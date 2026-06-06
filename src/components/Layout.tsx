@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Menu, X, LayoutDashboard, Calculator } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, ShieldCheck } from 'lucide-react';
 
 export default function Layout() {
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -15,7 +15,6 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '매출 시뮬레이터', path: '/simulator', icon: <Calculator size={20} /> },
   ];
 
   return (
@@ -56,12 +55,21 @@ export default function Layout() {
             </NavLink>
           ))}
         </div>
-
-        <div className="p-4 border-t border-slate-100">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-4 py-3 font-bold text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors rounded-xl"
-          >
+          
+        <div className="p-4 space-y-2">
+            {isAdmin && (
+              <NavLink
+                to="/admin/simulator"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
+              >
+                <ShieldCheck size={20} className="text-brand-mint" />
+                관리자 센터 입장
+              </NavLink>
+            )}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-bold text-sm"
+            >
             <LogOut size={20} />
             로그아웃
           </button>

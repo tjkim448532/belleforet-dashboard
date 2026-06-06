@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SimulationProvider } from './contexts/SimulationContext';
 
 import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Simulator from './pages/Simulator';
@@ -13,14 +14,16 @@ import AdminLogs from './pages/AdminLogs';
 // Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
   return <>{children}</>;
 };
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
         <SimulationProvider>
           <BrowserRouter>
             <Routes>
@@ -28,15 +31,21 @@ function App() {
               
               <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route index element={<Home />} />
-                <Route path="simulator" element={<Simulator />} />
-                <Route path="super-admin-logs" element={<AdminLogs />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
+
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                <Route path="simulator" element={<Simulator />} />
+                <Route path="logs" element={<AdminLogs />} />
+                <Route index element={<Navigate to="simulator" replace />} />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
         </SimulationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

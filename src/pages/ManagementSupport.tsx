@@ -94,7 +94,7 @@ ${nextDate} 예약팀: 120팀
     try {
       // API call to generate report from MariaDB
       // Assuming today is 06-06, we fetch data for '2026-06-05'
-      const response = await fetch('/api/generate-report?date=2026-06-05');
+      const response = await fetch('https://belleforet-data.vercel.app/api/generate-report?date=2026-06-05');
       
       if (!response.ok) {
         const text = await response.text();
@@ -153,7 +153,7 @@ ${nextDate} 예약팀: 120팀
         payload.scheduledDate = new Date(scheduledDate).toISOString();
       }
 
-      const response = await fetch('/api/send-sms', {
+      const response = await fetch('https://belleforet-data.vercel.app/api/send-sms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

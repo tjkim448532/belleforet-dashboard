@@ -10,8 +10,7 @@ export default function ManagementSupport() {
   const currentDate = '26년 06월 06일(토)'; // Using current date context
   const nextDate = '06/07(일)';
 
-  const defaultMessage = `[Web발신]
-[블랙스톤 벨포레 리조트]영업보고
+  const defaultMessage = `[블랙스톤 벨포레 리조트]영업보고
 일자: ${currentDate}
 내장팀: 114팀(451명)
 총매출: 103,220,931원

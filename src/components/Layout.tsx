@@ -89,8 +89,11 @@ export default function Layout() {
                 {leisureItems.map((subItem, idx) => (
                   <button
                     key={idx}
-                    className="w-full text-left px-4 py-2 text-sm font-medium text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5 rounded-lg transition-colors"
-                    onClick={(e) => { e.preventDefault(); }}
+                    className="w-full text-left px-4 py-3 md:py-2 text-sm font-medium text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5 rounded-lg transition-colors"
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      if (window.innerWidth < 1024) setSidebarOpen(false); // Close sidebar on mobile
+                    }}
                   >
                     {subItem}
                   </button>

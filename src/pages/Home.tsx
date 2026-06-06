@@ -152,7 +152,7 @@ export default function Home() {
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform group-hover:scale-150" />
               <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-brand-mint" /> 금일 전사 매출
+                <CalendarDays className="w-5 h-5 text-brand-mint" /> 오늘 매출 ({currentDate})
               </h2>
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
                 {formatCurrency(displayData.today.actual)}

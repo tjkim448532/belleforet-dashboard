@@ -13,6 +13,8 @@ import Simulator from './pages/Simulator';
 import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
 
+import ManagementSupport from './pages/ManagementSupport';
+
 // Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -34,6 +36,7 @@ function App() {
                 
                 <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route index element={<Home />} />
+                  <Route path="management-support" element={<ManagementSupport />} />
                 </Route>
 
                 {/* Admin Routes */}

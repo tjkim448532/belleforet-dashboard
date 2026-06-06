@@ -19,7 +19,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '경영지원실', path: '#경영지원실', icon: <Briefcase size={20} /> },
+    { name: '경영지원실', path: '/management-support', icon: <Briefcase size={20} /> },
     { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} /> },
     { name: '콘도', path: '#콘도', icon: <Hotel size={20} /> },
   ];

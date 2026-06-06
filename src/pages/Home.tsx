@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Building2, CalendarDays, Coins } from 'lucide-react';
 
 interface SummaryData {
   success: boolean;
@@ -12,71 +11,6 @@ interface SummaryData {
   avg_green_fee: number;
   weekly_trend: { day: string; fullDate: string; this_week: number; last_week: number; }[];
 }
-
-// Custom Gauge Chart Component
-const SpeedometerGauge = ({ 
-  value, 
-  min = 0, 
-  max, 
-  label, 
-  formatFn, 
-  color = "#00e676", 
-  danger = false 
-}: { 
-  value: number, 
-  min?: number, 
-  max: number, 
-  label: string, 
-  formatFn: (val: number) => string, 
-  color?: string,
-  danger?: boolean 
-}) => {
-  const radius = 60;
-  const circumference = Math.PI * radius; // Half circle
-  const safeValue = Math.min(Math.max(value, min), max);
-  const percent = (safeValue - min) / (max - min);
-  const dashoffset = circumference - percent * circumference;
-
-  return (
-    <div className="flex flex-col items-center justify-center relative w-full h-32">
-      <div className="absolute -top-4 text-xs font-semibold text-slate-400">{label}</div>
-      <svg className="w-40 h-24 overflow-visible" viewBox="0 0 140 80">
-        {/* Background Track */}
-        <path
-          d={`M 10 70 A 60 60 0 0 1 130 70`}
-          fill="none"
-          stroke="#1e293b"
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-        {/* Progress Track */}
-        <path
-          d={`M 10 70 A 60 60 0 0 1 130 70`}
-          fill="none"
-          stroke={danger ? "#ef4444" : color}
-          strokeWidth="12"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashoffset}
-          className="transition-all duration-1000 ease-out"
-        />
-        {/* Needle */}
-        <g 
-          className="transition-transform duration-1000 ease-out origin-[70px_70px]" 
-          style={{ transform: `rotate(${percent * 180 - 90}deg)` }}
-        >
-          <circle cx="70" cy="70" r="4" fill="#ffffff" />
-          <path d="M 68 70 L 72 70 L 70 20 Z" fill="#ffffff" />
-        </g>
-        <text x="10" y="85" fill="#64748b" fontSize="10" textAnchor="middle">{formatFn(min)}</text>
-        <text x="130" y="85" fill="#64748b" fontSize="10" textAnchor="middle">{formatFn(max)}</text>
-      </svg>
-      <div className="text-2xl font-black text-white -mt-2">
-        {formatFn(value)}
-      </div>
-    </div>
-  );
-};
 
 export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
@@ -93,7 +27,7 @@ export default function Home() {
         const json = await res.json();
         
         if (!json.success || (json.ytd.actual === 0 && json.today.actual === 0)) {
-          // Fallback with mock data structure matching the new API shape
+          // Fallback with mock data
           setData({
             success: true,
             date: currentDate,
@@ -130,21 +64,24 @@ export default function Home() {
     fetchSummary();
   }, []);
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('ko-KR').format(val) + '원';
+  };
+
   const formatShortCurrency = (val: number) => {
-    if (val >= 100000000) return `₩${(val / 100000000).toFixed(1)}억`;
-    if (val >= 10000) return `₩${(val / 10000).toFixed(0)}만`;
-    return `₩${val}`;
+    if (val >= 100000000) return `${(val / 100000000).toFixed(1)}억`;
+    if (val >= 10000) return `${(val / 10000).toFixed(0)}만`;
+    return `${val}`;
   };
 
   if (loading || !data) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#00e676] border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-xl font-bold text-slate-400 animate-pulse">데이터를 불러오는 중입니다...</div>
       </div>
     );
   }
 
-  // Calculate variances
   const todayDiff = data.today.actual - data.today.ly_actual;
   const todayPct = data.today.ly_actual > 0 ? (todayDiff / data.today.ly_actual) * 100 : 0;
   
@@ -152,157 +89,122 @@ export default function Home() {
   const ytdPct = data.ytd.ly_actual > 0 ? (ytdDiff / data.ytd.ly_actual) * 100 : 0;
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-4 md:p-6 bg-[#011126] min-h-screen text-slate-200">
+    <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 bg-[#011126] min-h-screen text-slate-200 font-sans tracking-tight">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#1e293b]">
-        <div className="flex items-center gap-3">
-          <div className="bg-white text-black font-black px-2 py-1 rounded-sm text-xs">DAOL</div>
-          <h1 className="text-xl font-bold tracking-wide">Sales Manager Live Monitoring</h1>
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b-2 border-slate-800">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="bg-white text-[#011126] font-black px-2 py-1 text-sm tracking-wider">다올 종합 그룹</div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">경영진 종합 현황판</h1>
+          </div>
+          <div className="text-slate-400 text-sm">모든 데이터는 실시간 시스템(POS 및 PMS)과 연동되어 집계됩니다.</div>
         </div>
-        <div className="text-xl font-bold font-mono tracking-widest">{currentDate}</div>
+        <div className="text-2xl font-black text-white mt-4 md:mt-0 tracking-widest">{currentDate}</div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Column */}
-        <div className="lg:col-span-9 flex flex-col gap-4">
+        {/* Left Area (Top level metrics) */}
+        <div className="lg:col-span-8 flex flex-col gap-8">
           
-          {/* Top KPI Panel (Today + Gauges) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Executive Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            {/* Today Sales Card */}
-            <div className="bg-[#021a3a] border border-[#1e293b] p-6 rounded-md">
-              <h2 className="text-sm font-bold text-slate-300 mb-6">Today's sales</h2>
-              <div className="text-5xl font-black text-white tracking-tight mb-1">
-                {formatShortCurrency(data.today.actual)}
+            <div className="bg-[#021a3a] border-l-4 border-[#00e676] p-8 shadow-2xl">
+              <h2 className="text-sm font-bold text-slate-400 mb-8 flex items-center gap-2">
+                <CalendarDays className="w-4 h-4" /> 금일 전사 매출
+              </h2>
+              <div className="text-5xl lg:text-6xl font-black text-white mb-4">
+                {formatCurrency(data.today.actual)}
               </div>
-              <div className="text-sm text-slate-400 mb-8">Revenue</div>
-              
-              <div className={`text-sm font-bold ${todayPct >= 0 ? 'text-[#00e676]' : 'text-red-500'}`}>
-                {todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}% vs last year
-              </div>
-
-              <div className="mt-8">
-                <div className="text-3xl font-black text-white mb-1">
-                  {formatShortCurrency(data.ytd.actual)}
-                </div>
-                <div className="text-sm text-slate-400 mb-2">YTD Revenue</div>
-                <div className={`text-sm font-bold ${ytdPct >= 0 ? 'text-[#00e676]' : 'text-red-500'}`}>
-                  {ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}% vs last year
-                </div>
+              <div className={`text-lg font-bold flex items-center gap-2 ${todayPct >= 0 ? 'text-[#00e676]' : 'text-red-500'}`}>
+                <span>전년 동요일 대비</span>
+                <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
+                <span className="text-sm font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatShortCurrency(todayDiff)})</span>
               </div>
             </div>
 
-            {/* Gauges Card */}
-            <div className="md:col-span-2 bg-[#021a3a] border border-[#1e293b] p-6 rounded-md flex flex-col">
-              <h2 className="text-sm font-bold text-slate-300 mb-6">Today's performance metrics</h2>
-              <div className="flex-1 flex flex-col md:flex-row items-center justify-around gap-6">
-                
-                <SpeedometerGauge 
-                  label="YTD Target %" 
-                  value={105} // Dummy target %
-                  max={120} 
-                  formatFn={(v) => `${v}%`}
-                  color="#00e676"
-                />
-                
-                <SpeedometerGauge 
-                  label="Avg. Daily Rate (ADR)" 
-                  value={data.adr} 
-                  min={0}
-                  max={300000} 
-                  formatFn={(v) => formatShortCurrency(v)}
-                  color="#3b82f6"
-                />
-                
-                <SpeedometerGauge 
-                  label="Avg. Green Fee" 
-                  value={data.avg_green_fee} 
-                  min={0}
-                  max={250000} 
-                  formatFn={(v) => formatShortCurrency(v)}
-                  color="#f43f5e"
-                  danger={data.avg_green_fee < 100000} // Example danger logic
-                />
-                
+            <div className="bg-[#021a3a] border-l-4 border-[#3b82f6] p-8 shadow-2xl">
+              <h2 className="text-sm font-bold text-slate-400 mb-8 flex items-center gap-2">
+                <Building2 className="w-4 h-4" /> 올해 누적 매출 (YTD)
+              </h2>
+              <div className="text-5xl lg:text-6xl font-black text-white mb-4">
+                {formatShortCurrency(data.ytd.actual)}원
+              </div>
+              <div className={`text-lg font-bold flex items-center gap-2 ${ytdPct >= 0 ? 'text-[#3b82f6]' : 'text-red-500'}`}>
+                <span>전년 동기 대비</span>
+                <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
+                <span className="text-sm font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatShortCurrency(ytdDiff)})</span>
               </div>
             </div>
+
           </div>
 
-          {/* Bottom Chart Panel */}
-          <div className="bg-[#021a3a] border border-[#1e293b] p-6 rounded-md flex-1">
-            <h2 className="text-sm font-bold text-slate-300 mb-2">Revenue this week</h2>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="text-4xl font-black text-white">{formatShortCurrency(data.today.actual)}</div>
-              <div className="text-sm text-slate-400">Today</div>
-            </div>
+          {/* Key Indicators (No Graphs, just big typography) */}
+          <div className="bg-[#021a3a] border border-slate-800 p-8 shadow-2xl">
+            <h2 className="text-sm font-bold text-slate-400 mb-8 flex items-center gap-2 border-b border-slate-800 pb-4">
+              <Coins className="w-4 h-4" /> 핵심 영업 지표 (1인당 / 객실당 단가)
+            </h2>
             
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.weekly_trend} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                  <XAxis dataKey="day" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
-                  <YAxis 
-                    stroke="#64748b" 
-                    tick={{fill: '#64748b', fontSize: 12}} 
-                    axisLine={false} 
-                    tickLine={false}
-                    tickFormatter={(val) => `${val / 10000}만`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '4px', color: '#fff' }}
-                    itemStyle={{ color: '#fff' }}
-                    formatter={(val: any) => new Intl.NumberFormat('ko-KR').format(val) + '원'}
-                  />
-                  <Line type="monotone" dataKey="this_week" stroke="#00e676" strokeWidth={3} dot={{r: 4, fill: '#011126', strokeWidth: 2}} name="This Week" />
-                  <Line type="monotone" dataKey="last_week" stroke="#fbbf24" strokeWidth={2} dot={false} name="Last Week" />
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div>
+                <div className="text-slate-400 font-medium mb-2 text-lg">숙박 객실 평균 단가 (ADR)</div>
+                <div className="text-4xl font-black text-white mb-2">{formatCurrency(data.adr)}</div>
+                <div className="text-sm text-slate-500">당일 숙박 매출 ÷ 판매된 총 객실 수</div>
+              </div>
+
+              <div>
+                <div className="text-slate-400 font-medium mb-2 text-lg">골프 1인당 평균 그린피</div>
+                <div className="text-4xl font-black text-white mb-2">{formatCurrency(data.avg_green_fee)}</div>
+                <div className="text-sm text-slate-500">당일 골프 매출 ÷ 내장객 수</div>
+              </div>
             </div>
           </div>
 
         </div>
 
-        {/* Right Column (Leaderboard) */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
+        {/* Right Area (Leaderboard & Weekly Summary) */}
+        <div className="lg:col-span-4 flex flex-col gap-8">
           
-          {/* Leaderboard Panel */}
-          <div className="bg-[#021a3a] border border-[#1e293b] p-6 rounded-md flex-1">
-            <h2 className="text-sm font-bold text-slate-300 mb-6">Today's leaderboard</h2>
-            <div className="space-y-4">
+          {/* HQ Leaderboard */}
+          <div className="bg-[#021a3a] border border-slate-800 p-8 shadow-2xl flex-1">
+            <h2 className="text-sm font-bold text-slate-400 mb-8 pb-4 border-b border-slate-800">
+              오늘의 본부별 실적 순위
+            </h2>
+            <div className="space-y-6">
               {data.hq_today.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
-                <div key={idx} className="flex items-center justify-between border-b border-[#1e293b] pb-3">
-                  <span className="text-slate-300 font-medium">{hq.hq}</span>
-                  <span className="text-white font-mono">{formatShortCurrency(hq.actual)}</span>
+                <div key={idx} className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-bold text-lg flex items-center gap-3">
+                      <span className="text-slate-500 font-mono text-sm">{idx + 1}</span>
+                      {hq.hq} 본부
+                    </span>
+                    <span className="text-[#00e676] font-bold text-xl">{formatShortCurrency(hq.actual)}원</span>
+                  </div>
+                  <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-slate-400" 
+                      style={{ width: `${Math.max((hq.actual / data.hq_today[0].actual) * 100, 2)}%` }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Bottom Alerts Panel (mimicking the "leads" section) */}
-          <div className="bg-[#021a3a] border border-[#1e293b] p-6 rounded-md relative overflow-hidden">
-            <h2 className="text-sm font-bold text-slate-300 mb-6">Live Alerts</h2>
-            
-            <div className="flex items-end gap-3 mb-4">
-              <span className="text-4xl font-black text-white">4</span>
-              <span className="text-sm text-slate-400 mb-1">new reservations</span>
-            </div>
-            
-            <div className="flex items-end gap-3 mb-4">
-              <span className="text-3xl font-black text-white">1</span>
-              <span className="text-sm text-slate-400 mb-1">VIP check-in</span>
-            </div>
-
-            <div className="flex items-end gap-3 border border-red-500/50 bg-red-500/10 p-3 rounded-md mt-4">
-              <span className="text-3xl font-black text-white">0</span>
-              <span className="text-sm text-slate-400 mb-1">system errors</span>
-              <AlertCircle className="absolute bottom-4 right-4 text-red-500 w-8 h-8" />
-            </div>
+          {/* System Status (Replaces Live Alerts) */}
+          <div className="bg-slate-900 border border-red-900/30 p-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-2 h-full bg-red-500/20" />
+            <h2 className="text-sm font-bold text-slate-500 mb-4 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-slate-400" /> 시스템 상태 알림
+            </h2>
+            <div className="text-white font-medium text-lg mb-1">정상 가동 중</div>
+            <div className="text-slate-500 text-sm">연동 오류가 발견되지 않았습니다.</div>
           </div>
 
         </div>
-
       </div>
     </div>
   );

@@ -95,7 +95,7 @@ export default function Home() {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b-2 border-slate-800">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="bg-white text-[#011126] font-black px-2 py-1 text-sm tracking-wider">다올 종합 그룹</div>
+            <div className="bg-white text-[#011126] font-black px-2 py-1 text-sm tracking-wider">벨포레 리조트</div>
             <h1 className="text-2xl font-bold tracking-tight text-white">경영진 종합 현황판</h1>
           </div>
           <div className="text-slate-400 text-sm">모든 데이터는 실시간 시스템(POS 및 PMS)과 연동되어 집계됩니다.</div>

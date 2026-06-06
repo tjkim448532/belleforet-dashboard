@@ -90,6 +90,24 @@ ${nextDate} 예약팀: 120팀
     }
   };
 
+  const handleFetchReport = async () => {
+    try {
+      // API call to generate report from MariaDB
+      // Assuming today is 06-06, we fetch data for '2026-06-05'
+      const response = await fetch('/api/generate-report?date=2026-06-05');
+      const result = await response.json();
+      if (result.success) {
+        setMessage(result.message);
+        alert('✅ MariaDB에서 영업 데이터를 성공적으로 불러왔습니다!');
+      } else {
+        alert('❌ 데이터 불러오기 실패: ' + result.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ 데이터 불러오기 중 오류가 발생했습니다.');
+    }
+  };
+
   // Handle Send SMS via Solapi API
   const handleSendSMS = async () => {
     if (!receiverPhone) {
@@ -256,6 +274,12 @@ ${nextDate} 예약팀: 120팀
               📱 문자 내용 작성 및 편집
             </h2>
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleFetchReport}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all shadow-md mr-2"
+              >
+                📥 데이터 자동 생성
+              </button>
               <button
                 onClick={handleCopy}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${

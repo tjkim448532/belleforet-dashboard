@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import DaolDepartment from './pages/departments/DaolDepartment';
 
 // Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -25,7 +24,6 @@ function App() {
             
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Home />} />
-              <Route path="sales" element={<DaolDepartment />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

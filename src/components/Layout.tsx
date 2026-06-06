@@ -3,8 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { 
-  LogOut, Moon, Sun, Menu, X, LayoutDashboard, 
-  TrendingUp, BarChart3, PieChart
+  LogOut, Moon, Sun, Menu, X, LayoutDashboard
 } from 'lucide-react';
 
 export default function Layout() {
@@ -20,45 +19,40 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '매출 상세', path: '/sales', icon: <TrendingUp size={20} /> },
-    { name: '객실 부문 (준비중)', path: '/rooms', icon: <BarChart3 size={20} />, disabled: true },
-    { name: 'F&B 부문 (준비중)', path: '/fnb', icon: <PieChart size={20} />, disabled: true },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
+    <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#0a0f16] text-slate-900 dark:text-slate-100 flex transition-colors duration-300 font-sans">
       
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 glass-panel-light dark:glass-panel-dark transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col`}>
-        <div className="p-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">BELLEFORET</h2>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500">
+      {/* Sidebar - McKinsey Style (Deep Navy, sharp) */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#002855] text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col border-r border-[#001f42]`}>
+        <div className="p-6 flex items-center justify-between border-b border-white/10">
+          <h2 className="text-xl font-bold tracking-widest">BELLEFORET</h2>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/70 hover:text-white transition-colors">
             <X size={24} />
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-          <div className="text-xs font-bold text-slate-400 mb-4 px-2 tracking-wider">DASHBOARDS</div>
+        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+          <div className="text-xs font-semibold text-white/50 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
           {menuItems.map((item, idx) => (
             <NavLink
               key={idx}
-              to={item.disabled ? '#' : item.path}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                item.disabled 
-                  ? 'opacity-50 cursor-not-allowed text-slate-500'
-                  : isActive && item.path !== '#'
-                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+              to={item.path}
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all ${
+                isActive
+                  ? 'bg-white/10 text-white border-l-4 border-blue-400'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white border-l-4 border-transparent'
               }`}
-              onClick={() => { if (!item.disabled) setSidebarOpen(false); }}
+              onClick={() => setSidebarOpen(false)}
             >
               {item.icon}
               {item.name}
@@ -66,17 +60,17 @@ export default function Layout() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-4 border-t border-white/10 space-y-1">
           <button
             onClick={toggleTheme}
-            className="flex w-full items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+            className="flex w-full items-center gap-3 px-4 py-3 font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors border-l-4 border-transparent"
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             {theme === 'dark' ? '라이트 모드' : '다크 모드'}
           </button>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+            className="flex w-full items-center gap-3 px-4 py-3 font-medium text-red-400 hover:bg-red-500/10 transition-colors border-l-4 border-transparent"
           >
             <LogOut size={20} />
             로그아웃
@@ -87,20 +81,22 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         {/* Topbar for mobile */}
-        <header className="lg:hidden h-16 glass-panel-light dark:glass-panel-dark flex items-center justify-between px-4 sticky top-0 z-30">
+        <header className="lg:hidden h-16 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="text-slate-600 dark:text-slate-300">
               <Menu size={24} />
             </button>
-            <h1 className="font-bold text-lg">BELLEFORET</h1>
+            <h1 className="font-bold text-lg tracking-widest text-[#002855] dark:text-white">BELLEFORET</h1>
           </div>
           <button onClick={toggleTheme} className="text-slate-600 dark:text-slate-300">
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100/50 dark:bg-[#0B0F19]">
-          <Outlet />
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="w-full h-full p-4 md:p-8">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

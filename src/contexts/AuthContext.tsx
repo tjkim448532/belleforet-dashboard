@@ -13,8 +13,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const COMMON_PASSWORD = 'aebece'; // 일반 임직원 공용 비밀번호
-const ADMIN_EMAIL = 'tjkim@bsbelleforet.com';
-const ADMIN_PASSWORD = 'service';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -49,25 +47,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let success = false;
     let isSuperAdmin = false;
 
-    // 슈퍼 관리자 체크 (Firebase Auth 연동)
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      try {
-        const { auth } = await import('../lib/firebase');
-        const { signInWithEmailAndPassword } = await import('firebase/auth');
-        await signInWithEmailAndPassword(auth, email, password);
-        success = true;
-        isSuperAdmin = true;
-      } catch (error) {
-        console.error("Firebase Auth Error:", error);
-        // Firebase 인증 실패 시 에러 처리 (로그인 실패)
-        return false;
-      }
-    } 
-    // 일반 임직원 체크 (기존 방식 유지)
-    else {
+    try {
+      // 1. 먼저 파이어베이스 Auth(슈퍼 관리자) 로그인을 시도해 봅니다.
+      const { auth } = await import('../lib/firebase');
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // 파이어베이스 인증 성공 -> 이 사람은 콘솔에 등록된 슈퍼 관리자임
+      success = true;
+      isSuperAdmin = true;
+    } catch (error) {
+      // 파이어베이스 인증 실패 시 (콘솔에 등록 안 된 일반 직원인 경우)
+      // 2. 일반 임직원 도메인 및 공용 비밀번호 체크 로직으로 넘어갑니다.
       const isCompanyEmail = email.endsWith('@daol.com') || email.endsWith('@belleforet.com') || email === 'admin';
       if (isCompanyEmail && password === COMMON_PASSWORD) {
         success = true;
+        isSuperAdmin = false;
       }
     }
     

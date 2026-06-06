@@ -21,7 +21,6 @@ interface SummaryData {
 export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // 현재 날짜 기준
   const currentDate = '2026-06-06';
@@ -29,7 +28,6 @@ export default function Home() {
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
-      setError(null);
       try {
         const res = await fetch(`https://belleforet-daol-engine.vercel.app/api/reports/home-summary?date=${currentDate}`);
         if (!res.ok) throw new Error('데이터를 불러오는데 실패했습니다.');

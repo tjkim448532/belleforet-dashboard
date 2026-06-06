@@ -60,7 +60,7 @@ export default async function handler(req: any, res: any) {
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     if (response.ok) {
       return res.status(200).json({ success: true, data });

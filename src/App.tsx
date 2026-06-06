@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Simulator from './pages/Simulator';
+import AdminLogs from './pages/AdminLogs';
 
 // Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -28,6 +29,7 @@ function App() {
               <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route index element={<Home />} />
                 <Route path="simulator" element={<Simulator />} />
+                <Route path="super-admin-logs" element={<AdminLogs />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

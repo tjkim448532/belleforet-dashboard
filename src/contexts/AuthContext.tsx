@@ -9,7 +9,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const COMMON_PASSWORD = 'daol'; // 임시 공용 비밀번호
+const COMMON_PASSWORD = 'aebece'; // 변경된 공용 비밀번호
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -22,13 +22,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (email: string, password: string) => {
     // 회사 이메일 도메인 검증 및 비밀번호 확인
-    const isCompanyEmail = email.endsWith('@daol.com') || email.endsWith('@belleforet.com');
+    const isCompanyEmail = email.endsWith('@daol.com') || email.endsWith('@belleforet.com') || email === 'admin';
     
     if (isCompanyEmail && password === COMMON_PASSWORD) {
       setIsAuthenticated(true);
       setUserEmail(email);
       sessionStorage.setItem('auth', 'true');
       sessionStorage.setItem('userEmail', email);
+      
+      // 보안 로그 저장 (슈퍼 관리자용)
+      const logs = JSON.parse(localStorage.getItem('superAdminLoginLogs') || '[]');
+      logs.push({ email, timestamp: new Date().toLocaleString('ko-KR') });
+      localStorage.setItem('superAdminLoginLogs', JSON.stringify(logs));
+      
       return true;
     }
     return false;

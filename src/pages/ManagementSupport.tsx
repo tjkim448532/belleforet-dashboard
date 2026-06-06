@@ -95,6 +95,12 @@ ${nextDate} 예약팀: 120팀
       // API call to generate report from MariaDB
       // Assuming today is 06-06, we fetch data for '2026-06-05'
       const response = await fetch('/api/generate-report?date=2026-06-05');
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`서버 응답 오류 (HTTP ${response.status}):\n${text.slice(0, 150)}...`);
+      }
+
       const result = await response.json();
       if (result.success) {
         setMessage(result.message);
@@ -102,9 +108,9 @@ ${nextDate} 예약팀: 120팀
       } else {
         alert('❌ 데이터 불러오기 실패: ' + result.error);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('❌ 데이터 불러오기 중 오류가 발생했습니다.');
+      alert(`❌ 데이터 불러오기 중 오류가 발생했습니다.\n\n상세내용: ${err.message}`);
     }
   };
 
@@ -155,16 +161,21 @@ ${nextDate} 예약팀: 120팀
         body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`서버 응답 오류 (HTTP ${response.status}):\n${text.slice(0, 150)}...`);
+      }
+
       const result = await response.json();
 
-      if (response.ok && result.success) {
+      if (result.success) {
         alert(isScheduled ? '✅ 문자 예약 발송이 성공적으로 등록되었습니다!' : '✅ 문자가 성공적으로 발송되었습니다!');
       } else {
         alert(`❌ 문자 발송 실패: ${result.error || '알 수 없는 오류'}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('SMS Send Error:', err);
-      alert('❌ 서버와 통신하는 중 오류가 발생했습니다.');
+      alert(`❌ 서버와 통신하는 중 오류가 발생했습니다.\n\n상세내용: ${err.message}`);
     } finally {
       setIsSending(false);
     }

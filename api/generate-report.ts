@@ -1,9 +1,10 @@
-import mysql from 'mysql2/promise';
-
 export default async function handler(req: any, res: any) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
-  }
+  try {
+    const mysql = await import('mysql2/promise');
+    
+    if (req.method !== 'GET') {
+      return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+    }
 
   // Use provided credentials or fallback to the known ones
   const dbConfig = {
@@ -14,8 +15,7 @@ export default async function handler(req: any, res: any) {
     ssl: { rejectUnauthorized: false }
   };
 
-  try {
-    const connection = await mysql.createConnection(dbConfig);
+  const connection = await mysql.createConnection(dbConfig);
     
     // Set target date (e.g., yesterday's sales)
     // For this demonstration/mock, we use a fixed date that has data or just '2026-06-05'

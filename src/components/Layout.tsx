@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Calculator } from 'lucide-react';
 
 export default function Layout() {
   const { logout } = useAuth();
@@ -15,6 +15,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
+    { name: '매출 시뮬레이터', path: '/simulator', icon: <Calculator size={20} /> },
   ];
 
   return (

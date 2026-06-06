@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
-import { CalendarDays, Building2, Coins, Trees } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
+import { useSimulation } from '../contexts/SimulationContext';
 
 interface SummaryData {
   success: boolean;
@@ -16,6 +16,7 @@ interface SummaryData {
 export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { simulatedData, clearSimulation } = useSimulation();
 
   const currentDate = '2026-06-06';
 
@@ -41,15 +42,7 @@ export default function Home() {
             ],
             adr: 223000,
             avg_green_fee: 160000,
-            weekly_trend: [
-              { day: 'Sun', fullDate: '2026-05-31', this_week: 65000000, last_week: 55000000 },
-              { day: 'Mon', fullDate: '2026-06-01', this_week: 42000000, last_week: 40000000 },
-              { day: 'Tue', fullDate: '2026-06-02', this_week: 38000000, last_week: 35000000 },
-              { day: 'Wed', fullDate: '2026-06-03', this_week: 39000000, last_week: 36000000 },
-              { day: 'Thu', fullDate: '2026-06-04', this_week: 45000000, last_week: 48000000 },
-              { day: 'Fri', fullDate: '2026-06-05', this_week: 62000000, last_week: 59000000 },
-              { day: 'Sat', fullDate: '2026-06-06', this_week: 58200000, last_week: 45000000 },
-            ]
+            weekly_trend: []
           });
         } else {
           setData(json);
@@ -64,25 +57,36 @@ export default function Home() {
     fetchSummary();
   }, []);
 
+  // 시뮬레이션 데이터 덮어쓰기 로직
+  let displayData = data;
+  if (data && simulatedData) {
+    displayData = {
+      ...data,
+      today: { ...data.today, actual: simulatedData.totalSales },
+      ytd: { ...data.ytd, actual: data.ytd.actual - data.today.actual + simulatedData.totalSales },
+      hq_today: [
+        { hq: '골프', actual: simulatedData.hqTotals['골프'] || 0, qty: 150 },
+        { hq: '숙박', actual: simulatedData.hqTotals['숙박'] || 0, qty: 65 },
+        { hq: '레저', actual: simulatedData.hqTotals['레저'] || 0, qty: 420 },
+        { hq: '식음', actual: simulatedData.hqTotals['식음'] || 0, qty: 310 },
+      ]
+    };
+  }
+
+  // 모든 숫자 표기를 일정하게 (콤마 + 원) 통일
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('ko-KR').format(val) + '원';
-  };
-
-  const formatShortCurrency = (val: number) => {
-    if (val >= 100000000) return `${(val / 100000000).toFixed(1)}억`;
-    if (val >= 10000) return `${(val / 10000).toFixed(0)}만`;
-    return `${val}`;
   };
 
   const getHqIcon = (hq: string) => {
     if (hq.includes('골프')) return '⛳';
     if (hq.includes('숙박')) return '🏨';
-    if (hq.includes('레저')) return '🐑'; // 🐑 양 캐릭터
-    if (hq.includes('식음')) return '☕'; // ☕ 카페
-    return '🐶'; // 🐶 댕댕이
+    if (hq.includes('레저')) return '🐑'; 
+    if (hq.includes('식음')) return '☕'; 
+    return '🐶'; 
   };
 
-  if (loading || !data) {
+  if (loading || !displayData) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
         <div className="text-xl font-bold text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
@@ -90,11 +94,11 @@ export default function Home() {
     );
   }
 
-  const todayDiff = data.today.actual - data.today.ly_actual;
-  const todayPct = data.today.ly_actual > 0 ? (todayDiff / data.today.ly_actual) * 100 : 0;
+  const todayDiff = displayData.today.actual - displayData.today.ly_actual;
+  const todayPct = displayData.today.ly_actual > 0 ? (todayDiff / displayData.today.ly_actual) * 100 : 0;
   
-  const ytdDiff = data.ytd.actual - data.ytd.ly_actual;
-  const ytdPct = data.ytd.ly_actual > 0 ? (ytdDiff / data.ytd.ly_actual) * 100 : 0;
+  const ytdDiff = displayData.ytd.actual - displayData.ytd.ly_actual;
+  const ytdPct = displayData.ytd.ly_actual > 0 ? (ytdDiff / displayData.ytd.ly_actual) * 100 : 0;
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -109,6 +113,18 @@ export default function Home() {
 
       <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
+        {simulatedData && (
+          <div className="bg-red-500 text-white p-4 rounded-2xl mb-8 flex items-center justify-between shadow-lg animate-pulse">
+            <div className="flex items-center gap-3">
+              <AlertCircle size={24} />
+              <span className="font-bold text-lg">시뮬레이션 모드 작동 중! 실제 데이터가 아닙니다.</span>
+            </div>
+            <button onClick={clearSimulation} className="bg-white text-red-500 px-4 py-2 rounded-xl font-bold hover:bg-red-50 transition-colors">
+              실제 데이터로 복귀
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
@@ -139,12 +155,12 @@ export default function Home() {
                 <CalendarDays className="w-5 h-5 text-brand-mint" /> 금일 전사 매출
               </h2>
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
-                {formatCurrency(data.today.actual)}
+                {formatCurrency(displayData.today.actual)}
               </div>
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                 <span>전년 동요일 대비</span>
                 <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
-                <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatShortCurrency(todayDiff)})</span>
+                <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
               </div>
             </div>
 
@@ -155,18 +171,18 @@ export default function Home() {
                 <Building2 className="w-5 h-5 text-brand-mint" /> 올해 누적 매출 (YTD)
               </h2>
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
-                {formatShortCurrency(data.ytd.actual)}원
+                {formatCurrency(displayData.ytd.actual)}
               </div>
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                 <span>전년 동기 대비</span>
                 <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
-                <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatShortCurrency(ytdDiff)})</span>
+                <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
               </div>
             </div>
 
           </div>
 
-          {/* Left Area (Indicators & Chart) */}
+          {/* Left Area (Indicators) */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             
             {/* Key Indicators */}
@@ -177,47 +193,14 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
                   <div className="text-slate-500 font-bold mb-2">숙박 객실 평균 단가 (ADR)</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(data.adr)}</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(displayData.adr)}</div>
                   <div className="text-sm text-slate-400">당일 숙박 매출 ÷ 판매된 총 객실 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
                   <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(data.avg_green_fee)}</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(displayData.avg_green_fee)}</div>
                   <div className="text-sm text-slate-400">당일 골프 매출 ÷ 내장객 수</div>
                 </div>
-              </div>
-            </div>
-
-            {/* Weekly Chart */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[400px] flex flex-col">
-              <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Trees className="w-5 h-5 text-brand-mint" /> 최근 일주일 매출 추이
-              </h2>
-              <div className="flex-1 w-full h-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.weekly_trend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 13, fontWeight: 'bold'}} dy={10} />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{fill: '#94a3b8', fontSize: 12}} 
-                      tickFormatter={(val) => `${val / 10000}만`}
-                      dx={-10}
-                    />
-                    <Tooltip 
-                      cursor={{fill: '#f8fafc'}}
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '12px' }}
-                      formatter={(value: any) => [`${new Intl.NumberFormat('ko-KR').format(value)}원`, '매출액']}
-                      labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '4px'}}
-                    />
-                    <Bar dataKey="this_week" name="이번 주" radius={[6, 6, 6, 6]}>
-                      {data.weekly_trend.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={index === data.weekly_trend.length - 1 ? '#00AE95' : '#cbd5e1'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
               </div>
             </div>
 
@@ -232,7 +215,7 @@ export default function Home() {
                 🏆 오늘의 본부별 실적 순위
               </h2>
               <div className="space-y-6">
-                {data.hq_today.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
+                {displayData.hq_today.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
                   <div key={idx} className="flex flex-col gap-3 group">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-700 font-bold text-lg flex items-center gap-2">
@@ -241,12 +224,12 @@ export default function Home() {
                         </span>
                         {hq.hq}
                       </span>
-                      <span className="text-slate-800 font-emphatic text-xl">{formatShortCurrency(hq.actual)}원</span>
+                      <span className="text-slate-800 font-emphatic text-xl">{formatCurrency(hq.actual)}</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-brand-mint rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${Math.max((hq.actual / data.hq_today[0].actual) * 100, 3)}%` }}
+                        style={{ width: `${Math.max((hq.actual / (displayData.hq_today[0]?.actual || 1)) * 100, 3)}%` }}
                       />
                     </div>
                   </div>

@@ -88,7 +88,7 @@ export default function Home() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`https://belleforet-daol-engine.vercel.app/api/reports/home-summary?date=${currentDate}`);
+        const res = await fetch(`https://belleforet-data.vercel.app/api/reports/home-summary?date=${currentDate}`);
         if (!res.ok) throw new Error('데이터를 불러오는데 실패했습니다.');
         const json = await res.json();
         

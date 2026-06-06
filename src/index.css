@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --color-dark-bg: #0a0f16;
-  --color-dark-panel: #1e293b;
+  --color-dark-bg: #011126;
+  --color-dark-panel: #021a3a;
   --color-light-bg: #f4f6f8;
   --color-light-panel: #ffffff;
 }
@@ -10,13 +10,11 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--color-light-bg);
-  color: #1e293b;
+  background-color: var(--color-dark-bg);
+  color: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: var(--color-dark-bg);
-    color: #f8fafc;
-  }
+/* Force dark mode globally since user wants the dark live monitoring style */
+html {
+  color-scheme: dark;
 }

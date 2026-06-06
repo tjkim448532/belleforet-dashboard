@@ -11,9 +11,9 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ success: false, error: 'Missing required fields: to, text' });
   }
 
-  const apiKey = process.env.VITE_SOLAPI_API_KEY || process.env.SOLAPI_API_KEY;
-  const apiSecret = process.env.VITE_SOLAPI_API_SECRET || process.env.SOLAPI_API_SECRET;
-  const from = process.env.VITE_SOLAPI_SENDER_NO || process.env.SOLAPI_SENDER_NO;
+  const apiKey = process.env.VITE_SOLAPI_API_KEY || process.env.SOLAPI_API_KEY || 'NCSEQZGX8C5I7AM2';
+  const apiSecret = process.env.VITE_SOLAPI_API_SECRET || process.env.SOLAPI_API_SECRET || '3MJOV9OZOYSNOCFPOVFXAECXIHXQYVMI';
+  const from = process.env.VITE_SOLAPI_SENDER_NO || process.env.SOLAPI_SENDER_NO || '15660162';
 
   if (!apiKey || !apiSecret || !from) {
     return res.status(500).json({ success: false, error: '서버에 솔라피 연동 정보가 설정되지 않았습니다. (API Key, Secret, 발신번호)' });

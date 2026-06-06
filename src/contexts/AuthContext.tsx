@@ -49,12 +49,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let success = false;
     let isSuperAdmin = false;
 
-    // 슈퍼 관리자 체크
+    // 슈퍼 관리자 체크 (Firebase Auth 연동)
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      success = true;
-      isSuperAdmin = true;
+      try {
+        const { auth } = await import('../lib/firebase');
+        const { signInWithEmailAndPassword } = await import('firebase/auth');
+        await signInWithEmailAndPassword(auth, email, password);
+        success = true;
+        isSuperAdmin = true;
+      } catch (error) {
+        console.error("Firebase Auth Error:", error);
+        // Firebase 인증 실패 시 에러 처리 (로그인 실패)
+        return false;
+      }
     } 
-    // 일반 임직원 체크
+    // 일반 임직원 체크 (기존 방식 유지)
     else {
       const isCompanyEmail = email.endsWith('@daol.com') || email.endsWith('@belleforet.com') || email === 'admin';
       if (isCompanyEmail && password === COMMON_PASSWORD) {

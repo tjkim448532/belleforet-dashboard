@@ -35,9 +35,30 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setMappings(newMappings);
       } else {
         const fetchedMappings: StoreMapping[] = [];
-        snapshot.forEach((doc) => {
-          fetchedMappings.push({ id: doc.id, ...(doc.data() as Omit<StoreMapping, 'id'>) });
-        });
+        const migrationMap: Record<string, Category> = {
+          '객실': '리조트사업본부',
+          '골프': '골프사업본부',
+          '식음업장': '식음',
+          '티켓업장': '레져사업본부'
+        };
+
+        for (const docSnapshot of snapshot.docs) {
+          const data = docSnapshot.data() as Omit<StoreMapping, 'id'>;
+          let category = data.category;
+          let needsUpdate = false;
+
+          // Migrate old category names to new ones automatically
+          if (migrationMap[category]) {
+            category = migrationMap[category];
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
+            await updateDoc(doc(db, 'storeMappings', docSnapshot.id), { category });
+          }
+
+          fetchedMappings.push({ id: docSnapshot.id, ...data, category });
+        }
         setMappings(fetchedMappings);
       }
     } catch (error) {

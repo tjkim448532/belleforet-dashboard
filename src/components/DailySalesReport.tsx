@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, Calendar, TrendingUp, TrendingDown, ChevronRight, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { RefreshCw, Calendar, Download } from 'lucide-react';
 
 interface SalesData {
   category: string;

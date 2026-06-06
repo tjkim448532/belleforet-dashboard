@@ -1,4 +1,3 @@
-import React from 'react';
 import DailySalesReport from '../../components/DailySalesReport';
 
 export default function DaolDepartment() {

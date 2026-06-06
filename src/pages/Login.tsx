@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { Lock, LogIn, Moon, Sun } from 'lucide-react';
+import { Lock, LogIn, Mail } from 'lucide-react';
 
 export default function Login() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const { login } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(password)) {
+    if (login(email, password)) {
       navigate('/');
     } else {
       setError(true);
@@ -22,50 +21,75 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      <div className="absolute top-6 right-6">
-        <button
-          onClick={toggleTheme}
-          className="p-3 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm"
-        >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-800 font-sans relative overflow-hidden">
+      
+      {/* Decorative Background */}
+      <div className="absolute top-0 left-0 w-full h-[40vh] bg-brand-mint rounded-b-[60px] z-0" />
+      <div className="absolute top-10 left-10 w-48 h-48 bg-white/20 rounded-full blur-2xl z-0" />
+      <div className="absolute top-20 right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl z-0" />
 
-      <div className="w-full max-w-md p-8 rounded-2xl glass-panel-light dark:glass-panel-dark shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-indigo-500/10 blur-3xl" />
+      <div className="w-full max-w-md p-8 md:p-10 rounded-[32px] bg-white shadow-[0_20px_60px_rgb(0,0,0,0.08)] relative z-10 mx-4">
         
-        <div className="relative z-10 text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-4 shadow-inner">
-            <Lock size={32} />
+        <div className="relative z-10 text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[24px] bg-brand-mint/10 text-brand-mint mb-6">
+            <Lock size={36} strokeWidth={2.5} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight mb-2">경영진 대시보드</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">보안을 위해 공용 비밀번호를 입력해주세요</p>
+          <div className="font-emphatic text-3xl tracking-widest text-brand-mint mb-2">BELLE FORET</div>
+          <h1 className="text-2xl font-bold tracking-tight mb-3">임직원 전용 대시보드</h1>
+          <p className="text-sm text-slate-500 font-medium">다올 또는 벨포레 회사 이메일로 로그인하세요.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+        <form onSubmit={handleSubmit} className="relative z-10 space-y-5">
           <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호 입력"
-              className={`w-full px-5 py-4 rounded-xl bg-white/50 dark:bg-slate-900/50 border focus:ring-2 outline-none transition-all ${
-                error 
-                  ? 'border-red-500 focus:ring-red-500/50 text-red-500' 
-                  : 'border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-blue-500/20'
-              }`}
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                <Mail size={20} />
+              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="회사 이메일 (@daol.com / @belleforet.com)"
+                className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border focus:ring-4 outline-none transition-all font-medium ${
+                  error 
+                    ? 'border-red-300 focus:ring-red-500/20 text-red-500' 
+                    : 'border-slate-200 focus:border-brand-mint focus:ring-brand-mint/20'
+                }`}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                <Lock size={20} />
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호"
+                className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border focus:ring-4 outline-none transition-all font-medium ${
+                  error 
+                    ? 'border-red-300 focus:ring-red-500/20 text-red-500' 
+                    : 'border-slate-200 focus:border-brand-mint focus:ring-brand-mint/20'
+                }`}
+                required
+              />
+            </div>
             {error && (
-              <p className="text-red-500 text-xs mt-2 font-medium px-2">비밀번호가 올바르지 않습니다.</p>
+              <p className="text-red-500 text-sm mt-3 font-bold px-2 text-center animate-pulse">
+                이메일 도메인 또는 비밀번호가 올바르지 않습니다.
+              </p>
             )}
           </div>
+
           <button
             type="submit"
-            className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full py-4 mt-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all text-white bg-brand-mint hover:bg-[#009c85] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 text-lg"
           >
-            <LogIn size={20} />
+            <LogIn size={22} />
             로그인
           </button>
         </form>

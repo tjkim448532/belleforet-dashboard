@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { 
-  LogOut, Moon, Sun, Menu, X, LayoutDashboard
-} from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
 
 export default function Layout() {
   const { logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -22,35 +18,35 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#0a0f16] text-slate-900 dark:text-slate-100 flex transition-colors duration-300 font-sans">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
       
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - McKinsey Style (Deep Navy, sharp) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#002855] text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col border-r border-[#001f42]`}>
-        <div className="p-6 flex items-center justify-between border-b border-white/10">
-          <h2 className="text-xl font-bold tracking-widest">BELLEFORET</h2>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/70 hover:text-white transition-colors">
+      {/* Sidebar - Belleforet Light Theme */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm`}>
+        <div className="p-6 flex items-center justify-between border-b border-slate-100">
+          <h2 className="text-2xl font-emphatic text-brand-mint tracking-widest">BELLE FORET</h2>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors">
             <X size={24} />
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          <div className="text-xs font-semibold text-white/50 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
+        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+          <div className="text-xs font-bold text-slate-400 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
           {menuItems.map((item, idx) => (
             <NavLink
               key={idx}
               to={item.path}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all ${
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-bold transition-all rounded-xl ${
                 isActive
-                  ? 'bg-white/10 text-white border-l-4 border-blue-400'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white border-l-4 border-transparent'
+                  ? 'bg-brand-mint/10 text-brand-mint'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}
               onClick={() => setSidebarOpen(false)}
             >
@@ -60,17 +56,10 @@ export default function Layout() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-white/10 space-y-1">
-          <button
-            onClick={toggleTheme}
-            className="flex w-full items-center gap-3 px-4 py-3 font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors border-l-4 border-transparent"
-          >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            {theme === 'dark' ? '라이트 모드' : '다크 모드'}
-          </button>
+        <div className="p-4 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-4 py-3 font-medium text-red-400 hover:bg-red-500/10 transition-colors border-l-4 border-transparent"
+            className="flex w-full items-center gap-3 px-4 py-3 font-bold text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors rounded-xl"
           >
             <LogOut size={20} />
             로그아웃
@@ -81,20 +70,18 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         {/* Topbar for mobile */}
-        <header className="lg:hidden h-16 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sticky top-0 z-30">
+        <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="text-slate-600 dark:text-slate-300">
+            <button onClick={() => setSidebarOpen(true)} className="text-slate-500">
               <Menu size={24} />
             </button>
-            <h1 className="font-bold text-lg tracking-widest text-[#002855] dark:text-white">BELLEFORET</h1>
+            <h1 className="font-emphatic text-xl tracking-widest text-brand-mint mt-1">BELLE FORET</h1>
           </div>
-          <button onClick={toggleTheme} className="text-slate-600 dark:text-slate-300">
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
         </header>
 
         <div className="flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="w-full h-full p-4 md:p-8">
+          {/* Outlet is wrapped by Home.tsx which handles its own padding. But Layout wrapper usually needs w-full h-full */}
+          <div className="w-full h-full relative">
             <Outlet />
           </div>
         </div>

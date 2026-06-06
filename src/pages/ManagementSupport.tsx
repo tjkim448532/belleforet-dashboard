@@ -63,7 +63,7 @@ ${nextDate} 예약팀: 120팀
   const [message, setMessage] = useState(defaultMessage);
   const [receiverPhone, setReceiverPhone] = useState('');
   const [isScheduled, setIsScheduled] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('09:00'); // Default 09:00 AM
   const [copied, setCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
@@ -120,8 +120,8 @@ ${nextDate} 예약팀: 120팀
       return;
     }
 
-    if (isScheduled && !scheduledDate) {
-      alert('예약 시간을 설정해주세요.');
+    if (isScheduled && !scheduledTime) {
+      alert('매일 발송할 시간을 설정해주세요.');
       return;
     }
 
@@ -134,7 +134,7 @@ ${nextDate} 예약팀: 120팀
     }
 
     const confirmMsg = isScheduled 
-      ? `총 ${phones.length}명에게 ${new Date(scheduledDate).toLocaleString()}에 문자를 예약 발송하시겠습니까?`
+      ? `총 ${phones.length}명에게 매일 [${scheduledTime}]에 영업보고 문자를 자동 발송하도록 정기 구독을 등록하시겠습니까? (MariaDB 데이터를 자동 취합합니다)`
       : `총 ${phones.length}명에게 지금 즉시 문자를 발송하시겠습니까?`;
 
     if (!confirm(confirmMsg)) {
@@ -143,37 +143,48 @@ ${nextDate} 예약팀: 120팀
 
     setIsSending(true);
     try {
-      const payload: any = {
-        to: phones.join(','),
-        text: message
-      };
-      
       if (isScheduled) {
-        payload.scheduledDate = new Date(scheduledDate).toISOString();
-      }
-
-      const response = await fetch('https://belleforet-data.vercel.app/api/send-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`서버 응답 오류 (HTTP ${response.status}):\n${text.slice(0, 150)}...`);
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(isScheduled ? '✅ 문자 예약 발송이 성공적으로 등록되었습니다!' : '✅ 문자가 성공적으로 발송되었습니다!');
+        // Save daily schedule to Firestore
+        const { db } = await import('../lib/firebase');
+        const { doc, setDoc } = await import('firebase/firestore');
+        
+        await setDoc(doc(db, 'dailySmsSchedules', 'defaultSchedule'), {
+          phones,
+          time: scheduledTime,
+          updatedAt: new Date().toISOString()
+        });
+        
+        alert('✅ 매일 정기구독(자동 발송)이 파이어베이스에 성공적으로 등록되었습니다!');
       } else {
-        alert(`❌ 문자 발송 실패: ${result.error || '알 수 없는 오류'}`);
+        // Immediate Send
+        const payload: any = {
+          to: phones.join(','),
+          text: message
+        };
+
+        const response = await fetch('https://belleforet-data.vercel.app/api/send-sms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`서버 응답 오류 (HTTP ${response.status}):\n${text.slice(0, 150)}...`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('✅ 문자가 성공적으로 즉시 발송되었습니다!');
+        } else {
+          alert(`❌ 문자 발송 실패: ${result.error || '알 수 없는 오류'}`);
+        }
       }
     } catch (err: any) {
-      console.error('SMS Send Error:', err);
+      console.error('Action Error:', err);
       alert(`❌ 서버와 통신하는 중 오류가 발생했습니다.\n\n상세내용: ${err.message}`);
     } finally {
       setIsSending(false);
@@ -252,26 +263,27 @@ ${nextDate} 예약팀: 120팀
                   className={`flex-1 py-2 font-bold text-sm rounded-lg transition-colors ${!isScheduled ? 'bg-white text-brand-mint shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   onClick={() => setIsScheduled(false)}
                 >
-                  즉시 발송
+                  단건 즉시 발송
                 </button>
                 <button
                   className={`flex-1 py-2 font-bold text-sm rounded-lg transition-colors flex items-center justify-center gap-1 ${isScheduled ? 'bg-brand-mint text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   onClick={() => setIsScheduled(true)}
                 >
-                  <Clock size={14} /> 예약 발송
+                  <Clock size={14} /> 매일 정기 발송
                 </button>
               </div>
 
               {isScheduled && (
                 <div className="animate-in fade-in slide-in-from-top-2">
                   <input
-                    type="datetime-local"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    min={new Date().toISOString().slice(0, 16)}
+                    type="time"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/50 text-xl font-bold text-center"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
                   />
-                  <p className="text-xs text-slate-400 mt-2">현재 시간으로부터 최소 10분 이후부터 예약 가능합니다.</p>
+                  <p className="text-xs text-brand-mint font-bold mt-2 text-center">
+                    매일 위 시간에 최신 리포트가 자동 발송됩니다.
+                  </p>
                 </div>
               )}
             </div>
@@ -307,7 +319,7 @@ ${nextDate} 예약팀: 120팀
                 }`}
               >
                 {isScheduled ? <Clock size={18} /> : <Send size={18} className={isSending ? 'animate-pulse' : ''} />}
-                {isSending ? '처리 중...' : (isScheduled ? '문자 예약하기' : '즉시 쏘기!')}
+                {isSending ? '처리 중...' : (isScheduled ? '매일 정기구독 등록' : '즉시 쏘기!')}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Building2, CalendarDays, Coins } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
+import { CalendarDays, Building2, Coins, Trees } from 'lucide-react';
 
 interface SummaryData {
   success: boolean;
@@ -27,7 +28,6 @@ export default function Home() {
         const json = await res.json();
         
         if (!json.success || (json.ytd.actual === 0 && json.today.actual === 0)) {
-          // Fallback with mock data
           setData({
             success: true,
             date: currentDate,
@@ -74,10 +74,18 @@ export default function Home() {
     return `${val}`;
   };
 
+  const getHqIcon = (hq: string) => {
+    if (hq.includes('골프')) return '⛳';
+    if (hq.includes('숙박')) return '🏨';
+    if (hq.includes('레저')) return '🐑'; // 🐑 양 캐릭터
+    if (hq.includes('식음')) return '☕'; // ☕ 카페
+    return '🐶'; // 🐶 댕댕이
+  };
+
   if (loading || !data) {
     return (
-      <div className="w-full h-[80vh] flex items-center justify-center">
-        <div className="text-xl font-bold text-slate-400 animate-pulse">데이터를 불러오는 중입니다...</div>
+      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="text-xl font-bold text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
       </div>
     );
   }
@@ -89,121 +97,173 @@ export default function Home() {
   const ytdPct = data.ytd.ly_actual > 0 ? (ytdDiff / data.ytd.ly_actual) * 100 : 0;
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 bg-[#011126] min-h-screen text-slate-200 font-sans tracking-tight">
+    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b-2 border-slate-800">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-white text-[#011126] font-black px-2 py-1 text-sm tracking-wider">벨포레 리조트</div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">경영진 종합 현황판</h1>
-          </div>
-          <div className="text-slate-400 text-sm">모든 데이터는 실시간 시스템(POS 및 PMS)과 연동되어 집계됩니다.</div>
-        </div>
-        <div className="text-2xl font-black text-white mt-4 md:mt-0 tracking-widest">{currentDate}</div>
+      {/* Decorative Header Background */}
+      <div className="w-full bg-brand-mint h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
+        {/* Brand Graphic Motifs in Background */}
+        <div className="absolute top-10 right-[10%] w-32 h-32 bg-white/20 shape-half-circle" />
+        <div className="absolute -top-10 right-[20%] w-48 h-48 bg-white/10 shape-leaf" />
+        <div className="absolute top-20 left-[5%] w-16 h-16 bg-white/20 rounded-full" />
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
-        {/* Left Area (Top level metrics) */}
-        <div className="lg:col-span-8 flex flex-col gap-8">
-          
-          {/* Executive Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
-            <div className="bg-[#021a3a] border-l-4 border-[#00e676] p-8 shadow-2xl">
-              <h2 className="text-sm font-bold text-slate-400 mb-8 flex items-center gap-2">
-                <CalendarDays className="w-4 h-4" /> 금일 전사 매출
-              </h2>
-              <div className="text-5xl lg:text-6xl font-black text-white mb-4">
-                {formatCurrency(data.today.actual)}
-              </div>
-              <div className={`text-lg font-bold flex items-center gap-2 ${todayPct >= 0 ? 'text-[#00e676]' : 'text-red-500'}`}>
-                <span>전년 동요일 대비</span>
-                <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
-                <span className="text-sm font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatShortCurrency(todayDiff)})</span>
-              </div>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+          <div className="text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-emphatic text-3xl tracking-widest bg-white text-brand-mint px-3 py-1 rounded-sm shadow-md">
+                BELLE FORET
+              </span>
+              <span className="font-emphatic text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-
-            <div className="bg-[#021a3a] border-l-4 border-[#3b82f6] p-8 shadow-2xl">
-              <h2 className="text-sm font-bold text-slate-400 mb-8 flex items-center gap-2">
-                <Building2 className="w-4 h-4" /> 올해 누적 매출 (YTD)
-              </h2>
-              <div className="text-5xl lg:text-6xl font-black text-white mb-4">
-                {formatShortCurrency(data.ytd.actual)}원
-              </div>
-              <div className={`text-lg font-bold flex items-center gap-2 ${ytdPct >= 0 ? 'text-[#3b82f6]' : 'text-red-500'}`}>
-                <span>전년 동기 대비</span>
-                <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
-                <span className="text-sm font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatShortCurrency(ytdDiff)})</span>
-              </div>
-            </div>
-
+            <h1 className="text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
+            <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
-
-          {/* Key Indicators (No Graphs, just big typography) */}
-          <div className="bg-[#021a3a] border border-slate-800 p-8 shadow-2xl">
-            <h2 className="text-sm font-bold text-slate-400 mb-8 flex items-center gap-2 border-b border-slate-800 pb-4">
-              <Coins className="w-4 h-4" /> 핵심 영업 지표 (1인당 / 객실당 단가)
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div>
-                <div className="text-slate-400 font-medium mb-2 text-lg">숙박 객실 평균 단가 (ADR)</div>
-                <div className="text-4xl font-black text-white mb-2">{formatCurrency(data.adr)}</div>
-                <div className="text-sm text-slate-500">당일 숙박 매출 ÷ 판매된 총 객실 수</div>
-              </div>
-
-              <div>
-                <div className="text-slate-400 font-medium mb-2 text-lg">골프 1인당 평균 그린피</div>
-                <div className="text-4xl font-black text-white mb-2">{formatCurrency(data.avg_green_fee)}</div>
-                <div className="text-sm text-slate-500">당일 골프 매출 ÷ 내장객 수</div>
-              </div>
-            </div>
+          <div className="text-xl font-bold text-white mt-4 md:mt-0 bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm">
+            🗓️ {currentDate}
           </div>
-
         </div>
 
-        {/* Right Area (Leaderboard & Weekly Summary) */}
-        <div className="lg:col-span-4 flex flex-col gap-8">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-12">
           
-          {/* HQ Leaderboard */}
-          <div className="bg-[#021a3a] border border-slate-800 p-8 shadow-2xl flex-1">
-            <h2 className="text-sm font-bold text-slate-400 mb-8 pb-4 border-b border-slate-800">
-              오늘의 본부별 실적 순위
-            </h2>
-            <div className="space-y-6">
-              {data.hq_today.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
-                <div key={idx} className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-bold text-lg flex items-center gap-3">
-                      <span className="text-slate-500 font-mono text-sm">{idx + 1}</span>
-                      {hq.hq} 본부
-                    </span>
-                    <span className="text-[#00e676] font-bold text-xl">{formatShortCurrency(hq.actual)}원</span>
-                  </div>
-                  <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-slate-400" 
-                      style={{ width: `${Math.max((hq.actual / data.hq_today[0].actual) * 100, 2)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+          {/* Top Cards (Today & YTD) */}
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Today Sales */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform group-hover:scale-150" />
+              <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-brand-mint" /> 금일 전사 매출
+              </h2>
+              <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
+                {formatCurrency(data.today.actual)}
+              </div>
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                <span>전년 동요일 대비</span>
+                <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
+                <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatShortCurrency(todayDiff)})</span>
+              </div>
             </div>
+
+            {/* YTD Sales */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform group-hover:scale-125" />
+              <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-brand-mint" /> 올해 누적 매출 (YTD)
+              </h2>
+              <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
+                {formatShortCurrency(data.ytd.actual)}원
+              </div>
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                <span>전년 동기 대비</span>
+                <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
+                <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatShortCurrency(ytdDiff)})</span>
+              </div>
+            </div>
+
           </div>
 
-          {/* System Status (Replaces Live Alerts) */}
-          <div className="bg-slate-900 border border-red-900/30 p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-2 h-full bg-red-500/20" />
-            <h2 className="text-sm font-bold text-slate-500 mb-4 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-slate-400" /> 시스템 상태 알림
-            </h2>
-            <div className="text-white font-medium text-lg mb-1">정상 가동 중</div>
-            <div className="text-slate-500 text-sm">연동 오류가 발견되지 않았습니다.</div>
+          {/* Left Area (Indicators & Chart) */}
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            
+            {/* Key Indicators */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+              <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Coins className="w-5 h-5 text-brand-mint" /> 핵심 영업 지표 (1인당 / 객실당 단가)
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
+                  <div className="text-slate-500 font-bold mb-2">숙박 객실 평균 단가 (ADR)</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(data.adr)}</div>
+                  <div className="text-sm text-slate-400">당일 숙박 매출 ÷ 판매된 총 객실 수</div>
+                </div>
+                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
+                  <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(data.avg_green_fee)}</div>
+                  <div className="text-sm text-slate-400">당일 골프 매출 ÷ 내장객 수</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Weekly Chart */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[400px] flex flex-col">
+              <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Trees className="w-5 h-5 text-brand-mint" /> 최근 일주일 매출 추이
+              </h2>
+              <div className="flex-1 w-full h-full min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.weekly_trend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 13, fontWeight: 'bold'}} dy={10} />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{fill: '#94a3b8', fontSize: 12}} 
+                      tickFormatter={(val) => `${val / 10000}만`}
+                      dx={-10}
+                    />
+                    <Tooltip 
+                      cursor={{fill: '#f8fafc'}}
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '12px' }}
+                      formatter={(value: any) => [`${new Intl.NumberFormat('ko-KR').format(value)}원`, '매출액']}
+                      labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '4px'}}
+                    />
+                    <Bar dataKey="this_week" name="이번 주" radius={[6, 6, 6, 6]}>
+                      {data.weekly_trend.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={index === data.weekly_trend.length - 1 ? '#00AE95' : '#cbd5e1'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
           </div>
 
+          {/* Right Area (Leaderboard) */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            
+            {/* Leaderboard Card */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex-1">
+              <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
+                🏆 오늘의 본부별 실적 순위
+              </h2>
+              <div className="space-y-6">
+                {data.hq_today.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
+                  <div key={idx} className="flex flex-col gap-3 group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-700 font-bold text-lg flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-lg">
+                          {getHqIcon(hq.hq)}
+                        </span>
+                        {hq.hq}
+                      </span>
+                      <span className="text-slate-800 font-emphatic text-xl">{formatShortCurrency(hq.actual)}원</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-brand-mint rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${Math.max((hq.actual / data.hq_today[0].actual) * 100, 3)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Fun Fact / Character Area */}
+            <div className="bg-brand-mint text-white rounded-[32px] p-6 shadow-lg flex items-center gap-4">
+              <div className="text-5xl">🐱🎧</div>
+              <div>
+                <div className="font-bold text-lg mb-1">우리 벨포레 고양이!</div>
+                <div className="text-sm opacity-90 leading-tight">오늘도 본부장님을 위해 열심히 데이터를 수집하고 분석했어요!</div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>

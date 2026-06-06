@@ -5,7 +5,7 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 
-  const { to, text } = req.body;
+  const { to, text, scheduledDate } = req.body;
 
   if (!to || !text) {
     return res.status(400).json({ success: false, error: 'Missing required fields: to, text' });
@@ -28,20 +28,36 @@ export default async function handler(req: any, res: any) {
 
     const authorization = `HMAC-SHA256 apiKey=${apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
 
-    const response = await fetch('https://api.solapi.com/messages/v4/send', {
+    // 'to' can be a comma-separated string or an array
+    const toArray = Array.isArray(to) ? to : to.split(',');
+    
+    const messages = toArray.map((num: string) => ({
+      to: num.replace(/[^0-9]/g, ''),
+      from: from.replace(/[^0-9]/g, ''),
+      text,
+      type: text.length > 90 ? 'LMS' : 'SMS'
+    })).filter((msg: any) => msg.to.length >= 10);
+
+    if (messages.length === 0) {
+      return res.status(400).json({ success: false, error: '유효한 수신 번호가 없습니다.' });
+    }
+
+    const payload: any = { messages };
+    
+    // Add scheduling if provided
+    if (scheduledDate) {
+      // Must be ISO-8601 string in UTC or local timezone with offset, formatted as YYYY-MM-DDTHH:mm:ssZ etc.
+      // Solapi accepts ISO strings for scheduledDate.
+      payload.scheduledDate = new Date(scheduledDate).toISOString();
+    }
+
+    const response = await fetch('https://api.solapi.com/messages/v4/send-many', {
       method: 'POST',
       headers: {
         'Authorization': authorization,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        message: {
-          to: to.replace(/[^0-9]/g, ''),
-          from: from.replace(/[^0-9]/g, ''),
-          text,
-          type: text.length > 90 ? 'LMS' : 'SMS'
-        }
-      })
+      body: JSON.stringify(payload)
     });
 
     const data = await response.json();

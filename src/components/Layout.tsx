@@ -11,6 +11,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
+  const [managementOpen, setManagementOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -19,7 +20,6 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '경영지원실', path: '/management-support', icon: <Briefcase size={20} /> },
     { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} /> },
     { name: '콘도', path: '#콘도', icon: <Hotel size={20} /> },
   ];
@@ -70,7 +70,45 @@ export default function Layout() {
               {item.name}
             </NavLink>
           ))}
-
+          {/* 경영지원실 Accordion */}
+          <div className="mt-2">
+            <button
+              onClick={() => setManagementOpen(!managementOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <Briefcase size={20} />
+                경영지원실
+              </div>
+              {managementOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            
+            {managementOpen && (
+              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                <NavLink
+                  to="#management-dashboard"
+                  className="block w-full text-left px-4 py-3 md:py-2 text-sm font-medium text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5 rounded-lg transition-colors"
+                  onClick={(e) => { 
+                    e.preventDefault(); 
+                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                  }}
+                >
+                  영업보고 대시보드
+                </NavLink>
+                <NavLink
+                  to="/management-support"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={() => { 
+                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                  }}
+                >
+                  영업보고 문자보내기
+                </NavLink>
+              </div>
+            )}
+          </div>
           {/* 레져본부 Accordion */}
           <div className="mt-2">
             <button

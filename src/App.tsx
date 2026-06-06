@@ -25,7 +25,7 @@ function App() {
             
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Home />} />
-              <Route path="daol" element={<DaolDepartment />} />
+              <Route path="sales" element={<DaolDepartment />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

@@ -20,7 +20,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '다올 매출 상세', path: '/daol', icon: <TrendingUp size={20} /> },
+    { name: '매출 상세', path: '/sales', icon: <TrendingUp size={20} /> },
     { name: '객실 부문 (준비중)', path: '/rooms', icon: <BarChart3 size={20} />, disabled: true },
     { name: 'F&B 부문 (준비중)', path: '/fnb', icon: <PieChart size={20} />, disabled: true },
   ];

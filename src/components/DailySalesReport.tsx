@@ -19,29 +19,18 @@ export default function DailySalesReport() {
   const fetchSalesData = async (selectedDate: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`https://belleforet-daol-engine.vercel.app/api/reports/daily-sales?date=${selectedDate}`);
+      const res = await fetch(`https://belleforet-data.vercel.app/api/reports/daily-sales?date=${selectedDate}`);
       const result = await res.json();
-      if (result.success && result.data.length > 0) {
+      if (result.success && result.data) {
         setData(result.data);
       } else {
-        // 백엔드 연결 전 또는 데이터가 없을 경우 목업 데이터 유지
-        setData([
-          { category: '객실', target_daily: 15000000, actual_daily: 14500000, target_mtd: 450000000, actual_mtd: 460000000, target_ytd: 2500000000, actual_ytd: 2600000000 },
-          { category: '식음(F&B)', target_daily: 8000000, actual_daily: 9200000, target_mtd: 240000000, actual_mtd: 255000000, target_ytd: 1200000000, actual_ytd: 1180000000 },
-          { category: '골프', target_daily: 22000000, actual_daily: 24000000, target_mtd: 660000000, actual_mtd: 680000000, target_ytd: 3800000000, actual_ytd: 3950000000 },
-          { category: '레저', target_daily: 12000000, actual_daily: 10500000, target_mtd: 360000000, actual_mtd: 340000000, target_ytd: 1800000000, actual_ytd: 1750000000 },
-        ]);
+        setData([]);
       }
       setLoading(false);
     } catch (err) {
       console.error('API Error:', err);
-      // API 호출 실패 시에도 임시로 목업 데이터 표시
-      setData([
-        { category: '객실', target_daily: 15000000, actual_daily: 14500000, target_mtd: 450000000, actual_mtd: 460000000, target_ytd: 2500000000, actual_ytd: 2600000000 },
-        { category: '식음(F&B)', target_daily: 8000000, actual_daily: 9200000, target_mtd: 240000000, actual_mtd: 255000000, target_ytd: 1200000000, actual_ytd: 1180000000 },
-        { category: '골프', target_daily: 22000000, actual_daily: 24000000, target_mtd: 660000000, actual_mtd: 680000000, target_ytd: 3800000000, actual_ytd: 3950000000 },
-        { category: '레저', target_daily: 12000000, actual_daily: 10500000, target_mtd: 360000000, actual_mtd: 340000000, target_ytd: 1800000000, actual_ytd: 1750000000 },
-      ]);
+      setData([]);
+      setLoading(false);
       setLoading(false);
     }
   };
@@ -69,7 +58,7 @@ export default function DailySalesReport() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">다올 일일 매출 보고서</h2>
+          <h2 className="text-2xl font-bold">일일 매출 보고서</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">부서별 일계, 월누계, 연누계 목표 및 실적 매트릭스</p>
         </div>
         

@@ -40,12 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localTimeStr: new Date().toLocaleString('ko-KR')
       });
       
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Firestore log save timeout (방화벽 차단)')), 3000)
-      );
-
-      // 방화벽 차단으로 무한 대기하는 것을 방지하고 3초 후 에러를 발생시켜 localStorage 로컬 저장소로 넘김
-      await Promise.race([addDocPromise, timeoutPromise]);
+      await addDocPromise;
     } catch (e) {
       console.error("Error adding document: ", e);
       const logs = JSON.parse(localStorage.getItem('superAdminLoginLogs') || '[]');
@@ -62,21 +57,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Firestore에서 권한(role) 조회 (방화벽 차단 시 무한 대기 방지를 위해 3초 타임아웃 적용)
       const roleDocRef = doc(db, 'userRoles', email);
       
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Firestore connection timeout (방화벽 차단)')), 3000)
-      );
-
       let role = 'guest'; // 기본 권한
       try {
-        const roleSnap: any = await Promise.race([
-          getDoc(roleDocRef),
-          timeoutPromise
-        ]);
+        const roleSnap: any = await getDoc(roleDocRef);
         if (roleSnap.exists()) {
           role = roleSnap.data().role;
         }
       } catch (firestoreError) {
-        console.warn('Firestore 조회 실패 (네트워크/방화벽 문제). 기본 권한으로 진행합니다.', firestoreError);
+        console.warn('Firestore 권한 조회 실패:', firestoreError);
       }
 
       // [긴급 권한 복구] 대표님 계정은 어떤 상황에서도 무조건 슈퍼 관리자로 접속되도록 하드코딩 보호

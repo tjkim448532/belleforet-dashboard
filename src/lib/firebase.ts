@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -13,8 +13,8 @@ const firebaseConfig = {
   measurementId: "G-ZP2F3Q9733"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase safely (prevents double-initialization errors)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Analytics (optional, might not work in all environments if measurementId is not active)
 let analytics;

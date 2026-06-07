@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -48,8 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       // 1. Firebase Auth 로그인
-      const { auth } = await import('../lib/firebase');
-      const { signInWithEmailAndPassword } = await import('firebase/auth');
       await signInWithEmailAndPassword(auth, email, password);
       
       // 2. Firestore에서 권한(role) 조회

@@ -31,16 +31,16 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
 
   // 식음업장 -> 식음
   { storeName: '브리스킷346', category: '식음' },
-  { storeName: '인육말가페', category: '식음' },
-  { storeName: '빙엄테이블', category: '식음' },
-  { storeName: '남도매답', category: '식음' },
-  { storeName: '벼무새촌', category: '식음' },
+  { storeName: '얼룩말카페', category: '식음' },
+  { storeName: '밤밤테이블', category: '식음' },
+  { storeName: '남도예담', category: '식음' },
+  { storeName: '앵무새촌', category: '식음' },
   { storeName: '클럽하우스-레스토랑', category: '식음' },
   { storeName: '클럽하우스-스타트하우스', category: '식음' },
   { storeName: '쿠치나', category: '식음' },
   { storeName: '핏스탑', category: '식음' },
   { storeName: '딜라이트', category: '식음' },
-  { storeName: '빙엄트릭', category: '식음' },
+  { storeName: '밤밤트럭', category: '식음' },
 
   // 연회
   { storeName: '연회장', category: '연회' },
@@ -60,7 +60,7 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
   { storeName: '원더풀', category: '레져사업본부' },
   { storeName: '벨포레 리조트', category: '레져사업본부' },
   { storeName: '썸머랜드', category: '레져사업본부' },
-  { storeName: '핏포레', category: '레져사업본부' },
+  { storeName: '펫포레', category: '레져사업본부' },
 
   // 기타업장
   { storeName: '프로샵', category: '기타업장' },

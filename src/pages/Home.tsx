@@ -18,7 +18,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { simulatedData, clearSimulation } = useSimulation();
 
-  const currentDate = '2026-06-06';
+  const [currentDate, setCurrentDate] = useState('2026-06-06');
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -56,7 +56,7 @@ export default function Home() {
     };
 
     fetchSummary();
-  }, []);
+  }, [currentDate]);
 
   // 시뮬레이션 데이터 덮어쓰기 로직
   let displayData = data;
@@ -138,8 +138,14 @@ export default function Home() {
             <h1 className="text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
-          <div className="text-xl font-bold text-white mt-4 md:mt-0 bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm">
-            🗓️ {currentDate}
+          <div className="mt-4 md:mt-0 flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white focus-within:ring-2 focus-within:ring-white/50 transition-all">
+            <span className="mr-2 opacity-80">🗓️</span>
+            <input 
+              type="date" 
+              value={currentDate} 
+              onChange={(e) => setCurrentDate(e.target.value)}
+              className="bg-transparent border-none text-xl font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+            />
           </div>
         </div>
 

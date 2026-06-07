@@ -28,20 +28,21 @@ export default function Home() {
         if (!res.ok) throw new Error('데이터를 불러오는데 실패했습니다.');
         const json = await res.json();
         
-        if (!json.success || (json.ytd.actual === 0 && json.today.actual === 0)) {
+        if (!json.success) {
+          // API 실패 시 빈 데이터 객체를 설정하여 화면이 깨지지 않게 방어
           setData({
             success: true,
             date: currentDate,
-            ytd: { actual: 12500000000, ly_actual: 11000000000 },
-            today: { actual: 58200000, ly_actual: 45000000 },
+            ytd: { actual: 0, ly_actual: 0 },
+            today: { actual: 0, ly_actual: 0 },
             hq_today: [
-              { hq: '골프', actual: 24000000, qty: 150 },
-              { hq: '숙박', actual: 14500000, qty: 65 },
-              { hq: '레저', actual: 10500000, qty: 420 },
-              { hq: '식음', actual: 9200000, qty: 310 },
+              { hq: '골프', actual: 0, qty: 0 },
+              { hq: '숙박', actual: 0, qty: 0 },
+              { hq: '레저', actual: 0, qty: 0 },
+              { hq: '식음', actual: 0, qty: 0 },
             ],
-            adr: 223000,
-            avg_green_fee: 160000,
+            adr: 0,
+            avg_green_fee: 0,
             weekly_trend: []
           });
         } else {

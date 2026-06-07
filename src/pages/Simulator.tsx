@@ -186,21 +186,30 @@ export default function Simulator() {
                 const assignedHq = assignments[t.id] || '미지정';
                 const isAssigned = assignedHq !== '미지정';
                 
+                // 본부별 테마색 배경 매핑
+                const rowBgColor = 
+                  assignedHq === '골프' ? 'bg-emerald-50' :
+                  assignedHq === '숙박' ? 'bg-blue-50' :
+                  assignedHq === '레저' ? 'bg-amber-50' :
+                  assignedHq === '식음' ? 'bg-orange-50' : 'bg-white hover:bg-slate-50';
+
                 return (
                   <tr 
                     key={t.id} 
-                    className={`border-b border-slate-100 hover:bg-slate-100 cursor-pointer transition-colors ${isAssigned ? 'bg-white' : ''}`}
+                    className={`border-b border-slate-100 cursor-pointer transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:scale-95 ${rowBgColor} ${isAssigned ? 'shadow-[inset_4px_0_0_0_currentColor] text-slate-800' : ''}`}
+                    style={{ color: isAssigned ? (assignedHq === '골프' ? '#10b981' : assignedHq === '숙박' ? '#3b82f6' : assignedHq === '레저' ? '#f59e0b' : '#f97316') : '' }}
                     onClick={() => handleRowClick(t.id)}
                   >
                     <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
                     <td className="p-4 font-mono text-slate-500">{t.time}</td>
                     <td className="p-4 font-mono text-xs text-slate-400" title={t.id}>{t.id.substring(0, 15)}...</td>
                     <td className="p-4 font-bold">
-                      <span className={`px-3 py-1 rounded-full text-xs border ${HQ_COLORS[assignedHq]}`}>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border shadow-sm transition-all ${HQ_COLORS[assignedHq]} ${isAssigned ? 'scale-110 inline-block' : ''}`}>
+                        {isAssigned && <CheckCircle2 size={12} className="inline mr-1 -mt-0.5" />}
                         {assignedHq}
                       </span>
                     </td>
-                    <td className="p-4 font-semibold text-slate-700">{t.description}</td>
+                    <td className={`p-4 font-bold ${isAssigned ? 'text-slate-800' : 'text-slate-600'}`}>{t.description}</td>
                     <td className={`p-4 text-right font-bold ${isAssigned ? 'text-slate-800' : 'text-slate-400'}`}>
                       {new Intl.NumberFormat('ko-KR').format(t.amount)}원
                     </td>

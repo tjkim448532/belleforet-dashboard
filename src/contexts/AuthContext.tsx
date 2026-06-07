@@ -51,13 +51,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Firebase Auth 로그인
       await signInWithEmailAndPassword(auth, email, password);
       
-      // 2. Firestore에서 권한(role) 조회
+      // 2. Firestore에서 권한(role) 조회 (방화벽 차단 시 무한 대기 방지를 위해 3초 타임아웃 적용)
       const roleDocRef = doc(db, 'userRoles', email);
-      const roleSnap = await getDoc(roleDocRef);
       
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Firestore connection timeout (방화벽 차단)')), 3000)
+      );
+
       let role = 'guest'; // 기본 권한
-      if (roleSnap.exists()) {
-        role = roleSnap.data().role;
+      try {
+        const roleSnap: any = await Promise.race([
+          getDoc(roleDocRef),
+          timeoutPromise
+        ]);
+        if (roleSnap.exists()) {
+          role = roleSnap.data().role;
+        }
+      } catch (firestoreError) {
+        console.warn('Firestore 조회 실패 (네트워크/방화벽 문제). 기본 권한으로 진행합니다.', firestoreError);
       }
 
       // [긴급 권한 복구] 대표님 계정은 어떤 상황에서도 무조건 슈퍼 관리자로 접속되도록 하드코딩 보호

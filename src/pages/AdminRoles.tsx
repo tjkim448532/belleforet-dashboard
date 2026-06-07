@@ -17,6 +17,7 @@ export default function AdminRoles() {
   const [newRole, setNewRole] = useState('guest');
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState('');
 
   useEffect(() => {
     fetchRoles();
@@ -94,35 +95,63 @@ export default function AdminRoles() {
   };
 
   const handleBulkImport = async () => {
-    if (!confirm('스프레드시트의 22명 임직원 권한 데이터를 일괄 등록하시겠습니까? (기존 데이터 덮어쓰기)')) return;
+    if (!sheetUrl) {
+      alert('구글 시트 공유 링크를 입력해주세요.');
+      return;
+    }
+    
+    // URL 변환 로직 (edit?usp=sharing -> export?format=csv)
+    let fetchUrl = sheetUrl;
+    if (sheetUrl.includes('/edit')) {
+      fetchUrl = sheetUrl.replace(/\/edit.*$/, '/export?format=csv');
+    }
+
+    if (!confirm('입력하신 구글 시트에서 최신 명단을 불러와 일괄 등록하시겠습니까? (기존 권한은 최신 내용으로 덮어쓰기 됩니다)')) return;
     setImporting(true);
     
-    const spreadsheetData = [
-      { name: '신지선', email: 'jsshin@bsbelleforet.com', role: 'leisure' },
-      { name: '권순민', email: 'smkwon@bsbelleforet.com', role: 'leisure' },
-      { name: '최성영', email: 'sychoi@bsbelleforet.com', role: 'leisure' },
-      { name: '김자훈', email: 'jhkim2407@bsbelleforet.com', role: 'leisure' },
-      { name: '김형도', email: 'hdkim@bsbelleforet.com', role: 'leisure' },
-      { name: '이재훈', email: 'jhlee1212@bsbelleforet.com', role: 'leisure' },
-      { name: '허진용', email: 'jyheo@kmgcompany.co.kr', role: 'leisure' },
-      { name: '선진영', email: 'jysun@bsbelleforet.com', role: 'sales' },
-      { name: '김환길', email: 'kimhk@bsbelleforet.com', role: 'sales' },
-      { name: '임태환', email: 'thim@bsbelleforet.com', role: 'sales' },
-      { name: '이승우', email: 'swlee@bsbelleforet.com', role: 'content' },
-      { name: '장창명', email: 'cmjang@bsbelleforet.com', role: 'sales' },
-      { name: '박혁', email: 'hpark@bsbelleforet.com', role: 'sales' },
-      { name: '양주', email: 'jdyang@bsbelleforet.com', role: 'management' },
-      { name: '조경미', email: 'kmjo@bsbelleforet.com', role: 'management' },
-      { name: '권영해', email: 'yhkwon@bsbelleforet.com', role: 'management' },
-      { name: '김종우', email: 'kimjw00@bsbelleforet.com', role: 'executive' },
-      { name: '원성역', email: 'swon@daewonspic.com', role: 'executive' },
-      { name: '신영남', email: 'ynshin@bsbelleforet.com', role: 'resort' },
-      { name: '염세영', email: 'syyeom@bsbelleforet.com', role: 'resort' },
-      { name: '최현정', email: 'hjchoi71@bsbelleforet.com', role: 'resort' },
-      { name: '임진영', email: 'jylim@bsbelleforet.com', role: 'resort' },
-    ];
-
     try {
+      // CSV 데이터 가져오기
+      const response = await fetch(fetchUrl);
+      if (!response.ok) throw new Error('구글 시트를 읽을 수 없습니다. "링크가 있는 모든 사용자 보기 가능" 설정인지 확인해주세요.');
+      
+      const csvText = await response.text();
+      const rows = csvText.split('\n').map(row => row.trim()).filter(row => row);
+      
+      // 첫 줄(헤더) 제외
+      const dataRows = rows.slice(1);
+      
+      const spreadsheetData: any[] = [];
+      
+      dataRows.forEach(row => {
+        // 이름,이메일,본부,파이어베이스 순서
+        const columns = row.split(',');
+        if (columns.length >= 3) {
+          const name = columns[0].trim();
+          const email = columns[1].trim();
+          const koreanRole = columns[2].trim();
+          
+          if (!email || !email.includes('@')) return; // 이메일 없는 행 무시
+          
+          // 한국어 본부명 -> 영문 역할코드 변환
+          let role = 'guest';
+          if (koreanRole.includes('레져')) role = 'leisure';
+          else if (koreanRole.includes('세일즈')) role = 'sales';
+          else if (koreanRole.includes('콘텐츠')) role = 'content';
+          else if (koreanRole.includes('경영지원') || koreanRole.includes('지원본부')) role = 'management';
+          else if (koreanRole.includes('임원')) role = 'executive';
+          else if (koreanRole.includes('리조트')) role = 'resort';
+          else if (koreanRole.includes('식음')) role = 'fnb';
+          
+          spreadsheetData.push({ name, email, role });
+        }
+      });
+
+      if (spreadsheetData.length === 0) {
+        alert('읽어올 유효한 데이터가 없습니다. CSV 형식이 맞는지 확인해주세요.');
+        setImporting(false);
+        return;
+      }
+
       const batch = writeBatch(db);
       
       spreadsheetData.forEach(data => {
@@ -138,32 +167,41 @@ export default function AdminRoles() {
       await fetchRoles();
       setImporting(false);
       setTimeout(() => {
-        alert('22명의 임직원 권한이 한 번에 안전하게 일괄 등록되었습니다!');
+        alert(`총 ${spreadsheetData.length}명의 임직원 권한이 한 번에 안전하게 일괄 등록되었습니다!`);
       }, 100);
     } catch (error) {
       console.error('Bulk import error:', error);
-      alert('일괄 등록에 실패했습니다. (방화벽 차단 가능성)');
+      alert('일괄 등록에 실패했습니다. 링크 또는 방화벽 차단 문제를 확인해주세요.');
       setImporting(false);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Users className="text-brand-mint" />
             임직원 권한 관리
           </h1>
           <p className="text-slate-500 mt-1">Firebase 계정에 가입된 이메일 주소별로 대시보드 접근 권한을 설정합니다.</p>
         </div>
-        <button
-          onClick={handleBulkImport}
-          disabled={importing}
-          className="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
-        >
-          {importing ? '안전하게 전송 중...' : '구글 시트 명단 일괄 가져오기 (22명)'}
-        </button>
+        <div className="flex items-center gap-2 w-full max-w-lg">
+          <input 
+            type="text" 
+            placeholder="구글 시트 링크를 입력하세요" 
+            value={sheetUrl}
+            onChange={(e) => setSheetUrl(e.target.value)}
+            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+          />
+          <button
+            onClick={handleBulkImport}
+            disabled={importing || !sheetUrl}
+            className="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+          >
+            {importing ? '전송 중...' : '시트 내용 동기화'}
+          </button>
+        </div>
       </div>
 
       {/* Add or Update Role */}

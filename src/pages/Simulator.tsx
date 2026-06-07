@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSimulation } from '../contexts/SimulationContext';
 import { Save, RotateCcw, CheckCircle2 } from 'lucide-react';
@@ -12,24 +12,15 @@ const HQ_COLORS: Record<string, string> = {
   '미지정': 'bg-slate-100 text-slate-500 border-slate-200'
 };
 
-// 결제 영업장 명칭 목록
-const FACILITIES = [
-  '블랙스톤CC', '마리나클럽', '투썸플레이스', '브리스킷346', 
-  '목장입장권', '루지', '사계절썰매', '놀이동산',
-  '콘도(숙박)', '세미나실 대관', '미디어아트센터'
-];
+// 결제 영업장 명칭 목록 (삭제 - 실제 데이터 사용)
+// MOCK_TRANSACTIONS (삭제 - 실제 데이터 사용)
 
-const MOCK_TRANSACTIONS = Array.from({ length: 50 }).map((_, i) => {
-  const desc = FACILITIES[Math.floor(Math.random() * FACILITIES.length)];
-  const amount = Math.floor(Math.random() * 50 + 5) * 10000; // 5만 ~ 55만
-
-  return {
-    id: `TX-${2000 + i}`,
-    time: `1${Math.floor(Math.random() * 8) + 1}:${Math.floor(Math.random() * 50) + 10}`,
-    description: desc,
-    amount
-  };
-}).sort((a, b) => a.time.localeCompare(b.time));
+interface Transaction {
+  id: string;
+  time: string;
+  description: string;
+  amount: number;
+}
 
 export default function Simulator() {
   const { setSimulatedData, clearSimulation } = useSimulation();
@@ -37,6 +28,29 @@ export default function Simulator() {
   
   const [activeHq, setActiveHq] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
+  
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 실데이터 S3 연동 API 호출
+  useEffect(() => {
+    const fetchRealData = async () => {
+      try {
+        const res = await fetch('https://belleforet-data.vercel.app/api/reports/recent-transactions');
+        const data = await res.json();
+        if (data.success && data.transactions) {
+          setTransactions(data.transactions);
+        } else {
+          console.error("API error:", data.error);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRealData();
+  }, []);
 
   const handleRowClick = (id: string) => {
     if (!activeHq) {
@@ -60,7 +74,7 @@ export default function Simulator() {
     const totals: Record<string, number> = { '골프': 0, '숙박': 0, '레저': 0, '식음': 0 };
     let sum = 0;
     
-    MOCK_TRANSACTIONS.forEach(t => {
+    transactions.forEach(t => {
       const hq = assignments[t.id];
       if (hq && totals[hq] !== undefined) {
         totals[hq] += t.amount;
@@ -69,7 +83,7 @@ export default function Simulator() {
     });
 
     return { hqTotals: totals, totalSales: sum };
-  }, [assignments]);
+  }, [assignments, transactions]);
 
   const handleApply = () => {
     setSimulatedData({ hqTotals, totalSales });
@@ -155,31 +169,45 @@ export default function Simulator() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_TRANSACTIONS.map((t, idx) => {
-              const assignedHq = assignments[t.id] || '미지정';
-              const isAssigned = assignedHq !== '미지정';
-              
-              return (
-                <tr 
-                  key={t.id} 
-                  className={`border-b border-slate-100 hover:bg-slate-100 cursor-pointer transition-colors ${isAssigned ? 'bg-white' : ''}`}
-                  onClick={() => handleRowClick(t.id)}
-                >
-                  <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
-                  <td className="p-4 font-mono text-slate-500">{t.time}</td>
-                  <td className="p-4 font-mono text-xs text-slate-400">{t.id}</td>
-                  <td className="p-4 font-bold">
-                    <span className={`px-3 py-1 rounded-full text-xs border ${HQ_COLORS[assignedHq]}`}>
-                      {assignedHq}
-                    </span>
-                  </td>
-                  <td className="p-4">{t.description}</td>
-                  <td className={`p-4 text-right font-bold ${isAssigned ? 'text-slate-800' : 'text-slate-400'}`}>
-                    {new Intl.NumberFormat('ko-KR').format(t.amount)}원
-                  </td>
-                </tr>
-              );
-            })}
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-slate-400 font-bold animate-pulse">
+                  실제 S3 영업 데이터를 불러오는 중입니다...
+                </td>
+              </tr>
+            ) : transactions.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
+                  최근 거래 내역이 없습니다.
+                </td>
+              </tr>
+            ) : (
+              transactions.map((t, idx) => {
+                const assignedHq = assignments[t.id] || '미지정';
+                const isAssigned = assignedHq !== '미지정';
+                
+                return (
+                  <tr 
+                    key={t.id} 
+                    className={`border-b border-slate-100 hover:bg-slate-100 cursor-pointer transition-colors ${isAssigned ? 'bg-white' : ''}`}
+                    onClick={() => handleRowClick(t.id)}
+                  >
+                    <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                    <td className="p-4 font-mono text-slate-500">{t.time}</td>
+                    <td className="p-4 font-mono text-xs text-slate-400" title={t.id}>{t.id.substring(0, 15)}...</td>
+                    <td className="p-4 font-bold">
+                      <span className={`px-3 py-1 rounded-full text-xs border ${HQ_COLORS[assignedHq]}`}>
+                        {assignedHq}
+                      </span>
+                    </td>
+                    <td className="p-4 font-semibold text-slate-700">{t.description}</td>
+                    <td className={`p-4 text-right font-bold ${isAssigned ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {new Intl.NumberFormat('ko-KR').format(t.amount)}원
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

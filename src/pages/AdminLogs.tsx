@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShieldAlert, Trash2, Database } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit, writeBatch, doc } from 'firebase/firestore';
 
 interface LogEntry {
   email: string;
@@ -39,9 +39,24 @@ export default function AdminLogs() {
     fetchLogs();
   }, []);
 
-  const clearLogs = () => {
-    if (confirm('모든 접속 로그를 삭제하시겠습니까? (현재 로컬 뷰에서만 삭제되며 DB에는 유지됩니다)')) {
-      setLogs([]);
+  const clearLogs = async () => {
+    if (confirm('모든 접속 로그를 데이터베이스(Firestore)에서 완전히 삭제하시겠습니까? (복구 불가능)')) {
+      try {
+        const q = query(collection(db, 'loginLogs'));
+        const snapshot = await getDocs(q);
+        
+        const batch = writeBatch(db);
+        snapshot.docs.forEach((document) => {
+          batch.delete(doc(db, 'loginLogs', document.id));
+        });
+        
+        await batch.commit();
+        setLogs([]);
+        alert('모든 로그가 성공적으로 영구 삭제되었습니다.');
+      } catch (error) {
+        console.error('Error deleting logs:', error);
+        alert('로그 삭제에 실패했습니다. (방화벽 문제일 수 있습니다.)');
+      }
     }
   };
 
@@ -59,8 +74,8 @@ export default function AdminLogs() {
             <p className="text-white/60 text-xs">Firebase Firestore와 실시간 연동되어 임직원 접속 기록을 추적합니다.</p>
           </div>
         </div>
-        <button onClick={clearLogs} className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 px-4 py-2 rounded-xl transition-colors font-bold text-sm">
-          <Trash2 size={16} /> 화면 지우기
+        <button onClick={clearLogs} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl transition-colors font-bold text-sm shadow-md">
+          <Trash2 size={16} /> 전체 영구 삭제 (DB 초기화)
         </button>
       </div>
 

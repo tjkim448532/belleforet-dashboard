@@ -33,11 +33,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const saveLoginLogToFirebase = async (email: string) => {
     try {
-      await addDoc(collection(db, 'loginLogs'), {
+      const addDocPromise = addDoc(collection(db, 'loginLogs'), {
         email,
         timestamp: serverTimestamp(),
         localTimeStr: new Date().toLocaleString('ko-KR')
       });
+      
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Firestore log save timeout (방화벽 차단)')), 3000)
+      );
+
+      // 방화벽 차단으로 무한 대기하는 것을 방지하고 3초 후 에러를 발생시켜 localStorage 로컬 저장소로 넘김
+      await Promise.race([addDocPromise, timeoutPromise]);
     } catch (e) {
       console.error("Error adding document: ", e);
       const logs = JSON.parse(localStorage.getItem('superAdminLoginLogs') || '[]');

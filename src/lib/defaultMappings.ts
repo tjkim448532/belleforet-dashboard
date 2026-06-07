@@ -21,6 +21,8 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
   { storeName: '객실', category: '리조트사업본부' },
   { storeName: 'ROOM', category: '리조트사업본부' },
   { storeName: 'ROOM OTHER', category: '리조트사업본부' },
+  { storeName: '콘도', category: '리조트사업본부' },
+  { storeName: '벨포레 콘도', category: '리조트사업본부' },
   
   // 골프 -> 골프사업본부
   { storeName: '골프', category: '골프사업본부' }, // [12차 패치] 실제 POS DB 연동 기준 명칭
@@ -45,6 +47,7 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
 
   // 연회
   { storeName: '연회장', category: '연회' },
+  { storeName: '벨포레홀', category: '연회' },
 
   // 티켓업장 -> 레져사업본부
   { storeName: '마운틴카트', category: '레져사업본부' },
@@ -62,6 +65,21 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
   { storeName: '벨포레 리조트', category: '레져사업본부' },
   { storeName: '썸머랜드', category: '레져사업본부' },
   { storeName: '펫포레', category: '레져사업본부' },
+
+  // 온라인 구매처 -> 레져사업본부 (티켓 판매)
+  { storeName: '네이버', category: '레져사업본부' },
+  { storeName: '스마트예약', category: '레져사업본부' },
+  { storeName: '쿠팡', category: '레져사업본부' },
+  { storeName: '야놀자', category: '레져사업본부' },
+  { storeName: '홈페이지', category: '레져사업본부' },
+  { storeName: '위메프', category: '레져사업본부' },
+  { storeName: '티몬', category: '레져사업본부' },
+  { storeName: '마이리얼트립', category: '레져사업본부' },
+  { storeName: '여기어때', category: '레져사업본부' },
+  { storeName: '티켓링크', category: '레져사업본부' },
+  { storeName: '인터파크', category: '레져사업본부' },
+  { storeName: 'G마켓', category: '레져사업본부' },
+  { storeName: '11번가', category: '레져사업본부' },
 
   // 기타업장
   { storeName: '프로샵', category: '기타업장' },

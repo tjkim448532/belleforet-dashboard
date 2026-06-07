@@ -254,7 +254,6 @@ export default function Simulator() {
                 
                 // 본부별 테마색 배경 매핑
                 const rowBgColor = getHqColor(assignedHq).split(' ')[0].replace('100', '50');
-                const isCustomHq = assignedHq !== '미지정' && assignedHq !== '미분류';
                 
                 return (
                   <tr 

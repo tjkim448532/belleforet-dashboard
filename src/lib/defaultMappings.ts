@@ -23,6 +23,7 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
   { storeName: 'ROOM OTHER', category: '리조트사업본부' },
   
   // 골프 -> 골프사업본부
+  { storeName: '골프', category: '골프사업본부' }, // [12차 패치] 실제 POS DB 연동 기준 명칭
   { storeName: '그린피', category: '골프사업본부' },
   { storeName: '카트대여', category: '골프사업본부' },
   { storeName: '대여품', category: '골프사업본부' },

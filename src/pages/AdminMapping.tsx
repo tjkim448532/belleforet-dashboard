@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useMapping } from '../contexts/MappingContext';
 import type { Category } from '../lib/defaultMappings';
-import { Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
 export default function AdminMapping() {
-  const { mappings, categories, loading, updateMapping } = useMapping();
+  const { mappings, categories, loading, updateMapping, addCategory, deleteCategory } = useMapping();
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
 
   if (loading) {
     return (
@@ -27,8 +29,36 @@ export default function AdminMapping() {
     }
   };
 
+  const handleAddCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    if (categories.includes(trimmed)) {
+      alert("이미 존재하는 본부명입니다.");
+      return;
+    }
+    try {
+      setIsAddingCategory(true);
+      await addCategory(trimmed);
+      setNewCategoryName('');
+    } catch (err) {
+      alert("본부 추가 중 오류가 발생했습니다.");
+    } finally {
+      setIsAddingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (name: string) => {
+    if (window.confirm(`'${name}' 본부를 정말 삭제하시겠습니까?\n이 본부에 속했던 매장들은 '미분류'로 변경됩니다.`)) {
+      try {
+        await deleteCategory(name);
+      } catch (err) {
+        alert("본부 삭제 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
   return (
-    <div className="p-4 lg:p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-8 space-y-8 max-w-5xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">매장 분류 매핑 관리</h1>
         <p className="text-slate-500 mt-2 text-sm">
@@ -43,6 +73,45 @@ export default function AdminMapping() {
           신규 매장이 추가되거나 기존 매장의 본부 소속이 변경되었을 때, 이 페이지에서 
           <strong> 셀렉트박스(드롭다운)</strong>를 변경하시면 즉시 클라우드에 반영됩니다.
         </p>
+      </div>
+
+      {/* 본부(Category) 관리 섹션 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">본부 목록 관리</h2>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {categories.map(cat => (
+            <div key={cat} className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full text-sm">
+              <span className="font-medium">{cat}</span>
+              <button 
+                onClick={() => handleDeleteCategory(cat)}
+                className="text-slate-400 hover:text-red-500 transition-colors p-0.5 rounded-full hover:bg-slate-200"
+                title="본부 삭제"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+            placeholder="새 본부명 입력 (예: 기타, 외주업체)"
+            className="flex-1 max-w-sm bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-brand-mint focus:border-brand-mint block p-2.5"
+            disabled={isAddingCategory}
+          />
+          <button
+            onClick={handleAddCategory}
+            disabled={!newCategoryName.trim() || isAddingCategory}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Plus size={16} />
+            본부 추가
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

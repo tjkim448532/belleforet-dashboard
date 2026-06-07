@@ -105,8 +105,13 @@ export default function Home() {
       .filter(key => hqMap[key].actual > 0)
       .map(key => ({ hq: key, actual: hqMap[key].actual, qty: hqMap[key].qty }));
 
-    const lodging = hqMap['리조트사업본부'] || {actual:0, qty:0};
-    const golf = hqMap['골프사업본부'] || {actual:0, qty:0};
+    // [구조적 결함 수정] "리조트사업본부", "골프사업본부" 하드코딩 제거 및 키워드 매칭 도입
+    const lodgingKey = Object.keys(hqMap).find(k => k.includes('리조트') || k.includes('숙박') || k.includes('콘도'));
+    const golfKey = Object.keys(hqMap).find(k => k.includes('골프'));
+
+    const lodging = lodgingKey ? hqMap[lodgingKey] : { actual: 0, qty: 0 };
+    const golf = golfKey ? hqMap[golfKey] : { actual: 0, qty: 0 };
+    
     dynamicAdr = lodging.qty > 0 ? Math.round(lodging.actual / lodging.qty) : 0;
     dynamicAvgGreenFee = golf.qty > 0 ? Math.round(golf.actual / golf.qty) : 0;
   }

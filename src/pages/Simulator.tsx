@@ -42,12 +42,20 @@ export default function Simulator() {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // [12차 패치] 시간 여행 방지용 날짜 상태 (기본값: 오늘 KST 기준)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+    return now.toISOString().split('T')[0];
+  });
 
   // 실데이터 S3 연동 API 호출
   useEffect(() => {
     const fetchRealData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('https://belleforet-data.vercel.app/api/reports/recent-transactions');
+        // [12차 패치] 날짜 파라미터를 API에 전달하여 해당 날짜의 POS/예약 결제 내역을 필터링합니다.
+        const res = await fetch(`https://belleforet-data.vercel.app/api/reports/recent-transactions?date=${selectedDate}`);
         const data = await res.json();
         if (data.success && data.transactions) {
           setTransactions(data.transactions);
@@ -61,7 +69,7 @@ export default function Simulator() {
       }
     };
     fetchRealData();
-  }, []);
+  }, [selectedDate]);
 
   // 매핑 정보를 기반으로 초기 본부 자동 지정
   useEffect(() => {
@@ -152,7 +160,16 @@ export default function Simulator() {
       {/* Header */}
       <div className="bg-brand-mint p-6 text-white flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1">본부지정</h1>
+          <div className="flex items-center gap-4 mb-1">
+            <h1 className="text-2xl font-bold">본부지정</h1>
+            {/* [12차 패치] 달력 (Date Picker) 추가 */}
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-white/20 text-white placeholder-white/50 border border-white/30 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-white/50"
+            />
+          </div>
           <p className="text-white/90 text-sm font-medium">1. 상단의 본부를 선택하세요 ➔ 2. 아래 영업장을 클릭하여 해당 본부 매출로 할당하세요.</p>
         </div>
         <div className="flex gap-3">

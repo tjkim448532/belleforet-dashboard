@@ -1,18 +1,17 @@
 import React, { createContext, useContext, useState } from 'react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   userEmail: string | null;
   isAdmin: boolean;
+  userRole: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const COMMON_PASSWORD = 'aebece'; // 일반 임직원 공용 비밀번호
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -27,6 +26,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sessionStorage.getItem('isAdmin') === 'true';
   });
 
+  const [userRole, setUserRole] = useState<string | null>(() => {
+    return sessionStorage.getItem('userRole');
+  });
+
   const saveLoginLogToFirebase = async (email: string) => {
     try {
       await addDoc(collection(db, 'loginLogs'), {
@@ -36,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (e) {
       console.error("Error adding document: ", e);
-      // Fallback to localStorage if Firebase fails (e.g. permissions)
       const logs = JSON.parse(localStorage.getItem('superAdminLoginLogs') || '[]');
       logs.push({ email, timestamp: new Date().toLocaleString('ko-KR') });
       localStorage.setItem('superAdminLoginLogs', JSON.stringify(logs));
@@ -44,60 +46,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
-    let success = false;
-    let isSuperAdmin = false;
-
     try {
-      // 1. 먼저 파이어베이스 Auth(슈퍼 관리자) 로그인을 시도해 봅니다.
+      // 1. Firebase Auth 로그인
       const { auth } = await import('../lib/firebase');
       const { signInWithEmailAndPassword } = await import('firebase/auth');
       await signInWithEmailAndPassword(auth, email, password);
       
-      // 파이어베이스 인증 성공 -> 이 사람은 콘솔에 등록된 슈퍼 관리자임
-      success = true;
-      isSuperAdmin = true;
-    } catch (error) {
-      // 파이어베이스 인증 실패 시 (콘솔에 등록 안 된 일반 직원인 경우)
-      // 2. 일반 임직원 도메인 및 공용 비밀번호 체크 로직으로 넘어갑니다.
-      const isCompanyEmail = email.endsWith('@daol.com') || email.endsWith('@belleforet.com') || email === 'admin';
-      if (isCompanyEmail && password === COMMON_PASSWORD) {
-        success = true;
-        isSuperAdmin = false;
+      // 2. Firestore에서 권한(role) 조회
+      const roleDocRef = doc(db, 'userRoles', email);
+      const roleSnap = await getDoc(roleDocRef);
+      
+      let role = 'guest'; // 기본 권한
+      if (roleSnap.exists()) {
+        role = roleSnap.data().role;
       }
-    }
-    
-    if (success) {
+
+      // role이 admin이면 기존의 슈퍼 관리자 권한도 부여
+      const isSuperAdmin = role === 'admin';
+
       setIsAuthenticated(true);
       setUserEmail(email);
       setIsAdmin(isSuperAdmin);
+      setUserRole(role);
       
       sessionStorage.setItem('auth', 'true');
       sessionStorage.setItem('userEmail', email);
+      sessionStorage.setItem('userRole', role);
       if (isSuperAdmin) {
         sessionStorage.setItem('isAdmin', 'true');
       } else {
         sessionStorage.removeItem('isAdmin');
       }
 
-      // 파이어베이스에 로그인 로그 기록 (비동기)
+      // 파이어베이스에 로그인 로그 기록
       saveLoginLogToFirebase(email);
       
       return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
-    
-    return false;
   };
 
   const logout = () => {
     setIsAuthenticated(false);
     setUserEmail(null);
     setIsAdmin(false);
+    setUserRole(null);
     sessionStorage.removeItem('auth');
     sessionStorage.removeItem('userEmail');
     sessionStorage.removeItem('isAdmin');
+    sessionStorage.removeItem('userRole');
   };
 
-  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, userRole, login, logout }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

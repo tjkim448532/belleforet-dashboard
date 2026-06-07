@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 export default function Layout() {
-  const { logout, isAdmin } = useAuth();
+  const { logout, isAdmin, userRole } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
@@ -19,14 +19,16 @@ export default function Layout() {
   };
 
   const menuItems = [
-    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} /> },
-    { name: '콘도', path: '#콘도', icon: <Hotel size={20} /> },
+    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest'] },
+    { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} />, roles: ['admin', 'executive', 'sales'] },
+    { name: '리조트사업본부', path: '#리조트사업본부', icon: <Hotel size={20} />, roles: ['admin', 'executive', 'resort'] },
   ];
+
+  const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
 
   const leisureItems = [
     '목장', '미디어아트센터', '썸머랜드', '원더풀', 
-    '사계절썰매', '마리나클럽', '미니포렛', '그랜드포렛', '놀이동산'
+    '사계절썰매', '마리나클럽', '미니포렛', '그랜드포렛', '놀이동산', '모토아레나'
   ];
 
   return (
@@ -52,7 +54,7 @@ export default function Layout() {
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
           <div className="text-xs font-bold text-slate-400 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
           
-          {menuItems.map((item, idx) => (
+          {visibleMenuItems.map((item, idx) => (
             <NavLink
               key={idx}
               to={item.path}
@@ -71,7 +73,8 @@ export default function Layout() {
             </NavLink>
           ))}
           {/* 경영지원실 Accordion */}
-          <div className="mt-2">
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'sales' || userRole === 'management') && (
+            <div className="mt-2">
             <button
               onClick={() => setManagementOpen(!managementOpen)}
               className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
@@ -109,7 +112,9 @@ export default function Layout() {
               </div>
             )}
           </div>
+          )}
           {/* 레져본부 Accordion */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
           <div className="mt-2">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
@@ -139,6 +144,7 @@ export default function Layout() {
               </div>
             )}
           </div>
+          )}
 
         </div>
           

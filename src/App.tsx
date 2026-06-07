@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import Simulator from './pages/Simulator';
 import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
+import AdminRoles from './pages/AdminRoles';
 
 import ManagementSupport from './pages/ManagementSupport';
 
@@ -44,6 +45,7 @@ function App() {
                   <Route path="simulator" element={<Simulator />} />
                   <Route path="logs" element={<AdminLogs />} />
                   <Route path="mapping" element={<AdminMapping />} />
+                  <Route path="roles" element={<AdminRoles />} />
                   <Route index element={<Navigate to="simulator" replace />} />
                 </Route>
 

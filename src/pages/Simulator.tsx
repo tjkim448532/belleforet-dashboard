@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSimulation } from '../contexts/SimulationContext';
+import { useMapping } from '../contexts/MappingContext';
 import { Save, RotateCcw, CheckCircle2 } from 'lucide-react';
 
 const HQS = ['골프', '숙박', '레저', '식음'];
@@ -24,6 +25,7 @@ interface Transaction {
 
 export default function Simulator() {
   const { setSimulatedData, clearSimulation } = useSimulation();
+  const { getCategoryForStore, mappings, loading: mappingLoading } = useMapping();
   const navigate = useNavigate();
   
   const [activeHq, setActiveHq] = useState<string | null>(null);
@@ -51,6 +53,34 @@ export default function Simulator() {
     };
     fetchRealData();
   }, []);
+
+  // 매핑 정보를 기반으로 초기 본부 자동 지정
+  useEffect(() => {
+    if (transactions.length > 0 && mappings.length > 0) {
+      setAssignments(prev => {
+        const newAssignments = { ...prev };
+        let updated = false;
+
+        transactions.forEach(t => {
+          if (!newAssignments[t.id]) {
+            const fullCategory = getCategoryForStore(t.description);
+            let shortHq = '미지정';
+            if (fullCategory.includes('골프')) shortHq = '골프';
+            else if (fullCategory.includes('리조트') || fullCategory.includes('숙박')) shortHq = '숙박';
+            else if (fullCategory.includes('레져') || fullCategory.includes('레저')) shortHq = '레저';
+            else if (fullCategory.includes('식음')) shortHq = '식음';
+            
+            if (shortHq !== '미지정') {
+              newAssignments[t.id] = shortHq;
+              updated = true;
+            }
+          }
+        });
+
+        return updated ? newAssignments : prev;
+      });
+    }
+  }, [transactions, mappings, getCategoryForStore]);
 
   const handleRowClick = (id: string) => {
     if (!activeHq) {
@@ -169,10 +199,10 @@ export default function Simulator() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
+            {loading || mappingLoading ? (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-slate-400 font-bold animate-pulse">
-                  실제 S3 영업 데이터를 불러오는 중입니다...
+                  실제 S3 영업 데이터 및 매핑 정보를 불러오는 중입니다...
                 </td>
               </tr>
             ) : transactions.length === 0 ? (

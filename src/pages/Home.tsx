@@ -77,6 +77,11 @@ export default function Home() {
     };
   }
 
+  // 모든 숫자 표기를 일정하게 (콤마 + 원) 통일
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('ko-KR').format(val) + '원';
+  };
+
   // 동적 매핑 합산 로직
   let dynamicHqToday = displayData?.hq_today || [];
   let dynamicAdr = displayData?.adr || 0;

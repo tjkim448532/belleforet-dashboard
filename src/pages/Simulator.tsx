@@ -43,6 +43,9 @@ export default function Simulator() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // [13차 패치] 교차 검증용 DB 진짜 총액 상태 추가
+  const [dbGrandTotal, setDbGrandTotal] = useState<number>(0);
+  
   // [12차 패치] 시간 여행 방지용 날짜 상태 (기본값: 오늘 KST 기준)
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
@@ -59,6 +62,7 @@ export default function Simulator() {
         const data = await res.json();
         if (data.success && data.transactions) {
           setTransactions(data.transactions);
+          setDbGrandTotal(data.dbGrandTotal || 0); // [13차 패치] API에서 가져온 DB 진짜 총액 저장
         } else {
           console.error("API error:", data.error);
         }
@@ -229,10 +233,38 @@ export default function Simulator() {
       </div>
 
       {/* Summary Banner */}
-      <div className="bg-white border-b border-slate-100 p-4 flex gap-8 items-center text-sm font-bold shadow-sm z-20">
-        <div className="text-slate-500">전체 할당된 금액:</div>
-        <div className="text-2xl font-emphatic text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
+      <div className="bg-white border-b border-slate-100 p-4 flex gap-6 items-center text-sm font-bold shadow-sm z-20">
+        <div className="flex items-center gap-2">
+          <div className="text-slate-500">대시보드 총액:</div>
+          <div className="text-2xl font-emphatic text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
+        </div>
         
+        {/* [13차 패치] 마리아DB VS 대시보드 실시간 교차 검증 배지 (Cross-Checker) */}
+        {!loading && (
+          <div className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all border ${
+            totalSales === dbGrandTotal 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+              : 'bg-red-50 text-red-600 border-red-200 animate-pulse'
+          }`}>
+            {totalSales === dbGrandTotal ? (
+              <>
+                <CheckCircle2 size={18} className="text-emerald-500" />
+                <span>DB 실매출 일치 (무결성 검증 완료 🟢)</span>
+              </>
+            ) : (
+              <>
+                <X size={18} className="text-red-500" />
+                <span>
+                  DB 불일치 경고 🔴 (차액: {new Intl.NumberFormat('ko-KR').format(Math.abs(dbGrandTotal - totalSales))}원 누락)
+                </span>
+                <div className="text-xs ml-2 opacity-70">
+                  (DB 총액: {new Intl.NumberFormat('ko-KR').format(dbGrandTotal)}원)
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="ml-auto text-slate-400 bg-slate-100 px-4 py-2 rounded-full flex items-center gap-2">
           Step 2. 아래 리스트를 클릭하여 색칠하세요 👇
         </div>

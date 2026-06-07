@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Save, Trash2, Plus, Users, ShieldAlert } from 'lucide-react';
 
 interface UserRole {
@@ -123,22 +123,26 @@ export default function AdminRoles() {
     ];
 
     try {
-      const promises = spreadsheetData.map(data => 
-        setDoc(doc(db, 'userRoles', data.email), {
+      const batch = writeBatch(db);
+      
+      spreadsheetData.forEach(data => {
+        const docRef = doc(db, 'userRoles', data.email);
+        batch.set(docRef, {
           role: data.role,
           name: data.name,
           updatedAt: new Date().toISOString()
-        })
-      );
-      await Promise.all(promises);
+        });
+      });
+      
+      await batch.commit();
       await fetchRoles();
       setImporting(false);
       setTimeout(() => {
-        alert('22명의 임직원 권한이 성공적으로 일괄 등록되었습니다!');
+        alert('22명의 임직원 권한이 한 번에 안전하게 일괄 등록되었습니다!');
       }, 100);
     } catch (error) {
       console.error('Bulk import error:', error);
-      alert('일괄 등록에 실패했습니다.');
+      alert('일괄 등록에 실패했습니다. (방화벽 차단 가능성)');
       setImporting(false);
     }
   };
@@ -158,7 +162,7 @@ export default function AdminRoles() {
           disabled={importing}
           className="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
         >
-          {importing ? '가져오는 중...' : '엑셀 명단 일괄 가져오기 (22명)'}
+          {importing ? '안전하게 전송 중...' : '구글 시트 명단 일괄 가져오기 (22명)'}
         </button>
       </div>
 

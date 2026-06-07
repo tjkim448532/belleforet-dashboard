@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
 import { useSimulation } from '../contexts/SimulationContext';
+import { useMapping } from '../contexts/MappingContext';
 
 interface SummaryData {
   success: boolean;
@@ -8,6 +9,7 @@ interface SummaryData {
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
   hq_today: { hq: string; actual: number; qty: number }[];
+  store_today?: { shop_name: string; actual: number; qty: number }[];
   adr: number;
   avg_green_fee: number;
   weekly_trend: { day: string; fullDate: string; this_week: number; last_week: number; }[];
@@ -17,6 +19,7 @@ export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const { simulatedData, clearSimulation } = useSimulation();
+  const { mappings, loading: mappingLoading } = useMapping();
 
   const [currentDate, setCurrentDate] = useState('2026-06-06');
 
@@ -74,20 +77,50 @@ export default function Home() {
     };
   }
 
-  // 모든 숫자 표기를 일정하게 (콤마 + 원) 통일
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('ko-KR').format(val) + '원';
-  };
+  // 동적 매핑 합산 로직
+  let dynamicHqToday = displayData?.hq_today || [];
+  let dynamicAdr = displayData?.adr || 0;
+  let dynamicAvgGreenFee = displayData?.avg_green_fee || 0;
+
+  if (displayData && displayData.store_today && mappings.length > 0 && !simulatedData) {
+    const hqMap: Record<string, { actual: number, qty: number }> = {
+      '리조트사업본부': { actual: 0, qty: 0 },
+      '식음': { actual: 0, qty: 0 },
+      '레져사업본부': { actual: 0, qty: 0 },
+      '골프사업본부': { actual: 0, qty: 0 },
+      '연회': { actual: 0, qty: 0 },
+      '기타사업본부': { actual: 0, qty: 0 }
+    };
+
+    displayData.store_today.forEach(store => {
+      const mapped = mappings.find(m => store.shop_name.includes(m.storeName) || m.storeName.includes(store.shop_name));
+      const cat = mapped ? mapped.category : '기타사업본부';
+      if (hqMap[cat]) {
+        hqMap[cat].actual += store.actual;
+        hqMap[cat].qty += store.qty;
+      }
+    });
+
+    dynamicHqToday = Object.keys(hqMap)
+      .filter(key => hqMap[key].actual > 0)
+      .map(key => ({ hq: key, actual: hqMap[key].actual, qty: hqMap[key].qty }));
+
+    const lodging = hqMap['리조트사업본부'];
+    const golf = hqMap['골프사업본부'];
+    dynamicAdr = lodging.qty > 0 ? Math.round(lodging.actual / lodging.qty) : 0;
+    dynamicAvgGreenFee = golf.qty > 0 ? Math.round(golf.actual / golf.qty) : 0;
+  }
 
   const getHqIcon = (hq: string) => {
     if (hq.includes('골프')) return '⛳';
-    if (hq.includes('숙박')) return '🏨';
-    if (hq.includes('레저')) return '🐑'; 
+    if (hq.includes('숙박') || hq.includes('리조트')) return '🏨';
+    if (hq.includes('레저') || hq.includes('레져')) return '🐑'; 
     if (hq.includes('식음')) return '☕'; 
+    if (hq.includes('연회')) return '🍷';
     return '🐶'; 
   };
 
-  if (loading || !displayData) {
+  if (loading || mappingLoading || !displayData) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
         <div className="text-xl font-bold text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
@@ -200,12 +233,12 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
                   <div className="text-slate-500 font-bold mb-2">숙박 객실 평균 단가 (ADR)</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(displayData.adr)}</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(dynamicAdr)}</div>
                   <div className="text-sm text-slate-400">당일 숙박 매출 ÷ 판매된 총 객실 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
                   <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(displayData.avg_green_fee)}</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(dynamicAvgGreenFee)}</div>
                   <div className="text-sm text-slate-400">당일 골프 매출 ÷ 내장객 수</div>
                 </div>
               </div>
@@ -222,7 +255,7 @@ export default function Home() {
                 🏆 오늘의 본부별 실적 순위
               </h2>
               <div className="space-y-6">
-                {displayData.hq_today.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
+                {dynamicHqToday.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
                   <div key={idx} className="flex flex-col gap-3 group">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-700 font-bold text-lg flex items-center gap-2">
@@ -236,7 +269,7 @@ export default function Home() {
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-brand-mint rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${Math.max((hq.actual / (displayData.hq_today[0]?.actual || 1)) * 100, 3)}%` }}
+                        style={{ width: `${Math.max((hq.actual / (dynamicHqToday[0]?.actual || 1)) * 100, 3)}%` }}
                       />
                     </div>
                   </div>

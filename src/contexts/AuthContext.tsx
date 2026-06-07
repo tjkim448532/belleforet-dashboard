@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; errorMsg?: string }>;
   logout: () => void;
   updateUserPassword: (newPassword: string) => Promise<{ success: boolean; errorMsg?: string }>;
+  authReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +32,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<string | null>(() => {
     return sessionStorage.getItem('userRole');
   });
+
+  const [authReady, setAuthReady] = useState(false);
+
+  React.useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setAuthReady(true);
+      if (!user) {
+        // If firebase says not logged in, but session storage says yes, it's a mismatch
+        // But let's trust session storage for UI, Firebase will block data if token is bad
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const saveLoginLogToFirebase = async (email: string) => {
     try {
@@ -127,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, userRole, login, logout, updateUserPassword }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, userRole, login, logout, updateUserPassword, authReady }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import { defaultMappings } from '../lib/defaultMappings';
 import type { StoreMapping, Category } from '../lib/defaultMappings';
 
@@ -71,7 +72,19 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   useEffect(() => {
-    fetchMappings();
+    // Wait for Firebase Auth to initialize before fetching, to prevent permission errors
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchMappings();
+      } else {
+        // If not logged in, we can either clear mappings or load defaults
+        // For now, if they are viewing the public simulator, maybe they need defaults
+        setMappings(defaultMappings.map((m, i) => ({ ...m, id: `local-${i}` })));
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const updateMapping = async (id: string, newCategory: Category) => {

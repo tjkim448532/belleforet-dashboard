@@ -16,11 +16,14 @@ import AdminRoles from './pages/AdminRoles';
 
 import ManagementSupport from './pages/ManagementSupport';
 
-// Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authReady } = useAuth();
   const isSessionAuth = sessionStorage.getItem('auth') === 'true';
   
+  if (!authReady) {
+    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 text-slate-500">잠시만 기다려주세요...</div>;
+  }
+
   // React 상태 업데이트 지연(Race condition)으로 인해 방금 로그인했는데도 다시 튕기는 현상 방지
   if (!isAuthenticated && !isSessionAuth) {
     return <Navigate to="/login" replace />;

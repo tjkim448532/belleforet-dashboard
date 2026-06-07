@@ -38,7 +38,7 @@ export default function Login() {
           </div>
           <div className="font-emphatic text-3xl tracking-widest text-brand-mint mb-2">BELLE FORET</div>
           <h1 className="text-2xl font-bold tracking-tight mb-3">임직원 전용 대시보드</h1>
-          <p className="text-sm text-slate-500 font-medium">다올 또는 벨포레 회사 이메일로 로그인하세요.</p>
+          <p className="text-sm text-slate-500 font-medium">벨포레 회사 이메일로 로그인하세요.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="relative z-10 space-y-5">
@@ -51,7 +51,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="회사 이메일 (@daol.com / @belleforet.com)"
+                placeholder="회사 이메일 (@bsbelleforet.com)"
                 className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border focus:ring-4 outline-none transition-all font-medium ${
                   error 
                     ? 'border-red-300 focus:ring-red-500/20 text-red-500' 

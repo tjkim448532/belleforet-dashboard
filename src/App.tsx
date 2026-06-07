@@ -19,7 +19,10 @@ import ManagementSupport from './pages/ManagementSupport';
 // Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
+  const isSessionAuth = sessionStorage.getItem('auth') === 'true';
+  
+  // React 상태 업데이트 지연(Race condition)으로 인해 방금 로그인했는데도 다시 튕기는 현상 방지
+  if (!isAuthenticated && !isSessionAuth) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;

@@ -7,7 +7,7 @@ interface AuthContextType {
   userEmail: string | null;
   isAdmin: boolean;
   userRole: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; errorMsg?: string }>;
   logout: () => void;
 }
 
@@ -86,10 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 파이어베이스에 로그인 로그 기록
       saveLoginLogToFirebase(email);
       
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Login failed:', error);
-      return false;
+      return { success: false, errorMsg: error?.message || '알 수 없는 에러' };
     }
   };
 

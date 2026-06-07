@@ -12,10 +12,11 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       navigate('/');
     } else {
+      alert(`[로그인 실패 알림]\n원인: ${result.errorMsg}\n\n※ user-not-found 에러인 경우, 파이어베이스 콘솔(Authentication)에 해당 이메일이 아직 회원가입(추가)되지 않은 것입니다.`);
       setError(true);
       setTimeout(() => setError(false), 3000);
     }

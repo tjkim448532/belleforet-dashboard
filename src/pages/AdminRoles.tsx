@@ -65,6 +65,21 @@ export default function AdminRoles() {
     }
   };
 
+  const handleInlineRoleChange = async (email: string, newRole: string) => {
+    try {
+      // Optimistic UI update for snappy feel
+      setRoles(prev => prev.map(r => r.email === email ? { ...r, role: newRole } : r));
+      await setDoc(doc(db, 'userRoles', email), { 
+        role: newRole, 
+        updatedAt: new Date().toISOString() 
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error updating role:', error);
+      alert('권한 업데이트에 실패했습니다.');
+      fetchRoles(); // Revert on failure
+    }
+  };
+
   const handleDeleteRole = async (email: string) => {
     if (!confirm(`${email} 계정의 권한을 삭제하시겠습니까? (삭제 시 기본 게스트 권한으로 변경됩니다)`)) return;
     
@@ -237,41 +252,34 @@ export default function AdminRoles() {
                     <td className="px-6 py-4 text-slate-800 font-bold">{roleObj.name || '-'}</td>
                     <td className="px-6 py-4 text-slate-600 font-medium">{roleObj.email}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold
-                        ${roleObj.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                          roleObj.role === 'executive' ? 'bg-yellow-100 text-yellow-800' :
-                          roleObj.role === 'leisure' ? 'bg-blue-100 text-blue-800' :
-                          roleObj.role === 'resort' ? 'bg-green-100 text-green-800' :
-                          roleObj.role === 'sales' ? 'bg-orange-100 text-orange-800' :
-                          roleObj.role === 'fnb' ? 'bg-amber-100 text-amber-800' :
-                          roleObj.role === 'management' ? 'bg-indigo-100 text-indigo-800' :
-                          roleObj.role === 'content' ? 'bg-pink-100 text-pink-800' :
-                          'bg-slate-100 text-slate-800'}
-                      `}>
-                        {roleObj.role === 'admin' && '👑 슈퍼 관리자'}
-                        {roleObj.role === 'executive' && '⭐ 임원'}
-                        {roleObj.role === 'leisure' && '🎢 레져본부'}
-                        {roleObj.role === 'resort' && '🏨 리조트사업본부'}
-                        {roleObj.role === 'sales' && '💼 세일즈본부'}
-                        {roleObj.role === 'fnb' && '🍽️ 식음본부'}
-                        {roleObj.role === 'management' && '📋 경영지원실'}
-                        {roleObj.role === 'content' && '🎨 콘텐츠기획실'}
-                        {roleObj.role === 'guest' && '👤 게스트'}
-                      </span>
+                      <select
+                        value={roleObj.role}
+                        onChange={(e) => handleInlineRoleChange(roleObj.email, e.target.value)}
+                        className={`inline-block px-3 py-1.5 rounded-lg text-sm font-bold border-0 cursor-pointer focus:ring-2 focus:ring-brand-mint/50 outline-none
+                          ${roleObj.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                            roleObj.role === 'executive' ? 'bg-yellow-100 text-yellow-800' :
+                            roleObj.role === 'leisure' ? 'bg-blue-100 text-blue-800' :
+                            roleObj.role === 'resort' ? 'bg-green-100 text-green-800' :
+                            roleObj.role === 'sales' ? 'bg-orange-100 text-orange-800' :
+                            roleObj.role === 'fnb' ? 'bg-amber-100 text-amber-800' :
+                            roleObj.role === 'management' ? 'bg-indigo-100 text-indigo-800' :
+                            roleObj.role === 'content' ? 'bg-pink-100 text-pink-800' :
+                            'bg-slate-100 text-slate-800'}
+                        `}
+                      >
+                        <option value="admin">👑 슈퍼 관리자</option>
+                        <option value="executive">⭐ 임원</option>
+                        <option value="leisure">🎢 레져본부</option>
+                        <option value="resort">🏨 리조트사업본부</option>
+                        <option value="sales">💼 세일즈본부</option>
+                        <option value="fnb">🍽️ 식음본부</option>
+                        <option value="management">📋 경영지원실</option>
+                        <option value="content">🎨 콘텐츠기획실</option>
+                        <option value="guest">👤 게스트</option>
+                      </select>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setNewEmail(roleObj.email);
-                            setNewName(roleObj.name || '');
-                            setNewRole(roleObj.role);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="text-brand-mint hover:text-emerald-700 p-2 hover:bg-emerald-50 rounded-lg transition-colors font-medium text-sm"
-                        >
-                          수정
-                        </button>
                         <button
                           onClick={() => handleDeleteRole(roleObj.email)}
                           className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors"

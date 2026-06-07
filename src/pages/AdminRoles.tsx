@@ -169,6 +169,7 @@ export default function AdminRoles() {
               <option value="leisure">레져본부 (모토아레나 포함)</option>
               <option value="resort">리조트사업본부</option>
               <option value="sales">세일즈본부</option>
+              <option value="fnb">식음본부</option>
               <option value="management">경영지원실 / 지원본부</option>
               <option value="content">콘텐츠기획실</option>
               <option value="executive">임원 (모든 대시보드 조회)</option>
@@ -224,6 +225,7 @@ export default function AdminRoles() {
                           roleObj.role === 'leisure' ? 'bg-blue-100 text-blue-800' :
                           roleObj.role === 'resort' ? 'bg-green-100 text-green-800' :
                           roleObj.role === 'sales' ? 'bg-orange-100 text-orange-800' :
+                          roleObj.role === 'fnb' ? 'bg-amber-100 text-amber-800' :
                           roleObj.role === 'management' ? 'bg-indigo-100 text-indigo-800' :
                           roleObj.role === 'content' ? 'bg-pink-100 text-pink-800' :
                           'bg-slate-100 text-slate-800'}
@@ -233,6 +235,7 @@ export default function AdminRoles() {
                         {roleObj.role === 'leisure' && '🎢 레져본부'}
                         {roleObj.role === 'resort' && '🏨 리조트사업본부'}
                         {roleObj.role === 'sales' && '💼 세일즈본부'}
+                        {roleObj.role === 'fnb' && '🍽️ 식음본부'}
                         {roleObj.role === 'management' && '📋 경영지원실'}
                         {roleObj.role === 'content' && '🎨 콘텐츠기획실'}
                         {roleObj.role === 'guest' && '👤 게스트'}

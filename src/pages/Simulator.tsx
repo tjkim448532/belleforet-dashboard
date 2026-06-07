@@ -12,14 +12,15 @@ const HQ_COLORS: Record<string, string> = {
   '미지정': 'bg-slate-100 text-slate-500 border-slate-200'
 };
 
-// 미지정 결제 내역 50개 생성
-const DESCRIPTIONS = [
-  '법인카드 단체 결제', '개인카드 현장 결제', '온라인 사전 예약금', 'VIP 바우처 사용', 
-  '패키지 상품 현장 추가 결제', '무통장 입금', '포인트 전액 결제', '임직원 복지포인트 결제'
+// 결제 영업장 명칭 목록
+const FACILITIES = [
+  '블랙스톤CC', '마리나클럽', '투썸플레이스', '브리스킷346', 
+  '목장입장권', '루지', '사계절썰매', '놀이동산',
+  '콘도(숙박)', '세미나실 대관', '미디어아트센터'
 ];
 
 const MOCK_TRANSACTIONS = Array.from({ length: 50 }).map((_, i) => {
-  const desc = DESCRIPTIONS[Math.floor(Math.random() * DESCRIPTIONS.length)];
+  const desc = FACILITIES[Math.floor(Math.random() * FACILITIES.length)];
   const amount = Math.floor(Math.random() * 50 + 5) * 10000; // 5만 ~ 55만
 
   return {
@@ -87,8 +88,8 @@ export default function Simulator() {
       {/* Header */}
       <div className="bg-brand-mint p-6 text-white flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1">매출 시뮬레이터 (본부 지정 모드)</h1>
-          <p className="text-white/90 text-sm font-medium">1. 상단의 본부를 선택하세요 ➔ 2. 아래 내역을 클릭하여 해당 본부 매출로 할당하세요.</p>
+          <h1 className="text-2xl font-bold mb-1">본부지정</h1>
+          <p className="text-white/90 text-sm font-medium">1. 상단의 본부를 선택하세요 ➔ 2. 아래 영업장을 클릭하여 해당 본부 매출로 할당하세요.</p>
         </div>
         <div className="flex gap-3">
           <button onClick={handleClear} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors font-bold text-sm">
@@ -149,7 +150,7 @@ export default function Simulator() {
               <th className="p-4 w-28">결제 시간</th>
               <th className="p-4 w-32">트랜잭션 ID</th>
               <th className="p-4 w-32">지정 본부</th>
-              <th className="p-4">결제 내역 (항목)</th>
+              <th className="p-4">영업장 명칭 (결제 영업장)</th>
               <th className="p-4 text-right">결제 금액</th>
             </tr>
           </thead>

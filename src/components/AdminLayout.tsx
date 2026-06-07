@@ -10,7 +10,7 @@ export default function AdminLayout() {
   }
 
   const menuItems = [
-    { name: '매출 시뮬레이터', path: '/admin/simulator', icon: <Calculator size={20} /> },
+    { name: '본부지정', path: '/admin/simulator', icon: <Calculator size={20} /> },
     { name: '매장 분류 매핑 관리', path: '/admin/mapping', icon: <Database size={20} /> },
     { name: '접속 로그 모니터링', path: '/admin/logs', icon: <ShieldCheck size={20} /> },
     { name: '임직원 권한 관리', path: '/admin/roles', icon: <Users size={20} /> },

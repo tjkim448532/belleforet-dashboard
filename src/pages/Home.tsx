@@ -19,7 +19,7 @@ export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const { simulatedData, clearSimulation } = useSimulation();
-  const { mappings, loading: mappingLoading } = useMapping();
+  const { mappings, categories, loading: mappingLoading } = useMapping();
 
   const [currentDate, setCurrentDate] = useState('2026-06-06');
 
@@ -64,16 +64,18 @@ export default function Home() {
   // 시뮬레이션 데이터 덮어쓰기 로직
   let displayData = data;
   if (data && simulatedData) {
+    // 시뮬레이터에서 설정된 본부별 금액 (키: 본부명, 값: 금액)
+    const simulatedHqToday = Object.keys(simulatedData.hqTotals).map(key => ({
+      hq: key,
+      actual: simulatedData.hqTotals[key] || 0,
+      qty: 0 // 시뮬레이션은 매출 금액만 제공하므로 qty는 0
+    }));
+
     displayData = {
       ...data,
       today: { ...data.today, actual: simulatedData.totalSales },
       ytd: { ...data.ytd, actual: data.ytd.actual - data.today.actual + simulatedData.totalSales },
-      hq_today: [
-        { hq: '골프', actual: simulatedData.hqTotals['골프'] || 0, qty: 150 },
-        { hq: '숙박', actual: simulatedData.hqTotals['숙박'] || 0, qty: 65 },
-        { hq: '레저', actual: simulatedData.hqTotals['레저'] || 0, qty: 420 },
-        { hq: '식음', actual: simulatedData.hqTotals['식음'] || 0, qty: 310 },
-      ]
+      hq_today: simulatedHqToday
     };
   }
 
@@ -88,30 +90,23 @@ export default function Home() {
   let dynamicAvgGreenFee = displayData?.avg_green_fee || 0;
 
   if (displayData && displayData.store_today && mappings.length > 0 && !simulatedData) {
-    const hqMap: Record<string, { actual: number, qty: number }> = {
-      '리조트사업본부': { actual: 0, qty: 0 },
-      '식음': { actual: 0, qty: 0 },
-      '레져사업본부': { actual: 0, qty: 0 },
-      '골프사업본부': { actual: 0, qty: 0 },
-      '연회': { actual: 0, qty: 0 },
-      '기타사업본부': { actual: 0, qty: 0 }
-    };
+    const hqMap: Record<string, { actual: number, qty: number }> = {};
+    categories.forEach(c => hqMap[c] = { actual: 0, qty: 0 });
 
     displayData.store_today.forEach(store => {
       const mapped = mappings.find(m => store.shop_name.includes(m.storeName) || m.storeName.includes(store.shop_name));
-      const cat = mapped ? mapped.category : '기타사업본부';
-      if (hqMap[cat]) {
-        hqMap[cat].actual += store.actual;
-        hqMap[cat].qty += store.qty;
-      }
+      const cat = mapped ? mapped.category : '미분류';
+      if (!hqMap[cat]) hqMap[cat] = { actual: 0, qty: 0 };
+      hqMap[cat].actual += store.actual;
+      hqMap[cat].qty += store.qty;
     });
 
     dynamicHqToday = Object.keys(hqMap)
       .filter(key => hqMap[key].actual > 0)
       .map(key => ({ hq: key, actual: hqMap[key].actual, qty: hqMap[key].qty }));
 
-    const lodging = hqMap['리조트사업본부'];
-    const golf = hqMap['골프사업본부'];
+    const lodging = hqMap['리조트사업본부'] || {actual:0, qty:0};
+    const golf = hqMap['골프사업본부'] || {actual:0, qty:0};
     dynamicAdr = lodging.qty > 0 ? Math.round(lodging.actual / lodging.qty) : 0;
     dynamicAvgGreenFee = golf.qty > 0 ? Math.round(golf.actual / golf.qty) : 0;
   }
@@ -122,7 +117,8 @@ export default function Home() {
     if (hq.includes('레저') || hq.includes('레져')) return '🐑'; 
     if (hq.includes('식음')) return '☕'; 
     if (hq.includes('연회')) return '🍷';
-    return '🐶'; 
+    if (hq.includes('기타')) return '🐶';
+    return '🏢'; // 커스텀 본부 폴백 아이콘
   };
 
   if (loading || mappingLoading || !displayData) {

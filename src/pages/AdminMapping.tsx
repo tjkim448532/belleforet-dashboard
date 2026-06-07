@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useMapping } from '../contexts/MappingContext';
-import { CATEGORIES } from '../lib/defaultMappings';
 import type { Category } from '../lib/defaultMappings';
 import { Save, AlertCircle } from 'lucide-react';
 
 export default function AdminMapping() {
-  const { mappings, loading, updateMapping } = useMapping();
+  const { mappings, categories, loading, updateMapping } = useMapping();
   const [savingId, setSavingId] = useState<string | null>(null);
 
   if (loading) {
@@ -69,7 +68,7 @@ export default function AdminMapping() {
                         disabled={savingId === mapping.id}
                         className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-brand-mint focus:border-brand-mint block w-full p-2.5 max-w-[200px]"
                       >
-                        {CATEGORIES.map(cat => (
+                        {categories.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>

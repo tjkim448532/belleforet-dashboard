@@ -2,15 +2,24 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
-import { Save, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Save, RotateCcw, CheckCircle2, Plus, X } from 'lucide-react';
 
-const HQS = ['골프', '숙박', '레저', '식음'];
-const HQ_COLORS: Record<string, string> = {
-  '골프': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  '숙박': 'bg-blue-100 text-blue-700 border-blue-200',
-  '레저': 'bg-orange-100 text-orange-700 border-orange-200',
-  '식음': 'bg-rose-100 text-rose-700 border-rose-200',
-  '미지정': 'bg-slate-100 text-slate-500 border-slate-200'
+const getHqColor = (hq: string) => {
+  if (hq.includes('골프')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+  if (hq.includes('리조트') || hq.includes('숙박')) return 'bg-blue-100 text-blue-700 border-blue-200';
+  if (hq.includes('레져') || hq.includes('레저')) return 'bg-amber-100 text-amber-700 border-amber-200';
+  if (hq.includes('식음')) return 'bg-orange-100 text-orange-700 border-orange-200';
+  if (hq === '미지정' || hq === '미분류') return 'bg-slate-100 text-slate-500 border-slate-200';
+  
+  const colors = [
+    'bg-purple-100 text-purple-700 border-purple-200',
+    'bg-pink-100 text-pink-700 border-pink-200',
+    'bg-indigo-100 text-indigo-700 border-indigo-200',
+    'bg-cyan-100 text-cyan-700 border-cyan-200',
+    'bg-teal-100 text-teal-700 border-teal-200'
+  ];
+  const hash = hq.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
 };
 
 // 결제 영업장 명칭 목록 (삭제 - 실제 데이터 사용)
@@ -25,7 +34,7 @@ interface Transaction {
 
 export default function Simulator() {
   const { setSimulatedData, clearSimulation } = useSimulation();
-  const { getCategoryForStore, mappings, loading: mappingLoading } = useMapping();
+  const { getCategoryForStore, mappings, categories, loading: mappingLoading, addCategory, deleteCategory } = useMapping();
   const navigate = useNavigate();
   
   const [activeHq, setActiveHq] = useState<string | null>(null);
@@ -64,14 +73,8 @@ export default function Simulator() {
         transactions.forEach(t => {
           if (!newAssignments[t.id]) {
             const fullCategory = getCategoryForStore(t.description);
-            let shortHq = '미지정';
-            if (fullCategory.includes('골프')) shortHq = '골프';
-            else if (fullCategory.includes('리조트') || fullCategory.includes('숙박')) shortHq = '숙박';
-            else if (fullCategory.includes('레져') || fullCategory.includes('레저')) shortHq = '레저';
-            else if (fullCategory.includes('식음')) shortHq = '식음';
-            
-            if (shortHq !== '미지정') {
-              newAssignments[t.id] = shortHq;
+            if (fullCategory !== '미분류') {
+              newAssignments[t.id] = fullCategory;
               updated = true;
             }
           }
@@ -101,7 +104,9 @@ export default function Simulator() {
   };
 
   const { hqTotals, totalSales } = useMemo(() => {
-    const totals: Record<string, number> = { '골프': 0, '숙박': 0, '레저': 0, '식음': 0 };
+    const totals: Record<string, number> = {};
+    categories.forEach(cat => totals[cat] = 0);
+    
     let sum = 0;
     
     transactions.forEach(t => {
@@ -124,6 +129,21 @@ export default function Simulator() {
     clearSimulation();
     setAssignments({});
     setActiveHq(null);
+  };
+
+  const handleAddCategory = async () => {
+    const name = window.prompt("추가할 본부의 이름을 입력하세요 (예: 외주업체, 신규사업부)");
+    if (name && name.trim()) {
+      await addCategory(name.trim());
+    }
+  };
+
+  const handleDeleteCategory = async (e: React.MouseEvent, name: string) => {
+    e.stopPropagation(); // Prevents button click
+    if (window.confirm(`'${name}' 본부를 정말 삭제하시겠습니까? 매핑된 데이터가 모두 '미분류'로 초기화됩니다.`)) {
+      await deleteCategory(name);
+      if (activeHq === name) setActiveHq(null);
+    }
   };
 
   return (
@@ -150,28 +170,44 @@ export default function Simulator() {
         <div className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
           Step 1. 할당할 본부를 먼저 선택하세요 (현재 선택된 펜)
         </div>
-        <div className="grid grid-cols-4 gap-4">
-          {HQS.map(hq => {
+        <div className="flex flex-wrap gap-4">
+          {categories.filter(c => c !== '미분류').map(hq => {
             const isSelected = activeHq === hq;
+            const hqColorClasses = getHqColor(hq);
             return (
               <button
                 key={hq}
                 onClick={() => setActiveHq(hq)}
-                className={`py-4 px-6 rounded-2xl font-bold text-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                className={`relative py-4 px-6 rounded-2xl font-bold text-lg border-2 transition-all flex flex-col items-center gap-1 ${
                   isSelected 
-                    ? `${HQ_COLORS[hq].split(' ')[0]} border-slate-900 shadow-md transform scale-105` 
+                    ? `${hqColorClasses.split(' ')[0]} border-slate-900 shadow-md transform scale-105` 
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  {hq} 본부 {isSelected && <CheckCircle2 size={20} className="text-slate-900" />}
+                  {hq} {isSelected && <CheckCircle2 size={20} className="text-slate-900" />}
                 </div>
                 <div className="text-sm font-medium opacity-80">
-                  누적: {new Intl.NumberFormat('ko-KR').format(hqTotals[hq])}원
+                  누적: {new Intl.NumberFormat('ko-KR').format(hqTotals[hq] || 0)}원
+                </div>
+                {/* 커스텀 본부 전용 삭제 버튼 */}
+                <div 
+                  onClick={(e) => handleDeleteCategory(e, hq)}
+                  className="absolute -top-2 -right-2 bg-slate-200 hover:bg-red-500 hover:text-white text-slate-500 rounded-full p-1 cursor-pointer transition-colors shadow-sm"
+                  title="본부 삭제"
+                >
+                  <X size={14} />
                 </div>
               </button>
             );
           })}
+          <button
+            onClick={handleAddCategory}
+            className="py-4 px-6 rounded-2xl font-bold text-lg border-2 border-dashed border-slate-300 text-slate-400 hover:text-brand-mint hover:border-brand-mint hover:bg-brand-mint/5 transition-all flex flex-col items-center justify-center gap-1"
+          >
+            <Plus size={24} />
+            <span className="text-sm">본부 추가</span>
+          </button>
         </div>
       </div>
 
@@ -217,24 +253,21 @@ export default function Simulator() {
                 const isAssigned = assignedHq !== '미지정';
                 
                 // 본부별 테마색 배경 매핑
-                const rowBgColor = 
-                  assignedHq === '골프' ? 'bg-emerald-50' :
-                  assignedHq === '숙박' ? 'bg-blue-50' :
-                  assignedHq === '레저' ? 'bg-amber-50' :
-                  assignedHq === '식음' ? 'bg-orange-50' : 'bg-white hover:bg-slate-50';
-
+                const rowBgColor = getHqColor(assignedHq).split(' ')[0].replace('100', '50');
+                const isCustomHq = assignedHq !== '미지정' && assignedHq !== '미분류';
+                
                 return (
                   <tr 
                     key={t.id} 
-                    className={`border-b border-slate-100 cursor-pointer transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:scale-95 ${rowBgColor} ${isAssigned ? 'shadow-[inset_4px_0_0_0_currentColor] text-slate-800' : ''}`}
-                    style={{ color: isAssigned ? (assignedHq === '골프' ? '#10b981' : assignedHq === '숙박' ? '#3b82f6' : assignedHq === '레저' ? '#f59e0b' : '#f97316') : '' }}
+                    className={`border-b border-slate-100 cursor-pointer transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:scale-95 ${isAssigned ? rowBgColor : 'bg-white hover:bg-slate-50'} ${isAssigned ? 'shadow-[inset_4px_0_0_0_currentColor] text-slate-800' : ''}`}
+                    style={{ color: isAssigned ? '#475569' : '' }}
                     onClick={() => handleRowClick(t.id)}
                   >
                     <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
                     <td className="p-4 font-mono text-slate-500">{t.time}</td>
                     <td className="p-4 font-mono text-xs text-slate-400" title={t.id}>{t.id.substring(0, 15)}...</td>
                     <td className="p-4 font-bold">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border shadow-sm transition-all ${HQ_COLORS[assignedHq]} ${isAssigned ? 'scale-110 inline-block' : ''}`}>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border shadow-sm transition-all ${getHqColor(assignedHq)} ${isAssigned ? 'scale-110 inline-block' : ''}`}>
                         {isAssigned && <CheckCircle2 size={12} className="inline mr-1 -mt-0.5" />}
                         {assignedHq}
                       </span>

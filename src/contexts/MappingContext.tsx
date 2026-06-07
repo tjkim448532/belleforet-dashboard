@@ -1,25 +1,41 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
-import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { defaultMappings } from '../lib/defaultMappings';
+import { DEFAULT_CATEGORIES, defaultMappings } from '../lib/defaultMappings';
 import type { StoreMapping, Category } from '../lib/defaultMappings';
 
 interface MappingContextType {
   mappings: StoreMapping[];
+  categories: string[];
   loading: boolean;
   updateMapping: (id: string, newCategory: Category) => Promise<void>;
   getCategoryForStore: (storeName: string) => Category;
+  addCategory: (name: string) => Promise<void>;
+  deleteCategory: (name: string) => Promise<void>;
 }
 
 const MappingContext = createContext<MappingContextType | undefined>(undefined);
 
 export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mappings, setMappings] = useState<StoreMapping[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMappings = async () => {
     try {
+      // 1. Fetch custom categories
+      const settingsRef = doc(db, 'settings', 'hqCategories');
+      const settingsSnap = await getDoc(settingsRef);
+      let loadedCategories = [...DEFAULT_CATEGORIES];
+      if (settingsSnap.exists() && settingsSnap.data().categories) {
+        loadedCategories = settingsSnap.data().categories;
+      } else {
+        await setDoc(settingsRef, { categories: DEFAULT_CATEGORIES });
+      }
+      setCategories(loadedCategories);
+
+      // 2. Fetch mappings
       const mappingRef = collection(db, 'storeMappings');
       const snapshot = await getDocs(mappingRef);
 
@@ -81,6 +97,7 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (error) {
       console.error("Error fetching mappings: ", error);
       // Fallback to local default mappings if firebase fails (e.g. offline)
+      setCategories([...DEFAULT_CATEGORIES]);
       setMappings(defaultMappings.map((m, i) => ({ ...m, id: `local-${i}` })));
     } finally {
       setLoading(false);
@@ -94,7 +111,7 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         fetchMappings();
       } else {
         // If not logged in, we can either clear mappings or load defaults
-        // For now, if they are viewing the public simulator, maybe they need defaults
+        setCategories([...DEFAULT_CATEGORIES]);
         setMappings(defaultMappings.map((m, i) => ({ ...m, id: `local-${i}` })));
         setLoading(false);
       }
@@ -126,8 +143,35 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return mapping ? mapping.category : '미분류';
   };
 
+  const addCategory = async (name: string) => {
+    if (!name || categories.includes(name)) return;
+    const newCategories = [...categories, name];
+    await updateDoc(doc(db, 'settings', 'hqCategories'), { categories: newCategories });
+    setCategories(newCategories);
+  };
+
+  const deleteCategory = async (name: string) => {
+    // 기본 카테고리는 삭제 방지 (선택적 구현)
+    if (DEFAULT_CATEGORIES.includes(name)) {
+      alert('기본 본부는 삭제할 수 없습니다.');
+      return;
+    }
+    const newCategories = categories.filter(c => c !== name);
+    await updateDoc(doc(db, 'settings', 'hqCategories'), { categories: newCategories });
+    setCategories(newCategories);
+
+    // 삭제된 본부에 속한 매장들을 '미분류'로 자동 폴백
+    const affectedMappings = mappings.filter(m => m.category === name);
+    for (const m of affectedMappings) {
+      if (m.id && !m.id.startsWith('local-')) {
+        await updateDoc(doc(db, 'storeMappings', m.id), { category: '미분류' });
+      }
+    }
+    setMappings(prev => prev.map(m => m.category === name ? { ...m, category: '미분류' } : m));
+  };
+
   return (
-    <MappingContext.Provider value={{ mappings, loading, updateMapping, getCategoryForStore }}>
+    <MappingContext.Provider value={{ mappings, categories, loading, updateMapping, getCategoryForStore, addCategory, deleteCategory }}>
       {children}
     </MappingContext.Provider>
   );

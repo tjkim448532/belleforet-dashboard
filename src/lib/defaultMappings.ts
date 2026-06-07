@@ -1,4 +1,4 @@
-export const CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   '리조트사업본부',
   '골프사업본부',
   '식음',
@@ -6,9 +6,9 @@ export const CATEGORIES = [
   '레져사업본부',
   '기타업장',
   '미분류'
-] as const;
+];
 
-export type Category = typeof CATEGORIES[number];
+export type Category = string;
 
 export interface StoreMapping {
   id?: string;

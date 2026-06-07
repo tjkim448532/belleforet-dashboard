@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { initializeFirestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -22,9 +22,7 @@ if (typeof window !== "undefined") {
   analytics = getAnalytics(app);
 }
 
-// 방화벽(웹소켓 차단) 우회를 위해 강제로 Long-Polling 방식을 사용하도록 설정합니다.
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
-});
+// Initialize Firestore
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export { app, analytics };

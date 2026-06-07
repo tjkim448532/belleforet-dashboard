@@ -131,12 +131,14 @@ export default function AdminRoles() {
         })
       );
       await Promise.all(promises);
-      fetchRoles();
-      alert('22명의 임직원 권한이 성공적으로 일괄 등록되었습니다!');
+      await fetchRoles();
+      setImporting(false);
+      setTimeout(() => {
+        alert('22명의 임직원 권한이 성공적으로 일괄 등록되었습니다!');
+      }, 100);
     } catch (error) {
       console.error('Bulk import error:', error);
       alert('일괄 등록에 실패했습니다.');
-    } finally {
       setImporting(false);
     }
   };

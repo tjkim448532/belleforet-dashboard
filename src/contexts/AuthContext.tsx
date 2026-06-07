@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -10,6 +10,7 @@ interface AuthContextType {
   userRole: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; errorMsg?: string }>;
   logout: () => void;
+  updateUserPassword: (newPassword: string) => Promise<{ success: boolean; errorMsg?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -121,7 +122,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.removeItem('userRole');
   };
 
-  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, userRole, login, logout }}>{children}</AuthContext.Provider>;
+  const updateUserPassword = async (newPassword: string) => {
+    if (!auth.currentUser) return { success: false, errorMsg: '로그인된 상태가 아닙니다.' };
+    try {
+      await updatePassword(auth.currentUser, newPassword);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Password update failed:', error);
+      let errorMsg = '비밀번호 변경에 실패했습니다.';
+      if (error?.code === 'auth/requires-recent-login') {
+        errorMsg = '보안을 위해 다시 로그인한 후 비밀번호를 변경해주세요.';
+      } else if (error?.code === 'auth/weak-password') {
+        errorMsg = '비밀번호는 최소 6자리 이상이어야 합니다.';
+      }
+      return { success: false, errorMsg };
+    }
+  };
+
+  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, userRole, login, logout, updateUserPassword }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

@@ -3,19 +3,43 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee 
+  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key 
 } from 'lucide-react';
 
 export default function Layout() {
-  const { logout, isAdmin, userRole } = useAuth();
+  const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
 
+  const [pwdModalOpen, setPwdModalOpen] = useState(false);
+  const [newPwd, setNewPwd] = useState('');
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPwd || newPwd.length < 6) {
+      alert('비밀번호는 최소 6자리 이상이어야 합니다.');
+      return;
+    }
+    if (!confirm('정말 이 비밀번호로 변경하시겠습니까?')) return;
+    
+    setIsChangingPwd(true);
+    const result = await updateUserPassword(newPwd);
+    setIsChangingPwd(false);
+    
+    if (result.success) {
+      alert('비밀번호가 성공적으로 변경되었습니다. 다음 로그인부터 새 비밀번호를 사용해주세요.');
+      setPwdModalOpen(false);
+      setNewPwd('');
+    } else {
+      alert(result.errorMsg);
+    }
   };
 
   const menuItems = [
@@ -160,6 +184,13 @@ export default function Layout() {
               </NavLink>
             )}
             <button
+              onClick={() => setPwdModalOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-bold text-sm"
+            >
+              <Key size={20} />
+              비밀번호 변경
+            </button>
+            <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-bold text-sm"
             >
@@ -188,6 +219,44 @@ export default function Layout() {
           </div>
         </div>
       </main>
+
+      {/* Password Change Modal */}
+      {pwdModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 overflow-hidden relative">
+            <button 
+              onClick={() => setPwdModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <Key className="text-brand-mint" size={24} /> 비밀번호 변경
+            </h3>
+            <p className="text-sm text-slate-500 mb-6 font-medium">현재 접속된 계정 ({userEmail})의 비밀번호를 새로 설정합니다.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">새 비밀번호 (6자리 이상)</label>
+                <input 
+                  type="password"
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  placeholder="새로운 비밀번호를 입력하세요"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/50 font-sans"
+                />
+              </div>
+              <button
+                onClick={handleChangePassword}
+                disabled={isChangingPwd || newPwd.length < 6}
+                className="w-full py-3 bg-brand-mint text-white font-bold rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-50 mt-4"
+              >
+                {isChangingPwd ? '변경하는 중...' : '이 비밀번호로 변경하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

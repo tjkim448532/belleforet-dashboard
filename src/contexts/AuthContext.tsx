@@ -61,6 +61,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role = roleSnap.data().role;
       }
 
+      // [긴급 권한 복구] 대표님 계정은 어떤 상황에서도 무조건 슈퍼 관리자로 접속되도록 하드코딩 보호
+      if (email === 'tjkim@bsbelleforet.com' || email === 'tjkim448532@gmail.com') {
+        role = 'admin';
+      }
+
       // role이 admin이면 기존의 슈퍼 관리자 권한도 부여
       const isSuperAdmin = role === 'admin';
 

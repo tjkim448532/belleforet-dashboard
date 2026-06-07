@@ -92,6 +92,22 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
           fetchedMappings.push({ id: docSnapshot.id, ...data, category, storeName });
         }
+
+        // [14차 패치] 파이어베이스에 아직 등록되지 않은 신규 defaultMappings (예: '골프') 강제 주입 동기화
+        const missingMappings = defaultMappings.filter(
+          dm => !fetchedMappings.some(fm => fm.storeName === dm.storeName)
+        );
+
+        if (missingMappings.length > 0) {
+          console.log(`[Auto-Sync] Adding ${missingMappings.length} missing default mappings to Firestore...`);
+          for (const missing of missingMappings) {
+            const newDocRef = doc(mappingRef);
+            const newMapping = { ...missing, id: newDocRef.id };
+            await setDoc(newDocRef, newMapping);
+            fetchedMappings.push(newMapping);
+          }
+        }
+
         setMappings(fetchedMappings);
       }
     } catch (error) {

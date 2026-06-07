@@ -6,12 +6,14 @@ import { Save, Trash2, Plus, Users, ShieldAlert } from 'lucide-react';
 interface UserRole {
   email: string;
   role: string;
+  name?: string;
 }
 
 export default function AdminRoles() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState('');
+  const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('guest');
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -25,7 +27,7 @@ export default function AdminRoles() {
       const querySnapshot = await getDocs(collection(db, 'userRoles'));
       const fetchedRoles: UserRole[] = [];
       querySnapshot.forEach((doc) => {
-        fetchedRoles.push({ email: doc.id, role: doc.data().role });
+        fetchedRoles.push({ email: doc.id, role: doc.data().role, name: doc.data().name || '' });
       });
       setRoles(fetchedRoles);
     } catch (error) {
@@ -47,9 +49,11 @@ export default function AdminRoles() {
     try {
       await setDoc(doc(db, 'userRoles', newEmail), {
         role: newRole,
+        name: newName,
         updatedAt: new Date().toISOString()
       });
       setNewEmail('');
+      setNewName('');
       setNewRole('guest');
       fetchRoles();
       alert('권한이 성공적으로 저장되었습니다.');
@@ -79,34 +83,35 @@ export default function AdminRoles() {
     setImporting(true);
     
     const spreadsheetData = [
-      { email: 'jsshin@bsbelleforet.com', role: 'leisure' },
-      { email: 'smkwon@bsbelleforet.com', role: 'leisure' },
-      { email: 'sychoi@bsbelleforet.com', role: 'leisure' },
-      { email: 'jhkim2407@bsbelleforet.com', role: 'leisure' },
-      { email: 'hdkim@bsbelleforet.com', role: 'leisure' },
-      { email: 'jhlee1212@bsbelleforet.com', role: 'leisure' },
-      { email: 'jyheo@kmgcompany.co.kr', role: 'leisure' },
-      { email: 'jysun@bsbelleforet.com', role: 'sales' },
-      { email: 'kimhk@bsbelleforet.com', role: 'sales' },
-      { email: 'thim@bsbelleforet.com', role: 'sales' },
-      { email: 'swlee@bsbelleforet.com', role: 'content' },
-      { email: 'cmjang@bsbelleforet.com', role: 'sales' },
-      { email: 'hpark@bsbelleforet.com', role: 'sales' },
-      { email: 'jdyang@bsbelleforet.com', role: 'management' },
-      { email: 'kmjo@bsbelleforet.com', role: 'management' },
-      { email: 'yhkwon@bsbelleforet.com', role: 'management' },
-      { email: 'kimjw00@bsbelleforet.com', role: 'executive' },
-      { email: 'swon@daewonspic.com', role: 'executive' },
-      { email: 'ynshin@bsbelleforet.com', role: 'resort' },
-      { email: 'syyeom@bsbelleforet.com', role: 'resort' },
-      { email: 'hjchoi71@bsbelleforet.com', role: 'resort' },
-      { email: 'jylim@bsbelleforet.com', role: 'resort' },
+      { name: '신지선', email: 'jsshin@bsbelleforet.com', role: 'leisure' },
+      { name: '권순민', email: 'smkwon@bsbelleforet.com', role: 'leisure' },
+      { name: '최성영', email: 'sychoi@bsbelleforet.com', role: 'leisure' },
+      { name: '김자훈', email: 'jhkim2407@bsbelleforet.com', role: 'leisure' },
+      { name: '김형도', email: 'hdkim@bsbelleforet.com', role: 'leisure' },
+      { name: '이재훈', email: 'jhlee1212@bsbelleforet.com', role: 'leisure' },
+      { name: '허진용', email: 'jyheo@kmgcompany.co.kr', role: 'leisure' },
+      { name: '선진영', email: 'jysun@bsbelleforet.com', role: 'sales' },
+      { name: '김환길', email: 'kimhk@bsbelleforet.com', role: 'sales' },
+      { name: '임태환', email: 'thim@bsbelleforet.com', role: 'sales' },
+      { name: '이승우', email: 'swlee@bsbelleforet.com', role: 'content' },
+      { name: '장창명', email: 'cmjang@bsbelleforet.com', role: 'sales' },
+      { name: '박혁', email: 'hpark@bsbelleforet.com', role: 'sales' },
+      { name: '양주', email: 'jdyang@bsbelleforet.com', role: 'management' },
+      { name: '조경미', email: 'kmjo@bsbelleforet.com', role: 'management' },
+      { name: '권영해', email: 'yhkwon@bsbelleforet.com', role: 'management' },
+      { name: '김종우', email: 'kimjw00@bsbelleforet.com', role: 'executive' },
+      { name: '원성역', email: 'swon@daewonspic.com', role: 'executive' },
+      { name: '신영남', email: 'ynshin@bsbelleforet.com', role: 'resort' },
+      { name: '염세영', email: 'syyeom@bsbelleforet.com', role: 'resort' },
+      { name: '최현정', email: 'hjchoi71@bsbelleforet.com', role: 'resort' },
+      { name: '임진영', email: 'jylim@bsbelleforet.com', role: 'resort' },
     ];
 
     try {
       const promises = spreadsheetData.map(data => 
         setDoc(doc(db, 'userRoles', data.email), {
           role: data.role,
+          name: data.name,
           updatedAt: new Date().toISOString()
         })
       );
@@ -147,6 +152,17 @@ export default function AdminRoles() {
           임직원 권한 부여 및 수정
         </h2>
         <form onSubmit={handleAddOrUpdateRole} className="flex gap-4 items-end">
+          <div className="flex-1 max-w-[200px]">
+            <label className="block text-sm font-medium text-slate-600 mb-1">이름</label>
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="예: 홍길동"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+              required
+            />
+          </div>
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-600 mb-1">회사 이메일 주소</label>
             <input
@@ -209,6 +225,7 @@ export default function AdminRoles() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                  <th className="px-6 py-3 font-semibold">이름</th>
                   <th className="px-6 py-3 font-semibold">이메일 계정</th>
                   <th className="px-6 py-3 font-semibold">부여된 권한 (역할)</th>
                   <th className="px-6 py-3 font-semibold text-right">관리</th>
@@ -217,7 +234,8 @@ export default function AdminRoles() {
               <tbody className="divide-y divide-slate-100">
                 {roles.map((roleObj) => (
                   <tr key={roleObj.email} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-800 font-medium">{roleObj.email}</td>
+                    <td className="px-6 py-4 text-slate-800 font-bold">{roleObj.name || '-'}</td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">{roleObj.email}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold
                         ${roleObj.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
@@ -242,13 +260,26 @@ export default function AdminRoles() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleDeleteRole(roleObj.email)}
-                        className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                        title="권한 삭제"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setNewEmail(roleObj.email);
+                            setNewName(roleObj.name || '');
+                            setNewRole(roleObj.role);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="text-brand-mint hover:text-emerald-700 p-2 hover:bg-emerald-50 rounded-lg transition-colors font-medium text-sm"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRole(roleObj.email)}
+                          className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                          title="권한 삭제"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

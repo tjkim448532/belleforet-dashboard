@@ -36,29 +36,45 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setMappings(newMappings);
       } else {
         const fetchedMappings: StoreMapping[] = [];
-        const migrationMap: Record<string, Category> = {
+        const categoryMigrationMap: Record<string, Category> = {
           '객실': '리조트사업본부',
           '골프': '골프사업본부',
           '식음업장': '식음',
           '티켓업장': '레져사업본부'
         };
 
+        const nameMigrationMap: Record<string, string> = {
+          '인육말가페': '얼룩말카페',
+          '빙엄테이블': '밤밤테이블',
+          '남도매답': '남도예담',
+          '벼무새촌': '앵무새촌',
+          '빙엄트릭': '밤밤트럭',
+          '핏포레': '펫포레'
+        };
+
         for (const docSnapshot of snapshot.docs) {
           const data = docSnapshot.data() as Omit<StoreMapping, 'id'>;
           let category = data.category;
+          let storeName = data.storeName;
           let needsUpdate = false;
 
-          // Migrate old category names to new ones automatically
-          if (migrationMap[category]) {
-            category = migrationMap[category];
+          // Migrate old category names
+          if (categoryMigrationMap[category]) {
+            category = categoryMigrationMap[category];
+            needsUpdate = true;
+          }
+
+          // Migrate OCR typo store names
+          if (nameMigrationMap[storeName]) {
+            storeName = nameMigrationMap[storeName];
             needsUpdate = true;
           }
 
           if (needsUpdate) {
-            await updateDoc(doc(db, 'storeMappings', docSnapshot.id), { category });
+            await updateDoc(doc(db, 'storeMappings', docSnapshot.id), { category, storeName });
           }
 
-          fetchedMappings.push({ id: docSnapshot.id, ...data, category });
+          fetchedMappings.push({ id: docSnapshot.id, ...data, category, storeName });
         }
         setMappings(fetchedMappings);
       }

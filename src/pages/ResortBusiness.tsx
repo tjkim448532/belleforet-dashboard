@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CalendarDays, Hotel, Coins } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
+import { useDate } from '../contexts/DateContext';
 
 interface AdrTableItem {
   roomSize: string;
@@ -24,13 +25,13 @@ interface SummaryData {
 export default function ResortBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState('2026-06-06');
+  const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
 
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${currentDate}`);
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
         
         const grid = json.gridData || [];
         const todayActual = json.today?.actual || 0;
@@ -66,7 +67,7 @@ export default function ResortBusiness() {
         
         setData({
           success: true,
-          date: currentDate,
+          date: endDate,
           ytd: { actual: json.ytd?.actual || 0, ly_actual: json.ytd?.ly_actual || 0 },
           today: { actual: todayActual, ly_actual: todayLyActual },
           hq_today: hqToday,
@@ -77,7 +78,7 @@ export default function ResortBusiness() {
         console.error('API Error:', err);
         setData({
           success: true,
-          date: currentDate,
+          date: endDate,
           ytd: { actual: 0, ly_actual: 0 },
           today: { actual: 0, ly_actual: 0 },
           hq_today: [],
@@ -90,7 +91,7 @@ export default function ResortBusiness() {
     };
 
     fetchSummary();
-  }, [currentDate]);
+  }, [startDate, endDate]);
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val || 0);
@@ -189,14 +190,62 @@ export default function ResortBusiness() {
             <h1 className="text-3xl font-bold tracking-tight mt-3">리조트사업본부 경영 현황 🏨</h1>
             <p className="text-white/80 mt-1">객실 판매 채널별 세부 객단가 및 정산 실적 리포트입니다.</p>
           </div>
-          <div className="mt-4 md:mt-0 flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white focus-within:ring-2 focus-within:ring-white/50 transition-all">
-            <span className="mr-2 opacity-80">🗓️</span>
-            <input 
-              type="date" 
-              value={currentDate} 
-              onChange={(e) => setCurrentDate(e.target.value)}
-              className="bg-transparent border-none text-xl font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-            />
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Toggle Button for Range / Single */}
+            <div className="flex bg-black/30 p-1 rounded-xl backdrop-blur-sm border border-white/10">
+              <button
+                onClick={() => setIsRange(false)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  !isRange 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                단일 조회
+              </button>
+              <button
+                onClick={() => setIsRange(true)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  isRange 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                기간 조회
+              </button>
+            </div>
+
+            {/* Inputs */}
+            <div className="flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white border border-white/15 focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
+              <span className="mr-2 opacity-80">🗓️</span>
+              {!isRange ? (
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setEndDate(e.target.value);
+                  }}
+                  className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+                  />
+                  <span className="text-white/50 font-bold">~</span>
+                  <input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -205,12 +254,12 @@ export default function ResortBusiness() {
           {/* Room Revenue */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
-              <Hotel className="w-5 h-5 text-emerald-500" /> 오늘 객실 매출
+              <Hotel className="w-5 h-5 text-emerald-500" /> 선택 기간 객실 매출
             </h2>
             <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
               {formatCurrency(lodgingStats.revenue)}
             </div>
-            <p className="text-xs text-slate-400 mt-2">정산 시트 기준 Room Charge 매출액 합계</p>
+            <p className="text-xs text-slate-400 mt-2">정산 시트 기준 Room Charge 매출액 누적 합계</p>
           </div>
 
           {/* Rooms Sold */}
@@ -221,7 +270,7 @@ export default function ResortBusiness() {
             <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
               {lodgingStats.roomsSold}실
             </div>
-            <p className="text-xs text-slate-400 mt-2">당일 체크인 및 정산 완료된 총 객실 수</p>
+            <p className="text-xs text-slate-400 mt-2">선택 기간 내 정산 완료된 총 객실 수</p>
           </div>
 
           {/* Overall ADR */}
@@ -232,7 +281,7 @@ export default function ResortBusiness() {
             <div className="text-4xl font-emphatic text-emerald-600 tracking-tight">
               {formatCurrency(lodgingStats.adr)}
             </div>
-            <p className="text-xs text-slate-400 mt-2">총 객실 매출 ÷ 총 판매 객실 수</p>
+            <p className="text-xs text-slate-400 mt-2">선택 기간 총 객실 매출 ÷ 총 판매 객실 수</p>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SimulationProvider } from './contexts/SimulationContext';
 import { MappingProvider } from './contexts/MappingContext';
+import { DateProvider } from './contexts/DateContext';
 
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -38,28 +39,30 @@ function App() {
       <ThemeProvider>
         <SimulationProvider>
           <MappingProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                
-                <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                  <Route index element={<Home />} />
-                  <Route path="management-support" element={<ManagementSupport />} />
-                  <Route path="resort-business" element={<ResortBusiness />} />
-                </Route>
+            <DateProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  
+                  <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                    <Route index element={<Home />} />
+                    <Route path="management-support" element={<ManagementSupport />} />
+                    <Route path="resort-business" element={<ResortBusiness />} />
+                  </Route>
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                  <Route path="simulator" element={<Simulator />} />
-                  <Route path="logs" element={<AdminLogs />} />
-                  <Route path="mapping" element={<AdminMapping />} />
-                  <Route path="roles" element={<AdminRoles />} />
-                  <Route index element={<Navigate to="simulator" replace />} />
-                </Route>
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                    <Route path="simulator" element={<Simulator />} />
+                    <Route path="logs" element={<AdminLogs />} />
+                    <Route path="mapping" element={<AdminMapping />} />
+                    <Route path="roles" element={<AdminRoles />} />
+                    <Route index element={<Navigate to="simulator" replace />} />
+                  </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </BrowserRouter>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </DateProvider>
           </MappingProvider>
         </SimulationProvider>
       </ThemeProvider>

@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import { useDate } from '../contexts/DateContext';
 
 interface AdrTableItem {
   roomSize: string;
@@ -33,13 +34,13 @@ export default function Home() {
   const { simulatedData, clearSimulation } = useSimulation();
   const { mappings, categories, loading: mappingLoading } = useMapping();
 
-  const [currentDate, setCurrentDate] = useState('2026-06-06');
+  const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
 
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${currentDate}`);
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
         
         const grid = json.gridData || [];
         const todayActual = json.today?.actual || 0;
@@ -75,7 +76,7 @@ export default function Home() {
         
         setData({
           success: true,
-          date: currentDate,
+          date: endDate,
           ytd: { actual: json.ytd?.actual || 0, ly_actual: json.ytd?.ly_actual || 0 },
           today: { actual: todayActual, ly_actual: todayLyActual },
           hq_today: hqToday,
@@ -89,7 +90,7 @@ export default function Home() {
         console.error('API Error:', err);
         setData({
           success: true,
-          date: currentDate,
+          date: endDate,
           ytd: { actual: 0, ly_actual: 0 },
           today: { actual: 0, ly_actual: 0 },
           hq_today: [],
@@ -105,7 +106,7 @@ export default function Home() {
     };
 
     fetchSummary();
-  }, [currentDate]);
+  }, [startDate, endDate]);
 
   // 시뮬레이션 데이터 덮어쓰기 로직
   let displayData = data;
@@ -134,7 +135,12 @@ export default function Home() {
   // 동적 매핑 합산 로직
   let dynamicHqToday = displayData?.hq_today || [];
   let dynamicAdr = displayData?.adr || 0;
-  let dynamicAvgGreenFee = displayData?.avg_green_fee || 0;
+  
+  // 골프 1인당 평균 그린피 산출 (그린피 항목 매출 ÷ 그린피 수량)
+  const greenFeeItem = displayData?.store_today?.find(s => s.shop_name === '그린피');
+  let dynamicAvgGreenFee = greenFeeItem && greenFeeItem.qty > 0 
+    ? Math.round(greenFeeItem.actual / greenFeeItem.qty) 
+    : 0;
 
   if (displayData && displayData.store_today && mappings.length > 0 && !simulatedData) {
     const hqMap: Record<string, { actual: number, qty: number }> = {};
@@ -154,13 +160,9 @@ export default function Home() {
 
     // [구조적 결함 수정] "리조트사업본부", "골프사업본부" 하드코딩 제거 및 키워드 매칭 도입
     const lodgingKey = Object.keys(hqMap).find(k => k.includes('리조트') || k.includes('숙박') || k.includes('콘도'));
-    const golfKey = Object.keys(hqMap).find(k => k.includes('골프'));
-
     const lodging = lodgingKey ? hqMap[lodgingKey] : { actual: 0, qty: 0 };
-    const golf = golfKey ? hqMap[golfKey] : { actual: 0, qty: 0 };
     
     dynamicAdr = lodging.qty > 0 ? Math.round(lodging.actual / lodging.qty) : 0;
-    dynamicAvgGreenFee = golf.qty > 0 ? Math.round(golf.actual / golf.qty) : 0;
   }
 
   // Aggregate ADR Table by Market Type and Room Size (for Home.tsx)
@@ -255,14 +257,62 @@ export default function Home() {
             <h1 className="text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
-          <div className="mt-4 md:mt-0 flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white focus-within:ring-2 focus-within:ring-white/50 transition-all">
-            <span className="mr-2 opacity-80">🗓️</span>
-            <input 
-              type="date" 
-              value={currentDate} 
-              onChange={(e) => setCurrentDate(e.target.value)}
-              className="bg-transparent border-none text-xl font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-            />
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Toggle Button for Range / Single */}
+            <div className="flex bg-black/30 p-1 rounded-xl backdrop-blur-sm border border-white/10">
+              <button
+                onClick={() => setIsRange(false)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  !isRange 
+                    ? 'bg-brand-mint text-white shadow-md' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                단일 조회
+              </button>
+              <button
+                onClick={() => setIsRange(true)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  isRange 
+                    ? 'bg-brand-mint text-white shadow-md' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                기간 조회
+              </button>
+            </div>
+
+            {/* Inputs */}
+            <div className="flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white border border-white/15 focus-within:ring-2 focus-within:ring-brand-mint/50 transition-all">
+              <span className="mr-2 opacity-80">🗓️</span>
+              {!isRange ? (
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setEndDate(e.target.value);
+                  }}
+                  className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+                  />
+                  <span className="text-white/50 font-bold">~</span>
+                  <input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -276,7 +326,7 @@ export default function Home() {
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform group-hover:scale-150" />
               <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-brand-mint" /> 오늘 매출 ({currentDate})
+                <CalendarDays className="w-5 h-5 text-brand-mint" /> 선택 기간 매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`})
               </h2>
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
                 {formatCurrency(displayData.today.actual)}

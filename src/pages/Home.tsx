@@ -5,6 +5,15 @@ import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
 import { secureFetcher } from '../lib/secureFetcher';
 
+interface AdrTableItem {
+  roomSize: string;
+  marketType: string;
+  channel: string;
+  roomsSold: number;
+  totalRevenue: number;
+  adr: number;
+}
+
 interface SummaryData {
   success: boolean;
   date: string;
@@ -15,6 +24,7 @@ interface SummaryData {
   adr: number;
   avg_green_fee: number;
   weekly_trend: { day: string; fullDate: string; this_week: number; last_week: number; }[];
+  adrTable?: AdrTableItem[];
 }
 
 export default function Home() {
@@ -72,7 +82,8 @@ export default function Home() {
           store_today: storeToday,
           adr: 0,
           avg_green_fee: 0,
-          weekly_trend: []
+          weekly_trend: [],
+          adrTable: json.adrTable || []
         });
       } catch (err) {
         console.error('API Error:', err);
@@ -85,7 +96,8 @@ export default function Home() {
           store_today: [],
           adr: 0,
           avg_green_fee: 0,
-          weekly_trend: []
+          weekly_trend: [],
+          adrTable: []
         });
       } finally {
         setLoading(false);
@@ -150,6 +162,37 @@ export default function Home() {
     dynamicAdr = lodging.qty > 0 ? Math.round(lodging.actual / lodging.qty) : 0;
     dynamicAvgGreenFee = golf.qty > 0 ? Math.round(golf.actual / golf.qty) : 0;
   }
+
+  // Aggregate ADR Table by Market Type and Room Size (for Home.tsx)
+  const marketTypeAdrData = (() => {
+    if (!displayData || !displayData.adrTable) return [];
+    
+    const groups: Record<string, { marketType: string; roomSize: string; totalRevenue: number; roomsSold: number }> = {};
+    
+    displayData.adrTable.forEach(item => {
+      const key = `${item.marketType}||${item.roomSize}`;
+      if (!groups[key]) {
+        groups[key] = {
+          marketType: item.marketType,
+          roomSize: item.roomSize,
+          totalRevenue: 0,
+          roomsSold: 0
+        };
+      }
+      groups[key].totalRevenue += item.totalRevenue;
+      groups[key].roomsSold += item.roomsSold;
+    });
+    
+    return Object.values(groups).map(g => ({
+      marketType: g.marketType,
+      roomSize: g.roomSize,
+      roomsSold: g.roomsSold,
+      adr: g.roomsSold > 0 ? Math.round(g.totalRevenue / g.roomsSold) : 0
+    })).sort((a, b) => {
+      if (a.marketType !== b.marketType) return a.marketType.localeCompare(b.marketType);
+      return a.roomSize.localeCompare(b.roomSize);
+    });
+  })();
 
   const getHqIcon = (hq: string) => {
     if (hq.includes('골프')) return '⛳';
@@ -282,6 +325,43 @@ export default function Home() {
                   <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(dynamicAvgGreenFee)}</div>
                   <div className="text-sm text-slate-400">당일 골프 매출 ÷ 내장객 수</div>
                 </div>
+              </div>
+            </div>
+
+            {/* Market Type ADR Table */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+              <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+                🏨 마켓타입별 객실 평균단가 (ADR)
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-4 px-6">마켓타입명</th>
+                      <th className="py-4 px-6">객실 평수</th>
+                      <th className="py-4 px-6 text-right">판매 객실수</th>
+                      <th className="py-4 px-6 text-right">평균 객단가 (ADR)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-sm">
+                    {marketTypeAdrData.length > 0 ? (
+                      marketTypeAdrData.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4 px-6 font-bold text-slate-700">{row.marketType}</td>
+                          <td className="py-4 px-6 text-slate-600">{row.roomSize}</td>
+                          <td className="py-4 px-6 text-right text-slate-500 font-medium">{row.roomsSold}실</td>
+                          <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-slate-400">
+                          해당 날짜의 객실 판매 데이터가 없습니다.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 

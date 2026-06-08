@@ -45,7 +45,7 @@ export default function Layout() {
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
     { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} />, roles: ['admin', 'executive', 'sales'] },
-    { name: '리조트사업본부', path: '#리조트사업본부', icon: <Hotel size={20} />, roles: ['admin', 'executive', 'resort'] },
+    { name: '리조트사업본부', path: '/resort-business', icon: <Hotel size={20} />, roles: ['admin', 'executive', 'resort'] },
     { name: '식음본부', path: '#식음본부', icon: <Coffee size={20} />, roles: ['admin', 'executive', 'fnb'] },
   ];
 

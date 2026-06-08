@@ -448,7 +448,7 @@ export default function Members() {
                               <span>{evt.item_name} ({evt.quantity}개)</span>
                               {evt.credit_amount !== null && (
                                 <span className="font-bold text-slate-800 text-xs">
-                                  {formatCurrency(evt.credit_amount || evt.total_amount)}
+                                  {formatCurrency(evt.credit_amount ?? evt.total_amount)}
                                 </span>
                               )}
                             </div>

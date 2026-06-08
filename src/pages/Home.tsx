@@ -35,6 +35,7 @@ export default function Home() {
   const { mappings, categories, loading: mappingLoading } = useMapping();
 
   const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
+  const [selectedRoomSize, setSelectedRoomSize] = useState<string>('');
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -134,7 +135,6 @@ export default function Home() {
 
   // 동적 매핑 합산 로직
   let dynamicHqToday = displayData?.hq_today || [];
-  let dynamicAdr = displayData?.adr || 0;
   
   // 골프 1인당 평균 그린피 산출 (그린피 항목 매출 ÷ 그린피 수량)
   const greenFeeItem = displayData?.store_today?.find(s => s.shop_name === '그린피');
@@ -157,12 +157,6 @@ export default function Home() {
     dynamicHqToday = Object.keys(hqMap)
       .filter(key => hqMap[key].actual > 0)
       .map(key => ({ hq: key, actual: hqMap[key].actual, qty: hqMap[key].qty }));
-
-    // [구조적 결함 수정] "리조트사업본부", "골프사업본부" 하드코딩 제거 및 키워드 매칭 도입
-    const lodgingKey = Object.keys(hqMap).find(k => k.includes('리조트') || k.includes('숙박') || k.includes('콘도'));
-    const lodging = lodgingKey ? hqMap[lodgingKey] : { actual: 0, qty: 0 };
-    
-    dynamicAdr = lodging.qty > 0 ? Math.round(lodging.actual / lodging.qty) : 0;
   }
 
   // Aggregate ADR Table by Market Type and Room Size (for Home.tsx)
@@ -194,6 +188,37 @@ export default function Home() {
       if (a.marketType !== b.marketType) return a.marketType.localeCompare(b.marketType);
       return a.roomSize.localeCompare(b.roomSize);
     });
+  })();
+
+  // Get unique room sizes for the key indicator dropdown selector
+  const availableRoomSizes = (() => {
+    if (!displayData || !displayData.adrTable) return [];
+    return Array.from(new Set(displayData.adrTable.map(item => item.roomSize))).sort();
+  })();
+
+  // Automatically default selectedRoomSize to first item if not set or invalid
+  useEffect(() => {
+    if (availableRoomSizes.length > 0) {
+      if (!selectedRoomSize || !availableRoomSizes.includes(selectedRoomSize)) {
+        setSelectedRoomSize(availableRoomSizes[0]);
+      }
+    } else {
+      setSelectedRoomSize('');
+    }
+  }, [availableRoomSizes, selectedRoomSize]);
+
+  // Calculate ADR for selected room size
+  const selectedSizeAdr = (() => {
+    if (!displayData || !displayData.adrTable || !selectedRoomSize) return 0;
+    let revenue = 0;
+    let qty = 0;
+    displayData.adrTable.forEach(item => {
+      if (item.roomSize === selectedRoomSize) {
+        revenue += item.totalRevenue;
+        qty += item.roomsSold;
+      }
+    });
+    return qty > 0 ? Math.round(revenue / qty) : 0;
   })();
 
   const getHqIcon = (hq: string) => {
@@ -365,15 +390,34 @@ export default function Home() {
                 <Coins className="w-5 h-5 text-brand-mint" /> 핵심 영업 지표 (1인당 / 객실당 단가)
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
-                  <div className="text-slate-500 font-bold mb-2">숙박 객실 평균 단가 (ADR)</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(dynamicAdr)}</div>
-                  <div className="text-sm text-slate-400">당일 숙박 매출 ÷ 판매된 총 객실 수</div>
+                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-slate-500 font-bold">객실 평형별 평균 단가 (ADR)</div>
+                      {availableRoomSizes.length > 0 && (
+                        <select
+                          value={selectedRoomSize}
+                          onChange={(e) => setSelectedRoomSize(e.target.value)}
+                          className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-mint/50"
+                        >
+                          {availableRoomSizes.map(size => (
+                            <option key={size} value={size}>{size}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                    <div className="text-4xl font-emphatic text-brand-mint mb-2">
+                      {selectedRoomSize ? formatCurrency(selectedSizeAdr) : '0원'}
+                    </div>
+                  </div>
+                  <div className="text-sm text-slate-400 mt-2">
+                    {selectedRoomSize ? `${selectedRoomSize} 매출액 ÷ 판매된 객실 수` : '객실 판매 데이터가 없습니다.'}
+                  </div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
                   <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
                   <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(dynamicAvgGreenFee)}</div>
-                  <div className="text-sm text-slate-400">당일 골프 매출 ÷ 내장객 수</div>
+                  <div className="text-sm text-slate-400">선택 기간 그린피 매출 ÷ 내장객 수</div>
                 </div>
               </div>
             </div>

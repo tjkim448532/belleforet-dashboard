@@ -27,6 +27,32 @@ export default function ResortBusiness() {
   const [loading, setLoading] = useState(true);
   const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
 
+  const [capacities, setCapacities] = useState<Record<string, number>>({
+    '16평': 70,
+    '35평': 50,
+    '51평': 30,
+    '펫룸 16평': 10,
+    '펫룸 35평': 10,
+    '펫룸 51평': 10
+  });
+
+  useEffect(() => {
+    const fetchCapacities = async () => {
+      try {
+        const { db } = await import('../lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const docRef = doc(db, 'roomCapacity', 'default');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setCapacities(docSnap.data() as Record<string, number>);
+        }
+      } catch (err) {
+        console.error('Error fetching capacities:', err);
+      }
+    };
+    fetchCapacities();
+  }, []);
+
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
@@ -159,6 +185,26 @@ export default function ResortBusiness() {
     return { revenue, roomsSold, adr };
   })();
 
+  const roomOccupancyData = (() => {
+    if (!data || !data.adrTable) return [];
+    const soldMap: Record<string, number> = {};
+    data.adrTable.forEach(item => {
+      const size = item.roomSize || '기타';
+      soldMap[size] = (soldMap[size] || 0) + item.roomsSold;
+    });
+
+    return Object.entries(capacities).map(([size, cap]) => {
+      const sold = soldMap[size] || 0;
+      const rate = cap > 0 ? Math.round((sold / cap) * 100) : 0;
+      return {
+        roomSize: size,
+        sold,
+        capacity: cap,
+        rate
+      };
+    });
+  })();
+
   if (loading || !data) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
@@ -282,6 +328,46 @@ export default function ResortBusiness() {
               {formatCurrency(lodgingStats.adr)}
             </div>
             <p className="text-xs text-slate-400 mt-2">선택 기간 총 객실 매출 ÷ 총 판매 객실 수</p>
+          </div>
+        </div>
+
+        {/* Room Occupancy Status Card */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+          <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+            🏨 평형별 객실 실시간 가동률 (Occupancy Status)
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
+            {roomOccupancyData.map((row) => (
+              <div key={row.roomSize} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 mb-3">{row.roomSize}</span>
+                <div className="relative w-20 h-20 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="#e2e8f0"
+                      strokeWidth="6"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="#10b981"
+                      strokeWidth="6"
+                      fill="transparent"
+                      strokeDasharray={2 * Math.PI * 34}
+                      strokeDashoffset={2 * Math.PI * 34 * (1 - Math.min(row.rate, 100) / 100)}
+                    />
+                  </svg>
+                  <span className="absolute text-base font-bold text-slate-800">{row.rate}%</span>
+                </div>
+                <span className="text-xs font-bold text-slate-500 mt-4">
+                  {row.sold}실 / {row.capacity}실
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 

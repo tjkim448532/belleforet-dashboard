@@ -1,12 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Copy, CheckCircle2, MessageSquare, Clock, Lock, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useDate } from '../contexts/DateContext';
 
 export default function ManagementSupport() {
   const { isAdmin } = useAuth();
   const [isUnlocked, setIsUnlocked] = useState(isAdmin);
   const [authPassword, setAuthPassword] = useState('');
-  
+  const { startDate } = useDate();
+  const [reportDate, setReportDate] = useState(startDate);
+
+  const [capacities, setCapacities] = useState<Record<string, number>>({
+    '16평': 70,
+    '35평': 50,
+    '51평': 30,
+    '펫룸 16평': 10,
+    '펫룸 35평': 10,
+    '펫룸 51평': 10
+  });
+
+  useEffect(() => {
+    const fetchCapacities = async () => {
+      try {
+        const { db } = await import('../lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const docRef = doc(db, 'roomCapacity', 'default');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setCapacities(docSnap.data() as Record<string, number>);
+        }
+      } catch (err) {
+        console.error('Error fetching capacities:', err);
+      }
+    };
+    fetchCapacities();
+  }, []);
+
+  const handleUpdateCapacity = async (key: string, value: number) => {
+    const updated = { ...capacities, [key]: value };
+    setCapacities(updated);
+    try {
+      const { db } = await import('../lib/firebase');
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'roomCapacity', 'default'), updated);
+    } catch (err) {
+      console.error('Error saving capacities:', err);
+      alert('객실 수용량 저장 실패: ' + err);
+    }
+  };
+
   const currentDate = '26년 06월 06일(토)'; // Using current date context
   const nextDate = '06/07(일)';
 
@@ -92,8 +134,7 @@ ${nextDate} 예약팀: 120팀
   const handleFetchReport = async () => {
     try {
       // API call to generate report from MariaDB
-      // Assuming today is 06-06, we fetch data for '2026-06-05'
-      const response = await fetch('https://belleforet-data.vercel.app/api/generate-report?date=2026-06-05');
+      const response = await fetch(`https://belleforet-data.vercel.app/api/generate-report?date=${reportDate}`);
       
       if (!response.ok) {
         const text = await response.text();
@@ -241,7 +282,7 @@ ${nextDate} 예약팀: 120팀
           <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             📡 발송 정보 세팅
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">수신자 번호 (여러 명 가능)</label>
               <textarea
@@ -252,6 +293,19 @@ ${nextDate} 예약팀: 120팀
               />
               <p className="text-xs font-bold text-brand-mint mt-2">
                 총 {receiverPhone.split(/[\n, ]+/).filter(p => p.replace(/[^0-9]/g, '').length >= 10).length}명의 유효한 수신자가 입력되었습니다.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">보고 대상 날짜 선택</label>
+              <input
+                type="date"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/50 font-bold text-center"
+                value={reportDate}
+                onChange={(e) => setReportDate(e.target.value)}
+              />
+              <p className="text-xs text-brand-mint font-bold mt-2 text-center">
+                이 날짜의 매출 데이터를 취합하여 보고서를 생성합니다.
               </p>
             </div>
             
@@ -335,6 +389,31 @@ ${nextDate} 예약팀: 120팀
             </div>
           </div>
         </div>
+
+        {/* Firestore Room Capacity Configurations Card */}
+        <div className="bg-white rounded-[32px] p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mt-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            🏨 평형별 객실 총 수용량(Inventory Capacity) 설정
+          </h2>
+          <p className="text-sm text-slate-500 mb-6 font-medium">
+            각 객실 평형별 실제 보유하고 있는 총 방 개수를 지정합니다. 이 수치는 리조트사업본부 탭에서 실시간 객실 가동률을 계산하는 데 사용됩니다.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            {Object.entries(capacities).map(([key, val]) => (
+              <div key={key} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                <span className="block text-xs font-bold text-slate-400 mb-2">{key}</span>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full text-center text-lg font-bold bg-white border border-slate-200 rounded-lg py-1 px-2 focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+                  value={val}
+                  onChange={(e) => handleUpdateCapacity(key, parseInt(e.target.value) || 0)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );

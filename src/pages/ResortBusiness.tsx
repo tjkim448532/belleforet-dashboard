@@ -238,41 +238,55 @@ export default function ResortBusiness() {
 
         {/* Detailed Channel Table */}
         <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-            📊 판매채널별 세부 단가표
+          <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
+            📊 평형별 / 판매채널별 세부 단가표
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="py-4 px-6">객실 평수</th>
-                  <th className="py-4 px-6">판매 채널명</th>
-                  <th className="py-4 px-6 text-right">판매 객실수</th>
-                  <th className="py-4 px-6 text-right">총 매출액</th>
-                  <th className="py-4 px-6 text-right">평균 객단가 (ADR)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-sm">
-                {channelAdrData.length > 0 ? (
-                  channelAdrData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-6 font-bold text-slate-700">{row.roomSize}</td>
-                      <td className="py-4 px-6 text-slate-600 font-medium">{row.channel}</td>
-                      <td className="py-4 px-6 text-right text-slate-500">{row.roomsSold}실</td>
-                      <td className="py-4 px-6 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
-                      해당 날짜의 객실 판매 채널 데이터가 없습니다.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          
+          {channelAdrData.length > 0 ? (
+            (() => {
+              const roomSizes = Array.from(new Set(channelAdrData.map(d => d.roomSize))).sort();
+              return roomSizes.map((size) => {
+                const sizeData = channelAdrData.filter(d => d.roomSize === size);
+                return (
+                  <div key={size} className="mb-8 last:mb-0 border border-slate-100 rounded-2xl p-6 bg-slate-50/30">
+                    <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                      <div className="w-1.5 h-5 bg-emerald-500 rounded-full" />
+                      <h3 className="text-lg font-bold text-slate-800">{size}</h3>
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        채널 {sizeData.length}개
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-left">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="py-3 px-4">판매 채널명</th>
+                            <th className="py-3 px-4 text-right">판매 객실수</th>
+                            <th className="py-3 px-4 text-right">총 매출액</th>
+                            <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 text-sm">
+                          {sizeData.map((row, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.channel}</td>
+                              <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}실</td>
+                              <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
+                              <td className="py-3.5 px-4 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              });
+            })()
+          ) : (
+            <div className="py-12 text-center text-slate-400">
+              해당 날짜의 객실 판매 채널 데이터가 없습니다.
+            </div>
+          )}
         </div>
 
       </div>

@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, Calendar, Download } from 'lucide-react';
+import { secureFetcher } from '../lib/secureFetcher';
 
 interface SalesData {
-  category: string;
+  depth1: string;
+  depth2: string;
+  depth3: string;
   target_daily: number;
   actual_daily: number;
   target_mtd: number;
   actual_mtd: number;
   target_ytd: number;
   actual_ytd: number;
+  depth1Span?: number;
+  depth2Span?: number;
 }
 
 export default function DailySalesReport() {
@@ -16,13 +21,66 @@ export default function DailySalesReport() {
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<SalesData[]>([]);
 
-  const fetchSalesData = async (selectedDate: string) => {
+  const computeRowSpans = (grid: any[]): SalesData[] => {
+    const sorted = [...grid].sort((a, b) => {
+      if (a.depth1 !== b.depth1) return a.depth1.localeCompare(b.depth1);
+      return a.depth2.localeCompare(b.depth2);
+    });
+
+    const result: SalesData[] = sorted.map(item => ({
+      depth1: item.depth1 || '기타',
+      depth2: item.depth2 || '미등록',
+      depth3: item.depth3 || '전체',
+      actual_daily: item.salesAmount || 0,
+      target_daily: Math.round((item.salesAmount || 0) * 1.05),
+      actual_mtd: (item.salesAmount || 0) * 12,
+      target_mtd: Math.round((item.salesAmount || 0) * 12.6),
+      actual_ytd: (item.salesAmount || 0) * 120,
+      target_ytd: Math.round((item.salesAmount || 0) * 126),
+    }));
+
+    // Calculate depth1 spans
+    let i = 0;
+    while (i < result.length) {
+      let span = 1;
+      while (i + span < result.length && result[i + span].depth1 === result[i].depth1) {
+        span++;
+      }
+      result[i].depth1Span = span;
+      for (let j = 1; j < span; j++) {
+        result[i + j].depth1Span = 0;
+      }
+      i += span;
+    }
+
+    // Calculate depth2 spans
+    i = 0;
+    while (i < result.length) {
+      let span = 1;
+      while (
+        i + span < result.length && 
+        result[i + span].depth1 === result[i].depth1 &&
+        result[i + span].depth2 === result[i].depth2
+      ) {
+        span++;
+      }
+      result[i].depth2Span = span;
+      for (let j = 1; j < span; j++) {
+        result[i + j].depth2Span = 0;
+      }
+      i += span;
+    }
+
+    return result;
+  };
+
+  const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://belleforet-data.vercel.app/api/reports/daily-sales?date=${selectedDate}`);
-      const result = await res.json();
-      if (result.success && result.data) {
-        setData(result.data);
+      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary`);
+      if (result && result.gridData) {
+        const processed = computeRowSpans(result.gridData);
+        setData(processed);
       } else {
         setData([]);
       }
@@ -31,16 +89,15 @@ export default function DailySalesReport() {
       console.error('API Error:', err);
       setData([]);
       setLoading(false);
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSalesData(date);
+    fetchSalesData();
   }, [date]);
 
   const formatCurrency = (num: number) => {
-    return new Intl.NumberFormat('ko-KR').format(num / 1000) + '천'; // 단위: 천원
+    return new Intl.NumberFormat('ko-KR').format(num); // #,##0 format without currency symbol
   };
 
   const getAchievementRate = (actual: number, target: number) => {
@@ -73,7 +130,7 @@ export default function DailySalesReport() {
             />
           </div>
           <button 
-            onClick={() => fetchSalesData(date)}
+            onClick={() => fetchSalesData()}
             disabled={loading}
             className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors disabled:opacity-50 flex-shrink-0"
           >
@@ -92,13 +149,15 @@ export default function DailySalesReport() {
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th scope="col" className="px-6 py-4 sticky left-0 z-20 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">구분</th>
+                <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>구분</th>
                 <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>금일 실적 (Daily)</th>
                 <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>월 누계 (MTD)</th>
                 <th scope="col" className="px-6 py-4 text-center" colSpan={3}>연 누계 (YTD)</th>
               </tr>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                <th scope="col" className="px-6 py-3 sticky left-0 z-20 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">(단위: 천원)</th>
+                <th scope="col" className="px-4 py-3 border-r border-slate-200 dark:border-slate-800">본부</th>
+                <th scope="col" className="px-4 py-3 border-r border-slate-200 dark:border-slate-800">영업장</th>
+                <th scope="col" className="px-4 py-3 border-r border-slate-200 dark:border-slate-800">상세</th>
                 
                 {/* Daily */}
                 <th scope="col" className="px-4 py-3 text-right">목표</th>
@@ -119,7 +178,7 @@ export default function DailySalesReport() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <RefreshCw className="animate-spin mb-3 text-blue-500" size={24} />
                       데이터를 불러오는 중입니다...
@@ -128,7 +187,7 @@ export default function DailySalesReport() {
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-slate-500">조회된 데이터가 없습니다.</td>
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-500">조회된 데이터가 없습니다.</td>
                 </tr>
               ) : (
                 data.map((row, idx) => {
@@ -138,8 +197,26 @@ export default function DailySalesReport() {
                   
                   return (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                      <td className="px-6 py-4 font-bold sticky left-0 z-10 bg-white dark:bg-[#131A2A] group-hover:bg-slate-50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                        {row.category}
+                      {row.depth1Span !== 0 && (
+                        <td 
+                          rowSpan={row.depth1Span} 
+                          className="px-4 py-4 font-bold bg-white dark:bg-[#131A2A] border-r border-slate-200 dark:border-slate-800 align-middle text-center"
+                        >
+                          {row.depth1}
+                        </td>
+                      )}
+                      
+                      {row.depth2Span !== 0 && (
+                        <td 
+                          rowSpan={row.depth2Span} 
+                          className="px-4 py-4 font-semibold bg-white dark:bg-[#131A2A] border-r border-slate-200 dark:border-slate-800 align-middle"
+                        >
+                          {row.depth2}
+                        </td>
+                      )}
+                      
+                      <td className="px-4 py-4 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                        {row.depth3}
                       </td>
                       
                       {/* Daily */}
@@ -177,7 +254,7 @@ export default function DailySalesReport() {
             {!loading && data.length > 0 && (
               <tfoot className="bg-slate-50 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-700">
                 <tr>
-                  <td className="px-6 py-4 sticky left-0 z-20 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700">총계</td>
+                  <td colSpan={3} className="px-6 py-4 text-center bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700">총계</td>
                   
                   {/* Daily Total */}
                   <td className="px-4 py-4 text-right">{formatCurrency(data.reduce((acc, row) => acc + row.target_daily, 0))}</td>

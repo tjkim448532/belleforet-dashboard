@@ -7,6 +7,9 @@ interface GolfSummary {
   reservedTeams: number;
   visitedTeams: number;
   visitedPlayers: number;
+  avgGreenFee: number;
+  memberAvgGreenFee: number;
+  nonMemberAvgGreenFee: number;
 }
 
 interface SummaryData {
@@ -206,7 +209,7 @@ export default function GolfBusiness() {
             📊 예약 이행 및 분석 지표
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
                 <div className="text-slate-500 font-bold mb-1 text-sm">예약 완료 팀수</div>
@@ -229,6 +232,38 @@ export default function GolfBusiness() {
                 <div className="text-3xl font-emphatic text-slate-800">{avgPlayersPerTeam}명</div>
               </div>
               <p className="text-xs text-slate-400 mt-4">실제 내장객 수 ÷ 실제 내장 팀수</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">1인당 평균 그린피</div>
+                <div className="text-3xl font-emphatic text-emerald-600">
+                  {data.golfSummary?.avgGreenFee ? formatCurrency(data.golfSummary.avgGreenFee) : '0원'}
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">선택 기간 그린피 총 매출 ÷ 내장객 수</p>
+            </div>
+            
+            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">회원 평균 그린피</div>
+                <div className="text-3xl font-emphatic text-slate-800">
+                  {data.golfSummary?.memberAvgGreenFee ? formatCurrency(data.golfSummary.memberAvgGreenFee) : '0원'}
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">회원 그린피 매출 ÷ 회원 내장객 수</p>
+            </div>
+            
+            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">비회원 평균 그린피</div>
+                <div className="text-3xl font-emphatic text-slate-800">
+                  {data.golfSummary?.nonMemberAvgGreenFee ? formatCurrency(data.golfSummary.nonMemberAvgGreenFee) : '0원'}
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">비회원 그린피 매출 ÷ 비회원 내장객 수</p>
             </div>
           </div>
         </div>

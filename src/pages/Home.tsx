@@ -30,6 +30,9 @@ interface SummaryData {
     reservedTeams: number;
     visitedTeams: number;
     visitedPlayers: number;
+    avgGreenFee: number;
+    memberAvgGreenFee: number;
+    nonMemberAvgGreenFee: number;
   };
 }
 
@@ -106,7 +109,7 @@ export default function Home() {
           avg_green_fee: 0,
           weekly_trend: [],
           adrTable: [],
-          golfSummary: { reservedTeams: 0, visitedTeams: 0, visitedPlayers: 0 }
+          golfSummary: { reservedTeams: 0, visitedTeams: 0, visitedPlayers: 0, avgGreenFee: 0, memberAvgGreenFee: 0, nonMemberAvgGreenFee: 0 }
         });
       } finally {
         setLoading(false);
@@ -426,24 +429,49 @@ export default function Home() {
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
                   <div>
-                    <div className="text-slate-500 font-bold mb-4">골프 예약 및 내장 팀수</div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="text-slate-500 font-bold mb-4">골프 예약 및 그린피 현황</div>
+                    
+                    {/* Teams row */}
+                    <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-100">
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
-                        <div className="text-3xl font-emphatic text-brand-mint">
+                        <div className="text-2xl font-emphatic text-brand-mint">
                           {displayData.golfSummary ? `${displayData.golfSummary.reservedTeams}팀` : '0팀'}
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">실제 내장 팀수</div>
-                        <div className="text-3xl font-emphatic text-brand-mint">
+                        <div className="text-2xl font-emphatic text-brand-mint">
                           {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
                         </div>
                       </div>
                     </div>
+
+                    {/* Green Fees section */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500 font-medium">1인당 평균 그린피</span>
+                        <span className="text-sm font-bold text-slate-800">
+                          {displayData.golfSummary ? formatCurrency(displayData.golfSummary.avgGreenFee) : '0원'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pl-2 border-l-2 border-slate-200">
+                        <span className="text-xs text-slate-400 font-medium">ㄴ 회원 평균가</span>
+                        <span className="text-xs font-semibold text-slate-600">
+                          {displayData.golfSummary ? formatCurrency(displayData.golfSummary.memberAvgGreenFee) : '0원'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pl-2 border-l-2 border-slate-200">
+                        <span className="text-xs text-slate-400 font-medium">ㄴ 비회원 평균가</span>
+                        <span className="text-xs font-semibold text-slate-600">
+                          {displayData.golfSummary ? formatCurrency(displayData.golfSummary.nonMemberAvgGreenFee) : '0원'}
+                        </span>
+                      </div>
+                    </div>
+
                   </div>
-                  <div className="text-sm text-slate-400 mt-4">
-                    선택 기간 골프-예약 및 골프-내장객 데이터 집계
+                  <div className="text-sm text-slate-400 mt-4 pt-2 border-t border-slate-50">
+                    선택 기간 골프 예약/방문 및 그린피 정산 데이터 집계
                   </div>
                 </div>
               </div>

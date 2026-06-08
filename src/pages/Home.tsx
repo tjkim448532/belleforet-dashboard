@@ -192,18 +192,19 @@ export default function Home() {
 
   // Get unique room sizes for the key indicator dropdown selector
   const availableRoomSizes = (() => {
-    if (!displayData || !displayData.adrTable) return [];
-    return Array.from(new Set(displayData.adrTable.map(item => item.roomSize))).sort();
+    const defaultSizes = ['16평', '35평', '51평', '펫룸 16평', '펫룸 35평', '펫룸 51평'];
+    if (!displayData || !displayData.adrTable) return defaultSizes;
+    const dbSizes = displayData.adrTable.map(item => item.roomSize);
+    return Array.from(new Set([...defaultSizes, ...dbSizes])).sort();
   })();
 
-  // Automatically default selectedRoomSize to first item if not set or invalid
+  // Automatically default selectedRoomSize to '16평' or first item if not set or invalid
   useEffect(() => {
     if (availableRoomSizes.length > 0) {
       if (!selectedRoomSize || !availableRoomSizes.includes(selectedRoomSize)) {
-        setSelectedRoomSize(availableRoomSizes[0]);
+        const defaultSize = availableRoomSizes.includes('16평') ? '16평' : availableRoomSizes[0];
+        setSelectedRoomSize(defaultSize);
       }
-    } else {
-      setSelectedRoomSize('');
     }
   }, [availableRoomSizes, selectedRoomSize]);
 
@@ -393,12 +394,12 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-slate-500 font-bold">객실 평형별 평균 단가 (ADR)</div>
+                      <div className="text-slate-500 font-bold">숙박 객실 평균 단가 (ADR)</div>
                       {availableRoomSizes.length > 0 && (
                         <select
                           value={selectedRoomSize}
                           onChange={(e) => setSelectedRoomSize(e.target.value)}
-                          className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-mint/50"
+                          className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-mint/50 cursor-pointer hover:border-slate-300 transition-colors"
                         >
                           {availableRoomSizes.map(size => (
                             <option key={size} value={size}>{size}</option>
@@ -411,7 +412,15 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="text-sm text-slate-400 mt-2">
-                    {selectedRoomSize ? `${selectedRoomSize} 매출액 ÷ 판매된 객실 수` : '객실 판매 데이터가 없습니다.'}
+                    {selectedRoomSize ? (
+                      selectedSizeAdr > 0 ? (
+                        `${selectedRoomSize} 매출액 ÷ 판매된 객실 수`
+                      ) : (
+                        `선택 기간 ${selectedRoomSize} 판매 내역이 없습니다.`
+                      )
+                    ) : (
+                      '객실 판매 데이터가 없습니다.'
+                    )}
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">

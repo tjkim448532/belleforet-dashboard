@@ -29,11 +29,11 @@ export default function Home() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary`);
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${currentDate}`);
         
         const grid = json.gridData || [];
-        const todayActual = grid.reduce((acc: number, item: any) => acc + item.salesAmount, 0);
-        const todayLyActual = todayActual * 0.92; // 8% growth estimation as mock
+        const todayActual = json.today?.actual || 0;
+        const todayLyActual = json.today?.ly_actual || 0;
         
         const storeToday = grid.map((item: any) => ({
           shop_name: item.depth2,
@@ -66,7 +66,7 @@ export default function Home() {
         setData({
           success: true,
           date: currentDate,
-          ytd: { actual: todayActual * 12.5, ly_actual: todayActual * 11.8 },
+          ytd: { actual: json.ytd?.actual || 0, ly_actual: json.ytd?.ly_actual || 0 },
           today: { actual: todayActual, ly_actual: todayLyActual },
           hq_today: hqToday,
           store_today: storeToday,
@@ -115,7 +115,8 @@ export default function Home() {
 
   // 모든 숫자 표기를 일정하게 (콤마 + 원) 통일
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('ko-KR').format(val) + '원';
+    const rounded = Math.round(val || 0);
+    return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
   };
 
   // 동적 매핑 합산 로직

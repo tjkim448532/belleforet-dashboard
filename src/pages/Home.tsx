@@ -26,6 +26,11 @@ interface SummaryData {
   avg_green_fee: number;
   weekly_trend: { day: string; fullDate: string; this_week: number; last_week: number; }[];
   adrTable?: AdrTableItem[];
+  golfSummary?: {
+    reservedTeams: number;
+    visitedTeams: number;
+    visitedPlayers: number;
+  };
 }
 
 export default function Home() {
@@ -85,7 +90,8 @@ export default function Home() {
           adr: 0,
           avg_green_fee: 0,
           weekly_trend: [],
-          adrTable: json.adrTable || []
+          adrTable: json.adrTable || [],
+          golfSummary: json.golfSummary
         });
       } catch (err) {
         console.error('API Error:', err);
@@ -99,7 +105,8 @@ export default function Home() {
           adr: 0,
           avg_green_fee: 0,
           weekly_trend: [],
-          adrTable: []
+          adrTable: [],
+          golfSummary: { reservedTeams: 0, visitedTeams: 0, visitedPlayers: 0 }
         });
       } finally {
         setLoading(false);
@@ -135,12 +142,6 @@ export default function Home() {
 
   // 동적 매핑 합산 로직
   let dynamicHqToday = displayData?.hq_today || [];
-  
-  // 골프 1인당 평균 그린피 산출 (그린피 항목 매출 ÷ 그린피 수량)
-  const greenFeeItem = displayData?.store_today?.find(s => s.shop_name === '그린피');
-  let dynamicAvgGreenFee = greenFeeItem && greenFeeItem.qty > 0 
-    ? Math.round(greenFeeItem.actual / greenFeeItem.qty) 
-    : 0;
 
   if (displayData && displayData.store_today && mappings.length > 0 && !simulatedData) {
     const hqMap: Record<string, { actual: number, qty: number }> = {};
@@ -423,10 +424,27 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100">
-                  <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(dynamicAvgGreenFee)}</div>
-                  <div className="text-sm text-slate-400">선택 기간 그린피 매출 ÷ 내장객 수</div>
+                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <div className="text-slate-500 font-bold mb-4">골프 예약 및 내장 팀수</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
+                        <div className="text-3xl font-emphatic text-brand-mint">
+                          {displayData.golfSummary ? `${displayData.golfSummary.reservedTeams}팀` : '0팀'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">실제 내장 팀수</div>
+                        <div className="text-3xl font-emphatic text-brand-mint">
+                          {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-slate-400 mt-4">
+                    선택 기간 골프-예약 및 골프-내장객 데이터 집계
+                  </div>
                 </div>
               </div>
             </div>

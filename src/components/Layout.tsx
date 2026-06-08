@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key 
+  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key, Flag 
 } from 'lucide-react';
 
 export default function Layout() {
@@ -44,6 +44,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
+    { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} />, roles: ['admin', 'executive', 'sales'] },
     { name: '리조트사업본부', path: '/resort-business', icon: <Hotel size={20} />, roles: ['admin', 'executive', 'resort'] },
     { name: '식음본부', path: '#식음본부', icon: <Coffee size={20} />, roles: ['admin', 'executive', 'fnb'] },

@@ -17,6 +17,7 @@ import AdminRoles from './pages/AdminRoles';
 
 import ManagementSupport from './pages/ManagementSupport';
 import ResortBusiness from './pages/ResortBusiness';
+import GolfBusiness from './pages/GolfBusiness';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -48,6 +49,7 @@ function App() {
                     <Route index element={<Home />} />
                     <Route path="management-support" element={<ManagementSupport />} />
                     <Route path="resort-business" element={<ResortBusiness />} />
+                    <Route path="golf-business" element={<GolfBusiness />} />
                   </Route>
 
                   {/* Admin Routes */}

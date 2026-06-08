@@ -1,0 +1,282 @@
+import { useState, useEffect } from 'react';
+import { Flag, Coins, Users } from 'lucide-react';
+import { secureFetcher } from '../lib/secureFetcher';
+import { useDate } from '../contexts/DateContext';
+
+interface GolfSummary {
+  reservedTeams: number;
+  visitedTeams: number;
+  visitedPlayers: number;
+}
+
+interface SummaryData {
+  success: boolean;
+  date: string;
+  ytd: { actual: number; ly_actual: number; };
+  today: { actual: number; ly_actual: number; };
+  hq_today: { hq: string; actual: number; qty: number }[];
+  gridData: {
+    depth1: string;
+    depth2: string;
+    depth3: string;
+    salesAmount: number;
+    quantity: number;
+  }[];
+  golfSummary: GolfSummary;
+}
+
+export default function GolfBusiness() {
+  const [data, setData] = useState<SummaryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      setLoading(true);
+      try {
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
+        setData(json);
+      } catch (err) {
+        console.error('API Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, [startDate, endDate]);
+
+  const formatCurrency = (val: number) => {
+    const rounded = Math.round(val || 0);
+    return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
+  };
+
+  const formatNumber = (val: number) => {
+    return new Intl.NumberFormat('ko-KR').format(val || 0);
+  };
+
+  // Extract golf-specific records
+  const golfDetails = data?.gridData?.filter(item => item.depth1 === '골프') || [];
+
+  // Calculate golf total revenue
+  const golfRevenue = golfDetails.reduce((acc, cur) => acc + cur.salesAmount, 0);
+
+  // Golf Reservation Summary Metrics
+  const reservedTeams = data?.golfSummary?.reservedTeams || 0;
+  const visitedTeams = data?.golfSummary?.visitedTeams || 0;
+  const visitedPlayers = data?.golfSummary?.visitedPlayers || 0;
+
+  const showUpRate = reservedTeams > 0 
+    ? ((visitedTeams / reservedTeams) * 100).toFixed(1) 
+    : '0.0';
+
+  const avgPlayersPerTeam = visitedTeams > 0 
+    ? (visitedPlayers / visitedTeams).toFixed(2) 
+    : '0.00';
+
+  if (loading || !data) {
+    return (
+      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="text-xl font-bold text-brand-mint animate-pulse">골프사업본부 데이터를 불러오는 중입니다...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
+      
+      {/* Decorative Header Background */}
+      <div className="w-full bg-gradient-to-r from-emerald-600 to-teal-500 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
+        <div className="absolute top-10 right-[15%] w-36 h-36 bg-white/10 rounded-full blur-2xl" />
+        <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
+      </div>
+
+      <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 relative z-10 pt-10">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+          <div className="text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-emphatic text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
+                BELLE FORET
+              </span>
+              <span className="font-emphatic text-2xl tracking-wide ml-1">RESORT</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
+            <p className="text-white/80 mt-1">골프 예약 현황 및 매장별 정산 실적 리포트입니다.</p>
+          </div>
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Toggle Button for Range / Single */}
+            <div className="flex bg-black/30 p-1 rounded-xl backdrop-blur-sm border border-white/10">
+              <button
+                onClick={() => setIsRange(false)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  !isRange 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                단일 조회
+              </button>
+              <button
+                onClick={() => setIsRange(true)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  isRange 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                기간 조회
+              </button>
+            </div>
+
+            {/* Inputs */}
+            <div className="flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white border border-white/15 focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
+              <span className="mr-2 opacity-80">🗓️</span>
+              {!isRange ? (
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setEndDate(e.target.value);
+                  }}
+                  className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+                  />
+                  <span className="text-white/50 font-bold">~</span>
+                  <input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Overview Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
+          {/* Golf Revenue */}
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+            <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
+              <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 총 매출
+            </h2>
+            <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
+              {formatCurrency(golfRevenue)}
+            </div>
+            <p className="text-xs text-slate-400 mt-2">정산 시트 기준 골프(그린피, 카트, 레스토랑 등) 총합</p>
+          </div>
+
+          {/* Visited Teams */}
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+            <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
+              <Flag className="w-5 h-5 text-emerald-500" /> 실제 내장 팀수
+            </h2>
+            <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
+              {visitedTeams}팀
+            </div>
+            <p className="text-xs text-slate-400 mt-2">골프-내장객 고유 예약번호 개수 (예약: {reservedTeams}팀)</p>
+          </div>
+
+          {/* Visited Players */}
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+            <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-500" /> 실제 총 내장객 수
+            </h2>
+            <div className="text-4xl font-emphatic text-emerald-600 tracking-tight">
+              {formatNumber(visitedPlayers)}명
+            </div>
+            <p className="text-xs text-slate-400 mt-2">실제 입장하여 라운딩을 진행한 플레이어 수</p>
+          </div>
+        </div>
+
+        {/* Detailed Booking Analysis */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+          <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+            📊 예약 이행 및 분석 지표
+          </h2>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">예약 완료 팀수</div>
+                <div className="text-3xl font-emphatic text-slate-800">{reservedTeams}팀</div>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">골프-예약 명단에 기록된 예약 수</p>
+            </div>
+            
+            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">실제 내장률 (Show-up)</div>
+                <div className="text-3xl font-emphatic text-emerald-600">{showUpRate}%</div>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">예약 팀수 대비 실제 내장 팀수 비율</p>
+            </div>
+            
+            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">팀당 평균 동반 인원</div>
+                <div className="text-3xl font-emphatic text-slate-800">{avgPlayersPerTeam}명</div>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">실제 내장객 수 ÷ 실제 내장 팀수</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Sales Table */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
+            ⛳ 골프 세부 항목별 정산 내역
+          </h2>
+          
+          {golfDetails.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <th className="py-4 px-6">항목명</th>
+                    <th className="py-4 px-6 text-right">수량</th>
+                    <th className="py-4 px-6 text-right">총 매출액</th>
+                    <th className="py-4 px-6 text-right">평균 단가</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 text-sm">
+                  {golfDetails.map((row, idx) => {
+                    const avgPrice = row.quantity > 0 ? Math.round(row.salesAmount / row.quantity) : 0;
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 px-6 font-bold text-slate-700">{row.depth2}</td>
+                        <td className="py-4 px-6 text-right text-slate-500 font-medium">
+                          {row.quantity > 0 ? `${formatNumber(row.quantity)}` : '-'}
+                        </td>
+                        <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.salesAmount)}</td>
+                        <td className="py-4 px-6 text-right text-slate-600 font-medium">
+                          {avgPrice > 0 ? formatCurrency(avgPrice) : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-12 text-center text-slate-400">
+              해당 날짜의 골프 정산 데이터가 없습니다.
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}

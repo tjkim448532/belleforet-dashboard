@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key, Flag 
+  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key, Flag, Database 
 } from 'lucide-react';
 
 export default function Layout() {
@@ -48,6 +48,7 @@ export default function Layout() {
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} />, roles: ['admin', 'executive', 'sales'] },
     { name: '식음본부', path: '#식음본부', icon: <Coffee size={20} />, roles: ['admin', 'executive', 'fnb'] },
+    { name: '데이터 연동 현황', path: '/etl-status', icon: <Database size={20} />, roles: ['admin', 'executive', 'management', 'resort', 'leisure'] },
   ];
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));

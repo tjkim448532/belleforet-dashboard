@@ -19,6 +19,7 @@ import ManagementSupport from './pages/ManagementSupport';
 import ResortBusiness from './pages/ResortBusiness';
 import GolfBusiness from './pages/GolfBusiness';
 import Members from './pages/Members';
+import { DataSyncStatus } from './pages/DataSyncStatus';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -52,6 +53,7 @@ function App() {
                     <Route path="resort-business" element={<ResortBusiness />} />
                     <Route path="golf-business" element={<GolfBusiness />} />
                     <Route path="members" element={<Members />} />
+                    <Route path="etl-status" element={<DataSyncStatus />} />
                   </Route>
 
                   {/* Admin Routes */}

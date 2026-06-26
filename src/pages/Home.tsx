@@ -5,6 +5,8 @@ import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface AdrTableItem {
   roomSize: string;
@@ -36,6 +38,13 @@ interface SummaryData {
   };
 }
 
+interface WeatherData {
+  tempMax?: number;
+  tempMin?: number;
+  precipitation?: number;
+  weatherDesc?: string;
+}
+
 export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +53,7 @@ export default function Home() {
 
   const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
   const [selectedRoomSize, setSelectedRoomSize] = useState<string>('');
+  const [weather, setWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -116,7 +126,23 @@ export default function Home() {
       }
     };
 
+    const fetchWeather = async () => {
+      try {
+        const docRef = doc(db, 'weather_daily', endDate);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setWeather(docSnap.data() as WeatherData);
+        } else {
+          setWeather(null);
+        }
+      } catch (err) {
+        console.error('Weather fetch error:', err);
+        setWeather(null);
+      }
+    };
+
     fetchSummary();
+    fetchWeather();
   }, [startDate, endDate]);
 
   // 시뮬레이션 데이터 덮어쓰기 로직
@@ -355,9 +381,22 @@ export default function Home() {
             {/* Today Sales */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform group-hover:scale-150" />
-              <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-brand-mint" /> 선택 기간 매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) <span className="text-xs text-slate-400 font-normal">(부가세 포함)</span>
-              </h2>
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-base font-bold text-slate-500 flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5 text-brand-mint" /> 
+                  선택 기간 매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
+                  <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
+                </h2>
+                {weather && startDate === endDate && (
+                  <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div className="font-bold text-brand-mint text-base flex items-center justify-end gap-1">
+                      {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
+                      {weather.weatherDesc}
+                    </div>
+                    <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                  </div>
+                )}
+              </div>
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
                 {formatCurrency(displayData.today.actual)}
               </div>

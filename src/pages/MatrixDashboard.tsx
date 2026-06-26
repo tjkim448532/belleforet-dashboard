@@ -23,7 +23,7 @@ const formatGrowth = (rate: number) => {
 };
 
 export default function MatrixDashboard() {
-  const { targetDate } = useDate();
+  const { startDate } = useDate();
   const [data, setData] = useState<MatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +31,7 @@ export default function MatrixDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://belleforet-data.vercel.app/api/dashboard/matrix?date=${targetDate}`);
+        const response = await fetch(`https://belleforet-data.vercel.app/api/dashboard/matrix?date=${startDate}`);
         const result = await response.json();
         if (result.success) {
           setData(result.data);
@@ -43,7 +43,7 @@ export default function MatrixDashboard() {
       }
     };
     fetchData();
-  }, [targetDate]);
+  }, [startDate]);
 
   // Group data by category
   const groupedData = data.reduce((acc, row) => {
@@ -106,7 +106,7 @@ export default function MatrixDashboard() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">경영 매트릭스 (기존 대시보드 검증용)</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
-          기준일자: {targetDate}
+          기준일자: {startDate}
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export default function MatrixDashboard() {
 
               return (
                 <React.Fragment key={category}>
-                  {rows.map((row, idx) => (
+                  {rows.map((row) => (
                     <tr key={row.shop_name} className="hover:bg-slate-50 transition-colors">
                       <td className="p-2 border-r border-slate-200 text-left pl-4 text-slate-600">{row.shop_name}</td>
                       <td className="p-2 font-medium">{formatCurrency(row.today.actual)}</td>

@@ -21,6 +21,7 @@ import GolfBusiness from './pages/GolfBusiness';
 import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 import MatrixDashboard from './pages/MatrixDashboard';
+import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -54,6 +55,7 @@ function App() {
                     <Route path="resort-business" element={<ResortBusiness />} />
                     <Route path="golf-business" element={<GolfBusiness />} />
                     <Route path="matrix" element={<MatrixDashboard />} />
+                    <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="members" element={<Members />} />
                     <Route path="etl-status" element={<DataSyncStatus />} />
                   </Route>

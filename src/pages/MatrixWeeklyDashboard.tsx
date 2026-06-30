@@ -22,7 +22,7 @@ const formatGrowth = (rate: number) => {
   return rate > 0 ? `+${formatted}` : formatted;
 };
 
-export default function MatrixDashboard() {
+export default function MatrixWeeklyDashboard() {
   const { startDate } = useDate();
   const [data, setData] = useState<MatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ export default function MatrixDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://belleforet-data.vercel.app/api/dashboard/matrix?date=${startDate}`);
+        const response = await fetch(`https://belleforet-data.vercel.app/api/dashboard/matrix-weekly?date=${startDate}`);
         const result = await response.json();
         if (result.success) {
           setData(result.data);
@@ -108,7 +108,7 @@ export default function MatrixDashboard() {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">경영 매트릭스 (기존 대시보드 검증용)</h1>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">경영 매트릭스 (동일 주/요일 비교)</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
           기준일자: {startDate}
         </div>

@@ -38,18 +38,18 @@ export default function MatrixDashboard() {
           const netData = result.data.map((r: MatrixRow) => ({
             ...r,
             today: {
-              actual: r.today.actual / 1.1,
-              lastYear: r.today.lastYear / 1.1,
+              actual: r.today.actual,
+              lastYear: r.today.lastYear,
               growthRate: r.today.growthRate
             },
             mtd: {
-              actual: r.mtd.actual / 1.1,
-              lastYear: r.mtd.lastYear / 1.1,
+              actual: r.mtd.actual,
+              lastYear: r.mtd.lastYear,
               growthRate: r.mtd.growthRate
             },
             ytd: {
-              actual: r.ytd.actual / 1.1,
-              lastYear: r.ytd.lastYear / 1.1,
+              actual: r.ytd.actual,
+              lastYear: r.ytd.lastYear,
               growthRate: r.ytd.growthRate
             }
           }));

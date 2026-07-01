@@ -35,25 +35,7 @@ export default function MatrixWeeklyDashboard() {
         const response = await fetch(`https://belleforet-data.vercel.app/api/dashboard/matrix-weekly?date=${startDate}`);
         const result = await response.json();
         if (result.success) {
-          const netData = result.data.map((r: MatrixRow) => ({
-            ...r,
-            today: {
-              actual: r.today.actual / 1.1,
-              lastYear: r.today.lastYear / 1.1,
-              growthRate: r.today.growthRate
-            },
-            mtd: {
-              actual: r.mtd.actual / 1.1,
-              lastYear: r.mtd.lastYear / 1.1,
-              growthRate: r.mtd.growthRate
-            },
-            ytd: {
-              actual: r.ytd.actual / 1.1,
-              lastYear: r.ytd.lastYear / 1.1,
-              growthRate: r.ytd.growthRate
-            }
-          }));
-          setData(netData);
+          setData(result.data);
         }
       } catch (error) {
         console.error('Error fetching matrix data:', error);

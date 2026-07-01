@@ -282,7 +282,7 @@ export default function MatrixDashboard() {
               <div>
                 <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">금일 실적</p>
                 <p className="font-bold text-xl">{formatCurrency(checkedTotal.today.actual)} <span className="text-sm font-normal opacity-80">원</span></p>
-                <p className={`text-sm mt-1 font-medium ${checkedTotal.today.growthRate >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
+                <p className={`text-sm mt-1 font-medium ${getGrowth(checkedTotal.today.actual, checkedTotal.today.lastYear) >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
                   전년비: {formatGrowth(getGrowth(checkedTotal.today.actual, checkedTotal.today.lastYear))}%
                 </p>
               </div>
@@ -290,7 +290,7 @@ export default function MatrixDashboard() {
               <div>
                 <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">월누계 실적</p>
                 <p className="font-bold text-xl">{formatCurrency(checkedTotal.mtd.actual)} <span className="text-sm font-normal opacity-80">원</span></p>
-                <p className={`text-sm mt-1 font-medium ${checkedTotal.mtd.growthRate >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
+                <p className={`text-sm mt-1 font-medium ${getGrowth(checkedTotal.mtd.actual, checkedTotal.mtd.lastYear) >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
                   전년비: {formatGrowth(getGrowth(checkedTotal.mtd.actual, checkedTotal.mtd.lastYear))}%
                 </p>
               </div>
@@ -298,7 +298,7 @@ export default function MatrixDashboard() {
               <div>
                 <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">연누계 실적</p>
                 <p className="font-bold text-xl">{formatCurrency(checkedTotal.ytd.actual)} <span className="text-sm font-normal opacity-80">원</span></p>
-                <p className={`text-sm mt-1 font-medium ${checkedTotal.ytd.growthRate >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
+                <p className={`text-sm mt-1 font-medium ${getGrowth(checkedTotal.ytd.actual, checkedTotal.ytd.lastYear) >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
                   전년비: {formatGrowth(getGrowth(checkedTotal.ytd.actual, checkedTotal.ytd.lastYear))}%
                 </p>
               </div>

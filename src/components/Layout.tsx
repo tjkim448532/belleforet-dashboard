@@ -45,6 +45,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
+    { name: '경영진 대시보드 (V3)', path: '/executive', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '경영 매트릭스', path: '/matrix', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '경영 매트릭스 (요일 비교)', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },

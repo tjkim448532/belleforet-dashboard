@@ -48,6 +48,7 @@ interface WeatherData {
 export default function Home() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const { simulatedData, clearSimulation } = useSimulation();
   const { mappings, categories, loading: mappingLoading } = useMapping();
 
@@ -58,6 +59,7 @@ export default function Home() {
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
+      setApiError(null);
       try {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
         
@@ -108,6 +110,7 @@ export default function Home() {
         });
       } catch (err) {
         console.error('API Error:', err);
+        setApiError('데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.');
         setData({
           success: true,
           date: endDate,
@@ -301,6 +304,13 @@ export default function Home() {
           </div>
         )}
 
+        {apiError && (
+          <div className="bg-orange-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
+            <AlertCircle size={24} />
+            <span className="font-bold text-lg">{apiError}</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
@@ -379,11 +389,11 @@ export default function Home() {
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Today Sales */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform group-hover:scale-150" />
-              <div className="flex justify-between items-start mb-6">
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
+              <div className="flex justify-between items-start mb-6 relative z-10">
                 <h2 className="text-base font-bold text-slate-500 flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5 text-brand-mint" /> 
+                  <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
                   선택 기간 매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
                   <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
                 </h2>
@@ -408,15 +418,15 @@ export default function Home() {
             </div>
 
             {/* YTD Sales */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform group-hover:scale-125" />
-              <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-brand-mint" /> 올해 누적 매출 (YTD)
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
+              <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
+                <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD)
               </h2>
-              <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight">
+              <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight relative z-10">
                 {formatCurrency(displayData.ytd.actual)}
               </div>
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold relative z-10 ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                 <span>전년 동기 대비</span>
                 <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
                 <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
@@ -429,12 +439,12 @@ export default function Home() {
           <div className="lg:col-span-8 flex flex-col gap-6">
             
             {/* Key Indicators */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
               <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-brand-mint" /> 핵심 영업 지표 (1인당 / 객실당 단가)
+                <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12 transition-transform duration-300" /> 핵심 영업 지표 (1인당 / 객실당 단가)
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-slate-500 font-bold">숙박 객실 평균 단가 (ADR)</div>
@@ -466,7 +476,7 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
                     <div className="text-slate-500 font-bold mb-4">골프 예약 및 그린피 현황</div>
                     

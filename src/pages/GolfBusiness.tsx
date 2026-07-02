@@ -25,14 +25,34 @@ export default function GolfBusiness() {
       try {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
         const payload = json.data || json;
-        if (payload && payload.todaySummary) {
+        if (payload) {
+          const grid = payload.gridData || [];
+          const hqGroups: Record<string, { actual: number, qty: number }> = {};
+          grid.forEach((item: any) => {
+            const cat = item.depth1 || '기타';
+            if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
+            hqGroups[cat].actual += item.salesAmount;
+            hqGroups[cat].qty += item.quantity;
+          });
+
+          const ts = payload.todaySummary || {
+            golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
+            room_revenue: hqGroups['숙박']?.actual || 0,
+            food_revenue: hqGroups['식음']?.actual || 0,
+            beverage_revenue: 0,
+            other_revenue: hqGroups['기타']?.actual || 0,
+            rooms_sold: hqGroups['숙박']?.qty || 0,
+            golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
+            golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
+            total_gross: payload.today?.actual || 0
+          };
           setData({
             success: json.status === 'success',
             date: payload.targetDate || endDate,
             todaySummary: {
-              golf_revenue: payload.todaySummary.golf_revenue || 0,
-              golf_visited_teams: payload.todaySummary.golf_visited_teams || 0,
-              golf_visited_players: payload.todaySummary.golf_visited_players || 0,
+              golf_revenue: ts.golf_revenue || 0,
+              golf_visited_teams: ts.golf_visited_teams || 0,
+              golf_visited_players: ts.golf_visited_players || 0,
             },
             golfFacilityBreakdown: payload.golfFacilityBreakdown || []
           });

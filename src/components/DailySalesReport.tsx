@@ -80,9 +80,28 @@ export default function DailySalesReport() {
     try {
       const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${date}&endDate=${date}`);
       const payload = result.data || result;
-      if (payload && payload.todaySummary) {
+      if (payload) {
         setAccumulated(payload.accumulatedRevenue || null);
-        const ts = payload.todaySummary;
+        const grid = payload.gridData || [];
+        const hqGroups: Record<string, { actual: number, qty: number }> = {};
+        grid.forEach((item: any) => {
+          const cat = item.depth1 || '기타';
+          if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
+          hqGroups[cat].actual += item.salesAmount;
+          hqGroups[cat].qty += item.quantity;
+        });
+
+        const ts = payload.todaySummary || {
+          golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
+          room_revenue: hqGroups['숙박']?.actual || 0,
+          food_revenue: hqGroups['식음']?.actual || 0,
+          beverage_revenue: 0,
+          other_revenue: hqGroups['기타']?.actual || 0,
+          rooms_sold: hqGroups['숙박']?.qty || 0,
+          golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
+          golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
+          total_gross: payload.today?.actual || 0
+        };
         const fakeGrid = [
           { depth1: '골프', depth2: '골프사업부', depth3: '전체', salesAmount: ts.golf_revenue },
           { depth1: '숙박', depth2: '객실', depth3: '전체', salesAmount: ts.room_revenue },

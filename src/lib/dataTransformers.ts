@@ -110,7 +110,8 @@ export const transformHomeData = (core: CoreDataState) => {
       avgGreenFee: 0,
       memberAvgGreenFee: 0,
       nonMemberAvgGreenFee: 0
-    }
+    },
+    qa_metrics: c.qa_metrics || null
   };
 };
 

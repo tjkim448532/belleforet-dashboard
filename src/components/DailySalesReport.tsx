@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Calendar, Download } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
-
+import { useDate } from '../contexts/DateContext';
+import GlobalDatePicker from './GlobalDatePicker';
 interface SalesData {
   depth1: string;
   depth2: string;
@@ -17,7 +18,7 @@ interface SalesData {
 }
 
 export default function DailySalesReport() {
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const { startDate: date } = useDate();
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<SalesData[]>([]);
   const [accumulated, setAccumulated] = useState<{ mtd_room_revenue: number; ytd_total_gross: number } | null>(null);
@@ -78,36 +79,19 @@ export default function DailySalesReport() {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${date}&endDate=${date}`);
+      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/reports/daily-sales?date=${date}`);
       const payload = result.data || result;
-      if (payload) {
-        setAccumulated(payload.accumulatedRevenue || null);
-        const grid = payload.gridData || [];
-        const hqGroups: Record<string, { actual: number, qty: number }> = {};
-        grid.forEach((item: any) => {
-          const cat = item.depth1 || '기타';
-          if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
-          hqGroups[cat].actual += item.salesAmount;
-          hqGroups[cat].qty += item.quantity;
-        });
-
-        const ts = payload.todaySummary || {
-          golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
-          room_revenue: hqGroups['숙박']?.actual || 0,
-          food_revenue: hqGroups['식음']?.actual || 0,
-          beverage_revenue: 0,
-          other_revenue: hqGroups['기타']?.actual || 0,
-          rooms_sold: hqGroups['숙박']?.qty || 0,
-          golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
-          golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
-          total_gross: payload.today?.actual || 0
-        };
-        const fakeGrid = [
-          { depth1: '골프', depth2: '골프사업부', depth3: '전체', salesAmount: ts.golf_revenue },
-          { depth1: '숙박', depth2: '객실', depth3: '전체', salesAmount: ts.room_revenue },
-          { depth1: '식음', depth2: '식음료', depth3: '전체', salesAmount: ts.food_revenue + ts.beverage_revenue },
-          { depth1: '기타/레저', depth2: '기타', depth3: '전체', salesAmount: ts.other_revenue },
-        ];
+      if (payload && Array.isArray(payload)) {
+        setAccumulated(null);
+        
+        const fakeGrid = payload.map((item: any) => ({
+          depth1: item.category === 'ROOM' ? '숙박' : item.category === 'GOLF' ? '골프' : item.category === 'FNB' ? '식음' : '레저/기타',
+          depth2: item.category,
+          depth3: '전체',
+          salesAmount: item.actual_daily || 0,
+          targetAmount: item.target_daily || 0
+        }));
+        
         const processed = computeRowSpans(fakeGrid);
         setData(processed);
       } else {
@@ -152,13 +136,7 @@ export default function DailySalesReport() {
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-auto">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="date" 
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full sm:w-40 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none text-sm font-medium transition-all"
-            />
+            <GlobalDatePicker allowRange={false} />
           </div>
           <button 
             onClick={() => fetchSalesData()}

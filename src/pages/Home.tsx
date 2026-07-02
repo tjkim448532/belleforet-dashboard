@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
 import { useDate } from '../contexts/DateContext';
@@ -9,35 +10,7 @@ import { transformHomeData } from '../lib/dataTransformers';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-interface AdrTableItem {
-  roomSize: string;
-  marketType: string;
-  channel: string;
-  roomsSold: number;
-  totalRevenue: number;
-  adr: number;
-}
 
-interface SummaryData {
-  success: boolean;
-  date: string;
-  ytd: { actual: number; ly_actual: number; };
-  today: { actual: number; ly_actual: number; };
-  hq_today: { hq: string; actual: number; qty: number }[];
-  store_today?: { shop_name: string; actual: number; qty: number }[];
-  adr: number;
-  avg_green_fee: number;
-  weekly_trend: { day: string; fullDate: string; this_week: number; last_week: number; }[];
-  adrTable?: AdrTableItem[];
-  golfSummary?: {
-    reservedTeams: number;
-    visitedTeams: number;
-    visitedPlayers: number;
-    avgGreenFee: number;
-    memberAvgGreenFee: number;
-    nonMemberAvgGreenFee: number;
-  };
-}
 
 interface WeatherData {
   tempMax?: number;
@@ -49,7 +22,7 @@ interface WeatherData {
 export default function Home() {
   const { simulatedData, clearSimulation } = useSimulation();
   const { mappings, categories, loading: mappingLoading } = useMapping();
-  const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
+  const { startDate, endDate } = useDate();
   const coreData = useCoreData();
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
@@ -198,61 +171,7 @@ export default function Home() {
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Toggle Button for Range / Single */}
-            <div className="flex bg-black/30 p-1 rounded-xl backdrop-blur-sm border border-white/10">
-              <button
-                onClick={() => setIsRange(false)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  !isRange 
-                    ? 'bg-brand-mint text-white shadow-md' 
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                단일 조회
-              </button>
-              <button
-                onClick={() => setIsRange(true)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  isRange 
-                    ? 'bg-brand-mint text-white shadow-md' 
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                기간 조회
-              </button>
-            </div>
-
-            {/* Inputs */}
-            <div className="flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white border border-white/15 focus-within:ring-2 focus-within:ring-brand-mint/50 transition-all">
-              <span className="mr-2 opacity-80">🗓️</span>
-              {!isRange ? (
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setEndDate(e.target.value);
-                  }}
-                  className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-                />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="date" 
-                    value={startDate} 
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
-                  />
-                  <span className="text-white/50 font-bold">~</span>
-                  <input 
-                    type="date" 
-                    value={endDate} 
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
-                  />
-                </div>
-              )}
-            </div>
+            <GlobalDatePicker allowRange={true} />
           </div>
         </div>
 

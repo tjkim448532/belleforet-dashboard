@@ -22,7 +22,7 @@ export default function MatrixWeeklyDashboard() {
 
   const data = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return [];
-    return transformMatrixData(coreData, true); // true for isWeeklyMode
+    return transformMatrixData(coreData);
   }, [coreData]);
 
   // Group data by category

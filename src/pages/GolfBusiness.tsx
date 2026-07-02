@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import { Flag, Coins, Users } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
@@ -17,44 +18,26 @@ interface SummaryData {
 export default function GolfBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
+  const { startDate, endDate } = useDate();
 
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/reports/home-summary?date=${endDate}`);
         const payload = json.data || json;
-        if (payload) {
-          const grid = payload.gridData || [];
-          const hqGroups: Record<string, { actual: number, qty: number }> = {};
-          grid.forEach((item: any) => {
-            const cat = item.depth1 || '기타';
-            if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
-            hqGroups[cat].actual += item.salesAmount;
-            hqGroups[cat].qty += item.quantity;
-          });
-
-          const ts = payload.todaySummary || {
-            golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
-            room_revenue: hqGroups['숙박']?.actual || 0,
-            food_revenue: hqGroups['식음']?.actual || 0,
-            beverage_revenue: 0,
-            other_revenue: hqGroups['기타']?.actual || 0,
-            rooms_sold: hqGroups['숙박']?.qty || 0,
-            golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
-            golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
-            total_gross: payload.today?.actual || 0
-          };
+        if (payload && payload.breakdown) {
+          const bd = payload.breakdown;
+          const golf_revenue = bd['GOLF']?.total_amount || 0;
           setData({
-            success: json.status === 'success',
-            date: payload.targetDate || endDate,
+            success: json.success || true,
+            date: payload.date || endDate,
             todaySummary: {
-              golf_revenue: ts.golf_revenue || 0,
-              golf_visited_teams: ts.golf_visited_teams || 0,
-              golf_visited_players: ts.golf_visited_players || 0,
+              golf_revenue: golf_revenue,
+              golf_visited_teams: 0,
+              golf_visited_players: 0,
             },
-            golfFacilityBreakdown: payload.golfFacilityBreakdown || []
+            golfFacilityBreakdown: bd['GOLF']?.shops?.map((s:any) => ({ facility_name: s.shop_name, revenue: s.amount })) || []
           });
         }
       } catch (err) {
@@ -122,61 +105,7 @@ export default function GolfBusiness() {
             <p className="text-white/80 mt-1">골프 예약 현황 및 매장별 정산 실적 리포트입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Toggle Button for Range / Single */}
-            <div className="flex bg-black/30 p-1 rounded-xl backdrop-blur-sm border border-white/10">
-              <button
-                onClick={() => setIsRange(false)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  !isRange 
-                    ? 'bg-emerald-600 text-white shadow-md' 
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                단일 조회
-              </button>
-              <button
-                onClick={() => setIsRange(true)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  isRange 
-                    ? 'bg-emerald-600 text-white shadow-md' 
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                기간 조회
-              </button>
-            </div>
-
-            {/* Inputs */}
-            <div className="flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white border border-white/15 focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
-              <span className="mr-2 opacity-80">🗓️</span>
-              {!isRange ? (
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setEndDate(e.target.value);
-                  }}
-                  className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-                />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="date" 
-                    value={startDate} 
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
-                  />
-                  <span className="text-white/50 font-bold">~</span>
-                  <input 
-                    type="date" 
-                    value={endDate} 
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
-                  />
-                </div>
-              )}
-            </div>
+            <GlobalDatePicker allowRange={true} />
           </div>
         </div>
 

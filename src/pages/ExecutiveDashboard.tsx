@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformExecutiveData } from '../lib/dataTransformers';
 
 export default function ExecutiveDashboard() {
-  const [targetDate, setTargetDate] = useState('2026-06-23');
   const coreData = useCoreData();
 
   const transformed = useMemo(() => {
@@ -90,35 +90,32 @@ export default function ExecutiveDashboard() {
     <div className="p-6 lg:p-10 space-y-6 bg-slate-900 min-h-[calc(100vh-64px)] lg:min-h-screen text-slate-100">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold font-emphatic tracking-wide text-white">경영진 대시보드 (V3)</h2>
-        <input 
-          type="date" 
-          value={targetDate} 
-          onChange={(e) => setTargetDate(e.target.value)}
-          className="glass-card px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 bg-slate-800 text-slate-100 border border-slate-700"
-        />
+        <div className="flex bg-slate-800 rounded-xl p-2 border border-slate-700">
+          <GlobalDatePicker allowRange={false} />
+        </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-6 border border-slate-700">
           <p className="text-sm text-slate-400 font-medium mb-1">총매출 (Total Revenue)</p>
-          <h3 className="text-2xl font-bold text-slate-100">{formatKRW(kpiData?.total_revenue_today)} 원</h3>
-          <p className={`text-xs mt-2 font-medium ${kpiData?.dod_growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-            {kpiData?.dod_growth >= 0 ? '▲' : '▼'} {Math.abs(kpiData?.dod_growth || 0).toFixed(1)}% (전일 대비)
+          <h3 className="text-2xl font-bold text-slate-100">{formatKRW(kpiData?.total_revenue_today || 0)} 원</h3>
+          <p className={`text-xs mt-2 font-medium ${(kpiData?.dod_growth || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {(kpiData?.dod_growth || 0) >= 0 ? '▲' : '▼'} {Math.abs(kpiData?.dod_growth || 0).toFixed(1)}% (전일 대비)
           </p>
         </div>
         
         <div className="glass-card p-6 border border-slate-700">
           <p className="text-sm text-slate-400 font-medium mb-1">객실 판매 (Rooms Sold)</p>
-          <h3 className="text-2xl font-bold text-slate-100">{formatKRW(kpiData?.rooms_sold)} Room</h3>
+          <h3 className="text-2xl font-bold text-slate-100">{formatKRW(kpiData?.rooms_sold || 0)} Room</h3>
           <p className="text-xs mt-2 text-sky-400 font-medium">객실 가동률(Occ) 핵심 지표</p>
         </div>
 
         <div className="glass-card p-6 border border-slate-700">
           <p className="text-sm text-slate-400 font-medium mb-1">골프 내장객 (Golf Players)</p>
-          <h3 className="text-2xl font-bold text-slate-100">{formatKRW(kpiData?.golf_visited_players)} 명</h3>
+          <h3 className="text-2xl font-bold text-slate-100">{formatKRW(kpiData?.golf_visited_players || 0)} 명</h3>
           <p className="text-xs mt-2 text-sky-400 font-medium">
-            ({formatKRW(kpiData?.golf_visited_teams)} 팀 방문)
+            ({formatKRW(kpiData?.golf_visited_teams || 0)} 팀 방문)
           </p>
         </div>
 

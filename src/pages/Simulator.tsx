@@ -59,13 +59,13 @@ export default function Simulator() {
       try {
         // [12차 패치] 날짜 파라미터를 API에 전달하여 해당 날짜의 POS/예약 결제 내역을 필터링합니다.
         const res = await fetch(`https://belleforet-data.vercel.app/api/reports/recent-transactions?date=${selectedDate}`);
-        const data = await res.json();
-        if (data.success && data.transactions) {
-          setTransactions(data.transactions);
-          setDbGrandTotal(data.dbGrandTotal || 0);
+        const result = await res.json();
+        if (result.success && result.data && result.data.transactions) {
+          setTransactions(result.data.transactions);
+          setDbGrandTotal(result.data.metadata?.grandTotal || 0);
           
           const initialAssignments: Record<string, string> = {};
-          data.transactions.forEach((t: Transaction) => {
+          result.data.transactions.forEach((t: Transaction) => {
             const fullCategory = getCategoryForStore(t.description);
             if (fullCategory !== '미분류') {
               initialAssignments[t.id] = fullCategory;
@@ -73,7 +73,7 @@ export default function Simulator() {
           });
           setAssignments(initialAssignments);
         } else {
-          console.error("API error:", data.error);
+          console.error("API error:", result.error || "Invalid response format");
         }
       } catch (err) {
         console.error("Fetch error:", err);

@@ -46,16 +46,15 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       const targetDate = endDate; // Use endDate as targetDate for queries
 
       try {
-        const [coreRes, summaryRes, matrixRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v3/dashboard/core?targetDate=${targetDate}`),
-          secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${targetDate}`),
-          secureFetcher(`${API_BASE}/api/dashboard/matrix?date=${targetDate}`)
+        const [homeSummaryRes, dailySalesRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/reports/home-summary?date=${targetDate}`),
+          secureFetcher(`${API_BASE}/api/reports/daily-sales?date=${targetDate}`)
         ]);
 
         setState({
-          core: coreRes.data || coreRes,
-          summary: summaryRes.data || summaryRes,
-          matrix: matrixRes.data || matrixRes,
+          core: homeSummaryRes.data || homeSummaryRes,
+          summary: dailySalesRes.data || dailySalesRes,
+          matrix: null, // matrix API is removed in V3, we will derive from home-summary
           isLoading: false,
           error: null
         });

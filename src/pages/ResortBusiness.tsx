@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CalendarDays, Hotel, Coins } from 'lucide-react';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 
@@ -10,14 +11,14 @@ interface SummaryData {
   today: { actual: number; ly_actual: number; };
   hq_today: { hq: string; actual: number; qty: number }[];
   store_today?: { shop_name: string; actual: number; qty: number }[];
-  roomTypeBreakdown?: { room_type: string; rooms_sold: number }[];
+  roomTypeBreakdown?: { room_type: string; rooms_sold: number; room_revenue: number; total_capacity: number }[];
   channelBreakdown?: { channel_name: string; rooms_sold: number; room_revenue: number }[];
 }
 
 export default function ResortBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
+  const { startDate, endDate } = useDate();
 
 
 
@@ -25,44 +26,23 @@ export default function ResortBusiness() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
-        
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${endDate}`);
         const payload = json.data || json;
         if (!payload) throw new Error("Invalid payload");
         
-        const grid = payload.gridData || [];
-        const hqGroups: Record<string, { actual: number, qty: number }> = {};
-        grid.forEach((item: any) => {
-          const cat = item.depth1 || '기타';
-          if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
-          hqGroups[cat].actual += item.salesAmount;
-          hqGroups[cat].qty += item.quantity;
-        });
-
-        const ts = payload.todaySummary || {
-          golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
-          room_revenue: hqGroups['숙박']?.actual || 0,
-          food_revenue: hqGroups['식음']?.actual || 0,
-          beverage_revenue: 0,
-          other_revenue: hqGroups['기타']?.actual || 0,
-          rooms_sold: hqGroups['숙박']?.qty || 0,
-          golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
-          golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
-          total_gross: payload.today?.actual || 0
-        };
+        const getGridAmount = (depth1: string) => payload.gridData?.find((g:any) => g.depth1 === depth1)?.salesAmount || 0;
+        const getGridQty = (depth1: string, depth2: string) => payload.gridData?.find((g:any) => g.depth1 === depth1 && g.depth2 === depth2)?.quantity || 0;
         
         const hqToday = [
-          { hq: '골프', actual: ts.golf_revenue, qty: ts.golf_visited_teams || 0 },
-          { hq: '숙박', actual: ts.room_revenue, qty: ts.rooms_sold || 0 },
-          { hq: '식음', actual: ts.food_revenue + ts.beverage_revenue, qty: 0 },
-          { hq: '레저/기타', actual: ts.other_revenue, qty: 0 }
+          { hq: '골프', actual: getGridAmount('레저'), qty: getGridQty('레저', '골프장') },
+          { hq: '숙박', actual: getGridAmount('숙박'), qty: getGridQty('숙박', '객실') }
         ].filter(h => h.actual > 0 || h.qty > 0);
         
         setData({
-          success: json.status === 'success',
-          date: payload.targetDate || endDate,
-          ytd: { actual: 0, ly_actual: 0 },
-          today: { actual: ts.total_gross, ly_actual: 0 },
+          success: json.success || true,
+          date: payload.date || endDate,
+          ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
+          today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
           hq_today: hqToday,
           store_today: [],
           roomTypeBreakdown: payload.roomTypeBreakdown || [],
@@ -102,27 +82,22 @@ export default function ResortBusiness() {
     return { revenue, roomsSold, adr };
   })();
 
-  const capacities: Record<string, number> = {
-    '16평': 69,
-    '35평': 105,
-    '51평': 38,
-    '반려견 16평': 6,
-    '반려견 35평': 1,
-    '반려견 51평': 1
-  };
-
   const roomOccupancyData = (() => {
     if (!data || !data.roomTypeBreakdown) return [];
     return data.roomTypeBreakdown.map(item => {
       const size = item.room_type;
-      const sold = item.rooms_sold;
-      const cap = capacities[size] || 0;
+      const sold = item.rooms_sold || 0;
+      const cap = item.total_capacity || 0;
       const rate = cap > 0 ? Math.round((sold / cap) * 100) : 0;
+      const revenue = item.room_revenue || 0;
+      const adr = sold > 0 ? Math.round(revenue / sold) : 0;
       return {
         roomSize: size,
         sold,
         capacity: cap,
-        rate
+        rate,
+        revenue,
+        adr
       };
     });
   })();
@@ -169,61 +144,7 @@ export default function ResortBusiness() {
             <p className="text-white/80 mt-1">객실 판매 채널별 세부 객단가 및 정산 실적 리포트입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Toggle Button for Range / Single */}
-            <div className="flex bg-black/30 p-1 rounded-xl backdrop-blur-sm border border-white/10">
-              <button
-                onClick={() => setIsRange(false)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  !isRange 
-                    ? 'bg-emerald-600 text-white shadow-md' 
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                단일 조회
-              </button>
-              <button
-                onClick={() => setIsRange(true)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  isRange 
-                    ? 'bg-emerald-600 text-white shadow-md' 
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                기간 조회
-              </button>
-            </div>
-
-            {/* Inputs */}
-            <div className="flex items-center bg-black/20 px-4 py-2 rounded-2xl backdrop-blur-sm text-white border border-white/15 focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
-              <span className="mr-2 opacity-80">🗓️</span>
-              {!isRange ? (
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setEndDate(e.target.value);
-                  }}
-                  className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-                />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="date" 
-                    value={startDate} 
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
-                  />
-                  <span className="text-white/50 font-bold">~</span>
-                  <input 
-                    type="date" 
-                    value={endDate} 
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
-                  />
-                </div>
-              )}
-            </div>
+            <GlobalDatePicker allowRange={true} />
           </div>
         </div>
 
@@ -280,7 +201,11 @@ export default function ResortBusiness() {
                     </svg>
                     <span className="absolute text-base font-bold text-slate-800">{row.rate}%</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-500 mt-4">{row.sold}실 / {row.capacity}실</span>
+                  <div className="flex flex-col items-center mt-4 space-y-1">
+                    <span className="text-xs font-bold text-slate-500">{row.sold}실 / {row.capacity}실</span>
+                    <span className="text-[10px] text-slate-400">매출: {formatCurrency(row.revenue)}</span>
+                    <span className="text-[10px] text-emerald-500 font-bold">ADR: {formatCurrency(row.adr)}</span>
+                  </div>
                 </div>
               ))}
             </div>

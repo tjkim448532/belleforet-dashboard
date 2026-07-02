@@ -24,20 +24,19 @@ export default function GolfBusiness() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/reports/home-summary?date=${endDate}`);
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${endDate}`);
         const payload = json.data || json;
-        if (payload && payload.breakdown) {
-          const bd = payload.breakdown;
-          const golf_revenue = bd['GOLF']?.total_amount || 0;
+        if (payload) {
+          const golf_revenue = payload.gridData?.find((g:any) => g.depth1 === '레저')?.salesAmount || 0;
           setData({
             success: json.success || true,
             date: payload.date || endDate,
             todaySummary: {
               golf_revenue: golf_revenue,
-              golf_visited_teams: 0,
-              golf_visited_players: 0,
+              golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
+              golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
             },
-            golfFacilityBreakdown: bd['GOLF']?.shops?.map((s:any) => ({ facility_name: s.shop_name, revenue: s.amount })) || []
+            golfFacilityBreakdown: payload.golfFacilityBreakdown || []
           });
         }
       } catch (err) {

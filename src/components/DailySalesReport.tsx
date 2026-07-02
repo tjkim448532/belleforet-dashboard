@@ -79,20 +79,13 @@ export default function DailySalesReport() {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/reports/daily-sales?date=${date}`);
+      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${date}`);
       const payload = result.data || result;
-      if (payload && Array.isArray(payload)) {
+      if (payload && payload.gridData) {
         setAccumulated(null);
         
-        const fakeGrid = payload.map((item: any) => ({
-          depth1: item.category === 'ROOM' ? '숙박' : item.category === 'GOLF' ? '골프' : item.category === 'FNB' ? '식음' : '레저/기타',
-          depth2: item.category,
-          depth3: '전체',
-          salesAmount: item.actual_daily || 0,
-          targetAmount: item.target_daily || 0
-        }));
-        
-        const processed = computeRowSpans(fakeGrid);
+        // gridData already matches the structure: depth1, depth2, depth3, salesAmount
+        const processed = computeRowSpans(payload.gridData);
         setData(processed);
       } else {
         setData([]);

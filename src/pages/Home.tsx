@@ -489,7 +489,7 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: number) => formatCurrency(Number(value))}
+                      formatter={(value: any) => formatCurrency(Number(value))}
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
                     />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" />

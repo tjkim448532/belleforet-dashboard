@@ -4,7 +4,7 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
   const user = auth.currentUser;
   const token = user 
     ? await user.getIdToken(true) 
-    : (sessionStorage.getItem('token') || 'mock_super_admin_token');
+    : sessionStorage.getItem('token') || '';
 
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');

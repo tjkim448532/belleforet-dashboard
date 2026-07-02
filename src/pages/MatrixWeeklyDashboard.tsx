@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
-import { useCoreData } from '../contexts/CoreDataContext';
-import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
+import { secureFetcher } from '../lib/secureFetcher';
+
+export interface MatrixRow {
+  category: string;
+  shop_name: string;
+  today: { actual: number; lastYear: number; growthRate: number };
+  mtd: { actual: number; lastYear: number; growthRate: number };
+  ytd: { actual: number; lastYear: number; growthRate: number };
+}
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -17,13 +24,31 @@ const formatGrowth = (rate: number) => {
 
 export default function MatrixWeeklyDashboard() {
   const { startDate } = useDate();
-  const coreData = useCoreData();
+  const [data, setData] = useState<MatrixRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
 
-  const data = React.useMemo(() => {
-    if (coreData.isLoading || coreData.error) return [];
-    return transformMatrixData(coreData);
-  }, [coreData]);
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await secureFetcher(`https://belleforet-data.vercel.app/api/dashboard/matrix-weekly?date=${startDate}`);
+        const result = response.data || response;
+        if (Array.isArray(result)) {
+           setData(result);
+        } else if (result && Array.isArray(result.data)) {
+           setData(result.data);
+        } else {
+           setData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching matrix data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [startDate]);
 
   // Group data by category
   const groupedData = data.reduce((acc, row) => {
@@ -80,7 +105,7 @@ export default function MatrixWeeklyDashboard() {
   const checkedRowsList = data.filter(r => checkedShops.includes(r.shop_name));
   const checkedTotal = calculateSubtotal(checkedRowsList);
 
-  if (coreData.isLoading) {
+  if (loading) {
     return <div className="p-6 text-slate-500">데이터를 불러오는 중입니다...</div>;
   }
 

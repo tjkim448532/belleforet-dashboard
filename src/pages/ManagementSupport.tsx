@@ -148,6 +148,7 @@ ${nextDate} 예약팀: 120팀
       } else {
         alert('❌ 데이터 불러오기 실패: ' + result.error);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       alert(`❌ 데이터 불러오기 중 오류가 발생했습니다.\n\n상세내용: ${err.message}`);
@@ -198,6 +199,7 @@ ${nextDate} 예약팀: 120팀
         alert('✅ 매일 정기구독(자동 발송)이 파이어베이스에 성공적으로 등록되었습니다!');
       } else {
         // Immediate Send
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payload: any = {
           to: phones.join(','),
           text: message
@@ -224,6 +226,7 @@ ${nextDate} 예약팀: 120팀
           alert(`❌ 문자 발송 실패: ${result.error || '알 수 없는 오류'}`);
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Action Error:', err);
       alert(`❌ 서버와 통신하는 중 오류가 발생했습니다.\n\n상세내용: ${err.message}`);

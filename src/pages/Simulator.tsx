@@ -34,7 +34,7 @@ interface Transaction {
 
 export default function Simulator() {
   const { setSimulatedData, clearSimulation } = useSimulation();
-  const { getCategoryForStore, mappings, categories, loading: mappingLoading, addCategory, deleteCategory } = useMapping();
+  const { getCategoryForStore, categories, loading: mappingLoading, addCategory, deleteCategory } = useMapping();
   const navigate = useNavigate();
   
   const [activeHq, setActiveHq] = useState<string | null>(null);
@@ -62,7 +62,16 @@ export default function Simulator() {
         const data = await res.json();
         if (data.success && data.transactions) {
           setTransactions(data.transactions);
-          setDbGrandTotal(data.dbGrandTotal || 0); // [13차 패치] API에서 가져온 DB 진짜 총액 저장
+          setDbGrandTotal(data.dbGrandTotal || 0);
+          
+          const initialAssignments: Record<string, string> = {};
+          data.transactions.forEach((t: Transaction) => {
+            const fullCategory = getCategoryForStore(t.description);
+            if (fullCategory !== '미분류') {
+              initialAssignments[t.id] = fullCategory;
+            }
+          });
+          setAssignments(initialAssignments);
         } else {
           console.error("API error:", data.error);
         }
@@ -73,29 +82,8 @@ export default function Simulator() {
       }
     };
     fetchRealData();
-  }, [selectedDate]);
+  }, [selectedDate, getCategoryForStore]);
 
-  // 매핑 정보를 기반으로 초기 본부 자동 지정
-  useEffect(() => {
-    if (transactions.length > 0 && mappings.length > 0) {
-      setAssignments(prev => {
-        const newAssignments = { ...prev };
-        let updated = false;
-
-        transactions.forEach(t => {
-          if (!newAssignments[t.id]) {
-            const fullCategory = getCategoryForStore(t.description);
-            if (fullCategory !== '미분류') {
-              newAssignments[t.id] = fullCategory;
-              updated = true;
-            }
-          }
-        });
-
-        return updated ? newAssignments : prev;
-      });
-    }
-  }, [transactions, mappings, getCategoryForStore]);
 
   const handleRowClick = (id: string) => {
     if (!activeHq) {
@@ -130,7 +118,7 @@ export default function Simulator() {
     });
 
     return { hqTotals: totals, totalSales: sum };
-  }, [assignments, transactions]);
+  }, [assignments, transactions, categories]);
 
   const handleApply = () => {
     setSimulatedData({ hqTotals, totalSales });

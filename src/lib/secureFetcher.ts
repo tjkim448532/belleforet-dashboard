@@ -2,13 +2,9 @@ import { auth } from './firebase';
 
 export const secureFetcher = async (url: string, options: RequestInit = {}) => {
   const user = auth.currentUser;
-  let token = '';
-  
-  if (user) {
-    token = await user.getIdToken(true);
-  } else {
-    token = sessionStorage.getItem('token') || 'mock_super_admin_token';
-  }
+  const token = user 
+    ? await user.getIdToken(true) 
+    : (sessionStorage.getItem('token') || 'mock_super_admin_token');
 
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');
@@ -21,7 +17,7 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const error: any = new Error(errorData.error || 'API 요청 중 오류가 발생했습니다.');
+    const error = new Error(errorData.error || 'API 요청 중 오류가 발생했습니다.') as Error & { status?: number };
     error.status = response.status;
     throw error;
   }

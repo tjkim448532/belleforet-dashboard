@@ -20,6 +20,7 @@ export default function DailySalesReport() {
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<SalesData[]>([]);
+  const [accumulated, setAccumulated] = useState<{ mtd_room_revenue: number; ytd_total_gross: number } | null>(null);
 
   const computeRowSpans = (grid: any[]): SalesData[] => {
     const sorted = [...grid].sort((a, b) => {
@@ -77,17 +78,28 @@ export default function DailySalesReport() {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary`);
-      if (result && result.gridData) {
-        const processed = computeRowSpans(result.gridData);
+      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${date}&endDate=${date}`);
+      const payload = result.data;
+      if (payload && payload.todaySummary) {
+        setAccumulated(payload.accumulatedRevenue || null);
+        const ts = payload.todaySummary;
+        const fakeGrid = [
+          { depth1: '골프', depth2: '골프사업부', depth3: '전체', salesAmount: ts.golf_revenue },
+          { depth1: '숙박', depth2: '객실', depth3: '전체', salesAmount: ts.room_revenue },
+          { depth1: '식음', depth2: '식음료', depth3: '전체', salesAmount: ts.food_revenue + ts.beverage_revenue },
+          { depth1: '기타/레저', depth2: '기타', depth3: '전체', salesAmount: ts.other_revenue },
+        ];
+        const processed = computeRowSpans(fakeGrid);
         setData(processed);
       } else {
         setData([]);
+        setAccumulated(null);
       }
       setLoading(false);
     } catch (err) {
       console.error('API Error:', err);
       setData([]);
+      setAccumulated(null);
       setLoading(false);
     }
   };
@@ -142,6 +154,24 @@ export default function DailySalesReport() {
           </button>
         </div>
       </div>
+
+      {/* 누적 실적 요약 (MTD/YTD) */}
+      {accumulated && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-[#131A2A] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2">이번 달 누적 객실 매출 (MTD)</h3>
+            <div className="text-3xl font-emphatic text-emerald-600">
+              {formatCurrency(accumulated.mtd_room_revenue)}원
+            </div>
+          </div>
+          <div className="bg-white dark:bg-[#131A2A] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2">올해 누적 총매출 (YTD)</h3>
+            <div className="text-3xl font-emphatic text-blue-600">
+              {formatCurrency(accumulated.ytd_total_gross)}원
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 매트릭스 테이블 */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131A2A] shadow-sm overflow-hidden">

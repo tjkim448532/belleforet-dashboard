@@ -8,7 +8,7 @@ export default function ExecutiveDashboard() {
   const [loading, setLoading] = useState(true);
 
   // Vercel Backend URL
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
   useEffect(() => {
     async function fetchData() {

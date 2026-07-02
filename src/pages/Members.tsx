@@ -59,11 +59,17 @@ export default function Members() {
   const [formPhone, setFormPhone] = useState('');
   const [formType, setFormType] = useState<'골프회원' | '콘도회원' | '일반회원' | 'VIP'>('일반회원');
 
-  // Sync date ranges from global context
-  useEffect(() => {
+  const [prevStartDate, setPrevStartDate] = useState(startDate);
+  const [prevEndDate, setPrevEndDate] = useState(endDate);
+
+  if (startDate !== prevStartDate) {
+    setPrevStartDate(startDate);
     setLocalStartDate(startDate);
+  }
+  if (endDate !== prevEndDate) {
+    setPrevEndDate(endDate);
     setLocalEndDate(endDate);
-  }, [startDate, endDate]);
+  }
 
   // Firestore Real-time listener for members
   useEffect(() => {
@@ -519,7 +525,7 @@ export default function Members() {
                 <label className="block text-xs font-bold text-slate-600 mb-1.5">회원구분</label>
                 <select 
                   value={formType}
-                  onChange={(e) => setFormType(e.target.value as any)}
+                  onChange={(e) => setFormType(e.target.value as '골프회원' | '콘도회원' | '일반회원' | 'VIP')}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
                 >
                   <option value="일반회원">일반회원</option>
@@ -589,7 +595,7 @@ export default function Members() {
                 <label className="block text-xs font-bold text-slate-600 mb-1.5">회원구분</label>
                 <select 
                   value={formType}
-                  onChange={(e) => setFormType(e.target.value as any)}
+                  onChange={(e) => setFormType(e.target.value as '골프회원' | '콘도회원' | '일반회원' | 'VIP')}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
                 >
                   <option value="일반회원">일반회원</option>

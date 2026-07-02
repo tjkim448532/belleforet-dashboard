@@ -40,7 +40,7 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const snapshot = await getDocs(mappingRef);
 
       if (snapshot.empty) {
-        console.log("No mappings found in Firestore. Initializing default mappings...");
+        // Initialize default mappings
         // Initialize default mappings
         const newMappings: StoreMapping[] = [];
         for (const defaultMap of defaultMappings) {
@@ -99,7 +99,7 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         );
 
         if (missingMappings.length > 0) {
-          console.log(`[Auto-Sync] Adding ${missingMappings.length} missing default mappings to Firestore...`);
+          // Add missing default mappings to Firestore
           for (const missing of missingMappings) {
             const newDocRef = doc(mappingRef);
             const newMapping = { ...missing, id: newDocRef.id };

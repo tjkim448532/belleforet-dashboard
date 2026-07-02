@@ -19,10 +19,6 @@ export default function AdminRoles() {
   const [importing, setImporting] = useState(false);
   const [sheetUrl, setSheetUrl] = useState('');
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
-
   const fetchRoles = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'userRoles'));
@@ -38,6 +34,10 @@ export default function AdminRoles() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
 
   const handleAddOrUpdateRole = async (e: React.FormEvent) => {
     e.preventDefault();

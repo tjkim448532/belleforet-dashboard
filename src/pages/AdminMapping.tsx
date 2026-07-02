@@ -22,7 +22,8 @@ export default function AdminMapping() {
     try {
       setSavingId(id);
       await updateMapping(id, newCategory);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       alert("매핑 업데이트 중 오류가 발생했습니다.");
     } finally {
       setSavingId(null);
@@ -40,7 +41,8 @@ export default function AdminMapping() {
       setIsAddingCategory(true);
       await addCategory(trimmed);
       setNewCategoryName('');
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       alert("본부 추가 중 오류가 발생했습니다.");
     } finally {
       setIsAddingCategory(false);
@@ -51,7 +53,8 @@ export default function AdminMapping() {
     if (window.confirm(`'${name}' 본부를 정말 삭제하시겠습니까?\n이 본부에 속했던 매장들은 '미분류'로 변경됩니다.`)) {
       try {
         await deleteCategory(name);
-      } catch (err) {
+      } catch (error) {
+        console.error(error);
         alert("본부 삭제 중 오류가 발생했습니다.");
       }
     }

@@ -53,7 +53,7 @@ export default function Home() {
   const { mappings, categories, loading: mappingLoading } = useMapping();
 
   const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
-  const [selectedRoomSize, setSelectedRoomSize] = useState<string>('');
+
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
@@ -63,50 +63,47 @@ export default function Home() {
       try {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
         
-        const grid = json.gridData || [];
-        const todayActual = json.today?.actual || 0;
-        const todayLyActual = json.today?.ly_actual || 0;
+        const payload = json.data;
+        if (!payload || !payload.todaySummary) throw new Error("Invalid payload");
         
-        const storeToday = grid.map((item: any) => ({
-          shop_name: item.depth2,
-          actual: item.salesAmount,
-          qty: item.quantity
-        }));
+        const ts = payload.todaySummary;
         
-        const hqGroups: Record<string, { actual: number, qty: number }> = {
-          '골프': { actual: 0, qty: 0 },
-          '숙박': { actual: 0, qty: 0 },
-          '레저': { actual: 0, qty: 0 },
-          '식음': { actual: 0, qty: 0 }
-        };
-        
-        grid.forEach((item: any) => {
-          const cat = item.depth1 || '기타';
-          if (!hqGroups[cat]) {
-            hqGroups[cat] = { actual: 0, qty: 0 };
-          }
-          hqGroups[cat].actual += item.salesAmount;
-          hqGroups[cat].qty += item.quantity;
+        const hqToday = [
+          { hq: '골프', actual: ts.golf_revenue, qty: ts.golf_visited_teams || 0 },
+          { hq: '숙박', actual: ts.room_revenue, qty: ts.rooms_sold || 0 },
+          { hq: '식음', actual: ts.food_revenue + ts.beverage_revenue, qty: 0 },
+          { hq: '레저/기타', actual: ts.other_revenue, qty: 0 }
+        ].filter(h => h.actual > 0 || h.qty > 0);
+
+        const weeklyTrend = (payload.weeklyTrend || []).map((wt: { date: string, total_gross: number }) => {
+          const dateObj = new Date(wt.date);
+          const dayName = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
+          return {
+            day: dayName,
+            fullDate: wt.date,
+            this_week: wt.total_gross,
+            last_week: 0
+          };
         });
-        
-        const hqToday = Object.keys(hqGroups).map(key => ({
-          hq: key,
-          actual: hqGroups[key].actual,
-          qty: hqGroups[key].qty
-        }));
-        
+
         setData({
-          success: true,
-          date: endDate,
-          ytd: { actual: json.ytd?.actual || 0, ly_actual: json.ytd?.ly_actual || 0 },
-          today: { actual: todayActual, ly_actual: todayLyActual },
+          success: json.status === 'success',
+          date: payload.targetDate || endDate,
+          ytd: { actual: 0, ly_actual: 0 },
+          today: { actual: ts.total_gross, ly_actual: 0 },
           hq_today: hqToday,
-          store_today: storeToday,
-          adr: 0,
-          avg_green_fee: 0,
-          weekly_trend: [],
-          adrTable: json.adrTable || [],
-          golfSummary: json.golfSummary
+          store_today: [],
+          adr: ts.rooms_sold > 0 ? Math.round(ts.room_revenue / ts.rooms_sold) : 0,
+          avg_green_fee: ts.golf_visited_players > 0 ? Math.round(ts.golf_revenue / ts.golf_visited_players) : 0,
+          weekly_trend: weeklyTrend,
+          golfSummary: {
+            reservedTeams: 0,
+            visitedTeams: ts.golf_visited_teams || 0,
+            visitedPlayers: ts.golf_visited_players || 0,
+            avgGreenFee: ts.golf_visited_players > 0 ? Math.round(ts.golf_revenue / ts.golf_visited_players) : 0,
+            memberAvgGreenFee: 0,
+            nonMemberAvgGreenFee: 0
+          }
         });
       } catch (err) {
         console.error('API Error:', err);
@@ -121,7 +118,6 @@ export default function Home() {
           adr: 0,
           avg_green_fee: 0,
           weekly_trend: [],
-          adrTable: [],
           golfSummary: { reservedTeams: 0, visitedTeams: 0, visitedPlayers: 0, avgGreenFee: 0, memberAvgGreenFee: 0, nonMemberAvgGreenFee: 0 }
         });
       } finally {
@@ -192,68 +188,7 @@ export default function Home() {
       .map(key => ({ hq: key, actual: hqMap[key].actual, qty: hqMap[key].qty }));
   }
 
-  // Aggregate ADR Table by Market Type and Room Size (for Home.tsx)
-  const marketTypeAdrData = (() => {
-    if (!displayData || !displayData.adrTable) return [];
-    
-    const groups: Record<string, { marketType: string; roomSize: string; totalRevenue: number; roomsSold: number }> = {};
-    
-    displayData.adrTable.forEach(item => {
-      const key = `${item.marketType}||${item.roomSize}`;
-      if (!groups[key]) {
-        groups[key] = {
-          marketType: item.marketType,
-          roomSize: item.roomSize,
-          totalRevenue: 0,
-          roomsSold: 0
-        };
-      }
-      groups[key].totalRevenue += item.totalRevenue;
-      groups[key].roomsSold += item.roomsSold;
-    });
-    
-    return Object.values(groups).map(g => ({
-      marketType: g.marketType,
-      roomSize: g.roomSize,
-      roomsSold: g.roomsSold,
-      adr: g.roomsSold > 0 ? Math.round(g.totalRevenue / g.roomsSold) : 0
-    })).sort((a, b) => {
-      if (a.marketType !== b.marketType) return a.marketType.localeCompare(b.marketType);
-      return a.roomSize.localeCompare(b.roomSize);
-    });
-  })();
 
-  // Get unique room sizes for the key indicator dropdown selector
-  const availableRoomSizes = (() => {
-    const defaultSizes = ['16평', '35평', '51평', '펫룸 16평', '펫룸 35평', '펫룸 51평'];
-    if (!displayData || !displayData.adrTable) return defaultSizes;
-    const dbSizes = displayData.adrTable.map(item => item.roomSize);
-    return Array.from(new Set([...defaultSizes, ...dbSizes])).sort();
-  })();
-
-  // Automatically default selectedRoomSize to '16평' or first item if not set or invalid
-  useEffect(() => {
-    if (availableRoomSizes.length > 0) {
-      if (!selectedRoomSize || !availableRoomSizes.includes(selectedRoomSize)) {
-        const defaultSize = availableRoomSizes.includes('16평') ? '16평' : availableRoomSizes[0];
-        setSelectedRoomSize(defaultSize);
-      }
-    }
-  }, [availableRoomSizes, selectedRoomSize]);
-
-  // Calculate ADR for selected room size
-  const selectedSizeAdr = (() => {
-    if (!displayData || !displayData.adrTable || !selectedRoomSize) return 0;
-    let revenue = 0;
-    let qty = 0;
-    displayData.adrTable.forEach(item => {
-      if (item.roomSize === selectedRoomSize) {
-        revenue += item.totalRevenue;
-        qty += item.roomsSold;
-      }
-    });
-    return qty > 0 ? Math.round(revenue / qty) : 0;
-  })();
 
   const getHqIcon = (hq: string) => {
     if (hq.includes('골프')) return '⛳';
@@ -447,33 +382,14 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-slate-500 font-bold">숙박 객실 평균 단가 (ADR)</div>
-                      {availableRoomSizes.length > 0 && (
-                        <select
-                          value={selectedRoomSize}
-                          onChange={(e) => setSelectedRoomSize(e.target.value)}
-                          className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-mint/50 cursor-pointer hover:border-slate-300 transition-colors"
-                        >
-                          {availableRoomSizes.map(size => (
-                            <option key={size} value={size}>{size}</option>
-                          ))}
-                        </select>
-                      )}
+                      <div className="text-slate-500 font-bold">숙박 객실 전체 평균 단가 (ADR)</div>
                     </div>
                     <div className="text-4xl font-emphatic text-brand-mint mb-2">
-                      {selectedRoomSize ? formatCurrency(selectedSizeAdr) : '0원'}
+                      {formatCurrency(displayData?.adr || 0)}
                     </div>
                   </div>
                   <div className="text-sm text-slate-400 mt-2">
-                    {selectedRoomSize ? (
-                      selectedSizeAdr > 0 ? (
-                        `${selectedRoomSize} 매출액 ÷ 판매된 객실 수`
-                      ) : (
-                        `선택 기간 ${selectedRoomSize} 판매 내역이 없습니다.`
-                      )
-                    ) : (
-                      '객실 판매 데이터가 없습니다.'
-                    )}
+                    숙박 부문 총 매출액 ÷ 판매된 전체 객실 수
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
@@ -504,18 +420,6 @@ export default function Home() {
                           {displayData.golfSummary ? formatCurrency(displayData.golfSummary.avgGreenFee) : '0원'}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between pl-2 border-l-2 border-slate-200">
-                        <span className="text-xs text-slate-400 font-medium">ㄴ 회원 평균가</span>
-                        <span className="text-xs font-semibold text-slate-600">
-                          {displayData.golfSummary ? formatCurrency(displayData.golfSummary.memberAvgGreenFee) : '0원'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between pl-2 border-l-2 border-slate-200">
-                        <span className="text-xs text-slate-400 font-medium">ㄴ 비회원 평균가</span>
-                        <span className="text-xs font-semibold text-slate-600">
-                          {displayData.golfSummary ? formatCurrency(displayData.golfSummary.nonMemberAvgGreenFee) : '0원'}
-                        </span>
-                      </div>
                     </div>
 
                   </div>
@@ -526,42 +430,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Market Type ADR Table */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-                🏨 마켓타입별 객실 평균단가 (ADR)
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <th className="py-4 px-6">마켓타입명</th>
-                      <th className="py-4 px-6">객실 평수</th>
-                      <th className="py-4 px-6 text-right">판매 객실수</th>
-                      <th className="py-4 px-6 text-right">평균 객단가 (ADR)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 text-sm">
-                    {marketTypeAdrData.length > 0 ? (
-                      marketTypeAdrData.map((row, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 px-6 font-bold text-slate-700">{row.marketType}</td>
-                          <td className="py-4 px-6 text-slate-600">{row.roomSize}</td>
-                          <td className="py-4 px-6 text-right text-slate-500 font-medium">{row.roomsSold}실</td>
-                          <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="py-8 text-center text-slate-400">
-                          해당 날짜의 객실 판매 데이터가 없습니다.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
           </div>
 
@@ -602,7 +470,7 @@ export default function Home() {
                 🥧 실시간 본부별 매출 비중
               </h2>
               <div className="w-full h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie
                       data={dynamicHqToday.sort((a, b) => b.actual - a.actual)}
@@ -621,7 +489,7 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: any) => formatCurrency(Number(value))}
+                      formatter={(value: number) => formatCurrency(Number(value))}
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
                     />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" />

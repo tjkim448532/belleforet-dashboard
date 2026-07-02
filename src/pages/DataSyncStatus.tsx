@@ -41,6 +41,7 @@ export const DataSyncStatus: React.FC = () => {
     fetchLogs();
     
     // Auto refresh every 30 seconds to make it feel like a live terminal
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     const interval = setInterval(fetchLogs, 30000);
     return () => clearInterval(interval);
   }, []);

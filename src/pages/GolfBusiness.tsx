@@ -3,29 +3,15 @@ import { Flag, Coins, Users } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 
-interface GolfSummary {
-  reservedTeams: number;
-  visitedTeams: number;
-  visitedPlayers: number;
-  avgGreenFee: number;
-  memberAvgGreenFee: number;
-  nonMemberAvgGreenFee: number;
-}
-
 interface SummaryData {
   success: boolean;
   date: string;
-  ytd: { actual: number; ly_actual: number; };
-  today: { actual: number; ly_actual: number; };
-  hq_today: { hq: string; actual: number; qty: number }[];
-  gridData: {
-    depth1: string;
-    depth2: string;
-    depth3: string;
-    salesAmount: number;
-    quantity: number;
-  }[];
-  golfSummary: GolfSummary;
+  todaySummary: {
+    golf_revenue: number;
+    golf_visited_teams: number;
+    golf_visited_players: number;
+  };
+  golfFacilityBreakdown?: { facility_name: string; revenue: number }[];
 }
 
 export default function GolfBusiness() {
@@ -38,7 +24,19 @@ export default function GolfBusiness() {
       setLoading(true);
       try {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
-        setData(json);
+        const payload = json.data;
+        if (payload && payload.todaySummary) {
+          setData({
+            success: json.status === 'success',
+            date: payload.targetDate || endDate,
+            todaySummary: {
+              golf_revenue: payload.todaySummary.golf_revenue || 0,
+              golf_visited_teams: payload.todaySummary.golf_visited_teams || 0,
+              golf_visited_players: payload.todaySummary.golf_visited_players || 0,
+            },
+            golfFacilityBreakdown: payload.golfFacilityBreakdown || []
+          });
+        }
       } catch (err) {
         console.error('API Error:', err);
       } finally {
@@ -58,24 +56,19 @@ export default function GolfBusiness() {
     return new Intl.NumberFormat('ko-KR').format(val || 0);
   };
 
-  // Extract golf-specific records
-  const golfDetails = data?.gridData?.filter(item => item.depth1 === '골프') || [];
-
-  // Calculate golf total revenue
-  const golfRevenue = golfDetails.reduce((acc, cur) => acc + cur.salesAmount, 0);
-
-  // Golf Reservation Summary Metrics
-  const reservedTeams = data?.golfSummary?.reservedTeams || 0;
-  const visitedTeams = data?.golfSummary?.visitedTeams || 0;
-  const visitedPlayers = data?.golfSummary?.visitedPlayers || 0;
-
-  const showUpRate = reservedTeams > 0 
-    ? ((visitedTeams / reservedTeams) * 100).toFixed(1) 
-    : '0.0';
+  const golfRevenue = data?.todaySummary?.golf_revenue || 0;
+  const visitedTeams = data?.todaySummary?.golf_visited_teams || 0;
+  const visitedPlayers = data?.todaySummary?.golf_visited_players || 0;
 
   const avgPlayersPerTeam = visitedTeams > 0 
     ? (visitedPlayers / visitedTeams).toFixed(2) 
     : '0.00';
+    
+  const avgGreenFee = visitedPlayers > 0
+    ? Math.round(golfRevenue / visitedPlayers)
+    : 0;
+
+  const golfDetails = data?.golfFacilityBreakdown || [];
 
   if (loading || !data) {
     return (
@@ -188,7 +181,7 @@ export default function GolfBusiness() {
             <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
               {visitedTeams}팀
             </div>
-            <p className="text-xs text-slate-400 mt-2">골프-내장객 고유 예약번호 개수 (예약: {reservedTeams}팀)</p>
+            <p className="text-xs text-slate-400 mt-2">골프-내장객 고유 예약번호 개수</p>
           </div>
 
           {/* Visited Players */}
@@ -209,21 +202,13 @@ export default function GolfBusiness() {
             📊 예약 이행 및 분석 지표
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">예약 완료 팀수</div>
-                <div className="text-3xl font-emphatic text-slate-800">{reservedTeams}팀</div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">실제 내장 팀수</div>
+                <div className="text-3xl font-emphatic text-emerald-600">{visitedTeams}팀</div>
               </div>
-              <p className="text-xs text-slate-400 mt-4">골프-예약 명단에 기록된 예약 수</p>
-            </div>
-            
-            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">실제 내장률 (Show-up)</div>
-                <div className="text-3xl font-emphatic text-emerald-600">{showUpRate}%</div>
-              </div>
-              <p className="text-xs text-slate-400 mt-4">예약 팀수 대비 실제 내장 팀수 비율</p>
+              <p className="text-xs text-slate-400 mt-4">실제 입장하여 라운딩을 진행한 팀 수</p>
             </div>
             
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
@@ -235,35 +220,15 @@ export default function GolfBusiness() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">1인당 평균 그린피</div>
+                <div className="text-slate-500 font-bold mb-1 text-sm">1인당 평균 그린피 (객단가)</div>
                 <div className="text-3xl font-emphatic text-emerald-600">
-                  {data.golfSummary?.avgGreenFee ? formatCurrency(data.golfSummary.avgGreenFee) : '0원'}
+                  {formatCurrency(avgGreenFee)}
                 </div>
               </div>
-              <p className="text-xs text-slate-400 mt-4">선택 기간 그린피 총 매출 ÷ 내장객 수</p>
-            </div>
-            
-            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">회원 평균 그린피</div>
-                <div className="text-3xl font-emphatic text-slate-800">
-                  {data.golfSummary?.memberAvgGreenFee ? formatCurrency(data.golfSummary.memberAvgGreenFee) : '0원'}
-                </div>
-              </div>
-              <p className="text-xs text-slate-400 mt-4">회원 그린피 매출 ÷ 회원 내장객 수</p>
-            </div>
-            
-            <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">비회원 평균 그린피</div>
-                <div className="text-3xl font-emphatic text-slate-800">
-                  {data.golfSummary?.nonMemberAvgGreenFee ? formatCurrency(data.golfSummary.nonMemberAvgGreenFee) : '0원'}
-                </div>
-              </div>
-              <p className="text-xs text-slate-400 mt-4">비회원 그린피 매출 ÷ 비회원 내장객 수</p>
+              <p className="text-xs text-slate-400 mt-4">선택 기간 골프 총 매출 ÷ 내장객 수</p>
             </div>
           </div>
         </div>
@@ -279,28 +244,17 @@ export default function GolfBusiness() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="py-4 px-6">항목명</th>
-                    <th className="py-4 px-6 text-right">수량</th>
+                    <th className="py-4 px-6">영업장명 (항목)</th>
                     <th className="py-4 px-6 text-right">총 매출액</th>
-                    <th className="py-4 px-6 text-right">평균 단가</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
-                  {golfDetails.map((row, idx) => {
-                    const avgPrice = row.quantity > 0 ? Math.round(row.salesAmount / row.quantity) : 0;
-                    return (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 font-bold text-slate-700">{row.depth2}</td>
-                        <td className="py-4 px-6 text-right text-slate-500 font-medium">
-                          {row.quantity > 0 ? `${formatNumber(row.quantity)}` : '-'}
-                        </td>
-                        <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.salesAmount)}</td>
-                        <td className="py-4 px-6 text-right text-slate-600 font-medium">
-                          {avgPrice > 0 ? formatCurrency(avgPrice) : '-'}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {golfDetails.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-4 px-6 font-bold text-slate-700">{row.facility_name}</td>
+                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.revenue)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

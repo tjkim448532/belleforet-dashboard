@@ -1,10 +1,27 @@
 import { auth } from './firebase';
 
+import { onAuthStateChanged } from 'firebase/auth';
+
+const getAuthToken = async (): Promise<string> => {
+  if (auth.currentUser) {
+    return await auth.currentUser.getIdToken(true);
+  }
+  
+  return new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe();
+      if (user) {
+        const token = await user.getIdToken(true);
+        resolve(token);
+      } else {
+        resolve(sessionStorage.getItem('token') || '');
+      }
+    });
+  });
+};
+
 export const secureFetcher = async (url: string, options: RequestInit = {}) => {
-  const user = auth.currentUser;
-  const token = user 
-    ? await user.getIdToken(true) 
-    : sessionStorage.getItem('token') || '';
+  const token = await getAuthToken();
 
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');

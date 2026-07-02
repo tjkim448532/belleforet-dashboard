@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
-
-// Types matching the API response
-interface MatrixRow {
-  category: string;
-  shop_name: string;
-  today: { actual: number; lastYear: number; growthRate: number };
-  mtd: { actual: number; lastYear: number; growthRate: number };
-  ytd: { actual: number; lastYear: number; growthRate: number };
-}
+import { fetchMatrixData, type MatrixRow } from '../lib/matrixFetcher';
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -32,29 +24,8 @@ export default function MatrixDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://belleforet-data.vercel.app/api/dashboard/matrix?date=${startDate}`);
-        const result = await response.json();
-        if (result.success) {
-          const netData = result.data.map((r: MatrixRow) => ({
-            ...r,
-            today: {
-              actual: r.today.actual,
-              lastYear: r.today.lastYear,
-              growthRate: r.today.growthRate
-            },
-            mtd: {
-              actual: r.mtd.actual,
-              lastYear: r.mtd.lastYear,
-              growthRate: r.mtd.growthRate
-            },
-            ytd: {
-              actual: r.ytd.actual,
-              lastYear: r.ytd.lastYear,
-              growthRate: r.ytd.growthRate
-            }
-          }));
-          setData(netData);
-        }
+        const netData = await fetchMatrixData(startDate, false);
+        setData(netData);
       } catch (error) {
         console.error('Error fetching matrix data:', error);
       } finally {

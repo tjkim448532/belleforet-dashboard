@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { secureFetcher } from '../lib/secureFetcher';
 
 export default function ExecutiveDashboard() {
   const [targetDate, setTargetDate] = useState('2026-06-23');
@@ -14,16 +15,42 @@ export default function ExecutiveDashboard() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [kpiRes, revRes] = await Promise.all([
-          fetch(`${API_BASE}/api/dashboard/kpi?date=${targetDate}`),
-          fetch(`${API_BASE}/api/dashboard/revenue?date=${targetDate}`)
-        ]);
+        const json = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?startDate=${targetDate}&endDate=${targetDate}`);
+        const payload = json.data || json;
+        if (!payload) throw new Error("Invalid payload");
         
-        const kpi = await kpiRes.json();
-        const rev = await revRes.json();
+        const grid = payload.gridData || [];
+        const hqGroups: Record<string, number> = {};
+        const details: any[] = [];
         
-        setKpiData(kpi.metrics);
-        setRevenueData(rev);
+        grid.forEach((item: any) => {
+          const cat = item.depth1 || '기타';
+          if (!hqGroups[cat]) hqGroups[cat] = 0;
+          hqGroups[cat] += item.salesAmount;
+          
+          details.push({
+            depth_2_shop: item.depth2 || '알수없음',
+            sales_amount: item.salesAmount
+          });
+        });
+        
+        const summary = Object.keys(hqGroups).map(key => ({
+          depth_1_category: key,
+          total_sales: hqGroups[key]
+        }));
+        
+        setKpiData({
+          total_revenue_today: payload.today?.actual || payload.todaySummary?.total_gross || 0,
+          dod_growth: 0,
+          rooms_sold: payload.todaySummary?.rooms_sold || grid.find((g: any) => g.depth1 === '숙박')?.quantity || 0,
+          golf_visited_players: payload.golfSummary?.visitedPlayers || payload.todaySummary?.golf_visited_players || 0,
+          golf_visited_teams: payload.golfSummary?.visitedTeams || payload.todaySummary?.golf_visited_teams || 0
+        });
+        
+        setRevenueData({
+          summary,
+          details
+        });
       } catch (e) {
         console.error("Failed to fetch dashboard data", e);
       } finally {

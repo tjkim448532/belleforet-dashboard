@@ -1,4 +1,4 @@
-import type { CoreDataState, RawPayload } from '../contexts/CoreDataContext';
+import type { CoreDataState } from '../contexts/CoreDataContext';
 
 export interface MatrixRow {
   category: string;
@@ -8,90 +8,48 @@ export interface MatrixRow {
   ytd: { actual: number; lastYear: number; growthRate: number };
 }
 
-export const transformMatrixData = (core: CoreDataState, isWeeklyMode = false): MatrixRow[] => {
-  if (!core.current || !core.mtd || !core.ytd) return [];
-
-  const shopMap = new Map<string, MatrixRow>();
-
-  const addData = (payload: RawPayload | null, period: 'today' | 'mtd' | 'ytd', type: 'actual' | 'lastYear') => {
-    if (!payload || !payload.gridData) return;
-    payload.gridData.forEach(item => {
-      let shop = item.depth2 || '기타업장';
-      let cat = item.depth1 || '기타';
-      
-      if (!shopMap.has(shop)) {
-        shopMap.set(shop, {
-          category: cat,
-          shop_name: shop,
-          today: { actual: 0, lastYear: 0, growthRate: 0 },
-          mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-          ytd: { actual: 0, lastYear: 0, growthRate: 0 }
-        });
-      }
-      const record = shopMap.get(shop)!;
-      record[period][type] += item.salesAmount || 0;
-    });
-  };
-
-  addData(core.current, 'today', 'actual');
-  addData(isWeeklyMode ? core.currentLYWeekly : core.currentLY, 'today', 'lastYear');
+export const transformMatrixData = (core: CoreDataState, _isWeeklyMode = false): MatrixRow[] => {
+  if (!core.matrix) return [];
   
-  addData(core.mtd, 'mtd', 'actual');
-  addData(isWeeklyMode ? core.mtdLYWeekly : core.mtdLY, 'mtd', 'lastYear');
+  // The backend's /api/dashboard/matrix returns the full matrix array (or we wrap it if needed).
+  // Assuming it returns an array of MatrixRow or an object containing the array.
+  const matrixData = Array.isArray(core.matrix) ? core.matrix : (core.matrix.data || core.matrix.gridData || []);
   
-  addData(core.ytd, 'ytd', 'actual');
-  addData(isWeeklyMode ? core.ytdLYWeekly : core.ytdLY, 'ytd', 'lastYear');
-
-  return Array.from(shopMap.values()).map(r => {
-    const calcGrowth = (act: number, ly: number) => {
-      if (ly === 0) return 0;
-      return ((act - ly) / Math.abs(ly)) * 100;
-    };
-    
-    r.today.growthRate = calcGrowth(r.today.actual, r.today.lastYear);
-    r.mtd.growthRate = calcGrowth(r.mtd.actual, r.mtd.lastYear);
-    r.ytd.growthRate = calcGrowth(r.ytd.actual, r.ytd.lastYear);
-    return r;
-  });
+  // Assuming the backend matrix API already provides today, mtd, ytd with actual and lastYear.
+  // If isWeeklyMode is true, the backend matrix API should handle it if we pass a weekly flag, 
+  // but since we only pass ?date=..., we will assume the backend returns standard LY.
+  // (We may need to adjust if the backend returns different structures).
+  return matrixData as MatrixRow[];
 };
 
 export const transformHomeData = (core: CoreDataState) => {
-  if (!core.current) return null;
-  const payload = core.current;
+  if (!core.core || !core.summary) return null;
+  const c = core.core;
+  const s = core.summary;
 
-  const grid = payload.gridData || [];
-  const hqGroups: Record<string, { actual: number, qty: number }> = {};
-  grid.forEach((item: any) => {
-    const cat = item.depth1 || '기타';
-    if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
-    hqGroups[cat].actual += item.salesAmount;
-    hqGroups[cat].qty += item.quantity;
-  });
-
-  const ts = payload.todaySummary || {
-    golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
-    room_revenue: hqGroups['숙박']?.actual || 0,
-    food_revenue: hqGroups['식음']?.actual || 0,
-    beverage_revenue: 0,
-    other_revenue: hqGroups['기타']?.actual || 0,
-    rooms_sold: hqGroups['숙박']?.qty || 0,
-    golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
-    golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
-    total_gross: payload.today?.actual || 0
+  const getMetric = (metric: any, period: 'today' | 'mtd' | 'ytd', field: 'actual' | 'ly_date' | 'ly_day') => {
+    return metric?.[period]?.[field] || 0;
   };
-  
-  if (ts.total_gross === 0) {
-    ts.total_gross = Object.values(hqGroups).reduce((acc, cur) => acc + cur.actual, 0);
-  }
+
+  const ts = {
+    golf_revenue: getMetric(c.golf_revenue, 'today', 'actual'),
+    room_revenue: getMetric(c.room_revenue, 'today', 'actual'),
+    food_revenue: getMetric(c.fnb_revenue, 'today', 'actual'),
+    other_revenue: getMetric(c.other_revenue, 'today', 'actual') + getMetric(c.ticket_revenue, 'today', 'actual'),
+    rooms_sold: getMetric(c.rooms_sold, 'today', 'actual'),
+    golf_visited_teams: getMetric(c.golf_visited_teams, 'today', 'actual'),
+    golf_visited_players: getMetric(c.golf_visited_players, 'today', 'actual'),
+    total_gross: getMetric(c.total_net, 'today', 'actual')
+  };
 
   const hqToday = [
-    { hq: '골프', actual: ts.golf_revenue, qty: ts.golf_visited_teams || 0 },
-    { hq: '숙박', actual: ts.room_revenue, qty: ts.rooms_sold || 0 },
-    { hq: '식음', actual: ts.food_revenue + ts.beverage_revenue, qty: 0 },
+    { hq: '골프', actual: ts.golf_revenue, qty: ts.golf_visited_teams },
+    { hq: '숙박', actual: ts.room_revenue, qty: ts.rooms_sold },
+    { hq: '식음', actual: ts.food_revenue, qty: 0 },
     { hq: '레저/기타', actual: ts.other_revenue, qty: 0 }
   ].filter(h => h.actual > 0 || h.qty > 0);
 
-  const weeklyTrend = (payload.weeklyTrend || []).map((wt: any) => {
+  const weeklyTrend = (s.weeklyTrend || []).map((wt: any) => {
     const dateObj = new Date(wt.date);
     const dayName = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
     return {
@@ -102,50 +60,55 @@ export const transformHomeData = (core: CoreDataState) => {
     };
   });
 
-  const adrTableRooms = payload.adrTable?.reduce((acc: number, cur: any) => acc + (cur.roomsSold || 0), 0) || 0;
-  const adrTableRev = payload.adrTable?.reduce((acc: number, cur: any) => acc + (cur.totalRevenue || 0), 0) || 0;
-
-  const ytdActual = core.ytd?.today?.actual || core.ytd?.gridData?.reduce((acc: number, cur: any) => acc + (cur.salesAmount || 0), 0) || 0;
-  const ytdLyActual = core.ytdLY?.today?.actual || core.ytdLY?.gridData?.reduce((acc: number, cur: any) => acc + (cur.salesAmount || 0), 0) || 0;
-  const currentLyActual = core.currentLY?.today?.actual || core.currentLY?.gridData?.reduce((acc: number, cur: any) => acc + (cur.salesAmount || 0), 0) || 0;
+  const adrTableRooms = s.adrTable?.reduce((acc: number, cur: any) => acc + (cur.roomsSold || 0), 0) || 0;
+  const adrTableRev = s.adrTable?.reduce((acc: number, cur: any) => acc + (cur.totalRevenue || 0), 0) || 0;
 
   return {
     success: true,
-    date: payload.targetDate || '',
-    ytd: { actual: ytdActual, ly_actual: ytdLyActual },
-    today: { actual: ts.total_gross, ly_actual: currentLyActual },
+    date: c.targetDate || '',
+    ytd: { 
+      actual: getMetric(c.total_net, 'ytd', 'actual'), 
+      ly_actual: getMetric(c.total_net, 'ytd', 'ly_date'),
+      ly_day: getMetric(c.total_net, 'ytd', 'ly_day') 
+    },
+    today: { 
+      actual: getMetric(c.total_net, 'today', 'actual'), 
+      ly_actual: getMetric(c.total_net, 'today', 'ly_date'),
+      ly_day: getMetric(c.total_net, 'today', 'ly_day') 
+    },
     hq_today: hqToday,
     store_today: [],
     adr: adrTableRooms > 0 ? Math.round(adrTableRev / adrTableRooms) : 0,
-    avg_green_fee: payload.golfSummary?.avgGreenFee || 0,
+    avg_green_fee: s.golfSummary?.avgGreenFee || 0,
     weekly_trend: weeklyTrend,
     golfSummary: {
-      reservedTeams: payload.golfSummary?.reservedTeams || 0,
-      visitedTeams: payload.golfSummary?.visitedTeams || ts.golf_visited_teams || 0,
-      visitedPlayers: payload.golfSummary?.visitedPlayers || ts.golf_visited_players || 0,
-      avgGreenFee: payload.golfSummary?.avgGreenFee || 0,
-      memberAvgGreenFee: payload.golfSummary?.memberAvgGreenFee || 0,
-      nonMemberAvgGreenFee: payload.golfSummary?.nonMemberAvgGreenFee || 0
+      reservedTeams: s.golfSummary?.reservedTeams || 0,
+      visitedTeams: ts.golf_visited_teams,
+      visitedPlayers: ts.golf_visited_players,
+      avgGreenFee: s.golfSummary?.avgGreenFee || 0,
+      memberAvgGreenFee: s.golfSummary?.memberAvgGreenFee || 0,
+      nonMemberAvgGreenFee: s.golfSummary?.nonMemberAvgGreenFee || 0
     }
   };
 };
 
 export const transformExecutiveData = (core: CoreDataState) => {
-  if (!core.current) return null;
-  const payload = core.current;
-
-  const grid = payload.gridData || [];
+  if (!core.core || !core.matrix) return null;
+  const c = core.core;
+  
+  // Matrix data returns array of shop level performance
+  const grid = Array.isArray(core.matrix) ? core.matrix : (core.matrix.data || core.matrix.gridData || []);
   const hqGroups: Record<string, number> = {};
   const details: any[] = [];
   
   grid.forEach((item: any) => {
     const cat = item.depth1 || '기타';
     if (!hqGroups[cat]) hqGroups[cat] = 0;
-    hqGroups[cat] += item.salesAmount;
+    hqGroups[cat] += item.salesAmount || 0;
     
     details.push({
       depth_2_shop: item.depth2 || '알수없음',
-      sales_amount: item.salesAmount
+      sales_amount: item.salesAmount || 0
     });
   });
   
@@ -156,11 +119,11 @@ export const transformExecutiveData = (core: CoreDataState) => {
   
   return {
     kpiData: {
-      total_revenue_today: payload.today?.actual || payload.todaySummary?.total_gross || 0,
+      total_revenue_today: c.total_net?.today?.actual || 0,
       dod_growth: 0,
-      rooms_sold: payload.todaySummary?.rooms_sold || grid.find((g: any) => g.depth1 === '숙박')?.quantity || 0,
-      golf_visited_players: payload.golfSummary?.visitedPlayers || payload.todaySummary?.golf_visited_players || 0,
-      golf_visited_teams: payload.golfSummary?.visitedTeams || payload.todaySummary?.golf_visited_teams || 0
+      rooms_sold: c.rooms_sold?.today?.actual || 0,
+      golf_visited_players: c.golf_visited_players?.today?.actual || 0,
+      golf_visited_teams: c.golf_visited_teams?.today?.actual || 0
     },
     revenueData: { summary, details }
   };

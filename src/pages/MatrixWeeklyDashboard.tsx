@@ -71,7 +71,7 @@ export default function MatrixWeeklyDashboard() {
     return ((actual - lastYear) / lastYear) * 100;
   };
 
-  const categoriesOrder = ['식음', '연회', '레저', '숙박', '기타업장'];
+  const categoriesOrder = ['식음', '연회', '레저', '숙박', '기타'];
   const grandTotalRows = data;
   const netTotal = calculateSubtotal(grandTotalRows);
 

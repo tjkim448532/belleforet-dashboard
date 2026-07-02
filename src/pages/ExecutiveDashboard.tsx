@@ -1,23 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformExecutiveData } from '../lib/dataTransformers';
 
 export default function ExecutiveDashboard() {
   const [targetDate, setTargetDate] = useState('2026-06-23');
-  const [kpiData, setKpiData] = useState<any>(null);
-  const [revenueData, setRevenueData] = useState<any>(null);
-
   const coreData = useCoreData();
 
-  useEffect(() => {
-    if (coreData.isLoading) return;
-    const transformed = transformExecutiveData(coreData);
-    if (transformed) {
-      setKpiData(transformed.kpiData);
-      setRevenueData(transformed.revenueData);
-    }
+  const transformed = useMemo(() => {
+    if (coreData.isLoading || coreData.error) return null;
+    return transformExecutiveData(coreData);
   }, [coreData]);
+
+  const kpiData = transformed?.kpiData || null;
+  const revenueData = transformed?.revenueData || null;
 
   if (coreData.isLoading) {
     return (

@@ -47,35 +47,23 @@ interface WeatherData {
 }
 
 export default function Home() {
-  const [data, setData] = useState<SummaryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState<string | null>(null);
   const { simulatedData, clearSimulation } = useSimulation();
   const { mappings, categories, loading: mappingLoading } = useMapping();
   const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
   const coreData = useCoreData();
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
-  useEffect(() => {
-    if (coreData.isLoading) {
-      setLoading(true);
-      return;
-    }
-    
-    if (coreData.error) {
-      setApiError('데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.');
-      setLoading(false);
-      return;
-    }
+  const transformedData = React.useMemo(() => {
+    if (coreData.isLoading || coreData.error) return null;
+    return transformHomeData(coreData);
+  }, [coreData]);
+  
+  const data = transformedData;
+  const loading = coreData.isLoading || mappingLoading;
+  const apiError = coreData.error ? '데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.' : 
+                  (coreData.isLoading ? null : (transformedData ? null : '데이터를 불러오는 데 실패했습니다.'));
 
-    const transformed = transformHomeData(coreData);
-    if (transformed) {
-      setData(transformed);
-      setApiError(null);
-    } else {
-      setApiError('데이터를 불러오는 데 실패했습니다.');
-    }
-    setLoading(false);
+  useEffect(() => {
 
     const fetchWeather = async () => {
       try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
@@ -18,13 +18,11 @@ const formatGrowth = (rate: number) => {
 export default function MatrixWeeklyDashboard() {
   const { startDate } = useDate();
   const coreData = useCoreData();
-  const [data, setData] = useState<MatrixRow[]>([]);
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (coreData.isLoading) return;
-    const transformed = transformMatrixData(coreData, true); // true for isWeeklyMode
-    setData(transformed);
+  const data = React.useMemo(() => {
+    if (coreData.isLoading || coreData.error) return [];
+    return transformMatrixData(coreData, true); // true for isWeeklyMode
   }, [coreData]);
 
   // Group data by category

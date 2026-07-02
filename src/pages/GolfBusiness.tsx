@@ -24,7 +24,7 @@ export default function GolfBusiness() {
       setLoading(true);
       try {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
-        const payload = json.data;
+        const payload = json.data || json;
         if (payload && payload.todaySummary) {
           setData({
             success: json.status === 'success',

@@ -79,7 +79,7 @@ export default function DailySalesReport() {
     setLoading(true);
     try {
       const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${date}&endDate=${date}`);
-      const payload = result.data;
+      const payload = result.data || result;
       if (payload && payload.todaySummary) {
         setAccumulated(payload.accumulatedRevenue || null);
         const ts = payload.todaySummary;

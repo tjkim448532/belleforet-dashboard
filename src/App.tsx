@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SimulationProvider } from './contexts/SimulationContext';
 import { MappingProvider } from './contexts/MappingContext';
 import { DateProvider } from './contexts/DateContext';
+import { CoreDataProvider } from './contexts/CoreDataContext';
 
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -46,8 +47,9 @@ function App() {
         <SimulationProvider>
           <MappingProvider>
             <DateProvider>
-              <BrowserRouter>
-                <Routes>
+              <CoreDataProvider>
+                <BrowserRouter>
+                  <Routes>
                   <Route path="/login" element={<Login />} />
                   
                   <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -72,8 +74,9 @@ function App() {
                   </Route>
 
                   <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </BrowserRouter>
+                  </Routes>
+                </BrowserRouter>
+              </CoreDataProvider>
             </DateProvider>
           </MappingProvider>
         </SimulationProvider>

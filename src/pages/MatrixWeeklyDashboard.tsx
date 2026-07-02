@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
-import { fetchMatrixData, type MatrixRow } from '../lib/matrixFetcher';
+import { useCoreData } from '../contexts/CoreDataContext';
+import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -16,24 +17,15 @@ const formatGrowth = (rate: number) => {
 
 export default function MatrixWeeklyDashboard() {
   const { startDate } = useDate();
+  const coreData = useCoreData();
   const [data, setData] = useState<MatrixRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const netData = await fetchMatrixData(startDate, true);
-        setData(netData);
-      } catch (error) {
-        console.error('Error fetching matrix data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [startDate]);
+    if (coreData.isLoading) return;
+    const transformed = transformMatrixData(coreData, true); // true for isWeeklyMode
+    setData(transformed);
+  }, [coreData]);
 
   // Group data by category
   const groupedData = data.reduce((acc, row) => {
@@ -90,8 +82,8 @@ export default function MatrixWeeklyDashboard() {
   const checkedRowsList = data.filter(r => checkedShops.includes(r.shop_name));
   const checkedTotal = calculateSubtotal(checkedRowsList);
 
-  if (loading) {
-    return <div className="p-8 flex justify-center items-center h-full">데이터를 불러오는 중입니다...</div>;
+  if (coreData.isLoading) {
+    return <div className="p-6 text-slate-500">데이터를 불러오는 중입니다...</div>;
   }
 
   return (

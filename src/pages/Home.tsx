@@ -3,8 +3,9 @@ import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
-import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import { useCoreData } from '../contexts/CoreDataContext';
+import { transformHomeData } from '../lib/dataTransformers';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -51,98 +52,30 @@ export default function Home() {
   const [apiError, setApiError] = useState<string | null>(null);
   const { simulatedData, clearSimulation } = useSimulation();
   const { mappings, categories, loading: mappingLoading } = useMapping();
-
   const { startDate, endDate, isRange, setStartDate, setEndDate, setIsRange } = useDate();
-
+  const coreData = useCoreData();
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
-    const fetchSummary = async () => {
+    if (coreData.isLoading) {
       setLoading(true);
+      return;
+    }
+    
+    if (coreData.error) {
+      setApiError('데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.');
+      setLoading(false);
+      return;
+    }
+
+    const transformed = transformHomeData(coreData);
+    if (transformed) {
+      setData(transformed);
       setApiError(null);
-      try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${endDate}`);
-        
-        const payload = json.data || json;
-        if (!payload) throw new Error("Invalid payload");
-        
-        const grid = payload.gridData || [];
-        const hqGroups: Record<string, { actual: number, qty: number }> = {};
-        grid.forEach((item: any) => {
-          const cat = item.depth1 || '기타';
-          if (!hqGroups[cat]) hqGroups[cat] = { actual: 0, qty: 0 };
-          hqGroups[cat].actual += item.salesAmount;
-          hqGroups[cat].qty += item.quantity;
-        });
-
-        const ts = payload.todaySummary || {
-          golf_revenue: hqGroups['레저']?.actual || hqGroups['골프']?.actual || 0,
-          room_revenue: hqGroups['숙박']?.actual || 0,
-          food_revenue: hqGroups['식음']?.actual || 0,
-          beverage_revenue: 0,
-          other_revenue: hqGroups['기타']?.actual || 0,
-          rooms_sold: hqGroups['숙박']?.qty || 0,
-          golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
-          golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
-          total_gross: payload.today?.actual || 0
-        };
-        
-        const hqToday = [
-          { hq: '골프', actual: ts.golf_revenue, qty: ts.golf_visited_teams || 0 },
-          { hq: '숙박', actual: ts.room_revenue, qty: ts.rooms_sold || 0 },
-          { hq: '식음', actual: ts.food_revenue + ts.beverage_revenue, qty: 0 },
-          { hq: '레저/기타', actual: ts.other_revenue, qty: 0 }
-        ].filter(h => h.actual > 0 || h.qty > 0);
-
-        const weeklyTrend = (payload.weeklyTrend || []).map((wt: { date: string, total_gross: number }) => {
-          const dateObj = new Date(wt.date);
-          const dayName = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
-          return {
-            day: dayName,
-            fullDate: wt.date,
-            this_week: wt.total_gross,
-            last_week: 0
-          };
-        });
-
-        setData({
-          success: json.status === 'success',
-          date: payload.targetDate || endDate,
-          ytd: { actual: 0, ly_actual: 0 },
-          today: { actual: ts.total_gross, ly_actual: 0 },
-          hq_today: hqToday,
-          store_today: [],
-          adr: ts.rooms_sold > 0 ? Math.round(ts.room_revenue / ts.rooms_sold) : 0,
-          avg_green_fee: ts.golf_visited_players > 0 ? Math.round(ts.golf_revenue / ts.golf_visited_players) : 0,
-          weekly_trend: weeklyTrend,
-          golfSummary: {
-            reservedTeams: 0,
-            visitedTeams: ts.golf_visited_teams || 0,
-            visitedPlayers: ts.golf_visited_players || 0,
-            avgGreenFee: ts.golf_visited_players > 0 ? Math.round(ts.golf_revenue / ts.golf_visited_players) : 0,
-            memberAvgGreenFee: 0,
-            nonMemberAvgGreenFee: 0
-          }
-        });
-      } catch (err) {
-        console.error('API Error:', err);
-        setApiError('데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.');
-        setData({
-          success: true,
-          date: endDate,
-          ytd: { actual: 0, ly_actual: 0 },
-          today: { actual: 0, ly_actual: 0 },
-          hq_today: [],
-          store_today: [],
-          adr: 0,
-          avg_green_fee: 0,
-          weekly_trend: [],
-          golfSummary: { reservedTeams: 0, visitedTeams: 0, visitedPlayers: 0, avgGreenFee: 0, memberAvgGreenFee: 0, nonMemberAvgGreenFee: 0 }
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    } else {
+      setApiError('데이터를 불러오는 데 실패했습니다.');
+    }
+    setLoading(false);
 
     const fetchWeather = async () => {
       try {
@@ -159,9 +92,8 @@ export default function Home() {
       }
     };
 
-    fetchSummary();
     fetchWeather();
-  }, [startDate, endDate]);
+  }, [coreData, endDate]);
 
   // 시뮬레이션 데이터 덮어쓰기 로직
   let displayData = data;

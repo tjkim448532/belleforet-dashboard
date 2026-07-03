@@ -75,17 +75,27 @@ export default function MatrixDashboard() {
     const rawSub = calculateSubtotal(rows);
     
     // Overlay real totals from gridData depth1/depth2 if we have them
+    // Strictly match depth2 to avoid double counting depth1 (e.g., '레저' for both Golf and Ticket)
     const realTotal = coreData.core?.gridData?.find(
-      (item: any) =>
-        (category.includes('골프') && (item.depth2 === '골프장' || item.depth1 === '레저')) ||
-        (category.includes('객실') && (item.depth2 === '객실' || item.depth1 === '숙박')) ||
-        (category.includes('식음') && (item.depth2 === '식음업장' || item.depth1 === '식음')) ||
-        (category.includes('연회') && (item.depth2 === '연회' || item.depth1 === '식음')) ||
-        (category.includes('티켓') && (item.depth2 === '티켓업장' || item.depth2 === '레저' || item.depth1 === '레저')) ||
-        (category.includes('기타') && (item.depth2 === '기타영업' || item.depth1 === '기타'))
+      (item: any) => {
+        // We only want aggregate rows for the category.
+        // Aggregate rows typically have depth3 as '전체' or null.
+        const isAggregate = !item.depth3 || item.depth3 === '전체';
+        if (!isAggregate) return false;
+
+        if (category.includes('골프')) return item.depth2 === '골프장';
+        if (category.includes('객실')) return item.depth2 === '객실';
+        if (category.includes('식음')) return item.depth2 === '식음업장';
+        if (category.includes('연회')) return item.depth2 === '연회';
+        if (category.includes('티켓')) return item.depth2 === '티켓업장' || item.depth2 === '레저';
+        if (category.includes('기타')) return item.depth2 === '기타영업' || item.depth2 === '기타';
+        return false;
+      }
     );
 
     if (realTotal) {
+      // ONLY override actual if the backend breakdown arrays are NOT complete or if we trust gridData more.
+      // But since backend fixed the math, gridData aggregate row SHOULD match exactly.
       rawSub.today.actual = Number(realTotal.salesAmount) || rawSub.today.actual;
       rawSub.today.lastYear = Number(realTotal.lastYearSalesAmount) || rawSub.today.lastYear;
       rawSub.today.growthRate = Number(realTotal.growthRate) || rawSub.today.growthRate;
@@ -121,6 +131,27 @@ export default function MatrixDashboard() {
   });
 
   const netTotal = calculateSubtotal(Object.values(categorySubtotals));
+
+  // Override with the true Net Total from the backend API if available
+  // This ensures 100% match with the DB's mathematical formula (POS - 객실후불)
+  if (coreData.core) {
+    if (coreData.core.today) {
+      netTotal.today.actual = Number(coreData.core.today.actual) || netTotal.today.actual;
+      netTotal.today.lastYear = Number(coreData.core.today.ly_actual) || netTotal.today.lastYear;
+      netTotal.today.growthRate = getGrowth(netTotal.today.actual, netTotal.today.lastYear);
+    }
+    // MTD/YTD override from backend root payload if they exist
+    if (coreData.core.mtd) {
+      netTotal.mtd.actual = Number(coreData.core.mtd.actual) || netTotal.mtd.actual;
+      netTotal.mtd.lastYear = Number(coreData.core.mtd.ly_actual) || netTotal.mtd.lastYear;
+      netTotal.mtd.growthRate = getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear);
+    }
+    if (coreData.core.ytd) {
+      netTotal.ytd.actual = Number(coreData.core.ytd.actual) || netTotal.ytd.actual;
+      netTotal.ytd.lastYear = Number(coreData.core.ytd.ly_actual) || netTotal.ytd.lastYear;
+      netTotal.ytd.growthRate = getGrowth(netTotal.ytd.actual, netTotal.ytd.lastYear);
+    }
+  }
 
   const vatTotal = {
     today: { actual: netTotal.today.actual * 0.1, lastYear: netTotal.today.lastYear * 0.1 },

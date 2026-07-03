@@ -36,9 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authReady, setAuthReady] = useState(false);
 
   React.useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setAuthReady(true);
-      if (!user) {
+      if (user) {
+        const token = await user.getIdToken();
+        sessionStorage.setItem('token', token);
+      } else {
         // If firebase says not logged in, but session storage says yes, it's a mismatch
         // But let's trust session storage for UI, Firebase will block data if token is bad
       }
@@ -66,7 +69,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       // 1. Firebase Auth 로그인
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const token = await userCredential.user.getIdToken();
+      sessionStorage.setItem('token', token);
       
       // 2. Firestore에서 권한(role) 조회 (방화벽 차단 시 무한 대기 방지를 위해 3초 타임아웃 적용)
       const roleDocRef = doc(db, 'userRoles', email);
@@ -122,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.removeItem('userEmail');
     sessionStorage.removeItem('isAdmin');
     sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('token');
   };
 
   const updateUserPassword = async (newPassword: string) => {

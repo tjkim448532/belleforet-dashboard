@@ -8,37 +8,81 @@ export interface MatrixRow {
   ytd: { actual: number; lastYear: number; growthRate: number };
 }
 
+import { EXCEL_LAYOUT, findExcelShopName } from './matrixSchema';
+
 export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   if (!core.core || !core.core.gridData) return [];
   const gridData = core.core.gridData;
   const rows: MatrixRow[] = [];
-  
-  // To avoid double-counting, we prefer depth3 (detailed shops).
-  // We'll collect all rows. If there are detail rows (depth3 !== '전체'), we filter out the '전체' row for that depth2 group.
-  const hasDetailsForDepth2: Record<string, boolean> = {};
+
+  const excelDataMap = new Map<string, MatrixRow>();
+  EXCEL_LAYOUT.forEach(group => {
+    group.shops.forEach(shop => {
+      const key = `${group.category}|${shop}`;
+      excelDataMap.set(key, {
+        category: group.category,
+        shop_name: shop,
+        today: { actual: 0, lastYear: 0, growthRate: 0 },
+        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+        ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+      });
+    });
+  });
+
+  const addAmount = (category: string, shopName: string, amount: number) => {
+    if (!amount) return;
+    const key = `${category}|${shopName}`;
+    if (excelDataMap.has(key)) {
+      const row = excelDataMap.get(key)!;
+      row.today.actual += amount;
+    }
+  };
+
+  // Map gridData
   gridData.forEach((item: any) => {
-    if (item.depth3 && item.depth3 !== '전체') {
-      hasDetailsForDepth2[item.depth2] = true;
+    const isDetail = item.depth3 && item.depth3 !== '전체';
+    const rawName = isDetail ? item.depth3 : (item.depth2 || '기타');
+    
+    // Only map if it's a detail row OR if depth3 is entirely missing
+    // We want to avoid mapping '전체' (aggregate rows) if we have detail rows
+    // But since findExcelShopName maps explicitly to known shops, aggregate rows like '티켓업장' won't match any shop!
+    // Wait, '객실' matches ROOM. '골프장' doesn't match anything. '식음업장' doesn't match anything.
+    // So if item is an aggregate row, and it matches (like '객실' -> ROOM), it will be added.
+    const match = findExcelShopName(rawName);
+    if (match) {
+      // Don't add aggregate '객실' if we have roomTypeBreakdown? 
+      // Actually, if we use the breakdown arrays, they might overlap.
+      // Let's just use gridData for now. If breakdown array has values, we add them too, BUT we might double count!
+      // To prevent double counting for ROOM and GOLF:
+      const hasGolfBreakdown = core.core?.golfFacilityBreakdown && core.core.golfFacilityBreakdown.length > 0;
+      const hasRoomBreakdown = core.core?.roomTypeBreakdown && core.core.roomTypeBreakdown.length > 0;
+      
+      if (match.category === '객실 Total' && hasRoomBreakdown) return;
+      if (match.category === '골프 Total' && hasGolfBreakdown) return;
+      
+      addAmount(match.category, match.shopName, item.salesAmount || 0);
     }
   });
 
-  gridData.forEach((item: any) => {
-    // Skip '전체' if detail rows exist for this group
-    if (item.depth3 === '전체' && hasDetailsForDepth2[item.depth2]) {
-      return; 
-    }
-    
-    // For shop_name, use depth3 if it's a detail row, otherwise use depth2. 
-    // If depth3 is empty/null, fallback to depth2.
-    const isDetail = item.depth3 && item.depth3 !== '전체';
-    const shopName = isDetail ? item.depth3 : (item.depth2 || '전체');
+  // Map Breakdown Arrays
+  const mapBreakdown = (arr: any[], nameField: string, valueField: string) => {
+    if (!arr) return;
+    arr.forEach((item: any) => {
+      const match = findExcelShopName(item[nameField]);
+      if (match) addAmount(match.category, match.shopName, item[valueField] || item.sales_amount || item.actual || item.revenue || 0);
+    });
+  };
 
-    rows.push({
-      category: item.depth1 || '기타',
-      shop_name: shopName,
-      today: { actual: item.salesAmount || 0, lastYear: 0, growthRate: 0 },
-      mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-      ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+  mapBreakdown(core.core.golfFacilityBreakdown, 'facility_name', 'revenue');
+  mapBreakdown(core.core.roomTypeBreakdown, 'room_type', 'room_revenue');
+  mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'sales_amount');
+  mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'sales_amount');
+
+  // Push rows in exact EXCEL_LAYOUT order
+  EXCEL_LAYOUT.forEach(group => {
+    group.shops.forEach(shop => {
+      const key = `${group.category}|${shop}`;
+      rows.push(excelDataMap.get(key)!);
     });
   });
 

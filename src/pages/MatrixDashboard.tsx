@@ -61,7 +61,7 @@ export default function MatrixDashboard() {
     return ((actual - lastYear) / lastYear) * 100;
   };
 
-  const categoriesOrder = ['식음', '연회', '레저', '숙박', '기타'];
+  const categoriesOrder = ['객실 Total', '골프 Total', '식음업장 Total', '연회 Total', '티켓업장 Total', '기타업장 Total'];
   const grandTotalRows = data;
   const netTotal = calculateSubtotal(grandTotalRows);
 
@@ -156,7 +156,7 @@ export default function MatrixDashboard() {
                     </tr>
                   ))}
                   <tr className="bg-amber-50 font-semibold text-slate-800 border-t border-b-2 border-amber-200/50">
-                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4">{category} Total</td>
+                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{category}</td>
                     <td className="p-2">{formatCurrency(sub.today.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.today.lastYear)}</td>
                     <td className={`p-2 border-r-2 border-slate-300 ${getGrowth(sub.today.actual, sub.today.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.today.actual, sub.today.lastYear))}</td>

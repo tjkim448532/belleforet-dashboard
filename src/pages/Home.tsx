@@ -118,11 +118,15 @@ export default function Home() {
     );
   }
 
-  const todayDiff = displayData.today.actual - displayData.today.ly_actual;
-  const todayPct = displayData.today.ly_actual > 0 ? (todayDiff / displayData.today.ly_actual) * 100 : 0;
+  const todayGross = displayData.today.actual * 1.1;
+  const todayLyGross = displayData.today.ly_actual * 1.1;
+  const todayDiff = todayGross - todayLyGross;
+  const todayPct = todayLyGross > 0 ? (todayDiff / todayLyGross) * 100 : 0;
   
-  const ytdDiff = displayData.ytd.actual - displayData.ytd.ly_actual;
-  const ytdPct = displayData.ytd.ly_actual > 0 ? (ytdDiff / displayData.ytd.ly_actual) * 100 : 0;
+  const ytdGross = displayData.ytd.actual * 1.1;
+  const ytdLyGross = displayData.ytd.ly_actual * 1.1;
+  const ytdDiff = ytdGross - ytdLyGross;
+  const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -225,7 +229,7 @@ export default function Home() {
                 {formatCurrency(
                   viewMode === 'daol_raw' && displayData.qa_metrics 
                     ? displayData.qa_metrics.daol_raw_total 
-                    : displayData.today.actual
+                    : todayGross
                 )}
               </div>
               
@@ -240,10 +244,10 @@ export default function Home() {
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
               <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
-                <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD)
+                <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) <span className="text-xs text-slate-400 font-normal">(부가세 포함)</span>
               </h2>
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight relative z-10">
-                {formatCurrency(displayData.ytd.actual)}
+                {formatCurrency(ytdGross)}
               </div>
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold relative z-10 ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                 <span>전년 동기 대비</span>

@@ -141,25 +141,6 @@ export default function MatrixWeeklyDashboard() {
 
   const netTotal = calculateSubtotal(Object.values(categorySubtotals));
 
-  // Override with the true Net Total from the backend API if available
-  if (coreData.core) {
-    if (coreData.core.today) {
-      netTotal.today.actual = Number(coreData.core.today.actual) || netTotal.today.actual;
-      netTotal.today.lastYear = Number(coreData.core.today.ly_actual) || netTotal.today.lastYear;
-      netTotal.today.growthRate = getGrowth(netTotal.today.actual, netTotal.today.lastYear);
-    }
-    if (coreData.core.mtd) {
-      netTotal.mtd.actual = Number(coreData.core.mtd.actual) || netTotal.mtd.actual;
-      netTotal.mtd.lastYear = Number(coreData.core.mtd.ly_actual) || netTotal.mtd.lastYear;
-      netTotal.mtd.growthRate = getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear);
-    }
-    if (coreData.core.ytd) {
-      netTotal.ytd.actual = Number(coreData.core.ytd.actual) || netTotal.ytd.actual;
-      netTotal.ytd.lastYear = Number(coreData.core.ytd.ly_actual) || netTotal.ytd.lastYear;
-      netTotal.ytd.growthRate = getGrowth(netTotal.ytd.actual, netTotal.ytd.lastYear);
-    }
-  }
-
   const vatTotal = {
     today: { actual: netTotal.today.actual * 0.1, lastYear: netTotal.today.lastYear * 0.1 },
     mtd: { actual: netTotal.mtd.actual * 0.1, lastYear: netTotal.mtd.lastYear * 0.1 },

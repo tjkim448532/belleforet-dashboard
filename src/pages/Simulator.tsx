@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useMapping } from '../contexts/MappingContext';
 import { Save, RotateCcw, CheckCircle2, Plus, X } from 'lucide-react';
+import { secureFetcher } from '../lib/secureFetcher';
 
 const getHqColor = (hq: string) => {
   if (hq.includes('골프')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';

@@ -20,150 +20,81 @@ export interface MatrixRow {
   };
 }
 
-const formatYMD = (d: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-};
-
-export const fetchMatrixData = async (startDateStr: string, isWeeklyMode: boolean = false): Promise<MatrixRow[]> => {
+export const fetchMatrixData = async (startDateStr: string): Promise<MatrixRow[]> => {
   const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
   
-  const target = new Date(startDateStr + "T00:00:00");
+  try {
+    const [matrixRes, v3Res] = await Promise.all([
+      secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDateStr}`).catch(() => null),
+      secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${startDateStr}`).catch(() => null)
+    ]);
 
-  const calcLY = (date: Date) => {
-    const ly = new Date(date);
-    if (isWeeklyMode) {
-      ly.setDate(ly.getDate() - 364);
-    } else {
-      ly.setFullYear(ly.getFullYear() - 1);
+    let matrixData: MatrixRow[] = [];
+    if (matrixRes) {
+      matrixData = matrixRes.data || matrixRes;
+      if (!Array.isArray(matrixData)) {
+        matrixData = [];
+      }
     }
-    return ly;
-  };
 
-  const d1 = formatYMD(target);
-  const d2 = formatYMD(calcLY(target));
-
-  const mtdStart = new Date(target);
-  mtdStart.setDate(1);
-  const d3_start = formatYMD(mtdStart);
-  const d3_end = formatYMD(target);
-
-  const d4_start = formatYMD(calcLY(mtdStart));
-  const d4_end = formatYMD(calcLY(target));
-
-  const ytdStart = new Date(target);
-  ytdStart.setMonth(0);
-  ytdStart.setDate(1);
-  const d5_start = formatYMD(ytdStart);
-  const d5_end = formatYMD(target);
-
-  const d6_start = formatYMD(calcLY(ytdStart));
-  const d6_end = formatYMD(calcLY(target));
-
-  const fetcher = async (s: string, e: string) => {
-    try {
-      const json = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?startDate=${s}&endDate=${e}`);
-      return json.data || json;
-    } catch (err) {
-      console.warn(`Fallback to empty for ${s}~${e} due to API error:`, err);
-      return null;
+    let v3Payload = null;
+    if (v3Res) {
+      v3Payload = v3Res.data || v3Res;
     }
-  };
 
-  const [t, tLY, m, mLY, y, yLY] = await Promise.all([
-    fetcher(d1, d1),
-    fetcher(d2, d2),
-    fetcher(d3_start, d3_end),
-    fetcher(d4_start, d4_end),
-    fetcher(d5_start, d5_end),
-    fetcher(d6_start, d6_end)
-  ]);
+    if (!v3Payload) {
+      return matrixData; // Fallback to raw matrix data if V3 fails
+    }
 
-  const shopMap = new Map<string, MatrixRow>();
-
-  const addData = (payload: any, period: 'today' | 'mtd' | 'ytd', type: 'actual' | 'lastYear') => {
-    if (!payload) return;
-    
-    const grid = payload.gridData || [];
-    const golfBreakdown = payload.golfFacilityBreakdown || [];
-    const roomBreakdown = payload.roomTypeBreakdown || [];
+    const golfBreakdown = v3Payload.golfFacilityBreakdown || [];
+    const roomBreakdown = v3Payload.roomTypeBreakdown || [];
 
     const hasGolfBreakdown = golfBreakdown.length > 0;
     const hasRoomBreakdown = roomBreakdown.length > 0;
 
-    grid.forEach((item: any) => {
-      let shop = item.depth2 || item.depth1 || '기타업장';
-      let cat = item.depth1 || '기타';
-
-      if (cat === 'GOLF') cat = '레저';
-      if (cat === 'ROOM') cat = '숙박';
-      if (cat === 'FNB') cat = '식음';
-      
-      // If we have breakdowns for this category, skip the aggregate row
-      if (hasGolfBreakdown && shop.includes('티켓')) return;
-      if (hasRoomBreakdown && shop.includes('객실')) return;
-
-      if (!shopMap.has(shop)) {
-        shopMap.set(shop, {
-          category: cat,
-          shop_name: shop,
-          today: { actual: 0, lastYear: 0, growthRate: 0 },
-          mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-          ytd: { actual: 0, lastYear: 0, growthRate: 0 }
-        });
-      }
-      shopMap.get(shop)![period][type] += (item.salesAmount || 0);
+    // Filter out aggregate rows if breakdowns exist
+    let netData = matrixData.filter(row => {
+      if (hasGolfBreakdown && row.shop_name.includes('티켓')) return false;
+      if (hasRoomBreakdown && row.shop_name.includes('객실')) return false;
+      return true;
     });
 
-    golfBreakdown.forEach((item: any) => {
-      let shop = item.facility_name;
-      let cat = '레저';
-      if (!shopMap.has(shop)) {
-        shopMap.set(shop, {
-          category: cat,
-          shop_name: shop,
-          today: { actual: 0, lastYear: 0, growthRate: 0 },
-          mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-          ytd: { actual: 0, lastYear: 0, growthRate: 0 }
-        });
-      }
-      shopMap.get(shop)![period][type] += (item.sales_amount || 0);
+    const createEmptyMetrics = () => ({
+      today: { actual: 0, lastYear: 0, growthRate: 0 },
+      mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+      ytd: { actual: 0, lastYear: 0, growthRate: 0 }
     });
 
-    roomBreakdown.forEach((item: any) => {
-      let shop = item.room_type;
-      let cat = '숙박';
-      if (!shopMap.has(shop)) {
-        shopMap.set(shop, {
-          category: cat,
-          shop_name: shop,
-          today: { actual: 0, lastYear: 0, growthRate: 0 },
-          mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-          ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+    // Inject Golf Breakdowns
+    if (hasGolfBreakdown) {
+      golfBreakdown.forEach((item: any) => {
+        const metrics = createEmptyMetrics();
+        metrics.today.actual = item.sales_amount || 0;
+        netData.push({
+          category: '레저',
+          shop_name: item.facility_name,
+          ...metrics
         });
-      }
-      shopMap.get(shop)![period][type] += (item.room_revenue || 0);
-    });
-  };
+      });
+    }
 
-  addData(t, 'today', 'actual');
-  addData(tLY, 'today', 'lastYear');
-  addData(m, 'mtd', 'actual');
-  addData(mLY, 'mtd', 'lastYear');
-  addData(y, 'ytd', 'actual');
-  addData(yLY, 'ytd', 'lastYear');
+    // Inject Room Breakdowns
+    if (hasRoomBreakdown) {
+      roomBreakdown.forEach((item: any) => {
+        const metrics = createEmptyMetrics();
+        metrics.today.actual = item.room_revenue || 0;
+        netData.push({
+          category: '숙박',
+          shop_name: item.room_type,
+          ...metrics
+        });
+      });
+    }
 
-  const netData = Array.from(shopMap.values()).map(r => {
-    const calcGrowth = (act: number, ly: number) => {
-      if (ly === 0) return 0;
-      return ((act - ly) / Math.abs(ly)) * 100;
-    };
-    
-    r.today.growthRate = calcGrowth(r.today.actual, r.today.lastYear);
-    r.mtd.growthRate = calcGrowth(r.mtd.actual, r.mtd.lastYear);
-    r.ytd.growthRate = calcGrowth(r.ytd.actual, r.ytd.lastYear);
-    return r;
-  });
+    return netData;
 
-  return netData;
+  } catch (error) {
+    console.error('Failed to fetch merged matrix data:', error);
+    return [];
+  }
 };

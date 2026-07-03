@@ -24,7 +24,7 @@ export default function MatrixWeeklyDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const netData = await fetchMatrixData(startDate, true);
+        const netData = await fetchMatrixData(startDate);
         setData(netData);
       } catch (error) {
         console.error('Error fetching matrix data:', error);

@@ -75,7 +75,7 @@ export const EXCEL_LAYOUT = [
 
 export const normalizeName = (name: string): string => {
   if (!name) return '';
-  return name.replace(/\s+/g, '').toLowerCase();
+  return String(name).replace(/\s+/g, '').toLowerCase();
 };
 
 export const findExcelShopName = (rawName: string): { category: string, shopName: string } | null => {

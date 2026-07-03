@@ -99,24 +99,29 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
 
   // Map Breakdown Arrays
   const mapBreakdown = (arr: any[], nameField: string, valueField: string, defaultCategory: string) => {
-    if (!arr) return;
+    if (!arr || !Array.isArray(arr)) return;
     arr.forEach((item: any) => {
-      const rawName = item[nameField] || item.shop_name || item.name || '알수없음';
-      const amount = item[valueField] || item.sales_amount || item.actual || item.revenue || 0;
-      if (amount === 0) return;
+      try {
+        const rawName = String(item[nameField] || item.shop_name || item.name || '알수없음');
+        const rawAmount = item[valueField] || item.sales_amount || item.actual || item.revenue || 0;
+        const amount = typeof rawAmount === 'string' ? parseFloat(rawAmount.replace(/,/g, '')) || 0 : Number(rawAmount) || 0;
+        if (amount === 0) return;
 
-      const match = findExcelShopName(rawName);
-      if (match) {
-        addAmount(match.category, match.shopName, amount);
-      } else {
-        // Unmapped breakdown data
-        unmappedRows.push({
-          category: defaultCategory,
-          shop_name: `[미매핑] ${rawName}`,
-          today: { actual: amount, lastYear: 0, growthRate: 0 },
-          mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-          ytd: { actual: 0, lastYear: 0, growthRate: 0 }
-        });
+        const match = findExcelShopName(rawName);
+        if (match) {
+          addAmount(match.category, match.shopName, amount);
+        } else {
+          // Unmapped breakdown data
+          unmappedRows.push({
+            category: defaultCategory,
+            shop_name: `[미매핑] ${rawName}`,
+            today: { actual: amount, lastYear: 0, growthRate: 0 },
+            mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+            ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+          });
+        }
+      } catch (e) {
+        console.error('Error mapping breakdown item', item, e);
       }
     });
   };

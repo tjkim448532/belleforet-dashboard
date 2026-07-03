@@ -51,14 +51,29 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     const amount = item.salesAmount || 0;
     
     const match = findExcelShopName(rawName);
+    
+    // Determine if we should skip this gridData row because we are using Breakdown arrays instead
+    const skipRoom = match?.category === '객실 Total' || item.depth2?.includes('객실');
+    const skipGolf = match?.category === '골프 Total' || item.depth2?.includes('골프');
+    const skipTicket = match?.category === '티켓업장 Total' || item.depth2?.includes('티켓');
+    const skipFnb = match?.category === '식음업장 Total' || item.depth2?.includes('식음');
+
     if (match) {
-      if (match.category === '객실 Total' && hasRoomBreakdown) return;
-      if (match.category === '골프 Total' && hasGolfBreakdown) return;
-      if (match.category === '티켓업장 Total' && hasTicketBreakdown) return;
-      if (match.category === '식음업장 Total' && hasFnbBreakdown) return;
+      if (skipRoom && hasRoomBreakdown) return;
+      if (skipGolf && hasGolfBreakdown) return;
+      if (skipTicket && hasTicketBreakdown) return;
+      if (skipFnb && hasFnbBreakdown) return;
       
       addAmount(match.category, match.shopName, amount);
     } else if (amount > 0) {
+      // Unmapped gridData
+      // If it's an aggregate row (not a detail) AND we have breakdown data for that category, SKIP IT to prevent double counting
+      if (!isDetail) {
+        if (skipRoom && hasRoomBreakdown) return;
+        if (skipGolf && hasGolfBreakdown) return;
+        if (skipTicket && hasTicketBreakdown) return;
+        if (skipFnb && hasFnbBreakdown) return;
+      }
       // Unmapped gridData
       // determine default category based on depth1 or depth2
       let defaultCategory = '기타업장 Total';

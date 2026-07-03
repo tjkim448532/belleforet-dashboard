@@ -14,6 +14,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   if (!core.core || !core.core.gridData) return [];
   const gridData = core.core.gridData;
   const rows: MatrixRow[] = [];
+  const unmappedRows: MatrixRow[] = [];
 
   const excelDataMap = new Map<string, MatrixRow>();
   EXCEL_LAYOUT.forEach(group => {
@@ -38,49 +39,71 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     }
   };
 
+  const hasGolfBreakdown = core.core?.golfFacilityBreakdown && core.core.golfFacilityBreakdown.length > 0;
+  const hasRoomBreakdown = core.core?.roomTypeBreakdown && core.core.roomTypeBreakdown.length > 0;
+  const hasTicketBreakdown = core.core?.ticketFacilityBreakdown && core.core.ticketFacilityBreakdown.length > 0;
+  const hasFnbBreakdown = core.core?.fnbFacilityBreakdown && core.core.fnbFacilityBreakdown.length > 0;
+
   // Map gridData
   gridData.forEach((item: any) => {
     const isDetail = item.depth3 && item.depth3 !== '전체';
     const rawName = isDetail ? item.depth3 : (item.depth2 || '기타');
+    const amount = item.salesAmount || 0;
     
-    // Only map if it's a detail row OR if depth3 is entirely missing
-    // We want to avoid mapping '전체' (aggregate rows) if we have detail rows
-    // But since findExcelShopName maps explicitly to known shops, aggregate rows like '티켓업장' won't match any shop!
-    // Wait, '객실' matches ROOM. '골프장' doesn't match anything. '식음업장' doesn't match anything.
-    // So if item is an aggregate row, and it matches (like '객실' -> ROOM), it will be added.
     const match = findExcelShopName(rawName);
     if (match) {
-      // Don't add aggregate '객실' if we have roomTypeBreakdown? 
-      // Actually, if we use the breakdown arrays, they might overlap.
-      // Let's just use gridData for now. If breakdown array has values, we add them too, BUT we might double count!
-      // To prevent double counting for ROOM and GOLF:
-      const hasGolfBreakdown = core.core?.golfFacilityBreakdown && core.core.golfFacilityBreakdown.length > 0;
-      const hasRoomBreakdown = core.core?.roomTypeBreakdown && core.core.roomTypeBreakdown.length > 0;
-      const hasTicketBreakdown = core.core?.ticketFacilityBreakdown && core.core.ticketFacilityBreakdown.length > 0;
-      const hasFnbBreakdown = core.core?.fnbFacilityBreakdown && core.core.fnbFacilityBreakdown.length > 0;
-      
       if (match.category === '객실 Total' && hasRoomBreakdown) return;
       if (match.category === '골프 Total' && hasGolfBreakdown) return;
       if (match.category === '티켓업장 Total' && hasTicketBreakdown) return;
       if (match.category === '식음업장 Total' && hasFnbBreakdown) return;
       
-      addAmount(match.category, match.shopName, item.salesAmount || 0);
+      addAmount(match.category, match.shopName, amount);
+    } else if (amount > 0) {
+      // Unmapped gridData
+      // determine default category based on depth1 or depth2
+      let defaultCategory = '기타업장 Total';
+      if (item.depth1?.includes('레저') || item.depth2?.includes('골프')) defaultCategory = '골프 Total';
+      else if (item.depth1?.includes('숙박') || item.depth2?.includes('객실')) defaultCategory = '객실 Total';
+      else if (item.depth1?.includes('식음')) defaultCategory = '식음업장 Total';
+      
+      unmappedRows.push({
+        category: defaultCategory,
+        shop_name: `[미매핑] ${rawName}`,
+        today: { actual: amount, lastYear: 0, growthRate: 0 },
+        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+        ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+      });
     }
   });
 
   // Map Breakdown Arrays
-  const mapBreakdown = (arr: any[], nameField: string, valueField: string) => {
+  const mapBreakdown = (arr: any[], nameField: string, valueField: string, defaultCategory: string) => {
     if (!arr) return;
     arr.forEach((item: any) => {
-      const match = findExcelShopName(item[nameField] || item.shop_name || item.name || '');
-      if (match) addAmount(match.category, match.shopName, item[valueField] || item.sales_amount || item.actual || item.revenue || 0);
+      const rawName = item[nameField] || item.shop_name || item.name || '알수없음';
+      const amount = item[valueField] || item.sales_amount || item.actual || item.revenue || 0;
+      if (amount === 0) return;
+
+      const match = findExcelShopName(rawName);
+      if (match) {
+        addAmount(match.category, match.shopName, amount);
+      } else {
+        // Unmapped breakdown data
+        unmappedRows.push({
+          category: defaultCategory,
+          shop_name: `[미매핑] ${rawName}`,
+          today: { actual: amount, lastYear: 0, growthRate: 0 },
+          mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+          ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+        });
+      }
     });
   };
 
-  mapBreakdown(core.core.golfFacilityBreakdown, 'facility_name', 'revenue');
-  mapBreakdown(core.core.roomTypeBreakdown, 'room_type', 'room_revenue');
-  mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'revenue');
-  mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'revenue');
+  mapBreakdown(core.core.golfFacilityBreakdown, 'facility_name', 'revenue', '골프 Total');
+  mapBreakdown(core.core.roomTypeBreakdown, 'room_type', 'room_revenue', '객실 Total');
+  mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'revenue', '티켓업장 Total');
+  mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'revenue', '식음업장 Total');
 
   // Push rows in exact EXCEL_LAYOUT order
   EXCEL_LAYOUT.forEach(group => {
@@ -88,6 +111,10 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       const key = `${group.category}|${shop}`;
       rows.push(excelDataMap.get(key)!);
     });
+    
+    // Append unmapped rows for this category
+    const unmappedForGroup = unmappedRows.filter(r => r.category === group.category);
+    rows.push(...unmappedForGroup);
   });
 
   return rows;

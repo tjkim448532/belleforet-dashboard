@@ -83,8 +83,8 @@ export const findExcelShopName = (rawName: string): { category: string, shopName
   const nName = normalizeName(rawName);
 
   // Special cases mappings
-  if (nName.includes('평') || nName.includes('펫룸') || nName.includes('객실') || nName.includes('룸') && !nName.includes('기타')) return { category: '객실 Total', shopName: 'ROOM' };
   if (nName.includes('객실기타') || nName.includes('룸기타')) return { category: '객실 Total', shopName: 'ROOM OTHER' };
+  if (nName.includes('평') || nName.includes('펫룸') || nName.includes('객실') || (nName.includes('룸') && !nName.includes('기타'))) return { category: '객실 Total', shopName: 'ROOM' };
   
   if (nName.includes('목장') && !nName.includes('체험')) return { category: '티켓업장 Total', shopName: '벨포레 목장' };
   if (nName.includes('목장체험') || nName.includes('체험')) return { category: '티켓업장 Total', shopName: '벨포레 목장(체험)' };

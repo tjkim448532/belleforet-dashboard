@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
-import { secureFetcher } from '../lib/secureFetcher';
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -20,34 +19,8 @@ export default function MatrixDashboard() {
   const { startDate } = useDate();
   const coreData = useCoreData();
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
-  const [weeklyTotals, setWeeklyTotals] = useState<Record<string, MatrixRow>>({});
-
   useEffect(() => {
-    const fetchWeekly = async () => {
-      try {
-        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const res = await secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDate}`);
-        const result = res.data || res;
-        const dataArray = Array.isArray(result) ? result : (result.data || []);
-        
-        const map: Record<string, MatrixRow> = {};
-        dataArray.forEach((row: MatrixRow) => {
-          if (row.shop_name === '객실') map['객실 Total'] = row;
-          if (row.shop_name === '골프장') map['골프 Total'] = row;
-          if (row.shop_name === '식음업장') map['식음업장 Total'] = row;
-          if (row.shop_name === '기타영업') map['기타업장 Total'] = row;
-          if (row.shop_name === '티켓업장' || row.shop_name === '레저') {
-            // Some old APIs combined tickets into leisure. We'll map what we have.
-            if (row.shop_name === '티켓업장') map['티켓업장 Total'] = row;
-          }
-          if (row.shop_name === '연회') map['연회 Total'] = row;
-        });
-        setWeeklyTotals(map);
-      } catch (err) {
-        console.error('Failed to fetch matrix weekly', err);
-      }
-    };
-    fetchWeekly();
+    // coreData fetches everything we need
   }, [startDate]);
 
   const data = React.useMemo(() => {
@@ -68,20 +41,23 @@ export default function MatrixDashboard() {
         today: {
           actual: acc.today.actual + r.today.actual,
           lastYear: acc.today.lastYear + r.today.lastYear,
+          growthRate: 0,
         },
         mtd: {
           actual: acc.mtd.actual + r.mtd.actual,
           lastYear: acc.mtd.lastYear + r.mtd.lastYear,
+          growthRate: 0,
         },
         ytd: {
           actual: acc.ytd.actual + r.ytd.actual,
           lastYear: acc.ytd.lastYear + r.ytd.lastYear,
+          growthRate: 0,
         },
       }),
       {
-        today: { actual: 0, lastYear: 0 },
-        mtd: { actual: 0, lastYear: 0 },
-        ytd: { actual: 0, lastYear: 0 },
+        today: { actual: 0, lastYear: 0, growthRate: 0 },
+        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+        ytd: { actual: 0, lastYear: 0, growthRate: 0 },
       }
     );
   };
@@ -97,25 +73,49 @@ export default function MatrixDashboard() {
   categoriesOrder.forEach(category => {
     const rows = groupedData[category] || [];
     const rawSub = calculateSubtotal(rows);
-    const wTotal = weeklyTotals[category];
+    
+    // Overlay real totals from gridData depth1/depth2 if we have them
+    const realTotal = coreData.core?.gridData?.find(
+      (item: any) =>
+        (category.includes('골프') && (item.depth2 === '골프장' || item.depth1 === '레저')) ||
+        (category.includes('객실') && (item.depth2 === '객실' || item.depth1 === '숙박')) ||
+        (category.includes('식음') && (item.depth2 === '식음업장' || item.depth1 === '식음')) ||
+        (category.includes('연회') && (item.depth2 === '연회' || item.depth1 === '식음')) ||
+        (category.includes('티켓') && (item.depth2 === '티켓업장' || item.depth2 === '레저' || item.depth1 === '레저')) ||
+        (category.includes('기타') && (item.depth2 === '기타영업' || item.depth1 === '기타'))
+    );
+
+    if (realTotal) {
+      rawSub.today.actual = Number(realTotal.salesAmount) || rawSub.today.actual;
+      rawSub.today.lastYear = Number(realTotal.lastYearSalesAmount) || rawSub.today.lastYear;
+      rawSub.today.growthRate = Number(realTotal.growthRate) || rawSub.today.growthRate;
+
+      rawSub.mtd.actual = Number(realTotal.mtdSalesAmount) || rawSub.mtd.actual;
+      rawSub.mtd.lastYear = Number(realTotal.lastYearMtdSalesAmount) || rawSub.mtd.lastYear;
+      rawSub.mtd.growthRate = Number(realTotal.mtdGrowthRate) || rawSub.mtd.growthRate;
+
+      rawSub.ytd.actual = Number(realTotal.ytdSalesAmount) || rawSub.ytd.actual;
+      rawSub.ytd.lastYear = Number(realTotal.lastYearYtdSalesAmount) || rawSub.ytd.lastYear;
+      rawSub.ytd.growthRate = Number(realTotal.ytdGrowthRate) || rawSub.ytd.growthRate;
+    }
     
     categorySubtotals[category] = {
       category: category,
       shop_name: category,
       today: {
         actual: rawSub.today.actual,
-        lastYear: wTotal ? wTotal.today.lastYear : rawSub.today.lastYear,
-        growthRate: getGrowth(rawSub.today.actual, wTotal ? wTotal.today.lastYear : rawSub.today.lastYear)
+        lastYear: rawSub.today.lastYear,
+        growthRate: rawSub.today.growthRate || getGrowth(rawSub.today.actual, rawSub.today.lastYear)
       },
       mtd: {
-        actual: wTotal ? wTotal.mtd.actual : rawSub.mtd.actual,
-        lastYear: wTotal ? wTotal.mtd.lastYear : rawSub.mtd.lastYear,
-        growthRate: getGrowth(wTotal ? wTotal.mtd.actual : rawSub.mtd.actual, wTotal ? wTotal.mtd.lastYear : rawSub.mtd.lastYear)
+        actual: rawSub.mtd.actual,
+        lastYear: rawSub.mtd.lastYear,
+        growthRate: rawSub.mtd.growthRate || getGrowth(rawSub.mtd.actual, rawSub.mtd.lastYear)
       },
       ytd: {
-        actual: wTotal ? wTotal.ytd.actual : rawSub.ytd.actual,
-        lastYear: wTotal ? wTotal.ytd.lastYear : rawSub.ytd.lastYear,
-        growthRate: getGrowth(wTotal ? wTotal.ytd.actual : rawSub.ytd.actual, wTotal ? wTotal.ytd.lastYear : rawSub.ytd.lastYear)
+        actual: rawSub.ytd.actual,
+        lastYear: rawSub.ytd.lastYear,
+        growthRate: rawSub.ytd.growthRate || getGrowth(rawSub.ytd.actual, rawSub.ytd.lastYear)
       }
     };
   });

@@ -39,6 +39,23 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     }
   };
 
+  const addGridData = (category: string, shopName: string, item: any, skipTodayActual: boolean) => {
+    const key = `${category}|${shopName}`;
+    if (excelDataMap.has(key)) {
+      const row = excelDataMap.get(key)!;
+      if (!skipTodayActual) {
+        row.today.actual += Number(item.salesAmount) || 0;
+      }
+      row.today.lastYear += Number(item.lastYearSalesAmount) || 0;
+      
+      row.mtd.actual += Number(item.mtdSalesAmount) || 0;
+      row.mtd.lastYear += Number(item.lastYearMtdSalesAmount) || 0;
+      
+      row.ytd.actual += Number(item.ytdSalesAmount) || 0;
+      row.ytd.lastYear += Number(item.lastYearYtdSalesAmount) || 0;
+    }
+  };
+
   const hasGolfBreakdown = core.core?.golfFacilityBreakdown && core.core.golfFacilityBreakdown.length > 0;
   const hasRoomBreakdown = core.core?.roomTypeBreakdown && core.core.roomTypeBreakdown.length > 0;
   const hasTicketBreakdown = core.core?.ticketFacilityBreakdown && core.core.ticketFacilityBreakdown.length > 0;
@@ -61,14 +78,16 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     const skipBanquet = match?.category === '연회 Total' || item.depth2?.includes('연회');
 
     if (match) {
-      if (skipRoom && hasRoomBreakdown) return;
-      if (skipGolf && hasGolfBreakdown) return;
-      if (skipTicket && hasTicketBreakdown) return;
-      if (skipFnb && hasFnbBreakdown) return;
-      if (skipOther && core.core?.otherFacilityBreakdown?.length > 0) return;
-      if (skipBanquet && core.core?.banquetFacilityBreakdown?.length > 0) return;
+      const shouldSkipTodayActual = Boolean(
+        (skipRoom && hasRoomBreakdown) ||
+        (skipGolf && hasGolfBreakdown) ||
+        (skipTicket && hasTicketBreakdown) ||
+        (skipFnb && hasFnbBreakdown) ||
+        (skipOther && core.core?.otherFacilityBreakdown?.length > 0) ||
+        (skipBanquet && core.core?.banquetFacilityBreakdown?.length > 0)
+      );
       
-      addAmount(match.category, match.shopName, amount);
+      addGridData(match.category, match.shopName, item, shouldSkipTodayActual);
     } else if (amount > 0) {
       // Unmapped gridData
       // If it's an aggregate row (not a detail) AND we have breakdown data for that category, SKIP IT to prevent double counting
@@ -90,9 +109,9 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       unmappedRows.push({
         category: defaultCategory,
         shop_name: `[미매핑] ${rawName}`,
-        today: { actual: amount, lastYear: 0, growthRate: 0 },
-        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-        ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+        today: { actual: amount, lastYear: Number(item.lastYearSalesAmount) || 0, growthRate: 0 },
+        mtd: { actual: Number(item.mtdSalesAmount) || 0, lastYear: Number(item.lastYearMtdSalesAmount) || 0, growthRate: 0 },
+        ytd: { actual: Number(item.ytdSalesAmount) || 0, lastYear: Number(item.lastYearYtdSalesAmount) || 0, growthRate: 0 }
       });
     }
   });

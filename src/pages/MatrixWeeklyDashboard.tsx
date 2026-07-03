@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
+import { useCoreData } from '../contexts/CoreDataContext';
+import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
 import { secureFetcher } from '../lib/secureFetcher';
-
-export interface MatrixRow {
-  category: string;
-  shop_name: string;
-  today: { actual: number; lastYear: number; growthRate: number };
-  mtd: { actual: number; lastYear: number; growthRate: number };
-  ytd: { actual: number; lastYear: number; growthRate: number };
-}
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -24,34 +18,52 @@ const formatGrowth = (rate: number) => {
 
 export default function MatrixWeeklyDashboard() {
   const { startDate } = useDate();
-  const [data, setData] = useState<MatrixRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const coreData = useCoreData();
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
+  const [weeklyTotals, setWeeklyTotals] = useState<Record<string, MatrixRow>>({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchWeekly = async () => {
       try {
-        const response = await secureFetcher(`https://belleforet-data.vercel.app/api/dashboard/matrix-weekly?date=${startDate}`);
-        const result = response.data || response;
-        if (Array.isArray(result)) {
-           setData(result);
-        } else if (result && Array.isArray(result.data)) {
-           setData(result.data);
-        } else {
-           setData([]);
-        }
-      } catch (error) {
-        console.error('Error fetching matrix data:', error);
-      } finally {
-        setLoading(false);
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+        const res = await secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDate}`);
+        const result = res.data || res;
+        const dataArray = Array.isArray(result) ? result : (result.data || []);
+        
+        const map: Record<string, MatrixRow> = {};
+        dataArray.forEach((row: MatrixRow) => {
+          if (row.shop_name === '객실') map['객실 Total'] = row;
+          if (row.shop_name === '골프장') map['골프 Total'] = row;
+          if (row.shop_name === '식음업장') map['식음업장 Total'] = row;
+          if (row.shop_name === '기타영업') map['기타업장 Total'] = row;
+          if (row.shop_name === '티켓업장' || row.shop_name === '레저') map['티켓업장 Total'] = row;
+          if (row.shop_name === '연회') map['연회 Total'] = row;
+        });
+        setWeeklyTotals(map);
+      } catch (err) {
+        console.error('Failed to fetch matrix weekly', err);
       }
     };
-    fetchData();
+    fetchWeekly();
   }, [startDate]);
 
+  const data = React.useMemo(() => {
+    if (coreData.isLoading || coreData.error) return [];
+    // Deep clone to avoid mutating the original mappedRows since we'll zero out lastYear
+    const rows = JSON.parse(JSON.stringify(transformMatrixData(coreData)));
+    // For weekly dashboard, we only have weekly comparison data for the Category Totals.
+    // Detail rows do not have weekly comparison data from the API, so we zero them out to avoid confusion
+    // with exact-date last year data.
+    rows.forEach((r: MatrixRow) => {
+      r.today.lastYear = 0; r.today.growthRate = 0;
+      r.mtd.lastYear = 0; r.mtd.growthRate = 0;
+      r.ytd.lastYear = 0; r.ytd.growthRate = 0;
+    });
+    return rows;
+  }, [coreData]);
+
   // Group data by category
-  const groupedData = data.reduce((acc, row) => {
+  const groupedData = data.reduce((acc: Record<string, MatrixRow[]>, row: MatrixRow) => {
     if (!acc[row.category]) acc[row.category] = [];
     acc[row.category].push(row);
     return acc;
@@ -86,9 +98,45 @@ export default function MatrixWeeklyDashboard() {
     return ((actual - lastYear) / lastYear) * 100;
   };
 
-  const categoriesOrder = ['식음', '연회', '레저', '숙박', '기타'];
-  const grandTotalRows = data;
-  const netTotal = calculateSubtotal(grandTotalRows);
+  const categoriesOrder = ['객실 Total', '골프 Total', '식음업장 Total', '연회 Total', '티켓업장 Total', '기타업장 Total'];
+
+  const categorySubtotals: Record<string, MatrixRow> = {};
+  categoriesOrder.forEach(category => {
+    const rows = groupedData[category] || [];
+    const rawSub = calculateSubtotal(rows);
+    const wTotal = weeklyTotals[category];
+
+    if (wTotal) {
+      rawSub.today.actual = Number(wTotal.today.actual) || rawSub.today.actual;
+      rawSub.today.lastYear = Number(wTotal.today.lastYear) || rawSub.today.lastYear;
+      rawSub.mtd.actual = Number(wTotal.mtd.actual) || rawSub.mtd.actual;
+      rawSub.mtd.lastYear = Number(wTotal.mtd.lastYear) || rawSub.mtd.lastYear;
+      rawSub.ytd.actual = Number(wTotal.ytd.actual) || rawSub.ytd.actual;
+      rawSub.ytd.lastYear = Number(wTotal.ytd.lastYear) || rawSub.ytd.lastYear;
+    }
+    
+    categorySubtotals[category] = {
+      category: category,
+      shop_name: category,
+      today: {
+        actual: rawSub.today.actual,
+        lastYear: rawSub.today.lastYear,
+        growthRate: getGrowth(rawSub.today.actual, rawSub.today.lastYear)
+      },
+      mtd: {
+        actual: rawSub.mtd.actual,
+        lastYear: rawSub.mtd.lastYear,
+        growthRate: getGrowth(rawSub.mtd.actual, rawSub.mtd.lastYear)
+      },
+      ytd: {
+        actual: rawSub.ytd.actual,
+        lastYear: rawSub.ytd.lastYear,
+        growthRate: getGrowth(rawSub.ytd.actual, rawSub.ytd.lastYear)
+      }
+    };
+  });
+
+  const netTotal = calculateSubtotal(Object.values(categorySubtotals));
 
   const vatTotal = {
     today: { actual: netTotal.today.actual * 0.1, lastYear: netTotal.today.lastYear * 0.1 },
@@ -102,10 +150,10 @@ export default function MatrixWeeklyDashboard() {
     ytd: { actual: netTotal.ytd.actual + vatTotal.ytd.actual, lastYear: netTotal.ytd.lastYear + vatTotal.ytd.lastYear },
   };
 
-  const checkedRowsList = data.filter(r => checkedShops.includes(r.shop_name));
+  const checkedRowsList = data.filter((r: MatrixRow) => checkedShops.includes(r.shop_name));
   const checkedTotal = calculateSubtotal(checkedRowsList);
 
-  if (loading) {
+  if (coreData.isLoading) {
     return <div className="p-6 text-slate-500">데이터를 불러오는 중입니다...</div>;
   }
 
@@ -122,18 +170,18 @@ export default function MatrixWeeklyDashboard() {
         <table className="w-full text-sm text-right whitespace-nowrap">
           <thead className="bg-slate-100 text-slate-600 font-semibold border-b-2 border-slate-300 sticky top-0 z-20 shadow-sm">
             <tr>
-              <th className="p-3 text-center border-r border-slate-200" rowSpan={2}>구분</th>
-              <th className="p-3 text-center border-r border-slate-200" colSpan={3}>금일(Today)</th>
-              <th className="p-3 text-center border-r border-slate-200" colSpan={3}>월누계(Month To Date)</th>
+              <th className="p-3 text-center border-r-2 border-slate-300" rowSpan={2}>구분</th>
+              <th className="p-3 text-center border-r-2 border-slate-300" colSpan={3}>금일(Today)</th>
+              <th className="p-3 text-center border-r-2 border-slate-300" colSpan={3}>월누계(Month To Date)</th>
               <th className="p-3 text-center" colSpan={3}>연누계(Year To Date)</th>
             </tr>
             <tr className="bg-slate-50 text-xs">
               <th className="p-2 border-r border-slate-200 font-medium">실적</th>
               <th className="p-2 border-r border-slate-200 font-medium">전년</th>
-              <th className="p-2 border-r border-slate-200 font-medium text-blue-600">증감율</th>
+              <th className="p-2 border-r-2 border-slate-300 font-medium text-blue-600">증감율</th>
               <th className="p-2 border-r border-slate-200 font-medium">실적</th>
               <th className="p-2 border-r border-slate-200 font-medium">전년</th>
-              <th className="p-2 border-r border-slate-200 font-medium text-blue-600">증감율</th>
+              <th className="p-2 border-r-2 border-slate-300 font-medium text-blue-600">증감율</th>
               <th className="p-2 border-r border-slate-200 font-medium">실적</th>
               <th className="p-2 border-r border-slate-200 font-medium">전년</th>
               <th className="p-2 font-medium text-blue-600">증감율</th>
@@ -144,13 +192,13 @@ export default function MatrixWeeklyDashboard() {
               const rows = groupedData[category];
               if (!rows) return null;
               
-              const sub = calculateSubtotal(rows);
+              const sub = categorySubtotals[category];
 
               return (
                 <React.Fragment key={category}>
-                  {rows.map((row) => (
+                  {rows.map((row: MatrixRow) => (
                     <tr key={row.shop_name} className={`hover:bg-slate-50 transition-colors ${checkedShops.includes(row.shop_name) ? 'bg-blue-50/50' : ''}`}>
-                      <td className="p-2 border-r border-slate-200 text-left pl-4 text-slate-600 flex items-center gap-3">
+                      <td className="p-2 border-r-2 border-slate-300 text-left pl-4 text-slate-600 flex items-center gap-3">
                         <input 
                           type="checkbox" 
                           className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
@@ -169,11 +217,12 @@ export default function MatrixWeeklyDashboard() {
                       </td>
                       <td className="p-2 font-medium">{formatCurrency(row.today.actual)}</td>
                       <td className="p-2 text-slate-500">{formatCurrency(row.today.lastYear)}</td>
-                      <td className={`p-2 border-r border-slate-200 ${row.today.growthRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatGrowth(row.today.growthRate)}</td>
+
+                      <td className={`p-2 border-r-2 border-slate-300 ${row.today.growthRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatGrowth(row.today.growthRate)}</td>
                       
                       <td className="p-2 font-medium">{formatCurrency(row.mtd.actual)}</td>
                       <td className="p-2 text-slate-500">{formatCurrency(row.mtd.lastYear)}</td>
-                      <td className={`p-2 border-r border-slate-200 ${row.mtd.growthRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatGrowth(row.mtd.growthRate)}</td>
+                      <td className={`p-2 border-r-2 border-slate-300 ${row.mtd.growthRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatGrowth(row.mtd.growthRate)}</td>
                       
                       <td className="p-2 font-medium">{formatCurrency(row.ytd.actual)}</td>
                       <td className="p-2 text-slate-500">{formatCurrency(row.ytd.lastYear)}</td>
@@ -181,14 +230,14 @@ export default function MatrixWeeklyDashboard() {
                     </tr>
                   ))}
                   <tr className="bg-amber-50 font-semibold text-slate-800 border-t border-b-2 border-amber-200/50">
-                    <td className="p-2 border-r border-slate-200 text-left pl-4">{category} Total</td>
+                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{category}</td>
                     <td className="p-2">{formatCurrency(sub.today.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.today.lastYear)}</td>
-                    <td className={`p-2 border-r border-slate-200 ${getGrowth(sub.today.actual, sub.today.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.today.actual, sub.today.lastYear))}</td>
+                    <td className={`p-2 border-r-2 border-slate-300 ${getGrowth(sub.today.actual, sub.today.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.today.actual, sub.today.lastYear))}</td>
                     
                     <td className="p-2">{formatCurrency(sub.mtd.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.mtd.lastYear)}</td>
-                    <td className={`p-2 border-r border-slate-200 ${getGrowth(sub.mtd.actual, sub.mtd.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.mtd.actual, sub.mtd.lastYear))}</td>
+                    <td className={`p-2 border-r-2 border-slate-300 ${getGrowth(sub.mtd.actual, sub.mtd.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.mtd.actual, sub.mtd.lastYear))}</td>
                     
                     <td className="p-2">{formatCurrency(sub.ytd.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.ytd.lastYear)}</td>
@@ -200,14 +249,15 @@ export default function MatrixWeeklyDashboard() {
 
             {/* NET ROW */}
             <tr className="bg-red-50 font-bold text-red-800 border-t-2 border-red-200">
-              <td className="p-3 border-r border-slate-200 text-left pl-4">NET</td>
+              <td className="p-3 border-r-2 border-slate-300 text-left pl-4">NET</td>
               <td className="p-3">{formatCurrency(netTotal.today.actual)}</td>
               <td className="p-3">{formatCurrency(netTotal.today.lastYear)}</td>
-              <td className="p-3 border-r border-slate-200">{formatGrowth(getGrowth(netTotal.today.actual, netTotal.today.lastYear))}</td>
-              
+              <td className="p-2 border-r border-slate-200">
+                {netTotal.today.actual === 0 ? '0.00' : formatGrowth(getGrowth(netTotal.today.actual, netTotal.today.lastYear))}%
+              </td>
               <td className="p-3">{formatCurrency(netTotal.mtd.actual)}</td>
               <td className="p-3">{formatCurrency(netTotal.mtd.lastYear)}</td>
-              <td className="p-3 border-r border-slate-200">{formatGrowth(getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear))}</td>
+              <td className="p-3 border-r-2 border-slate-300">{formatGrowth(getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear))}</td>
               
               <td className="p-3">{formatCurrency(netTotal.ytd.actual)}</td>
               <td className="p-3">{formatCurrency(netTotal.ytd.lastYear)}</td>
@@ -216,22 +266,22 @@ export default function MatrixWeeklyDashboard() {
 
             {/* SVC ROW */}
             <tr className="bg-slate-50 font-medium text-slate-600">
-              <td className="p-2 border-r border-slate-200 text-left pl-4">SVC</td>
-              <td className="p-2">0</td><td className="p-2">0</td><td className="p-2 border-r border-slate-200">0.00</td>
-              <td className="p-2">0</td><td className="p-2">0</td><td className="p-2 border-r border-slate-200">0.00</td>
+              <td className="p-2 border-r-2 border-slate-300 text-left pl-4">SVC</td>
+              <td className="p-2">0</td><td className="p-2">0</td><td className="p-2 border-r-2 border-slate-300">0.00</td>
+              <td className="p-2">0</td><td className="p-2">0</td><td className="p-2 border-r-2 border-slate-300">0.00</td>
               <td className="p-2">0</td><td className="p-2">0</td><td className="p-2">0.00</td>
             </tr>
 
             {/* VAT ROW */}
             <tr className="bg-slate-50 font-medium text-slate-700 border-b-2 border-slate-300">
-              <td className="p-2 border-r border-slate-200 text-left pl-4">VAT</td>
+              <td className="p-2 border-r-2 border-slate-300 text-left pl-4">VAT</td>
               <td className="p-2">{formatCurrency(vatTotal.today.actual)}</td>
               <td className="p-2">{formatCurrency(vatTotal.today.lastYear)}</td>
-              <td className="p-2 border-r border-slate-200">{formatGrowth(getGrowth(vatTotal.today.actual, vatTotal.today.lastYear))}</td>
+              <td className="p-2 border-r-2 border-slate-300">{formatGrowth(getGrowth(vatTotal.today.actual, vatTotal.today.lastYear))}</td>
               
               <td className="p-2">{formatCurrency(vatTotal.mtd.actual)}</td>
               <td className="p-2">{formatCurrency(vatTotal.mtd.lastYear)}</td>
-              <td className="p-2 border-r border-slate-200">{formatGrowth(getGrowth(vatTotal.mtd.actual, vatTotal.mtd.lastYear))}</td>
+              <td className="p-2 border-r-2 border-slate-300">{formatGrowth(getGrowth(vatTotal.mtd.actual, vatTotal.mtd.lastYear))}</td>
               
               <td className="p-2">{formatCurrency(vatTotal.ytd.actual)}</td>
               <td className="p-2">{formatCurrency(vatTotal.ytd.lastYear)}</td>
@@ -240,14 +290,14 @@ export default function MatrixWeeklyDashboard() {
 
             {/* GRAND TOTAL ROW */}
             <tr className="bg-red-100 font-extrabold text-red-900 shadow-sm">
-              <td className="p-3 border-r border-slate-200 text-left pl-4">Grand Total</td>
+              <td className="p-3 border-r-2 border-slate-300 text-left pl-4">Grand Total</td>
               <td className="p-3">{formatCurrency(grandTotal.today.actual)}</td>
               <td className="p-3">{formatCurrency(grandTotal.today.lastYear)}</td>
-              <td className="p-3 border-r border-slate-200">{formatGrowth(getGrowth(grandTotal.today.actual, grandTotal.today.lastYear))}</td>
+              <td className="p-3 border-r-2 border-slate-300">{formatGrowth(getGrowth(grandTotal.today.actual, grandTotal.today.lastYear))}</td>
               
               <td className="p-3">{formatCurrency(grandTotal.mtd.actual)}</td>
               <td className="p-3">{formatCurrency(grandTotal.mtd.lastYear)}</td>
-              <td className="p-3 border-r border-slate-200">{formatGrowth(getGrowth(grandTotal.mtd.actual, grandTotal.mtd.lastYear))}</td>
+              <td className="p-3 border-r-2 border-slate-300">{formatGrowth(getGrowth(grandTotal.mtd.actual, grandTotal.mtd.lastYear))}</td>
               
               <td className="p-3">{formatCurrency(grandTotal.ytd.actual)}</td>
               <td className="p-3">{formatCurrency(grandTotal.ytd.lastYear)}</td>

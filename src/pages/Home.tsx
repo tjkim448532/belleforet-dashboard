@@ -282,10 +282,10 @@ export default function Home() {
                         </span>
                       </div>
                       <div className="flex flex-col border-l border-slate-200 pl-4">
-                        <span className="text-xs text-slate-400 font-medium mb-1">25평</span>
+                        <span className="text-xs text-slate-400 font-medium mb-1">35평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('25'));
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('35'));
                             return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
                           })())}
                         </span>

@@ -11,36 +11,60 @@ export interface MatrixRow {
 export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   if (!core.core || !core.core.gridData) return [];
   const gridData = core.core.gridData;
+  const golfBreakdown = core.core.golfFacilityBreakdown || [];
+  const roomBreakdown = core.core.roomTypeBreakdown || [];
+
+  const hasGolfBreakdown = golfBreakdown.length > 0;
+  const hasRoomBreakdown = roomBreakdown.length > 0;
+
   const rows: MatrixRow[] = [];
-  
-  // To avoid double-counting, we prefer depth3 (detailed shops).
-  // We'll collect all rows. If there are detail rows (depth3 !== '전체'), we filter out the '전체' row for that depth2 group.
-  const hasDetailsForDepth2: Record<string, boolean> = {};
-  gridData.forEach((item: any) => {
-    if (item.depth3 && item.depth3 !== '전체') {
-      hasDetailsForDepth2[item.depth2] = true;
-    }
-  });
 
   gridData.forEach((item: any) => {
-    // Skip '전체' if detail rows exist for this group
-    if (item.depth3 === '전체' && hasDetailsForDepth2[item.depth2]) {
-      return; 
-    }
-    
-    // For shop_name, use depth3 if it's a detail row, otherwise use depth2. 
-    // If depth3 is empty/null, fallback to depth2.
-    const isDetail = item.depth3 && item.depth3 !== '전체';
-    const shopName = isDetail ? item.depth3 : (item.depth2 || '전체');
+    const shop = item.depth2 || item.depth1 || '기타업장';
+    let cat = item.depth1 || '기타';
+
+    if (cat === 'GOLF') cat = '레저';
+    if (cat === 'ROOM') cat = '숙박';
+    if (cat === 'FNB') cat = '식음';
+
+    // If we have breakdowns for this category, skip the aggregate row to avoid double counting
+    if (hasGolfBreakdown && shop.includes('티켓')) return;
+    if (hasRoomBreakdown && shop.includes('객실')) return;
 
     rows.push({
-      category: item.depth1 || '기타',
-      shop_name: shopName,
+      category: cat,
+      shop_name: shop,
       today: { actual: item.salesAmount || 0, lastYear: 0, growthRate: 0 },
       mtd: { actual: 0, lastYear: 0, growthRate: 0 },
       ytd: { actual: 0, lastYear: 0, growthRate: 0 }
     });
   });
+
+  // Inject Golf Breakdowns
+  if (hasGolfBreakdown) {
+    golfBreakdown.forEach((item: any) => {
+      rows.push({
+        category: '레저',
+        shop_name: item.facility_name,
+        today: { actual: item.sales_amount || 0, lastYear: 0, growthRate: 0 },
+        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+        ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+      });
+    });
+  }
+
+  // Inject Room Breakdowns
+  if (hasRoomBreakdown) {
+    roomBreakdown.forEach((item: any) => {
+      rows.push({
+        category: '숙박',
+        shop_name: item.room_type,
+        today: { actual: item.room_revenue || 0, lastYear: 0, growthRate: 0 },
+        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+        ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+      });
+    });
+  }
 
   return rows;
 };

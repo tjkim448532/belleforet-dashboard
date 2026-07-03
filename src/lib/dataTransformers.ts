@@ -57,12 +57,16 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     const skipGolf = match?.category === '골프 Total' || item.depth2?.includes('골프');
     const skipTicket = match?.category === '티켓업장 Total' || item.depth2?.includes('티켓');
     const skipFnb = match?.category === '식음업장 Total' || item.depth2?.includes('식음');
+    const skipOther = match?.category === '기타업장 Total' || item.depth2?.includes('기타');
+    const skipBanquet = match?.category === '연회 Total' || item.depth2?.includes('연회');
 
     if (match) {
       if (skipRoom && hasRoomBreakdown) return;
       if (skipGolf && hasGolfBreakdown) return;
       if (skipTicket && hasTicketBreakdown) return;
       if (skipFnb && hasFnbBreakdown) return;
+      if (skipOther && core.core?.otherFacilityBreakdown?.length > 0) return;
+      if (skipBanquet && core.core?.banquetFacilityBreakdown?.length > 0) return;
       
       addAmount(match.category, match.shopName, amount);
     } else if (amount > 0) {
@@ -73,6 +77,8 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
         if (skipGolf && hasGolfBreakdown) return;
         if (skipTicket && hasTicketBreakdown) return;
         if (skipFnb && hasFnbBreakdown) return;
+        if (skipOther && core.core?.otherFacilityBreakdown?.length > 0) return;
+        if (skipBanquet && core.core?.banquetFacilityBreakdown?.length > 0) return;
       }
       // Unmapped gridData
       // determine default category based on depth1 or depth2
@@ -119,6 +125,8 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   mapBreakdown(core.core.roomTypeBreakdown, 'room_type', 'room_revenue', '객실 Total');
   mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'revenue', '티켓업장 Total');
   mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'revenue', '식음업장 Total');
+  mapBreakdown(core.core.otherFacilityBreakdown, 'facility_name', 'revenue', '기타업장 Total');
+  mapBreakdown(core.core.banquetFacilityBreakdown, 'facility_name', 'revenue', '연회 Total');
 
   // Push rows in exact EXCEL_LAYOUT order
   EXCEL_LAYOUT.forEach(group => {

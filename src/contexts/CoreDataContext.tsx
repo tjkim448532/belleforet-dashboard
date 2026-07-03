@@ -12,6 +12,10 @@ export interface RawPayload {
   roomTypeBreakdown: any[];
   channelBreakdown: any[];
   golfFacilityBreakdown: any[];
+  fnbFacilityBreakdown: any[];
+  ticketFacilityBreakdown: any[];
+  otherFacilityBreakdown: any[];
+  banquetFacilityBreakdown: any[];
   weeklyTrend: any[];
   targetDate: string;
   [key: string]: any;

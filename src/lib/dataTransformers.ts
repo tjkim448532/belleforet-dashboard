@@ -263,6 +263,8 @@ export const transformHomeData = (core: CoreDataState) => {
     qty: 0 // Fallback
   })).filter(h => h.actual > 0);
 
+  const roomRevenue = (c.roomTypeBreakdown || []).reduce((sum: number, item: any) => sum + (Number(item.room_revenue) || 0), 0);
+  
   const safeActual = c.fnbFacilityBreakdown && c.ticketFacilityBreakdown 
     ? [
         ...(c.fnbFacilityBreakdown || []),
@@ -270,7 +272,7 @@ export const transformHomeData = (core: CoreDataState) => {
         ...(c.otherFacilityBreakdown || []),
         ...(c.banquetFacilityBreakdown || []),
         ...(c.golfFacilityBreakdown || []),
-      ].reduce((sum, item) => sum + (Number(item.revenue) || 0), 0)
+      ].reduce((sum, item) => sum + (Number(item.revenue) || 0), 0) + roomRevenue
     : c.today?.actual || 0;
 
   return {

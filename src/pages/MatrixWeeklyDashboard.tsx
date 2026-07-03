@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
-import { fetchMatrixData, type MatrixRow } from '../lib/matrixFetcher';
+import { secureFetcher } from '../lib/secureFetcher';
+
+export interface MatrixRow {
+  category: string;
+  shop_name: string;
+  today: { actual: number; lastYear: number; growthRate: number };
+  mtd: { actual: number; lastYear: number; growthRate: number };
+  ytd: { actual: number; lastYear: number; growthRate: number };
+}
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -24,8 +32,15 @@ export default function MatrixWeeklyDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const netData = await fetchMatrixData(startDate);
-        setData(netData);
+        const response = await secureFetcher(`https://belleforet-data.vercel.app/api/dashboard/matrix-weekly?date=${startDate}`);
+        const result = response.data || response;
+        if (Array.isArray(result)) {
+           setData(result);
+        } else if (result && Array.isArray(result.data)) {
+           setData(result.data);
+        } else {
+           setData([]);
+        }
       } catch (error) {
         console.error('Error fetching matrix data:', error);
       } finally {

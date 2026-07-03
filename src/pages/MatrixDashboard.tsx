@@ -150,6 +150,25 @@ export default function MatrixDashboard() {
         </div>
       </div>
 
+      {coreData.core && (
+        <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+          <h3 className="font-bold text-red-800 mb-2">데이터 구조 디버깅 (백엔드 확인용)</h3>
+          <pre className="text-xs text-red-600 overflow-auto">
+            {JSON.stringify({
+              fnbFacilityBreakdown_length: coreData.core?.fnbFacilityBreakdown?.length || 0,
+              ticketFacilityBreakdown_length: coreData.core?.ticketFacilityBreakdown?.length || 0,
+              otherFacilityBreakdown_length: coreData.core?.otherFacilityBreakdown?.length || 0,
+              banquetFacilityBreakdown_length: coreData.core?.banquetFacilityBreakdown?.length || 0,
+              golfFacilityBreakdown_length: coreData.core?.golfFacilityBreakdown?.length || 0,
+              roomTypeBreakdown_length: coreData.core?.roomTypeBreakdown?.length || 0,
+              ticket_sample: coreData.core?.ticketFacilityBreakdown?.[0] || '없음',
+              fnb_sample: coreData.core?.fnbFacilityBreakdown?.[0] || '없음',
+              other_sample: coreData.core?.otherFacilityBreakdown?.[0] || '없음'
+            }, null, 2)}
+          </pre>
+        </div>
+      )}
+
       <div className="overflow-auto max-h-[calc(100vh-10rem)] rounded-xl border border-slate-200 shadow-sm bg-white relative">
         <table className="w-full text-sm text-right whitespace-nowrap">
           <thead className="bg-slate-100 text-slate-600 font-semibold border-b-2 border-slate-300 sticky top-0 z-20 shadow-sm">

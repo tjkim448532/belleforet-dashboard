@@ -269,15 +269,40 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-slate-500 font-bold">숙박 객실 전체 평균 단가 (ADR)</div>
-                    </div>
-                    <div className="text-4xl font-emphatic text-brand-mint mb-2">
-                      {formatCurrency(displayData?.adr || 0)}
+                    <div className="text-slate-500 font-bold mb-4">평형별 객실 평균 단가 (ADR)</div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mb-2 pb-2">
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-400 font-medium mb-1">16평</span>
+                        <span className="text-lg font-bold text-brand-mint">
+                          {formatCurrency((() => {
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('16'));
+                            return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
+                          })())}
+                        </span>
+                      </div>
+                      <div className="flex flex-col border-l border-slate-200 pl-4">
+                        <span className="text-xs text-slate-400 font-medium mb-1">25평</span>
+                        <span className="text-lg font-bold text-brand-mint">
+                          {formatCurrency((() => {
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('25'));
+                            return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
+                          })())}
+                        </span>
+                      </div>
+                      <div className="flex flex-col border-l border-slate-200 pl-4">
+                        <span className="text-xs text-slate-400 font-medium mb-1">51평</span>
+                        <span className="text-lg font-bold text-brand-mint">
+                          {formatCurrency((() => {
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('51'));
+                            return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
+                          })())}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-sm text-slate-400 mt-2">
-                    숙박 부문 총 매출액 ÷ 판매된 전체 객실 수
+                  <div className="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-3">
+                    평형별 객실 순매출액 ÷ 판매된 객실 수
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">

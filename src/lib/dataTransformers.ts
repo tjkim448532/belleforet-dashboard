@@ -291,6 +291,7 @@ export const transformHomeData = (core: CoreDataState) => {
     adr: 0, // Fallback
     avg_green_fee: 0, // Fallback
     weekly_trend: [], // Fallback
+    roomTypeBreakdown: c.roomTypeBreakdown || [],
     golfSummary: c.golfSummary || {
       reservedTeams: 0,
       visitedTeams: 0,

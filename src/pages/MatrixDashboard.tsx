@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
-import { useCoreData } from '../contexts/CoreDataContext';
-import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
+import { transformMatrixWeeklyToExcelLayout, type MatrixRow } from '../lib/dataTransformers';
+import { secureFetcher } from '../lib/secureFetcher';
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -17,13 +17,32 @@ const formatGrowth = (rate: number) => {
 
 export default function MatrixDashboard() {
   const { startDate } = useDate();
-  const coreData = useCoreData();
+  const [data, setData] = useState<MatrixRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
 
-  const data = React.useMemo(() => {
-    if (coreData.isLoading || coreData.error) return [];
-    return transformMatrixData(coreData);
-  }, [coreData]);
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+        const response = await secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDate}`);
+        const result = response.data || response;
+        if (Array.isArray(result)) {
+           setData(transformMatrixWeeklyToExcelLayout(result));
+        } else if (result && Array.isArray(result.data)) {
+           setData(transformMatrixWeeklyToExcelLayout(result.data));
+        } else {
+           setData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching matrix data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [startDate]);
 
   // Group data by category
   const groupedData = data.reduce((acc, row) => {
@@ -80,14 +99,14 @@ export default function MatrixDashboard() {
   const checkedRowsList = data.filter(r => checkedShops.includes(r.shop_name));
   const checkedTotal = calculateSubtotal(checkedRowsList);
 
-  if (coreData.isLoading) {
+  if (loading) {
     return <div className="p-6 text-slate-500">데이터를 불러오는 중입니다...</div>;
   }
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">경영 매트릭스 (기존 대시보드 검증용)</h1>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">데이타 검증 (기존 대시보드 비교용)</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
           기준일자: {startDate}
         </div>

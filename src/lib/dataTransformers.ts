@@ -93,6 +93,62 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   return rows;
 };
 
+export const transformMatrixWeeklyToExcelLayout = (weeklyData: MatrixRow[]): MatrixRow[] => {
+  const rows: MatrixRow[] = [];
+
+  const excelDataMap = new Map<string, MatrixRow>();
+  EXCEL_LAYOUT.forEach(group => {
+    group.shops.forEach(shop => {
+      const key = `${group.category}|${shop}`;
+      excelDataMap.set(key, {
+        category: group.category,
+        shop_name: shop,
+        today: { actual: 0, lastYear: 0, growthRate: 0 },
+        mtd: { actual: 0, lastYear: 0, growthRate: 0 },
+        ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+      });
+    });
+  });
+
+  const addAmount = (category: string, shopName: string, sourceRow: MatrixRow) => {
+    const key = `${category}|${shopName}`;
+    if (excelDataMap.has(key)) {
+      const row = excelDataMap.get(key)!;
+      row.today.actual += sourceRow.today?.actual || 0;
+      row.today.lastYear += sourceRow.today?.lastYear || 0;
+      row.mtd.actual += sourceRow.mtd?.actual || 0;
+      row.mtd.lastYear += sourceRow.mtd?.lastYear || 0;
+      row.ytd.actual += sourceRow.ytd?.actual || 0;
+      row.ytd.lastYear += sourceRow.ytd?.lastYear || 0;
+      
+      const calcGrowth = (actual: number, ly: number) => ly ? ((actual - ly) / ly) * 100 : (actual ? 100 : 0);
+      row.today.growthRate = calcGrowth(row.today.actual, row.today.lastYear);
+      row.mtd.growthRate = calcGrowth(row.mtd.actual, row.mtd.lastYear);
+      row.ytd.growthRate = calcGrowth(row.ytd.actual, row.ytd.lastYear);
+    }
+  };
+
+  if (Array.isArray(weeklyData)) {
+    weeklyData.forEach(item => {
+      const rawName = item.shop_name;
+      if (!rawName) return;
+      const match = findExcelShopName(rawName);
+      if (match) {
+        addAmount(match.category, match.shopName, item);
+      }
+    });
+  }
+
+  EXCEL_LAYOUT.forEach(group => {
+    group.shops.forEach(shop => {
+      const key = `${group.category}|${shop}`;
+      rows.push(excelDataMap.get(key)!);
+    });
+  });
+
+  return rows;
+};
+
 export const transformHomeData = (core: CoreDataState) => {
   if (!core.core) return null;
   const c = core.core;

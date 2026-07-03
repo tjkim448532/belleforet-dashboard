@@ -46,8 +46,6 @@ export default function Layout() {
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
     { name: '경영진 대시보드 (V3)', path: '/executive', icon: <Database size={20} />, roles: ['admin', 'executive'] },
-    { name: '경영 매트릭스', path: '/matrix', icon: <Database size={20} />, roles: ['admin', 'executive'] },
-    { name: '경영 매트릭스 (요일 비교)', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} />, roles: ['admin', 'executive', 'sales'] },
     { name: '식음본부', path: '#식음본부', icon: <Coffee size={20} />, roles: ['admin', 'executive', 'fnb'] },
@@ -230,6 +228,29 @@ export default function Layout() {
               <Database size={20} />
               데이터 연동 현황
             </NavLink>
+
+            {['admin', 'executive'].some(r => userRole === r) && (
+              <>
+                <NavLink
+                  to="/matrix"
+                  className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+                    isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  <Database size={20} />
+                  데이타 검증
+                </NavLink>
+                <NavLink
+                  to="/matrix-weekly"
+                  className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+                    isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  <Database size={20} />
+                  데이타 검증 (요일 비교)
+                </NavLink>
+              </>
+            )}
             
             {isAdmin && (
               <NavLink

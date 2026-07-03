@@ -56,9 +56,13 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       // To prevent double counting for ROOM and GOLF:
       const hasGolfBreakdown = core.core?.golfFacilityBreakdown && core.core.golfFacilityBreakdown.length > 0;
       const hasRoomBreakdown = core.core?.roomTypeBreakdown && core.core.roomTypeBreakdown.length > 0;
+      const hasTicketBreakdown = core.core?.ticketFacilityBreakdown && core.core.ticketFacilityBreakdown.length > 0;
+      const hasFnbBreakdown = core.core?.fnbFacilityBreakdown && core.core.fnbFacilityBreakdown.length > 0;
       
       if (match.category === '객실 Total' && hasRoomBreakdown) return;
       if (match.category === '골프 Total' && hasGolfBreakdown) return;
+      if (match.category === '티켓업장 Total' && hasTicketBreakdown) return;
+      if (match.category === '식음업장 Total' && hasFnbBreakdown) return;
       
       addAmount(match.category, match.shopName, item.salesAmount || 0);
     }
@@ -68,15 +72,15 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   const mapBreakdown = (arr: any[], nameField: string, valueField: string) => {
     if (!arr) return;
     arr.forEach((item: any) => {
-      const match = findExcelShopName(item[nameField]);
+      const match = findExcelShopName(item[nameField] || item.shop_name || item.name || '');
       if (match) addAmount(match.category, match.shopName, item[valueField] || item.sales_amount || item.actual || item.revenue || 0);
     });
   };
 
   mapBreakdown(core.core.golfFacilityBreakdown, 'facility_name', 'revenue');
   mapBreakdown(core.core.roomTypeBreakdown, 'room_type', 'room_revenue');
-  mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'sales_amount');
-  mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'sales_amount');
+  mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'revenue');
+  mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'revenue');
 
   // Push rows in exact EXCEL_LAYOUT order
   EXCEL_LAYOUT.forEach(group => {

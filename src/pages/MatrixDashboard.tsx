@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
-import { transformMatrixWeeklyToExcelLayout, type MatrixRow } from '../lib/dataTransformers';
+import { useCoreData } from '../contexts/CoreDataContext';
+import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
 import { secureFetcher } from '../lib/secureFetcher';
 
 // Utility to format currency
@@ -17,32 +18,42 @@ const formatGrowth = (rate: number) => {
 
 export default function MatrixDashboard() {
   const { startDate } = useDate();
-  const [data, setData] = useState<MatrixRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const coreData = useCoreData();
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
+  const [weeklyTotals, setWeeklyTotals] = useState<Record<string, MatrixRow>>({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchWeekly = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const response = await secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDate}`);
-        const result = response.data || response;
-        if (Array.isArray(result)) {
-           setData(transformMatrixWeeklyToExcelLayout(result));
-        } else if (result && Array.isArray(result.data)) {
-           setData(transformMatrixWeeklyToExcelLayout(result.data));
-        } else {
-           setData([]);
-        }
-      } catch (error) {
-        console.error('Error fetching matrix data:', error);
-      } finally {
-        setLoading(false);
+        const res = await secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDate}`);
+        const result = res.data || res;
+        const dataArray = Array.isArray(result) ? result : (result.data || []);
+        
+        const map: Record<string, MatrixRow> = {};
+        dataArray.forEach((row: MatrixRow) => {
+          if (row.shop_name === '객실') map['객실 Total'] = row;
+          if (row.shop_name === '골프장') map['골프 Total'] = row;
+          if (row.shop_name === '식음업장') map['식음업장 Total'] = row;
+          if (row.shop_name === '기타영업') map['기타업장 Total'] = row;
+          if (row.shop_name === '티켓업장' || row.shop_name === '레저') {
+            // Some old APIs combined tickets into leisure. We'll map what we have.
+            if (row.shop_name === '티켓업장') map['티켓업장 Total'] = row;
+          }
+          if (row.shop_name === '연회') map['연회 Total'] = row;
+        });
+        setWeeklyTotals(map);
+      } catch (err) {
+        console.error('Failed to fetch matrix weekly', err);
       }
     };
-    fetchData();
+    fetchWeekly();
   }, [startDate]);
+
+  const data = React.useMemo(() => {
+    if (coreData.isLoading || coreData.error) return [];
+    return transformMatrixData(coreData);
+  }, [coreData]);
 
   // Group data by category
   const groupedData = data.reduce((acc, row) => {
@@ -81,8 +92,35 @@ export default function MatrixDashboard() {
   };
 
   const categoriesOrder = ['객실 Total', '골프 Total', '식음업장 Total', '연회 Total', '티켓업장 Total', '기타업장 Total'];
-  const grandTotalRows = data;
-  const netTotal = calculateSubtotal(grandTotalRows);
+
+  const categorySubtotals: Record<string, MatrixRow> = {};
+  categoriesOrder.forEach(category => {
+    const rows = groupedData[category] || [];
+    const rawSub = calculateSubtotal(rows);
+    const wTotal = weeklyTotals[category];
+    
+    categorySubtotals[category] = {
+      category: category,
+      shop_name: category,
+      today: {
+        actual: rawSub.today.actual,
+        lastYear: wTotal ? wTotal.today.lastYear : rawSub.today.lastYear,
+        growthRate: getGrowth(rawSub.today.actual, wTotal ? wTotal.today.lastYear : rawSub.today.lastYear)
+      },
+      mtd: {
+        actual: wTotal ? wTotal.mtd.actual : rawSub.mtd.actual,
+        lastYear: wTotal ? wTotal.mtd.lastYear : rawSub.mtd.lastYear,
+        growthRate: getGrowth(wTotal ? wTotal.mtd.actual : rawSub.mtd.actual, wTotal ? wTotal.mtd.lastYear : rawSub.mtd.lastYear)
+      },
+      ytd: {
+        actual: wTotal ? wTotal.ytd.actual : rawSub.ytd.actual,
+        lastYear: wTotal ? wTotal.ytd.lastYear : rawSub.ytd.lastYear,
+        growthRate: getGrowth(wTotal ? wTotal.ytd.actual : rawSub.ytd.actual, wTotal ? wTotal.ytd.lastYear : rawSub.ytd.lastYear)
+      }
+    };
+  });
+
+  const netTotal = calculateSubtotal(Object.values(categorySubtotals));
 
   const vatTotal = {
     today: { actual: netTotal.today.actual * 0.1, lastYear: netTotal.today.lastYear * 0.1 },
@@ -99,7 +137,7 @@ export default function MatrixDashboard() {
   const checkedRowsList = data.filter(r => checkedShops.includes(r.shop_name));
   const checkedTotal = calculateSubtotal(checkedRowsList);
 
-  if (loading) {
+  if (coreData.isLoading) {
     return <div className="p-6 text-slate-500">데이터를 불러오는 중입니다...</div>;
   }
 
@@ -138,7 +176,7 @@ export default function MatrixDashboard() {
               const rows = groupedData[category];
               if (!rows) return null;
               
-              const sub = calculateSubtotal(rows);
+              const sub = categorySubtotals[category];
 
               return (
                 <React.Fragment key={category}>
@@ -163,6 +201,7 @@ export default function MatrixDashboard() {
                       </td>
                       <td className="p-2 font-medium">{formatCurrency(row.today.actual)}</td>
                       <td className="p-2 text-slate-500">{formatCurrency(row.today.lastYear)}</td>
+
                       <td className={`p-2 border-r-2 border-slate-300 ${row.today.growthRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatGrowth(row.today.growthRate)}</td>
                       
                       <td className="p-2 font-medium">{formatCurrency(row.mtd.actual)}</td>

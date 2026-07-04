@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
   ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key, Flag, Database 
@@ -53,10 +54,7 @@ export default function Layout() {
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
 
-  const leisureItems = [
-    '목장', '미디어아트센터', '썸머랜드', '원더풀', 
-    '사계절썰매', '마리나클럽', '미니포렛', '그랜드포렛', '놀이동산', '모토아레나'
-  ];
+  const { leisureGroups } = useLeisureMapping();
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
@@ -199,17 +197,19 @@ export default function Layout() {
             
             {leisureOpen && (
               <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
-                {leisureItems.map((subItem, idx) => (
-                  <button
-                    key={idx}
-                    className="w-full text-left px-4 py-3 md:py-2 text-sm font-medium text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5 rounded-lg transition-colors"
-                    onClick={(e) => { 
-                      e.preventDefault(); 
-                      if (window.innerWidth < 1024) setSidebarOpen(false); // Close sidebar on mobile
+                {leisureGroups.map((group) => (
+                  <NavLink
+                    key={group.id}
+                    to={`/leisure/${group.id}`}
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isActive ? 'text-brand-mint bg-brand-mint/5' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={() => { 
+                      if (window.innerWidth < 1024) setSidebarOpen(false);
                     }}
                   >
-                    {subItem}
-                  </button>
+                    {group.name}
+                  </NavLink>
                 ))}
               </div>
             )}

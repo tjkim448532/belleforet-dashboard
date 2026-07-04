@@ -24,8 +24,12 @@ export default function LeisureFacility() {
     const { facilities } = group;
     const gridData = core.gridData;
 
-    // Filter gridData matching the facilities
-    const matchedData = gridData.filter((g: any) => facilities.includes(g.depth2));
+    // Filter gridData matching the facilities (using includes to handle cases like "놀이동산(2025)" or "벨포레 목장")
+    const matchedData = gridData.filter((g: any) => {
+      const matchD2 = facilities.some((f: string) => g.depth2?.includes(f));
+      const matchD3 = facilities.some((f: string) => g.depth3?.includes(f));
+      return matchD2 || matchD3;
+    });
 
     let totalSales = 0;
     let totalQuantity = 0;
@@ -41,14 +45,15 @@ export default function LeisureFacility() {
       totalSales += sales;
       totalQuantity += qty;
 
-      if (g.depth3) {
-        // Group by depth3 (Item Name)
-        const existing = itemMap.get(g.depth3);
+      if (g.depth2 || g.depth3) {
+        // Group by depth3 (if available) or depth2
+        const keyName = g.depth3 || g.depth2;
+        const existing = itemMap.get(keyName);
         if (existing) {
           existing.sales += sales;
           existing.qty += qty;
         } else {
-          itemMap.set(g.depth3, { name: g.depth3, sales, qty, depth1: g.depth1, depth2: g.depth2 });
+          itemMap.set(keyName, { name: keyName, sales, qty, depth1: g.depth1, depth2: g.depth2 });
         }
       }
     });

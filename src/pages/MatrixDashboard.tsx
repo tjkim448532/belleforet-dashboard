@@ -175,7 +175,7 @@ export default function MatrixDashboard() {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">데이타 검증 (기존 대시보드 비교용)</h1>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">데이터 검증 (기존 대시보드 비교용)</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
           기준일자: {startDate}
         </div>

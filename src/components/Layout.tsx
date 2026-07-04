@@ -217,7 +217,7 @@ export default function Layout() {
                   }`}
                 >
                   <Database size={20} />
-                  데이타 검증
+                  데이터 검증
                 </NavLink>
               </>
             )}

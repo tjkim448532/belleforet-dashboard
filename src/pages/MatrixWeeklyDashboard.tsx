@@ -182,7 +182,7 @@ export default function MatrixWeeklyDashboard() {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">데이타 검증 (동일 주/요일 비교)</h1>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">요일비교</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
           기준일자: {startDate}
         </div>

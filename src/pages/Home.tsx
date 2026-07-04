@@ -25,7 +25,7 @@ export default function Home() {
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [viewMode, setViewMode] = useState<'true_net' | 'daol_raw'>('true_net');
+
 
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -173,22 +173,7 @@ export default function Home() {
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {displayData.qa_metrics && (
-              <div className="bg-white/20 backdrop-blur-sm p-1 rounded-lg flex items-center shadow-inner">
-                <button 
-                  onClick={() => setViewMode('true_net')}
-                  className={`px-3 py-1.5 text-sm font-bold rounded-md transition-all ${viewMode === 'true_net' ? 'bg-white text-brand-mint shadow-sm' : 'text-white hover:bg-white/10'}`}
-                >
-                  벨포레 순매출
-                </button>
-                <button 
-                  onClick={() => setViewMode('daol_raw')}
-                  className={`px-3 py-1.5 text-sm font-bold rounded-md transition-all ${viewMode === 'daol_raw' ? 'bg-white text-brand-mint shadow-sm' : 'text-white hover:bg-white/10'}`}
-                >
-                  다올 원본
-                </button>
-              </div>
-            )}
+
             <GlobalDatePicker allowRange={true} />
           </div>
         </div>
@@ -219,18 +204,8 @@ export default function Home() {
                 )}
               </div>
               
-              {viewMode === 'daol_raw' && displayData.qa_metrics && (
-                <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 px-2.5 py-1 rounded-md text-xs font-bold mb-2">
-                  ⚠️ 다올 원본 기준 (이중결제 오류 차액: {formatCurrency(displayData.qa_metrics.daol_error_gap)})
-                </div>
-              )}
-              
               <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight transition-all duration-300">
-                {formatCurrency(
-                  viewMode === 'daol_raw' && displayData.qa_metrics 
-                    ? displayData.qa_metrics.daol_raw_total 
-                    : todayGross
-                )}
+                {formatCurrency(todayGross)}
               </div>
               
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>

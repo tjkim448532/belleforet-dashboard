@@ -48,8 +48,6 @@ export default function Layout() {
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
     { name: '경영진 대시보드 (V3)', path: '/executive', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
-    { name: '세일즈본부', path: '#세일즈본부', icon: <Building size={20} />, roles: ['admin', 'executive', 'sales'] },
-    { name: '식음본부', path: '#식음본부', icon: <Coffee size={20} />, roles: ['admin', 'executive', 'fnb'] },
   ];
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
@@ -156,16 +154,6 @@ export default function Layout() {
             
             {managementOpen && (
               <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
-                <NavLink
-                  to="#management-dashboard"
-                  className="block w-full text-left px-4 py-3 md:py-2 text-sm font-medium text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5 rounded-lg transition-colors"
-                  onClick={(e) => { 
-                    e.preventDefault(); 
-                    if (window.innerWidth < 1024) setSidebarOpen(false);
-                  }}
-                >
-                  영업보고 대시보드
-                </NavLink>
                 <NavLink
                   to="/management-support"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${

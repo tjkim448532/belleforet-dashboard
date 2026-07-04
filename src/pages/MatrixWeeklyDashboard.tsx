@@ -214,7 +214,10 @@ export default function MatrixWeeklyDashboard() {
 
   const getWeatherIcon = (desc: string) => {
     if (!desc) return '';
-    return desc.includes('비') ? '🌧️' : desc.includes('눈') ? '❄️' : desc.includes('구름') ? '⛅' : '☀️';
+    if (desc.includes('비') || desc.includes('소나기')) return '🌧️';
+    if (desc.includes('눈')) return '❄️';
+    if (desc.includes('구름') || desc.includes('흐림')) return '⛅';
+    return '☀️';
   };
 
   const dynamicTitle = `${currDateStr} ${getWeatherIcon(currentWeather?.weatherDesc || '')} vs ${lyDateFormattedStr} ${getWeatherIcon(lastYearWeather?.weatherDesc || '')}`;

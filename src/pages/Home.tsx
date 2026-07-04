@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useSimulation } from '../contexts/SimulationContext';
-import { useMapping } from '../contexts/MappingContext';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
@@ -21,19 +19,16 @@ interface WeatherData {
 
 export default function Home() {
   const { simulatedData, clearSimulation } = useSimulation();
-  const { mappings, categories, loading: mappingLoading } = useMapping();
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
   const [weather, setWeather] = useState<WeatherData | null>(null);
-
-
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
     return transformHomeData(coreData);
   }, [coreData]);
-  
+
   const data = transformedData;
-  const loading = coreData.isLoading || mappingLoading;
+  const loading = coreData.isLoading;
   const apiError = coreData.error ? '데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.' : 
                   (coreData.isLoading ? null : (transformedData ? null : '데이터를 불러오는 데 실패했습니다.'));
 
@@ -80,37 +75,8 @@ export default function Home() {
     return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
   };
 
-  // 동적 매핑 합산 로직
-  let dynamicHqToday: { hq: string; actual: number; qty: number }[] = displayData?.hq_today || [];
 
-  if (displayData && displayData.store_today && mappings.length > 0 && !simulatedData) {
-    const hqMap: Record<string, { actual: number, qty: number }> = {};
-    categories.forEach(c => hqMap[c] = { actual: 0, qty: 0 });
-
-    displayData.store_today.forEach((store: any) => {
-      const mapped = mappings.find(m => store.shop_name.includes(m.storeName) || m.storeName.includes(store.shop_name));
-      const cat = mapped ? mapped.category : '미분류';
-      if (!hqMap[cat]) hqMap[cat] = { actual: 0, qty: 0 };
-      hqMap[cat].actual += store.actual;
-      hqMap[cat].qty += store.qty;
-    });
-
-    dynamicHqToday = Object.keys(hqMap)
-      .filter(key => hqMap[key].actual > 0)
-      .map(key => ({ hq: key, actual: hqMap[key].actual, qty: hqMap[key].qty }));
-  }
-
-  const getHqIcon = (hq: string) => {
-    if (hq.includes('골프')) return '⛳';
-    if (hq.includes('숙박') || hq.includes('리조트')) return '🏨';
-    if (hq.includes('레저') || hq.includes('레져')) return '🐑'; 
-    if (hq.includes('식음')) return '☕'; 
-    if (hq.includes('연회')) return '🍷';
-    if (hq.includes('기타')) return '🐶';
-    return '🏢'; // 커스텀 본부 폴백 아이콘
-  };
-
-  if (loading || mappingLoading || !displayData) {
+  if (loading || !displayData) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
         <div className="text-xl font-bold text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
@@ -234,7 +200,7 @@ export default function Home() {
           </div>
 
           {/* Left Area (Indicators) */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
+          <div className="lg:col-span-12 flex flex-col gap-6">
             
             {/* Key Indicators */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
@@ -318,82 +284,6 @@ export default function Home() {
               </div>
             </div>
 
-
-          </div>
-
-          {/* Right Area (Leaderboard) */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            
-            {/* Leaderboard Card */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex-1">
-              <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
-                🏆 오늘의 본부별 실적 순위
-              </h2>
-              <div className="space-y-6">
-                {dynamicHqToday.sort((a, b) => b.actual - a.actual).map((hq, idx) => (
-                  <div key={idx} className="flex flex-col gap-3 group">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-700 font-bold text-lg flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-lg">
-                          {getHqIcon(hq.hq)}
-                        </span>
-                        {hq.hq}
-                      </span>
-                      <span className="text-slate-800 font-emphatic text-xl">{formatCurrency(hq.actual)}</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-brand-mint rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${Math.max((hq.actual / (dynamicHqToday[0]?.actual || 1)) * 100, 3)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-                        {/* 3D Pie Chart (HQ Distribution) */}
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex-1 min-h-[350px]">
-              <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
-                🥧 실시간 본부별 매출 비중
-              </h2>
-              <div className="w-full h-[250px]">
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <PieChart>
-                    <Pie
-                      data={dynamicHqToday.sort((a, b) => b.actual - a.actual)}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="actual"
-                      nameKey="hq"
-                      stroke="none"
-                      style={{ filter: 'drop-shadow(0px 8px 12px rgba(0,0,0,0.15))' }}
-                    >
-                      {dynamicHqToday.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={['#14b8a6', '#0ea5e9', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'][index % 6]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: any) => formatCurrency(Number(value))}
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-                    />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Fun Fact / Character Area */}
-            <div className="bg-brand-mint text-white rounded-[32px] p-6 shadow-lg flex items-center gap-4">
-              <div className="text-5xl">🐱🎧</div>
-              <div>
-                <div className="font-bold text-lg mb-1">우리 벨포레 고양이!</div>
-                <div className="text-sm opacity-90 leading-tight">오늘도 본부장님을 위해 열심히 데이터를 수집하고 분석했어요!</div>
-              </div>
-            </div>
 
           </div>
         </div>

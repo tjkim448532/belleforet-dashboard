@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Building, Hotel, Ticket, Coffee, Key, Flag, Database 
+  ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database 
 } from 'lucide-react';
 
 export default function Layout() {
@@ -46,6 +46,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
+    { name: '요일비교', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '경영진 대시보드 (V3)', path: '/executive', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
   ];
@@ -207,16 +208,6 @@ export default function Layout() {
         </div>
           
         <div className="p-4 space-y-2 border-t border-slate-100">
-            <NavLink
-              to="/etl-status"
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
-                isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-              }`}
-            >
-              <Database size={20} />
-              데이터 연동 현황
-            </NavLink>
-
             {['admin', 'executive'].some(r => userRole === r) && (
               <>
                 <NavLink
@@ -227,15 +218,6 @@ export default function Layout() {
                 >
                   <Database size={20} />
                   데이타 검증
-                </NavLink>
-                <NavLink
-                  to="/matrix-weekly"
-                  className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
-                    isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                  }`}
-                >
-                  <Database size={20} />
-                  데이타 검증 (요일 비교)
                 </NavLink>
               </>
             )}

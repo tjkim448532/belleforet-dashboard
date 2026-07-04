@@ -9,8 +9,7 @@ interface SummaryData {
   date: string;
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
-  hq_today: { hq: string; actual: number; qty: number }[];
-  store_today?: { shop_name: string; actual: number; qty: number }[];
+  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number };
   roomTypeBreakdown?: { room_type: string; rooms_sold: number; room_revenue: number; total_capacity: number }[];
   channelBreakdown?: { channel_name: string; rooms_sold: number; room_revenue: number }[];
 }
@@ -30,21 +29,12 @@ export default function ResortBusiness() {
         const payload = json.data || json;
         if (!payload) throw new Error("Invalid payload");
         
-        const getGridAmount = (depth1: string) => payload.gridData?.find((g:any) => g.depth1 === depth1)?.salesAmount || 0;
-        const getGridQty = (depth1: string, depth2: string) => payload.gridData?.find((g:any) => g.depth1 === depth1 && g.depth2 === depth2)?.quantity || 0;
-        
-        const hqToday = [
-          { hq: '골프', actual: getGridAmount('레저'), qty: getGridQty('레저', '골프장') },
-          { hq: '숙박', actual: getGridAmount('숙박'), qty: getGridQty('숙박', '객실') }
-        ].filter(h => h.actual > 0 || h.qty > 0);
-        
         setData({
           success: json.success || true,
           date: payload.date || endDate,
           ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
           today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
-          hq_today: hqToday,
-          store_today: [],
+          resortSummary: payload.resortSummary || null,
           roomTypeBreakdown: payload.roomTypeBreakdown || [],
           channelBreakdown: payload.channelBreakdown || []
         });
@@ -55,8 +45,6 @@ export default function ResortBusiness() {
           date: endDate,
           ytd: { actual: 0, ly_actual: 0 },
           today: { actual: 0, ly_actual: 0 },
-          hq_today: [],
-          store_today: [],
           roomTypeBreakdown: [],
           channelBreakdown: []
         });
@@ -74,10 +62,10 @@ export default function ResortBusiness() {
   };
 
   const lodgingStats = (() => {
-    if (!data || !data.hq_today) return { revenue: 0, roomsSold: 0, adr: 0 };
-    const lodg = data.hq_today.find(h => h.hq === '숙박');
-    const revenue = lodg ? lodg.actual : 0;
-    const roomsSold = lodg ? lodg.qty : 0;
+    if (!data || !data.resortSummary) return { revenue: 0, roomsSold: 0, adr: 0 };
+    const summary = data.resortSummary;
+    const revenue = summary.lodging_revenue || 0;
+    const roomsSold = summary.rooms_sold || 0;
     const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
     return { revenue, roomsSold, adr };
   })();

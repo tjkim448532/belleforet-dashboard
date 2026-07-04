@@ -27,7 +27,7 @@ export default function GolfBusiness() {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${endDate}`);
         const payload = json.data || json;
         if (payload) {
-          const golf_revenue = payload.gridData?.find((g:any) => g.depth1 === '레저')?.salesAmount || 0;
+          const golf_revenue = payload.golfSummary?.golfRevenue || 0;
           setData({
             success: json.success || true,
             date: payload.date || endDate,

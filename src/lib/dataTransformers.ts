@@ -170,6 +170,17 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     rows.push(...unmappedForGroup);
   });
 
+  const calcGrowth = (actual: number, ly: number) => {
+    if (!ly) return actual ? 100 : 0;
+    return ((actual - ly) / Math.abs(ly)) * 100;
+  };
+
+  rows.forEach(r => {
+    r.today.growthRate = calcGrowth(r.today.actual, r.today.lastYear);
+    r.mtd.growthRate = calcGrowth(r.mtd.actual, r.mtd.lastYear);
+    r.ytd.growthRate = calcGrowth(r.ytd.actual, r.ytd.lastYear);
+  });
+
   return rows;
 };
 

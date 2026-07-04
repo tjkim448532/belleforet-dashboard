@@ -49,17 +49,7 @@ export default function MatrixWeeklyDashboard() {
 
   const data = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return [];
-    // Deep clone to avoid mutating the original mappedRows since we'll zero out lastYear
-    const rows = JSON.parse(JSON.stringify(transformMatrixData(coreData)));
-    // For weekly dashboard, we only have weekly comparison data for the Category Totals.
-    // Detail rows do not have weekly comparison data from the API, so we zero them out to avoid confusion
-    // with exact-date last year data.
-    rows.forEach((r: MatrixRow) => {
-      r.today.lastYear = 0; r.today.growthRate = 0;
-      r.mtd.lastYear = 0; r.mtd.growthRate = 0;
-      r.ytd.lastYear = 0; r.ytd.growthRate = 0;
-    });
-    return rows;
+    return transformMatrixData(coreData);
   }, [coreData]);
 
   // Group data by category

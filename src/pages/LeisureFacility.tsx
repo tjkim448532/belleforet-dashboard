@@ -17,44 +17,38 @@ export default function LeisureFacility() {
   const group = leisureGroups.find(g => g.id === groupId);
 
   const { totalSales, topTickets, totalQuantity } = useMemo(() => {
-    if (!core || !core.gridData || !group) {
+    if (!core || !group) {
       return { totalSales: 0, topTickets: [], totalQuantity: 0 };
     }
 
     const { facilities } = group;
-    const gridData = core.gridData;
+    const products = core.leisureProductBreakdown || [];
 
-    // Filter gridData matching the facilities (using includes to handle cases like "놀이동산(2025)" or "벨포레 목장")
-    const matchedData = gridData.filter((g: any) => {
-      const matchD2 = facilities.some((f: string) => g.depth2?.includes(f));
-      const matchD3 = facilities.some((f: string) => g.depth3?.includes(f));
-      return matchD2 || matchD3;
+    // Filter products matching the facilities
+    const matchedData = products.filter((p: any) => {
+      const matchFacility = facilities.some((f: string) => p.facility_name?.includes(f));
+      const matchProduct = facilities.some((f: string) => p.product_name?.includes(f));
+      return matchFacility || matchProduct;
     });
 
     let totalSales = 0;
     let totalQuantity = 0;
-    const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1: string; depth2: string }>();
+    const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1?: string; depth2?: string }>();
 
-    matchedData.forEach((g: any) => {
-      // Exclude grand totals or category totals if depth3 is "전체"
-      if (g.depth3 === '전체') return;
-
-      const sales = Number(g.salesAmount) || 0;
-      const qty = Number(g.quantity) || 0;
+    matchedData.forEach((p: any) => {
+      const sales = Number(p.revenue) || 0;
+      const qty = Number(p.qty) || 0;
       
       totalSales += sales;
       totalQuantity += qty;
 
-      if (g.depth2 || g.depth3) {
-        // Group by depth3 (if available) or depth2
-        const keyName = g.depth3 || g.depth2;
-        const existing = itemMap.get(keyName);
-        if (existing) {
-          existing.sales += sales;
-          existing.qty += qty;
-        } else {
-          itemMap.set(keyName, { name: keyName, sales, qty, depth1: g.depth1, depth2: g.depth2 });
-        }
+      const pName = p.product_name || p.facility_name || '알 수 없음';
+      const existing = itemMap.get(pName);
+      if (existing) {
+        existing.sales += sales;
+        existing.qty += qty;
+      } else {
+        itemMap.set(pName, { name: pName, sales, qty, depth1: '레저', depth2: p.facility_name });
       }
     });
 

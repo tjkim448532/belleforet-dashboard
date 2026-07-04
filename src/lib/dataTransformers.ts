@@ -30,12 +30,16 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     });
   });
 
-  const addAmount = (category: string, shopName: string, amount: number) => {
-    if (!amount) return;
+  const addBreakdownData = (category: string, shopName: string, item: any) => {
     const key = `${category}|${shopName}`;
     if (excelDataMap.has(key)) {
       const row = excelDataMap.get(key)!;
-      row.today.actual += amount;
+      row.today.actual += Number(item.today_actual || item.revenue || item.actual || item.sales_amount || item.room_revenue || 0);
+      row.today.lastYear += Number(item.today_ly || 0);
+      row.mtd.actual += Number(item.mtd_actual || 0);
+      row.mtd.lastYear += Number(item.mtd_ly || 0);
+      row.ytd.actual += Number(item.ytd_actual || 0);
+      row.ytd.lastYear += Number(item.ytd_ly || 0);
     }
   };
 
@@ -117,26 +121,28 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   });
 
   // Map Breakdown Arrays
-  const mapBreakdown = (arr: any[], nameField: string, valueField: string, defaultCategory: string) => {
+  const mapBreakdown = (arr: any[], defaultCategory: string) => {
     if (!arr || !Array.isArray(arr)) return;
     arr.forEach((item: any) => {
       try {
-        const rawName = String(item[nameField] || item.shop_name || item.name || '알수없음');
-        const rawAmount = item[valueField] || item.sales_amount || item.actual || item.revenue || 0;
-        const amount = typeof rawAmount === 'string' ? parseFloat(rawAmount.replace(/,/g, '')) || 0 : Number(rawAmount) || 0;
-        if (amount === 0) return;
+        const rawName = String(item.facility_name || item.room_type || item.shop_name || item.name || '알수없음');
+        const todayActual = Number(item.today_actual || item.revenue || item.actual || item.sales_amount || item.room_revenue || 0);
+        const mtdActual = Number(item.mtd_actual || 0);
+        const ytdActual = Number(item.ytd_actual || 0);
+        
+        if (todayActual === 0 && mtdActual === 0 && ytdActual === 0) return;
 
         const match = findExcelShopName(rawName);
         if (match) {
-          addAmount(match.category, match.shopName, amount);
+          addBreakdownData(match.category, match.shopName, item);
         } else {
           // Unmapped breakdown data
           unmappedRows.push({
             category: defaultCategory,
             shop_name: `[미매핑] ${rawName}`,
-            today: { actual: amount, lastYear: 0, growthRate: 0 },
-            mtd: { actual: 0, lastYear: 0, growthRate: 0 },
-            ytd: { actual: 0, lastYear: 0, growthRate: 0 }
+            today: { actual: todayActual, lastYear: Number(item.today_ly || 0), growthRate: 0 },
+            mtd: { actual: mtdActual, lastYear: Number(item.mtd_ly || 0), growthRate: 0 },
+            ytd: { actual: ytdActual, lastYear: Number(item.ytd_ly || 0), growthRate: 0 }
           });
         }
       } catch (e) {
@@ -145,12 +151,12 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     });
   };
 
-  mapBreakdown(core.core.golfFacilityBreakdown, 'facility_name', 'revenue', '골프 Total');
-  mapBreakdown(core.core.roomTypeBreakdown, 'room_type', 'room_revenue', '객실 Total');
-  mapBreakdown(core.core.ticketFacilityBreakdown, 'facility_name', 'revenue', '티켓업장 Total');
-  mapBreakdown(core.core.fnbFacilityBreakdown, 'facility_name', 'revenue', '식음업장 Total');
-  mapBreakdown(core.core.otherFacilityBreakdown, 'facility_name', 'revenue', '기타업장 Total');
-  mapBreakdown(core.core.banquetFacilityBreakdown, 'facility_name', 'revenue', '연회 Total');
+  mapBreakdown(core.core.golfFacilityBreakdown, '골프 Total');
+  mapBreakdown(core.core.roomTypeBreakdown, '객실 Total');
+  mapBreakdown(core.core.ticketFacilityBreakdown, '티켓업장 Total');
+  mapBreakdown(core.core.fnbFacilityBreakdown, '식음업장 Total');
+  mapBreakdown(core.core.otherFacilityBreakdown, '기타업장 Total');
+  mapBreakdown(core.core.banquetFacilityBreakdown, '연회 Total');
 
   // Push rows in exact EXCEL_LAYOUT order
   EXCEL_LAYOUT.forEach(group => {

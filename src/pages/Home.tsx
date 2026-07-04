@@ -217,7 +217,7 @@ export default function Home() {
                         <span className="text-xs text-slate-400 font-medium mb-1">16평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('16'));
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => (x.room_type || x.facility_name || '').includes('16'));
                             return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
                           })())}
                         </span>
@@ -226,7 +226,7 @@ export default function Home() {
                         <span className="text-xs text-slate-400 font-medium mb-1">35평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('35'));
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => (x.room_type || x.facility_name || '').includes('35'));
                             return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
                           })())}
                         </span>
@@ -235,7 +235,7 @@ export default function Home() {
                         <span className="text-xs text-slate-400 font-medium mb-1">51평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => x.room_type.includes('51'));
+                            const r = displayData?.roomTypeBreakdown?.find((x: any) => (x.room_type || x.facility_name || '').includes('51'));
                             return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
                           })())}
                         </span>

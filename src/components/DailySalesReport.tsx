@@ -4,17 +4,14 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
 interface SalesData {
-  depth1: string;
-  depth2: string;
-  depth3: string;
-  target_daily: number;
-  actual_daily: number;
-  target_mtd: number;
-  actual_mtd: number;
-  target_ytd: number;
-  actual_ytd: number;
-  depth1Span?: number;
-  depth2Span?: number;
+  category: string;
+  name: string;
+  today_actual: number;
+  today_ly: number;
+  mtd_actual: number;
+  mtd_ly: number;
+  ytd_actual: number;
+  ytd_ly: number;
 }
 
 export default function DailySalesReport() {
@@ -23,70 +20,14 @@ export default function DailySalesReport() {
   const [data, setData] = useState<SalesData[]>([]);
   const [accumulated, setAccumulated] = useState<{ mtd_room_revenue: number; ytd_total_gross: number } | null>(null);
 
-  const computeRowSpans = (grid: any[]): SalesData[] => {
-    const sorted = [...grid].sort((a, b) => {
-      if (a.depth1 !== b.depth1) return a.depth1.localeCompare(b.depth1);
-      return a.depth2.localeCompare(b.depth2);
-    });
-
-    const result: SalesData[] = sorted.map(item => ({
-      depth1: item.depth1 || '기타',
-      depth2: item.depth2 || '미등록',
-      depth3: item.depth3 || '전체',
-      actual_daily: item.salesAmount || 0,
-      target_daily: Math.round((item.salesAmount || 0) * 1.05),
-      actual_mtd: (item.salesAmount || 0) * 12,
-      target_mtd: Math.round((item.salesAmount || 0) * 12.6),
-      actual_ytd: (item.salesAmount || 0) * 120,
-      target_ytd: Math.round((item.salesAmount || 0) * 126),
-    }));
-
-    // Calculate depth1 spans
-    let i = 0;
-    while (i < result.length) {
-      let span = 1;
-      while (i + span < result.length && result[i + span].depth1 === result[i].depth1) {
-        span++;
-      }
-      result[i].depth1Span = span;
-      for (let j = 1; j < span; j++) {
-        result[i + j].depth1Span = 0;
-      }
-      i += span;
-    }
-
-    // Calculate depth2 spans
-    i = 0;
-    while (i < result.length) {
-      let span = 1;
-      while (
-        i + span < result.length && 
-        result[i + span].depth1 === result[i].depth1 &&
-        result[i + span].depth2 === result[i].depth2
-      ) {
-        span++;
-      }
-      result[i].depth2Span = span;
-      for (let j = 1; j < span; j++) {
-        result[i + j].depth2Span = 0;
-      }
-      i += span;
-    }
-
-    return result;
-  };
-
   const fetchSalesData = async () => {
     setLoading(true);
     try {
       const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${date}`);
       const payload = result.data || result;
-      if (payload && payload.gridData) {
+      if (payload && payload.dailyReportBreakdown) {
         setAccumulated(null);
-        
-        // gridData already matches the structure: depth1, depth2, depth3, salesAmount
-        const processed = computeRowSpans(payload.gridData);
-        setData(processed);
+        setData(payload.dailyReportBreakdown);
       } else {
         setData([]);
         setAccumulated(null);
@@ -104,19 +45,23 @@ export default function DailySalesReport() {
     fetchSalesData();
   }, [date]);
 
-  const formatCurrency = (num: number) => {
-    return new Intl.NumberFormat('ko-KR').format(num); // #,##0 format without currency symbol
+  const formatCurrency = (num: number | string) => {
+    if (!num) return '0';
+    return new Intl.NumberFormat('ko-KR').format(Math.round(Number(num)));
   };
 
-  const getAchievementRate = (actual: number, target: number) => {
-    if (target === 0) return 0;
-    return ((actual / target) * 100).toFixed(1);
+  const getGrowthRate = (actual: number | string, ly: number | string) => {
+    const act = Number(actual) || 0;
+    const lastYear = Number(ly) || 0;
+    if (lastYear === 0) return act > 0 ? '100.0' : '0.0';
+    return (((act - lastYear) / Math.abs(lastYear)) * 100).toFixed(1);
   };
 
-  const getAchievementColor = (rate: number) => {
-    if (rate >= 100) return 'text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10';
-    if (rate >= 90) return 'text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10';
-    return 'text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10';
+  const getGrowthColor = (rate: string) => {
+    const num = Number(rate);
+    if (num > 0) return 'text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10';
+    if (num < 0) return 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10';
+    return 'text-slate-500 dark:text-slate-400';
   };
 
   return (
@@ -169,30 +114,26 @@ export default function DailySalesReport() {
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>구분</th>
+                <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" rowSpan={2}>구분</th>
                 <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>금일 실적 (Daily)</th>
                 <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>월 누계 (MTD)</th>
                 <th scope="col" className="px-6 py-4 text-center" colSpan={3}>연 누계 (YTD)</th>
               </tr>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                <th scope="col" className="px-4 py-3 border-r border-slate-200 dark:border-slate-800">본부</th>
-                <th scope="col" className="px-4 py-3 border-r border-slate-200 dark:border-slate-800">영업장</th>
-                <th scope="col" className="px-4 py-3 border-r border-slate-200 dark:border-slate-800">상세</th>
-                
                 {/* Daily */}
-                <th scope="col" className="px-4 py-3 text-right">목표</th>
                 <th scope="col" className="px-4 py-3 text-right">실적</th>
-                <th scope="col" className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800">달성률</th>
+                <th scope="col" className="px-4 py-3 text-right">전년</th>
+                <th scope="col" className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800">증감율(%)</th>
                 
                 {/* MTD */}
-                <th scope="col" className="px-4 py-3 text-right">목표</th>
                 <th scope="col" className="px-4 py-3 text-right">실적</th>
-                <th scope="col" className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800">달성률</th>
+                <th scope="col" className="px-4 py-3 text-right">전년</th>
+                <th scope="col" className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800">증감율(%)</th>
                 
                 {/* YTD */}
-                <th scope="col" className="px-4 py-3 text-right">목표</th>
                 <th scope="col" className="px-4 py-3 text-right">실적</th>
-                <th scope="col" className="px-4 py-3 text-center">달성률</th>
+                <th scope="col" className="px-4 py-3 text-right">전년</th>
+                <th scope="col" className="px-4 py-3 text-center">증감율(%)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -207,62 +148,61 @@ export default function DailySalesReport() {
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-12 text-center text-slate-500">조회된 데이터가 없습니다.</td>
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-500">조회된 데이터가 없습니다.</td>
                 </tr>
               ) : (
                 data.map((row, idx) => {
-                  const dailyRate = Number(getAchievementRate(row.actual_daily, row.target_daily));
-                  const mtdRate = Number(getAchievementRate(row.actual_mtd, row.target_mtd));
-                  const ytdRate = Number(getAchievementRate(row.actual_ytd, row.target_ytd));
+                  const dailyGrowth = getGrowthRate(row.today_actual, row.today_ly);
+                  const mtdGrowth = getGrowthRate(row.mtd_actual, row.mtd_ly);
+                  const ytdGrowth = getGrowthRate(row.ytd_actual, row.ytd_ly);
                   
+                  const isTotalRow = row.name && row.name.includes('Total');
+
                   return (
-                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                      {row.depth1Span !== 0 && (
-                        <td 
-                          rowSpan={row.depth1Span} 
-                          className="px-4 py-4 font-bold bg-white dark:bg-[#131A2A] border-r border-slate-200 dark:border-slate-800 align-middle text-center"
-                        >
-                          {row.depth1}
-                        </td>
-                      )}
-                      
-                      {row.depth2Span !== 0 && (
-                        <td 
-                          rowSpan={row.depth2Span} 
-                          className="px-4 py-4 font-semibold bg-white dark:bg-[#131A2A] border-r border-slate-200 dark:border-slate-800 align-middle"
-                        >
-                          {row.depth2}
-                        </td>
-                      )}
-                      
-                      <td className="px-4 py-4 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                        {row.depth3}
+                    <tr 
+                      key={idx} 
+                      className={`
+                        hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors
+                        ${isTotalRow ? 'bg-amber-50/30 dark:bg-amber-900/10 font-bold' : ''}
+                      `}
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 pl-8">
+                        {row.name}
                       </td>
-                      
-                      {/* Daily */}
-                      <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{formatCurrency(row.target_daily)}</td>
-                      <td className="px-4 py-4 text-right font-semibold">{formatCurrency(row.actual_daily)}</td>
-                      <td className="px-4 py-4 text-center border-r border-slate-200 dark:border-slate-800">
-                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${getAchievementColor(dailyRate)}`}>
-                          {dailyRate}%
+
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                        {formatCurrency(row.today_actual)}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                        {formatCurrency(row.today_ly)}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getGrowthColor(dailyGrowth)}`}>
+                          {Number(dailyGrowth) > 0 ? '+' : ''}{dailyGrowth}%
                         </span>
                       </td>
 
-                      {/* MTD */}
-                      <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{formatCurrency(row.target_mtd)}</td>
-                      <td className="px-4 py-4 text-right font-semibold">{formatCurrency(row.actual_mtd)}</td>
-                      <td className="px-4 py-4 text-center border-r border-slate-200 dark:border-slate-800">
-                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${getAchievementColor(mtdRate)}`}>
-                          {mtdRate}%
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                        {formatCurrency(row.mtd_actual)}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                        {formatCurrency(row.mtd_ly)}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getGrowthColor(mtdGrowth)}`}>
+                          {Number(mtdGrowth) > 0 ? '+' : ''}{mtdGrowth}%
                         </span>
                       </td>
 
-                      {/* YTD */}
-                      <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{formatCurrency(row.target_ytd)}</td>
-                      <td className="px-4 py-4 text-right font-semibold">{formatCurrency(row.actual_ytd)}</td>
-                      <td className="px-4 py-4 text-center">
-                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${getAchievementColor(ytdRate)}`}>
-                          {ytdRate}%
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                        {formatCurrency(row.ytd_actual)}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                        {formatCurrency(row.ytd_ly)}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getGrowthColor(ytdGrowth)}`}>
+                          {Number(ytdGrowth) > 0 ? '+' : ''}{ytdGrowth}%
                         </span>
                       </td>
                     </tr>
@@ -270,41 +210,6 @@ export default function DailySalesReport() {
                 })
               )}
             </tbody>
-            {/* 합계 열 */}
-            {!loading && data.length > 0 && (
-              <tfoot className="bg-slate-50 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-700">
-                <tr>
-                  <td colSpan={3} className="px-6 py-4 text-center bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700">총계</td>
-                  
-                  {/* Daily Total */}
-                  <td className="px-4 py-4 text-right">{formatCurrency(data.reduce((acc, row) => acc + row.target_daily, 0))}</td>
-                  <td className="px-4 py-4 text-right text-blue-600 dark:text-blue-400">{formatCurrency(data.reduce((acc, row) => acc + row.actual_daily, 0))}</td>
-                  <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700">
-                    <span className="text-blue-600 dark:text-blue-400">
-                      {getAchievementRate(data.reduce((acc, row) => acc + row.actual_daily, 0), data.reduce((acc, row) => acc + row.target_daily, 0))}%
-                    </span>
-                  </td>
-
-                  {/* MTD Total */}
-                  <td className="px-4 py-4 text-right">{formatCurrency(data.reduce((acc, row) => acc + row.target_mtd, 0))}</td>
-                  <td className="px-4 py-4 text-right text-indigo-600 dark:text-indigo-400">{formatCurrency(data.reduce((acc, row) => acc + row.actual_mtd, 0))}</td>
-                  <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700">
-                    <span className="text-indigo-600 dark:text-indigo-400">
-                      {getAchievementRate(data.reduce((acc, row) => acc + row.actual_mtd, 0), data.reduce((acc, row) => acc + row.target_mtd, 0))}%
-                    </span>
-                  </td>
-
-                  {/* YTD Total */}
-                  <td className="px-4 py-4 text-right">{formatCurrency(data.reduce((acc, row) => acc + row.target_ytd, 0))}</td>
-                  <td className="px-4 py-4 text-right text-violet-600 dark:text-violet-400">{formatCurrency(data.reduce((acc, row) => acc + row.actual_ytd, 0))}</td>
-                  <td className="px-4 py-4 text-center">
-                    <span className="text-violet-600 dark:text-violet-400">
-                      {getAchievementRate(data.reduce((acc, row) => acc + row.actual_ytd, 0), data.reduce((acc, row) => acc + row.target_ytd, 0))}%
-                    </span>
-                  </td>
-                </tr>
-              </tfoot>
-            )}
           </table>
         </div>
       </div>

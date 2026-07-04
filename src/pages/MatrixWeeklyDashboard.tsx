@@ -3,6 +3,15 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
 import { secureFetcher } from '../lib/secureFetcher';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+interface WeatherData {
+  tempMax?: number;
+  tempMin?: number;
+  precipitation?: number;
+  weatherDesc?: string;
+}
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -21,6 +30,8 @@ export default function MatrixWeeklyDashboard() {
   const coreData = useCoreData();
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
   const [weeklyTotals, setWeeklyTotals] = useState<Record<string, MatrixRow>>({});
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+  const [lastYearWeather, setLastYearWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
     const fetchWeekly = async () => {
@@ -44,7 +55,30 @@ export default function MatrixWeeklyDashboard() {
         console.error('Failed to fetch matrix weekly', err);
       }
     };
+    
+    const fetchWeathers = async () => {
+      try {
+        const parsedDate = new Date(startDate);
+        const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000);
+        const lyDateStr = lyDate.toISOString().split('T')[0];
+        
+        const [currSnap, lySnap] = await Promise.all([
+          getDoc(doc(db, 'weather_daily', startDate)),
+          getDoc(doc(db, 'weather_daily', lyDateStr))
+        ]);
+        
+        if (currSnap.exists()) setCurrentWeather(currSnap.data() as WeatherData);
+        else setCurrentWeather(null);
+        
+        if (lySnap.exists()) setLastYearWeather(lySnap.data() as WeatherData);
+        else setLastYearWeather(null);
+      } catch (err) {
+        console.error('Failed to fetch weather', err);
+      }
+    };
+    
     fetchWeekly();
+    fetchWeathers();
   }, [startDate]);
 
   const data = React.useMemo(() => {
@@ -169,10 +203,26 @@ export default function MatrixWeeklyDashboard() {
     return <div className="p-6 text-slate-500">데이터를 불러오는 중입니다...</div>;
   }
 
+  const parsedDate = new Date(startDate);
+  const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000);
+  
+  const currFormatter = new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' });
+  const currDateStr = currFormatter.format(parsedDate).replace(/ /g, '');
+  
+  const lyFormatter = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric', weekday: 'short' });
+  const lyDateFormattedStr = lyFormatter.format(lyDate).replace(/ /g, ' ');
+
+  const getWeatherIcon = (desc: string) => {
+    if (!desc) return '';
+    return desc.includes('비') ? '🌧️' : desc.includes('눈') ? '❄️' : desc.includes('구름') ? '⛅' : '☀️';
+  };
+
+  const dynamicTitle = `${currDateStr} ${getWeatherIcon(currentWeather?.weatherDesc || '')} vs ${lyDateFormattedStr} ${getWeatherIcon(lastYearWeather?.weatherDesc || '')}`;
+
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">요일비교</h1>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{dynamicTitle}</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
           기준일자: {startDate}
         </div>

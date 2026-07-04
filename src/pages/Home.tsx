@@ -239,7 +239,7 @@ export default function Home() {
             {/* Key Indicators */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
               <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12 transition-transform duration-300" /> 핵심 영업 지표 (1인당 / 객실당 단가)
+                <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12 transition-transform duration-300" /> 핵심 영업 지표
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">

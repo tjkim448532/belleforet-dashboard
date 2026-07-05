@@ -27,7 +27,8 @@ export default function GolfBusiness() {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${endDate}`);
         const payload = json.data || json;
         if (payload) {
-          const golf_revenue = payload.golfSummary?.golfRevenue || 0;
+          const golfBreakdown = payload.golfFacilityBreakdown || [];
+          const golf_revenue = payload.golfSummary?.golfRevenue || golfBreakdown.reduce((sum: number, x: any) => sum + (x.revenue || x.today_actual || 0), 0);
           setData({
             success: json.success || true,
             date: payload.date || endDate,
@@ -200,7 +201,7 @@ export default function GolfBusiness() {
                   {golfDetails.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-4 px-6 font-bold text-slate-700">{row.facility_name}</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.revenue)}</td>
+                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.revenue || row.today_actual || 0)}</td>
                     </tr>
                   ))}
                 </tbody>

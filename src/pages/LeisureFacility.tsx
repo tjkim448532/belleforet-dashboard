@@ -43,7 +43,7 @@ export default function LeisureFacility() {
     const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1?: string; depth2?: string }>();
 
     matchedProducts.forEach((p: any) => {
-      const sales = Number(p.revenue) || 0;
+      const sales = Number(p.revenue || p.today_actual || 0);
       totalSales += sales;
       const pName = p.product_name || p.facility_name || '알 수 없음';
       const existing = itemMap.get(pName);

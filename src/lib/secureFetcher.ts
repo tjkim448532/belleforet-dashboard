@@ -27,10 +27,24 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
   headers.set('Content-Type', 'application/json');
   headers.set('Authorization', `Bearer ${token}`);
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('API 응답 시간이 초과되었습니다 (15초). 백엔드 서버 상태를 확인해주세요.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

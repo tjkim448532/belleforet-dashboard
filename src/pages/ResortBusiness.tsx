@@ -64,7 +64,7 @@ export default function ResortBusiness() {
   const lodgingStats = (() => {
     if (!data || !data.resortSummary) return { revenue: 0, roomsSold: 0, adr: 0 };
     const summary = data.resortSummary;
-    const revenue = summary.lodging_revenue || summary.today_actual || 0;
+    const revenue = summary.lodging_revenue ?? summary.today_actual ?? 0;
     const roomsSold = summary.rooms_sold || 0;
     const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
     return { revenue, roomsSold, adr };
@@ -77,7 +77,7 @@ export default function ResortBusiness() {
       const sold = item.rooms_sold || 0;
       const cap = item.total_capacity || 0;
       const rate = cap > 0 ? Math.round((sold / cap) * 100) : 0;
-      const revenue = item.room_revenue || item.today_actual || 0;
+      const revenue = item.room_revenue ?? item.today_actual ?? 0;
       const adr = sold > 0 ? Math.round(revenue / sold) : 0;
       return {
         roomSize: size,
@@ -93,7 +93,7 @@ export default function ResortBusiness() {
   const channelAdrData = (() => {
     if (!data || !data.channelBreakdown) return [];
     return data.channelBreakdown.map(item => {
-      const revenue = item.room_revenue || item.today_actual || 0;
+      const revenue = item.room_revenue ?? item.today_actual ?? 0;
       return {
         channel: item.channel_name,
         roomsSold: item.rooms_sold,

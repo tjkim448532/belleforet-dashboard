@@ -96,17 +96,17 @@ export default function MatrixDashboard() {
     if (realTotal) {
       // ONLY override actual if the backend breakdown arrays are NOT complete or if we trust gridData more.
       // But since backend fixed the math, gridData aggregate row SHOULD match exactly.
-      rawSub.today.actual = Number(realTotal.salesAmount) || rawSub.today.actual;
-      rawSub.today.lastYear = Number(realTotal.lastYearSalesAmount) || rawSub.today.lastYear;
-      rawSub.today.growthRate = Number(realTotal.growthRate) || rawSub.today.growthRate;
+      rawSub.today.actual = realTotal.salesAmount !== undefined ? Number(realTotal.salesAmount) : rawSub.today.actual;
+      rawSub.today.lastYear = realTotal.lastYearSalesAmount !== undefined ? Number(realTotal.lastYearSalesAmount) : rawSub.today.lastYear;
+      rawSub.today.growthRate = realTotal.growthRate !== undefined ? Number(realTotal.growthRate) : rawSub.today.growthRate;
 
-      rawSub.mtd.actual = Number(realTotal.mtdSalesAmount) || rawSub.mtd.actual;
-      rawSub.mtd.lastYear = Number(realTotal.lastYearMtdSalesAmount) || rawSub.mtd.lastYear;
-      rawSub.mtd.growthRate = Number(realTotal.mtdGrowthRate) || rawSub.mtd.growthRate;
+      rawSub.mtd.actual = realTotal.mtdSalesAmount !== undefined ? Number(realTotal.mtdSalesAmount) : rawSub.mtd.actual;
+      rawSub.mtd.lastYear = realTotal.lastYearMtdSalesAmount !== undefined ? Number(realTotal.lastYearMtdSalesAmount) : rawSub.mtd.lastYear;
+      rawSub.mtd.growthRate = realTotal.mtdGrowthRate !== undefined ? Number(realTotal.mtdGrowthRate) : rawSub.mtd.growthRate;
 
-      rawSub.ytd.actual = Number(realTotal.ytdSalesAmount) || rawSub.ytd.actual;
-      rawSub.ytd.lastYear = Number(realTotal.lastYearYtdSalesAmount) || rawSub.ytd.lastYear;
-      rawSub.ytd.growthRate = Number(realTotal.ytdGrowthRate) || rawSub.ytd.growthRate;
+      rawSub.ytd.actual = realTotal.ytdSalesAmount !== undefined ? Number(realTotal.ytdSalesAmount) : rawSub.ytd.actual;
+      rawSub.ytd.lastYear = realTotal.lastYearYtdSalesAmount !== undefined ? Number(realTotal.lastYearYtdSalesAmount) : rawSub.ytd.lastYear;
+      rawSub.ytd.growthRate = realTotal.ytdGrowthRate !== undefined ? Number(realTotal.ytdGrowthRate) : rawSub.ytd.growthRate;
     }
     
     categorySubtotals[category] = {
@@ -136,19 +136,19 @@ export default function MatrixDashboard() {
   // This ensures 100% match with the DB's mathematical formula (POS - 객실후불)
   if (coreData.core) {
     if (coreData.core.today) {
-      netTotal.today.actual = Number(coreData.core.today.actual) || netTotal.today.actual;
-      netTotal.today.lastYear = Number(coreData.core.today.ly_actual) || netTotal.today.lastYear;
+      netTotal.today.actual = coreData.core.today.actual !== undefined ? Number(coreData.core.today.actual) : netTotal.today.actual;
+      netTotal.today.lastYear = coreData.core.today.ly_actual !== undefined ? Number(coreData.core.today.ly_actual) : netTotal.today.lastYear;
       netTotal.today.growthRate = getGrowth(netTotal.today.actual, netTotal.today.lastYear);
     }
     // MTD/YTD override from backend root payload if they exist
     if (coreData.core.mtd) {
-      netTotal.mtd.actual = Number(coreData.core.mtd.actual) || netTotal.mtd.actual;
-      netTotal.mtd.lastYear = Number(coreData.core.mtd.ly_actual) || netTotal.mtd.lastYear;
+      netTotal.mtd.actual = coreData.core.mtd.actual !== undefined ? Number(coreData.core.mtd.actual) : netTotal.mtd.actual;
+      netTotal.mtd.lastYear = coreData.core.mtd.ly_actual !== undefined ? Number(coreData.core.mtd.ly_actual) : netTotal.mtd.lastYear;
       netTotal.mtd.growthRate = getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear);
     }
     if (coreData.core.ytd) {
-      netTotal.ytd.actual = Number(coreData.core.ytd.actual) || netTotal.ytd.actual;
-      netTotal.ytd.lastYear = Number(coreData.core.ytd.ly_actual) || netTotal.ytd.lastYear;
+      netTotal.ytd.actual = coreData.core.ytd.actual !== undefined ? Number(coreData.core.ytd.actual) : netTotal.ytd.actual;
+      netTotal.ytd.lastYear = coreData.core.ytd.ly_actual !== undefined ? Number(coreData.core.ytd.ly_actual) : netTotal.ytd.lastYear;
       netTotal.ytd.growthRate = getGrowth(netTotal.ytd.actual, netTotal.ytd.lastYear);
     }
   }

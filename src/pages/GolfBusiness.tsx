@@ -25,19 +25,19 @@ export default function GolfBusiness() {
       setLoading(true);
       try {
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${endDate}`);
-        const payload = json.data || json;
+        const payload = json.data ?? json;
         if (payload) {
-          const golfBreakdown = payload.golfFacilityBreakdown || [];
-          const golf_revenue = payload.golfSummary?.golfRevenue || golfBreakdown.reduce((sum: number, x: any) => sum + (x.revenue || x.today_actual || 0), 0);
+          const golfBreakdown = payload.golfFacilityBreakdown ?? [];
+          const golf_revenue = payload.golfSummary?.golfRevenue ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.revenue ?? x.today_actual ?? 0), 0);
           setData({
-            success: json.success || true,
-            date: payload.date || endDate,
+            success: json.success ?? true,
+            date: payload.date ?? endDate,
             todaySummary: {
               golf_revenue: golf_revenue,
-              golf_visited_teams: payload.golfSummary?.visitedTeams || 0,
-              golf_visited_players: payload.golfSummary?.visitedPlayers || 0,
+              golf_visited_teams: payload.golfSummary?.visitedTeams ?? 0,
+              golf_visited_players: payload.golfSummary?.visitedPlayers ?? 0,
             },
-            golfFacilityBreakdown: payload.golfFacilityBreakdown || []
+            golfFacilityBreakdown: payload.golfFacilityBreakdown ?? []
           });
         }
       } catch (err) {
@@ -51,29 +51,29 @@ export default function GolfBusiness() {
   }, [startDate, endDate]);
 
   const formatCurrency = (val: number) => {
-    const rounded = Math.round(val || 0);
+    const rounded = Math.round(val ?? 0);
     return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
   };
 
   const formatNumber = (val: number) => {
-    return new Intl.NumberFormat('ko-KR').format(val || 0);
+    return new Intl.NumberFormat('ko-KR').format(val ?? 0);
   };
 
-  const golfRevenue = data?.todaySummary?.golf_revenue || 0;
-  const visitedTeams = data?.todaySummary?.golf_visited_teams || 0;
-  const visitedPlayers = data?.todaySummary?.golf_visited_players || 0;
+  const golfRevenue = data?.todaySummary?.golf_revenue ?? 0;
+  const visitedTeams = data?.todaySummary?.golf_visited_teams ?? 0;
+  const visitedPlayers = data?.todaySummary?.golf_visited_players ?? 0;
 
   const avgPlayersPerTeam = visitedTeams > 0 
     ? (visitedPlayers / visitedTeams).toFixed(2) 
     : '0.00';
     
-  const greenFeeTypes = (data?.golfFacilityBreakdown || []).filter((x: any) => (x.facility_name || '').includes('그린피'));
-  const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue || x.today_actual || 0), 0);
+  const greenFeeTypes = (data?.golfFacilityBreakdown ?? []).filter((x: any) => (x.facility_name ?? '').includes('그린피'));
+  const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue ?? x.today_actual ?? 0), 0);
   const avgGreenFee = visitedPlayers > 0
     ? Math.round(greenFeeRevenue / visitedPlayers)
     : 0;
 
-  const golfDetails = data?.golfFacilityBreakdown || [];
+  const golfDetails = data?.golfFacilityBreakdown ?? [];
 
   if (loading || !data) {
     return (
@@ -200,10 +200,10 @@ export default function GolfBusiness() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
-                  {golfDetails.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                  {golfDetails.map((row, index) => (
+                    <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="py-4 px-6 font-bold text-slate-700">{row.facility_name}</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.revenue || row.today_actual || 0)}</td>
+                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.revenue ?? row.today_actual ?? 0)}</td>
                     </tr>
                   ))}
                 </tbody>

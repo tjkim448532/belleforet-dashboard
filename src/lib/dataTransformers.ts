@@ -126,9 +126,9 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     arr.forEach((item: any) => {
       try {
         const rawName = String(item.facility_name || item.room_type || item.shop_name || item.name || '알수없음');
-        const todayActual = Number(item.today_actual || item.revenue || item.actual || item.sales_amount || item.room_revenue || 0);
-        const mtdActual = Number(item.mtd_actual || 0);
-        const ytdActual = Number(item.ytd_actual || 0);
+        const todayActual = Number(item.today_actual ?? item.revenue ?? item.actual ?? item.sales_amount ?? item.room_revenue ?? 0);
+        const mtdActual = Number(item.mtd_actual ?? 0);
+        const ytdActual = Number(item.ytd_actual ?? 0);
         
         if (todayActual === 0 && mtdActual === 0 && ytdActual === 0) return;
 

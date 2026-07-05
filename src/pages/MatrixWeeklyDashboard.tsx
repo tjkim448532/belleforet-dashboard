@@ -134,12 +134,12 @@ export default function MatrixWeeklyDashboard() {
     const wTotal = weeklyTotals[category];
 
     if (wTotal) {
-      rawSub.today.actual = Number(wTotal.today.actual) || rawSub.today.actual;
-      rawSub.today.lastYear = Number(wTotal.today.lastYear) || rawSub.today.lastYear;
-      rawSub.mtd.actual = Number(wTotal.mtd.actual) || rawSub.mtd.actual;
-      rawSub.mtd.lastYear = Number(wTotal.mtd.lastYear) || rawSub.mtd.lastYear;
-      rawSub.ytd.actual = Number(wTotal.ytd.actual) || rawSub.ytd.actual;
-      rawSub.ytd.lastYear = Number(wTotal.ytd.lastYear) || rawSub.ytd.lastYear;
+      rawSub.today.actual = wTotal.today.actual !== undefined ? Number(wTotal.today.actual) : rawSub.today.actual;
+      rawSub.today.lastYear = wTotal.today.lastYear !== undefined ? Number(wTotal.today.lastYear) : rawSub.today.lastYear;
+      rawSub.mtd.actual = wTotal.mtd.actual !== undefined ? Number(wTotal.mtd.actual) : rawSub.mtd.actual;
+      rawSub.mtd.lastYear = wTotal.mtd.lastYear !== undefined ? Number(wTotal.mtd.lastYear) : rawSub.mtd.lastYear;
+      rawSub.ytd.actual = wTotal.ytd.actual !== undefined ? Number(wTotal.ytd.actual) : rawSub.ytd.actual;
+      rawSub.ytd.lastYear = wTotal.ytd.lastYear !== undefined ? Number(wTotal.ytd.lastYear) : rawSub.ytd.lastYear;
     }
     
     categorySubtotals[category] = {

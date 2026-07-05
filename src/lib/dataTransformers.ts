@@ -299,13 +299,13 @@ export const transformHomeData = (core: CoreDataState) => {
     avg_green_fee: 0, // Fallback
     weekly_trend: [], // Fallback
     roomTypeBreakdown: c.roomTypeBreakdown || [],
-    golfSummary: c.golfSummary || {
-      reservedTeams: 0,
-      visitedTeams: 0,
-      visitedPlayers: 0,
-      avgGreenFee: 0,
-      memberAvgGreenFee: 0,
-      nonMemberAvgGreenFee: 0
+    golfSummary: {
+      reservedTeams: c.golfSummary?.reservedTeams || 0,
+      visitedTeams: c.golfSummary?.visitedTeams || 0,
+      visitedPlayers: c.golfSummary?.visitedPlayers || 0,
+      avgGreenFee: c.golfSummary?.avgGreenFee || 0,
+      memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || 0,
+      nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || 0
     },
     qa_metrics: c.qa_metrics || null
   };

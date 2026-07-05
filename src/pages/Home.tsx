@@ -226,7 +226,7 @@ export default function Home() {
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
                             const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('16')) || [];
-                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || 0), 0);
+                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || x.today_actual || 0), 0);
                             const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
                             return sold > 0 ? Math.round(rev / sold) : 0;
                           })())}
@@ -237,7 +237,7 @@ export default function Home() {
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
                             const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('35')) || [];
-                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || 0), 0);
+                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || x.today_actual || 0), 0);
                             const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
                             return sold > 0 ? Math.round(rev / sold) : 0;
                           })())}
@@ -248,7 +248,7 @@ export default function Home() {
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
                             const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('51')) || [];
-                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || 0), 0);
+                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || x.today_actual || 0), 0);
                             const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
                             return sold > 0 ? Math.round(rev / sold) : 0;
                           })())}
@@ -287,11 +287,11 @@ export default function Home() {
                         <span className="text-sm font-bold text-slate-800">
                           {formatCurrency((() => {
                             if (!displayData.golfSummary) return 0;
-                            if (displayData.golfSummary.avgGreenFee !== undefined) {
+                            if (displayData.golfSummary.avgGreenFee !== undefined && displayData.golfSummary.avgGreenFee > 0) {
                               return displayData.golfSummary.avgGreenFee;
                             }
                             const greenFeeTypes = displayData.golfFacilityBreakdown?.filter((x: any) => (x.facility_name || '').includes('그린피')) || [];
-                            const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue || 0), 0);
+                            const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue || x.today_actual || 0), 0);
                             const visitedPlayers = displayData.golfSummary.visitedPlayers || 1;
                             return greenFeeRevenue > 0 ? Math.round(greenFeeRevenue / visitedPlayers) : 0;
                           })())}

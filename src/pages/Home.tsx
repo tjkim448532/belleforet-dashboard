@@ -160,59 +160,30 @@ export default function Home() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
-                  <div className="text-slate-500 font-bold mb-4">평형별 객실 평균 매출 (ADR)</div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-slate-400 font-medium mb-1">16평</span>
-                      <span className="text-lg font-bold text-brand-mint">
-                        {formatCurrency(displayData?.adrBreakdown?.['16'] || 0)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col border-l border-slate-200 pl-4">
-                      <span className="text-xs text-slate-400 font-medium mb-1">35평</span>
-                      <span className="text-lg font-bold text-brand-mint">
-                        {formatCurrency(displayData?.adrBreakdown?.['35'] || 0)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col border-l border-slate-200 pl-4">
-                      <span className="text-xs text-slate-400 font-medium mb-1">51평</span>
-                      <span className="text-lg font-bold text-brand-mint">
-                        {formatCurrency(displayData?.adrBreakdown?.['51'] || 0)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-3">
-                    평형별 객실 순매출액 ÷ 판매된 객실 수
-                  </div>
+                  <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
+                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
+                  <div className="text-sm text-slate-400">선택 기간 그린피 매출 ÷ 입장객 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
-                    <div className="text-slate-500 font-bold mb-4">골프 예약 및 그린피 현황</div>
-                    <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-100">
+                    <div className="text-slate-500 font-bold mb-4">골프 예약 및 입장 현황</div>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
-                        <div className="text-2xl font-emphatic text-brand-mint">
-                          {displayData.golfSummary?.reservedTeams !== undefined ? `${displayData.golfSummary.reservedTeams}팀` : '-팀'}
+                        <div className="text-3xl font-emphatic text-brand-mint">
+                          {displayData.golfSummary ? `${displayData.golfSummary.reservedTeams}팀` : '0팀'}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">실제 내장 팀수</div>
-                        <div className="text-2xl font-emphatic text-brand-mint">
+                        <div className="text-xs text-slate-400 font-medium mb-1">실제 입장 팀수</div>
+                        <div className="text-3xl font-emphatic text-brand-mint">
                           {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-500 font-medium">1인당 평균 그린피</span>
-                        <span className="text-sm font-bold text-slate-800">
-                          {formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}
-                        </span>
-                      </div>
-                    </div>
                   </div>
-                  <div className="text-sm text-slate-400 mt-4 pt-2 border-t border-slate-50">
-                    선택 기간 골프 예약/방문 및 그린피 정산 데이터 집계
+                  <div className="text-sm text-slate-400 mt-4">
+                    선택 기간 골프-예약 및 골프-입장객 데이터 집계
                   </div>
                 </div>
               </div>

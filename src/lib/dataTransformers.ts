@@ -307,6 +307,7 @@ export const transformHomeData = (core: CoreDataState) => {
       memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || 0,
       nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || 0
     },
+    golfFacilityBreakdown: c.golfFacilityBreakdown || [],
     qa_metrics: c.qa_metrics || null
   };
 };

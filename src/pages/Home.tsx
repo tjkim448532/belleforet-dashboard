@@ -22,6 +22,7 @@ export default function Home() {
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [lastYearWeather, setLastYearWeather] = useState<WeatherData | null>(null);
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
     return transformHomeData(coreData);
@@ -35,16 +36,30 @@ export default function Home() {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const docRef = doc(db, 'weather_daily', endDate);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setWeather(docSnap.data() as WeatherData);
+        const parsedDate = new Date(endDate);
+        const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000);
+        const lyDateStr = lyDate.toISOString().split('T')[0];
+
+        const [currSnap, lySnap] = await Promise.all([
+          getDoc(doc(db, 'weather_daily', endDate)),
+          getDoc(doc(db, 'weather_daily', lyDateStr))
+        ]);
+
+        if (currSnap.exists()) {
+          setWeather(currSnap.data() as WeatherData);
         } else {
           setWeather(null);
+        }
+
+        if (lySnap.exists()) {
+          setLastYearWeather(lySnap.data() as WeatherData);
+        } else {
+          setLastYearWeather(null);
         }
       } catch (err) {
         console.error('Weather fetch error:', err);
         setWeather(null);
+        setLastYearWeather(null);
       }
     };
 
@@ -167,13 +182,28 @@ export default function Home() {
                   선택 기간 매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
                   <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
                 </h2>
-                {weather && startDate === endDate && (
-                  <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100">
-                    <div className="font-bold text-brand-mint text-base flex items-center justify-end gap-1">
-                      {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
-                      {weather.weatherDesc}
-                    </div>
-                    <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                {startDate === endDate && (weather || lastYearWeather) && (
+                  <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
+                    {lastYearWeather && (
+                      <div className="opacity-60 text-right pr-3 border-r border-slate-200">
+                        <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
+                        <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
+                          {lastYearWeather.weatherDesc?.includes('비') ? '🌧️' : lastYearWeather.weatherDesc?.includes('눈') ? '❄️' : lastYearWeather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
+                          {lastYearWeather.weatherDesc || '맑음'}
+                        </div>
+                        <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
+                      </div>
+                    )}
+                    {weather && (
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-brand-mint mb-0.5">현재 날씨</div>
+                        <div className="font-bold text-brand-mint text-base flex items-center justify-end gap-1">
+                          {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
+                          {weather.weatherDesc || '맑음'}
+                        </div>
+                        <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

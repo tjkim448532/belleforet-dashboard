@@ -279,12 +279,11 @@ export default function Home() {
                         <span className="text-sm font-bold text-slate-800">
                           {formatCurrency((() => {
                             if (!displayData.golfSummary) return 0;
-                            // 백엔드에서 avgGreenFee를 직접 주면 사용, 없으면 직접 계산
                             if (displayData.golfSummary.avgGreenFee !== undefined) {
                               return displayData.golfSummary.avgGreenFee;
                             }
-                            const greenFeeData = displayData.golfFacilityBreakdown?.find((x: any) => x.facility_name === '그린피');
-                            const greenFeeRevenue = greenFeeData?.revenue || 0;
+                            const greenFeeTypes = displayData.golfFacilityBreakdown?.filter((x: any) => (x.facility_name || '').includes('그린피')) || [];
+                            const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue || 0), 0);
                             const visitedPlayers = displayData.golfSummary.visitedPlayers || 1;
                             return greenFeeRevenue > 0 ? Math.round(greenFeeRevenue / visitedPlayers) : 0;
                           })())}

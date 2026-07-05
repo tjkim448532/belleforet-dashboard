@@ -37,7 +37,7 @@ export default function MatrixWeeklyDashboard() {
     const fetchWeekly = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const res = await secureFetcher(`${API_BASE}/api/dashboard/matrix-weekly?date=${startDate}`);
+        const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/matrix-weekly?date=${startDate}`);
         const result = res.data || res;
         const dataArray = Array.isArray(result) ? result : (result.data || []);
         

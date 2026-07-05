@@ -23,32 +23,47 @@ export default function LeisureFacility() {
 
     const { facilities } = group;
     const products = core.leisureProductBreakdown || [];
+    const visitors = core.leisureVisitorBreakdown || [];
 
-    // Filter products matching the facilities
-    const matchedData = products.filter((p: any) => {
+    // Filter products matching the facilities (for SALES)
+    const matchedProducts = products.filter((p: any) => {
       const matchFacility = facilities.some((f: string) => p.facility_name?.includes(f));
       const matchProduct = facilities.some((f: string) => p.product_name?.includes(f));
       return matchFacility || matchProduct;
     });
 
+    // Filter visitors matching the facilities (for QUANTITY/VISITORS)
+    const matchedVisitors = visitors.filter((v: any) => {
+      const matchFacility = facilities.some((f: string) => v.facility_name?.includes(f));
+      const matchProduct = facilities.some((f: string) => v.product_name?.includes(f));
+      return matchFacility || matchProduct;
+    });
+
     let totalSales = 0;
-    let totalQuantity = 0;
     const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1?: string; depth2?: string }>();
 
-    matchedData.forEach((p: any) => {
+    matchedProducts.forEach((p: any) => {
       const sales = Number(p.revenue) || 0;
-      const qty = Number(p.qty) || 0;
-      
       totalSales += sales;
-      totalQuantity += qty;
-
       const pName = p.product_name || p.facility_name || '알 수 없음';
       const existing = itemMap.get(pName);
       if (existing) {
         existing.sales += sales;
+      } else {
+        itemMap.set(pName, { name: pName, sales, qty: 0, depth1: '레저', depth2: p.facility_name });
+      }
+    });
+
+    let totalQuantity = 0;
+    matchedVisitors.forEach((v: any) => {
+      const qty = Number(v.qty) || 0;
+      totalQuantity += qty;
+      const vName = v.product_name || v.facility_name || '알 수 없음';
+      const existing = itemMap.get(vName);
+      if (existing) {
         existing.qty += qty;
       } else {
-        itemMap.set(pName, { name: pName, sales, qty, depth1: '레저', depth2: p.facility_name });
+        itemMap.set(vName, { name: vName, sales: 0, qty, depth1: '레저', depth2: v.facility_name });
       }
     });
 

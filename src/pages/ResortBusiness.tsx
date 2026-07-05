@@ -9,9 +9,9 @@ interface SummaryData {
   date: string;
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
-  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number };
-  roomTypeBreakdown?: { room_type: string; rooms_sold: number; room_revenue: number; total_capacity: number }[];
-  channelBreakdown?: { channel_name: string; rooms_sold: number; room_revenue: number }[];
+  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number };
+  roomTypeBreakdown?: { room_type: string; rooms_sold: number; room_revenue: number; total_capacity: number; today_actual?: number }[];
+  channelBreakdown?: { channel_name: string; rooms_sold: number; room_revenue: number; today_actual?: number }[];
 }
 
 export default function ResortBusiness() {

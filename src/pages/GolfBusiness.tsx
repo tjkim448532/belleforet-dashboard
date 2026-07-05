@@ -12,7 +12,7 @@ interface SummaryData {
     golf_visited_teams: number;
     golf_visited_players: number;
   };
-  golfFacilityBreakdown?: { facility_name: string; revenue: number }[];
+  golfFacilityBreakdown?: { facility_name: string; revenue: number; today_actual?: number }[];
 }
 
 export default function GolfBusiness() {

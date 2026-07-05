@@ -76,6 +76,14 @@ export default function Home() {
   };
 
 
+  if (apiError && !loading) {
+    return (
+      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="text-xl font-bold text-red-500">{apiError}</div>
+      </div>
+    );
+  }
+
   if (loading || !displayData) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">

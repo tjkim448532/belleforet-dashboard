@@ -217,8 +217,10 @@ export default function Home() {
                         <span className="text-xs text-slate-400 font-medium mb-1">16평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => (x.room_type || x.facility_name || '').includes('16'));
-                            return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
+                            const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('16')) || [];
+                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || 0), 0);
+                            const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
+                            return sold > 0 ? Math.round(rev / sold) : 0;
                           })())}
                         </span>
                       </div>
@@ -226,8 +228,10 @@ export default function Home() {
                         <span className="text-xs text-slate-400 font-medium mb-1">35평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => (x.room_type || x.facility_name || '').includes('35'));
-                            return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
+                            const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('35')) || [];
+                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || 0), 0);
+                            const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
+                            return sold > 0 ? Math.round(rev / sold) : 0;
                           })())}
                         </span>
                       </div>
@@ -235,8 +239,10 @@ export default function Home() {
                         <span className="text-xs text-slate-400 font-medium mb-1">51평</span>
                         <span className="text-lg font-bold text-brand-mint">
                           {formatCurrency((() => {
-                            const r = displayData?.roomTypeBreakdown?.find((x: any) => (x.room_type || x.facility_name || '').includes('51'));
-                            return r && r.rooms_sold > 0 ? Math.round(r.room_revenue / r.rooms_sold) : 0;
+                            const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('51')) || [];
+                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || 0), 0);
+                            const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
+                            return sold > 0 ? Math.round(rev / sold) : 0;
                           })())}
                         </span>
                       </div>
@@ -255,7 +261,7 @@ export default function Home() {
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
                         <div className="text-2xl font-emphatic text-brand-mint">
-                          {displayData.golfSummary ? `${displayData.golfSummary.reservedTeams}팀` : '0팀'}
+                          {displayData.golfSummary?.reservedTeams !== undefined ? `${displayData.golfSummary.reservedTeams}팀` : '-팀'}
                         </div>
                       </div>
                       <div>
@@ -271,7 +277,17 @@ export default function Home() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500 font-medium">1인당 평균 그린피</span>
                         <span className="text-sm font-bold text-slate-800">
-                          {displayData.golfSummary ? formatCurrency(displayData.golfSummary.avgGreenFee) : '0원'}
+                          {formatCurrency((() => {
+                            if (!displayData.golfSummary) return 0;
+                            // 백엔드에서 avgGreenFee를 직접 주면 사용, 없으면 직접 계산
+                            if (displayData.golfSummary.avgGreenFee !== undefined) {
+                              return displayData.golfSummary.avgGreenFee;
+                            }
+                            const greenFeeData = displayData.golfFacilityBreakdown?.find((x: any) => x.facility_name === '그린피');
+                            const greenFeeRevenue = greenFeeData?.revenue || 0;
+                            const visitedPlayers = displayData.golfSummary.visitedPlayers || 1;
+                            return greenFeeRevenue > 0 ? Math.round(greenFeeRevenue / visitedPlayers) : 0;
+                          })())}
                         </span>
                       </div>
                     </div>

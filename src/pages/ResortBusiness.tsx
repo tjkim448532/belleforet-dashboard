@@ -9,9 +9,9 @@ interface SummaryData {
   date: string;
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
-  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number };
-  roomTypeBreakdown?: { room_type: string; rooms_sold: number; room_revenue: number; total_capacity: number; today_actual?: number }[];
-  channelBreakdown?: { channel_name: string; rooms_sold: number; room_revenue: number; today_actual?: number }[];
+  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; gross?: number; };
+  roomTypeBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; total_capacity: number; }[];
+  channelBreakdown?: { facility_name: string; today_actual: number; qty?: number; visitors?: number; }[];
 }
 
 export default function ResortBusiness() {
@@ -35,8 +35,8 @@ export default function ResortBusiness() {
           ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
           today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
           resortSummary: payload.resortSummary || null,
-          roomTypeBreakdown: payload.roomTypeBreakdown || [],
-          channelBreakdown: payload.channelBreakdown || []
+          roomTypeBreakdown: payload.roomTypeBreakdown || payload.visitorData?.roomTypeBreakdown || [],
+          channelBreakdown: payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || []
         });
       } catch (err) {
         console.error('API Error:', err);
@@ -62,22 +62,33 @@ export default function ResortBusiness() {
   };
 
   const lodgingStats = (() => {
-    if (!data || !data.resortSummary) return { revenue: 0, roomsSold: 0, adr: 0 };
-    const summary = data.resortSummary;
-    const revenue = summary.lodging_revenue ?? summary.today_actual ?? 0;
-    const roomsSold = summary.rooms_sold || 0;
-    const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
-    return { revenue, roomsSold, adr };
+    if (!data) return { revenue: 0, roomsSold: 0, adr: 0 };
+    if (data.resortSummary) {
+      const summary = data.resortSummary;
+      const revenue = summary.gross || summary.today_actual || summary.lodging_revenue || 0;
+      const roomsSold = summary.rooms_sold || 0;
+      const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
+      return { revenue, roomsSold, adr };
+    }
+    
+    if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
+      const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.gross || item.today_actual || 0), 0);
+      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.visitors || item.qty || 0), 0);
+      const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
+      return { revenue, roomsSold, adr };
+    }
+
+    return { revenue: 0, roomsSold: 0, adr: 0 };
   })();
 
   const roomOccupancyData = (() => {
     if (!data || !data.roomTypeBreakdown) return [];
     return data.roomTypeBreakdown.map(item => {
-      const size = item.room_type;
-      const sold = item.rooms_sold || 0;
+      const size = item.facility_name;
+      const sold = Number(item.visitors || item.qty || 0);
       const cap = item.total_capacity || 0;
       const rate = cap > 0 ? Math.round((sold / cap) * 100) : 0;
-      const revenue = item.room_revenue ?? item.today_actual ?? 0;
+      const revenue = item.gross || item.today_actual || 0;
       const adr = sold > 0 ? Math.round(revenue / sold) : 0;
       return {
         roomSize: size,
@@ -93,12 +104,13 @@ export default function ResortBusiness() {
   const channelAdrData = (() => {
     if (!data || !data.channelBreakdown) return [];
     return data.channelBreakdown.map(item => {
-      const revenue = item.room_revenue ?? item.today_actual ?? 0;
+      const revenue = item.today_actual || 0;
+      const sold = Number(item.visitors || item.qty || 0);
       return {
-        channel: item.channel_name,
-        roomsSold: item.rooms_sold,
+        channel: item.facility_name,
+        roomsSold: sold,
         totalRevenue: revenue,
-        adr: item.rooms_sold > 0 ? Math.round(revenue / item.rooms_sold) : 0
+        adr: sold > 0 ? Math.round(revenue / sold) : 0
       };
     }).sort((a, b) => b.totalRevenue - a.totalRevenue);
   })();

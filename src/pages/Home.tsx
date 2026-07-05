@@ -1,28 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import { useSimulation } from '../contexts/SimulationContext';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-
-
-
-interface WeatherData {
-  tempMax?: number;
-  tempMin?: number;
-  precipitation?: number;
-  weatherDesc?: string;
-}
 
 export default function Home() {
-  const { simulatedData, clearSimulation } = useSimulation();
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [lastYearWeather, setLastYearWeather] = useState<WeatherData | null>(null);
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
     return transformHomeData(coreData);
@@ -33,58 +18,11 @@ export default function Home() {
   const apiError = coreData.error ? '데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.' : 
                   (coreData.isLoading ? null : (transformedData ? null : '데이터를 불러오는 데 실패했습니다.'));
 
-  useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        const parsedDate = new Date(endDate);
-        const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000);
-        const lyDateStr = lyDate.toISOString().split('T')[0];
+  const weather = coreData.core?.weather?.current || null;
+  const lastYearWeather = coreData.core?.weather?.lastYear || null;
 
-        const [currSnap, lySnap] = await Promise.all([
-          getDoc(doc(db, 'weather_daily', endDate)),
-          getDoc(doc(db, 'weather_daily', lyDateStr))
-        ]);
+  const displayData: any = data;
 
-        if (currSnap.exists()) {
-          setWeather(currSnap.data() as WeatherData);
-        } else {
-          setWeather(null);
-        }
-
-        if (lySnap.exists()) {
-          setLastYearWeather(lySnap.data() as WeatherData);
-        } else {
-          setLastYearWeather(null);
-        }
-      } catch (err) {
-        console.error('Weather fetch error:', err);
-        setWeather(null);
-        setLastYearWeather(null);
-      }
-    };
-
-    fetchWeather();
-  }, [coreData, endDate]);
-
-  // 시뮬레이션 데이터 덮어쓰기 로직
-  let displayData: any = data;
-  if (data && simulatedData) {
-    // 시뮬레이터에서 설정된 본부별 금액 (키: 본부명, 값: 금액)
-    const simulatedHqToday = Object.keys(simulatedData.hqTotals).map(key => ({
-      hq: key,
-      actual: simulatedData.hqTotals[key] || 0,
-      qty: 0 // 시뮬레이션은 매출 금액만 제공하므로 qty는 0
-    }));
-
-    displayData = {
-      ...data,
-      today: { ...data.today, actual: simulatedData.totalSales },
-      ytd: { ...data.ytd, actual: data.ytd.actual - data.today.actual + simulatedData.totalSales },
-      hq_today: simulatedHqToday
-    };
-  }
-
-  // 모든 숫자 표기를 일정하게 (콤마 + 원) 통일
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val || 0);
     return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
@@ -107,22 +45,20 @@ export default function Home() {
     );
   }
 
-  const todayGross = displayData.today.actual * 1.1;
-  const todayLyGross = displayData.today.ly_actual * 1.1;
+  const todayGross = displayData.today.gross;
+  const todayLyGross = displayData.today.ly_gross;
   const todayDiff = todayGross - todayLyGross;
   const todayPct = todayLyGross > 0 ? (todayDiff / todayLyGross) * 100 : 0;
   
-  const ytdGross = displayData.ytd.actual * 1.1;
-  const ytdLyGross = displayData.ytd.ly_actual * 1.1;
+  const ytdGross = displayData.ytd.gross;
+  const ytdLyGross = displayData.ytd.ly_gross;
   const ytdDiff = ytdGross - ytdLyGross;
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       
-      {/* Decorative Header Background */}
       <div className="w-full bg-brand-mint h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
-        {/* Brand Graphic Motifs in Background */}
         <div className="absolute top-10 right-[10%] w-32 h-32 bg-white/20 shape-half-circle" />
         <div className="absolute -top-10 right-[20%] w-48 h-48 bg-white/10 shape-leaf" />
         <div className="absolute top-20 left-[5%] w-16 h-16 bg-white/20 rounded-full" />
@@ -130,17 +66,6 @@ export default function Home() {
 
       <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
-        {simulatedData && (
-          <div className="bg-red-500 text-white p-4 rounded-2xl mb-8 flex items-center justify-between shadow-lg animate-pulse">
-            <div className="flex items-center gap-3">
-              <AlertCircle size={24} />
-              <span className="font-bold text-lg">시뮬레이션 모드 작동 중! 실제 데이터가 아닙니다.</span>
-            </div>
-            <button onClick={clearSimulation} className="bg-white text-red-500 px-4 py-2 rounded-xl font-bold hover:bg-red-50 transition-colors">
-              실제 데이터로 복귀
-            </button>
-          </div>
-        )}
 
         {apiError && (
           <div className="bg-orange-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
@@ -149,7 +74,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
@@ -162,25 +86,19 @@ export default function Home() {
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
             <GlobalDatePicker allowRange={true} />
           </div>
         </div>
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-12">
-          
-          {/* Top Cards (Today & YTD) */}
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Today Sales */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <h2 className="text-base font-bold text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
-                  선택 기간 매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
-                  <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
+                  선택 기간 순매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
+                  <span className="text-xs text-slate-400 font-normal hidden sm:inline">(Net 기준)</span>
                 </h2>
                 {startDate === endDate && (weather || lastYearWeather) && (
                   <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
@@ -219,7 +137,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* YTD Sales */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
               <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
@@ -234,56 +151,34 @@ export default function Home() {
                 <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
               </div>
             </div>
-
           </div>
 
-          {/* Left Area (Indicators) */}
           <div className="lg:col-span-12 flex flex-col gap-6">
-            
-            {/* Key Indicators */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
               <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12 transition-transform duration-300" /> 핵심 영업 지표
+                <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12" /> 주요 지표 및 운영 현황
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
-                  <div>
-                    <div className="text-slate-500 font-bold mb-4">평형별 객실 평균 단가 (ADR)</div>
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-2 pb-2">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-slate-400 font-medium mb-1">16평</span>
-                        <span className="text-lg font-bold text-brand-mint">
-                          {formatCurrency((() => {
-                            const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('16')) || [];
-                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || x.today_actual || 0), 0);
-                            const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
-                            return sold > 0 ? Math.round(rev / sold) : 0;
-                          })())}
-                        </span>
-                      </div>
-                      <div className="flex flex-col border-l border-slate-200 pl-4">
-                        <span className="text-xs text-slate-400 font-medium mb-1">35평</span>
-                        <span className="text-lg font-bold text-brand-mint">
-                          {formatCurrency((() => {
-                            const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('35')) || [];
-                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || x.today_actual || 0), 0);
-                            const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
-                            return sold > 0 ? Math.round(rev / sold) : 0;
-                          })())}
-                        </span>
-                      </div>
-                      <div className="flex flex-col border-l border-slate-200 pl-4">
-                        <span className="text-xs text-slate-400 font-medium mb-1">51평</span>
-                        <span className="text-lg font-bold text-brand-mint">
-                          {formatCurrency((() => {
-                            const types = displayData?.roomTypeBreakdown?.filter((x: any) => (x.room_type || x.facility_name || '').includes('51')) || [];
-                            const rev = types.reduce((sum: number, x: any) => sum + (x.room_revenue || x.today_actual || 0), 0);
-                            const sold = types.reduce((sum: number, x: any) => sum + (x.rooms_sold || 0), 0);
-                            return sold > 0 ? Math.round(rev / sold) : 0;
-                          })())}
-                        </span>
-                      </div>
+                  <div className="text-slate-500 font-bold mb-4">평형별 객실 평균 매출 (ADR)</div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-slate-400 font-medium mb-1">16평</span>
+                      <span className="text-lg font-bold text-brand-mint">
+                        {formatCurrency(displayData?.adrBreakdown?.['16'] || 0)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col border-l border-slate-200 pl-4">
+                      <span className="text-xs text-slate-400 font-medium mb-1">35평</span>
+                      <span className="text-lg font-bold text-brand-mint">
+                        {formatCurrency(displayData?.adrBreakdown?.['35'] || 0)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col border-l border-slate-200 pl-4">
+                      <span className="text-xs text-slate-400 font-medium mb-1">51평</span>
+                      <span className="text-lg font-bold text-brand-mint">
+                        {formatCurrency(displayData?.adrBreakdown?.['51'] || 0)}
+                      </span>
                     </div>
                   </div>
                   <div className="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-3">
@@ -293,8 +188,6 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
                     <div className="text-slate-500 font-bold mb-4">골프 예약 및 그린피 현황</div>
-                    
-                    {/* Teams row */}
                     <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-100">
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
@@ -309,26 +202,14 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Green Fees section */}
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500 font-medium">1인당 평균 그린피</span>
                         <span className="text-sm font-bold text-slate-800">
-                          {formatCurrency((() => {
-                            if (!displayData.golfSummary) return 0;
-                            if (displayData.golfSummary.avgGreenFee !== undefined && displayData.golfSummary.avgGreenFee > 0) {
-                              return displayData.golfSummary.avgGreenFee;
-                            }
-                            const greenFeeTypes = displayData.golfFacilityBreakdown?.filter((x: any) => (x.facility_name || '').includes('그린피')) || [];
-                            const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue || x.today_actual || 0), 0);
-                            const visitedPlayers = displayData.golfSummary.visitedPlayers || 1;
-                            return greenFeeRevenue > 0 ? Math.round(greenFeeRevenue / visitedPlayers) : 0;
-                          })())}
+                          {formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}
                         </span>
                       </div>
                     </div>
-
                   </div>
                   <div className="text-sm text-slate-400 mt-4 pt-2 border-t border-slate-50">
                     선택 기간 골프 예약/방문 및 그린피 정산 데이터 집계

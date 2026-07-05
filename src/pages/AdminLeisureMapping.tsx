@@ -13,16 +13,14 @@ export default function AdminLeisureMapping() {
   const availableFacilities = useMemo(() => {
     const facilities = new Set<string>();
     if (core) {
-      if (core.gridData) {
-        core.gridData.forEach((g: any) => g.depth2 && facilities.add(g.depth2));
-      }
+
       const breakdowns = [
         core.fnbFacilityBreakdown,
         core.ticketFacilityBreakdown,
         core.golfFacilityBreakdown,
         core.otherFacilityBreakdown,
         core.banquetFacilityBreakdown,
-        core.roomTypeBreakdown
+        core.roomTypeBreakdown || core.visitorData?.roomTypeBreakdown || []
       ];
       breakdowns.forEach(b => {
         if (Array.isArray(b)) {

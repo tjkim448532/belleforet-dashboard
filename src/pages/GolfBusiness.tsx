@@ -8,11 +8,13 @@ interface SummaryData {
   success: boolean;
   date: string;
   todaySummary: {
+    golf_gross_revenue?: number;
     golf_revenue: number;
     golf_visited_teams: number;
     golf_visited_players: number;
+    golf_avg_green_fee: number;
   };
-  golfFacilityBreakdown?: { facility_name: string; revenue: number; today_actual?: number }[];
+  golfFacilityBreakdown?: { facility_name: string; today_actual: number; }[];
 }
 
 export default function GolfBusiness() {
@@ -28,7 +30,7 @@ export default function GolfBusiness() {
         const payload = json.data ?? json;
         if (payload) {
           const golfBreakdown = payload.golfFacilityBreakdown ?? [];
-          const golf_revenue = payload.golfSummary?.golfRevenue ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.revenue ?? x.today_actual ?? 0), 0);
+          const golf_revenue = payload.golfSummary?.golfRevenue ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.today_actual || 0), 0);
           setData({
             success: json.success ?? true,
             date: payload.date ?? endDate,
@@ -36,6 +38,7 @@ export default function GolfBusiness() {
               golf_revenue: golf_revenue,
               golf_visited_teams: payload.golfSummary?.visitedTeams ?? 0,
               golf_visited_players: payload.golfSummary?.visitedPlayers ?? 0,
+              golf_avg_green_fee: payload.golfSummary?.avgGreenFee ?? 0,
             },
             golfFacilityBreakdown: payload.golfFacilityBreakdown ?? []
           });
@@ -59,7 +62,7 @@ export default function GolfBusiness() {
     return new Intl.NumberFormat('ko-KR').format(val ?? 0);
   };
 
-  const golfRevenue = data?.todaySummary?.golf_revenue ?? 0;
+  const golfRevenue = data?.todaySummary?.golf_gross_revenue ?? data?.todaySummary?.golf_revenue ?? 0;
   const visitedTeams = data?.todaySummary?.golf_visited_teams ?? 0;
   const visitedPlayers = data?.todaySummary?.golf_visited_players ?? 0;
 
@@ -67,11 +70,7 @@ export default function GolfBusiness() {
     ? (visitedPlayers / visitedTeams).toFixed(2) 
     : '0.00';
     
-  const greenFeeTypes = (data?.golfFacilityBreakdown ?? []).filter((x: any) => (x.facility_name ?? '').includes('그린피'));
-  const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue ?? x.today_actual ?? 0), 0);
-  const avgGreenFee = visitedPlayers > 0
-    ? Math.round(greenFeeRevenue / visitedPlayers)
-    : 0;
+  const avgGreenFee = data?.todaySummary?.golf_avg_green_fee ?? 0;
 
   const golfDetails = data?.golfFacilityBreakdown ?? [];
 
@@ -203,7 +202,7 @@ export default function GolfBusiness() {
                   {golfDetails.map((row, index) => (
                     <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="py-4 px-6 font-bold text-slate-700">{row.facility_name}</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.revenue ?? row.today_actual ?? 0)}</td>
+                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.today_actual || 0)}</td>
                     </tr>
                   ))}
                 </tbody>

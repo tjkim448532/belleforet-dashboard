@@ -3,15 +3,6 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
 import { secureFetcher } from '../lib/secureFetcher';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-
-interface WeatherData {
-  tempMax?: number;
-  tempMin?: number;
-  precipitation?: number;
-  weatherDesc?: string;
-}
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -30,8 +21,8 @@ export default function MatrixWeeklyDashboard() {
   const coreData = useCoreData();
   const [checkedShops, setCheckedShops] = useState<string[]>([]);
   const [weeklyTotals, setWeeklyTotals] = useState<Record<string, MatrixRow>>({});
-  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
-  const [lastYearWeather, setLastYearWeather] = useState<WeatherData | null>(null);
+  const [currentWeather, setCurrentWeather] = useState<any>(null);
+  const [lastYearWeather, setLastYearWeather] = useState<any>(null);
 
   useEffect(() => {
     const fetchWeekly = async () => {
@@ -42,13 +33,10 @@ export default function MatrixWeeklyDashboard() {
         const dataArray = Array.isArray(result) ? result : (result.data || []);
         
         const map: Record<string, MatrixRow> = {};
-        dataArray.forEach((row: MatrixRow) => {
-          if (row.shop_name === '객실') map['객실 Total'] = row;
-          if (row.shop_name === '골프장') map['골프 Total'] = row;
-          if (row.shop_name === '식음업장') map['식음업장 Total'] = row;
-          if (row.shop_name === '기타영업') map['기타업장 Total'] = row;
-          if (row.shop_name === '티켓업장' || row.shop_name === '레저') map['티켓업장 Total'] = row;
-          if (row.shop_name === '연회') map['연회 Total'] = row;
+        dataArray.forEach((row: any) => {
+          if (row.category_code) {
+            map[row.category_code] = row;
+          }
         });
         setWeeklyTotals(map);
       } catch (err) {
@@ -56,40 +44,26 @@ export default function MatrixWeeklyDashboard() {
       }
     };
     
-    const fetchWeathers = async () => {
-      try {
-        const parsedDate = new Date(startDate);
-        const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000);
-        const lyDateStr = lyDate.toISOString().split('T')[0];
-        
-        const [currSnap, lySnap] = await Promise.all([
-          getDoc(doc(db, 'weather_daily', startDate)),
-          getDoc(doc(db, 'weather_daily', lyDateStr))
-        ]);
-        
-        if (currSnap.exists()) setCurrentWeather(currSnap.data() as WeatherData);
-        else setCurrentWeather(null);
-        
-        if (lySnap.exists()) setLastYearWeather(lySnap.data() as WeatherData);
-        else setLastYearWeather(null);
-      } catch (err) {
-        console.error('Failed to fetch weather', err);
-      }
-    };
-    
     fetchWeekly();
-    fetchWeathers();
   }, [startDate]);
+
+  useEffect(() => {
+    if (coreData.core?.weather) {
+      setCurrentWeather(coreData.core.weather.current || null);
+      setLastYearWeather(coreData.core.weather.lastYear || null);
+    }
+  }, [coreData.core]);
 
   const data = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return [];
     return transformMatrixData(coreData);
   }, [coreData]);
 
-  // Group data by category
+  // Group data by category_code
   const groupedData = data.reduce((acc: Record<string, MatrixRow[]>, row: MatrixRow) => {
-    if (!acc[row.category]) acc[row.category] = [];
-    acc[row.category].push(row);
+    const code = row.category_code || 'OTHER';
+    if (!acc[code]) acc[code] = [];
+    acc[code].push(row);
     return acc;
   }, {} as Record<string, MatrixRow[]>);
 
@@ -125,13 +99,22 @@ export default function MatrixWeeklyDashboard() {
     return ((actual - lastYear) / lastYear) * 100;
   };
 
-  const categoriesOrder = ['객실 Total', '골프 Total', '식음업장 Total', '연회 Total', '티켓업장 Total', '기타업장 Total'];
+  const categoryLabels: Record<string, string> = {
+    'ROOM': '객실 Total',
+    'GOLF': '골프 Total',
+    'FNB': '식음업장 Total',
+    'BANQUET': '연회 Total',
+    'TICKET': '티켓업장 Total',
+    'OTHER': '기타업장 Total'
+  };
+
+  const categoriesOrder = ['ROOM', 'GOLF', 'FNB', 'BANQUET', 'TICKET', 'OTHER'];
 
   const categorySubtotals: Record<string, MatrixRow> = {};
-  categoriesOrder.forEach(category => {
-    const rows = groupedData[category] || [];
+  categoriesOrder.forEach(code => {
+    const rows = groupedData[code] || [];
     const rawSub = calculateSubtotal(rows);
-    const wTotal = weeklyTotals[category];
+    const wTotal = weeklyTotals[code];
 
     if (wTotal) {
       rawSub.today.actual = wTotal.today.actual !== undefined ? Number(wTotal.today.actual) : rawSub.today.actual;
@@ -142,9 +125,10 @@ export default function MatrixWeeklyDashboard() {
       rawSub.ytd.lastYear = wTotal.ytd.lastYear !== undefined ? Number(wTotal.ytd.lastYear) : rawSub.ytd.lastYear;
     }
     
-    categorySubtotals[category] = {
-      category: category,
-      shop_name: category,
+    categorySubtotals[code] = {
+      category: categoryLabels[code],
+      category_code: code,
+      shop_name: categoryLabels[code],
       today: {
         actual: rawSub.today.actual,
         lastYear: rawSub.today.lastYear,
@@ -185,15 +169,33 @@ export default function MatrixWeeklyDashboard() {
   }
 
   const vatTotal = {
-    today: { actual: netTotal.today.actual * 0.1, lastYear: netTotal.today.lastYear * 0.1 },
-    mtd: { actual: netTotal.mtd.actual * 0.1, lastYear: netTotal.mtd.lastYear * 0.1 },
-    ytd: { actual: netTotal.ytd.actual * 0.1, lastYear: netTotal.ytd.lastYear * 0.1 },
+    today: { 
+      actual: coreData.core?.today?.vat !== undefined ? Number(coreData.core.today.vat) : 0, 
+      lastYear: coreData.core?.today?.ly_vat !== undefined ? Number(coreData.core.today.ly_vat) : 0 
+    },
+    mtd: { 
+      actual: coreData.core?.mtd?.vat !== undefined ? Number(coreData.core.mtd.vat) : 0, 
+      lastYear: coreData.core?.mtd?.ly_vat !== undefined ? Number(coreData.core.mtd.ly_vat) : 0 
+    },
+    ytd: { 
+      actual: coreData.core?.ytd?.vat !== undefined ? Number(coreData.core.ytd.vat) : 0, 
+      lastYear: coreData.core?.ytd?.ly_vat !== undefined ? Number(coreData.core.ytd.ly_vat) : 0 
+    },
   };
 
   const grandTotal = {
-    today: { actual: netTotal.today.actual + vatTotal.today.actual, lastYear: netTotal.today.lastYear + vatTotal.today.lastYear },
-    mtd: { actual: netTotal.mtd.actual + vatTotal.mtd.actual, lastYear: netTotal.mtd.lastYear + vatTotal.mtd.lastYear },
-    ytd: { actual: netTotal.ytd.actual + vatTotal.ytd.actual, lastYear: netTotal.ytd.lastYear + vatTotal.ytd.lastYear },
+    today: { 
+      actual: coreData.core?.today?.gross !== undefined ? Number(coreData.core.today.gross) : netTotal.today.actual + vatTotal.today.actual, 
+      lastYear: coreData.core?.today?.ly_gross !== undefined ? Number(coreData.core.today.ly_gross) : netTotal.today.lastYear + vatTotal.today.lastYear 
+    },
+    mtd: { 
+      actual: coreData.core?.mtd?.gross !== undefined ? Number(coreData.core.mtd.gross) : netTotal.mtd.actual + vatTotal.mtd.actual, 
+      lastYear: coreData.core?.mtd?.ly_gross !== undefined ? Number(coreData.core.mtd.ly_gross) : netTotal.mtd.lastYear + vatTotal.mtd.lastYear 
+    },
+    ytd: { 
+      actual: coreData.core?.ytd?.gross !== undefined ? Number(coreData.core.ytd.gross) : netTotal.ytd.actual + vatTotal.ytd.actual, 
+      lastYear: coreData.core?.ytd?.ly_gross !== undefined ? Number(coreData.core.ytd.ly_gross) : netTotal.ytd.lastYear + vatTotal.ytd.lastYear 
+    },
   };
 
   const checkedRowsList = data.filter((r: MatrixRow) => checkedShops.includes(r.shop_name));
@@ -295,7 +297,7 @@ export default function MatrixWeeklyDashboard() {
                     </tr>
                   ))}
                   <tr className="bg-amber-50 font-semibold text-slate-800 border-t border-b-2 border-amber-200/50">
-                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{category}</td>
+                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{sub.category}</td>
                     <td className="p-2">{formatCurrency(sub.today.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.today.lastYear)}</td>
                     <td className={`p-2 border-r-2 border-slate-300 ${getGrowth(sub.today.actual, sub.today.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.today.actual, sub.today.lastYear))}</td>

@@ -3,7 +3,7 @@ import { useDate } from './DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 
 export interface RawPayload {
-  gridData: any[];
+
   chartData: any[];
   adrTable: any[];
   today: { actual: number; ly_actual: number };

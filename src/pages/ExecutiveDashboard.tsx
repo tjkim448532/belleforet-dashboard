@@ -121,9 +121,11 @@ export default function ExecutiveDashboard() {
 
         <div className="glass-card p-6 bg-gradient-to-br from-indigo-900/50 to-sky-900/50 border border-sky-500/30">
           <p className="text-sm text-sky-200 font-medium mb-1">연간 실적 달성률 (YTD Goal)</p>
-          <h3 className="text-2xl font-bold text-white">49.4 %</h3>
+          <h3 className="text-2xl font-bold text-white">
+            {kpiData?.ytd_goal_pct ? `${kpiData.ytd_goal_pct} %` : 'N/A'}
+          </h3>
           <div className="w-full bg-slate-800 rounded-full h-1.5 mt-3">
-            <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-1.5 rounded-full" style={{ width: '49.4%' }}></div>
+            <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-1.5 rounded-full" style={{ width: `${kpiData?.ytd_goal_pct || 0}%` }}></div>
           </div>
         </div>
       </div>

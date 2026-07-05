@@ -2,6 +2,7 @@ import type { CoreDataState } from '../contexts/CoreDataContext';
 
 export interface MatrixRow {
   category: string;
+  category_code?: string;
   shop_name: string;
   today: { actual: number; lastYear: number; growthRate: number };
   mtd: { actual: number; lastYear: number; growthRate: number };
@@ -286,11 +287,15 @@ export const transformHomeData = (core: CoreDataState) => {
     ytd: { 
       actual: c.ytd?.actual || 0, 
       ly_actual: c.ytd?.ly_actual || 0,
+      gross: c.ytd?.gross || c.ytd?.actual || 0,
+      ly_gross: c.ytd?.ly_gross || c.ytd?.ly_actual || 0,
       ly_day: 0
     },
     today: { 
       actual: c.today?.actual || 0, 
       ly_actual: c.today?.ly_actual || 0,
+      gross: c.today?.gross || c.today?.actual || 0,
+      ly_gross: c.today?.ly_gross || c.today?.ly_actual || 0,
       ly_day: 0
     },
     hq_today: hqToday,
@@ -368,11 +373,12 @@ export const transformExecutiveData = (core: CoreDataState) => {
   
   return {
     kpiData: {
-      total_revenue_today: c.today?.actual || 0,
+      total_revenue_today: c.today?.gross || c.today?.actual || 0,
       dod_growth: 0,
       rooms_sold: 0,
       golf_visited_players: c.golfSummary?.visitedPlayers || 0,
-      golf_visited_teams: c.golfSummary?.visitedTeams || 0
+      golf_visited_teams: c.golfSummary?.visitedTeams || 0,
+      ytd_goal_pct: c.kpi?.ytd_goal_pct || 0
     },
     revenueData: { summary: summaryList, details }
   };

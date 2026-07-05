@@ -28,10 +28,11 @@ export default function MatrixDashboard() {
     return transformMatrixData(coreData);
   }, [coreData]);
 
-  // Group data by category
-  const groupedData = data.reduce((acc, row) => {
-    if (!acc[row.category]) acc[row.category] = [];
-    acc[row.category].push(row);
+  // Group data by category_code
+  const groupedData = data.reduce((acc: Record<string, MatrixRow[]>, row: MatrixRow) => {
+    const code = row.category_code || 'OTHER';
+    if (!acc[code]) acc[code] = [];
+    acc[code].push(row);
     return acc;
   }, {} as Record<string, MatrixRow[]>);
 
@@ -67,65 +68,40 @@ export default function MatrixDashboard() {
     return ((actual - lastYear) / lastYear) * 100;
   };
 
-  const categoriesOrder = ['객실 Total', '골프 Total', '식음업장 Total', '연회 Total', '티켓업장 Total', '기타업장 Total'];
+  const categoryLabels: Record<string, string> = {
+    'ROOM': '객실 Total',
+    'GOLF': '골프 Total',
+    'FNB': '식음업장 Total',
+    'BANQUET': '연회 Total',
+    'TICKET': '티켓업장 Total',
+    'OTHER': '기타업장 Total'
+  };
+
+  const categoriesOrder = ['ROOM', 'GOLF', 'FNB', 'BANQUET', 'TICKET', 'OTHER'];
 
   const categorySubtotals: Record<string, MatrixRow> = {};
-  categoriesOrder.forEach(category => {
-    const rows = groupedData[category] || [];
+  categoriesOrder.forEach(code => {
+    const rows = groupedData[code] || [];
     const rawSub = calculateSubtotal(rows);
     
-    // Overlay real totals from gridData depth1/depth2 if we have them
-    // Strictly match depth2 to avoid double counting depth1 (e.g., '레저' for both Golf and Ticket)
-    const realTotal = coreData.core?.gridData?.find(
-      (item: any) => {
-        // We only want aggregate rows for the category.
-        // Aggregate rows typically have depth3 as '전체' or null.
-        const isAggregate = !item.depth3 || item.depth3 === '전체';
-        if (!isAggregate) return false;
-
-        if (category.includes('골프')) return item.depth2 === '골프장';
-        if (category.includes('객실')) return item.depth2 === '객실';
-        if (category.includes('식음')) return item.depth2 === '식음업장';
-        if (category.includes('연회')) return item.depth2 === '연회';
-        if (category.includes('티켓')) return item.depth2 === '티켓업장' || item.depth2 === '레저';
-        if (category.includes('기타')) return item.depth2 === '기타영업' || item.depth2 === '기타';
-        return false;
-      }
-    );
-
-    if (realTotal) {
-      // ONLY override actual if the backend breakdown arrays are NOT complete or if we trust gridData more.
-      // But since backend fixed the math, gridData aggregate row SHOULD match exactly.
-      rawSub.today.actual = realTotal.salesAmount !== undefined ? Number(realTotal.salesAmount) : rawSub.today.actual;
-      rawSub.today.lastYear = realTotal.lastYearSalesAmount !== undefined ? Number(realTotal.lastYearSalesAmount) : rawSub.today.lastYear;
-      rawSub.today.growthRate = realTotal.growthRate !== undefined ? Number(realTotal.growthRate) : rawSub.today.growthRate;
-
-      rawSub.mtd.actual = realTotal.mtdSalesAmount !== undefined ? Number(realTotal.mtdSalesAmount) : rawSub.mtd.actual;
-      rawSub.mtd.lastYear = realTotal.lastYearMtdSalesAmount !== undefined ? Number(realTotal.lastYearMtdSalesAmount) : rawSub.mtd.lastYear;
-      rawSub.mtd.growthRate = realTotal.mtdGrowthRate !== undefined ? Number(realTotal.mtdGrowthRate) : rawSub.mtd.growthRate;
-
-      rawSub.ytd.actual = realTotal.ytdSalesAmount !== undefined ? Number(realTotal.ytdSalesAmount) : rawSub.ytd.actual;
-      rawSub.ytd.lastYear = realTotal.lastYearYtdSalesAmount !== undefined ? Number(realTotal.lastYearYtdSalesAmount) : rawSub.ytd.lastYear;
-      rawSub.ytd.growthRate = realTotal.ytdGrowthRate !== undefined ? Number(realTotal.ytdGrowthRate) : rawSub.ytd.growthRate;
-    }
-    
-    categorySubtotals[category] = {
-      category: category,
-      shop_name: category,
+    categorySubtotals[code] = {
+      category: categoryLabels[code],
+      category_code: code,
+      shop_name: categoryLabels[code],
       today: {
         actual: rawSub.today.actual,
         lastYear: rawSub.today.lastYear,
-        growthRate: rawSub.today.growthRate || getGrowth(rawSub.today.actual, rawSub.today.lastYear)
+        growthRate: getGrowth(rawSub.today.actual, rawSub.today.lastYear)
       },
       mtd: {
         actual: rawSub.mtd.actual,
         lastYear: rawSub.mtd.lastYear,
-        growthRate: rawSub.mtd.growthRate || getGrowth(rawSub.mtd.actual, rawSub.mtd.lastYear)
+        growthRate: getGrowth(rawSub.mtd.actual, rawSub.mtd.lastYear)
       },
       ytd: {
         actual: rawSub.ytd.actual,
         lastYear: rawSub.ytd.lastYear,
-        growthRate: rawSub.ytd.growthRate || getGrowth(rawSub.ytd.actual, rawSub.ytd.lastYear)
+        growthRate: getGrowth(rawSub.ytd.actual, rawSub.ytd.lastYear)
       }
     };
   });
@@ -153,16 +129,35 @@ export default function MatrixDashboard() {
     }
   }
 
+  // 부가세 및 총계 로직 (API 실측 데이터가 없으면 임의로 * 0.1 하지 않고 0으로 처리)
   const vatTotal = {
-    today: { actual: netTotal.today.actual * 0.1, lastYear: netTotal.today.lastYear * 0.1 },
-    mtd: { actual: netTotal.mtd.actual * 0.1, lastYear: netTotal.mtd.lastYear * 0.1 },
-    ytd: { actual: netTotal.ytd.actual * 0.1, lastYear: netTotal.ytd.lastYear * 0.1 },
+    today: { 
+      actual: coreData.core?.today?.vat !== undefined ? Number(coreData.core.today.vat) : 0, 
+      lastYear: coreData.core?.today?.ly_vat !== undefined ? Number(coreData.core.today.ly_vat) : 0 
+    },
+    mtd: { 
+      actual: coreData.core?.mtd?.vat !== undefined ? Number(coreData.core.mtd.vat) : 0, 
+      lastYear: coreData.core?.mtd?.ly_vat !== undefined ? Number(coreData.core.mtd.ly_vat) : 0 
+    },
+    ytd: { 
+      actual: coreData.core?.ytd?.vat !== undefined ? Number(coreData.core.ytd.vat) : 0, 
+      lastYear: coreData.core?.ytd?.ly_vat !== undefined ? Number(coreData.core.ytd.ly_vat) : 0 
+    },
   };
 
   const grandTotal = {
-    today: { actual: netTotal.today.actual + vatTotal.today.actual, lastYear: netTotal.today.lastYear + vatTotal.today.lastYear },
-    mtd: { actual: netTotal.mtd.actual + vatTotal.mtd.actual, lastYear: netTotal.mtd.lastYear + vatTotal.mtd.lastYear },
-    ytd: { actual: netTotal.ytd.actual + vatTotal.ytd.actual, lastYear: netTotal.ytd.lastYear + vatTotal.ytd.lastYear },
+    today: { 
+      actual: coreData.core?.today?.gross !== undefined ? Number(coreData.core.today.gross) : netTotal.today.actual + vatTotal.today.actual, 
+      lastYear: coreData.core?.today?.ly_gross !== undefined ? Number(coreData.core.today.ly_gross) : netTotal.today.lastYear + vatTotal.today.lastYear 
+    },
+    mtd: { 
+      actual: coreData.core?.mtd?.gross !== undefined ? Number(coreData.core.mtd.gross) : netTotal.mtd.actual + vatTotal.mtd.actual, 
+      lastYear: coreData.core?.mtd?.ly_gross !== undefined ? Number(coreData.core.mtd.ly_gross) : netTotal.mtd.lastYear + vatTotal.mtd.lastYear 
+    },
+    ytd: { 
+      actual: coreData.core?.ytd?.gross !== undefined ? Number(coreData.core.ytd.gross) : netTotal.ytd.actual + vatTotal.ytd.actual, 
+      lastYear: coreData.core?.ytd?.ly_gross !== undefined ? Number(coreData.core.ytd.ly_gross) : netTotal.ytd.lastYear + vatTotal.ytd.lastYear 
+    },
   };
 
   const checkedRowsList = data.filter(r => checkedShops.includes(r.shop_name));
@@ -245,7 +240,7 @@ export default function MatrixDashboard() {
                     </tr>
                   ))}
                   <tr className="bg-amber-50 font-semibold text-slate-800 border-t border-b-2 border-amber-200/50">
-                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{category}</td>
+                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{sub.category}</td>
                     <td className="p-2">{formatCurrency(sub.today.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.today.lastYear)}</td>
                     <td className={`p-2 border-r-2 border-slate-300 ${getGrowth(sub.today.actual, sub.today.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.today.actual, sub.today.lastYear))}</td>

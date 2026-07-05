@@ -67,8 +67,10 @@ export default function GolfBusiness() {
     ? (visitedPlayers / visitedTeams).toFixed(2) 
     : '0.00';
     
+  const greenFeeTypes = (data?.golfFacilityBreakdown || []).filter((x: any) => (x.facility_name || '').includes('그린피'));
+  const greenFeeRevenue = greenFeeTypes.reduce((sum: number, x: any) => sum + (x.revenue || x.today_actual || 0), 0);
   const avgGreenFee = visitedPlayers > 0
-    ? Math.round(golfRevenue / visitedPlayers)
+    ? Math.round(greenFeeRevenue / visitedPlayers)
     : 0;
 
   const golfDetails = data?.golfFacilityBreakdown || [];
@@ -177,7 +179,7 @@ export default function GolfBusiness() {
                   {formatCurrency(avgGreenFee)}
                 </div>
               </div>
-              <p className="text-xs text-slate-400 mt-4">선택 기간 골프 총 매출 ÷ 내장객 수</p>
+              <p className="text-xs text-slate-400 mt-4">선택 기간 그린피 총 매출 ÷ 내장객 수</p>
             </div>
           </div>
         </div>

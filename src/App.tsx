@@ -27,6 +27,7 @@ import { DataSyncStatus } from './pages/DataSyncStatus';
 import MatrixDashboard from './pages/MatrixDashboard';
 import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
+import Synergy from './pages/Synergy';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -67,6 +68,7 @@ function App() {
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="members" element={<Members />} />
                     <Route path="etl-status" element={<DataSyncStatus />} />
+                    <Route path="synergy" element={<Synergy />} />
                   </Route>
 
                   {/* Admin Routes */}

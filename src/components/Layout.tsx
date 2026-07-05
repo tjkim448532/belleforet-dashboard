@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database 
+  ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database, MonitorPlay 
 } from 'lucide-react';
 
 export default function Layout() {
@@ -49,6 +49,7 @@ export default function Layout() {
     { name: '요일비교', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '경영진 대시보드 (V3)', path: '/executive', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
+    { name: '시너지', path: '/synergy', icon: <MonitorPlay size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
   ];
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));

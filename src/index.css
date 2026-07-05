@@ -1,6 +1,6 @@
-@import "tailwindcss";
 @import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css');
 @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap');
+@import "tailwindcss";
 
 @theme {
   --color-brand-mint: #00AE95; /* Pantone 3275C / RGB 00ae95 */

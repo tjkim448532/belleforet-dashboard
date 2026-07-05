@@ -281,9 +281,37 @@ export const transformHomeData = (core: CoreDataState) => {
     qty: 0 // Fallback
   })).filter(h => h.actual > 0);
 
+  const r = c.resortSummary || {};
+  const days = Math.max(1, r.days || 1);
+  const capacity = 175; // Static physical inventory
+  const totalInventory = capacity * days;
+  
+  let total1635Sold = 0;
+  if (c.roomTypeBreakdown) {
+    c.roomTypeBreakdown.forEach((rt: any) => {
+      if (rt.facility_name.includes('16') || rt.facility_name.includes('35')) {
+        total1635Sold += Number(rt.qty || 0);
+      }
+    });
+  }
+
+  const totalRoomRev = Number(r.lodging_revenue || 0);
+  const totalResortRevGross = Number(c.today?.gross || c.today?.actual || 0);
+
+  const kpiMetrics = {
+    totalOcc: (total1635Sold / totalInventory) * 100,
+    totalADR: total1635Sold > 0 ? (totalRoomRev / total1635Sold) : 0,
+    revPAR: totalRoomRev / totalInventory,
+    trevPAR: totalResortRevGross / totalInventory,
+    days: days,
+    weekdayDays: r.weekdayDays || 0,
+    weekendDays: r.weekendDays || 0
+  };
+
   return {
     success: true,
     date: c.date || '',
+    kpiMetrics: kpiMetrics,
     ytd: { 
       actual: c.ytd?.actual || 0, 
       ly_actual: c.ytd?.ly_actual || 0,

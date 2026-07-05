@@ -158,6 +158,34 @@ export default function Home() {
               <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
                 <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12" /> 주요 지표 및 운영 현황
               </h2>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
+                  <div className="text-xs text-slate-400 font-medium mb-1">객실 점유율 (Occ)</div>
+                  <div className="text-2xl font-emphatic text-brand-mint">
+                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
+                  </div>
+                </div>
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
+                  <div className="text-xs text-slate-400 font-medium mb-1">객단가 (ADR)</div>
+                  <div className="text-2xl font-emphatic text-brand-mint">
+                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalADR) ? formatCurrency(displayData.kpiMetrics.totalADR) : 0}
+                  </div>
+                </div>
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
+                  <div className="text-xs text-slate-400 font-medium mb-1">객실당 매출 (RevPAR)</div>
+                  <div className="text-2xl font-emphatic text-brand-mint">
+                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
+                  </div>
+                </div>
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
+                  <div className="text-xs text-slate-400 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
+                  <div className="text-2xl font-emphatic text-brand-mint">
+                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>

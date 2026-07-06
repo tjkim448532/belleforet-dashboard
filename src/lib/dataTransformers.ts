@@ -311,8 +311,28 @@ export const transformHomeData = (core: CoreDataState) => {
       });
   }
 
-  // The API returns aggregated capacity over the period, so we don't multiply by days again
-  const totalInventory = dynamicDailyCapacity > 0 ? dynamicDailyCapacity : 0;
+  // Determine if the backend provided daily capacity or aggregated capacity
+  let totalInventory = 0;
+  if (dynamicDailyCapacity > 0) {
+    if (Math.abs(dynamicDailyCapacity - 180) < 100) {
+      // Backend didn't multiply it, it's roughly the daily capacity
+      totalInventory = dynamicDailyCapacity * days;
+    } else if (Math.abs((dynamicDailyCapacity / days) - 180) < 100) {
+      // Backend already multiplied it
+      totalInventory = dynamicDailyCapacity;
+    } else {
+      // Fallback
+      totalInventory = dynamicDailyCapacity * days;
+    }
+  } else if (r.total_capacity > 0) {
+    if (Math.abs(r.total_capacity - 180) < 100) {
+      totalInventory = r.total_capacity * days;
+    } else if (Math.abs((r.total_capacity / days) - 180) < 100) {
+      totalInventory = r.total_capacity;
+    } else {
+      totalInventory = r.total_capacity * days;
+    }
+  }
   
   // Calculate unmapped (Other) rooms to prevent leakage
   const soldOther = totalProductsSold - sold16 - sold35 - sold51;

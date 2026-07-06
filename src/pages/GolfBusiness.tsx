@@ -27,7 +27,10 @@ export default function GolfBusiness() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?date=${endDate}`);
+        const queryParams = startDate === endDate 
+          ? `date=${endDate}` 
+          : `startDate=${startDate}&endDate=${endDate}`;
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (payload) {
           const golfBreakdown = payload.golfFacilityBreakdown ?? [];

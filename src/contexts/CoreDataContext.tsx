@@ -32,7 +32,7 @@ export interface CoreDataState {
 const CoreDataContext = createContext<CoreDataState | undefined>(undefined);
 
 export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { endDate } = useDate();
+  const { startDate, endDate } = useDate();
   
   const [state, setState] = useState<CoreDataState>({
     core: null,
@@ -47,10 +47,12 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      const targetDate = endDate; // Use endDate as targetDate for queries
+      const queryParams = startDate === endDate 
+        ? `date=${endDate}` 
+        : `startDate=${startDate}&endDate=${endDate}`;
 
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${targetDate}`);
+        const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);
 
         setState({
           core: res.data || res,
@@ -66,7 +68,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     fetchCoreData();
-  }, [endDate]);
+  }, [startDate, endDate]);
 
   return (
     <CoreDataContext.Provider value={state}>

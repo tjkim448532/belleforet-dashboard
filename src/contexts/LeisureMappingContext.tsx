@@ -29,7 +29,9 @@ const DEFAULT_GROUPS: LeisureGroup[] = [
   { name: '미니포렛', facilities: ['미니포렛'] },
   { name: '그랜드포렛', facilities: ['그랜드포렛'] },
   { name: '놀이동산', facilities: ['놀이동산'] },
-  { name: '모토아레나', facilities: ['모토아레나'] }
+  { name: '모토아레나', facilities: ['모토아레나'] },
+  { name: '기타티켓', facilities: ['기타티켓', '기타티켓(패키지)'] },
+  { name: '온라인티켓', facilities: ['온라인티켓', '온라인티켓-기타'] }
 ];
 
 export const LeisureMappingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -57,6 +59,19 @@ export const LeisureMappingProvider: React.FC<{ children: React.ReactNode }> = (
           const data = docSnapshot.data() as Omit<LeisureGroup, 'id'>;
           fetchedGroups.push({ id: docSnapshot.id, ...data });
         });
+
+        // Ensure new DEFAULT_GROUPS are injected if missing
+        const missingGroups = DEFAULT_GROUPS.filter(
+          dg => !fetchedGroups.some(fg => fg.name === dg.name)
+        );
+
+        for (const missing of missingGroups) {
+          const newDocRef = doc(mappingRef);
+          const newGroup = { ...missing, id: newDocRef.id };
+          await setDoc(newDocRef, { name: newGroup.name, facilities: newGroup.facilities });
+          fetchedGroups.push(newGroup);
+        }
+
         setLeisureGroups(fetchedGroups);
       }
     } catch (error) {

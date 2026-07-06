@@ -55,14 +55,14 @@ export default function GolfBusiness() {
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val ?? 0);
-    return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
+    return new Intl.NumberFormat('ko-KR').format(rounded);
   };
 
   const formatNumber = (val: number) => {
     return new Intl.NumberFormat('ko-KR').format(val ?? 0);
   };
 
-  const golfRevenue = data?.todaySummary?.golf_gross_revenue ?? data?.todaySummary?.golf_revenue ?? 0;
+  const golfRevenue = data?.todaySummary?.golf_revenue ?? 0;
   const visitedTeams = data?.todaySummary?.golf_visited_teams ?? 0;
   const visitedPlayers = data?.todaySummary?.golf_visited_players ?? 0;
 
@@ -97,10 +97,10 @@ export default function GolfBusiness() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-emphatic text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
+              <span className="font-black text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
                 BELLE FORET
               </span>
-              <span className="font-emphatic text-2xl tracking-wide ml-1">RESORT</span>
+              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
             <p className="text-white/80 mt-1">골프 예약 현황 및 매장별 정산 실적 리포트입니다.</p>
@@ -114,8 +114,8 @@ export default function GolfBusiness() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
           {/* Golf Revenue */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
-              <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 총 매출
+            <h2 className="text-sm font-bold text-slate-500 mb-4 flex items-center gap-2">
+              <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 순매출
             </h2>
             <div className="text-3xl font-bold text-slate-800 tracking-tight">
               {formatCurrency(golfRevenue)}

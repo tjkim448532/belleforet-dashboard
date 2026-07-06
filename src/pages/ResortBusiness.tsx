@@ -3,6 +3,7 @@ import { CalendarDays, Hotel, Coins } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import ReactECharts from 'echarts-for-react';
 
 interface SummaryData {
   success: boolean;
@@ -61,21 +62,22 @@ export default function ResortBusiness() {
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val || 0);
-    return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
+    return new Intl.NumberFormat('ko-KR').format(rounded);
   };
 
   const lodgingStats = (() => {
     if (!data) return { revenue: 0, roomsSold: 0, adr: 0 };
-    if (data.resortSummary) {
+    
+    if (data.resortSummary && (data.resortSummary.today_actual || data.resortSummary.gross || data.resortSummary.lodging_revenue)) {
       const summary = data.resortSummary;
-      const revenue = summary.gross || summary.today_actual || summary.lodging_revenue || 0;
+      const revenue = summary.today_actual || summary.gross || summary.lodging_revenue || 0;
       const roomsSold = summary.rooms_sold || 0;
       const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
       return { revenue, roomsSold, adr };
     }
     
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
-      const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.gross || item.today_actual || 0), 0);
+      const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.today_actual || item.gross || 0), 0);
       const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.visitors || item.qty || 0), 0);
       const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
       return { revenue, roomsSold, adr };
@@ -86,22 +88,67 @@ export default function ResortBusiness() {
 
   const roomOccupancyData = (() => {
     if (!data || !data.roomTypeBreakdown) return [];
-    return data.roomTypeBreakdown.map(item => {
-      const size = item.facility_name;
+    
+    const groups: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
+      '16평': { sold: 0, cap: 0, rev: 0 },
+      '35평': { sold: 0, cap: 0, rev: 0 },
+      '51평': { sold: 0, cap: 0, rev: 0, isVirtual: true },
+      '기타': { sold: 0, cap: 0, rev: 0 }
+    };
+
+    data.roomTypeBreakdown.forEach(item => {
+      const name = item.facility_name;
       const sold = Number(item.visitors || item.qty || 0);
       const cap = item.total_capacity || 0;
-      const rate = cap > 0 ? Math.round((sold / cap) * 100) : 0;
-      const revenue = item.gross || item.today_actual || 0;
-      const adr = sold > 0 ? Math.round(revenue / sold) : 0;
-      return {
-        roomSize: size,
-        sold,
-        capacity: cap,
-        rate,
-        revenue,
-        adr
-      };
+      const rev = item.today_actual || item.gross || 0;
+
+      if (name.includes('16평')) {
+        groups['16평'].sold += sold; groups['16평'].cap += cap; groups['16평'].rev += rev;
+      } else if (name.includes('35평')) {
+        groups['35평'].sold += sold; groups['35평'].cap += cap; groups['35평'].rev += rev;
+      } else if (name.includes('51평')) {
+        groups['51평'].sold += sold; groups['51평'].cap += cap; groups['51평'].rev += rev;
+      } else {
+        groups['기타'].sold += sold; groups['기타'].cap += cap; groups['기타'].rev += rev;
+      }
     });
+
+    const result = [];
+    const keys = ['16평', '35평', '51평', '기타'];
+    
+    for (const key of keys) {
+      const g = groups[key];
+      if (g.sold === 0 && g.cap === 0 && g.rev === 0) continue;
+      
+      let rate = 0;
+      let displayRate = '0%';
+      
+      if (key === '16평') {
+        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
+        displayRate = `${rate}%`;
+      } else if (key === '35평') {
+        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
+        displayRate = `${rate}%`;
+      } else if (key === '51평') {
+        rate = 0; // N/A conceptually
+        displayRate = 'N/A';
+      } else {
+        rate = g.cap > 0 ? Math.round((g.sold / g.cap) * 100) : 0;
+        displayRate = `${rate}%`;
+      }
+
+      result.push({
+        roomSize: key,
+        sold: g.sold,
+        capacity: g.cap,
+        rate,
+        displayRate,
+        revenue: g.rev,
+        adr: g.sold > 0 ? Math.round(g.rev / g.sold) : 0
+      });
+    }
+
+    return result;
   })();
 
   const channelAdrData = (() => {
@@ -118,7 +165,6 @@ export default function ResortBusiness() {
     }).sort((a, b) => b.totalRevenue - a.totalRevenue);
   })();
 
-  
   const rateAdrData = (() => {
     if (!data || !data.rateTypeBreakdown) return [];
     return data.rateTypeBreakdown.map(item => {
@@ -131,6 +177,43 @@ export default function ResortBusiness() {
         adr: sold > 0 ? Math.round(revenue / sold) : 0
       };
     }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  })();
+
+  const pieOptions = (() => {
+    const pieData = roomOccupancyData
+      .filter(r => r.roomSize === '16평' || r.roomSize === '35평' || r.roomSize === '51평')
+      .map(r => ({ name: r.roomSize, value: r.sold }))
+      .filter(d => d.value > 0);
+      
+    if (pieData.length === 0) return null;
+
+    return {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c}건 ({d}%)'
+      },
+      legend: {
+        top: 'bottom'
+      },
+      series: [
+        {
+          name: '상품 판매 비중',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: {
+            show: true,
+            formatter: '{b}\\n{d}%'
+          },
+          data: pieData
+        }
+      ]
+    };
   })();
 
   if (loading || !data) {
@@ -156,10 +239,10 @@ export default function ResortBusiness() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-emphatic text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
+              <span className="font-black text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
                 BELLE FORET
               </span>
-              <span className="font-emphatic text-2xl tracking-wide ml-1">RESORT</span>
+              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight mt-3">리조트사업본부 경영 현황 🏨</h1>
             <p className="text-white/80 mt-1">객실 판매 채널별 세부 객단가 및 정산 실적 리포트입니다.</p>
@@ -220,7 +303,7 @@ export default function ResortBusiness() {
                       <circle cx="40" cy="40" r="34" stroke="#e2e8f0" strokeWidth="6" fill="transparent" />
                       <circle cx="40" cy="40" r="34" stroke="#10b981" strokeWidth="6" fill="transparent" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - Math.min(row.rate, 100) / 100)} />
                     </svg>
-                    <span className="absolute text-base font-bold text-slate-800">{row.rate}%</span>
+                    <span className="absolute text-base font-bold text-slate-800">{row.displayRate}</span>
                   </div>
                   <div className="flex flex-col items-center mt-4 space-y-1">
                     <span className="text-xs font-bold text-slate-500">{row.sold}실 / {row.capacity}실</span>
@@ -232,12 +315,24 @@ export default function ResortBusiness() {
             </div>
           ) : (
             <div className="py-12 text-center text-slate-400">
-              해당 날짜의 가동률 데이터가 없습니다.
+              해당 날짜에 가동률 데이터가 없습니다.
             </div>
           )}
         </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pie Chart Section */}
+        {pieOptions && (
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+            <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-emerald-500" /> 객실 평형별 판매 비중 (인기도)
+            </h2>
+            <div className="h-[300px] w-full">
+              <ReactECharts option={pieOptions} style={{ height: '100%', width: '100%' }} />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
               💰 판매채널별 객단가 분석

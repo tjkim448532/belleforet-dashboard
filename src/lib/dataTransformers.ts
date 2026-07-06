@@ -283,26 +283,45 @@ export const transformHomeData = (core: CoreDataState) => {
 
   const r = c.resortSummary || {};
   const days = Math.max(1, r.days || 1);
-  const capacity = 175; // Static physical inventory
-  const totalInventory = capacity * days;
   
-  let total1635Sold = 0;
+  let dynamicDailyCapacity = 0;
+  let sold16 = 0;
+  let sold35 = 0;
+  let sold51 = 0;
+  let totalProductsSold = 0;
+
   if (c.roomTypeBreakdown) {
     c.roomTypeBreakdown.forEach((rt: any) => {
-      if (rt.facility_name.includes('16') || rt.facility_name.includes('35')) {
-        total1635Sold += Number(rt.qty || 0);
-      }
+      dynamicDailyCapacity += Number(rt.total_capacity || 0);
+      
+      const qty = Number(rt.qty || rt.visitors || 0);
+      totalProductsSold += qty;
+      
+      if (rt.facility_name.includes('16평')) sold16 += qty;
+      if (rt.facility_name.includes('35평')) sold35 += qty;
+      if (rt.facility_name.includes('51평')) sold51 += qty;
     });
   }
 
+  // Use dynamic capacity purely as requested by the guide. No hardcoded 180 fallback.
+  const dailyCapacity = dynamicDailyCapacity > 0 ? dynamicDailyCapacity : 0;
+  const totalInventory = dailyCapacity * days;
+  
+  // Calculate unmapped (Other) rooms to prevent leakage
+  const soldOther = totalProductsSold - sold16 - sold35 - sold51;
+  
+  // Total OCC hybrid calculation: 16평 + 35평 + (51평 * 2) + 기타객실
+  const hybridOccupiedRooms = sold16 + sold35 + (sold51 * 2) + Math.max(0, soldOther);
+
   const totalRoomRev = Number(r.lodging_revenue || 0);
-  const totalResortRevGross = Number(c.today?.gross || c.today?.actual || 0);
+  // Use net revenue (actual) instead of gross as per guide
+  const totalResortRevNet = Number(c.today?.actual || 0);
 
   const kpiMetrics = {
-    totalOcc: (total1635Sold / totalInventory) * 100,
-    totalADR: total1635Sold > 0 ? (totalRoomRev / total1635Sold) : 0,
-    revPAR: totalRoomRev / totalInventory,
-    trevPAR: totalResortRevGross / totalInventory,
+    totalOcc: totalInventory > 0 ? (hybridOccupiedRooms / totalInventory) * 100 : 0,
+    totalADR: totalProductsSold > 0 ? (totalRoomRev / totalProductsSold) : 0,
+    revPAR: totalInventory > 0 ? (totalRoomRev / totalInventory) : 0,
+    trevPAR: totalInventory > 0 ? (totalResortRevNet / totalInventory) : 0,
     days: days,
     weekdayDays: r.weekdayDays || 0,
     weekendDays: r.weekendDays || 0

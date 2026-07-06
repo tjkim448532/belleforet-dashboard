@@ -25,7 +25,7 @@ export default function Home() {
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val || 0);
-    return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
+    return new Intl.NumberFormat('ko-KR').format(rounded);
   };
 
 
@@ -45,15 +45,47 @@ export default function Home() {
     );
   }
 
-  const todayGross = displayData.today.gross;
-  const todayLyGross = displayData.today.ly_gross;
+  // Use net revenue instead of gross
+  const todayGross = displayData.today.actual;
+  const todayLyGross = displayData.today.ly_actual;
   const todayDiff = todayGross - todayLyGross;
   const todayPct = todayLyGross > 0 ? (todayDiff / todayLyGross) * 100 : 0;
   
-  const ytdGross = displayData.ytd.gross;
-  const ytdLyGross = displayData.ytd.ly_gross;
+  const ytdGross = displayData.ytd.actual;
+  const ytdLyGross = displayData.ytd.ly_actual;
   const ytdDiff = ytdGross - ytdLyGross;
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
+
+  const adrData = (() => {
+    let rev16 = 0, sold16 = 0;
+    let rev35 = 0, sold35 = 0;
+    let rev51 = 0, sold51 = 0;
+    
+    if (displayData?.roomTypeBreakdown) {
+      displayData.roomTypeBreakdown.forEach((item: any) => {
+        const name = item.facility_name || '';
+        const rev = item.today_actual || item.gross || 0;
+        const sold = Number(item.visitors || item.qty || 0);
+        if (name.includes('16평')) {
+          rev16 += rev; sold16 += sold;
+        } else if (name.includes('35평')) {
+          rev35 += rev; sold35 += sold;
+        } else if (name.includes('51평')) {
+          rev51 += rev; sold51 += sold;
+        }
+      });
+    }
+    
+    return {
+      adr16: sold16 > 0 ? Math.round(rev16 / sold16) : 0,
+      adr35: sold35 > 0 ? Math.round(rev35 / sold35) : 0,
+      adr51: sold51 > 0 ? Math.round(rev51 / sold51) : 0,
+    };
+  })();
+
+  const golfReservedTeams = displayData?.golfSummary?.reservedTeams 
+    ? Math.round(displayData.golfSummary.reservedTeams / 4)
+    : 0;
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -77,10 +109,10 @@ export default function Home() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-emphatic text-3xl tracking-widest bg-white text-brand-mint px-3 py-1 rounded-sm shadow-md">
+              <span className="font-black text-3xl tracking-widest bg-white text-brand-mint px-3 py-1 rounded-sm shadow-md">
                 BELLE FORET
               </span>
-              <span className="font-emphatic text-2xl tracking-wide ml-1">RESORT</span>
+              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
@@ -126,11 +158,11 @@ export default function Home() {
                 )}
               </div>
               
-              <div className="text-3xl lg:text-4xl font-bold text-slate-800 mb-4 tracking-tight transition-all duration-300">
+              <div className="text-3xl lg:text-4xl font-medium text-slate-800 mb-4 tracking-tight transition-all duration-300">
                 {formatCurrency(todayGross)}
               </div>
               
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                 <span>전년 동요일 대비</span>
                 <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
                 <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
@@ -139,13 +171,13 @@ export default function Home() {
 
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
-              <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
+              <h2 className="text-base font-semibold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
                 <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) <span className="text-xs text-slate-400 font-normal">(부가세 포함)</span>
               </h2>
-              <div className="text-3xl lg:text-4xl font-bold text-slate-800 mb-4 tracking-tight relative z-10">
+              <div className="text-3xl lg:text-4xl font-medium text-slate-800 mb-4 tracking-tight relative z-10">
                 {formatCurrency(ytdGross)}
               </div>
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold relative z-10 ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                 <span>전년 동기 대비</span>
                 <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
                 <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
@@ -155,32 +187,34 @@ export default function Home() {
 
           <div className="lg:col-span-12 flex flex-col gap-6">
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
-              <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <h2 className="text-base font-semibold text-slate-800 mb-6 flex items-center gap-2">
                 <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12" /> 주요 지표 및 운영 현황
               </h2>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
                   <div className="text-xs text-slate-400 font-medium mb-1">객실 점유율 (Occ)</div>
-                  <div className="text-2xl font-bold text-brand-mint">
+                  <div className="text-2xl font-medium text-brand-mint">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
-                  <div className="text-xs text-slate-400 font-medium mb-1">객단가 (ADR)</div>
-                  <div className="text-2xl font-bold text-brand-mint">
-                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalADR) ? formatCurrency(displayData.kpiMetrics.totalADR) : 0}
+                  <div className="text-xs text-slate-400 font-medium mb-2">객단가 (ADR)</div>
+                  <div className="flex justify-between px-2 text-sm text-brand-mint">
+                    <div className="flex flex-col"><span className="text-[10px] text-slate-400">16평</span><span className="font-medium">{formatCurrency(adrData.adr16)}</span></div>
+                    <div className="flex flex-col"><span className="text-[10px] text-slate-400">35평</span><span className="font-medium">{formatCurrency(adrData.adr35)}</span></div>
+                    <div className="flex flex-col"><span className="text-[10px] text-slate-400">51평</span><span className="font-medium">{formatCurrency(adrData.adr51)}</span></div>
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
                   <div className="text-xs text-slate-400 font-medium mb-1">객실당 매출 (RevPAR)</div>
-                  <div className="text-2xl font-bold text-brand-mint">
+                  <div className="text-2xl font-medium text-brand-mint">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
                   <div className="text-xs text-slate-400 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
-                  <div className="text-2xl font-emphatic text-brand-mint">
+                  <div className="text-2xl font-medium text-brand-mint">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
                   </div>
                 </div>
@@ -188,23 +222,23 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
-                  <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-4xl font-bold text-brand-mint mb-2">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
+                  <div className="text-slate-500 font-semibold mb-2">골프 1인당 평균 그린피</div>
+                  <div className="text-4xl font-medium text-brand-mint mb-2">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
                   <div className="text-sm text-slate-400">선택 기간 그린피 매출 ÷ 입장객 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
-                    <div className="text-slate-500 font-bold mb-4">골프 예약 및 입장 현황</div>
+                    <div className="text-slate-500 font-semibold mb-4">골프 예약 및 입장 현황</div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
-                        <div className="text-3xl font-bold text-brand-mint">
-                          {displayData.golfSummary ? `${displayData.golfSummary.reservedTeams}팀` : '0팀'}
+                        <div className="text-3xl font-medium text-brand-mint">
+                          {`${golfReservedTeams}팀`}
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">실제 입장 팀수</div>
-                        <div className="text-3xl font-emphatic text-brand-mint">
+                        <div className="text-3xl font-medium text-brand-mint">
                           {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
                         </div>
                       </div>

@@ -6,7 +6,7 @@ import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { Ticket, Trophy, AlertCircle, Wallet } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
-const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val)) + '원';
+const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
 
 export default function LeisureFacility() {
   const { groupId } = useParams();
@@ -43,7 +43,7 @@ export default function LeisureFacility() {
     const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1?: string; depth2?: string }>();
 
     matchedProducts.forEach((p: any) => {
-      const sales = Number(p.gross || p.revenue || p.today_actual || 0);
+      const sales = Number(p.today_actual || p.gross || p.revenue || 0);
       totalSales += sales;
       const pName = p.product_name || p.facility_name || '알 수 없음';
       const existing = itemMap.get(pName);

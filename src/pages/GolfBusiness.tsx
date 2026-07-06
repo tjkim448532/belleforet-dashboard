@@ -97,7 +97,7 @@ export default function GolfBusiness() {
         <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
       </div>
 
-      <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 relative z-10 pt-10">
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">

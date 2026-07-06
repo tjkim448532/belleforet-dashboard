@@ -124,7 +124,7 @@ export default function Home() {
         <div className="absolute top-20 left-[5%] w-16 h-16 bg-white/20 rounded-full" />
       </div>
 
-      <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 relative z-10 pt-10">
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
 
         {apiError && (

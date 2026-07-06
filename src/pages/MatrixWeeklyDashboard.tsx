@@ -392,7 +392,7 @@ export default function MatrixWeeklyDashboard() {
 
       {checkedShops.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-blue-600 text-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 p-4 border-t-4 border-blue-800">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="max-w-[1920px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="bg-blue-800 rounded-full w-8 h-8 flex items-center justify-center font-medium">{checkedShops.length}</div>
               <h3 className="font-medium text-lg">선택된 항목 실적 합계</h3>

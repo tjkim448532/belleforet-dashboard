@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database, MonitorPlay 
+  ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database, MonitorPlay, Maximize, Minimize 
 } from 'lucide-react';
 
 export default function Layout() {
@@ -16,6 +16,30 @@ export default function Layout() {
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const autoHideSidebar = isSynergy || isFullscreen;
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      if (!!document.fullscreenElement) {
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error enabling fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   const [pwdModalOpen, setPwdModalOpen] = useState(false);
   const [newPwd, setNewPwd] = useState('');
@@ -62,7 +86,7 @@ export default function Layout() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
       
       {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && !isSynergy && (
+      {sidebarOpen && !autoHideSidebar && (
         <div 
           className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
@@ -70,7 +94,7 @@ export default function Layout() {
       )}
 
       {/* Synergy Fullscreen Hover Trigger */}
-      {isSynergy && !sidebarOpen && (
+      {autoHideSidebar && !sidebarOpen && (
         <div 
           className="fixed inset-y-0 left-0 w-6 z-40 bg-transparent cursor-pointer"
           onMouseEnter={() => setSidebarOpen(true)}
@@ -79,14 +103,14 @@ export default function Layout() {
 
       {/* Sidebar - Belleforet Light Theme */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${!isSynergy ? 'lg:translate-x-0' : ''} transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${!autoHideSidebar ? 'lg:translate-x-0' : ''} transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm`}
         onMouseLeave={() => {
-          if (isSynergy) setSidebarOpen(false);
+          if (autoHideSidebar) setSidebarOpen(false);
         }}
       >
         <div className="p-6 flex items-center justify-between border-b border-slate-100">
           <h2 className="text-2xl font-emphatic text-brand-mint tracking-widest">BELLE FORET</h2>
-          <button onClick={() => setSidebarOpen(false)} className={`${isSynergy ? '' : 'lg:hidden'} text-slate-400 hover:text-slate-600 transition-colors`}>
+          <button onClick={() => setSidebarOpen(false)} className={`${autoHideSidebar ? '' : 'lg:hidden'} text-slate-400 hover:text-slate-600 transition-colors`}>
             <X size={24} />
           </button>
         </div>
@@ -104,11 +128,11 @@ export default function Layout() {
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}
               onClick={(e) => {
-                if (item.path.startsWith('#')) e.preventDefault();
-                else {
-                  if (!isSynergy || window.innerWidth < 1024) setSidebarOpen(false);
-                }
-              }}
+                  if (item.path.startsWith('#')) e.preventDefault();
+                  else {
+                    if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
+                  }
+                }}
             >
               {item.icon}
               {item.name}
@@ -137,7 +161,7 @@ export default function Layout() {
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
-                    if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                   }}
                 >
                   경영 현황 대시보드
@@ -148,7 +172,7 @@ export default function Layout() {
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
-                    if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                   }}
                 >
                   회원관리
@@ -179,7 +203,7 @@ export default function Layout() {
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
-                    if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                   }}
                 >
                   일일영업보고 문자보내기
@@ -212,7 +236,7 @@ export default function Layout() {
                       isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                     }`}
                     onClick={() => { 
-                      if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
+                      if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                     }}
                   >
                     {group.name}
@@ -246,9 +270,20 @@ export default function Layout() {
                 className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
               >
                 <ShieldCheck size={20} className="text-brand-mint" />
-                관리자 센터 입장
+                관리자 데이터 공장
               </NavLink>
             )}
+            <button
+              onClick={toggleFullscreen}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
+                isFullscreen 
+                  ? 'bg-brand-mint/10 text-brand-mint'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+              }`}
+            >
+              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+              {isFullscreen ? '일반 화면' : 'TV 프리젠테이션'}
+            </button>
             <button
               onClick={() => setPwdModalOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
@@ -267,7 +302,7 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col min-w-0 ${!isSynergy ? 'lg:ml-64' : ''} transition-all duration-300`}>
+      <main className={`flex-1 flex flex-col min-w-0 ${!autoHideSidebar ? 'lg:ml-64' : ''} transition-all duration-300`}>
         {/* Topbar for mobile */}
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-3">

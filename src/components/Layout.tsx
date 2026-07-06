@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
@@ -10,15 +10,13 @@ import {
 export default function Layout() {
   const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const isSynergy = location.pathname === '/synergy';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const autoHideSidebar = isSynergy || isFullscreen;
+  const autoHideSidebar = true;
 
   useEffect(() => {
     const handleFullscreenChange = () => {

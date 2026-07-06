@@ -47,9 +47,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      const queryParams = startDate === endDate 
-        ? `date=${endDate}` 
-        : `startDate=${startDate}&endDate=${endDate}`;
+      const queryParams = `startDate=${startDate}&endDate=${endDate}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);

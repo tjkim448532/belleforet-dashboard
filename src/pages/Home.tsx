@@ -227,7 +227,7 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
                     <div className="text-slate-500 font-semibold mb-4">골프 예약 및 입장 현황</div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-2">
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
                         <div className="text-3xl font-semibold text-brand-mint">
@@ -240,10 +240,16 @@ export default function Home() {
                           {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
                         </div>
                       </div>
+                      <div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">입장 예정 (미도착)</div>
+                        <div className="text-3xl font-semibold text-brand-mint">
+                          {displayData.golfSummary ? `${Math.max(0, golfReservedTeams - displayData.golfSummary.visitedTeams)}팀` : '0팀'}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="text-sm text-slate-400 mt-4">
-                    선택 기간 골프-예약 및 골프-입장객 데이터 집계
+                    선택 기간 골프 실시간 예약 및 입장 데이터 (아직 도착하지 않은 잔여 예약 포함)
                   </div>
                 </div>
               </div>

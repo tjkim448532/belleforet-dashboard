@@ -308,7 +308,7 @@ export default function Home() {
               <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
                   <Coins className="w-5 h-5 text-brand-mint" />
-                  관리자 센터 그룹별 매출 비중
+                  그룹별 매출 비중
                 </h3>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-8">
                   <div className="w-full md:w-1/2 h-[300px]">

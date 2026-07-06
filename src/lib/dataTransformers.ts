@@ -289,24 +289,24 @@ export const transformHomeData = (core: CoreDataState) => {
   let sold35 = 0;
   let sold51 = 0;
   let totalProductsSold = 0;
+  let hybridOccupiedRooms = 0;
 
   if (c.roomTypeBreakdown) {
       c.roomTypeBreakdown.forEach((rt: any) => {
         dynamicDailyCapacity += Number(rt.total_capacity || 0);
         
         const qty = Number(rt.qty || rt.visitors || 0);
+        const weightedQty = Number(rt.rooms_sold_weighted || (rt.facility_name.includes('51평') ? qty * 2 : qty));
+        
+        totalProductsSold += qty;
+        hybridOccupiedRooms += weightedQty;
         
         if (rt.facility_name.includes('16평')) {
           sold16 += qty;
-          totalProductsSold += qty;
         } else if (rt.facility_name.includes('35평')) {
           sold35 += qty;
-          totalProductsSold += qty;
         } else if (rt.facility_name.includes('51평')) {
           sold51 += qty;
-          totalProductsSold += (qty / 2); // 51평은 실제 1건 판매로 계산
-        } else {
-          totalProductsSold += qty;
         }
       });
   }
@@ -318,9 +318,9 @@ export const transformHomeData = (core: CoreDataState) => {
   // Calculate unmapped (Other) rooms to prevent leakage
   const soldOther = totalProductsSold - sold16 - sold35 - sold51;
   
-  // Total OCC hybrid calculation: 16평 + 35평 + 51평 + 기타객실
-  // (51평 is already pre-multiplied by 2 from the backend)
-  const hybridOccupiedRooms = sold16 + sold35 + sold51 + Math.max(0, soldOther);
+  // Total OCC hybrid calculation: uses weighted rooms for 51평 natively
+  // (hybridOccupiedRooms already calculated above, adding soldOther just in case)
+  hybridOccupiedRooms += Math.max(0, soldOther);
 
   const totalRoomRev = Number(r.lodging_revenue || 0);
   // Use net revenue (actual) instead of gross as per guide

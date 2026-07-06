@@ -76,7 +76,6 @@ export default function ResortBusiness() {
       if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
         roomsSold = data.roomTypeBreakdown.reduce((sum, item) => {
           let qty = Number(item.visitors || item.qty || 0);
-          if (item.facility_name.includes('51평')) qty = qty / 2;
           return sum + qty;
         }, 0);
       }
@@ -87,11 +86,7 @@ export default function ResortBusiness() {
     
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
       const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.today_actual || item.gross || 0), 0);
-      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => {
-        let qty = Number(item.visitors || item.qty || 0);
-        if (item.facility_name.includes('51평')) qty = qty / 2; // 51평 실제 판매건수
-        return sum + qty;
-      }, 0);
+      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.visitors || item.qty || 0), 0);
       const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
       return { revenue, roomsSold, adr };
     }
@@ -137,10 +132,10 @@ export default function ResortBusiness() {
       let displayRate = '0%';
       
       if (key === '16평') {
-        rate = g.cap > 0 ? Math.round(((g.sold + (groups['51평'].sold / 2)) / g.cap) * 100) : 0;
+        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
         displayRate = `${rate}%`;
       } else if (key === '35평') {
-        rate = g.cap > 0 ? Math.round(((g.sold + (groups['51평'].sold / 2)) / g.cap) * 100) : 0;
+        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
         displayRate = `${rate}%`;
       } else if (key === '51평') {
         rate = 0; // N/A conceptually
@@ -157,7 +152,7 @@ export default function ResortBusiness() {
         rate,
         displayRate,
         revenue: g.rev,
-        adr: g.sold > 0 ? Math.round(g.rev / (key === '51평' ? g.sold / 2 : g.sold)) : 0
+        adr: g.sold > 0 ? Math.round(g.rev / g.sold) : 0
       });
     }
 

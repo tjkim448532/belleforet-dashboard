@@ -83,9 +83,7 @@ export default function Home() {
     };
   })();
 
-  const golfReservedTeams = displayData?.golfSummary?.reservedTeams 
-    ? Math.round(displayData.golfSummary.reservedTeams / 4)
-    : 0;
+  const golfReservedTeams = displayData?.golfSummary?.reservedTeams || 0;
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">

@@ -191,31 +191,38 @@ export default function Home() {
               </h2>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center h-28">
-                  <div className="text-xs text-slate-400 font-medium mb-1">객실 점유율 (Occ)</div>
-                  <div className="text-3xl font-semibold text-brand-mint">
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
+                  <div className="text-sm text-slate-700 font-bold mb-1">객실 점유율 (Occ)</div>
+                  <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
                   </div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">물리적 판매 객실 ÷ 전체 객실 수</div>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center h-28">
-                  <div className="text-xs text-slate-400 font-medium mb-2">객단가 (ADR)</div>
-                  <div className="flex justify-between px-2 text-brand-mint items-end h-[36px]">
-                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-400 mb-0.5">16평</span><span className="text-base font-semibold">{formatCurrency(adrData.adr16)}</span></div>
-                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-400 mb-0.5">35평</span><span className="text-base font-semibold">{formatCurrency(adrData.adr35)}</span></div>
-                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-400 mb-0.5">51평</span><span className="text-base font-semibold">{formatCurrency(adrData.adr51)}</span></div>
+                
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
+                  <div className="text-sm text-slate-700 font-bold mb-2">객단가 (ADR)</div>
+                  <div className="flex justify-between px-1 text-teal-700 items-end">
+                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr16)}</span></div>
+                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr35)}</span></div>
+                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr51)}</span></div>
                   </div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">매출액 ÷ 순수 결제건수</div>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center h-28">
-                  <div className="text-xs text-slate-400 font-medium mb-1">객실당 매출 (RevPAR)</div>
-                  <div className="text-3xl font-semibold text-brand-mint">
+                
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
+                  <div className="text-sm text-slate-700 font-bold mb-1">객실당 매출 (RevPAR)</div>
+                  <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
                   </div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">객실 총매출 ÷ 전체 객실 수</div>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center h-28">
-                  <div className="text-xs text-slate-400 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
-                  <div className="text-3xl font-semibold text-brand-mint">
+                
+                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
+                  <div className="text-sm text-slate-700 font-bold mb-1">객실당 총매출 (TrevPAR)</div>
+                  <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
                   </div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">리조트 총매출 ÷ 전체 객실 수</div>
                 </div>
               </div>
 

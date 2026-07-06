@@ -291,16 +291,24 @@ export const transformHomeData = (core: CoreDataState) => {
   let totalProductsSold = 0;
 
   if (c.roomTypeBreakdown) {
-    c.roomTypeBreakdown.forEach((rt: any) => {
-      dynamicDailyCapacity += Number(rt.total_capacity || 0);
-      
-      const qty = Number(rt.qty || rt.visitors || 0);
-      totalProductsSold += qty;
-      
-      if (rt.facility_name.includes('16평')) sold16 += qty;
-      if (rt.facility_name.includes('35평')) sold35 += qty;
-      if (rt.facility_name.includes('51평')) sold51 += qty;
-    });
+      c.roomTypeBreakdown.forEach((rt: any) => {
+        dynamicDailyCapacity += Number(rt.total_capacity || 0);
+        
+        const qty = Number(rt.qty || rt.visitors || 0);
+        
+        if (rt.facility_name.includes('16평')) {
+          sold16 += qty;
+          totalProductsSold += qty;
+        } else if (rt.facility_name.includes('35평')) {
+          sold35 += qty;
+          totalProductsSold += qty;
+        } else if (rt.facility_name.includes('51평')) {
+          sold51 += qty;
+          totalProductsSold += (qty / 2); // 51평은 실제 1건 판매로 계산
+        } else {
+          totalProductsSold += qty;
+        }
+      });
   }
 
   // Use dynamic capacity purely as requested by the guide. No hardcoded 180 fallback.

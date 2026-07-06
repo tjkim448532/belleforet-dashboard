@@ -67,18 +67,31 @@ export default function ResortBusiness() {
 
   const lodgingStats = (() => {
     if (!data) return { revenue: 0, roomsSold: 0, adr: 0 };
-    
     if (data.resortSummary && (data.resortSummary.today_actual || data.resortSummary.gross || data.resortSummary.lodging_revenue)) {
       const summary = data.resortSummary;
       const revenue = summary.today_actual || summary.gross || summary.lodging_revenue || 0;
-      const roomsSold = summary.rooms_sold || 0;
+      
+      let roomsSold = summary.rooms_sold || 0;
+      // If roomTypeBreakdown is available, calculate actual sold rooms without 51평 double counting
+      if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
+        roomsSold = data.roomTypeBreakdown.reduce((sum, item) => {
+          let qty = Number(item.visitors || item.qty || 0);
+          if (item.facility_name.includes('51평')) qty = qty / 2;
+          return sum + qty;
+        }, 0);
+      }
+      
       const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
       return { revenue, roomsSold, adr };
     }
     
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
       const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.today_actual || item.gross || 0), 0);
-      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.visitors || item.qty || 0), 0);
+      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => {
+        let qty = Number(item.visitors || item.qty || 0);
+        if (item.facility_name.includes('51평')) qty = qty / 2; // 51평 실제 판매건수
+        return sum + qty;
+      }, 0);
       const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
       return { revenue, roomsSold, adr };
     }
@@ -144,7 +157,7 @@ export default function ResortBusiness() {
         rate,
         displayRate,
         revenue: g.rev,
-        adr: g.sold > 0 ? Math.round(g.rev / g.sold) : 0
+        adr: g.sold > 0 ? Math.round(g.rev / (key === '51평' ? g.sold / 2 : g.sold)) : 0
       });
     }
 

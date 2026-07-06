@@ -62,10 +62,10 @@ export default function Home() {
     let rev51 = 0, sold51 = 0;
     
     if (displayData?.roomTypeBreakdown) {
-      displayData.roomTypeBreakdown.forEach((item: any) => {
+      displayData?.roomTypeBreakdown?.forEach((item: any) => {
         const name = item.facility_name || '';
         const rev = item.today_actual || item.gross || 0;
-        const sold = Number(item.visitors || item.qty || 0);
+        const sold = Number(item.room_bookings || item.qty || item.visitors || 0);
         if (name.includes('16평')) {
           rev16 += rev; sold16 += sold;
         } else if (name.includes('35평')) {
@@ -229,8 +229,9 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div className="text-slate-500 font-semibold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-3xl font-semibold text-brand-mint mb-2">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
-                  <div className="text-sm text-slate-400">선택 기간 그린피 매출 ÷ 입장객 수</div>
+                  <div className="text-3xl font-semibold text-brand-mint mb-1">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
+                  <div className="text-sm text-brand-mint/80 font-medium mb-3">작년 동요일: {formatCurrency(displayData.golfSummary?.ly_avgGreenFee || 0)}</div>
+                  <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">선택 기간 그린피 매출 ÷ 입장객 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>

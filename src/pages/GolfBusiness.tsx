@@ -13,6 +13,7 @@ interface SummaryData {
     golf_visited_teams: number;
     golf_visited_players: number;
     golf_avg_green_fee: number;
+    golf_ly_avg_green_fee?: number;
   };
   golfFacilityBreakdown?: { facility_name: string; today_actual: number; }[];
 }
@@ -39,6 +40,7 @@ export default function GolfBusiness() {
               golf_visited_teams: payload.golfSummary?.visitedTeams ?? 0,
               golf_visited_players: payload.golfSummary?.visitedPlayers ?? 0,
               golf_avg_green_fee: payload.golfSummary?.avgGreenFee ?? 0,
+              golf_ly_avg_green_fee: payload.golfSummary?.ly_avgGreenFee ?? 0,
             },
             golfFacilityBreakdown: payload.golfFacilityBreakdown ?? []
           });
@@ -71,6 +73,7 @@ export default function GolfBusiness() {
     : '0.00';
     
   const avgGreenFee = data?.todaySummary?.golf_avg_green_fee ?? 0;
+  const lyAvgGreenFee = data?.todaySummary?.golf_ly_avg_green_fee ?? 0;
 
   const golfDetails = data?.golfFacilityBreakdown ?? [];
 
@@ -174,9 +177,14 @@ export default function GolfBusiness() {
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
                 <div className="text-slate-500 font-bold mb-1 text-sm">1인당 평균 그린피 (객단가)</div>
-                <div className="text-3xl font-bold text-emerald-600">
+                <div className="text-3xl font-bold text-emerald-600 mb-1">
                   {formatCurrency(avgGreenFee)}
                 </div>
+                {lyAvgGreenFee > 0 && (
+                  <div className="text-sm text-emerald-600/80 font-medium">
+                    작년 동요일: {formatCurrency(lyAvgGreenFee)}
+                  </div>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-4">선택 기간 그린피 총 매출 ÷ 내장객 수</p>
             </div>

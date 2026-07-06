@@ -295,7 +295,7 @@ export const transformHomeData = (core: CoreDataState) => {
       c.roomTypeBreakdown.forEach((rt: any) => {
         dynamicDailyCapacity += Number(rt.total_capacity || 0);
         
-        const qty = Number(rt.qty || rt.visitors || 0);
+        const qty = Number(rt.room_bookings || rt.qty || rt.visitors || 0);
         const weightedQty = Number(rt.rooms_sold_weighted || qty);
         
         totalProductsSold += qty;
@@ -371,6 +371,7 @@ export const transformHomeData = (core: CoreDataState) => {
       visitedTeams: c.golfSummary?.visitedTeams || 0,
       visitedPlayers: c.golfSummary?.visitedPlayers || 0,
       avgGreenFee: c.golfSummary?.avgGreenFee || 0,
+      ly_avgGreenFee: c.golfSummary?.ly_avgGreenFee || 0,
       memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || 0,
       nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || 0
     },

@@ -43,7 +43,8 @@ export default function LeisureFacility() {
     const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1?: string; depth2?: string }>();
 
     matchedProducts.forEach((p: any) => {
-      const sales = Number(p.today_actual || p.gross || p.revenue || 0);
+      // Prioritize gross for VAT inclusive calculation
+      const sales = Number(p.gross || p.today_actual || p.revenue || 0);
       totalSales += sales;
       const pName = p.product_name || p.facility_name || '알 수 없음';
       const existing = itemMap.get(pName);
@@ -135,7 +136,7 @@ export default function LeisureFacility() {
             <div className="text-3xl font-bold text-slate-800 mb-2 tracking-tight relative z-10">
               {formatCurrency(totalSales)}
             </div>
-            <p className="text-slate-400 text-sm relative z-10 font-medium">순매출 기준 합산</p>
+            <p className="text-slate-400 text-sm relative z-10 font-medium">총매출 기준 합산</p>
           </div>
 
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">

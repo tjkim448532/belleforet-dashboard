@@ -34,7 +34,7 @@ export default function GolfBusiness() {
         const payload = json.data ?? json;
         if (payload) {
           const golfBreakdown = payload.golfFacilityBreakdown ?? [];
-          const golf_revenue = payload.golfSummary?.golfRevenue ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.today_actual || 0), 0);
+          const golf_revenue = payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.gross || x.today_actual || 0), 0);
           setData({
             success: json.success ?? true,
             date: payload.date ?? endDate,
@@ -121,7 +121,7 @@ export default function GolfBusiness() {
           {/* Golf Revenue */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
             <h2 className="text-sm font-bold text-slate-500 mb-4 flex items-center gap-2">
-              <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 순매출
+              <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 총매출
             </h2>
             <div className="text-3xl font-bold text-slate-800 tracking-tight">
               {formatCurrency(golfRevenue)}

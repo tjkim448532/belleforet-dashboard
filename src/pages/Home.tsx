@@ -159,8 +159,8 @@ export default function Home() {
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <h2 className="text-base font-bold text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
-                  선택 기간 순매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
-                  <span className="text-xs text-slate-400 font-normal hidden sm:inline">(Net 기준)</span>
+                  선택 기간 총매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
+                  <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
                 </h2>
                 {startDate === endDate && (weather || lastYearWeather) && (
                   <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
@@ -408,7 +408,7 @@ export default function Home() {
                           <strong>경영 의미:</strong> 식음료, 부대시설 등을 포함해 리조트 전체 시설이 객실 1개당 창출한 총매출입니다. <strong>리조트 전체의 종합적인 수익 창출 능력</strong>을 보여줍니다.
                         </div>
                         <span className="text-xs text-slate-400 font-mono mt-1.5">
-                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevNet) : 0}원 (리조트 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
+                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevGross) : 0}원 (리조트 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
                         </span>
                       </li>
                     </ul>

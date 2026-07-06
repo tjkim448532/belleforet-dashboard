@@ -296,7 +296,7 @@ export const transformHomeData = (core: CoreDataState) => {
         dynamicDailyCapacity += Number(rt.total_capacity || 0);
         
         const qty = Number(rt.qty || rt.visitors || 0);
-        const weightedQty = Number(rt.rooms_sold_weighted || (rt.facility_name.includes('51평') ? qty * 2 : qty));
+        const weightedQty = Number(rt.rooms_sold_weighted || qty);
         
         totalProductsSold += qty;
         hybridOccupiedRooms += weightedQty;

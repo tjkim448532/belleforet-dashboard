@@ -365,26 +365,15 @@ export const transformHomeData = (core: CoreDataState) => {
     avg_green_fee: 0, // Fallback
     weekly_trend: [], // Fallback
     roomTypeBreakdown: c.roomTypeBreakdown || [],
-    golfSummary: (() => {
-      let calculatedAvgGreenFee = c.golfSummary?.avgGreenFee || c.golfSummary?.avg_green_fee || 0;
-      const visitedPlayers = c.golfSummary?.visitedPlayers || 0;
-      if (visitedPlayers > 0 && c.golfFacilityBreakdown) {
-        const gf = c.golfFacilityBreakdown.find((x: any) => x.facility_name?.includes('그린피'));
-        if (gf) {
-          const gfRev = Number(gf.gross || gf.today_actual || 0);
-          if (gfRev > 0) calculatedAvgGreenFee = Math.round(gfRev / visitedPlayers);
-        }
-      }
-      return {
-        reservedTeams: c.golfSummary?.reservedTeams || 0,
-        visitedTeams: c.golfSummary?.visitedTeams || 0,
-        visitedPlayers: visitedPlayers,
-        avgGreenFee: calculatedAvgGreenFee,
-        ly_avgGreenFee: c.golfSummary?.ly_avgGreenFee || c.golfSummary?.ly_avg_green_fee || 0,
-        memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || c.golfSummary?.member_avg_green_fee || 0,
-        nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || c.golfSummary?.non_member_avg_green_fee || 0
-      };
-    })(),
+    golfSummary: {
+      reservedTeams: c.golfSummary?.reservedTeams || 0,
+      visitedTeams: c.golfSummary?.visitedTeams || 0,
+      visitedPlayers: c.golfSummary?.visitedPlayers || 0,
+      avgGreenFee: c.golfSummary?.avgGreenFee || c.golfSummary?.avg_green_fee || 0,
+      ly_avgGreenFee: c.golfSummary?.ly_avgGreenFee || c.golfSummary?.ly_avg_green_fee || 0,
+      memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || c.golfSummary?.member_avg_green_fee || 0,
+      nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || c.golfSummary?.non_member_avg_green_fee || 0
+    },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
     qa_metrics: c.qa_metrics || null
   };

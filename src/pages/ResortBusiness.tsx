@@ -12,6 +12,7 @@ interface SummaryData {
   resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; gross?: number; };
   roomTypeBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; total_capacity: number; }[];
   channelBreakdown?: { facility_name: string; today_actual: number; qty?: number; visitors?: number; }[];
+    rateTypeBreakdown?: { facility_name: string; today_actual: number; qty?: number; visitors?: number; }[];
 }
 
 export default function ResortBusiness() {
@@ -36,7 +37,8 @@ export default function ResortBusiness() {
           today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
           resortSummary: payload.resortSummary || null,
           roomTypeBreakdown: payload.roomTypeBreakdown || payload.visitorData?.roomTypeBreakdown || [],
-          channelBreakdown: payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || []
+          channelBreakdown: payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || [],
+            rateTypeBreakdown: payload.rateTypeBreakdown || []
         });
       } catch (err) {
         console.error('API Error:', err);
@@ -46,7 +48,8 @@ export default function ResortBusiness() {
           ytd: { actual: 0, ly_actual: 0 },
           today: { actual: 0, ly_actual: 0 },
           roomTypeBreakdown: [],
-          channelBreakdown: []
+          channelBreakdown: [],
+            rateTypeBreakdown: []
         });
       } finally {
         setLoading(false);
@@ -108,6 +111,21 @@ export default function ResortBusiness() {
       const sold = Number(item.visitors || item.qty || 0);
       return {
         channel: item.facility_name,
+        roomsSold: sold,
+        totalRevenue: revenue,
+        adr: sold > 0 ? Math.round(revenue / sold) : 0
+      };
+    }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  })();
+
+  
+  const rateAdrData = (() => {
+    if (!data || !data.rateTypeBreakdown) return [];
+    return data.rateTypeBreakdown.map(item => {
+      const revenue = item.today_actual || 0;
+      const sold = Number(item.visitors || item.qty || 0);
+      return {
+        rateType: item.facility_name,
         roomsSold: sold,
         totalRevenue: revenue,
         adr: sold > 0 ? Math.round(revenue / sold) : 0
@@ -219,39 +237,74 @@ export default function ResortBusiness() {
           )}
         </div>
 
-        {/* Detailed Channel Table */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
-            📊 판매채널별 세부 단가표
-          </h2>
-          {channelAdrData.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-4">판매 채널명</th>
-                    <th className="py-3 px-4 text-right">판매 객실수</th>
-                    <th className="py-3 px-4 text-right">총 매출액</th>
-                    <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 text-sm">
-                  {channelAdrData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.channel}</td>
-                      <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}실</td>
-                      <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
+              💰 판매채널별 객단가 분석
+            </h2>
+            {channelAdrData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4">판매 채널명</th>
+                      <th className="py-3 px-4 text-right">판매 객실수</th>
+                      <th className="py-3 px-4 text-right">총 매출액</th>
+                      <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="py-12 text-center text-slate-400">
-              해당 날짜의 객실 판매 채널 데이터가 없습니다.
-            </div>
-          )}
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-sm">
+                    {channelAdrData.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.channel}</td>
+                        <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}실</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-400">
+                해당 날짜의 판매 채널 데이터가 없습니다.
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
+              💳 요금타입별 비중 및 객단가 (회원/비회원 분석)
+            </h2>
+            {rateAdrData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4">요금 타입명</th>
+                      <th className="py-3 px-4 text-right">판매 객실수</th>
+                      <th className="py-3 px-4 text-right">총 매출액</th>
+                      <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-sm">
+                    {rateAdrData.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.rateType}</td>
+                        <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}실</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900">{formatCurrency(row.adr)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-400">
+                해당 날짜의 요금타입 데이터가 없습니다.
+              </div>
+            )}
+          </div>
         </div>
 
       </div>

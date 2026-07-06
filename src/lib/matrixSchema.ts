@@ -3,7 +3,8 @@ export const EXCEL_LAYOUT = [
     category: '객실 Total',
     shops: [
       'ROOM',
-      'ROOM OTHER'
+      'ROOM OTHER',
+      '미지정'
     ]
   },
   {
@@ -58,7 +59,9 @@ export const EXCEL_LAYOUT = [
       '원더풀',
       '벨포레 리조트',
       '썸머랜드',
-      '펫포레'
+      '펫포레',
+      '기타티켓',
+      '온라인티켓'
     ]
   },
   {

@@ -126,7 +126,7 @@ export default function Home() {
                 )}
               </div>
               
-              <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight transition-all duration-300">
+              <div className="text-3xl lg:text-4xl font-bold text-slate-800 mb-4 tracking-tight transition-all duration-300">
                 {formatCurrency(todayGross)}
               </div>
               
@@ -142,7 +142,7 @@ export default function Home() {
               <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
                 <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) <span className="text-xs text-slate-400 font-normal">(부가세 포함)</span>
               </h2>
-              <div className="text-5xl lg:text-6xl font-emphatic text-slate-800 mb-4 tracking-tight relative z-10">
+              <div className="text-3xl lg:text-4xl font-bold text-slate-800 mb-4 tracking-tight relative z-10">
                 {formatCurrency(ytdGross)}
               </div>
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold relative z-10 ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
@@ -162,19 +162,19 @@ export default function Home() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
                   <div className="text-xs text-slate-400 font-medium mb-1">객실 점유율 (Occ)</div>
-                  <div className="text-2xl font-emphatic text-brand-mint">
+                  <div className="text-2xl font-bold text-brand-mint">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
                   <div className="text-xs text-slate-400 font-medium mb-1">객단가 (ADR)</div>
-                  <div className="text-2xl font-emphatic text-brand-mint">
+                  <div className="text-2xl font-bold text-brand-mint">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalADR) ? formatCurrency(displayData.kpiMetrics.totalADR) : 0}
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-100 flex flex-col justify-center text-center">
                   <div className="text-xs text-slate-400 font-medium mb-1">객실당 매출 (RevPAR)</div>
-                  <div className="text-2xl font-emphatic text-brand-mint">
+                  <div className="text-2xl font-bold text-brand-mint">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div className="text-slate-500 font-bold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-4xl font-emphatic text-brand-mint mb-2">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
+                  <div className="text-4xl font-bold text-brand-mint mb-2">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
                   <div className="text-sm text-slate-400">선택 기간 그린피 매출 ÷ 입장객 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
@@ -198,7 +198,7 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
-                        <div className="text-3xl font-emphatic text-brand-mint">
+                        <div className="text-3xl font-bold text-brand-mint">
                           {displayData.golfSummary ? `${displayData.golfSummary.reservedTeams}팀` : '0팀'}
                         </div>
                       </div>

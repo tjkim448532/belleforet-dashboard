@@ -95,13 +95,13 @@ export default function DailySalesReport() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-[#131A2A] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
             <h3 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2">이번 달 누적 객실 매출 (MTD)</h3>
-            <div className="text-3xl font-emphatic text-emerald-600">
+            <div className="text-3xl font-bold text-emerald-600">
               {formatCurrency(accumulated.mtd_room_revenue)}원
             </div>
           </div>
           <div className="bg-white dark:bg-[#131A2A] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
             <h3 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2">올해 누적 총매출 (YTD)</h3>
-            <div className="text-3xl font-emphatic text-blue-600">
+            <div className="text-3xl font-bold text-blue-600">
               {formatCurrency(accumulated.ytd_total_gross)}원
             </div>
           </div>

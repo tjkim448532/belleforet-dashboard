@@ -108,7 +108,7 @@ export default function LeisureFacility() {
               <Ticket size={24} />
               <span className="font-bold tracking-widest text-sm">BELLE FORET LEISURE</span>
             </div>
-            <h1 className="text-3xl lg:text-4xl font-emphatic tracking-tight mb-2">
+            <h1 className="text-3xl font-bold tracking-tight mb-2">
               {group.name} 영업장 대시보드
             </h1>
             <p className="text-emerald-50">
@@ -132,7 +132,7 @@ export default function LeisureFacility() {
             <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
               <Wallet className="w-5 h-5 text-blue-500" /> 그룹 매출 총합 <span className="text-xs font-normal">({isRange ? '선택기간' : '오늘'})</span>
             </h2>
-            <div className="text-4xl lg:text-5xl font-emphatic text-slate-800 mb-2 tracking-tight relative z-10">
+            <div className="text-3xl font-bold text-slate-800 mb-2 tracking-tight relative z-10">
               {formatCurrency(totalSales)}
             </div>
             <p className="text-slate-400 text-sm relative z-10 font-medium">순매출 기준 합산</p>
@@ -143,7 +143,7 @@ export default function LeisureFacility() {
             <h2 className="text-base font-bold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
               <Ticket className="w-5 h-5 text-purple-500" /> 총 판매 수량
             </h2>
-            <div className="text-4xl lg:text-5xl font-emphatic text-slate-800 mb-2 tracking-tight relative z-10">
+            <div className="text-3xl font-bold text-slate-800 mb-2 tracking-tight relative z-10">
               {totalQuantity.toLocaleString()} <span className="text-xl text-slate-500">개</span>
             </div>
             <p className="text-slate-400 text-sm relative z-10 font-medium">그룹 내 판매된 상품 총합</p>
@@ -162,7 +162,7 @@ export default function LeisureFacility() {
               <div className="space-y-4">
                 {topTickets.map((ticket, idx) => (
                   <div key={idx} className="flex items-center p-4 rounded-2xl bg-[#f8fafc] border border-slate-100 hover:bg-white hover:shadow-md transition-all duration-300">
-                    <div className="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm flex items-center justify-center font-emphatic text-xl mr-4 border border-slate-100">
+                    <div className="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm flex items-center justify-center font-bold text-xl mr-4 border border-slate-100">
                       {idx === 0 ? <span className="text-amber-400">1</span> :
                        idx === 1 ? <span className="text-slate-400">2</span> :
                        idx === 2 ? <span className="text-amber-700">3</span> :

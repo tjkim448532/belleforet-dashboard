@@ -239,7 +239,7 @@ export default function Simulator() {
       <div className="bg-white border-b border-slate-100 p-4 flex gap-6 items-center text-sm font-bold shadow-sm z-20">
         <div className="flex items-center gap-2">
           <div className="text-slate-500">대시보드 총액:</div>
-          <div className="text-2xl font-emphatic text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
+          <div className="text-2xl font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
         </div>
         
         {/* [13차 패치] 마리아DB VS 대시보드 실시간 교차 검증 배지 (Cross-Checker) */}

@@ -117,7 +117,7 @@ export default function GolfBusiness() {
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
               <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 총 매출
             </h2>
-            <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
               {formatCurrency(golfRevenue)}
             </div>
             <p className="text-xs text-slate-400 mt-2">정산 시트 기준 골프(그린피, 카트, 레스토랑 등) 총합</p>
@@ -128,7 +128,7 @@ export default function GolfBusiness() {
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
               <Flag className="w-5 h-5 text-emerald-500" /> 실제 내장 팀수
             </h2>
-            <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
               {visitedTeams}팀
             </div>
             <p className="text-xs text-slate-400 mt-2">골프-내장객 고유 예약번호 개수</p>
@@ -139,7 +139,7 @@ export default function GolfBusiness() {
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-500" /> 실제 총 내장객 수
             </h2>
-            <div className="text-4xl font-emphatic text-emerald-600 tracking-tight">
+            <div className="text-3xl font-bold text-emerald-600 tracking-tight">
               {formatNumber(visitedPlayers)}명
             </div>
             <p className="text-xs text-slate-400 mt-2">실제 입장하여 라운딩을 진행한 플레이어 수</p>
@@ -156,7 +156,7 @@ export default function GolfBusiness() {
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
                 <div className="text-slate-500 font-bold mb-1 text-sm">실제 내장 팀수</div>
-                <div className="text-3xl font-emphatic text-emerald-600">{visitedTeams}팀</div>
+                <div className="text-3xl font-bold text-emerald-600">{visitedTeams}팀</div>
               </div>
               <p className="text-xs text-slate-400 mt-4">실제 입장하여 라운딩을 진행한 팀 수</p>
             </div>
@@ -164,7 +164,7 @@ export default function GolfBusiness() {
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
                 <div className="text-slate-500 font-bold mb-1 text-sm">팀당 평균 동반 인원</div>
-                <div className="text-3xl font-emphatic text-slate-800">{avgPlayersPerTeam}명</div>
+                <div className="text-3xl font-bold text-slate-800">{avgPlayersPerTeam}명</div>
               </div>
               <p className="text-xs text-slate-400 mt-4">실제 내장객 수 ÷ 실제 내장 팀수</p>
             </div>
@@ -174,7 +174,7 @@ export default function GolfBusiness() {
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
                 <div className="text-slate-500 font-bold mb-1 text-sm">1인당 평균 그린피 (객단가)</div>
-                <div className="text-3xl font-emphatic text-emerald-600">
+                <div className="text-3xl font-bold text-emerald-600">
                   {formatCurrency(avgGreenFee)}
                 </div>
               </div>

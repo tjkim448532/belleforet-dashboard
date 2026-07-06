@@ -176,7 +176,7 @@ export default function ResortBusiness() {
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
               <Hotel className="w-5 h-5 text-emerald-500" /> 선택 기간 객실 매출
             </h2>
-            <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
               {formatCurrency(lodgingStats.revenue)}
             </div>
             <p className="text-xs text-slate-400 mt-2">정산 시트 기준 Room Charge 매출액 누적 합계</p>
@@ -187,7 +187,7 @@ export default function ResortBusiness() {
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-emerald-500" /> 판매된 객실 수
             </h2>
-            <div className="text-4xl font-emphatic text-slate-800 tracking-tight">
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
               {lodgingStats.roomsSold}실
             </div>
             <p className="text-xs text-slate-400 mt-2">선택 기간 내 정산 완료된 총 객실 수</p>
@@ -198,7 +198,7 @@ export default function ResortBusiness() {
             <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
               <Coins className="w-5 h-5 text-emerald-500" /> 객실 평균 단가 (ADR)
             </h2>
-            <div className="text-4xl font-emphatic text-emerald-600 tracking-tight">
+            <div className="text-3xl font-bold text-emerald-600 tracking-tight">
               {formatCurrency(lodgingStats.adr)}
             </div>
             <p className="text-xs text-slate-400 mt-2">선택 기간 총 객실 매출 ÷ 총 판매 객실 수</p>

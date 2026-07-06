@@ -1,0 +1,1 @@
+const http = require('http'); const server = http.createServer((req, res) => { let body = ''; req.on('data', chunk => body += chunk); req.on('end', () => { console.log('INTERCEPTED:', body); res.end('ok'); }); }); server.listen(9999, () => console.log('Listening on 9999'));

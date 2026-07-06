@@ -34,8 +34,10 @@ export default function MatrixWeeklyDashboard() {
         const result = res.data || res;
         const dataArray = Array.isArray(result) ? result : (result.data || []);
         
+        const hasValidWeather = coreData.core?.weather && (coreData.core.weather.current || coreData.core.weather.lastYear || coreData.core.weather.weatherDesc);
+
         // Fetch weather for startDate specifically if it's missing from global state
-        if (!coreData.core?.weather) {
+        if (!hasValidWeather) {
           try {
             // 날씨 전용 호출은 무조건 date 파라미터만 사용 (백엔드 API 특성)
             const weatherRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${startDate}`);
@@ -65,7 +67,8 @@ export default function MatrixWeeklyDashboard() {
   }, [startDate, coreData.core?.weather]);
 
   useEffect(() => {
-    if (coreData.core?.weather) {
+    const hasValidWeather = coreData.core?.weather && (coreData.core.weather.current || coreData.core.weather.lastYear || coreData.core.weather.weatherDesc);
+    if (hasValidWeather) {
       setCurrentWeather(coreData.core.weather.current || null);
       setLastYearWeather(coreData.core.weather.lastYear || null);
     }

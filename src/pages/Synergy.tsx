@@ -29,8 +29,7 @@ export default function Synergy() {
   // Use endDate as the target date to sync with the dashboard's current selection
   const targetDate = endDate;
   const baseUrl = "https://synergy-board.web.app/";
-  // Added &role=readonly and &permission=restricted to signal the AI not to overstep
-  const iframeSrc = `${baseUrl}?date=${targetDate}&token=${token}&role=readonly&permission=restricted`;
+  const iframeSrc = `${baseUrl}?date=${targetDate}&token=${token}`;
 
   return (
     <div className="w-full h-full min-h-screen flex flex-col">
@@ -39,7 +38,6 @@ export default function Synergy() {
         className="flex-1 w-full h-full border-none"
         title="시너지"
         allowFullScreen
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       />
     </div>
   );

@@ -333,7 +333,13 @@ export const transformHomeData = (core: CoreDataState) => {
     trevPAR: totalInventory > 0 ? (totalResortRevNet / totalInventory) : 0,
     days: days,
     weekdayDays: r.weekdayDays || 0,
-    weekendDays: r.weekendDays || 0
+    weekendDays: r.weekendDays || 0,
+    raw: {
+      totalRoomRev,
+      totalProductsSold,
+      totalInventory,
+      totalResortRevNet
+    }
   };
 
   return {

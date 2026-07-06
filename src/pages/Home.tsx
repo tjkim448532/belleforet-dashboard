@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, Building2, Coins, AlertCircle } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -80,6 +80,7 @@ export default function Home() {
       adr16: sold16 > 0 ? Math.round(rev16 / sold16) : 0,
       adr35: sold35 > 0 ? Math.round(rev35 / sold35) : 0,
       adr51: sold51 > 0 ? Math.round(rev51 / sold51) : 0,
+      raw: { rev16, sold16, rev35, sold35, rev51, sold51 }
     };
   })();
 
@@ -255,6 +256,74 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Math Explanation Card */}
+            <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-brand-mint" />
+                지표 산출 공식 및 근거 데이터
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
+                
+                {/* Room ADR */}
+                <div className="bg-slate-50 p-4 rounded-xl">
+                  <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">평형별 객단가 (ADR)</h4>
+                  <ul className="space-y-3 text-slate-600">
+                    <li className="flex flex-col">
+                      <span className="font-medium">16평: {formatCurrency(adrData.adr16)}원</span>
+                      <span className="text-xs text-slate-400 font-mono mt-1">
+                        = {formatCurrency(adrData.raw.rev16)}원 (매출액) ÷ {formatCurrency(adrData.raw.sold16)}건 (순수 결제건수)
+                      </span>
+                    </li>
+                    <li className="flex flex-col">
+                      <span className="font-medium">35평: {formatCurrency(adrData.adr35)}원</span>
+                      <span className="text-xs text-slate-400 font-mono mt-1">
+                        = {formatCurrency(adrData.raw.rev35)}원 (매출액) ÷ {formatCurrency(adrData.raw.sold35)}건 (순수 결제건수)
+                      </span>
+                    </li>
+                    <li className="flex flex-col">
+                      <span className="font-medium">51평: {formatCurrency(adrData.adr51)}원</span>
+                      <span className="text-xs text-slate-400 font-mono mt-1">
+                        = {formatCurrency(adrData.raw.rev51)}원 (매출액) ÷ {formatCurrency(adrData.raw.sold51)}건 (순수 결제건수)
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* RevPAR & TrevPAR */}
+                <div className="bg-slate-50 p-4 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">수익성 지표 (RevPAR / TrevPAR)</h4>
+                    <ul className="space-y-3 text-slate-600">
+                      <li className="flex flex-col">
+                        <span className="font-medium">객실당 매출 (RevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}원</span>
+                        <span className="text-xs text-slate-400 font-mono mt-1">
+                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalRoomRev) : 0}원 (객실 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
+                        </span>
+                      </li>
+                      <li className="flex flex-col">
+                        <span className="font-medium">객실당 총매출 (TrevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}원</span>
+                        <span className="text-xs text-slate-400 font-mono mt-1">
+                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevNet) : 0}원 (리조트 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Golf Green Fee */}
+                <div className="bg-slate-50 p-4 rounded-xl lg:col-span-2">
+                  <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">골프 평균 그린피</h4>
+                  <ul className="space-y-3 text-slate-600">
+                    <li className="flex flex-col">
+                      <span className="font-medium">1인당 평균 그린피: {formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}원</span>
+                      <span className="text-xs text-slate-400 font-mono mt-1">
+                        = {formatCurrency((displayData.golfSummary?.avgGreenFee || 0) * (displayData.golfSummary?.visitedPlayers || 0))}원 (그린피 총매출) ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
           </div>
         </div>

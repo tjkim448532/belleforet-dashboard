@@ -79,7 +79,7 @@ export default function Home() {
     return {
       adr16: sold16 > 0 ? Math.round(rev16 / sold16) : 0,
       adr35: sold35 > 0 ? Math.round(rev35 / sold35) : 0,
-      adr51: sold51 > 0 ? Math.round(rev51 / sold51) : 0,
+      adr51: sold51 > 0 ? Math.round(rev51 / (sold51 / 2)) : 0,
     };
   })();
 

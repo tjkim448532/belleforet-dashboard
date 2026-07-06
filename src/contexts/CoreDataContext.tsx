@@ -47,9 +47,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // 백엔드 V4 표준 파라미터인 startDate, endDate를 사용하되, 
-      // 날씨 API가 의존하는 date 파라미터도 함께 전송하여 두 데이터 모두 누락되지 않도록 합니다.
-      const queryParams = `startDate=${startDate}&endDate=${endDate}&date=${startDate}`;
+      // 백엔드 V4 표준 파라미터인 startDate, endDate를 사용합니다.
+      const queryParams = `startDate=${startDate}&endDate=${endDate}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);
@@ -58,6 +57,19 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         // 백엔드 응답에서 weather가 root 객체에 분리되어 내려올 경우 병합 처리
         if (res.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
+        }
+
+        // V4 API(startDate, endDate) 호출 시 백엔드가 날씨를 누락할 경우를 대비한 강력한 백업 호출
+        if (!corePayload.weather && startDate === endDate) {
+          try {
+            const wRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${startDate}`);
+            const w = wRes.data?.weather || wRes.weather || wRes.data?.core?.weather;
+            if (w) {
+              corePayload.weather = w;
+            }
+          } catch (e) {
+            console.error('Failed to fetch weather fallback', e);
+          }
         }
 
         setState({

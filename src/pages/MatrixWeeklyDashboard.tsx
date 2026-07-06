@@ -37,7 +37,8 @@ export default function MatrixWeeklyDashboard() {
         // Fetch weather for startDate specifically if it's missing from global state
         if (!coreData.core?.weather) {
           try {
-            const weatherRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${startDate}&date=${startDate}`);
+            // 날씨 전용 호출은 무조건 date 파라미터만 사용 (백엔드 API 특성)
+            const weatherRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${startDate}`);
             const w = weatherRes.data?.weather || weatherRes.weather || weatherRes.data?.core?.weather;
             if (w) {
               setCurrentWeather(w.current || null);

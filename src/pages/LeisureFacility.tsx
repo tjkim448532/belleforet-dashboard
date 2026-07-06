@@ -45,13 +45,16 @@ export default function LeisureFacility() {
     matchedProducts.forEach((p: any) => {
       // Prioritize gross for VAT inclusive calculation
       const sales = Number(p.gross || p.today_actual || p.revenue || 0);
+      // Extract qty directly from product payload if the backend provides it
+      const qty = Number(p.qty || p.quantity || p.count || p.sold || 0);
       totalSales += sales;
       const pName = p.product_name || p.facility_name || '알 수 없음';
       const existing = itemMap.get(pName);
       if (existing) {
         existing.sales += sales;
+        existing.qty += qty;
       } else {
-        itemMap.set(pName, { name: pName, sales, qty: 0, depth1: '레저', depth2: p.facility_name });
+        itemMap.set(pName, { name: pName, sales, qty, depth1: '레저', depth2: p.facility_name });
       }
     });
 

@@ -39,8 +39,8 @@ export default function GolfBusiness() {
               golf_revenue: golf_revenue,
               golf_visited_teams: payload.golfSummary?.visitedTeams ?? 0,
               golf_visited_players: payload.golfSummary?.visitedPlayers ?? 0,
-              golf_avg_green_fee: payload.golfSummary?.avgGreenFee ?? 0,
-              golf_ly_avg_green_fee: payload.golfSummary?.ly_avgGreenFee ?? 0,
+              golf_avg_green_fee: payload.golfSummary?.avgGreenFee ?? payload.golfSummary?.avg_green_fee ?? 0,
+              golf_ly_avg_green_fee: payload.golfSummary?.ly_avgGreenFee ?? payload.golfSummary?.ly_avg_green_fee ?? 0,
             },
             golfFacilityBreakdown: payload.golfFacilityBreakdown ?? []
           });

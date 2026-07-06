@@ -370,10 +370,10 @@ export const transformHomeData = (core: CoreDataState) => {
       reservedTeams: c.golfSummary?.reservedTeams || 0,
       visitedTeams: c.golfSummary?.visitedTeams || 0,
       visitedPlayers: c.golfSummary?.visitedPlayers || 0,
-      avgGreenFee: c.golfSummary?.avgGreenFee || 0,
-      ly_avgGreenFee: c.golfSummary?.ly_avgGreenFee || 0,
-      memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || 0,
-      nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || 0
+      avgGreenFee: c.golfSummary?.avgGreenFee || c.golfSummary?.avg_green_fee || 0,
+      ly_avgGreenFee: c.golfSummary?.ly_avgGreenFee || c.golfSummary?.ly_avg_green_fee || 0,
+      memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || c.golfSummary?.member_avg_green_fee || 0,
+      nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || c.golfSummary?.non_member_avg_green_fee || 0
     },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
     qa_metrics: c.qa_metrics || null

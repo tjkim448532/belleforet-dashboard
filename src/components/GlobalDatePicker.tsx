@@ -47,7 +47,7 @@ export default function GlobalDatePicker({ allowRange = true }: GlobalDatePicker
               setDraftIsRange(false);
               setDraftEnd(draftStart);
             }}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               !draftIsRange 
                 ? 'bg-brand-mint text-white shadow-md' 
                 : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -57,7 +57,7 @@ export default function GlobalDatePicker({ allowRange = true }: GlobalDatePicker
           </button>
           <button
             onClick={() => setDraftIsRange(true)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               draftIsRange 
                 ? 'bg-brand-mint text-white shadow-md' 
                 : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -79,7 +79,7 @@ export default function GlobalDatePicker({ allowRange = true }: GlobalDatePicker
               setDraftStart(e.target.value);
               setDraftEnd(e.target.value);
             }}
-            className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+            className="bg-transparent border-none text-base font-medium text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
           />
         ) : (
           <div className="flex items-center gap-2">
@@ -87,21 +87,21 @@ export default function GlobalDatePicker({ allowRange = true }: GlobalDatePicker
               type="date" 
               value={draftStart} 
               onChange={(e) => setDraftStart(e.target.value)}
-              className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+              className="bg-transparent border-none text-base font-medium text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
             />
-            <span className="text-white/50 font-bold">~</span>
+            <span className="text-white/50 font-medium">~</span>
             <input 
               type="date" 
               value={draftEnd} 
               onChange={(e) => setDraftEnd(e.target.value)}
-              className="bg-transparent border-none text-base font-bold text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
+              className="bg-transparent border-none text-base font-medium text-white outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80"
             />
           </div>
         )}
 
         <button 
           onClick={handleApply}
-          className="ml-4 bg-brand-mint hover:bg-emerald-400 text-white text-sm font-bold py-1 px-3 rounded-lg transition-colors shadow-sm"
+          className="ml-4 bg-brand-mint hover:bg-emerald-400 text-white text-sm font-medium py-1 px-3 rounded-lg transition-colors shadow-sm"
         >
           조회
         </button>

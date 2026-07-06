@@ -105,7 +105,7 @@ export default function AdminLogs() {
         <div className="flex items-center gap-3">
           <ShieldAlert className="text-red-400" size={28} />
           <div>
-            <h1 className="text-xl font-bold mb-1 flex items-center gap-2">
+            <h1 className="text-xl font-medium mb-1 flex items-center gap-2">
               시스템 감시 및 로그 <Database size={16} className="text-emerald-400" />
             </h1>
             <p className="text-white/60 text-xs">접속 기록 및 S3 데이터 동기화 파이프라인 무결성을 모니터링합니다.</p>
@@ -117,7 +117,7 @@ export default function AdminLogs() {
       <div className="flex border-b border-slate-200 bg-slate-50">
         <button
           onClick={() => setActiveTab('sync')}
-          className={`px-6 py-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${
+          className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${
             activeTab === 'sync' ? 'border-brand-mint text-brand-mint bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'
           }`}
         >
@@ -126,7 +126,7 @@ export default function AdminLogs() {
         </button>
         <button
           onClick={() => setActiveTab('login')}
-          className={`px-6 py-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${
+          className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${
             activeTab === 'login' ? 'border-brand-mint text-brand-mint bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'
           }`}
         >
@@ -140,14 +140,14 @@ export default function AdminLogs() {
         {activeTab === 'login' && (
           <>
             <div className="p-4 bg-white border-b border-slate-200 flex justify-end">
-              <button onClick={clearLoginLogs} className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-xl transition-colors font-bold text-sm shadow-sm border border-red-200">
+              <button onClick={clearLoginLogs} className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-xl transition-colors font-medium text-sm shadow-sm border border-red-200">
                 <Trash2 size={16} /> 접속 로그 전체 초기화
               </button>
             </div>
             {loadingLogin ? (
-              <div className="flex items-center justify-center h-64 text-slate-400 font-bold animate-pulse">불러오는 중...</div>
+              <div className="flex items-center justify-center h-64 text-slate-400 font-medium animate-pulse">불러오는 중...</div>
             ) : loginLogs.length === 0 ? (
-              <div className="flex items-center justify-center h-64 text-slate-400 font-bold">접속 로그가 없습니다.</div>
+              <div className="flex items-center justify-center h-64 text-slate-400 font-medium">접속 로그가 없습니다.</div>
             ) : (
               <table className="w-full text-left text-sm text-slate-600 bg-white">
                 <thead className="bg-slate-100 sticky top-0 border-b border-slate-200 shadow-sm z-10">
@@ -160,8 +160,8 @@ export default function AdminLogs() {
                 <tbody>
                   {loginLogs.map((log, idx) => (
                     <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td className="p-4 text-center font-bold text-slate-400">{loginLogs.length - idx}</td>
-                      <td className="p-4 font-bold text-slate-700">{log.email}</td>
+                      <td className="p-4 text-center font-medium text-slate-400">{loginLogs.length - idx}</td>
+                      <td className="p-4 font-medium text-slate-700">{log.email}</td>
                       <td className="p-4 font-mono text-slate-500 text-right">{log.timestamp}</td>
                     </tr>
                   ))}
@@ -184,9 +184,9 @@ export default function AdminLogs() {
             
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               {loadingSync ? (
-                <div className="flex items-center justify-center h-64 text-slate-400 font-bold animate-pulse">불러오는 중...</div>
+                <div className="flex items-center justify-center h-64 text-slate-400 font-medium animate-pulse">불러오는 중...</div>
               ) : syncLogs.length === 0 ? (
-                <div className="flex items-center justify-center h-64 text-slate-400 font-bold">동기화 로그가 없습니다.</div>
+                <div className="flex items-center justify-center h-64 text-slate-400 font-medium">동기화 로그가 없습니다.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-slate-600">
@@ -204,19 +204,19 @@ export default function AdminLogs() {
                         <tr key={log.job_id} className="hover:bg-slate-50">
                           <td className="p-4">
                             {log.status === 'SUCCESS' ? (
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium text-xs">
                                 <CheckCircle2 size={14} /> 성공 (일치)
                               </div>
                             ) : log.status === 'FAILED_VALIDATION' ? (
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-bold text-xs">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium text-xs">
                                 <XCircle size={14} /> 검증 실패
                               </div>
                             ) : log.status === 'FAILED' ? (
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-bold text-xs">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium text-xs">
                                 <XCircle size={14} /> 에러 (차단됨)
                               </div>
                             ) : (
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs animate-pulse">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium text-xs animate-pulse">
                                 진행중
                               </div>
                             )}
@@ -224,10 +224,10 @@ export default function AdminLogs() {
                           <td className="p-4 font-mono text-xs text-slate-500 whitespace-nowrap">
                             {new Date(log.started_at).toLocaleString('ko-KR')}
                           </td>
-                          <td className="p-4 text-right font-mono font-bold text-slate-700">
+                          <td className="p-4 text-right font-mono font-medium text-slate-700">
                             {log.s3_total_net != null ? `${Number(log.s3_total_net).toLocaleString()}원` : '-'}
                           </td>
-                          <td className="p-4 text-right font-mono font-bold text-slate-700">
+                          <td className="p-4 text-right font-mono font-medium text-slate-700">
                             {log.db_total_net != null ? `${Number(log.db_total_net).toLocaleString()}원` : '-'}
                           </td>
                           <td className="p-4">

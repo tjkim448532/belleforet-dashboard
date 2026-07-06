@@ -168,22 +168,22 @@ export default function Simulator() {
       <div className="bg-brand-mint p-6 text-white flex items-center justify-between">
         <div>
           <div className="flex items-center gap-4 mb-1">
-            <h1 className="text-2xl font-bold">본부지정</h1>
+            <h1 className="text-2xl font-medium">본부지정</h1>
             {/* [12차 패치] 달력 (Date Picker) 추가 */}
             <input 
               type="date" 
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white/20 text-white placeholder-white/50 border border-white/30 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="bg-white/20 text-white placeholder-white/50 border border-white/30 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/50"
             />
           </div>
           <p className="text-white/90 text-sm font-medium">1. 상단의 본부를 선택하세요 ➔ 2. 아래 영업장을 클릭하여 해당 본부 매출로 할당하세요.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleClear} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors font-bold text-sm">
+          <button onClick={handleClear} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors font-medium text-sm">
             <RotateCcw size={16} /> 초기화
           </button>
-          <button onClick={handleApply} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-xl transition-colors font-bold text-sm text-brand-mint shadow-lg">
+          <button onClick={handleApply} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-xl transition-colors font-medium text-sm text-brand-mint shadow-lg">
             <Save size={16} /> 대시보드에 적용
           </button>
         </div>
@@ -191,7 +191,7 @@ export default function Simulator() {
 
       {/* HQ Selector (The Palette) */}
       <div className="bg-slate-50 border-b border-slate-200 p-6">
-        <div className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
+        <div className="text-sm font-medium text-slate-500 mb-3 flex items-center gap-2">
           Step 1. 할당할 본부를 먼저 선택하세요 (현재 선택된 펜)
         </div>
         <div className="flex flex-wrap gap-4">
@@ -202,7 +202,7 @@ export default function Simulator() {
               <button
                 key={hq}
                 onClick={() => setActiveHq(hq)}
-                className={`relative py-4 px-6 rounded-2xl font-bold text-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                className={`relative py-4 px-6 rounded-2xl font-medium text-lg border-2 transition-all flex flex-col items-center gap-1 ${
                   isSelected 
                     ? `${hqColorClasses.split(' ')[0]} border-slate-900 shadow-md transform scale-105` 
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
@@ -227,7 +227,7 @@ export default function Simulator() {
           })}
           <button
             onClick={handleAddCategory}
-            className="py-4 px-6 rounded-2xl font-bold text-lg border-2 border-dashed border-slate-300 text-slate-400 hover:text-brand-mint hover:border-brand-mint hover:bg-brand-mint/5 transition-all flex flex-col items-center justify-center gap-1"
+            className="py-4 px-6 rounded-2xl font-medium text-lg border-2 border-dashed border-slate-300 text-slate-400 hover:text-brand-mint hover:border-brand-mint hover:bg-brand-mint/5 transition-all flex flex-col items-center justify-center gap-1"
           >
             <Plus size={24} />
             <span className="text-sm">본부 추가</span>
@@ -236,10 +236,10 @@ export default function Simulator() {
       </div>
 
       {/* Summary Banner */}
-      <div className="bg-white border-b border-slate-100 p-4 flex gap-6 items-center text-sm font-bold shadow-sm z-20">
+      <div className="bg-white border-b border-slate-100 p-4 flex gap-6 items-center text-sm font-medium shadow-sm z-20">
         <div className="flex items-center gap-2">
           <div className="text-slate-500">대시보드 총액:</div>
-          <div className="text-2xl font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
+          <div className="text-2xl font-medium text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
         </div>
         
         {/* [13차 패치] 마리아DB VS 대시보드 실시간 교차 검증 배지 (Cross-Checker) */}
@@ -289,13 +289,13 @@ export default function Simulator() {
           <tbody>
             {loading || mappingLoading ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400 font-bold animate-pulse">
+                <td colSpan={6} className="p-8 text-center text-slate-400 font-medium animate-pulse">
                   실제 S3 영업 데이터 및 매핑 정보를 불러오는 중입니다...
                 </td>
               </tr>
             ) : transactions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
+                <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">
                   최근 거래 내역이 없습니다.
                 </td>
               </tr>
@@ -314,17 +314,17 @@ export default function Simulator() {
                     style={{ color: isAssigned ? '#475569' : '' }}
                     onClick={() => handleRowClick(t.id)}
                   >
-                    <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                    <td className="p-4 text-center text-slate-400 font-medium">{idx + 1}</td>
                     <td className="p-4 font-mono text-slate-500">{t.time}</td>
                     <td className="p-4 font-mono text-xs text-slate-400" title={t.id}>{t.id.substring(0, 15)}...</td>
-                    <td className="p-4 font-bold">
+                    <td className="p-4 font-medium">
                       <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border shadow-sm transition-all ${getHqColor(assignedHq)} ${isAssigned ? 'scale-110 inline-block' : ''}`}>
                         {isAssigned && <CheckCircle2 size={12} className="inline mr-1 -mt-0.5" />}
                         {assignedHq}
                       </span>
                     </td>
-                    <td className={`p-4 font-bold ${isAssigned ? 'text-slate-800' : 'text-slate-600'}`}>{t.description}</td>
-                    <td className={`p-4 text-right font-bold ${isAssigned ? 'text-slate-800' : 'text-slate-400'}`}>
+                    <td className={`p-4 font-medium ${isAssigned ? 'text-slate-800' : 'text-slate-600'}`}>{t.description}</td>
+                    <td className={`p-4 text-right font-medium ${isAssigned ? 'text-slate-800' : 'text-slate-400'}`}>
                       {new Intl.NumberFormat('ko-KR').format(t.amount)}원
                     </td>
                   </tr>

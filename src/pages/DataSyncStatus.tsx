@@ -68,7 +68,7 @@ export const DataSyncStatus: React.FC = () => {
           <div className="flex items-center space-x-3 mb-2">
             <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase">System Online</span>
+              <span className="text-[10px] text-emerald-400 font-medium tracking-widest uppercase">System Online</span>
             </div>
             <div className="text-[10px] text-slate-500 font-mono tracking-wider">NODE: AWS-RDS-APNE2</div>
           </div>
@@ -90,7 +90,7 @@ export const DataSyncStatus: React.FC = () => {
             className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-sm transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="text-xs font-bold tracking-widest uppercase">Force Sync</span>
+            <span className="text-xs font-medium tracking-widest uppercase">Force Sync</span>
           </button>
         </div>
       </div>
@@ -101,7 +101,7 @@ export const DataSyncStatus: React.FC = () => {
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <Database className="w-16 h-16" />
           </div>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">Active Data Nodes</p>
+          <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest mb-1">Active Data Nodes</p>
           <p className="text-3xl font-light font-mono text-white">{logs.length}<span className="text-sm text-slate-500 ml-2">FILES</span></p>
         </div>
         
@@ -109,7 +109,7 @@ export const DataSyncStatus: React.FC = () => {
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <Activity className="w-16 h-16" />
           </div>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Records Synced</p>
+          <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest mb-1">Total Records Synced</p>
           <p className="text-3xl font-light font-mono text-white">{totalRecords.toLocaleString()}<span className="text-sm text-slate-500 ml-2">ROWS</span></p>
         </div>
 
@@ -117,7 +117,7 @@ export const DataSyncStatus: React.FC = () => {
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <Server className="w-16 h-16" />
           </div>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1">Storage Status</p>
+          <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest mb-1">Storage Status</p>
           <p className="text-3xl font-light font-mono text-emerald-400">OPTIMAL</p>
         </div>
       </div>
@@ -167,7 +167,7 @@ export const DataSyncStatus: React.FC = () => {
                       <FileBox className="w-5 h-5 text-blue-400/70" />
                     </div>
                     <div>
-                      <h3 className="text-sm text-slate-200 font-bold tracking-wide">
+                      <h3 className="text-sm text-slate-200 font-medium tracking-wide">
                         {getFileName(log.source_file_name)}
                       </h3>
                       <p className="text-[10px] text-slate-500 font-mono mt-1 break-all">
@@ -178,7 +178,7 @@ export const DataSyncStatus: React.FC = () => {
                   <div className="flex flex-col items-end">
                     <div className="flex items-center space-x-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-sm border border-emerald-500/20 mb-2">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[9px] text-emerald-400 font-bold tracking-wider">SYNCED</span>
+                      <span className="text-[9px] text-emerald-400 font-medium tracking-wider">SYNCED</span>
                     </div>
                     <span className="text-2xl font-light font-mono text-white tabular-nums">
                       {log.record_count.toLocaleString()}
@@ -190,7 +190,7 @@ export const DataSyncStatus: React.FC = () => {
                 {/* Timeline Visualization */}
                 <div className="mt-auto pt-5 border-t border-slate-800/50">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center">
+                    <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest flex items-center">
                       <CalendarRange className="w-3 h-3 mr-1.5" /> Data Horizon
                     </span>
                     <span className="text-[10px] text-slate-500 font-mono">

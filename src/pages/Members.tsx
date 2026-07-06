@@ -243,7 +243,7 @@ export default function Members() {
         </div>
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center gap-2 px-5 py-3 bg-brand-mint text-white font-bold rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/20 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-3 bg-brand-mint text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/20 cursor-pointer"
         >
           <UserPlus size={18} /> 신규 회원 등록
         </button>
@@ -266,7 +266,7 @@ export default function Members() {
                 className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/40 text-sm font-medium"
               />
             </div>
-            <div className="text-xs font-bold text-slate-400">
+            <div className="text-xs font-medium text-slate-400">
               총 {filteredMembers.length}명의 회원 검색됨
             </div>
           </div>
@@ -281,12 +281,12 @@ export default function Members() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider pl-6">회원번호</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">이름</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">연락처</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">회원구분</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">등록일자</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right pr-6">관리</th>
+                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider pl-6">회원번호</th>
+                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">이름</th>
+                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">연락처</th>
+                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">회원구분</th>
+                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">등록일자</th>
+                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider text-right pr-6">관리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -298,10 +298,10 @@ export default function Members() {
                         selectedMember?.id === member.id ? 'bg-brand-mint/5 hover:bg-brand-mint/5' : ''
                       }`}
                     >
-                      <td className="p-4 text-sm font-bold text-slate-700 pl-6">{member.memberId}</td>
+                      <td className="p-4 text-sm font-medium text-slate-700 pl-6">{member.memberId}</td>
                       <td className="p-4 text-sm font-semibold text-slate-800">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-xs ${
                             member.memberType === 'VIP' ? 'bg-amber-100 text-amber-600' :
                             member.memberType === '골프회원' ? 'bg-emerald-100 text-emerald-600' :
                             member.memberType === '콘도회원' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'
@@ -313,7 +313,7 @@ export default function Members() {
                       </td>
                       <td className="p-4 text-sm text-slate-500 font-medium">{member.phone}</td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           member.memberType === 'VIP' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
                           member.memberType === '골프회원' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
                           member.memberType === '콘도회원' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
@@ -357,7 +357,7 @@ export default function Members() {
               <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 text-slate-300">
                 <User size={32} />
               </div>
-              <h3 className="text-lg font-bold text-slate-700">회원 이용내역 분석</h3>
+              <h3 className="text-lg font-medium text-slate-700">회원 이용내역 분석</h3>
               <p className="text-sm text-slate-400 mt-2 max-w-[200px] mx-auto leading-relaxed">
                 좌측 목록에서 회원을 선택하시면 이번 달 업장별 이용 이력을 실시간 조회합니다.
               </p>
@@ -368,7 +368,7 @@ export default function Members() {
               {/* Member detail header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand-mint/10 text-brand-mint rounded-xl flex items-center justify-center font-bold text-base">
+                  <div className="w-10 h-10 bg-brand-mint/10 text-brand-mint rounded-xl flex items-center justify-center font-medium text-base">
                     {selectedMember.name.charAt(0)}
                   </div>
                   <div>
@@ -386,12 +386,12 @@ export default function Members() {
 
               {/* Date pickers to filter history */}
               <div className="space-y-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                <div className="text-xs font-medium text-slate-500 flex items-center gap-1">
                   <Calendar size={14} className="text-brand-mint" /> 조회 기간 설정
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 mb-1">시작일</label>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">시작일</label>
                     <input 
                       type="date" 
                       value={localStartDate}
@@ -400,7 +400,7 @@ export default function Members() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 mb-1">종료일</label>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">종료일</label>
                     <input 
                       type="date" 
                       value={localEndDate}
@@ -439,8 +439,8 @@ export default function Members() {
                         
                         <div className="space-y-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-bold text-slate-400">{evt.target_date}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            <span className="text-[11px] font-medium text-slate-400">{evt.target_date}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                               evt.category === '골프' ? 'bg-emerald-50 text-emerald-600' :
                               evt.category === '숙박' ? 'bg-indigo-50 text-indigo-600' :
                               evt.category === '식음' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-600'
@@ -449,11 +449,11 @@ export default function Members() {
                             </span>
                           </div>
                           <div className="bg-slate-50/50 hover:bg-slate-50 p-3 rounded-xl border border-slate-100 transition-colors">
-                            <div className="text-xs font-bold text-slate-700">{evt.shop_name}</div>
+                            <div className="text-xs font-medium text-slate-700">{evt.shop_name}</div>
                             <div className="text-[11px] text-slate-500 mt-1 flex justify-between items-center font-medium">
                               <span>{evt.item_name} ({evt.quantity}개)</span>
                               {evt.credit_amount !== null && (
-                                <span className="font-bold text-slate-800 text-xs">
+                                <span className="font-medium text-slate-800 text-xs">
                                   {formatCurrency(evt.credit_amount ?? evt.total_amount)}
                                 </span>
                               )}
@@ -489,7 +489,7 @@ export default function Members() {
             
             <form onSubmit={handleAddMember} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">회원번호 (자동 권장)</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원번호 (자동 권장)</label>
                 <input 
                   type="text" 
                   value={formMemberId}
@@ -500,7 +500,7 @@ export default function Members() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">회원명</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원명</label>
                 <input 
                   type="text" 
                   value={formName}
@@ -511,7 +511,7 @@ export default function Members() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">휴대폰 번호</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">휴대폰 번호</label>
                 <input 
                   type="tel" 
                   value={formPhone}
@@ -522,11 +522,11 @@ export default function Members() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">회원구분</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원구분</label>
                 <select 
                   value={formType}
                   onChange={(e) => setFormType(e.target.value as '골프회원' | '콘도회원' | '일반회원' | 'VIP')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
                 >
                   <option value="일반회원">일반회원</option>
                   <option value="골프회원">골프회원</option>
@@ -562,7 +562,7 @@ export default function Members() {
             
             <form onSubmit={handleEditMember} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">회원번호</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원번호</label>
                 <input 
                   type="text" 
                   value={formMemberId}
@@ -572,7 +572,7 @@ export default function Members() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">회원명</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원명</label>
                 <input 
                   type="text" 
                   value={formName}
@@ -582,7 +582,7 @@ export default function Members() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">휴대폰 번호</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">휴대폰 번호</label>
                 <input 
                   type="tel" 
                   value={formPhone}
@@ -592,11 +592,11 @@ export default function Members() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">회원구분</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원구분</label>
                 <select 
                   value={formType}
                   onChange={(e) => setFormType(e.target.value as '골프회원' | '콘도회원' | '일반회원' | 'VIP')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
                 >
                   <option value="일반회원">일반회원</option>
                   <option value="골프회원">골프회원</option>

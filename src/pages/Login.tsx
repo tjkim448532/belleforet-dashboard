@@ -37,7 +37,7 @@ export default function Login() {
             <Lock size={36} strokeWidth={2.5} />
           </div>
           <div className="font-emphatic text-3xl tracking-widest text-brand-mint mb-2">BELLE FORET</div>
-          <h1 className="text-2xl font-bold tracking-tight mb-3">임직원 전용 대시보드</h1>
+          <h1 className="text-2xl font-medium tracking-tight mb-3">임직원 전용 대시보드</h1>
           <p className="text-sm text-slate-500 font-medium">벨포레 회사 이메일로 로그인하세요.</p>
         </div>
 
@@ -81,7 +81,7 @@ export default function Login() {
               />
             </div>
             {error && (
-              <p className="text-red-500 text-sm mt-3 font-bold px-2 text-center animate-pulse">
+              <p className="text-red-500 text-sm mt-3 font-medium px-2 text-center animate-pulse">
                 이메일 도메인 또는 비밀번호가 올바르지 않습니다.
               </p>
             )}
@@ -89,7 +89,7 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full py-4 mt-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all text-white bg-brand-mint hover:bg-[#009c85] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 text-lg"
+            className="w-full py-4 mt-4 rounded-2xl font-medium flex items-center justify-center gap-2 transition-all text-white bg-brand-mint hover:bg-[#009c85] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 text-lg"
           >
             <LogIn size={22} />
             로그인

@@ -134,7 +134,7 @@ export default function AdminDaolRules() {
   return (
     <div className="p-4 lg:p-8 space-y-8 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">객실 패키지 분배 관리</h1>
+        <h1 className="text-2xl font-medium text-slate-800 tracking-tight">객실 패키지 분배 관리</h1>
         <p className="text-slate-500 mt-2 text-sm">
           객실 패키지 요금(ROOM_TICKET_MAPPING)에 포함된 식음/레져 쿠폰의 원가를 각 본부로 배분하는 룰을 설정합니다.
         </p>
@@ -142,7 +142,7 @@ export default function AdminDaolRules() {
 
       {(unmappedRooms.length > 0 || unmappedTickets.length > 0) && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
-          <div className="flex items-center gap-2 mb-2 font-bold text-red-600">
+          <div className="flex items-center gap-2 mb-2 font-medium text-red-600">
             <AlertCircle size={20} />
             <span>최근 7일 내 미분류 항목 알림 (노션 알람 연동됨)</span>
           </div>
@@ -190,7 +190,7 @@ export default function AdminDaolRules() {
         </div>
 
         <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3">
-          <label className="block text-xs font-bold text-slate-700">분배 대상 (어느 본부/영업장으로 얼마를 떼어줄 것인가)</label>
+          <label className="block text-xs font-medium text-slate-700">분배 대상 (어느 본부/영업장으로 얼마를 떼어줄 것인가)</label>
           
           {allocations.map((alloc, idx) => (
             <div key={idx} className="flex items-center gap-3">
@@ -245,9 +245,9 @@ export default function AdminDaolRules() {
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-6 py-4 text-slate-500">
                     {rule.rule_type === 'ROOM_TICKET_MAPPING' ? (
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">객실 단가 차감</span>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">객실 단가 차감</span>
                     ) : (
-                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-bold">티켓 비율 분배</span>
+                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">티켓 비율 분배</span>
                     )}
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-800">{rule.source_name}</td>

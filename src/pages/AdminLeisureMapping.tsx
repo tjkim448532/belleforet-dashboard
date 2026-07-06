@@ -94,7 +94,7 @@ export default function AdminLeisureMapping() {
   return (
     <div className="p-4 lg:p-8 space-y-8 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">레져본부 영업장 그룹핑</h1>
+        <h1 className="text-2xl font-medium text-slate-800 tracking-tight">레져본부 영업장 그룹핑</h1>
         <p className="text-slate-500 mt-2 text-sm">
           사이드바의 '레져본부' 하위에 노출될 메뉴(그룹)를 생성하고, 각 그룹에 어떤 실제 영업장 데이터를 묶을지 설정합니다.
         </p>
@@ -103,7 +103,7 @@ export default function AdminLeisureMapping() {
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 text-sm text-blue-800">
         <AlertCircle size={20} className="shrink-0 text-blue-500" />
         <div>
-          <p className="font-bold mb-1">그룹핑 가이드</p>
+          <p className="font-medium mb-1">그룹핑 가이드</p>
           <ul className="list-disc pl-4 space-y-1">
             <li>여기서 만든 그룹명은 좌측 사이드바 레져본부 메뉴에 그대로 노출됩니다.</li>
             <li>한 그룹 안에 식음업장, 티켓업장 등 여러 DB 영업장 이름을 추가해 매출을 하나로 묶어볼 수 있습니다. (예: 목장 그룹 = 목장 + 목장체험 + 얼룩말 카페)</li>
@@ -141,7 +141,7 @@ export default function AdminLeisureMapping() {
         {leisureGroups.map(group => (
           <div key={group.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="border-b border-slate-100 bg-slate-50 px-6 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+              <h3 className="font-medium text-slate-800 text-lg flex items-center gap-2">
                 📂 {group.name}
               </h3>
               <button 
@@ -161,7 +161,7 @@ export default function AdminLeisureMapping() {
                   <div className="flex flex-wrap gap-2">
                     {group.facilities.map(facility => (
                       <div key={facility} className="inline-flex items-center gap-1.5 bg-brand-mint/10 border border-brand-mint/20 text-brand-mint px-3 py-1.5 rounded-full text-sm">
-                        <span className="font-bold">{facility}</span>
+                        <span className="font-medium">{facility}</span>
                         <button 
                           onClick={() => handleRemoveFacilityFromGroup(group.id!, group.name, group.facilities, facility)}
                           className="text-brand-mint/60 hover:text-red-500 transition-colors p-0.5 rounded-full hover:bg-white"

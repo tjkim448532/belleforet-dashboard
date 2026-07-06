@@ -92,13 +92,13 @@ export default function Layout() {
         </div>
         
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-          <div className="text-xs font-bold text-slate-400 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
+          <div className="text-xs font-medium text-slate-400 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
           
           {visibleMenuItems.map((item, idx) => (
             <NavLink
               key={idx}
               to={item.path}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-bold transition-all rounded-xl ${
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl ${
                 isActive && (item.path === '/' ? window.location.pathname === '/' : true)
                   ? 'bg-brand-mint/10 text-brand-mint'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
@@ -120,7 +120,7 @@ export default function Layout() {
             <div className="mt-2">
             <button
               onClick={() => setResortOpen(!resortOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
             >
               <div className="flex items-center gap-3">
                 <Hotel size={20} />
@@ -162,7 +162,7 @@ export default function Layout() {
             <div className="mt-2">
             <button
               onClick={() => setManagementOpen(!managementOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
             >
               <div className="flex items-center gap-3">
                 <Briefcase size={20} />
@@ -193,7 +193,7 @@ export default function Layout() {
           <div className="mt-2">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
             >
               <div className="flex items-center gap-3">
                 <Ticket size={20} />
@@ -230,7 +230,7 @@ export default function Layout() {
               <>
                 <NavLink
                   to="/matrix"
-                  className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+                  className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
                     isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
                   }`}
                 >
@@ -243,7 +243,7 @@ export default function Layout() {
             {isAdmin && (
               <NavLink
                 to="/admin/simulator"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
               >
                 <ShieldCheck size={20} className="text-brand-mint" />
                 관리자 센터 입장
@@ -251,14 +251,14 @@ export default function Layout() {
             )}
             <button
               onClick={() => setPwdModalOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-bold text-sm"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
             >
               <Key size={20} />
               비밀번호 변경
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-bold text-sm"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
             >
             <LogOut size={20} />
             로그아웃
@@ -296,14 +296,14 @@ export default function Layout() {
             >
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+            <h3 className="text-xl font-medium text-slate-800 mb-2 flex items-center gap-2">
               <Key className="text-brand-mint" size={24} /> 비밀번호 변경
             </h3>
             <p className="text-sm text-slate-500 mb-6 font-medium">현재 접속된 계정 ({userEmail})의 비밀번호를 새로 설정합니다.</p>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">새 비밀번호 (6자리 이상)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">새 비밀번호 (6자리 이상)</label>
                 <input 
                   type="password"
                   value={newPwd}
@@ -315,7 +315,7 @@ export default function Layout() {
               <button
                 onClick={handleChangePassword}
                 disabled={isChangingPwd || newPwd.length < 6}
-                className="w-full py-3 bg-brand-mint text-white font-bold rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-50 mt-4"
+                className="w-full py-3 bg-brand-mint text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-50 mt-4"
               >
                 {isChangingPwd ? '변경하는 중...' : '이 비밀번호로 변경하기'}
               </button>

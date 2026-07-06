@@ -170,7 +170,7 @@ export default function MatrixDashboard() {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">데이터 검증 (기존 대시보드 비교용)</h1>
+        <h1 className="text-2xl font-medium text-slate-800 tracking-tight">데이터 검증 (기존 대시보드 비교용)</h1>
         <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
           기준일자: {startDate}
         </div>
@@ -240,7 +240,7 @@ export default function MatrixDashboard() {
                     </tr>
                   ))}
                   <tr className="bg-amber-50 font-semibold text-slate-800 border-t border-b-2 border-amber-200/50">
-                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-bold text-slate-800">{sub.category}</td>
+                    <td className="p-2 border-r-2 border-slate-300 text-left pl-4 font-medium text-slate-800">{sub.category}</td>
                     <td className="p-2">{formatCurrency(sub.today.actual)}</td>
                     <td className="p-2">{formatCurrency(sub.today.lastYear)}</td>
                     <td className={`p-2 border-r-2 border-slate-300 ${getGrowth(sub.today.actual, sub.today.lastYear) >= 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatGrowth(getGrowth(sub.today.actual, sub.today.lastYear))}</td>
@@ -258,7 +258,7 @@ export default function MatrixDashboard() {
             })}
 
             {/* NET ROW */}
-            <tr className="bg-red-50 font-bold text-red-800 border-t-2 border-red-200">
+            <tr className="bg-red-50 font-medium text-red-800 border-t-2 border-red-200">
               <td className="p-3 border-r-2 border-slate-300 text-left pl-4">NET</td>
               <td className="p-3">{formatCurrency(netTotal.today.actual)}</td>
               <td className="p-3">{formatCurrency(netTotal.today.lastYear)}</td>
@@ -320,13 +320,13 @@ export default function MatrixDashboard() {
         <div className="fixed bottom-0 left-0 right-0 bg-blue-600 text-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 p-4 border-t-4 border-blue-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="bg-blue-800 rounded-full w-8 h-8 flex items-center justify-center font-bold">{checkedShops.length}</div>
-              <h3 className="font-bold text-lg">선택된 항목 실적 합계</h3>
+              <div className="bg-blue-800 rounded-full w-8 h-8 flex items-center justify-center font-medium">{checkedShops.length}</div>
+              <h3 className="font-medium text-lg">선택된 항목 실적 합계</h3>
             </div>
             <div className="flex gap-8 text-right">
               <div>
                 <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">금일 실적</p>
-                <p className="font-bold text-xl">{formatCurrency(checkedTotal.today.actual)} </p>
+                <p className="font-medium text-xl">{formatCurrency(checkedTotal.today.actual)} </p>
                 <p className={`text-sm mt-1 font-medium ${getGrowth(checkedTotal.today.actual, checkedTotal.today.lastYear) >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
                   전년비: {formatGrowth(getGrowth(checkedTotal.today.actual, checkedTotal.today.lastYear))}%
                 </p>
@@ -334,7 +334,7 @@ export default function MatrixDashboard() {
               <div className="w-px bg-blue-500/50"></div>
               <div>
                 <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">월누계 실적</p>
-                <p className="font-bold text-xl">{formatCurrency(checkedTotal.mtd.actual)} </p>
+                <p className="font-medium text-xl">{formatCurrency(checkedTotal.mtd.actual)} </p>
                 <p className={`text-sm mt-1 font-medium ${getGrowth(checkedTotal.mtd.actual, checkedTotal.mtd.lastYear) >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
                   전년비: {formatGrowth(getGrowth(checkedTotal.mtd.actual, checkedTotal.mtd.lastYear))}%
                 </p>
@@ -342,7 +342,7 @@ export default function MatrixDashboard() {
               <div className="w-px bg-blue-500/50"></div>
               <div>
                 <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">연누계 실적</p>
-                <p className="font-bold text-xl">{formatCurrency(checkedTotal.ytd.actual)} </p>
+                <p className="font-medium text-xl">{formatCurrency(checkedTotal.ytd.actual)} </p>
                 <p className={`text-sm mt-1 font-medium ${getGrowth(checkedTotal.ytd.actual, checkedTotal.ytd.lastYear) >= 0 ? 'text-red-300' : 'text-blue-300'}`}>
                   전년비: {formatGrowth(getGrowth(checkedTotal.ytd.actual, checkedTotal.ytd.lastYear))}%
                 </p>

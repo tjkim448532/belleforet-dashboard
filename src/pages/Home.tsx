@@ -60,7 +60,7 @@ export default function Home() {
   if (apiError && !loading) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-xl font-bold text-red-500">{apiError}</div>
+        <div className="text-xl font-medium text-red-500">{apiError}</div>
       </div>
     );
   }
@@ -68,7 +68,7 @@ export default function Home() {
   if (loading || !displayData) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-xl font-bold text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
+        <div className="text-xl font-medium text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function Home() {
         {apiError && (
           <div className="bg-orange-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
             <AlertCircle size={24} />
-            <span className="font-bold text-lg">{apiError}</span>
+            <span className="font-medium text-lg">{apiError}</span>
           </div>
         )}
 
@@ -142,7 +142,7 @@ export default function Home() {
               </span>
               <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
+            <h1 className="text-3xl font-medium tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -155,7 +155,7 @@ export default function Home() {
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
               <div className="flex justify-between items-start mb-6 relative z-10">
-                <h2 className="text-base font-bold text-slate-500 flex items-center gap-2">
+                <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
                   선택 기간 총매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
                   <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
@@ -174,8 +174,8 @@ export default function Home() {
                     )}
                     {weather && (
                       <div className="text-right">
-                        <div className="text-[10px] font-bold text-brand-mint mb-0.5">현재 날씨</div>
-                        <div className="font-bold text-brand-mint text-base flex items-center justify-end gap-1">
+                        <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
+                        <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
                           {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
                           {weather.weatherDesc || '맑음'}
                         </div>
@@ -221,7 +221,7 @@ export default function Home() {
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-bold mb-1">객실 점유율 (Occ)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1">객실 점유율 (Occ)</div>
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
                   </div>
@@ -229,7 +229,7 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-bold mb-2">객단가 (ADR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-2">객단가 (ADR)</div>
                   <div className="flex justify-between px-1 text-teal-700 items-end">
                     <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr16)}</span></div>
                     <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr35)}</span></div>
@@ -239,7 +239,7 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-bold mb-1">객실당 매출 (RevPAR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1">객실당 매출 (RevPAR)</div>
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
                   </div>
@@ -247,7 +247,7 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-bold mb-1">객실당 총매출 (TrevPAR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
                   </div>
@@ -306,7 +306,7 @@ export default function Home() {
             {/* 본부별 매출 파이 차트 */}
             {pieChartData.length > 0 && (
               <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <h3 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
                   <Coins className="w-5 h-5 text-brand-mint" />
                   관리자 센터 그룹별 매출 비중
                 </h3>
@@ -343,7 +343,7 @@ export default function Home() {
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                           <span className="text-sm font-semibold text-slate-700">{entry.name}</span>
                         </div>
-                        <div className="text-xl font-bold text-slate-800">
+                        <div className="text-xl font-medium text-slate-800">
                           {formatCurrency(entry.value)}<span className="text-sm font-normal text-slate-500 ml-1">원</span>
                         </div>
                       </div>
@@ -355,7 +355,7 @@ export default function Home() {
 
             {/* Math Explanation Card */}
             <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
                 <Calculator className="w-5 h-5 text-brand-mint" />
                 지표 산출 공식 및 근거 데이터
               </h3>

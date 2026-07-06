@@ -68,7 +68,7 @@ export default function DailySalesReport() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">일일 매출 보고서</h2>
+          <h2 className="text-2xl font-medium">일일 매출 보고서</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">부서별 일계, 월누계, 연누계 목표 및 실적 매트릭스</p>
         </div>
         
@@ -94,14 +94,14 @@ export default function DailySalesReport() {
       {accumulated && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-[#131A2A] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2">이번 달 누적 객실 매출 (MTD)</h3>
-            <div className="text-3xl font-bold text-emerald-600">
+            <h3 className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-2">이번 달 누적 객실 매출 (MTD)</h3>
+            <div className="text-3xl font-medium text-emerald-600">
               {formatCurrency(accumulated.mtd_room_revenue)}원
             </div>
           </div>
           <div className="bg-white dark:bg-[#131A2A] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2">올해 누적 총매출 (YTD)</h3>
-            <div className="text-3xl font-bold text-blue-600">
+            <h3 className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-2">올해 누적 총매출 (YTD)</h3>
+            <div className="text-3xl font-medium text-blue-600">
               {formatCurrency(accumulated.ytd_total_gross)}원
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function DailySalesReport() {
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131A2A] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-medium text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" rowSpan={2}>구분</th>
                 <th scope="col" className="px-6 py-4 text-center border-r border-slate-200 dark:border-slate-800" colSpan={3}>금일 실적 (Daily)</th>
@@ -163,7 +163,7 @@ export default function DailySalesReport() {
                       key={idx} 
                       className={`
                         hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors
-                        ${isTotalRow ? 'bg-amber-50/30 dark:bg-amber-900/10 font-bold' : ''}
+                        ${isTotalRow ? 'bg-amber-50/30 dark:bg-amber-900/10 font-medium' : ''}
                       `}
                     >
                       <td className="px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 pl-8">
@@ -177,7 +177,7 @@ export default function DailySalesReport() {
                         {formatCurrency(row.today_ly)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getGrowthColor(dailyGrowth)}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(dailyGrowth)}`}>
                           {Number(dailyGrowth) > 0 ? '+' : ''}{dailyGrowth}%
                         </span>
                       </td>
@@ -189,7 +189,7 @@ export default function DailySalesReport() {
                         {formatCurrency(row.mtd_ly)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getGrowthColor(mtdGrowth)}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(mtdGrowth)}`}>
                           {Number(mtdGrowth) > 0 ? '+' : ''}{mtdGrowth}%
                         </span>
                       </td>
@@ -201,7 +201,7 @@ export default function DailySalesReport() {
                         {formatCurrency(row.ytd_ly)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getGrowthColor(ytdGrowth)}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(ytdGrowth)}`}>
                           {Number(ytdGrowth) > 0 ? '+' : ''}{ytdGrowth}%
                         </span>
                       </td>

@@ -83,7 +83,7 @@ export default function GolfBusiness() {
   if (loading || !data) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-xl font-bold text-brand-mint animate-pulse">골프사업본부 데이터를 불러오는 중입니다...</div>
+        <div className="text-xl font-medium text-brand-mint animate-pulse">골프사업본부 데이터를 불러오는 중입니다...</div>
       </div>
     );
   }
@@ -108,7 +108,7 @@ export default function GolfBusiness() {
               </span>
               <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
+            <h1 className="text-3xl font-medium tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
             <p className="text-white/80 mt-1">골프 예약 현황 및 매장별 정산 실적 리포트입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -120,10 +120,10 @@ export default function GolfBusiness() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
           {/* Golf Revenue */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-sm font-bold text-slate-500 mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-medium text-slate-500 mb-4 flex items-center gap-2">
               <Coins className="w-5 h-5 text-emerald-500" /> 선택 기간 골프 총매출
             </h2>
-            <div className="text-3xl font-bold text-slate-800 tracking-tight">
+            <div className="text-3xl font-medium text-slate-800 tracking-tight">
               {formatCurrency(golfRevenue)}
             </div>
             <p className="text-xs text-slate-400 mt-2">정산 시트 기준 골프(그린피, 카트, 레스토랑 등) 총합</p>
@@ -131,10 +131,10 @@ export default function GolfBusiness() {
 
           {/* Visited Teams */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
+            <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
               <Flag className="w-5 h-5 text-emerald-500" /> 실제 내장 팀수
             </h2>
-            <div className="text-3xl font-bold text-slate-800 tracking-tight">
+            <div className="text-3xl font-medium text-slate-800 tracking-tight">
               {visitedTeams}팀
             </div>
             <p className="text-xs text-slate-400 mt-2">골프-내장객 고유 예약번호 개수</p>
@@ -142,10 +142,10 @@ export default function GolfBusiness() {
 
           {/* Visited Players */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-base font-bold text-slate-500 mb-4 flex items-center gap-2">
+            <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-500" /> 실제 총 내장객 수
             </h2>
-            <div className="text-3xl font-bold text-emerald-600 tracking-tight">
+            <div className="text-3xl font-medium text-emerald-600 tracking-tight">
               {formatNumber(visitedPlayers)}명
             </div>
             <p className="text-xs text-slate-400 mt-2">실제 입장하여 라운딩을 진행한 플레이어 수</p>
@@ -154,23 +154,23 @@ export default function GolfBusiness() {
 
         {/* Detailed Booking Analysis */}
         <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
-          <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <h2 className="text-base font-medium text-slate-800 mb-6 flex items-center gap-2">
             📊 예약 이행 및 분석 지표
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">실제 내장 팀수</div>
-                <div className="text-3xl font-bold text-emerald-600">{visitedTeams}팀</div>
+                <div className="text-slate-500 font-medium mb-1 text-sm">실제 내장 팀수</div>
+                <div className="text-3xl font-medium text-emerald-600">{visitedTeams}팀</div>
               </div>
               <p className="text-xs text-slate-400 mt-4">실제 입장하여 라운딩을 진행한 팀 수</p>
             </div>
             
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">팀당 평균 동반 인원</div>
-                <div className="text-3xl font-bold text-slate-800">{avgPlayersPerTeam}명</div>
+                <div className="text-slate-500 font-medium mb-1 text-sm">팀당 평균 동반 인원</div>
+                <div className="text-3xl font-medium text-slate-800">{avgPlayersPerTeam}명</div>
               </div>
               <p className="text-xs text-slate-400 mt-4">실제 내장객 수 ÷ 실제 내장 팀수</p>
             </div>
@@ -179,18 +179,18 @@ export default function GolfBusiness() {
           <div className="grid grid-cols-1 sm:grid-cols-1 gap-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-bold mb-3 text-sm">1인당 평균 그린피 (객단가)</div>
+                <div className="text-slate-500 font-medium mb-3 text-sm">1인당 평균 그린피 (객단가)</div>
                 <div className="flex items-center gap-8 mb-2">
                   <div>
                     <div className="text-xs text-emerald-600 font-medium mb-1">선택 기간</div>
-                    <div className="text-3xl font-bold text-emerald-600">
+                    <div className="text-3xl font-medium text-emerald-600">
                       {formatCurrency(avgGreenFee)}
                     </div>
                   </div>
                   {lyAvgGreenFee > 0 && (
                     <div>
                       <div className="text-xs text-slate-400 font-medium mb-1">작년 동요일</div>
-                      <div className="text-3xl font-bold text-slate-400">
+                      <div className="text-3xl font-medium text-slate-400">
                         {formatCurrency(lyAvgGreenFee)}
                       </div>
                     </div>
@@ -204,7 +204,7 @@ export default function GolfBusiness() {
 
         {/* Detailed Sales Table */}
         <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <h2 className="text-base font-bold text-slate-800 mb-8 flex items-center gap-2">
+          <h2 className="text-base font-medium text-slate-800 mb-8 flex items-center gap-2">
             ⛳ 골프 세부 항목별 정산 내역
           </h2>
           
@@ -212,7 +212,7 @@ export default function GolfBusiness() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider">
                     <th className="py-4 px-6">영업장명 (항목)</th>
                     <th className="py-4 px-6 text-right">총 매출액</th>
                   </tr>
@@ -220,8 +220,8 @@ export default function GolfBusiness() {
                 <tbody className="divide-y divide-slate-50 text-sm">
                   {golfDetails.map((row, index) => (
                     <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td className="py-4 px-6 font-bold text-slate-700">{row.facility_name}</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(row.today_actual || 0)}</td>
+                      <td className="py-4 px-6 font-medium text-slate-700">{row.facility_name}</td>
+                      <td className="py-4 px-6 text-right font-medium text-slate-900">{formatCurrency(row.today_actual || 0)}</td>
                     </tr>
                   ))}
                 </tbody>

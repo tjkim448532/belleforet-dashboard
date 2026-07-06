@@ -180,7 +180,7 @@ export default function AdminRoles() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <h1 className="text-2xl font-medium text-slate-800 flex items-center gap-2">
             <Users className="text-brand-mint" />
             임직원 권한 관리
           </h1>
@@ -197,7 +197,7 @@ export default function AdminRoles() {
           <button
             onClick={handleBulkImport}
             disabled={importing || !sheetUrl}
-            className="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {importing ? '전송 중...' : '시트 내용 동기화'}
           </button>
@@ -206,7 +206,7 @@ export default function AdminRoles() {
 
       {/* Add or Update Role */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
           <Plus size={20} className="text-slate-400" />
           임직원 권한 부여 및 수정
         </h2>
@@ -254,7 +254,7 @@ export default function AdminRoles() {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-brand-mint text-white font-bold rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-6 py-2 bg-brand-mint text-white font-medium rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <Save size={18} />
             {saving ? '저장 중...' : '저장하기'}
@@ -263,7 +263,7 @@ export default function AdminRoles() {
         <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 flex items-start gap-3">
           <ShieldAlert className="text-amber-500 shrink-0 mt-0.5" size={18} />
           <div className="text-sm text-amber-800">
-            <strong>주의사항:</strong> 권한을 부여하기 전, 대상자가 반드시 <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="underline font-bold text-amber-900">Firebase 콘솔 (Authentication)</a>에 가입(등록)되어 있어야 실제로 로그인이 가능합니다. 이 화면은 등록된 사용자가 어떤 메뉴를 볼 수 있는지만 결정합니다.
+            <strong>주의사항:</strong> 권한을 부여하기 전, 대상자가 반드시 <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="underline font-medium text-amber-900">Firebase 콘솔 (Authentication)</a>에 가입(등록)되어 있어야 실제로 로그인이 가능합니다. 이 화면은 등록된 사용자가 어떤 메뉴를 볼 수 있는지만 결정합니다.
           </div>
         </div>
       </div>
@@ -271,7 +271,7 @@ export default function AdminRoles() {
       {/* Role List */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <h2 className="text-lg font-bold text-slate-800">등록된 권한 목록</h2>
+          <h2 className="text-lg font-medium text-slate-800">등록된 권한 목록</h2>
           <div className="text-sm text-slate-500">총 {roles.length}명</div>
         </div>
         
@@ -293,13 +293,13 @@ export default function AdminRoles() {
               <tbody className="divide-y divide-slate-100">
                 {roles.map((roleObj) => (
                   <tr key={roleObj.email} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-800 font-bold">{roleObj.name || '-'}</td>
+                    <td className="px-6 py-4 text-slate-800 font-medium">{roleObj.name || '-'}</td>
                     <td className="px-6 py-4 text-slate-600 font-medium">{roleObj.email}</td>
                     <td className="px-6 py-4">
                       <select
                         value={roleObj.role}
                         onChange={(e) => handleInlineRoleChange(roleObj.email, e.target.value)}
-                        className={`inline-block px-3 py-1.5 rounded-lg text-sm font-bold border-0 cursor-pointer focus:ring-2 focus:ring-brand-mint/50 outline-none
+                        className={`inline-block px-3 py-1.5 rounded-lg text-sm font-medium border-0 cursor-pointer focus:ring-2 focus:ring-brand-mint/50 outline-none
                           ${roleObj.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
                             roleObj.role === 'executive' ? 'bg-yellow-100 text-yellow-800' :
                             roleObj.role === 'leisure' ? 'bg-blue-100 text-blue-800' :

@@ -63,7 +63,7 @@ export default function AdminMapping() {
   return (
     <div className="p-4 lg:p-8 space-y-8 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">매장 분류 매핑 관리</h1>
+        <h1 className="text-2xl font-medium text-slate-800 tracking-tight">매장 분류 매핑 관리</h1>
         <p className="text-slate-500 mt-2 text-sm">
           S3 원본 데이터에서 들어오는 매장명을 어느 본부(카테고리)에 매칭시킬지 설정합니다.
           여기서 설정된 값은 대시보드 합계 계산의 기준이 됩니다.

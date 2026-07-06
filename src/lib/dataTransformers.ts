@@ -296,9 +296,16 @@ export const transformHomeData = (core: CoreDataState) => {
         dynamicDailyCapacity += Number(rt.total_capacity || 0);
         
         const qty = Number(rt.qty || rt.visitors || 0);
-        const weightedQty = Number(rt.rooms_sold_weighted || qty);
+        let pureQty = qty;
         
-        totalProductsSold += qty;
+        // [Hotfix] 백엔드에서 51평 qty가 가중치(2배) 포함으로 내려오는 현상 방어
+        if (rt.facility_name.includes('51평') && !rt.rooms_sold_weighted) {
+          pureQty = Math.round(qty / 2);
+        }
+        
+        const weightedQty = Number(rt.rooms_sold_weighted || (rt.facility_name.includes('51평') ? pureQty * 2 : pureQty));
+        
+        totalProductsSold += pureQty;
         hybridOccupiedRooms += weightedQty;
         
         if (rt.facility_name.includes('16평')) {

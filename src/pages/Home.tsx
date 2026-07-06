@@ -71,7 +71,9 @@ export default function Home() {
         } else if (name.includes('35평')) {
           rev35 += rev; sold35 += sold;
         } else if (name.includes('51평')) {
-          rev51 += rev; sold51 += sold;
+          // [Hotfix] 백엔드에서 51평 qty가 가중치(2배) 포함으로 내려오는 현상 방어
+          const pureSold = (item.rooms_sold_weighted) ? sold : Math.round(sold / 2);
+          rev51 += rev; sold51 += pureSold;
         }
       });
     }
@@ -300,16 +302,22 @@ export default function Home() {
                 <div className="bg-slate-50 p-4 rounded-xl flex flex-col justify-between">
                   <div>
                     <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">수익성 지표 (RevPAR / TrevPAR)</h4>
-                    <ul className="space-y-3 text-slate-600">
+                    <ul className="space-y-4 text-slate-600">
                       <li className="flex flex-col">
-                        <span className="font-medium">객실당 매출 (RevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}원</span>
-                        <span className="text-xs text-slate-400 font-mono mt-1">
+                        <span className="font-medium text-slate-800">객실당 매출 (RevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}원</span>
+                        <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
+                          <strong>경영 의미:</strong> 빈 방을 포함한 모든 보유 객실이 평균적으로 벌어들인 순수 객실 매출입니다. <strong>객실 판매의 실질적인 효율성</strong>을 나타냅니다.
+                        </div>
+                        <span className="text-xs text-slate-400 font-mono mt-1.5">
                           = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalRoomRev) : 0}원 (객실 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
                         </span>
                       </li>
-                      <li className="flex flex-col">
-                        <span className="font-medium">객실당 총매출 (TrevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}원</span>
-                        <span className="text-xs text-slate-400 font-mono mt-1">
+                      <li className="flex flex-col pt-2 border-t border-slate-200 border-dashed">
+                        <span className="font-medium text-slate-800">객실당 총매출 (TrevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}원</span>
+                        <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
+                          <strong>경영 의미:</strong> 식음료, 부대시설 등을 포함해 리조트 전체 시설이 객실 1개당 창출한 총매출입니다. <strong>리조트 전체의 종합적인 수익 창출 능력</strong>을 보여줍니다.
+                        </div>
+                        <span className="text-xs text-slate-400 font-mono mt-1.5">
                           = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevNet) : 0}원 (리조트 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
                         </span>
                       </li>

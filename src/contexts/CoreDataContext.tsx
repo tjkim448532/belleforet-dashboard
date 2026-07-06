@@ -59,24 +59,6 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           corePayload.weather = res.weather;
         }
 
-        fetch('http://localhost:9999', { method: 'POST', body: JSON.stringify({ source: 'v4', weather: corePayload.weather }) }).catch(()=>null);
-
-        const hasValidWeather = corePayload.weather && (corePayload.weather.current || corePayload.weather.lastYear || corePayload.weather.weatherDesc);
-
-        // V4 API(startDate, endDate) 호출 시 백엔드가 날씨를 빈 객체나 null로 내려줄 경우를 대비한 강력한 백업 호출
-        if (!hasValidWeather && startDate === endDate) {
-          try {
-            const wRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${startDate}`);
-            const w = wRes.data?.weather || wRes.weather || wRes.data?.core?.weather;
-            fetch('http://localhost:9999', { method: 'POST', body: JSON.stringify({ source: 'fallback', weather: w }) }).catch(()=>null);
-            if (w) {
-              corePayload.weather = w;
-            }
-          } catch (e) {
-            console.error('Failed to fetch weather fallback', e);
-          }
-        }
-
         setState({
           core: corePayload,
           summary: null, // Merged into core

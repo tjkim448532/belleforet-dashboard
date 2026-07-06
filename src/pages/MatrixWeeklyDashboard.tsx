@@ -34,23 +34,6 @@ export default function MatrixWeeklyDashboard() {
         const result = res.data || res;
         const dataArray = Array.isArray(result) ? result : (result.data || []);
         
-        const hasValidWeather = coreData.core?.weather && (coreData.core.weather.current || coreData.core.weather.lastYear || coreData.core.weather.weatherDesc);
-
-        // Fetch weather for startDate specifically if it's missing from global state
-        if (!hasValidWeather) {
-          try {
-            // 날씨 전용 호출은 무조건 date 파라미터만 사용 (백엔드 API 특성)
-            const weatherRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?date=${startDate}`);
-            const w = weatherRes.data?.weather || weatherRes.weather || weatherRes.data?.core?.weather;
-            if (w) {
-              setCurrentWeather(w.current || null);
-              setLastYearWeather(w.lastYear || null);
-            }
-          } catch (e) {
-            console.error('Failed to fetch weather', e);
-          }
-        }
-        
         const map: Record<string, MatrixRow> = {};
         dataArray.forEach((row: any) => {
           if (row.category_code) {

@@ -1,1 +1,0 @@
-const http = require('http'); const server = http.createServer((req, res) => { res.setHeader('Access-Control-Allow-Origin', '*'); let body = ''; req.on('data', chunk => body += chunk); req.on('end', () => { console.log('INTERCEPTED:', body.substring(0, 5000)); res.end('ok'); }); }); server.listen(9999, () => console.log('Listening on 9999'));

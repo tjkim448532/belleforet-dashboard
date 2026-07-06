@@ -232,13 +232,21 @@ export default function MatrixWeeklyDashboard() {
 
   const getWeatherIcon = (desc: string) => {
     if (!desc) return '';
-    if (desc.includes('비') || desc.includes('소나기')) return '🌧️';
-    if (desc.includes('눈')) return '❄️';
-    if (desc.includes('구름') || desc.includes('흐림')) return '⛅';
+    if (desc.includes('눈') || desc.includes('스노우')) return '❄️';
+    if (desc.includes('비')) return '🌧️';
+    if (desc.includes('구름') || desc.includes('흐림')) return '☁️';
     return '☀️';
   };
 
-  const dynamicTitle = `${currDateStr} ${getWeatherIcon(currentWeather?.weatherDesc || '')} vs ${lyDateFormattedStr} ${getWeatherIcon(lastYearWeather?.weatherDesc || '')}`;
+  const getWeatherText = (weather: any) => {
+    if (!weather) return '';
+    const desc = weather.weatherDesc || '맑음';
+    const icon = getWeatherIcon(desc);
+    const tempText = (weather.tempMax && weather.tempMin) ? ` ${weather.tempMax}°/${weather.tempMin}°` : '';
+    return `[${icon} ${desc}${tempText}]`;
+  };
+
+  const dynamicTitle = `${currDateStr} ${getWeatherText(currentWeather)} vs ${lyDateFormattedStr} ${getWeatherText(lastYearWeather)}`;
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">

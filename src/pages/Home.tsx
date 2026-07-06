@@ -71,9 +71,7 @@ export default function Home() {
         } else if (name.includes('35평')) {
           rev35 += rev; sold35 += sold;
         } else if (name.includes('51평')) {
-          // [Hotfix] 백엔드에서 51평 qty가 가중치(2배) 포함으로 내려오는 현상 방어
-          const pureSold = (item.rooms_sold_weighted) ? sold : Math.round(sold / 2);
-          rev51 += rev; sold51 += pureSold;
+          rev51 += rev; sold51 += sold;
         }
       });
     }

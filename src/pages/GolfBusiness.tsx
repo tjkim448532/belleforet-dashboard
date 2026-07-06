@@ -176,17 +176,25 @@ export default function GolfBusiness() {
           <div className="grid grid-cols-1 sm:grid-cols-1 gap-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-bold mb-1 text-sm">1인당 평균 그린피 (객단가)</div>
-                <div className="text-3xl font-bold text-emerald-600 mb-1">
-                  {formatCurrency(avgGreenFee)}
-                </div>
-                {lyAvgGreenFee > 0 && (
-                  <div className="text-sm text-emerald-600/80 font-medium">
-                    작년 동요일: {formatCurrency(lyAvgGreenFee)}
+                <div className="text-slate-500 font-bold mb-3 text-sm">1인당 평균 그린피 (객단가)</div>
+                <div className="flex items-center gap-8 mb-2">
+                  <div>
+                    <div className="text-xs text-emerald-600 font-medium mb-1">선택 기간</div>
+                    <div className="text-3xl font-bold text-emerald-600">
+                      {formatCurrency(avgGreenFee)}
+                    </div>
                   </div>
-                )}
+                  {lyAvgGreenFee > 0 && (
+                    <div>
+                      <div className="text-xs text-slate-400 font-medium mb-1">작년 동요일</div>
+                      <div className="text-3xl font-bold text-slate-400">
+                        {formatCurrency(lyAvgGreenFee)}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-slate-400 mt-4">선택 기간 그린피 총 매출 ÷ 내장객 수</p>
+              <p className="text-xs text-slate-400 mt-4 border-t border-slate-100 pt-3">선택 기간 그린피 총 매출 ÷ 내장객 수</p>
             </div>
           </div>
         </div>

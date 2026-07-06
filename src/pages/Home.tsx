@@ -229,8 +229,18 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div className="text-slate-500 font-semibold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="text-3xl font-semibold text-brand-mint mb-1">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
-                  <div className="text-sm text-brand-mint/80 font-medium mb-3">작년 동요일: {formatCurrency(displayData.golfSummary?.ly_avgGreenFee || 0)}</div>
+                  <div className="flex items-center gap-8 mb-4">
+                    <div>
+                      <div className="text-xs text-brand-mint font-medium mb-1">선택 기간</div>
+                      <div className="text-3xl font-semibold text-brand-mint">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
+                    </div>
+                    {displayData.golfSummary?.ly_avgGreenFee > 0 && (
+                      <div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">작년 동요일</div>
+                        <div className="text-3xl font-semibold text-slate-400">{formatCurrency(displayData.golfSummary.ly_avgGreenFee)}</div>
+                      </div>
+                    )}
+                  </div>
                   <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">선택 기간 그린피 매출 ÷ 입장객 수</div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">

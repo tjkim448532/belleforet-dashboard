@@ -17,6 +17,7 @@ body {
 
 html {
   color-scheme: light;
+  font-size: 17px; /* 기본 16px에서 17px로 상향 조정 (모든 텍스트 및 레이아웃 요소 약간 확대) */
 }
 
 .font-emphatic {

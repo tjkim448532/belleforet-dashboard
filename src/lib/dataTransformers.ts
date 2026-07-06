@@ -323,14 +323,14 @@ export const transformHomeData = (core: CoreDataState) => {
   hybridOccupiedRooms += Math.max(0, soldOther);
 
   const totalRoomRev = Number(r.lodging_revenue || 0);
-  // Use net revenue (actual) instead of gross as per guide
-  const totalResortRevNet = Number(c.today?.actual || 0);
+  // Use gross revenue (VAT inclusive) for TrevPAR
+  const totalResortRevGross = Number(c.today?.gross || c.today?.actual || 0);
 
   const kpiMetrics = {
     totalOcc: totalInventory > 0 ? (hybridOccupiedRooms / totalInventory) * 100 : 0,
     totalADR: totalProductsSold > 0 ? (totalRoomRev / totalProductsSold) : 0,
     revPAR: totalInventory > 0 ? (totalRoomRev / totalInventory) : 0,
-    trevPAR: totalInventory > 0 ? (totalResortRevNet / totalInventory) : 0,
+    trevPAR: totalInventory > 0 ? (totalResortRevGross / totalInventory) : 0,
     days: days,
     weekdayDays: r.weekdayDays || 0,
     weekendDays: r.weekendDays || 0,
@@ -338,7 +338,7 @@ export const transformHomeData = (core: CoreDataState) => {
       totalRoomRev,
       totalProductsSold,
       totalInventory,
-      totalResortRevNet
+      totalResortRevGross
     }
   };
 

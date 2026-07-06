@@ -73,14 +73,14 @@ export default function Home() {
     );
   }
 
-  // Use net revenue instead of gross
-  const todayGross = displayData.today.actual;
-  const todayLyGross = displayData.today.ly_actual;
+  // Use gross revenue (VAT inclusive)
+  const todayGross = displayData.today.gross;
+  const todayLyGross = displayData.today.ly_gross;
   const todayDiff = todayGross - todayLyGross;
   const todayPct = todayLyGross > 0 ? (todayDiff / todayLyGross) * 100 : 0;
   
-  const ytdGross = displayData.ytd.actual;
-  const ytdLyGross = displayData.ytd.ly_actual;
+  const ytdGross = displayData.ytd.gross;
+  const ytdLyGross = displayData.ytd.ly_gross;
   const ytdDiff = ytdGross - ytdLyGross;
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
@@ -92,7 +92,8 @@ export default function Home() {
     if (displayData?.roomTypeBreakdown) {
       displayData?.roomTypeBreakdown?.forEach((item: any) => {
         const name = item.facility_name || '';
-        const rev = item.today_actual || item.gross || 0;
+        // Prioritize gross for VAT inclusive calculation
+        const rev = item.gross || item.today_actual || 0;
         const sold = Number(item.room_bookings || item.qty || item.visitors || 0);
         if (name.includes('16평')) {
           rev16 += rev; sold16 += sold;

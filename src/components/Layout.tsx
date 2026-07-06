@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
@@ -10,6 +10,8 @@ import {
 export default function Layout() {
   const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSynergy = location.pathname === '/synergy';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
@@ -60,18 +62,31 @@ export default function Layout() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
       
       {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
+      {sidebarOpen && !isSynergy && (
         <div 
           className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
+      {/* Synergy Fullscreen Hover Trigger */}
+      {isSynergy && !sidebarOpen && (
+        <div 
+          className="fixed inset-y-0 left-0 w-6 z-40 bg-transparent cursor-pointer"
+          onMouseEnter={() => setSidebarOpen(true)}
+        />
+      )}
+
       {/* Sidebar - Belleforet Light Theme */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm`}>
+      <aside 
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${!isSynergy ? 'lg:translate-x-0' : ''} transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm`}
+        onMouseLeave={() => {
+          if (isSynergy) setSidebarOpen(false);
+        }}
+      >
         <div className="p-6 flex items-center justify-between border-b border-slate-100">
           <h2 className="text-2xl font-emphatic text-brand-mint tracking-widest">BELLE FORET</h2>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors">
+          <button onClick={() => setSidebarOpen(false)} className={`${isSynergy ? '' : 'lg:hidden'} text-slate-400 hover:text-slate-600 transition-colors`}>
             <X size={24} />
           </button>
         </div>
@@ -90,7 +105,9 @@ export default function Layout() {
               }`}
               onClick={(e) => {
                 if (item.path.startsWith('#')) e.preventDefault();
-                else setSidebarOpen(false);
+                else {
+                  if (!isSynergy || window.innerWidth < 1024) setSidebarOpen(false);
+                }
               }}
             >
               {item.icon}
@@ -120,7 +137,7 @@ export default function Layout() {
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
-                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                    if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
                   }}
                 >
                   경영 현황 대시보드
@@ -131,7 +148,7 @@ export default function Layout() {
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
-                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                    if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
                   }}
                 >
                   회원관리
@@ -162,10 +179,10 @@ export default function Layout() {
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
-                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                    if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
                   }}
                 >
-                  영업보고 문자보내기
+                  일일영업보고 문자보내기
                 </NavLink>
               </div>
             )}
@@ -191,11 +208,11 @@ export default function Layout() {
                   <NavLink
                     key={group.id}
                     to={`/leisure/${group.id}`}
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive ? 'text-brand-mint bg-brand-mint/5' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                     }`}
                     onClick={() => { 
-                      if (window.innerWidth < 1024) setSidebarOpen(false);
+                      if (window.innerWidth < 1024 || isSynergy) setSidebarOpen(false);
                     }}
                   >
                     {group.name}
@@ -250,7 +267,7 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
+      <main className={`flex-1 flex flex-col min-w-0 ${!isSynergy ? 'lg:ml-64' : ''} transition-all duration-300`}>
         {/* Topbar for mobile */}
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-3">

@@ -28,9 +28,25 @@ export default function MatrixWeeklyDashboard() {
     const fetchWeekly = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+        
+        // Fetch matrix weekly data
         const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/matrix-weekly?date=${startDate}`);
         const result = res.data || res;
         const dataArray = Array.isArray(result) ? result : (result.data || []);
+        
+        // Fetch weather for startDate specifically if it's missing from global state
+        if (!coreData.core?.weather) {
+          try {
+            const weatherRes = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?startDate=${startDate}&endDate=${startDate}`);
+            const w = weatherRes.data?.weather || weatherRes.weather || weatherRes.data?.core?.weather;
+            if (w) {
+              setCurrentWeather(w.current || null);
+              setLastYearWeather(w.lastYear || null);
+            }
+          } catch (e) {
+            console.error('Failed to fetch weather', e);
+          }
+        }
         
         const map: Record<string, MatrixRow> = {};
         dataArray.forEach((row: any) => {
@@ -45,7 +61,7 @@ export default function MatrixWeeklyDashboard() {
     };
     
     fetchWeekly();
-  }, [startDate]);
+  }, [startDate, coreData.core?.weather]);
 
   useEffect(() => {
     if (coreData.core?.weather) {

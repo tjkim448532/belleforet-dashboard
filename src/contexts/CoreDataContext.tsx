@@ -47,13 +47,22 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      const queryParams = `startDate=${startDate}&endDate=${endDate}`;
+      // 단일 날짜일 경우 백엔드의 날씨 API가 date 파라미터에 의존할 수 있으므로 분기 처리
+      const queryParams = startDate === endDate 
+        ? `date=${startDate}` 
+        : `startDate=${startDate}&endDate=${endDate}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);
 
+        let corePayload = res.data || res;
+        // 백엔드 응답에서 weather가 root 객체에 분리되어 내려올 경우 병합 처리
+        if (res.weather && !corePayload.weather) {
+          corePayload.weather = res.weather;
+        }
+
         setState({
-          core: res.data || res,
+          core: corePayload,
           summary: null, // Merged into core
           matrix: null, 
           isLoading: false,

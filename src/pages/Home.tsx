@@ -4,9 +4,12 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
+import { useMapping } from '../contexts/MappingContext';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
+  const { getCategoryForStore } = useMapping();
   const coreData = useCoreData();
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -27,6 +30,31 @@ export default function Home() {
     const rounded = Math.round(val || 0);
     return new Intl.NumberFormat('ko-KR').format(rounded);
   };
+
+  const pieChartData = React.useMemo(() => {
+    if (!coreData.core?.gridData) return [];
+    
+    const depth2Totals: Record<string, number> = {};
+    coreData.core.gridData.forEach((g: any) => {
+      // Aggregate by depth2. '전체' is depth3 sum in Belleforet data.
+      if (g.depth3 === '전체') {
+        depth2Totals[g.depth2] = g.salesAmount || 0;
+      }
+    });
+
+    const categoryTotals: Record<string, number> = {};
+    Object.keys(depth2Totals).forEach(store => {
+      const cat = getCategoryForStore(store);
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + depth2Totals[store];
+    });
+
+    return Object.keys(categoryTotals).map(cat => ({
+      name: cat,
+      value: categoryTotals[cat]
+    })).filter(c => c.value > 0).sort((a, b) => b.value - a.value);
+  }, [coreData.core?.gridData, getCategoryForStore]);
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];
 
 
   if (apiError && !loading) {
@@ -273,6 +301,56 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* 본부별 매출 파이 차트 */}
+            {pieChartData.length > 0 && (
+              <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-brand-mint" />
+                  관리자 센터 그룹별 매출 비중
+                </h3>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                  <div className="w-full md:w-1/2 h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={100}
+                          innerRadius={60}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieChartData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [`${formatCurrency(value)}원`, '매출액']}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                        <Legend verticalAlign="bottom" height={36} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
+                    {pieChartData.map((entry, index) => (
+                      <div key={entry.name} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                          <span className="text-sm font-semibold text-slate-700">{entry.name}</span>
+                        </div>
+                        <div className="text-xl font-bold text-slate-800">
+                          {formatCurrency(entry.value)}<span className="text-sm font-normal text-slate-500 ml-1">원</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Math Explanation Card */}
             <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">

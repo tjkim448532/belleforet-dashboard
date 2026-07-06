@@ -198,7 +198,7 @@ export default function ResortBusiness() {
       .filter(r => r.roomSize === '16평' || r.roomSize === '35평' || r.roomSize === '51평')
       .map(r => ({ 
         name: r.roomSize, 
-        value: r.roomSize === '51평' ? r.sold / 2 : r.sold 
+        value: r.sold 
       }))
       .filter(d => d.value > 0);
       

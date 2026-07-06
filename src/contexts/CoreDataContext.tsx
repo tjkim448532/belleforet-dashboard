@@ -47,10 +47,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // 단일 날짜일 경우 백엔드의 날씨 API가 date 파라미터에 의존할 수 있으므로 분기 처리
-      const queryParams = startDate === endDate 
-        ? `date=${startDate}` 
-        : `startDate=${startDate}&endDate=${endDate}`;
+      // 백엔드 V4 표준 파라미터인 startDate, endDate를 모든 경우에 일관되게 사용합니다.
+      const queryParams = `startDate=${startDate}&endDate=${endDate}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);

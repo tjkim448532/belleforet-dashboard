@@ -124,10 +124,10 @@ export default function ResortBusiness() {
       let displayRate = '0%';
       
       if (key === '16평') {
-        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
+        rate = g.cap > 0 ? Math.round(((g.sold + (groups['51평'].sold / 2)) / g.cap) * 100) : 0;
         displayRate = `${rate}%`;
       } else if (key === '35평') {
-        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
+        rate = g.cap > 0 ? Math.round(((g.sold + (groups['51평'].sold / 2)) / g.cap) * 100) : 0;
         displayRate = `${rate}%`;
       } else if (key === '51평') {
         rate = 0; // N/A conceptually
@@ -182,7 +182,10 @@ export default function ResortBusiness() {
   const pieOptions = (() => {
     const pieData = roomOccupancyData
       .filter(r => r.roomSize === '16평' || r.roomSize === '35평' || r.roomSize === '51평')
-      .map(r => ({ name: r.roomSize, value: r.sold }))
+      .map(r => ({ 
+        name: r.roomSize, 
+        value: r.roomSize === '51평' ? r.sold / 2 : r.sold 
+      }))
       .filter(d => d.value > 0);
       
     if (pieData.length === 0) return null;

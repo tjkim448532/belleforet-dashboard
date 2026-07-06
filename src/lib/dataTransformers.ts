@@ -310,8 +310,9 @@ export const transformHomeData = (core: CoreDataState) => {
   // Calculate unmapped (Other) rooms to prevent leakage
   const soldOther = totalProductsSold - sold16 - sold35 - sold51;
   
-  // Total OCC hybrid calculation: 16평 + 35평 + (51평 * 2) + 기타객실
-  const hybridOccupiedRooms = sold16 + sold35 + (sold51 * 2) + Math.max(0, soldOther);
+  // Total OCC hybrid calculation: 16평 + 35평 + 51평 + 기타객실
+  // (51평 is already pre-multiplied by 2 from the backend)
+  const hybridOccupiedRooms = sold16 + sold35 + sold51 + Math.max(0, soldOther);
 
   const totalRoomRev = Number(r.lodging_revenue || 0);
   // Use net revenue (actual) instead of gross as per guide

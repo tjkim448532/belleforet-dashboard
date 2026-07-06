@@ -11,7 +11,7 @@ interface SummaryData {
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
   resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; gross?: number; };
-  roomTypeBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; total_capacity: number; }[];
+  roomTypeBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; total_capacity: number; rooms_sold_weighted?: number; }[];
   channelBreakdown?: { facility_name: string; today_actual: number; qty?: number; visitors?: number; }[];
     rateTypeBreakdown?: { facility_name: string; today_actual: number; qty?: number; visitors?: number; }[];
 }
@@ -72,22 +72,28 @@ export default function ResortBusiness() {
       const revenue = summary.today_actual || summary.gross || summary.lodging_revenue || 0;
       
       let roomsSold = summary.rooms_sold || 0;
-      // If roomTypeBreakdown is available, calculate actual sold rooms without 51평 double counting
+      // 물리적 판매 객실 수 (가동률 계산용)는 rooms_sold_weighted 사용
       if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
         roomsSold = data.roomTypeBreakdown.reduce((sum, item) => {
-          let qty = Number(item.visitors || item.qty || 0);
-          return sum + qty;
+          let physicalQty = Number(item.rooms_sold_weighted || item.qty || 0);
+          return sum + physicalQty;
         }, 0);
       }
       
-      const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
+      // 만약 전체 ADR도 순수 예약 건수 기준으로 보여주고 싶다면 아래의 totalBookings를 사용하세요.
+      let totalBookings = roomsSold;
+      if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
+        totalBookings = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      }
+      const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
       return { revenue, roomsSold, adr };
     }
     
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
       const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.today_actual || item.gross || 0), 0);
-      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.visitors || item.qty || 0), 0);
-      const adr = roomsSold > 0 ? Math.round(revenue / roomsSold) : 0;
+      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.rooms_sold_weighted || item.qty || 0), 0);
+      const totalBookings = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
       return { revenue, roomsSold, adr };
     }
 

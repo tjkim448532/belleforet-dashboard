@@ -47,8 +47,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // 백엔드 V4 표준 파라미터인 startDate, endDate를 사용합니다.
-      const queryParams = `startDate=${startDate}&endDate=${endDate}`;
+      // 백엔드 V4 표준 파라미터인 startDate, endDate를 사용합니다. (캐시 무시용 타임스탬프 추가)
+      const queryParams = `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);

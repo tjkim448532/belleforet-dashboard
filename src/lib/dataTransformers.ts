@@ -181,13 +181,13 @@ export const transformHomeData = (core: CoreDataState) => {
     rooms: c.rooms || [],
     roomTypeBreakdown: c.roomTypeBreakdown || [],
     golfSummary: {
-      reservedTeams: c.golfSummary?.reservedTeams || 0,
-      visitedTeams: c.golfSummary?.visitedTeams || 0,
-      visitedPlayers: c.golfSummary?.visitedPlayers || 0,
-      avgGreenFee: c.golfSummary?.avgGreenFee || c.golfSummary?.avg_green_fee || 0,
-      ly_avgGreenFee: c.golfSummary?.ly_avgGreenFee || c.golfSummary?.ly_avg_green_fee || 0,
-      memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || c.golfSummary?.member_avg_green_fee || 0,
-      nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || c.golfSummary?.non_member_avg_green_fee || 0
+      reservedTeams: c.golfSummary?.reserved_teams || c.golfSummary?.reservedTeams || 0,
+      visitedTeams: c.golfSummary?.visited_teams || c.golfSummary?.visitedTeams || 0,
+      visitedPlayers: c.golfSummary?.visited_players || c.golfSummary?.visitedPlayers || 0,
+      avgGreenFee: c.golfSummary?.avg_green_fee || c.golfSummary?.avgGreenFee || 0,
+      ly_avgGreenFee: c.golfSummary?.ly_avg_green_fee || c.golfSummary?.ly_avgGreenFee || 0,
+      memberAvgGreenFee: c.golfSummary?.member_avg_green_fee || c.golfSummary?.memberAvgGreenFee || 0,
+      nonMemberAvgGreenFee: c.golfSummary?.non_member_avg_green_fee || c.golfSummary?.nonMemberAvgGreenFee || 0
     },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
     qa_metrics: c.qa_metrics || null
@@ -222,9 +222,9 @@ export const transformExecutiveData = (core: CoreDataState) => {
     kpiData: {
       total_revenue_today: c.today_actual ?? c.today?.today_actual ?? c.today?.gross ?? c.today?.actual ?? 0,
       dod_growth: 0,
-      rooms_sold: c.resortSummary?.rooms_sold || 0,
-      golf_visited_players: c.golfSummary?.visitedPlayers || 0,
-      golf_visited_teams: c.golfSummary?.visitedTeams || 0,
+      rooms_sold: c.resortSummary?.sales_qty || c.resortSummary?.rooms_sold || 0,
+      golf_visited_players: c.golfSummary?.visited_players || c.golfSummary?.visitedPlayers || 0,
+      golf_visited_teams: c.golfSummary?.visited_teams || c.golfSummary?.visitedTeams || 0,
       ytd_goal_pct: c.kpi?.ytd_goal_pct || 0
     },
     revenueData: { summary: summaryList, details }

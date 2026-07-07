@@ -77,7 +77,7 @@ export default function ResortBusiness() {
       const summary = data.resortSummary;
       const revenue = Number(summary.today_actual) || 0;
       
-      let roomsSold = summary.rooms_sold || 0;
+      let roomsSold = summary.sales_qty || summary.rooms_sold || 0;
       let totalBookings = roomsSold;
 
       if (data.rooms && data.rooms.length > 0) {

@@ -34,6 +34,13 @@ export default function GolfBusiness() {
         const payload = json.data ?? json;
         if (payload) {
           const golfBreakdown = payload.golfFacilityBreakdown ?? [];
+          const filteredBreakdown = golfBreakdown.filter((x: any) => {
+            const name = x.facility_name || '';
+            if (name.includes('Posting')) return false;
+            const nonGolfKeywords = ['ROOM', '남도예담', '브리스킷', '쿠치나', '루지', '목장', '마리나'];
+            if (nonGolfKeywords.some(keyword => name.toUpperCase().includes(keyword))) return false;
+            return true;
+          });
           const golf_revenue = payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.gross || x.today_actual || 0), 0);
           setData({
             success: json.success ?? true,
@@ -45,7 +52,7 @@ export default function GolfBusiness() {
               golf_avg_green_fee: payload.golfSummary?.avgGreenFee ?? payload.golfSummary?.avg_green_fee ?? 0,
               golf_ly_avg_green_fee: payload.golfSummary?.ly_avgGreenFee ?? payload.golfSummary?.ly_avg_green_fee ?? 0,
             },
-            golfFacilityBreakdown: payload.golfFacilityBreakdown ?? []
+            golfFacilityBreakdown: filteredBreakdown
           });
         }
       } catch (err) {

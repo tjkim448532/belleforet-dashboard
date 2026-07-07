@@ -130,16 +130,16 @@ export default function MatrixDashboard() {
 
   const grandTotal = {
     today: { 
-      actual: coreData.core?.today?.gross !== undefined ? Number(coreData.core.today.gross) : netTotal.today.actual + vatTotal.today.actual, 
-      lastYear: coreData.core?.today?.ly_gross !== undefined ? Number(coreData.core.today.ly_gross) : netTotal.today.lastYear + vatTotal.today.lastYear 
+      actual: netTotal.today.actual + vatTotal.today.actual, 
+      lastYear: netTotal.today.lastYear + vatTotal.today.lastYear 
     },
     mtd: { 
-      actual: coreData.core?.mtd?.gross !== undefined ? Number(coreData.core.mtd.gross) : netTotal.mtd.actual + vatTotal.mtd.actual, 
-      lastYear: coreData.core?.mtd?.ly_gross !== undefined ? Number(coreData.core.mtd.ly_gross) : netTotal.mtd.lastYear + vatTotal.mtd.lastYear 
+      actual: netTotal.mtd.actual + vatTotal.mtd.actual, 
+      lastYear: netTotal.mtd.lastYear + vatTotal.mtd.lastYear 
     },
     ytd: { 
-      actual: coreData.core?.ytd?.gross !== undefined ? Number(coreData.core.ytd.gross) : netTotal.ytd.actual + vatTotal.ytd.actual, 
-      lastYear: coreData.core?.ytd?.ly_gross !== undefined ? Number(coreData.core.ytd.ly_gross) : netTotal.ytd.lastYear + vatTotal.ytd.lastYear 
+      actual: netTotal.ytd.actual + vatTotal.ytd.actual, 
+      lastYear: netTotal.ytd.lastYear + vatTotal.ytd.lastYear 
     },
   };
 

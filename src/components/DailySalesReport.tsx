@@ -4,7 +4,8 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
 interface SalesData {
-  category: string;
+  category?: string;
+  category_code?: string;
   shop_name: string;
   today_actual: number;
   today_ly: number;
@@ -12,7 +13,126 @@ interface SalesData {
   mtd_ly: number;
   ytd_actual: number;
   ytd_ly: number;
+  isCategory?: boolean;
+  isChild?: boolean;
+  isFooter?: boolean;
 }
+
+const processSalesData = (rawData: SalesData[]) => {
+  // 1. Filter out old fake "... Total" rows
+  const filtered = rawData.filter(r => !r.shop_name?.includes('Total'));
+  
+  // 2. Normalize shop names
+  const normalizedMap = new Map<string, SalesData>();
+  
+  filtered.forEach(item => {
+    let rawName = item.shop_name || '알수없음';
+    // Remove " - Posting", " - Posting ", "-Posting"
+    rawName = rawName.replace(/\s*-\s*Posting\s*/i, '');
+    // Remove all spaces
+    rawName = rawName.replace(/\s+/g, '');
+    // Group variations (e.g., 놀이동산(2024) -> 놀이동산)
+    if (rawName.includes('놀이동산')) rawName = '놀이동산';
+    if (rawName.includes('사계절썰매')) rawName = '사계절썰매장';
+    if (rawName.includes('마리나클럽')) rawName = '마리나클럽';
+    
+    // Determine category
+    const cat = item.category_code || item.category || 'OTHER'; // ensure OTHER is handled
+    const key = `${cat}_${rawName}`;
+    
+    if (normalizedMap.has(key)) {
+      const existing = normalizedMap.get(key)!;
+      existing.today_actual += Number(item.today_actual || 0);
+      existing.today_ly += Number(item.today_ly || 0);
+      existing.mtd_actual += Number(item.mtd_actual || 0);
+      existing.mtd_ly += Number(item.mtd_ly || 0);
+      existing.ytd_actual += Number(item.ytd_actual || 0);
+      existing.ytd_ly += Number(item.ytd_ly || 0);
+    } else {
+      normalizedMap.set(key, {
+        ...item,
+        shop_name: rawName,
+        category: cat,
+        today_actual: Number(item.today_actual || 0),
+        today_ly: Number(item.today_ly || 0),
+        mtd_actual: Number(item.mtd_actual || 0),
+        mtd_ly: Number(item.mtd_ly || 0),
+        ytd_actual: Number(item.ytd_actual || 0),
+        ytd_ly: Number(item.ytd_ly || 0),
+      });
+    }
+  });
+
+  // Group by Category
+  const grouped: Record<string, SalesData[]> = {};
+  Array.from(normalizedMap.values()).forEach(item => {
+    let catName = item.category === 'ROOM' ? '객실' :
+                  item.category === 'GOLF' ? '골프장' :
+                  item.category === 'TICKET' ? '티켓/레저' :
+                  item.category === 'FNB' ? '식음' :
+                  item.category === 'MOTO' ? '모토아레나' :
+                  item.category === 'BANQUET' ? '연회' : '기타영업';
+    
+    if (!grouped[catName]) grouped[catName] = [];
+    grouped[catName].push(item);
+  });
+  
+  // Create final array with Category Parent Rows and Grand Total
+  const finalArray: SalesData[] = [];
+  const grandTotal = { today_actual: 0, today_ly: 0, mtd_actual: 0, mtd_ly: 0, ytd_actual: 0, ytd_ly: 0 };
+  
+  // Define custom sort order for categories
+  const sortOrder = ['객실', '골프장', '티켓/레저', '식음', '모토아레나', '연회', '기타영업'];
+  const sortedCategories = Object.keys(grouped).sort((a, b) => {
+    const idxA = sortOrder.indexOf(a);
+    const idxB = sortOrder.indexOf(b);
+    return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+  });
+
+  sortedCategories.forEach(catName => {
+    const children = grouped[catName];
+    // calc parent total
+    const parentTotal = children.reduce((acc, curr) => ({
+      today_actual: acc.today_actual + curr.today_actual,
+      today_ly: acc.today_ly + curr.today_ly,
+      mtd_actual: acc.mtd_actual + curr.mtd_actual,
+      mtd_ly: acc.mtd_ly + curr.mtd_ly,
+      ytd_actual: acc.ytd_actual + curr.ytd_actual,
+      ytd_ly: acc.ytd_ly + curr.ytd_ly,
+    }), { today_actual: 0, today_ly: 0, mtd_actual: 0, mtd_ly: 0, ytd_actual: 0, ytd_ly: 0 });
+    
+    grandTotal.today_actual += parentTotal.today_actual;
+    grandTotal.today_ly += parentTotal.today_ly;
+    grandTotal.mtd_actual += parentTotal.mtd_actual;
+    grandTotal.mtd_ly += parentTotal.mtd_ly;
+    grandTotal.ytd_actual += parentTotal.ytd_actual;
+    grandTotal.ytd_ly += parentTotal.ytd_ly;
+    
+    // Add Parent row
+    finalArray.push({
+      isCategory: true,
+      shop_name: catName,
+      ...parentTotal
+    });
+    
+    // Add Child rows
+    children.forEach(child => {
+      finalArray.push({
+        isChild: true,
+        ...child
+      });
+    });
+  });
+  
+  // Add Footer Row
+  finalArray.push({
+    isFooter: true,
+    shop_name: '총계 (Grand Total)',
+    ...grandTotal
+  });
+  
+  return finalArray;
+};
 
 export default function DailySalesReport() {
   const { startDate: date } = useDate();
@@ -27,7 +147,7 @@ export default function DailySalesReport() {
       const payload = result.data || result;
       if (payload && payload.dailyReportBreakdown) {
         setAccumulated(null);
-        setData(payload.dailyReportBreakdown);
+        setData(processSalesData(payload.dailyReportBreakdown));
       } else {
         setData([]);
         setAccumulated(null);
@@ -156,17 +276,23 @@ export default function DailySalesReport() {
                   const mtdGrowth = getGrowthRate(row.mtd_actual, row.mtd_ly);
                   const ytdGrowth = getGrowthRate(row.ytd_actual, row.ytd_ly);
                   
-                  const isTotalRow = row.shop_name && row.shop_name.includes('Total');
+                  const isCategory = row.isCategory;
+                  const isChild = row.isChild;
+                  const isFooter = row.isFooter;
 
                   return (
                     <tr 
                       key={idx} 
                       className={`
-                        hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors
-                        ${isTotalRow ? 'bg-amber-50/30 dark:bg-amber-900/10 font-medium' : ''}
+                        transition-colors
+                        ${isFooter ? 'bg-indigo-50 dark:bg-indigo-900/30 font-bold border-t-2 border-indigo-200 dark:border-indigo-800' : ''}
+                        ${isCategory ? 'bg-slate-100 dark:bg-slate-800/80 font-semibold' : ''}
+                        ${isChild ? 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50' : ''}
                       `}
                     >
-                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 pl-8">
+                      <td className={`px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 ${isChild ? 'pl-10 text-slate-600 dark:text-slate-400' : 'pl-6'}`}>
+                        {isCategory && <span className="mr-2 inline-block w-2 h-2 rounded-full bg-blue-500"></span>}
+                        {isChild && <span className="mr-2 text-slate-400">ㄴ</span>}
                         {row.shop_name}
                       </td>
 

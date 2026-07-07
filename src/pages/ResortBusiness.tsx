@@ -10,7 +10,7 @@ interface SummaryData {
   date: string;
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
-  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; sales_qty?: number; };
+  resortSummary?: { totalRoomRevenue?: number; totalRoomsSold?: number; lodging_revenue?: number; rooms_sold?: number; total_capacity?: number; leisure_revenue?: number; today_actual?: number; sales_qty?: number; };
   rooms?: { roomType: string; marketType: string; rateType: string; roomsSold: number; revenue: number; total_capacity?: number; rooms_sold_weighted?: number; sales_qty?: number; }[];
   roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; sales_qty?: number; pyType?: string; facility_name?: string; rooms_sold?: number; revenue?: number; }[];
   channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; sales_qty?: number; segment?: string; channel_name?: string; rooms_sold?: number; revenue?: number; }[];
@@ -31,7 +31,7 @@ export default function ResortBusiness() {
         const queryParams = startDate === endDate 
           ? `date=${endDate}` 
           : `startDate=${startDate}&endDate=${endDate}`;
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?${queryParams}`);
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (!payload) throw new Error("Invalid payload");
         
@@ -40,10 +40,10 @@ export default function ResortBusiness() {
           date: payload.date || endDate,
           ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
           today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
-          resortSummary: payload.resortSummary || null,
+          resortSummary: payload.roomSummary || payload.resortSummary || null,
           rooms: payload.rooms || null,
           roomTypeBreakdown: payload.roomTypeBreakdown || payload.visitorData?.roomTypeBreakdown || [],
-          channelBreakdown: payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || [],
+          channelBreakdown: payload.roomMarketBreakdown || payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || [],
           rateTypeBreakdown: payload.rateTypeBreakdown || []
         });
       } catch (err) {
@@ -73,11 +73,11 @@ export default function ResortBusiness() {
 
   const lodgingStats = (() => {
     if (!data) return { revenue: 0, roomsSold: 0, adr: 0 };
-    if (data.resortSummary && data.resortSummary.today_actual) {
+    if (data.resortSummary && (data.resortSummary.today_actual || data.resortSummary.totalRoomRevenue)) {
       const summary = data.resortSummary;
-      const revenue = Number(summary.today_actual) || 0;
+      const revenue = Number(summary.today_actual ?? summary.totalRoomRevenue) || 0;
       
-      let roomsSold = summary.sales_qty || summary.rooms_sold || 0;
+      let roomsSold = summary.sales_qty || summary.rooms_sold || summary.totalRoomsSold || 0;
       let totalBookings = roomsSold;
 
       if (data.rooms && data.rooms.length > 0) {

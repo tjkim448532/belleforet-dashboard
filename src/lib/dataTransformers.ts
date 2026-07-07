@@ -39,6 +39,27 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       shopName = '놀이동산';
     }
 
+    // 3. 카테고리 강제 보정 (Posting 등으로 인해 카테고리가 꼬인 경우 원상 복구)
+    if (['그린피', '카트대여', '캐디피', '프로샵'].some(k => shopName.includes(k))) {
+      categoryCode = 'GOLF';
+      categoryName = '골프장';
+    } else if (['조식', '브리스킷', '카페', '식당', '푸드코트', '치킨', '맥주', '바비큐', 'FNB', '식음', '라운지'].some(k => shopName.includes(k))) {
+      categoryCode = 'FNB';
+      categoryName = '식음업장';
+    } else if (['마리나클럽', '썰매', '놀이동산', '루지', '티켓', '목장', '미디어아트', '짚라인'].some(k => shopName.includes(k))) {
+      categoryCode = 'TICKET';
+      categoryName = '티켓업장';
+    } else if (['객실', '콘도', '룸'].some(k => shopName.includes(k))) {
+      categoryCode = 'ROOM';
+      categoryName = '객실';
+    } else if (['연회', '세미나', '대관'].some(k => shopName.includes(k))) {
+      categoryCode = 'BANQUET';
+      categoryName = '연회';
+    } else if (['모토아레나'].some(k => shopName.includes(k))) {
+      categoryCode = 'MOTO';
+      categoryName = '모토아레나';
+    }
+
     const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;
     const t_ly = Number(item.today_ly ?? item.ly_actual ?? item.today_last_year ?? item.lastYear) || 0;
     const m_act = Number(item.mtd_actual ?? item.mtdActual ?? item.mtd_sales) || 0;

@@ -25,10 +25,10 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
 
     const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;
     const t_ly = Number(item.today_ly ?? item.ly_actual ?? item.today_last_year ?? item.lastYear) || 0;
-    const m_act = Number(item.mtd_actual ?? item.mtd_sales) || 0;
-    const m_ly = Number(item.mtd_ly ?? item.mtd_last_year) || 0;
-    const y_act = Number(item.ytd_actual ?? item.ytd_sales) || 0;
-    const y_ly = Number(item.ytd_ly ?? item.ytd_last_year) || 0;
+    const m_act = Number(item.mtd_actual ?? item.mtdActual ?? item.mtd_sales) || 0;
+    const m_ly = Number(item.mtd_ly ?? item.mtdLy ?? item.mtd_last_year) || 0;
+    const y_act = Number(item.ytd_actual ?? item.ytdActual ?? item.ytd_sales) || 0;
+    const y_ly = Number(item.ytd_ly ?? item.ytdLy ?? item.ytd_last_year) || 0;
 
     rows.push({
       category: item.category_name || '기타업장',

@@ -394,7 +394,16 @@ export const transformHomeData = (core: CoreDataState) => {
       memberAvgGreenFee: c.golfSummary?.memberAvgGreenFee || c.golfSummary?.member_avg_green_fee || 0,
       nonMemberAvgGreenFee: c.golfSummary?.nonMemberAvgGreenFee || c.golfSummary?.non_member_avg_green_fee || 0
     },
-    golfFacilityBreakdown: c.golfFacilityBreakdown || [],
+    golfFacilityBreakdown: (c.golfFacilityBreakdown || [])
+      .filter((x: any) => {
+        const name = x.facility_name || '';
+        // "Posting" 제거
+        if (name.includes('Posting')) return false;
+        // 골프와 무관한 타 업장 데이터 제거 (백엔드 맵핑 오류 방어)
+        const nonGolfKeywords = ['ROOM', '남도예담', '브리스킷', '쿠치나', '루지', '목장', '마리나'];
+        if (nonGolfKeywords.some(keyword => name.toUpperCase().includes(keyword))) return false;
+        return true;
+      }),
     qa_metrics: c.qa_metrics || null
   };
 };

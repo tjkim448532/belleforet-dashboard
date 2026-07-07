@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   UserPlus, Search, Trash2, Edit3, X, Award, Clock, 
   Calendar, ChevronRight, User, AlertCircle 
@@ -241,12 +242,15 @@ export default function Members() {
           </h1>
           <p className="text-slate-500 text-sm mt-1">리조트 사업본부 산하 회원명부 및 실시간 업장에 걸친 이용 실적 추적</p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-2 px-5 py-3 bg-brand-mint text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/20 cursor-pointer"
-        >
-          <UserPlus size={18} /> 신규 회원 등록
-        </button>
+        <div className="flex items-center gap-4">
+          <GlobalDatePicker allowRange={true} />
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-2 px-5 py-3 bg-brand-mint text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/20 cursor-pointer"
+          >
+            <UserPlus size={18} /> 신규 회원 등록
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Membership list & selected member overview */}

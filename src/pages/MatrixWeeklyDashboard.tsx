@@ -3,6 +3,7 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformMatrixData, type MatrixRow } from '../lib/dataTransformers';
 import { secureFetcher } from '../lib/secureFetcher';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 
 // Utility to format currency
 const formatCurrency = (value: number) => {
@@ -240,8 +241,8 @@ export default function MatrixWeeklyDashboard() {
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-medium text-slate-800 tracking-tight">{dynamicTitle}</h1>
-        <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border">
-          기준일자: {startDate}
+        <div className="flex items-center gap-4">
+          <GlobalDatePicker allowRange={false} />
         </div>
       </div>
 

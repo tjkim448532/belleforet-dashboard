@@ -16,6 +16,14 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   const gridData = core.core.gridData;
   const rows: MatrixRow[] = [];
   const unmappedRows: MatrixRow[] = [];
+  const getCategoryCode = (category: string) => {
+    if (category.includes('객실')) return 'ROOM';
+    if (category.includes('골프')) return 'GOLF';
+    if (category.includes('식음')) return 'FNB';
+    if (category.includes('연회')) return 'BANQUET';
+    if (category.includes('티켓')) return 'TICKET';
+    return 'OTHER';
+  };
 
   const excelDataMap = new Map<string, MatrixRow>();
   EXCEL_LAYOUT.forEach(group => {
@@ -23,6 +31,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       const key = `${group.category}|${shop}`;
       excelDataMap.set(key, {
         category: group.category,
+        category_code: getCategoryCode(group.category),
         shop_name: shop,
         today: { actual: 0, lastYear: 0, growthRate: 0 },
         mtd: { actual: 0, lastYear: 0, growthRate: 0 },
@@ -113,6 +122,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       
       unmappedRows.push({
         category: defaultCategory,
+        category_code: getCategoryCode(defaultCategory),
         shop_name: `[미매핑] ${rawName}`,
         today: { actual: amount, lastYear: Number(item.lastYearSalesAmount) || 0, growthRate: 0 },
         mtd: { actual: Number(item.mtdSalesAmount) || 0, lastYear: Number(item.lastYearMtdSalesAmount) || 0, growthRate: 0 },
@@ -140,6 +150,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
           // Unmapped breakdown data
           unmappedRows.push({
             category: defaultCategory,
+            category_code: getCategoryCode(defaultCategory),
             shop_name: `[미매핑] ${rawName}`,
             today: { actual: todayActual, lastYear: Number(item.today_ly || 0), growthRate: 0 },
             mtd: { actual: mtdActual, lastYear: Number(item.mtd_ly || 0), growthRate: 0 },

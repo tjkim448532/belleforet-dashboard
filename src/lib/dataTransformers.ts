@@ -20,6 +20,10 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   const rows: MatrixRow[] = [];
 
   gridData.forEach((item: any) => {
+    // 백엔드가 V4에서 강제로 밀어넣은 '전체' 합계 로우는 프론트엔드가 직접 JS로 합산을 구하므로 제외해야 중복(Double Counting)을 막을 수 있습니다.
+    const isSubtotalRow = item.depth3 === '전체' || item.shop_name === '전체' || item.shop_name === '합계';
+    if (isSubtotalRow) return;
+
     const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;
     const t_ly = Number(item.today_ly ?? item.ly_actual ?? item.today_last_year ?? item.lastYear) || 0;
     const m_act = Number(item.mtd_actual ?? item.mtd_sales) || 0;

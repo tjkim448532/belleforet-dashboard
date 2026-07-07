@@ -73,7 +73,28 @@ export const transformHomeData = (core: CoreDataState) => {
   let totalProductsSold = 0;
   let hybridOccupiedRooms = 0;
 
-  if (c.roomTypeBreakdown) {
+  if (c.rooms && Array.isArray(c.rooms)) {
+    c.rooms.forEach((r: any) => {
+      const rt = r.roomType || '기타';
+      if (rt === '전체' || rt === '소계' || rt === '합계') return;
+
+      dynamicDailyCapacity += Number(r.total_capacity || 0); // Assuming total_capacity is per-room or omitted
+      
+      const qty = Number(r.roomsSold || 0);
+      const weightedQty = Number(r.roomsSoldWeighted || qty);
+      
+      totalProductsSold += qty;
+      hybridOccupiedRooms += weightedQty;
+      
+      if (rt.includes('16평')) {
+        sold16 += qty;
+      } else if (rt.includes('35평')) {
+        sold35 += qty;
+      } else if (rt.includes('51평')) {
+        sold51 += qty;
+      }
+    });
+  } else if (c.roomTypeBreakdown) {
       c.roomTypeBreakdown.forEach((rt: any) => {
         dynamicDailyCapacity += Number(rt.total_capacity || 0);
         
@@ -157,6 +178,7 @@ export const transformHomeData = (core: CoreDataState) => {
     adr: 0, 
     avg_green_fee: 0, 
     weekly_trend: [], 
+    rooms: c.rooms || [],
     roomTypeBreakdown: c.roomTypeBreakdown || [],
     golfSummary: {
       reservedTeams: c.golfSummary?.reservedTeams || 0,

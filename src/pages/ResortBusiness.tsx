@@ -11,6 +11,7 @@ interface SummaryData {
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
   resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; };
+  rooms?: { roomType: string; marketType: string; rateType: string; roomsSold: number; revenue: number; total_capacity?: number; rooms_sold_weighted?: number; }[];
   roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; }[];
   channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; }[];
   rateTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; }[];
@@ -40,9 +41,10 @@ export default function ResortBusiness() {
           ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
           today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
           resortSummary: payload.resortSummary || null,
+          rooms: payload.rooms || null,
           roomTypeBreakdown: payload.roomTypeBreakdown || payload.visitorData?.roomTypeBreakdown || [],
           channelBreakdown: payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || [],
-            rateTypeBreakdown: payload.rateTypeBreakdown || []
+          rateTypeBreakdown: payload.rateTypeBreakdown || []
         });
       } catch (err) {
         console.error('API Error:', err);
@@ -51,9 +53,10 @@ export default function ResortBusiness() {
           date: endDate,
           ytd: { actual: 0, ly_actual: 0 },
           today: { actual: 0, ly_actual: 0 },
+          rooms: [],
           roomTypeBreakdown: [],
           channelBreakdown: [],
-            rateTypeBreakdown: []
+          rateTypeBreakdown: []
         });
       } finally {
         setLoading(false);
@@ -75,23 +78,43 @@ export default function ResortBusiness() {
       const revenue = Number(summary.today_actual) || 0;
       
       let roomsSold = summary.rooms_sold || 0;
-      // 물리적 판매 객실 수 (가동률 계산용)는 rooms_sold_weighted 사용
-      if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
-        roomsSold = data.roomTypeBreakdown.reduce((sum, item) => {
-          let physicalQty = Number(item.rooms_sold_weighted || item.qty || 0);
-          return sum + physicalQty;
-        }, 0);
-      }
-      
-      // 만약 전체 ADR도 순수 예약 건수 기준으로 보여주고 싶다면 아래의 totalBookings를 사용하세요.
       let totalBookings = roomsSold;
-      if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
+
+      if (data.rooms && data.rooms.length > 0) {
+        roomsSold = data.rooms.reduce((sum, r) => {
+          if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
+          return sum + Number(r.rooms_sold_weighted || r.roomsSold || 0);
+        }, 0);
+        totalBookings = data.rooms.reduce((sum, r) => {
+          if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
+          return sum + Number(r.roomsSold || 0);
+        }, 0);
+      } else if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
+        roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.rooms_sold_weighted || item.qty || 0), 0);
         totalBookings = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
       }
+      
       const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
       return { revenue, roomsSold, adr };
     }
     
+    if (data.rooms && data.rooms.length > 0) {
+      const revenue = data.rooms.reduce((sum, r) => {
+        if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
+        return sum + (Number(r.revenue) || 0);
+      }, 0);
+      const roomsSold = data.rooms.reduce((sum, r) => {
+        if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
+        return sum + Number(r.rooms_sold_weighted || r.roomsSold || 0);
+      }, 0);
+      const totalBookings = data.rooms.reduce((sum, r) => {
+        if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
+        return sum + Number(r.roomsSold || 0);
+      }, 0);
+      const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
+      return { revenue, roomsSold, adr };
+    }
+
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
       const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (Number(item.today_actual) || 0), 0);
       const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.rooms_sold_weighted || item.qty || 0), 0);
@@ -104,7 +127,7 @@ export default function ResortBusiness() {
   })();
 
   const roomOccupancyData = (() => {
-    if (!data || !data.roomTypeBreakdown) return [];
+    if (!data) return [];
     
     const groups: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
       '16평': { sold: 0, cap: 0, rev: 0 },
@@ -113,22 +136,42 @@ export default function ResortBusiness() {
       '기타': { sold: 0, cap: 0, rev: 0 }
     };
 
-    data.roomTypeBreakdown.forEach(item => {
-      const name = item.shop_name;
-      const sold = Number(item.qty || 0);
-      const cap = item.total_capacity || 0;
-      const rev = Number(item.today_actual) || 0;
+    if (data.rooms && data.rooms.length > 0) {
+      data.rooms.forEach(r => {
+        const name = r.roomType || '기타';
+        if (name === '전체' || name === '소계' || name === '합계') return;
+        const sold = Number(r.roomsSold || 0);
+        const cap = Number(r.total_capacity || 0);
+        const rev = Number(r.revenue || 0);
 
-      if (name.includes('16평')) {
-        groups['16평'].sold += sold; groups['16평'].cap += cap; groups['16평'].rev += rev;
-      } else if (name.includes('35평')) {
-        groups['35평'].sold += sold; groups['35평'].cap += cap; groups['35평'].rev += rev;
-      } else if (name.includes('51평')) {
-        groups['51평'].sold += sold; groups['51평'].cap += cap; groups['51평'].rev += rev;
-      } else {
-        groups['기타'].sold += sold; groups['기타'].cap += cap; groups['기타'].rev += rev;
-      }
-    });
+        if (name.includes('16평')) {
+          groups['16평'].sold += sold; groups['16평'].cap += cap; groups['16평'].rev += rev;
+        } else if (name.includes('35평')) {
+          groups['35평'].sold += sold; groups['35평'].cap += cap; groups['35평'].rev += rev;
+        } else if (name.includes('51평')) {
+          groups['51평'].sold += sold; groups['51평'].cap += cap; groups['51평'].rev += rev;
+        } else {
+          groups['기타'].sold += sold; groups['기타'].cap += cap; groups['기타'].rev += rev;
+        }
+      });
+    } else if (data.roomTypeBreakdown) {
+      data.roomTypeBreakdown.forEach(item => {
+        const name = item.shop_name;
+        const sold = Number(item.qty || 0);
+        const cap = item.total_capacity || 0;
+        const rev = Number(item.today_actual) || 0;
+
+        if (name.includes('16평')) {
+          groups['16평'].sold += sold; groups['16평'].cap += cap; groups['16평'].rev += rev;
+        } else if (name.includes('35평')) {
+          groups['35평'].sold += sold; groups['35평'].cap += cap; groups['35평'].rev += rev;
+        } else if (name.includes('51평')) {
+          groups['51평'].sold += sold; groups['51평'].cap += cap; groups['51평'].rev += rev;
+        } else {
+          groups['기타'].sold += sold; groups['기타'].cap += cap; groups['기타'].rev += rev;
+        }
+      });
+    }
 
     const result = [];
     const keys = ['16평', '35평', '51평', '기타'];
@@ -169,31 +212,71 @@ export default function ResortBusiness() {
   })();
 
   const channelAdrData = (() => {
-    if (!data || !data.channelBreakdown) return [];
-    return data.channelBreakdown.map(item => {
-      const revenue = Number(item.today_actual) || 0;
-      const sold = Number(item.qty || 0);
-      return {
-        channel: item.shop_name,
-        roomsSold: sold,
-        totalRevenue: revenue,
-        adr: sold > 0 ? Math.round(revenue / sold) : 0
-      };
-    }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    if (!data) return [];
+    if (data.rooms && data.rooms.length > 0) {
+      const map: Record<string, { rev: number, sold: number }> = {};
+      data.rooms.forEach(r => {
+        const mt = r.marketType || '기타';
+        if (mt === '전체' || mt === '소계' || mt === '합계') return;
+        if (!map[mt]) map[mt] = { rev: 0, sold: 0 };
+        map[mt].rev += Number(r.revenue || 0);
+        map[mt].sold += Number(r.roomsSold || 0);
+      });
+      return Object.keys(map).map(k => ({
+        channel: k,
+        roomsSold: map[k].sold,
+        totalRevenue: map[k].rev,
+        adr: map[k].sold > 0 ? Math.round(map[k].rev / map[k].sold) : 0
+      })).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }
+    
+    if (data.channelBreakdown) {
+      return data.channelBreakdown.map(item => {
+        const revenue = Number(item.today_actual) || 0;
+        const sold = Number(item.qty || 0);
+        return {
+          channel: item.shop_name,
+          roomsSold: sold,
+          totalRevenue: revenue,
+          adr: sold > 0 ? Math.round(revenue / sold) : 0
+        };
+      }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }
+    return [];
   })();
 
   const rateAdrData = (() => {
-    if (!data || !data.rateTypeBreakdown) return [];
-    return data.rateTypeBreakdown.map(item => {
-      const revenue = Number(item.today_actual) || 0;
-      const sold = Number(item.qty || 0);
-      return {
-        rateType: item.shop_name,
-        roomsSold: sold,
-        totalRevenue: revenue,
-        adr: sold > 0 ? Math.round(revenue / sold) : 0
-      };
-    }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    if (!data) return [];
+    if (data.rooms && data.rooms.length > 0) {
+      const map: Record<string, { rev: number, sold: number }> = {};
+      data.rooms.forEach(r => {
+        const rat = r.rateType || '기타';
+        if (rat === '전체' || rat === '소계' || rat === '합계') return;
+        if (!map[rat]) map[rat] = { rev: 0, sold: 0 };
+        map[rat].rev += Number(r.revenue || 0);
+        map[rat].sold += Number(r.roomsSold || 0);
+      });
+      return Object.keys(map).map(k => ({
+        rateType: k,
+        roomsSold: map[k].sold,
+        totalRevenue: map[k].rev,
+        adr: map[k].sold > 0 ? Math.round(map[k].rev / map[k].sold) : 0
+      })).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }
+
+    if (data.rateTypeBreakdown) {
+      return data.rateTypeBreakdown.map(item => {
+        const revenue = Number(item.today_actual) || 0;
+        const sold = Number(item.qty || 0);
+        return {
+          rateType: item.shop_name,
+          roomsSold: sold,
+          totalRevenue: revenue,
+          adr: sold > 0 ? Math.round(revenue / sold) : 0
+        };
+      }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }
+    return [];
   })();
 
   const pieOptions = (() => {

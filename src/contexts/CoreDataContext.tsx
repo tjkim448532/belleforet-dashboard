@@ -10,6 +10,7 @@ export interface RawPayload {
   ytd: { actual: number; ly_actual: number };
   golfSummary: any;
   roomTypeBreakdown: any[];
+  rooms?: any[];
   channelBreakdown: any[];
   golfFacilityBreakdown: any[];
   fnbFacilityBreakdown: any[];

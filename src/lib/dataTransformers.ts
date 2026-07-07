@@ -49,7 +49,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     if (excelDataMap.has(key)) {
       const row = excelDataMap.get(key)!;
       if (!skipTodayActual) {
-        row.today.actual += Number(item.salesAmount ?? item.sales_amount ?? item.today_actual ?? item.actual ?? item.revenue ?? 0);
+        row.today.actual += Number(item.salesAmount) || 0;
       }
       row.today.lastYear += Number(item.lastYearSalesAmount) || 0;
       
@@ -70,7 +70,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   gridData.forEach((item: any) => {
     const isDetail = item.depth3 && item.depth3 !== '전체';
     const rawName = isDetail ? item.depth3 : (item.depth2 || '기타');
-    const amount = Number(item.salesAmount ?? item.sales_amount ?? item.today_actual ?? item.actual ?? item.revenue ?? 0);
+    const amount = item.salesAmount || 0;
     
     const match = findExcelShopName(rawName);
     
@@ -257,14 +257,14 @@ export const transformHomeData = (core: CoreDataState) => {
     c.gridData.forEach((g: any) => {
       depth1Map[g.depth2] = g.depth1 || '기타';
       if (g.depth3 === '전체') {
-        depth2Totals[g.depth2] = Number(g.salesAmount ?? g.sales_amount ?? g.today_actual ?? g.actual ?? g.revenue ?? 0);
+        depth2Totals[g.depth2] = g.salesAmount || 0;
       }
     });
 
     c.gridData.forEach((g: any) => {
       // If this depth2 group didn't have an explicit '전체' aggregate, we manually sum its details
       if (g.depth3 !== '전체' && depth2Totals[g.depth2] === undefined) {
-        depth2Totals[g.depth2] = (depth2Totals[g.depth2] || 0) + Number(g.salesAmount ?? g.sales_amount ?? g.today_actual ?? g.actual ?? g.revenue ?? 0);
+        depth2Totals[g.depth2] = (depth2Totals[g.depth2] || 0) + (g.salesAmount || 0);
       }
     });
 
@@ -413,20 +413,20 @@ export const transformExecutiveData = (core: CoreDataState) => {
     c.gridData.forEach((g: any) => {
       depth1Map[g.depth2] = g.depth1 || '기타';
       if (g.depth3 === '전체') {
-        depth2Totals[g.depth2] = Number(g.salesAmount ?? g.sales_amount ?? g.today_actual ?? g.actual ?? g.revenue ?? 0);
+        depth2Totals[g.depth2] = g.salesAmount || 0;
       }
     });
 
     c.gridData.forEach((g: any) => {
       if (g.depth3 !== '전체' && depth2Totals[g.depth2] === undefined) {
-        depth2Totals[g.depth2] = (depth2Totals[g.depth2] || 0) + Number(g.salesAmount ?? g.sales_amount ?? g.today_actual ?? g.actual ?? g.revenue ?? 0);
+        depth2Totals[g.depth2] = (depth2Totals[g.depth2] || 0) + (g.salesAmount || 0);
       }
       
       // For details array, we want actual shops, not '전체'
       if (g.depth3 && g.depth3 !== '전체') {
         details.push({
           depth_2_shop: g.depth3,
-          total_sales: Number(g.salesAmount ?? g.sales_amount ?? g.today_actual ?? g.actual ?? g.revenue ?? 0)
+          total_sales: g.salesAmount || 0
         });
       } else if (!g.depth3 || g.depth3 === '전체') {
         // If there are no detail rows for this depth2, we might just push the depth2 as a fallback

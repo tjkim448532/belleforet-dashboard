@@ -83,8 +83,10 @@ export default function MatrixDashboard() {
 
   const categorySubtotals: Record<string, MatrixRow> = {};
   categoriesOrder.forEach(code => {
-    const rows = groupedData[code] || [];
-    const rawSub = calculateSubtotal(rows);
+    const allRows = groupedData[code] || [];
+    const detailRows = allRows.filter(r => !r.isSubtotal);
+    const backendSub = allRows.find(r => r.isSubtotal);
+    const rawSub = backendSub || calculateSubtotal(detailRows);
     
     categorySubtotals[code] = {
       category: categoryLabels[code],
@@ -209,8 +211,9 @@ export default function MatrixDashboard() {
           </thead>
           <tbody className="divide-y divide-slate-200 text-slate-700">
             {categoriesOrder.map(category => {
-              const rows = groupedData[category];
-              if (!rows) return null;
+              const allRows = groupedData[category];
+              if (!allRows) return null;
+              const rows = allRows.filter(r => !r.isSubtotal);
               
               const sub = categorySubtotals[category];
 

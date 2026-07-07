@@ -20,24 +20,31 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   const rows: MatrixRow[] = [];
 
   gridData.forEach((item: any) => {
+    const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;
+    const t_ly = Number(item.today_ly ?? item.ly_actual ?? item.today_last_year ?? item.lastYear) || 0;
+    const m_act = Number(item.mtd_actual ?? item.mtd_sales) || 0;
+    const m_ly = Number(item.mtd_ly ?? item.mtd_last_year) || 0;
+    const y_act = Number(item.ytd_actual ?? item.ytd_sales) || 0;
+    const y_ly = Number(item.ytd_ly ?? item.ytd_last_year) || 0;
+
     rows.push({
       category: item.category_name || '기타업장',
       category_code: item.category_code || 'OTHER',
       shop_name: item.shop_name ?? item.shopName ?? item.facility_name ?? item.name ?? (item.depth3 ? (item.depth3 === '전체' ? (item.depth2 ?? '알수없음') : item.depth3) : '알수없음'),
       today: {
-        actual: Number(item.today_actual) || 0,
-        lastYear: Number(item.today_ly) || 0,
-        growthRate: calcGrowth(Number(item.today_actual) || 0, Number(item.today_ly) || 0)
+        actual: t_act,
+        lastYear: t_ly,
+        growthRate: calcGrowth(t_act, t_ly)
       },
       mtd: {
-        actual: Number(item.mtd_actual) || 0,
-        lastYear: Number(item.mtd_ly) || 0,
-        growthRate: calcGrowth(Number(item.mtd_actual) || 0, Number(item.mtd_ly) || 0)
+        actual: m_act,
+        lastYear: m_ly,
+        growthRate: calcGrowth(m_act, m_ly)
       },
       ytd: {
-        actual: Number(item.ytd_actual) || 0,
-        lastYear: Number(item.ytd_ly) || 0,
-        growthRate: calcGrowth(Number(item.ytd_actual) || 0, Number(item.ytd_ly) || 0)
+        actual: y_act,
+        lastYear: y_ly,
+        growthRate: calcGrowth(y_act, y_ly)
       }
     });
   });

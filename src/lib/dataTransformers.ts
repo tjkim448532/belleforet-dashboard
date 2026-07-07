@@ -18,10 +18,26 @@ const calcGrowth = (actual: number, ly: number) => {
 export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   if (!core.core || !core.core.gridData) return [];
   const gridData = core.core.gridData;
-  const rows: MatrixRow[] = [];
+  const rowMap = new Map<string, MatrixRow>();
 
   gridData.forEach((item: any) => {
-    const isSubtotalRow = item.depth3 === '전체' || item.shop_name === '전체' || item.shop_name === '합계';
+    // 백엔드에서 더 이상 서브토탈 데이터를 주지 않는다고 했으므로 혹시 몰라 필터링
+    const isBackendSubtotalRow = item.depth3 === '전체' || item.shop_name === '전체' || item.shop_name === '합계';
+    if (isBackendSubtotalRow) return;
+
+    let categoryCode = item.category_code || 'OTHER';
+    let categoryName = item.category_name || '기타영업';
+
+    let shopName = item.shop_name ?? item.shopName ?? item.facility_name ?? item.name ?? (item.depth3 ? (item.depth3 === '전체' ? (item.depth2 ?? '알수없음') : item.depth3) : '알수없음');
+    
+    // 1. '- Posting' 병합 처리
+    shopName = shopName.replace(/-\s*posting/i, '').trim();
+
+    // 2. 띄어쓰기 및 미세 명칭 차이 병합 처리
+    shopName = shopName.replace(/\s+/g, '');
+    if (shopName.includes('놀이동산')) {
+      shopName = '놀이동산';
+    }
 
     const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;
     const t_ly = Number(item.today_ly ?? item.ly_actual ?? item.today_last_year ?? item.lastYear) || 0;
@@ -30,30 +46,35 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     const y_act = Number(item.ytd_actual ?? item.ytdActual ?? item.ytd_sales) || 0;
     const y_ly = Number(item.ytd_ly ?? item.ytdLy ?? item.ytd_last_year) || 0;
 
-    rows.push({
-      category: item.category_name || '기타업장',
-      category_code: item.category_code || 'OTHER',
-      shop_name: item.shop_name ?? item.shopName ?? item.facility_name ?? item.name ?? (item.depth3 ? (item.depth3 === '전체' ? (item.depth2 ?? '알수없음') : item.depth3) : '알수없음'),
-      today: {
-        actual: t_act,
-        lastYear: t_ly,
-        growthRate: calcGrowth(t_act, t_ly)
-      },
-      mtd: {
-        actual: m_act,
-        lastYear: m_ly,
-        growthRate: calcGrowth(m_act, m_ly)
-      },
-      ytd: {
-        actual: y_act,
-        lastYear: y_ly,
-        growthRate: calcGrowth(y_act, y_ly)
-      },
-      isSubtotal: isSubtotalRow
-    });
+    const key = `${categoryCode}_${shopName}`;
+
+    if (rowMap.has(key)) {
+      const existing = rowMap.get(key)!;
+      existing.today.actual += t_act;
+      existing.today.lastYear += t_ly;
+      existing.today.growthRate = calcGrowth(existing.today.actual, existing.today.lastYear);
+      
+      existing.mtd.actual += m_act;
+      existing.mtd.lastYear += m_ly;
+      existing.mtd.growthRate = calcGrowth(existing.mtd.actual, existing.mtd.lastYear);
+      
+      existing.ytd.actual += y_act;
+      existing.ytd.lastYear += y_ly;
+      existing.ytd.growthRate = calcGrowth(existing.ytd.actual, existing.ytd.lastYear);
+    } else {
+      rowMap.set(key, {
+        category: categoryName,
+        category_code: categoryCode,
+        shop_name: shopName,
+        today: { actual: t_act, lastYear: t_ly, growthRate: calcGrowth(t_act, t_ly) },
+        mtd: { actual: m_act, lastYear: m_ly, growthRate: calcGrowth(m_act, m_ly) },
+        ytd: { actual: y_act, lastYear: y_ly, growthRate: calcGrowth(y_act, y_ly) },
+        isSubtotal: false
+      });
+    }
   });
 
-  return rows;
+  return Array.from(rowMap.values());
 };
 
 export const transformHomeData = (core: CoreDataState) => {

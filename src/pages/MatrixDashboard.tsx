@@ -84,7 +84,7 @@ export default function MatrixDashboard() {
   const categorySubtotals: Record<string, MatrixRow> = {};
   categoriesOrder.forEach(code => {
     const allRows = groupedData[code] || [];
-    const detailRows = allRows.filter(r => !r.isSubtotal && !categoriesOrder.some(c => categoryLabels[c] === r.shop_name.trim()) && !/posting/i.test(r.shop_name));
+    const detailRows = allRows.filter(r => !r.isSubtotal);
     const backendSub = allRows.find(r => r.isSubtotal);
     const rawSub = backendSub || calculateSubtotal(detailRows);
     
@@ -111,35 +111,6 @@ export default function MatrixDashboard() {
   });
 
   const netTotal = calculateSubtotal(Object.values(categorySubtotals));
-
-  // Override with the true Net Total from the backend API if available
-  // This ensures 100% match with the DB's mathematical formula (POS - 객실후불)
-  if (coreData.core) {
-    const t: any = coreData.core.today;
-    if (t) {
-      const t_act = t.today_actual ?? t.actual;
-      const t_ly = t.today_ly ?? t.ly_actual;
-      netTotal.today.actual = t_act !== undefined ? Number(t_act) : netTotal.today.actual;
-      netTotal.today.lastYear = t_ly !== undefined ? Number(t_ly) : netTotal.today.lastYear;
-      netTotal.today.growthRate = getGrowth(netTotal.today.actual, netTotal.today.lastYear);
-    }
-    const m: any = coreData.core.mtd;
-    if (m) {
-      const m_act = m.today_actual ?? m.mtd_actual ?? m.actual;
-      const m_ly = m.today_ly ?? m.mtd_ly ?? m.ly_actual;
-      netTotal.mtd.actual = m_act !== undefined ? Number(m_act) : netTotal.mtd.actual;
-      netTotal.mtd.lastYear = m_ly !== undefined ? Number(m_ly) : netTotal.mtd.lastYear;
-      netTotal.mtd.growthRate = getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear);
-    }
-    const y: any = coreData.core.ytd;
-    if (y) {
-      const y_act = y.today_actual ?? y.ytd_actual ?? y.actual;
-      const y_ly = y.today_ly ?? y.ytd_ly ?? y.ly_actual;
-      netTotal.ytd.actual = y_act !== undefined ? Number(y_act) : netTotal.ytd.actual;
-      netTotal.ytd.lastYear = y_ly !== undefined ? Number(y_ly) : netTotal.ytd.lastYear;
-      netTotal.ytd.growthRate = getGrowth(netTotal.ytd.actual, netTotal.ytd.lastYear);
-    }
-  }
 
   // 부가세 및 총계 로직 (API 실측 데이터가 없으면 임의로 * 0.1 하지 않고 0으로 처리)
   const vatTotal = {
@@ -213,7 +184,7 @@ export default function MatrixDashboard() {
             {categoriesOrder.map(category => {
               const allRows = groupedData[category];
               if (!allRows) return null;
-              const rows = allRows.filter(r => !r.isSubtotal && !categoriesOrder.some(c => categoryLabels[c] === r.shop_name.trim()) && !/posting/i.test(r.shop_name));
+              const rows = allRows.filter(r => !r.isSubtotal);
               
               const sub = categorySubtotals[category];
 

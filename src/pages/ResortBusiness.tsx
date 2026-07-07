@@ -150,10 +150,10 @@ export default function ResortBusiness() {
       });
     } else if (data.roomTypeBreakdown) {
       data.roomTypeBreakdown.forEach(item => {
-        const name = item.shop_name;
-        const sold = Number(item.sales_qty || item.qty || 0);
+        const name = item.pyType || item.facility_name || item.shop_name || '';
+        const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
         const cap = item.total_capacity || 0;
-        const rev = Number(item.today_actual) || 0;
+        const rev = Number(item.today_actual ?? item.revenue) || 0;
 
         if (name.includes('16평')) {
           groups['16평'].sold += sold; groups['16평'].cap += cap; groups['16평'].rev += rev;
@@ -226,10 +226,10 @@ export default function ResortBusiness() {
     
     if (data.channelBreakdown) {
       return data.channelBreakdown.map(item => {
-        const revenue = Number(item.today_actual) || 0;
-        const sold = Number(item.sales_qty || item.qty || 0);
+        const revenue = Number(item.today_actual ?? item.revenue) || 0;
+        const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
         return {
-          channel: item.shop_name,
+          channel: item.segment || item.channel_name || item.shop_name || '알수없음',
           roomsSold: sold,
           totalRevenue: revenue,
           adr: sold > 0 ? Math.round(revenue / sold) : 0

@@ -115,7 +115,7 @@ export default function ResortBusiness() {
 
     data.roomTypeBreakdown.forEach(item => {
       const name = item.facility_name;
-      const sold = Number(item.visitors || item.qty || 0);
+      const sold = Number(item.room_bookings || item.rooms_sold || item.visitors || item.qty || 0);
       const cap = item.total_capacity || 0;
       const rev = item.gross || item.today_actual || 0;
 

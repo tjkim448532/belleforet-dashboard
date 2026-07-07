@@ -23,7 +23,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     rows.push({
       category: item.category_name || '기타업장',
       category_code: item.category_code || 'OTHER',
-      shop_name: item.shop_name ?? item.shopName ?? item.facility_name ?? item.name ?? '알수없음',
+      shop_name: item.shop_name ?? item.shopName ?? item.facility_name ?? item.name ?? (item.depth3 ? (item.depth3 === '전체' ? (item.depth2 ?? '알수없음') : item.depth3) : '알수없음'),
       today: {
         actual: Number(item.today_actual) || 0,
         lastYear: Number(item.today_ly) || 0,

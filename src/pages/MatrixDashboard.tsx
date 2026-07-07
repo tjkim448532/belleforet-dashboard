@@ -113,20 +113,28 @@ export default function MatrixDashboard() {
   // Override with the true Net Total from the backend API if available
   // This ensures 100% match with the DB's mathematical formula (POS - 객실후불)
   if (coreData.core) {
-    if (coreData.core.today) {
-      netTotal.today.actual = coreData.core.today.actual !== undefined ? Number(coreData.core.today.actual) : netTotal.today.actual;
-      netTotal.today.lastYear = coreData.core.today.ly_actual !== undefined ? Number(coreData.core.today.ly_actual) : netTotal.today.lastYear;
+    const t: any = coreData.core.today;
+    if (t) {
+      const t_act = t.today_actual ?? t.actual;
+      const t_ly = t.today_ly ?? t.ly_actual;
+      netTotal.today.actual = t_act !== undefined ? Number(t_act) : netTotal.today.actual;
+      netTotal.today.lastYear = t_ly !== undefined ? Number(t_ly) : netTotal.today.lastYear;
       netTotal.today.growthRate = getGrowth(netTotal.today.actual, netTotal.today.lastYear);
     }
-    // MTD/YTD override from backend root payload if they exist
-    if (coreData.core.mtd) {
-      netTotal.mtd.actual = coreData.core.mtd.actual !== undefined ? Number(coreData.core.mtd.actual) : netTotal.mtd.actual;
-      netTotal.mtd.lastYear = coreData.core.mtd.ly_actual !== undefined ? Number(coreData.core.mtd.ly_actual) : netTotal.mtd.lastYear;
+    const m: any = coreData.core.mtd;
+    if (m) {
+      const m_act = m.today_actual ?? m.mtd_actual ?? m.actual;
+      const m_ly = m.today_ly ?? m.mtd_ly ?? m.ly_actual;
+      netTotal.mtd.actual = m_act !== undefined ? Number(m_act) : netTotal.mtd.actual;
+      netTotal.mtd.lastYear = m_ly !== undefined ? Number(m_ly) : netTotal.mtd.lastYear;
       netTotal.mtd.growthRate = getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear);
     }
-    if (coreData.core.ytd) {
-      netTotal.ytd.actual = coreData.core.ytd.actual !== undefined ? Number(coreData.core.ytd.actual) : netTotal.ytd.actual;
-      netTotal.ytd.lastYear = coreData.core.ytd.ly_actual !== undefined ? Number(coreData.core.ytd.ly_actual) : netTotal.ytd.lastYear;
+    const y: any = coreData.core.ytd;
+    if (y) {
+      const y_act = y.today_actual ?? y.ytd_actual ?? y.actual;
+      const y_ly = y.today_ly ?? y.ytd_ly ?? y.ly_actual;
+      netTotal.ytd.actual = y_act !== undefined ? Number(y_act) : netTotal.ytd.actual;
+      netTotal.ytd.lastYear = y_ly !== undefined ? Number(y_ly) : netTotal.ytd.lastYear;
       netTotal.ytd.growthRate = getGrowth(netTotal.ytd.actual, netTotal.ytd.lastYear);
     }
   }

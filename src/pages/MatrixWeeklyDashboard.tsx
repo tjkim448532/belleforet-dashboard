@@ -119,15 +119,23 @@ export default function MatrixWeeklyDashboard() {
   categoriesOrder.forEach(code => {
     const rows = groupedData[code] || [];
     const rawSub = calculateSubtotal(rows);
-    const wTotal = weeklyTotals[code];
+    const wTotal: any = weeklyTotals[code];
 
     if (wTotal) {
-      rawSub.today.actual = wTotal.today.actual !== undefined ? Number(wTotal.today.actual) : rawSub.today.actual;
-      rawSub.today.lastYear = wTotal.today.lastYear !== undefined ? Number(wTotal.today.lastYear) : rawSub.today.lastYear;
-      rawSub.mtd.actual = wTotal.mtd.actual !== undefined ? Number(wTotal.mtd.actual) : rawSub.mtd.actual;
-      rawSub.mtd.lastYear = wTotal.mtd.lastYear !== undefined ? Number(wTotal.mtd.lastYear) : rawSub.mtd.lastYear;
-      rawSub.ytd.actual = wTotal.ytd.actual !== undefined ? Number(wTotal.ytd.actual) : rawSub.ytd.actual;
-      rawSub.ytd.lastYear = wTotal.ytd.lastYear !== undefined ? Number(wTotal.ytd.lastYear) : rawSub.ytd.lastYear;
+      // Safely handle both V3 nested object and V4 flat snake_case payload
+      const t_actual = wTotal.today_actual ?? wTotal.today?.today_actual ?? wTotal.today?.actual;
+      const t_ly = wTotal.today_ly ?? wTotal.today?.today_ly ?? wTotal.today?.lastYear ?? wTotal.today?.ly_actual;
+      const m_actual = wTotal.mtd_actual ?? wTotal.mtd?.today_actual ?? wTotal.mtd?.actual;
+      const m_ly = wTotal.mtd_ly ?? wTotal.mtd?.today_ly ?? wTotal.mtd?.lastYear ?? wTotal.mtd?.ly_actual;
+      const y_actual = wTotal.ytd_actual ?? wTotal.ytd?.today_actual ?? wTotal.ytd?.actual;
+      const y_ly = wTotal.ytd_ly ?? wTotal.ytd?.today_ly ?? wTotal.ytd?.lastYear ?? wTotal.ytd?.ly_actual;
+
+      rawSub.today.actual = t_actual !== undefined ? Number(t_actual) : rawSub.today.actual;
+      rawSub.today.lastYear = t_ly !== undefined ? Number(t_ly) : rawSub.today.lastYear;
+      rawSub.mtd.actual = m_actual !== undefined ? Number(m_actual) : rawSub.mtd.actual;
+      rawSub.mtd.lastYear = m_ly !== undefined ? Number(m_ly) : rawSub.mtd.lastYear;
+      rawSub.ytd.actual = y_actual !== undefined ? Number(y_actual) : rawSub.ytd.actual;
+      rawSub.ytd.lastYear = y_ly !== undefined ? Number(y_ly) : rawSub.ytd.lastYear;
     }
     
     categorySubtotals[code] = {
@@ -156,19 +164,30 @@ export default function MatrixWeeklyDashboard() {
 
   // Override with the true Net Total from the backend API if available
   if (coreData.core) {
-    if (coreData.core.today) {
-      netTotal.today.actual = Number(coreData.core.today.actual) || netTotal.today.actual;
-      netTotal.today.lastYear = Number(coreData.core.today.ly_actual) || netTotal.today.lastYear;
+    const t: any = coreData.core.today;
+    if (t) {
+      const t_act = t.today_actual ?? t.actual;
+      const t_ly = t.today_ly ?? t.ly_actual;
+      netTotal.today.actual = Number(t_act) || netTotal.today.actual;
+      netTotal.today.lastYear = Number(t_ly) || netTotal.today.lastYear;
       netTotal.today.growthRate = getGrowth(netTotal.today.actual, netTotal.today.lastYear);
     }
-    if (coreData.core.mtd) {
-      netTotal.mtd.actual = Number(coreData.core.mtd.actual) || netTotal.mtd.actual;
-      netTotal.mtd.lastYear = Number(coreData.core.mtd.ly_actual) || netTotal.mtd.lastYear;
+    
+    const m: any = coreData.core.mtd;
+    if (m) {
+      const m_act = m.today_actual ?? m.mtd_actual ?? m.actual;
+      const m_ly = m.today_ly ?? m.mtd_ly ?? m.ly_actual;
+      netTotal.mtd.actual = Number(m_act) || netTotal.mtd.actual;
+      netTotal.mtd.lastYear = Number(m_ly) || netTotal.mtd.lastYear;
       netTotal.mtd.growthRate = getGrowth(netTotal.mtd.actual, netTotal.mtd.lastYear);
     }
-    if (coreData.core.ytd) {
-      netTotal.ytd.actual = Number(coreData.core.ytd.actual) || netTotal.ytd.actual;
-      netTotal.ytd.lastYear = Number(coreData.core.ytd.ly_actual) || netTotal.ytd.lastYear;
+    
+    const y: any = coreData.core.ytd;
+    if (y) {
+      const y_act = y.today_actual ?? y.ytd_actual ?? y.actual;
+      const y_ly = y.today_ly ?? y.ytd_ly ?? y.ly_actual;
+      netTotal.ytd.actual = Number(y_act) || netTotal.ytd.actual;
+      netTotal.ytd.lastYear = Number(y_ly) || netTotal.ytd.lastYear;
       netTotal.ytd.growthRate = getGrowth(netTotal.ytd.actual, netTotal.ytd.lastYear);
     }
   }

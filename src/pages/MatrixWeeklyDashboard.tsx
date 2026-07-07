@@ -228,6 +228,7 @@ export default function MatrixWeeklyDashboard() {
   const getWeatherText = (weather: any) => {
     if (!weather) return '';
     const desc = weather.weatherDesc || '맑음';
+    if (desc === '데이터없음' || desc === 'None') return '';
     const icon = getWeatherIcon(desc);
     const tempText = (weather.tempMax && weather.tempMin) ? ` ${weather.tempMax}°/${weather.tempMin}°` : '';
     return `[${icon} ${desc}${tempText}]`;

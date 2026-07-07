@@ -160,28 +160,36 @@ export default function Home() {
                   선택 기간 총매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
                   <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
                 </h2>
-                {startDate === endDate && (weather || lastYearWeather) && (
+                {startDate === endDate && (weather || lastYearWeather || !weather) && (
                   <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
-                    {lastYearWeather && lastYearWeather.weatherDesc !== '데이터없음' && (
-                      <div className="opacity-60 text-right pr-3 border-r border-slate-200">
-                        <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
-                        <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
-                          {lastYearWeather.weatherDesc?.includes('비') ? '🌧️' : lastYearWeather.weatherDesc?.includes('눈') ? '❄️' : lastYearWeather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
-                          {lastYearWeather.weatherDesc || '맑음'}
-                        </div>
-                        <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
-                      </div>
-                    )}
-                    {weather && weather.weatherDesc !== '데이터없음' && (
-                      <div className="text-right">
-                        <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
-                        <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
-                          {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
-                          {weather.weatherDesc || '맑음'}
-                        </div>
-                        <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
-                      </div>
-                    )}
+                    <div className="opacity-60 text-right pr-3 border-r border-slate-200">
+                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
+                      {lastYearWeather && lastYearWeather.weatherDesc !== '데이터없음' ? (
+                        <>
+                          <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
+                            {lastYearWeather.weatherDesc?.includes('비') ? '🌧️' : lastYearWeather.weatherDesc?.includes('눈') ? '❄️' : lastYearWeather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
+                            {lastYearWeather.weatherDesc || '맑음'}
+                          </div>
+                          <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
+                        </>
+                      ) : (
+                        <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">❓ 날씨없음</div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
+                      {weather && weather.weatherDesc !== '데이터없음' ? (
+                        <>
+                          <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
+                            {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
+                            {weather.weatherDesc || '맑음'}
+                          </div>
+                          <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                        </>
+                      ) : (
+                        <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">❓ 날씨없음</div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

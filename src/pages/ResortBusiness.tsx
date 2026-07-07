@@ -12,8 +12,8 @@ interface SummaryData {
   today: { actual: number; ly_actual: number; };
   resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; sales_qty?: number; };
   rooms?: { roomType: string; marketType: string; rateType: string; roomsSold: number; revenue: number; total_capacity?: number; rooms_sold_weighted?: number; sales_qty?: number; }[];
-  roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; sales_qty?: number; }[];
-  channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; sales_qty?: number; }[];
+  roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; sales_qty?: number; pyType?: string; facility_name?: string; rooms_sold?: number; revenue?: number; }[];
+  channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; sales_qty?: number; segment?: string; channel_name?: string; rooms_sold?: number; revenue?: number; }[];
   rateTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; sales_qty?: number; }[];
 }
 

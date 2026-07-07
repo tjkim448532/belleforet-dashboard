@@ -10,10 +10,10 @@ interface SummaryData {
   date: string;
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
-  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; gross?: number; };
-  roomTypeBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; total_capacity: number; rooms_sold_weighted?: number; }[];
-  channelBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; }[];
-  rateTypeBreakdown?: { facility_name: string; today_actual: number; gross?: number; qty?: number; visitors?: number; }[];
+  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; };
+  roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; }[];
+  channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; }[];
+  rateTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; }[];
 }
 
 export default function ResortBusiness() {
@@ -70,9 +70,9 @@ export default function ResortBusiness() {
 
   const lodgingStats = (() => {
     if (!data) return { revenue: 0, roomsSold: 0, adr: 0 };
-    if (data.resortSummary && (data.resortSummary.gross || data.resortSummary.today_actual || data.resortSummary.lodging_revenue)) {
+    if (data.resortSummary && data.resortSummary.today_actual) {
       const summary = data.resortSummary;
-      const revenue = summary.gross || summary.today_actual || summary.lodging_revenue || 0;
+      const revenue = Number(summary.today_actual) || 0;
       
       let roomsSold = summary.rooms_sold || 0;
       // 물리적 판매 객실 수 (가동률 계산용)는 rooms_sold_weighted 사용
@@ -93,7 +93,7 @@ export default function ResortBusiness() {
     }
     
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
-      const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (item.gross || item.today_actual || 0), 0);
+      const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (Number(item.today_actual) || 0), 0);
       const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.rooms_sold_weighted || item.qty || 0), 0);
       const totalBookings = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
       const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
@@ -114,10 +114,10 @@ export default function ResortBusiness() {
     };
 
     data.roomTypeBreakdown.forEach(item => {
-      const name = item.facility_name;
-      const sold = Number(item.visitors || item.qty || 0);
+      const name = item.shop_name;
+      const sold = Number(item.qty || 0);
       const cap = item.total_capacity || 0;
-      const rev = item.gross || item.today_actual || 0;
+      const rev = Number(item.today_actual) || 0;
 
       if (name.includes('16평')) {
         groups['16평'].sold += sold; groups['16평'].cap += cap; groups['16평'].rev += rev;
@@ -171,10 +171,10 @@ export default function ResortBusiness() {
   const channelAdrData = (() => {
     if (!data || !data.channelBreakdown) return [];
     return data.channelBreakdown.map(item => {
-      const revenue = item.gross || item.today_actual || 0;
-      const sold = Number(item.visitors || item.qty || 0);
+      const revenue = Number(item.today_actual) || 0;
+      const sold = Number(item.qty || 0);
       return {
-        channel: item.facility_name,
+        channel: item.shop_name,
         roomsSold: sold,
         totalRevenue: revenue,
         adr: sold > 0 ? Math.round(revenue / sold) : 0
@@ -185,10 +185,10 @@ export default function ResortBusiness() {
   const rateAdrData = (() => {
     if (!data || !data.rateTypeBreakdown) return [];
     return data.rateTypeBreakdown.map(item => {
-      const revenue = item.gross || item.today_actual || 0;
-      const sold = Number(item.visitors || item.qty || 0);
+      const revenue = Number(item.today_actual) || 0;
+      const sold = Number(item.qty || 0);
       return {
-        rateType: item.facility_name,
+        rateType: item.shop_name,
         roomsSold: sold,
         totalRevenue: revenue,
         adr: sold > 0 ? Math.round(revenue / sold) : 0

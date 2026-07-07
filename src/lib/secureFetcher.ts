@@ -90,19 +90,19 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
     });
     
     payload.roomTypeBreakdown = Object.keys(roomMap).map(k => ({
-      facility_name: k,
+      shop_name: k,
       qty: roomMap[k].qty,
       today_actual: roomMap[k].actual
     }));
     
     payload.marketTypeBreakdown = Object.keys(marketMap).map(k => ({
-      facility_name: k,
+      shop_name: k,
       qty: marketMap[k].qty,
       today_actual: marketMap[k].actual
     }));
     
     payload.rateTypeBreakdown = Object.keys(rateMap).map(k => ({
-      facility_name: k,
+      shop_name: k,
       qty: rateMap[k].qty,
       today_actual: rateMap[k].actual
     }));

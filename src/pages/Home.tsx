@@ -4,12 +4,10 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
-import { useMapping } from '../contexts/MappingContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
-  const { getCategoryForStore } = useMapping();
   const coreData = useCoreData();
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -34,25 +32,17 @@ export default function Home() {
   const pieChartData = React.useMemo(() => {
     if (!coreData.core?.gridData) return [];
     
-    const depth2Totals: Record<string, number> = {};
-    coreData.core.gridData.forEach((g: any) => {
-      // Aggregate by depth2. '전체' is depth3 sum in Belleforet data.
-      if (g.depth3 === '전체') {
-        depth2Totals[g.depth2] = g.salesAmount || 0;
-      }
-    });
-
     const categoryTotals: Record<string, number> = {};
-    Object.keys(depth2Totals).forEach(store => {
-      const cat = getCategoryForStore(store);
-      categoryTotals[cat] = (categoryTotals[cat] || 0) + depth2Totals[store];
+    coreData.core.gridData.forEach((g: any) => {
+      const cat = g.category_name || '기타업장';
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(g.today_actual) || 0);
     });
 
     return Object.keys(categoryTotals).map(cat => ({
       name: cat,
       value: categoryTotals[cat]
     })).filter(c => c.value > 0).sort((a, b) => b.value - a.value);
-  }, [coreData.core?.gridData, getCategoryForStore]);
+  }, [coreData.core?.gridData]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];
 
@@ -91,10 +81,10 @@ export default function Home() {
     
     if (displayData?.roomTypeBreakdown) {
       displayData?.roomTypeBreakdown?.forEach((item: any) => {
-        const name = item.facility_name || '';
+        const name = item.shop_name || '';
         // Prioritize gross for VAT inclusive calculation
-        const rev = item.gross || item.today_actual || 0;
-        const sold = Number(item.room_bookings || item.qty || item.visitors || 0);
+        const rev = Number(item.today_actual) || 0;
+        const sold = Number(item.qty || 0);
         if (name.includes('16평')) {
           rev16 += rev; sold16 += sold;
         } else if (name.includes('35평')) {

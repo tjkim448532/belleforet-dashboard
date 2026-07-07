@@ -24,7 +24,7 @@ export default function AdminLeisureMapping() {
       ];
       breakdowns.forEach(b => {
         if (Array.isArray(b)) {
-          b.forEach((item: any) => item.facility_name && facilities.add(item.facility_name));
+          b.forEach((item: any) => item.shop_name && facilities.add(item.shop_name));
         }
       });
     }

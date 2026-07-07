@@ -27,16 +27,12 @@ export default function LeisureFacility() {
 
     // Filter products matching the facilities (for SALES)
     const matchedProducts = products.filter((p: any) => {
-      const matchFacility = facilities.some((f: string) => p.facility_name?.includes(f));
-      const matchProduct = facilities.some((f: string) => p.product_name?.includes(f));
-      return matchFacility || matchProduct;
+      return facilities.some((f: string) => p.shop_name?.includes(f));
     });
 
     // Filter visitors matching the facilities (for QUANTITY/VISITORS)
     const matchedVisitors = visitors.filter((v: any) => {
-      const matchFacility = facilities.some((f: string) => v.facility_name?.includes(f));
-      const matchProduct = facilities.some((f: string) => v.product_name?.includes(f));
-      return matchFacility || matchProduct;
+      return facilities.some((f: string) => v.shop_name?.includes(f));
     });
 
     let totalSales = 0;
@@ -44,17 +40,17 @@ export default function LeisureFacility() {
 
     matchedProducts.forEach((p: any) => {
       // Prioritize gross for VAT inclusive calculation
-      const sales = Number(p.gross || p.today_actual || p.revenue || 0);
+      const sales = Number(p.today_actual || 0);
       // Extract qty directly from product payload if the backend provides it
-      const qty = Number(p.qty || p.quantity || p.count || p.sold || 0);
+      const qty = Number(p.qty || 0);
       totalSales += sales;
-      const pName = p.product_name || p.facility_name || '알 수 없음';
+      const pName = p.shop_name || '알 수 없음';
       const existing = itemMap.get(pName);
       if (existing) {
         existing.sales += sales;
         existing.qty += qty;
       } else {
-        itemMap.set(pName, { name: pName, sales, qty, depth1: '레저', depth2: p.facility_name });
+        itemMap.set(pName, { name: pName, sales, qty, depth1: '레저', depth2: p.shop_name });
       }
     });
 
@@ -62,12 +58,12 @@ export default function LeisureFacility() {
     matchedVisitors.forEach((v: any) => {
       const qty = Number(v.qty) || 0;
       totalQuantity += qty;
-      const vName = v.product_name || v.facility_name || '알 수 없음';
+      const vName = v.shop_name || '알 수 없음';
       const existing = itemMap.get(vName);
       if (existing) {
         existing.qty += qty;
       } else {
-        itemMap.set(vName, { name: vName, sales: 0, qty, depth1: '레저', depth2: v.facility_name });
+        itemMap.set(vName, { name: vName, sales: 0, qty, depth1: '레저', depth2: v.shop_name });
       }
     });
 

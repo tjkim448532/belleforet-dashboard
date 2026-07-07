@@ -104,15 +104,16 @@ export default function MatrixWeeklyDashboard() {
   };
 
   const categoryLabels: Record<string, string> = {
-    'ROOM': '객실 Total',
-    'GOLF': '골프 Total',
-    'FNB': '식음업장 Total',
-    'BANQUET': '연회 Total',
-    'TICKET': '티켓업장 Total',
-    'OTHER': '기타업장 Total'
+    'ROOM': '객실',
+    'GOLF': '골프장',
+    'FNB': '식음업장',
+    'TICKET': '티켓업장',
+    'MOTO': '모토아레나',
+    'BANQUET': '연회',
+    'OTHER': '기타영업'
   };
 
-  const categoriesOrder = ['ROOM', 'GOLF', 'FNB', 'BANQUET', 'TICKET', 'OTHER'];
+  const categoriesOrder = ['ROOM', 'GOLF', 'FNB', 'TICKET', 'MOTO', 'BANQUET', 'OTHER'];
 
   const categorySubtotals: Record<string, MatrixRow> = {};
   categoriesOrder.forEach(code => {

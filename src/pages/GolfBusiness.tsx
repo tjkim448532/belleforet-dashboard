@@ -15,7 +15,7 @@ interface SummaryData {
     golf_avg_green_fee: number;
     golf_ly_avg_green_fee?: number;
   };
-  golfFacilityBreakdown?: { facility_name: string; today_actual: number; }[];
+  golfFacilityBreakdown?: { shop_name: string; today_actual: number; }[];
 }
 
 export default function GolfBusiness() {
@@ -35,7 +35,7 @@ export default function GolfBusiness() {
         if (payload) {
           const golfBreakdown = payload.golfFacilityBreakdown ?? [];
           const filteredBreakdown = golfBreakdown;
-          const golf_revenue = payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? golfBreakdown.reduce((sum: number, x: any) => sum + (x.gross || x.today_actual || 0), 0);
+          const golf_revenue = payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? golfBreakdown.reduce((sum: number, x: any) => sum + (Number(x.today_actual) || 0), 0);
           setData({
             success: json.success ?? true,
             date: payload.date ?? endDate,
@@ -221,7 +221,7 @@ export default function GolfBusiness() {
                 <tbody className="divide-y divide-slate-50 text-sm">
                   {golfDetails.map((row, index) => (
                     <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td className="py-4 px-6 font-medium text-slate-700">{row.facility_name}</td>
+                      <td className="py-4 px-6 font-medium text-slate-700">{row.shop_name}</td>
                       <td className="py-4 px-6 text-right font-medium text-slate-900">{formatCurrency(row.today_actual || 0)}</td>
                     </tr>
                   ))}

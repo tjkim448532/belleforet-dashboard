@@ -5,7 +5,7 @@ import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
 interface SalesData {
   category: string;
-  name: string;
+  shop_name: string;
   today_actual: number;
   today_ly: number;
   mtd_actual: number;
@@ -156,7 +156,7 @@ export default function DailySalesReport() {
                   const mtdGrowth = getGrowthRate(row.mtd_actual, row.mtd_ly);
                   const ytdGrowth = getGrowthRate(row.ytd_actual, row.ytd_ly);
                   
-                  const isTotalRow = row.name && row.name.includes('Total');
+                  const isTotalRow = row.shop_name && row.shop_name.includes('Total');
 
                   return (
                     <tr 
@@ -167,7 +167,7 @@ export default function DailySalesReport() {
                       `}
                     >
                       <td className="px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 pl-8">
-                        {row.name}
+                        {row.shop_name}
                       </td>
 
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">

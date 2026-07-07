@@ -84,7 +84,7 @@ export default function MatrixDashboard() {
   const categorySubtotals: Record<string, MatrixRow> = {};
   categoriesOrder.forEach(code => {
     const allRows = groupedData[code] || [];
-    const detailRows = allRows.filter(r => !r.isSubtotal && r.shop_name.trim() !== categoryLabels[code] && !/-\s*posting/i.test(r.shop_name));
+    const detailRows = allRows.filter(r => !r.isSubtotal && !categoriesOrder.some(c => categoryLabels[c] === r.shop_name.trim()) && !/posting/i.test(r.shop_name));
     const backendSub = allRows.find(r => r.isSubtotal);
     const rawSub = backendSub || calculateSubtotal(detailRows);
     
@@ -213,7 +213,7 @@ export default function MatrixDashboard() {
             {categoriesOrder.map(category => {
               const allRows = groupedData[category];
               if (!allRows) return null;
-              const rows = allRows.filter(r => !r.isSubtotal && r.shop_name.trim() !== categoryLabels[category] && !/-\s*posting/i.test(r.shop_name));
+              const rows = allRows.filter(r => !r.isSubtotal && !categoriesOrder.some(c => categoryLabels[c] === r.shop_name.trim()) && !/posting/i.test(r.shop_name));
               
               const sub = categorySubtotals[category];
 

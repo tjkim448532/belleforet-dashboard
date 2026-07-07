@@ -426,7 +426,7 @@ export const transformExecutiveData = (core: CoreDataState) => {
       if (g.depth3 && g.depth3 !== '전체') {
         details.push({
           depth_2_shop: g.depth3,
-          sales_amount: g.salesAmount || 0
+          total_sales: g.salesAmount || 0
         });
       } else if (!g.depth3 || g.depth3 === '전체') {
         // If there are no detail rows for this depth2, we might just push the depth2 as a fallback
@@ -442,7 +442,7 @@ export const transformExecutiveData = (core: CoreDataState) => {
       if (!details.some(d => d.depth_2_shop === depth2) && !c.gridData.some((g:any) => g.depth2 === depth2 && g.depth3 && g.depth3 !== '전체')) {
         details.push({
           depth_2_shop: depth2,
-          sales_amount: depth2Totals[depth2]
+          total_sales: depth2Totals[depth2]
         });
       }
     });
@@ -457,7 +457,7 @@ export const transformExecutiveData = (core: CoreDataState) => {
     kpiData: {
       total_revenue_today: c.today?.gross || c.today?.actual || 0,
       dod_growth: 0,
-      rooms_sold: 0,
+      rooms_sold: c.resortSummary?.rooms_sold || 0,
       golf_visited_players: c.golfSummary?.visitedPlayers || 0,
       golf_visited_teams: c.golfSummary?.visitedTeams || 0,
       ytd_goal_pct: c.kpi?.ytd_goal_pct || 0

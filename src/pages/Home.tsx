@@ -84,7 +84,7 @@ export default function Home() {
         const name = item.shop_name || '';
         // Prioritize gross for VAT inclusive calculation
         const rev = Number(item.today_actual) || 0;
-        const sold = Number(item.qty || 0);
+        const sold = Number(item.sales_qty || item.qty || 0);
         if (name.includes('16평')) {
           rev16 += rev; sold16 += sold;
         } else if (name.includes('35평')) {

@@ -10,11 +10,11 @@ interface SummaryData {
   date: string;
   ytd: { actual: number; ly_actual: number; };
   today: { actual: number; ly_actual: number; };
-  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; };
-  rooms?: { roomType: string; marketType: string; rateType: string; roomsSold: number; revenue: number; total_capacity?: number; rooms_sold_weighted?: number; }[];
-  roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; }[];
-  channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; }[];
-  rateTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; }[];
+  resortSummary?: { lodging_revenue: number; rooms_sold: number; total_capacity: number; leisure_revenue: number; today_actual?: number; sales_qty?: number; };
+  rooms?: { roomType: string; marketType: string; rateType: string; roomsSold: number; revenue: number; total_capacity?: number; rooms_sold_weighted?: number; sales_qty?: number; }[];
+  roomTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; total_capacity: number; rooms_sold_weighted?: number; sales_qty?: number; }[];
+  channelBreakdown?: { shop_name: string; today_actual: number; qty?: number; sales_qty?: number; }[];
+  rateTypeBreakdown?: { shop_name: string; today_actual: number; qty?: number; sales_qty?: number; }[];
 }
 
 export default function ResortBusiness() {
@@ -83,15 +83,12 @@ export default function ResortBusiness() {
       if (data.rooms && data.rooms.length > 0) {
         roomsSold = data.rooms.reduce((sum, r) => {
           if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
-          return sum + Number(r.rooms_sold_weighted || r.roomsSold || 0);
+          return sum + Number(r.sales_qty || r.rooms_sold_weighted || r.roomsSold || 0);
         }, 0);
-        totalBookings = data.rooms.reduce((sum, r) => {
-          if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
-          return sum + Number(r.roomsSold || 0);
-        }, 0);
+        totalBookings = roomsSold;
       } else if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
-        roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.rooms_sold_weighted || item.qty || 0), 0);
-        totalBookings = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.sales_qty || item.rooms_sold_weighted || item.qty || 0), 0);
+        totalBookings = roomsSold;
       }
       
       const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
@@ -105,20 +102,17 @@ export default function ResortBusiness() {
       }, 0);
       const roomsSold = data.rooms.reduce((sum, r) => {
         if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
-        return sum + Number(r.rooms_sold_weighted || r.roomsSold || 0);
+        return sum + Number(r.sales_qty || r.rooms_sold_weighted || r.roomsSold || 0);
       }, 0);
-      const totalBookings = data.rooms.reduce((sum, r) => {
-        if (r.roomType === '전체' || r.roomType === '소계' || r.roomType === '합계') return sum;
-        return sum + Number(r.roomsSold || 0);
-      }, 0);
+      const totalBookings = roomsSold;
       const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
       return { revenue, roomsSold, adr };
     }
 
     if (data.roomTypeBreakdown && data.roomTypeBreakdown.length > 0) {
       const revenue = data.roomTypeBreakdown.reduce((sum, item) => sum + (Number(item.today_actual) || 0), 0);
-      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.rooms_sold_weighted || item.qty || 0), 0);
-      const totalBookings = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      const roomsSold = data.roomTypeBreakdown.reduce((sum, item) => sum + Number(item.sales_qty || item.rooms_sold_weighted || item.qty || 0), 0);
+      const totalBookings = roomsSold;
       const adr = totalBookings > 0 ? Math.round(revenue / totalBookings) : 0;
       return { revenue, roomsSold, adr };
     }
@@ -140,7 +134,7 @@ export default function ResortBusiness() {
       data.rooms.forEach(r => {
         const name = r.roomType || '기타';
         if (name === '전체' || name === '소계' || name === '합계') return;
-        const sold = Number(r.roomsSold || 0);
+        const sold = Number(r.sales_qty || r.roomsSold || 0);
         const cap = Number(r.total_capacity || 0);
         const rev = Number(r.revenue || 0);
 
@@ -157,7 +151,7 @@ export default function ResortBusiness() {
     } else if (data.roomTypeBreakdown) {
       data.roomTypeBreakdown.forEach(item => {
         const name = item.shop_name;
-        const sold = Number(item.qty || 0);
+        const sold = Number(item.sales_qty || item.qty || 0);
         const cap = item.total_capacity || 0;
         const rev = Number(item.today_actual) || 0;
 
@@ -220,7 +214,7 @@ export default function ResortBusiness() {
         if (mt === '전체' || mt === '소계' || mt === '합계') return;
         if (!map[mt]) map[mt] = { rev: 0, sold: 0 };
         map[mt].rev += Number(r.revenue || 0);
-        map[mt].sold += Number(r.roomsSold || 0);
+        map[mt].sold += Number(r.sales_qty || r.roomsSold || 0);
       });
       return Object.keys(map).map(k => ({
         channel: k,
@@ -233,7 +227,7 @@ export default function ResortBusiness() {
     if (data.channelBreakdown) {
       return data.channelBreakdown.map(item => {
         const revenue = Number(item.today_actual) || 0;
-        const sold = Number(item.qty || 0);
+        const sold = Number(item.sales_qty || item.qty || 0);
         return {
           channel: item.shop_name,
           roomsSold: sold,
@@ -254,7 +248,7 @@ export default function ResortBusiness() {
         if (rat === '전체' || rat === '소계' || rat === '합계') return;
         if (!map[rat]) map[rat] = { rev: 0, sold: 0 };
         map[rat].rev += Number(r.revenue || 0);
-        map[rat].sold += Number(r.roomsSold || 0);
+        map[rat].sold += Number(r.sales_qty || r.roomsSold || 0);
       });
       return Object.keys(map).map(k => ({
         rateType: k,
@@ -267,7 +261,7 @@ export default function ResortBusiness() {
     if (data.rateTypeBreakdown) {
       return data.rateTypeBreakdown.map(item => {
         const revenue = Number(item.today_actual) || 0;
-        const sold = Number(item.qty || 0);
+        const sold = Number(item.sales_qty || item.qty || 0);
         return {
           rateType: item.shop_name,
           roomsSold: sold,

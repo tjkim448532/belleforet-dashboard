@@ -42,7 +42,7 @@ export default function LeisureFacility() {
       // Prioritize gross for VAT inclusive calculation
       const sales = Number(p.today_actual || 0);
       // Extract qty directly from product payload if the backend provides it
-      const qty = Number(p.qty || 0);
+      const qty = Number(p.sales_qty || p.qty || 0);
       totalSales += sales;
       const pName = p.shop_name || '알 수 없음';
       const existing = itemMap.get(pName);
@@ -56,7 +56,7 @@ export default function LeisureFacility() {
 
     let totalQuantity = 0;
     matchedVisitors.forEach((v: any) => {
-      const qty = Number(v.qty) || 0;
+      const qty = Number(v.sales_qty || v.qty) || 0;
       totalQuantity += qty;
       const vName = v.shop_name || '알 수 없음';
       const existing = itemMap.get(vName);

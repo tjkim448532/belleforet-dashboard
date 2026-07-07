@@ -80,8 +80,8 @@ export const transformHomeData = (core: CoreDataState) => {
 
       dynamicDailyCapacity += Number(r.total_capacity || 0); // Assuming total_capacity is per-room or omitted
       
-      const qty = Number(r.roomsSold || 0);
-      const weightedQty = Number(r.roomsSoldWeighted || qty);
+      const qty = Number(r.sales_qty || r.roomsSold || 0);
+      const weightedQty = qty;
       
       totalProductsSold += qty;
       hybridOccupiedRooms += weightedQty;
@@ -98,8 +98,8 @@ export const transformHomeData = (core: CoreDataState) => {
       c.roomTypeBreakdown.forEach((rt: any) => {
         dynamicDailyCapacity += Number(rt.total_capacity || 0);
         
-        const qty = Number(rt.qty || rt.visitors || 0);
-        const weightedQty = Number(rt.rooms_sold_weighted || qty);
+        const qty = Number(rt.sales_qty || rt.qty || rt.visitors || 0);
+        const weightedQty = qty;
         
         totalProductsSold += qty;
         hybridOccupiedRooms += weightedQty;

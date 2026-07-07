@@ -225,16 +225,16 @@ export default function MatrixWeeklyDashboard() {
     return '☀️';
   };
 
-  const getWeatherText = (weather: any, rawPayload?: any) => {
-    if (!weather) return `[❓ 날씨없음: ${JSON.stringify(rawPayload || 'null')}]`;
+  const getWeatherText = (weather: any) => {
+    if (!weather) return '[❓ 날씨없음]';
     const desc = weather.weatherDesc || '맑음';
-    if (desc === '데이터없음' || desc === 'None') return `[❓ 날씨없음: ${JSON.stringify(rawPayload || '데이터없음')}]`;
+    if (desc === '데이터없음' || desc === 'None') return '[❓ 날씨없음]';
     const icon = getWeatherIcon(desc);
     const tempText = (weather.tempMax && weather.tempMin) ? ` ${weather.tempMax}°/${weather.tempMin}°` : '';
     return `[${icon} ${desc}${tempText}]`;
   };
 
-  const dynamicTitle = `${currDateStr} ${getWeatherText(currentWeather, coreData.core?.weather?.current || coreData.core?.weather)} vs ${lyDateFormattedStr} ${getWeatherText(lastYearWeather, coreData.core?.weather?.lastYear || coreData.core?.weather)}`;
+  const dynamicTitle = `${currDateStr} ${getWeatherText(currentWeather)} vs ${lyDateFormattedStr} ${getWeatherText(lastYearWeather)}`;
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">

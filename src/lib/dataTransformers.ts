@@ -21,9 +21,12 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
   const rowMap = new Map<string, MatrixRow>();
 
   gridData.forEach((item: any) => {
-    // 백엔드에서 더 이상 서브토탈 데이터를 주지 않는다고 했으므로 혹시 몰라 필터링
+    // 백엔드에서 더 이상 서브토탈 데이터를 주지 않는다고 했으나 여전히 섞여 들어오는 경우가 있음
     const isBackendSubtotalRow = item.depth3 === '전체' || item.shop_name === '전체' || item.shop_name === '합계';
-    if (isBackendSubtotalRow) return;
+    // NET, VAT, SVC, Grand Total 등은 영업장이 아니라 백엔드의 합계행이므로 반드시 필터링!
+    const isTaxOrTotalRow = ['NET', 'VAT', 'SVC', 'GRAND TOTAL', 'TOTAL'].includes(String(item.shop_name || '').toUpperCase());
+    
+    if (isBackendSubtotalRow || isTaxOrTotalRow) return;
 
     let categoryCode = item.category_code || 'OTHER';
     let categoryName = item.category_name || '기타영업';
@@ -39,25 +42,91 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       shopName = '놀이동산';
     }
 
-    // 3. 카테고리 강제 보정 (Posting 등으로 인해 카테고리가 꼬인 경우 원상 복구)
-    if (['그린피', '카트대여', '캐디피', '프로샵'].some(k => shopName.includes(k))) {
-      categoryCode = 'GOLF';
-      categoryName = '골프장';
-    } else if (['조식', '브리스킷', '카페', '식당', '푸드코트', '치킨', '맥주', '바비큐', 'FNB', '식음', '라운지'].some(k => shopName.includes(k))) {
-      categoryCode = 'FNB';
-      categoryName = '식음업장';
-    } else if (['마리나클럽', '썰매', '놀이동산', '루지', '티켓', '목장', '미디어아트', '짚라인'].some(k => shopName.includes(k))) {
-      categoryCode = 'TICKET';
-      categoryName = '티켓업장';
-    } else if (['객실', '콘도', '룸'].some(k => shopName.includes(k))) {
-      categoryCode = 'ROOM';
-      categoryName = '객실';
-    } else if (['연회', '세미나', '대관'].some(k => shopName.includes(k))) {
-      categoryCode = 'BANQUET';
-      categoryName = '연회';
-    } else if (['모토아레나'].some(k => shopName.includes(k))) {
-      categoryCode = 'MOTO';
-      categoryName = '모토아레나';
+    const shopCategoryMap: Record<string, { code: string, name: string }> = {
+      // GOLF
+      '그린피': { code: 'GOLF', name: '골프장' },
+      '카트대여': { code: 'GOLF', name: '골프장' },
+      '캐디피': { code: 'GOLF', name: '골프장' },
+      '프로샵': { code: 'GOLF', name: '골프장' },
+      '대여품': { code: 'GOLF', name: '골프장' },
+      '골프': { code: 'GOLF', name: '골프장' },
+      
+      // FNB (식음업장)
+      '조식': { code: 'FNB', name: '식음업장' },
+      '브리스킷346': { code: 'FNB', name: '식음업장' },
+      '브리스킷': { code: 'FNB', name: '식음업장' },
+      '얼룩말카페': { code: 'FNB', name: '식음업장' },
+      '밤밤테이블': { code: 'FNB', name: '식음업장' },
+      '남도예담': { code: 'FNB', name: '식음업장' },
+      '앵무새촌': { code: 'FNB', name: '식음업장' },
+      '클럽하우스-레스토랑': { code: 'FNB', name: '식음업장' },
+      '클럽하우스-스타트하우스': { code: 'FNB', name: '식음업장' },
+      '레스토랑': { code: 'FNB', name: '식음업장' },
+      '스타트하우스': { code: 'FNB', name: '식음업장' },
+      '쿠치나': { code: 'FNB', name: '식음업장' },
+      '핏스탑': { code: 'FNB', name: '식음업장' },
+      '딜라이트': { code: 'FNB', name: '식음업장' },
+      '밤밤트럭': { code: 'FNB', name: '식음업장' },
+      '썸머트럭(현장)': { code: 'FNB', name: '식음업장' },
+      '푸드코트': { code: 'FNB', name: '식음업장' },
+      '치킨': { code: 'FNB', name: '식음업장' },
+      '맥주': { code: 'FNB', name: '식음업장' },
+      '바비큐': { code: 'FNB', name: '식음업장' },
+      '라운지': { code: 'FNB', name: '식음업장' },
+      '미디어-기프트샵': { code: 'FNB', name: '식음업장' },
+      'BHC(멕시카나)': { code: 'FNB', name: '식음업장' },
+      'CU편의점': { code: 'FNB', name: '식음업장' },
+      '네네치킨': { code: 'FNB', name: '식음업장' },
+      '투썸플레이스': { code: 'FNB', name: '식음업장' },
+      
+      // TICKET (티켓업장)
+      '마리나클럽': { code: 'TICKET', name: '티켓업장' },
+      '사계절썰매장': { code: 'TICKET', name: '티켓업장' },
+      '썰매': { code: 'TICKET', name: '티켓업장' },
+      '놀이동산': { code: 'TICKET', name: '티켓업장' },
+      '익스트림루지': { code: 'TICKET', name: '티켓업장' },
+      '루지': { code: 'TICKET', name: '티켓업장' },
+      '벨포레목장': { code: 'TICKET', name: '티켓업장' },
+      '벨포레목장(계열)': { code: 'TICKET', name: '티켓업장' },
+      '목장': { code: 'TICKET', name: '티켓업장' },
+      '미디어아트센터': { code: 'TICKET', name: '티켓업장' },
+      '미디어아트': { code: 'TICKET', name: '티켓업장' },
+      '짚라인': { code: 'TICKET', name: '티켓업장' },
+      '썸머랜드(입장)': { code: 'TICKET', name: '티켓업장' },
+      '썸머랜드': { code: 'TICKET', name: '티켓업장' },
+      '온라인티켓': { code: 'TICKET', name: '티켓업장' },
+      '온라인티켓 기타': { code: 'TICKET', name: '티켓업장' },
+      '기타티켓': { code: 'TICKET', name: '티켓업장' },
+      '기타티켓(패키지)': { code: 'TICKET', name: '티켓업장' },
+      '마운틴카트': { code: 'TICKET', name: '티켓업장' },
+      
+      // MOTO (모토아레나)
+      '모토아레나': { code: 'MOTO', name: '모토아레나' },
+      '모토아레나렌탈샵': { code: 'MOTO', name: '모토아레나' },
+      
+      // ROOM (객실)
+      '객실': { code: 'ROOM', name: '객실' },
+      '콘도': { code: 'ROOM', name: '객실' },
+      'ROOM OTHER': { code: 'ROOM', name: '객실' },
+      '벨포레 콘도': { code: 'ROOM', name: '객실' },
+      
+      // BANQUET (연회)
+      '연회장': { code: 'BANQUET', name: '연회' },
+      '벨포레홀': { code: 'BANQUET', name: '연회' },
+      '연회': { code: 'BANQUET', name: '연회' },
+      '세미나': { code: 'BANQUET', name: '연회' },
+      '대관': { code: 'BANQUET', name: '연회' }
+    };
+
+    // 1:1 매핑 시도, 실패 시 부분 일치(fallback) 혹은 'OTHER' 유지
+    const mapped = shopCategoryMap[shopName];
+    if (mapped) {
+      categoryCode = mapped.code;
+      categoryName = mapped.name;
+    } else {
+      // 1:1 매핑 실패 시, 일부 키워드 폴백
+      if (shopName.includes('티켓')) { categoryCode = 'TICKET'; categoryName = '티켓업장'; }
+      else if (shopName.includes('식당') || shopName.includes('카페') || shopName.includes('식음')) { categoryCode = 'FNB'; categoryName = '식음업장'; }
     }
 
     const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;

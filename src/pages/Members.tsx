@@ -104,7 +104,7 @@ export default function Members() {
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
         const data = await secureFetcher(
-          `https://belleforet-data.vercel.app/api/v5/members/usage?hash=${hashHex}&startDate=${localStartDate}&endDate=${localEndDate}`
+          `https://belleforet-data.vercel.app/api/v3/members/usage?hash=${hashHex}&startDate=${localStartDate}&endDate=${localEndDate}`
         );
 
         if (data.success) {

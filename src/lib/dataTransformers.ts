@@ -283,3 +283,204 @@ export const transformExecutiveData = (core: CoreDataState) => {
     revenueData: { summary: summaryList, details }
   };
 };
+
+export const CHANNEL_ENUM: Record<string, string> = {
+  '기업영업(휴양소)': '기업영업(휴양소)',
+  '휴양소': '기업영업(휴양소)',
+  '법인': '기업영업(휴양소)',
+  '온라인 여행사(OTA)': '온라인 여행사(OTA)',
+  '온라인 여행사(자동)': '온라인 여행사(OTA)',
+  '야놀자': '온라인 여행사(OTA)',
+  '여기어때': '온라인 여행사(OTA)',
+  '아고다': '온라인 여행사(OTA)',
+  '익스피디아': '온라인 여행사(OTA)',
+  '트립닷컴': '온라인 여행사(OTA)',
+  '네이버예약': '온라인 여행사(OTA)',
+  '카카오메이커스': '온라인 여행사(OTA)',
+  '쿠팡': '온라인 여행사(OTA)',
+  '단체영업(세미나)': '단체영업(세미나)',
+  'MICE': '단체영업(세미나)',
+  '워크샵': '단체영업(세미나)',
+  '연수': '단체영업(세미나)',
+  '수학여행': '단체영업(세미나)',
+  '예약실(오프라인)': '예약실(오프라인)',
+  '전화': '예약실(오프라인)',
+  '메신저': '예약실(오프라인)',
+  '분양회원': '예약실(오프라인)',
+  '임직원': '예약실(오프라인)',
+  '홈페이지(다이렉트)': '홈페이지(다이렉트)',
+  'APP': '홈페이지(다이렉트)',
+  'WEB': '홈페이지(다이렉트)',
+  '자사채널': '홈페이지(다이렉트)'
+};
+
+export const normalizeMarketType = (marketName: string) => {
+  if (!marketName) return '기타';
+  // Check exact match first
+  if (CHANNEL_ENUM[marketName]) return CHANNEL_ENUM[marketName];
+  // Fallback to substring matching for legacy payloads, but using strict enum
+  for (const key of Object.keys(CHANNEL_ENUM)) {
+    if (marketName.includes(key)) {
+      return CHANNEL_ENUM[key];
+    }
+  }
+  return '기타';
+};
+
+export const transformResortData = (payload: any) => {
+  if (!payload) return null;
+
+  // Defensive parsing arrays
+  const roomTypeBreakdown = Array.isArray(payload.roomTypeBreakdown) 
+    ? payload.roomTypeBreakdown 
+    : (Array.isArray(payload.visitorData?.roomTypeBreakdown) ? payload.visitorData.roomTypeBreakdown : []);
+  
+  // Bug fix: Evaluate roomMarketBreakdown FIRST before channelBreakdown which could be an empty array
+  let marketBreakdown = [];
+  if (payload.roomMarketBreakdown && Array.isArray(payload.roomMarketBreakdown) && payload.roomMarketBreakdown.length > 0) {
+    marketBreakdown = payload.roomMarketBreakdown;
+  } else if (payload.channelBreakdown && Array.isArray(payload.channelBreakdown) && payload.channelBreakdown.length > 0) {
+    marketBreakdown = payload.channelBreakdown;
+  } else if (payload.marketTypeBreakdown && Array.isArray(payload.marketTypeBreakdown)) {
+    marketBreakdown = payload.marketTypeBreakdown;
+  }
+
+  // Fallbacks for rooms legacy array
+  const roomsLegacy = Array.isArray(payload.rooms) ? payload.rooms : [];
+
+  // 1. Calculate Room Occupancy & Sales using Defensive logic
+  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
+    '16평': { sold: 0, cap: 0, rev: 0 },
+    '35평': { sold: 0, cap: 0, rev: 0 },
+    '51평': { sold: 0, cap: 0, rev: 0, isVirtual: true },
+    '기타': { sold: 0, cap: 0, rev: 0 }
+  };
+
+  if (roomsLegacy.length > 0) {
+    roomsLegacy.forEach((r: any) => {
+      const name = r.roomType || '기타';
+      if (name === '전체' || name === '소계' || name === '합계') return;
+      const sold = Number(r.sales_qty || r.roomsSold || 0);
+      const cap = Number(r.total_capacity || 0);
+      const rev = Number(r.revenue || 0);
+
+      if (name.includes('16평')) {
+        roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].cap += cap; roomOccupancyMap['16평'].rev += rev;
+      } else if (name.includes('35평')) {
+        roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].cap += cap; roomOccupancyMap['35평'].rev += rev;
+      } else if (name.includes('51평')) {
+        roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].cap += cap; roomOccupancyMap['51평'].rev += rev;
+      } else {
+        roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].cap += cap; roomOccupancyMap['기타'].rev += rev;
+      }
+    });
+  } else if (roomTypeBreakdown.length > 0) {
+    roomTypeBreakdown.forEach((item: any) => {
+      const name = item.pyType || item.facility_name || item.shop_name || '기타';
+      const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
+      const cap = Number(item.total_capacity || 0);
+      const rev = Number(item.today_actual ?? item.revenue) || 0;
+
+      if (name.includes('16평')) {
+        roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].cap += cap; roomOccupancyMap['16평'].rev += rev;
+      } else if (name.includes('35평')) {
+        roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].cap += cap; roomOccupancyMap['35평'].rev += rev;
+      } else if (name.includes('51평')) {
+        roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].cap += cap; roomOccupancyMap['51평'].rev += rev;
+      } else {
+        roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].cap += cap; roomOccupancyMap['기타'].rev += rev;
+      }
+    });
+  }
+
+  // 2. Channel & Market Data (Applying SSOT and Enum mapping)
+  const channelMap: Record<string, { rev: number; sold: number }> = {};
+  
+  if (marketBreakdown.length > 0) {
+    marketBreakdown.forEach((item: any) => {
+      const rawChannel = item.segment || item.channel_name || item.shop_name || '기타';
+      const normalizedChannel = normalizeMarketType(rawChannel);
+      const revenue = Number(item.today_actual ?? item.revenue) || 0;
+      const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
+
+      if (!channelMap[normalizedChannel]) channelMap[normalizedChannel] = { rev: 0, sold: 0 };
+      channelMap[normalizedChannel].rev += revenue;
+      channelMap[normalizedChannel].sold += sold;
+    });
+  }
+
+  const channelAdrData = Object.keys(channelMap).map(k => ({
+    channel: k,
+    roomsSold: channelMap[k].sold,
+    totalRevenue: channelMap[k].rev,
+    adr: channelMap[k].sold > 0 ? Math.round(channelMap[k].rev / channelMap[k].sold) : 0
+  })).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  // 3. Rate Type Data
+  const rateBreakdown = Array.isArray(payload.rateTypeBreakdown) ? payload.rateTypeBreakdown : [];
+  const rateMap: Record<string, { rev: number; sold: number }> = {};
+  
+  if (roomsLegacy.length > 0) {
+    roomsLegacy.forEach((r: any) => {
+      const rt = r.rateType || '기타';
+      if (rt === '전체' || rt === '소계' || rt === '합계') return;
+      if (!rateMap[rt]) rateMap[rt] = { rev: 0, sold: 0 };
+      rateMap[rt].rev += Number(r.revenue || 0);
+      rateMap[rt].sold += Number(r.sales_qty || r.roomsSold || 0);
+    });
+  } else if (rateBreakdown.length > 0) {
+    rateBreakdown.forEach((item: any) => {
+      const rt = item.shop_name || '기타';
+      const revenue = Number(item.today_actual ?? item.revenue) || 0;
+      const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
+      if (!rateMap[rt]) rateMap[rt] = { rev: 0, sold: 0 };
+      rateMap[rt].rev += revenue;
+      rateMap[rt].sold += sold;
+    });
+  }
+
+  const rateAdrData = Object.keys(rateMap).map(k => ({
+    rateType: k,
+    roomsSold: rateMap[k].sold,
+    totalRevenue: rateMap[k].rev,
+    adr: rateMap[k].sold > 0 ? Math.round(rateMap[k].rev / rateMap[k].sold) : 0
+  })).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  // SSOT Principle for Lodging Stats
+  let summaryRevenue = 0;
+  let summaryRoomsSold = 0;
+  let summaryTotalCapacity = 0;
+  
+  const resortSummary = payload.roomSummary || payload.resortSummary;
+  if (resortSummary) {
+    summaryRevenue = Number(resortSummary.totalRoomRevenue ?? resortSummary.today_actual ?? resortSummary.lodging_revenue) || 0;
+    summaryRoomsSold = Number(resortSummary.totalRoomsSold ?? resortSummary.sales_qty ?? resortSummary.rooms_sold) || 0;
+    summaryTotalCapacity = Number(resortSummary.total_capacity) || 0;
+  }
+
+  // Fallback to local reduce if SSOT is missing or 0
+  if (summaryRevenue === 0 && summaryRoomsSold === 0) {
+    summaryRevenue = Object.values(roomOccupancyMap).reduce((sum, g) => sum + g.rev, 0);
+    summaryRoomsSold = Object.values(roomOccupancyMap).reduce((sum, g) => sum + g.sold, 0);
+  }
+
+  const lodgingStats = {
+    revenue: summaryRevenue,
+    roomsSold: summaryRoomsSold,
+    totalCapacity: summaryTotalCapacity,
+    adr: summaryRoomsSold > 0 ? Math.round(summaryRevenue / summaryRoomsSold) : 0
+  };
+
+  return {
+    success: payload.success || true,
+    date: payload.date,
+    ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
+    today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
+    roomOccupancyMap,
+    channelAdrData,
+    rateAdrData,
+    lodgingStats,
+    rawRooms: roomsLegacy, // Keep raw available for any edge case
+    rawRoomTypeBreakdown: roomTypeBreakdown
+  };
+};

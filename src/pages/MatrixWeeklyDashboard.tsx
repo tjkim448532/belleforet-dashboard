@@ -35,10 +35,23 @@ export default function MatrixWeeklyDashboard() {
         const result = res.data || res;
         const dataArray = Array.isArray(result) ? result : (result.data || []);
         
-        const map: Record<string, MatrixRow> = {};
+        const map: Record<string, any> = {};
         dataArray.forEach((row: any) => {
-          if (row.category_code) {
-            map[row.category_code] = row;
+          const code = row.category_code;
+          if (code) {
+            if (!map[code]) {
+              map[code] = {
+                today_actual: 0, today_ly: 0,
+                mtd_actual: 0, mtd_ly: 0,
+                ytd_actual: 0, ytd_ly: 0
+              };
+            }
+            map[code].today_actual += Number(row.today_actual || row.actual || 0);
+            map[code].today_ly += Number(row.today_ly || row.lastYear || row.ly_actual || 0);
+            map[code].mtd_actual += Number(row.mtd_actual || 0);
+            map[code].mtd_ly += Number(row.mtd_ly || 0);
+            map[code].ytd_actual += Number(row.ytd_actual || 0);
+            map[code].ytd_ly += Number(row.ytd_ly || 0);
           }
         });
         setWeeklyTotals(map);

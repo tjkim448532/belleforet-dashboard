@@ -95,7 +95,7 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       '썸머랜드(입장)': { code: 'TICKET', name: '티켓업장' },
       '썸머랜드': { code: 'TICKET', name: '티켓업장' },
       '온라인티켓': { code: 'TICKET', name: '티켓업장' },
-      '온라인티켓 기타': { code: 'TICKET', name: '티켓업장' },
+      '온라인티켓기타': { code: 'TICKET', name: '티켓업장' },
       '기타티켓': { code: 'TICKET', name: '티켓업장' },
       '기타티켓(패키지)': { code: 'TICKET', name: '티켓업장' },
       '마운틴카트': { code: 'TICKET', name: '티켓업장' },
@@ -107,8 +107,8 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
       // ROOM (객실)
       '객실': { code: 'ROOM', name: '객실' },
       '콘도': { code: 'ROOM', name: '객실' },
-      'ROOM OTHER': { code: 'ROOM', name: '객실' },
-      '벨포레 콘도': { code: 'ROOM', name: '객실' },
+      'ROOMOTHER': { code: 'ROOM', name: '객실' },
+      '벨포레콘도': { code: 'ROOM', name: '객실' },
       
       // BANQUET (연회)
       '연회장': { code: 'BANQUET', name: '연회' },

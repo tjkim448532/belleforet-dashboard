@@ -205,38 +205,64 @@ export default function ResortBusiness() {
     return result;
   })();
 
+  const groupMarketType = (market: string) => {
+    const m = (market || '').replace(/\s+/g, '');
+    
+    // 1. 기업영업(휴양소)
+    if (m.includes('휴양소') || m.includes('법인') || m.includes('기업영업')) return '기업영업(휴양소)';
+    
+    // 2. 온라인 여행사(OTA)
+    if (m.includes('온라인') || m.includes('여행사') || m.includes('OTA') || m.includes('자동') || m.includes('수동') || m.includes('야놀자') || m.includes('여기어때') || m.includes('아고다') || m.includes('익스피디아') || m.includes('트립닷컴') || m.includes('네이버예약') || m.includes('카카오메이커스') || m.includes('쿠팡')) return '온라인 여행사(OTA)';
+    
+    // 3. 단체영업(세미나)
+    if (m.includes('단체') || m.includes('세미나') || m.includes('MICE') || m.includes('워크샵') || m.includes('연수') || m.includes('수학여행')) return '단체영업(세미나)';
+    
+    // 4. 예약실(오프라인)
+    if (m.includes('예약실') || m.includes('전화') || m.includes('메신저') || m.includes('분양회원') || m.includes('임직원')) return '예약실(오프라인)';
+    
+    // 5. 홈페이지(다이렉트)
+    if (m.includes('홈페이지') || m.includes('APP') || m.includes('WEB') || m.includes('자사채널')) return '홈페이지(다이렉트)';
+    
+    return '기타';
+  };
+
   const channelAdrData = (() => {
     if (!data) return [];
+    
+    const map: Record<string, { rev: number, sold: number }> = {};
+    
     if (data.rooms && data.rooms.length > 0) {
-      const map: Record<string, { rev: number, sold: number }> = {};
       data.rooms.forEach(r => {
         const mt = r.marketType || '기타';
         if (mt === '전체' || mt === '소계' || mt === '합계') return;
-        if (!map[mt]) map[mt] = { rev: 0, sold: 0 };
-        map[mt].rev += Number(r.revenue || 0);
-        map[mt].sold += Number(r.sales_qty || r.roomsSold || 0);
+        
+        const groupName = groupMarketType(mt);
+        if (!map[groupName]) map[groupName] = { rev: 0, sold: 0 };
+        map[groupName].rev += Number(r.revenue || 0);
+        map[groupName].sold += Number(r.sales_qty || r.roomsSold || 0);
       });
-      return Object.keys(map).map(k => ({
-        channel: k,
-        roomsSold: map[k].sold,
-        totalRevenue: map[k].rev,
-        adr: map[k].sold > 0 ? Math.round(map[k].rev / map[k].sold) : 0
-      })).sort((a, b) => b.totalRevenue - a.totalRevenue);
-    }
-    
-    if (data.channelBreakdown) {
-      return data.channelBreakdown.map(item => {
+    } else if (data.channelBreakdown) {
+      data.channelBreakdown.forEach(item => {
+        const rawChannel = item.segment || item.channel_name || item.shop_name || '알수없음';
+        const groupName = groupMarketType(rawChannel);
+        
         const revenue = Number(item.today_actual ?? item.revenue) || 0;
         const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
-        return {
-          channel: item.segment || item.channel_name || item.shop_name || '알수없음',
-          roomsSold: sold,
-          totalRevenue: revenue,
-          adr: sold > 0 ? Math.round(revenue / sold) : 0
-        };
-      }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+        
+        if (!map[groupName]) map[groupName] = { rev: 0, sold: 0 };
+        map[groupName].rev += revenue;
+        map[groupName].sold += sold;
+      });
+    } else {
+      return [];
     }
-    return [];
+    
+    return Object.keys(map).map(k => ({
+      channel: k,
+      roomsSold: map[k].sold,
+      totalRevenue: map[k].rev,
+      adr: map[k].sold > 0 ? Math.round(map[k].rev / map[k].sold) : 0
+    })).sort((a, b) => b.totalRevenue - a.totalRevenue);
   })();
 
   const rateAdrData = (() => {

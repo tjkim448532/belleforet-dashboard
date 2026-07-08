@@ -43,7 +43,7 @@ export default function ResortBusiness() {
           resortSummary: payload.roomSummary || payload.resortSummary || null,
           rooms: payload.rooms || null,
           roomTypeBreakdown: payload.roomTypeBreakdown || payload.visitorData?.roomTypeBreakdown || [],
-          channelBreakdown: payload.roomMarketBreakdown || payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || [],
+          channelBreakdown: payload.channelBreakdown || payload.marketTypeBreakdown || payload.segmentBreakdown || payload.roomMarketBreakdown || [],
           rateTypeBreakdown: payload.rateTypeBreakdown || []
         });
       } catch (err) {

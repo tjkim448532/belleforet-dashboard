@@ -52,7 +52,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       const queryParams = `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`;
 
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);
+        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
 
         let corePayload = res.data || res;
         // 백엔드 응답에서 weather가 root 객체에 분리되어 내려올 경우 병합 처리

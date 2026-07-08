@@ -19,7 +19,7 @@ export const DataSyncStatus: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://belleforet-data.vercel.app/api/v3/etl/logs');
+      const response = await fetch('https://belleforet-data.vercel.app/api/v5/etl/logs');
       if (!response.ok) throw new Error('Failed to fetch data sync status');
       
       const data = await response.json();

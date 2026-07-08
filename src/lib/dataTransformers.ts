@@ -95,7 +95,13 @@ export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
     }
   });
 
-  return Array.from(rowMap.values());
+  return Array.from(rowMap.values()).filter(row => {
+    // 제로(0) 필터링: 금일, 누계, 전년 모두 0원인 쓰레기 행은 렌더링에서 제외
+    const hasToday = row.today.actual > 0 || row.today.lastYear > 0;
+    const hasMtd = row.mtd.actual > 0 || row.mtd.lastYear > 0;
+    const hasYtd = row.ytd.actual > 0 || row.ytd.lastYear > 0;
+    return hasToday || hasMtd || hasYtd;
+  });
 };
 
 export const transformHomeData = (core: CoreDataState) => {
@@ -327,7 +333,7 @@ export const normalizeMarketType = (marketName: string) => {
   return '기타';
 };
 
-export const transformResortData = (payload: any) => {
+export const transformResortData = (payload: any, masterCapacities?: Record<string, number>) => {
   if (!payload) return null;
 
   // Defensive parsing arrays
@@ -361,14 +367,17 @@ export const transformResortData = (payload: any) => {
       const name = r.roomType || '기타';
       if (name === '전체' || name === '소계' || name === '합계') return;
       const sold = Number(r.sales_qty || r.roomsSold || 0);
-      const cap = Number(r.total_capacity || 0);
       const rev = Number(r.revenue || 0);
+      let cap = Number(r.total_capacity || 0);
 
       if (name.includes('16평')) {
+        cap = cap || (masterCapacities?.['16평'] ?? 0);
         roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].cap += cap; roomOccupancyMap['16평'].rev += rev;
       } else if (name.includes('35평')) {
+        cap = cap || (masterCapacities?.['35평'] ?? 0);
         roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].cap += cap; roomOccupancyMap['35평'].rev += rev;
       } else if (name.includes('51평')) {
+        cap = cap || (masterCapacities?.['51평'] ?? 0);
         roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].cap += cap; roomOccupancyMap['51평'].rev += rev;
       } else {
         roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].cap += cap; roomOccupancyMap['기타'].rev += rev;
@@ -378,14 +387,17 @@ export const transformResortData = (payload: any) => {
     roomTypeBreakdown.forEach((item: any) => {
       const name = item.pyType || item.facility_name || item.shop_name || '기타';
       const sold = Number(item.sales_qty || item.qty || item.rooms_sold || 0);
-      const cap = Number(item.total_capacity || 0);
       const rev = Number(item.today_actual ?? item.revenue) || 0;
+      let cap = Number(item.total_capacity || 0);
 
       if (name.includes('16평')) {
+        cap = cap || (masterCapacities?.['16평'] ?? 0);
         roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].cap += cap; roomOccupancyMap['16평'].rev += rev;
       } else if (name.includes('35평')) {
+        cap = cap || (masterCapacities?.['35평'] ?? 0);
         roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].cap += cap; roomOccupancyMap['35평'].rev += rev;
       } else if (name.includes('51평')) {
+        cap = cap || (masterCapacities?.['51평'] ?? 0);
         roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].cap += cap; roomOccupancyMap['51평'].rev += rev;
       } else {
         roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].cap += cap; roomOccupancyMap['기타'].rev += rev;

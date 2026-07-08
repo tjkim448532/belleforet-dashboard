@@ -17,6 +17,18 @@ export default function ResortBusiness() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
+        let caps: Record<string, number> | undefined;
+        try {
+          const { db } = await import('../lib/firebase');
+          const { doc, getDoc } = await import('firebase/firestore');
+          const docSnap = await getDoc(doc(db, 'roomCapacity', 'default'));
+          if (docSnap.exists()) {
+            caps = docSnap.data() as Record<string, number>;
+          }
+        } catch (firebaseErr) {
+          console.error('Error fetching master capacities from Firebase:', firebaseErr);
+        }
+
         const queryParams = startDate === endDate 
           ? `date=${endDate}` 
           : `startDate=${startDate}&endDate=${endDate}`;
@@ -24,7 +36,7 @@ export default function ResortBusiness() {
         const payload = json.data ?? json;
         if (!payload) throw new Error("Invalid payload");
         
-        setData(transformResortData(payload));
+        setData(transformResortData(payload, caps));
       } catch (err) {
         console.error('API Error:', err);
         setData(null);

@@ -110,7 +110,13 @@ export const transformHomeData = (core: CoreDataState) => {
   })).filter(h => h.actual > 0);
 
   // Use SSOT values explicitly
-  const totalRoomRev = c.summary?.roomRevenue || 0;
+  // Find room revenue from salesByCategory as backend gives it per category
+  let totalRoomRev = 0;
+  if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
+    const roomCat = c.salesByCategory.find((x: any) => x.category === '객실');
+    if (roomCat) totalRoomRev = Number(roomCat.sales || roomCat.revenue || 0);
+  }
+  
   const totalResortRevGross = c.summary?.totalRevenue || 0;
   const totalRoomsSold = c.summary?.totalRooms || 0;
   const totalRoomCap = c.summary?.totalRoomCap || c.summary?.totalGuests || 0;
@@ -141,17 +147,17 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: c.summary?.ytdRevenue || c.ytd_actual || c.ytd?.actual || 0, 
-      ly_actual: c.summary?.ytdLyRevenue || c.ytd_ly || c.ytd?.ly_actual || 0,
-      gross: c.summary?.ytdGross || c.ytd_actual || c.ytd?.gross || 0,
-      ly_gross: c.summary?.ytdLyGross || c.ytd_ly || c.ytd?.ly_gross || 0,
+      actual: 0, 
+      ly_actual: 0,
+      gross: 0,
+      ly_gross: 0,
       ly_day: 0
     },
     today: { 
-      actual: c.summary?.todayRevenue || c.today_actual || c.today?.actual || 0, 
-      ly_actual: c.summary?.todayLyRevenue || c.today_ly || c.today?.ly_actual || 0,
-      gross: c.summary?.todayGross || c.today_actual || c.today?.gross || 0,
-      ly_gross: c.summary?.todayLyGross || c.today_ly || c.today?.ly_gross || 0,
+      actual: c.summary?.totalRevenue || 0, 
+      ly_actual: 0,
+      gross: c.summary?.totalRevenue || 0,
+      ly_gross: 0,
       ly_day: 0
     },
     hq_today: hqToday,
@@ -164,9 +170,9 @@ export const transformHomeData = (core: CoreDataState) => {
     golfSummary: {
       reservedTeams: c.summary?.totalGolfTeams || 0,
       visitedTeams: c.summary?.totalGolfTeams || 0,
-      visitedPlayers: c.summary?.totalGolfPlayers || 0,
-      avgGreenFee: c.summary?.avgGreenFee || 0,
-      ly_avgGreenFee: c.summary?.lyAvgGreenFee || 0,
+      visitedPlayers: 0, // 바이블에 없는 경우 0
+      avgGreenFee: 0,
+      ly_avgGreenFee: 0,
     },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
     qa_metrics: c.qa_metrics || null
@@ -269,15 +275,13 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   // SSOT Principle for Lodging Stats
   let summaryRevenue = 0;
-  let summaryRoomsSold = 0;
-  let summaryTotalCapacity = 0;
-  
-  const resortSummary = payload.roomSummary || payload.resortSummary;
-  if (resortSummary) {
-    summaryRevenue = Number(resortSummary.totalRoomRevenue ?? resortSummary.today_actual ?? resortSummary.lodging_revenue) || 0;
-    summaryRoomsSold = Number(resortSummary.totalRoomsSold ?? resortSummary.sales_qty ?? resortSummary.rooms_sold) || 0;
-    summaryTotalCapacity = Number(resortSummary.total_capacity) || 0;
+  if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
+    const roomCat = payload.salesByCategory.find((x: any) => x.category === '객실');
+    if (roomCat) summaryRevenue = Number(roomCat.sales || roomCat.revenue || 0);
   }
+  
+  let summaryRoomsSold = payload.summary?.totalRooms || 0;
+  let summaryTotalCapacity = payload.summary?.totalRoomCap || payload.summary?.totalGuests || 0;
 
 
 

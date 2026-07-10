@@ -38,7 +38,7 @@ export default function Members() {
   const [searchQuery, setSearchQuery] = useState('');
   
   // 2. Global date context for default range
-  const { startDate, endDate } = useDate();
+  const { startDate } = useDate();
   
   // 3. States for usage tracking
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -47,7 +47,7 @@ export default function Members() {
   
   // Local date override for usage history
   const [localStartDate, setLocalStartDate] = useState(startDate);
-  const [localEndDate, setLocalEndDate] = useState(endDate);
+  const [localEndDate, setLocalEndDate] = useState(startDate);
 
   // 4. States for Add/Edit Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -61,15 +61,11 @@ export default function Members() {
   const [formType, setFormType] = useState<'골프회원' | '콘도회원' | '일반회원' | 'VIP'>('일반회원');
 
   const [prevStartDate, setPrevStartDate] = useState(startDate);
-  const [prevEndDate, setPrevEndDate] = useState(endDate);
 
   if (startDate !== prevStartDate) {
     setPrevStartDate(startDate);
     setLocalStartDate(startDate);
-  }
-  if (endDate !== prevEndDate) {
-    setPrevEndDate(endDate);
-    setLocalEndDate(endDate);
+    setLocalEndDate(startDate);
   }
 
   // Firestore Real-time listener for members
@@ -243,7 +239,7 @@ export default function Members() {
           <p className="text-slate-500 text-sm mt-1">리조트 사업본부 산하 회원명부 및 실시간 업장에 걸친 이용 실적 추적</p>
         </div>
         <div className="flex items-center gap-4">
-          <GlobalDatePicker allowRange={true} />
+          <GlobalDatePicker />
           <button
             onClick={handleOpenAddModal}
             className="flex items-center gap-2 px-5 py-3 bg-brand-mint text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/20 cursor-pointer"

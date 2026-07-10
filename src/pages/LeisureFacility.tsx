@@ -1,78 +1,47 @@
 import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
 import { useCoreData } from '../contexts/CoreDataContext';
-import { useDate } from '../contexts/DateContext';
-import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { Ticket, Trophy, AlertCircle, Wallet } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
 
 export default function LeisureFacility() {
-  const { groupId } = useParams();
   const { core, isLoading } = useCoreData();
-  const { startDate, endDate } = useDate();
-  const { leisureGroups } = useLeisureMapping();
-
-  const group = leisureGroups.find(g => g.id === groupId);
 
   const { totalSales, topTickets, totalQuantity } = useMemo(() => {
-    if (!core || !group) {
+    if (!core?.salesByFacility) {
       return { totalSales: 0, topTickets: [], totalQuantity: 0 };
     }
 
-    const { facilities } = group;
-    const products = core.leisureProductBreakdown || [];
-    const visitors = core.leisureVisitorBreakdown || [];
-
-    // Filter products matching the facilities (for SALES)
-    const matchedProducts = products.filter((p: any) => {
-      return facilities.some((f: string) => p.shop_name?.includes(f));
-    });
-
-    // Filter visitors matching the facilities (for QUANTITY/VISITORS)
-    const matchedVisitors = visitors.filter((v: any) => {
-      return facilities.some((f: string) => v.shop_name?.includes(f));
-    });
+    const ticketFacilities = core.salesByFacility.filter((item: any) => 
+      item.category_code === 'TICKET' || item.category === '티켓/레저' || item.category === '티켓'
+    );
 
     let totalSales = 0;
-    const itemMap = new Map<string, { name: string; sales: number; qty: number; depth1?: string; depth2?: string }>();
+    let totalQuantity = 0;
+    const itemMap = new Map<string, { name: string; sales: number; qty: number; depth2?: string }>();
 
-    matchedProducts.forEach((p: any) => {
-      // Prioritize gross for VAT inclusive calculation
-      const sales = Number(p.today_actual || 0);
-      // Extract qty directly from product payload if the backend provides it
-      const qty = Number(p.sales_qty || p.qty || 0);
+    ticketFacilities.forEach((item: any) => {
+      const sales = Number(item.total_sales || item.today_actual || item.revenue || 0);
+      const qty = Number(item.qty || item.sales_qty || 0);
       totalSales += sales;
-      const pName = p.shop_name || '알 수 없음';
-      const existing = itemMap.get(pName);
+      totalQuantity += qty;
+      
+      const name = item.sub_group_name || item.shop_name || '기타';
+      const existing = itemMap.get(name);
       if (existing) {
         existing.sales += sales;
         existing.qty += qty;
       } else {
-        itemMap.set(pName, { name: pName, sales, qty, depth1: '레저', depth2: p.shop_name });
-      }
-    });
-
-    let totalQuantity = 0;
-    matchedVisitors.forEach((v: any) => {
-      const qty = Number(v.sales_qty || v.qty) || 0;
-      totalQuantity += qty;
-      const vName = v.shop_name || '알 수 없음';
-      const existing = itemMap.get(vName);
-      if (existing) {
-        existing.qty += qty;
-      } else {
-        itemMap.set(vName, { name: vName, sales: 0, qty, depth1: '레저', depth2: v.shop_name });
+        itemMap.set(name, { name, sales, qty, depth2: name });
       }
     });
 
     const sortedTickets = Array.from(itemMap.values())
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 5);
+      .sort((a, b) => b.sales - a.sales);
 
     return { totalSales, topTickets: sortedTickets, totalQuantity };
-  }, [core, group]);
+  }, [core]);
 
   if (isLoading) {
     return (
@@ -82,18 +51,16 @@ export default function LeisureFacility() {
     );
   }
 
-  if (!group) {
+  if (topTickets.length === 0 && !isLoading) {
     return (
       <div className="p-8">
-        <div className="bg-red-50 text-red-500 p-6 rounded-2xl flex items-center gap-3">
+        <div className="bg-slate-50 text-slate-500 p-6 rounded-2xl flex items-center gap-3">
           <AlertCircle size={24} />
-          <p className="font-medium">그룹을 찾을 수 없습니다.</p>
+          <p className="font-medium">레저 영업장 데이터가 없습니다. (혹은 백엔드 데이터 집계 전입니다)</p>
         </div>
       </div>
     );
   }
-
-  const isRange = startDate !== endDate;
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-8">
@@ -109,12 +76,10 @@ export default function LeisureFacility() {
               <span className="font-medium tracking-widest text-sm">BELLE FORET LEISURE</span>
             </div>
             <h1 className="text-3xl font-medium tracking-tight mb-2">
-              {group.name} 영업장 대시보드
+              레저 영업장 대시보드
             </h1>
             <p className="text-emerald-50">
-              {group.facilities.length > 0 
-                ? `현재 묶인 영업장: ${group.facilities.join(', ')}`
-                : '현재 이 그룹에 묶인 영업장이 없습니다. 관리자 페이지에서 묶음 설정을 진행해주세요.'}
+              티켓/레저 카테고리에 속한 전체 영업장의 요약 데이터입니다.
             </p>
           </div>
           
@@ -130,7 +95,7 @@ export default function LeisureFacility() {
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
             <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-50 transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12 rounded-full" />
             <h2 className="text-base font-medium text-slate-500 mb-6 flex items-center gap-2 relative z-10">
-              <Wallet className="w-5 h-5 text-blue-500" /> 그룹 매출 총합 <span className="text-xs font-normal">({isRange ? '선택기간' : '오늘'})</span>
+              <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal">(조회일)</span>
             </h2>
             <div className="text-3xl font-medium text-slate-800 mb-2 tracking-tight relative z-10">
               {formatCurrency(totalSales)}
@@ -146,7 +111,7 @@ export default function LeisureFacility() {
             <div className="text-3xl font-medium text-slate-800 mb-2 tracking-tight relative z-10">
               {totalQuantity.toLocaleString()} <span className="text-xl text-slate-500">개</span>
             </div>
-            <p className="text-slate-400 text-sm relative z-10 font-medium">그룹 내 판매된 상품 총합</p>
+            <p className="text-slate-400 text-sm relative z-10 font-medium">전체 판매된 티켓/상품 총합</p>
           </div>
         </div>
 
@@ -154,8 +119,8 @@ export default function LeisureFacility() {
         <div className="lg:col-span-8">
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full">
             <h2 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-amber-400" /> 가장 많이 팔린 상품 Top 5
-              <span className="text-xs font-normal text-slate-400 ml-2 bg-slate-100 px-2 py-1 rounded-md">매출액 기준 정렬</span>
+              <Trophy className="w-6 h-6 text-amber-400" /> 전체 영업장 실적
+              <span className="text-xs font-normal text-slate-400 ml-2 bg-slate-100 px-2 py-1 rounded-md">매출액 기준 내림차순</span>
             </h2>
 
             {topTickets.length > 0 ? (

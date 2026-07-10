@@ -275,7 +275,7 @@ export default function MatrixWeeklyDashboard() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-medium text-slate-800 tracking-tight">{dynamicTitle}</h1>
         <div className="flex items-center gap-4">
-          <GlobalDatePicker allowRange={false} />
+          <GlobalDatePicker />
         </div>
       </div>
 

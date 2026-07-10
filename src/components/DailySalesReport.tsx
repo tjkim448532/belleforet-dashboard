@@ -3,6 +3,7 @@ import { RefreshCw, Download } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
+
 interface SalesData {
   category?: string;
   category_code?: string;
@@ -18,117 +19,78 @@ interface SalesData {
   isFooter?: boolean;
 }
 
-const processSalesData = (rawData: SalesData[]) => {
-  // 1. Filter out old fake "... Total" rows
-  const filtered = rawData.filter(r => !r.shop_name?.includes('Total'));
+// V5 Bible Strict adherence: No frontend calculation. Use backend SSOT.
+const processSalesData = (payload: any) => {
+  if (!payload) return [];
   
-  // 2. Normalize shop names
-  const normalizedMap = new Map<string, SalesData>();
-  
-  filtered.forEach(item => {
-    let rawName = item.shop_name || '알수없음';
-    // Remove " - Posting", " - Posting ", "-Posting"
-    rawName = rawName.replace(/\s*-\s*Posting\s*/i, '');
-    // Remove all spaces
-    rawName = rawName.replace(/\s+/g, '');
-    // Group variations (e.g., 놀이동산(2024) -> 놀이동산)
-    if (rawName.includes('놀이동산')) rawName = '놀이동산';
-    if (rawName.includes('사계절썰매')) rawName = '사계절썰매장';
-    if (rawName.includes('마리나클럽')) rawName = '마리나클럽';
-    
-    // Determine category
-    const cat = item.category_code || item.category || 'OTHER'; // ensure OTHER is handled
-    const key = `${cat}_${rawName}`;
-    
-    if (normalizedMap.has(key)) {
-      const existing = normalizedMap.get(key)!;
-      existing.today_actual += Number(item.today_actual || 0);
-      existing.today_ly += Number(item.today_ly || 0);
-      existing.mtd_actual += Number(item.mtd_actual || 0);
-      existing.mtd_ly += Number(item.mtd_ly || 0);
-      existing.ytd_actual += Number(item.ytd_actual || 0);
-      existing.ytd_ly += Number(item.ytd_ly || 0);
-    } else {
-      normalizedMap.set(key, {
-        ...item,
-        shop_name: rawName,
-        category: cat,
-        today_actual: Number(item.today_actual || 0),
-        today_ly: Number(item.today_ly || 0),
-        mtd_actual: Number(item.mtd_actual || 0),
-        mtd_ly: Number(item.mtd_ly || 0),
-        ytd_actual: Number(item.ytd_actual || 0),
-        ytd_ly: Number(item.ytd_ly || 0),
-      });
-    }
-  });
-
-  // Group by Category
-  const grouped: Record<string, SalesData[]> = {};
-  Array.from(normalizedMap.values()).forEach(item => {
-    let catName = item.category === 'ROOM' ? '객실' :
-                  item.category === 'GOLF' ? '골프장' :
-                  item.category === 'TICKET' ? '티켓/레저' :
-                  item.category === 'FNB' ? '식음' :
-                  item.category === 'MOTO' ? '모토아레나' :
-                  item.category === 'BANQUET' ? '연회' : '기타영업';
-    
-    if (!grouped[catName]) grouped[catName] = [];
-    grouped[catName].push(item);
-  });
-  
-  // Create final array with Category Parent Rows and Grand Total
   const finalArray: SalesData[] = [];
-  const grandTotal = { today_actual: 0, today_ly: 0, mtd_actual: 0, mtd_ly: 0, ytd_actual: 0, ytd_ly: 0 };
   
-  // Define custom sort order for categories
+  const categories = payload.salesByCategory || [];
+  const facilities = payload.salesByFacility || [];
+  
   const sortOrder = ['객실', '골프장', '티켓/레저', '식음', '모토아레나', '연회', '기타영업'];
-  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    const idxA = sortOrder.indexOf(a);
-    const idxB = sortOrder.indexOf(b);
+  
+  // Group facilities by category for rendering order
+  const groupedFacilities: Record<string, any[]> = {};
+  facilities.forEach((f: any) => {
+    let catName = f.category_name || f.category || f.category_code || '기타영업';
+    if (catName === 'ROOM') catName = '객실';
+    else if (catName === 'GOLF') catName = '골프장';
+    else if (catName === 'TICKET') catName = '티켓/레저';
+    else if (catName === 'FNB') catName = '식음';
+    
+    if (!groupedFacilities[catName]) groupedFacilities[catName] = [];
+    groupedFacilities[catName].push(f);
+  });
+  
+  // Sort categories
+  const sortedCategories = [...categories].sort((a: any, b: any) => {
+    const idxA = sortOrder.indexOf(a.category || a.category_name);
+    const idxB = sortOrder.indexOf(b.category || b.category_name);
     return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
   });
 
-  sortedCategories.forEach(catName => {
-    const children = grouped[catName];
-    // calc parent total
-    const parentTotal = children.reduce((acc, curr) => ({
-      today_actual: acc.today_actual + curr.today_actual,
-      today_ly: acc.today_ly + curr.today_ly,
-      mtd_actual: acc.mtd_actual + curr.mtd_actual,
-      mtd_ly: acc.mtd_ly + curr.mtd_ly,
-      ytd_actual: acc.ytd_actual + curr.ytd_actual,
-      ytd_ly: acc.ytd_ly + curr.ytd_ly,
-    }), { today_actual: 0, today_ly: 0, mtd_actual: 0, mtd_ly: 0, ytd_actual: 0, ytd_ly: 0 });
+  // Render Subtotals (isCategory) strictly using salesByCategory
+  sortedCategories.forEach((cat: any) => {
+    const catName = cat.category || cat.category_name || '기타영업';
     
-    grandTotal.today_actual += parentTotal.today_actual;
-    grandTotal.today_ly += parentTotal.today_ly;
-    grandTotal.mtd_actual += parentTotal.mtd_actual;
-    grandTotal.mtd_ly += parentTotal.mtd_ly;
-    grandTotal.ytd_actual += parentTotal.ytd_actual;
-    grandTotal.ytd_ly += parentTotal.ytd_ly;
-    
-    // Add Parent row
     finalArray.push({
       isCategory: true,
       shop_name: catName,
-      ...parentTotal
+      today_actual: Number(cat.sales || cat.revenue || cat.today_actual || 0),
+      today_ly: Number(cat.today_ly || 0),
+      mtd_actual: Number(cat.mtd_actual || 0),
+      mtd_ly: Number(cat.mtd_ly || 0),
+      ytd_actual: Number(cat.ytd_actual || 0),
+      ytd_ly: Number(cat.ytd_ly || 0),
     });
     
-    // Add Child rows
-    children.forEach(child => {
+    const children = groupedFacilities[catName] || [];
+    children.forEach((child: any) => {
       finalArray.push({
         isChild: true,
-        ...child
+        shop_name: child.sub_group_name || child.shop_name || child.facility_name,
+        today_actual: Number(child.total_sales || child.today_actual || child.revenue || 0),
+        today_ly: Number(child.today_ly || 0),
+        mtd_actual: Number(child.mtd_actual || 0),
+        mtd_ly: Number(child.mtd_ly || 0),
+        ytd_actual: Number(child.ytd_actual || 0),
+        ytd_ly: Number(child.ytd_ly || 0),
       });
     });
   });
   
-  // Add Footer Row
+  // Render Grand Total strictly using summary SSOT
+  const summary = payload.summary || {};
   finalArray.push({
     isFooter: true,
     shop_name: '총계 (Grand Total)',
-    ...grandTotal
+    today_actual: Number(summary.todayRevenue || summary.totalRevenue || summary.today_actual || 0),
+    today_ly: Number(summary.todayLyRevenue || summary.today_ly || 0),
+    mtd_actual: Number(summary.mtdRevenue || summary.mtd_actual || 0),
+    mtd_ly: Number(summary.mtdLyRevenue || summary.mtd_ly || 0),
+    ytd_actual: Number(summary.ytdRevenue || summary.ytd_actual || 0),
+    ytd_ly: Number(summary.ytdLyRevenue || summary.ytd_ly || 0),
   });
   
   return finalArray;
@@ -143,11 +105,15 @@ export default function DailySalesReport() {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?startDate=${date}&endDate=${date}`);
+      const result = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?date=${date}`);
       const payload = result.data || result;
-      if (payload && payload.dailyReportBreakdown) {
-        setAccumulated(null);
-        setData(processSalesData(payload.dailyReportBreakdown));
+      // V5 SSOT: Pass the full payload to processSalesData
+      if (payload) {
+        setAccumulated({
+          mtd_room_revenue: payload.summary?.mtdRoomRevenue || 0,
+          ytd_total_gross: payload.summary?.ytdRevenue || 0
+        });
+        setData(processSalesData(payload));
       } else {
         setData([]);
         setAccumulated(null);
@@ -193,8 +159,8 @@ export default function DailySalesReport() {
         </div>
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative w-full sm:w-auto">
-            <GlobalDatePicker allowRange={false} />
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <GlobalDatePicker />
           </div>
           <button 
             onClick={() => fetchSalesData()}

@@ -90,9 +90,9 @@ export default function ExecutiveDashboard() {
     <div className="p-6 lg:p-10 space-y-6 bg-slate-900 min-h-[calc(100vh-64px)] lg:min-h-screen text-slate-100">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-medium tracking-wide text-white">경영진 대시보드 (V3)</h2>
-        <div className="flex bg-slate-800 rounded-xl p-2 border border-slate-700">
-          <GlobalDatePicker allowRange={false} />
-        </div>
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <GlobalDatePicker />
+          </div>
       </div>
 
       {/* KPI Cards */}

@@ -7,7 +7,7 @@ import { transformHomeData } from '../lib/dataTransformers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 export default function Home() {
-  const { startDate, endDate } = useDate();
+  const { startDate } = useDate();
   const coreData = useCoreData();
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -30,19 +30,13 @@ export default function Home() {
   };
 
   const pieChartData = React.useMemo(() => {
-    if (!coreData.core?.gridData) return [];
+    if (!coreData.core?.salesByCategory) return [];
     
-    const categoryTotals: Record<string, number> = {};
-    coreData.core.gridData.forEach((g: any) => {
-      const cat = g.category_name || '기타업장';
-      categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(g.today_actual) || 0);
-    });
-
-    return Object.keys(categoryTotals).map(cat => ({
-      name: cat,
-      value: categoryTotals[cat]
-    })).filter(c => c.value > 0).sort((a, b) => b.value - a.value);
-  }, [coreData.core?.gridData]);
+    return coreData.core.salesByCategory.map((c: any) => ({
+      name: c.category || '기타업장',
+      value: Number(c.sales || c.revenue || 0)
+    })).filter((c: any) => c.value > 0).sort((a: any, b: any) => b.value - a.value);
+  }, [coreData.core?.salesByCategory]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];
 
@@ -79,18 +73,15 @@ export default function Home() {
     let rev35 = 0, sold35 = 0;
     let rev51 = 0, sold51 = 0;
     
-    if (displayData?.roomTypeBreakdown) {
-      displayData?.roomTypeBreakdown?.forEach((item: any) => {
-        const name = item.shop_name || '';
-        // Prioritize gross for VAT inclusive calculation
-        const rev = Number(item.today_actual) || 0;
-        const sold = Number(item.sales_qty || item.qty || 0);
-        if (name.includes('16평')) {
-          rev16 += rev; sold16 += sold;
-        } else if (name.includes('35평')) {
-          rev35 += rev; sold35 += sold;
-        } else if (name.includes('51평')) {
-          rev51 += rev; sold51 += sold;
+    if (coreData.core?.roomSummaryByType) {
+      coreData.core.roomSummaryByType.forEach((item: any) => {
+        const typeName = item.room_type || '';
+        if (typeName.includes('16평')) {
+          rev16 = Number(item.revenue || 0); sold16 = Number(item.rooms_sold || 0);
+        } else if (typeName.includes('35평')) {
+          rev35 = Number(item.revenue || 0); sold35 = Number(item.rooms_sold || 0);
+        } else if (typeName.includes('51평')) {
+          rev51 = Number(item.revenue || 0); sold51 = Number(item.rooms_sold || 0);
         }
       });
     }
@@ -136,7 +127,7 @@ export default function Home() {
             <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <GlobalDatePicker allowRange={true} />
+            <GlobalDatePicker />
           </div>
         </div>
 
@@ -147,10 +138,10 @@ export default function Home() {
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
-                  선택 기간 총매출 ({startDate === endDate ? startDate : `${startDate} ~ ${endDate}`}) 
+                  조회일자 ({startDate}) 
                   <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
                 </h2>
-                {startDate === endDate && (weather || lastYearWeather || !weather) && (
+                {(weather || lastYearWeather) && (
                   <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
                     <div className="opacity-60 text-right pr-3 border-r border-slate-200">
                       <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
@@ -322,7 +313,7 @@ export default function Home() {
                           fill="#8884d8"
                           dataKey="value"
                         >
-                          {pieChartData.map((_, index) => (
+                          {pieChartData.map((_: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -335,7 +326,7 @@ export default function Home() {
                     </ResponsiveContainer>
                   </div>
                   <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
-                    {pieChartData.map((entry, index) => (
+                    {pieChartData.map((entry: any, index: number) => (
                       <div key={entry.name} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>

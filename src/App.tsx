@@ -6,7 +6,6 @@ import { SimulationProvider } from './contexts/SimulationContext';
 import { MappingProvider } from './contexts/MappingContext';
 import { DateProvider } from './contexts/DateContext';
 import { CoreDataProvider } from './contexts/CoreDataContext';
-import { LeisureMappingProvider } from './contexts/LeisureMappingContext';
 
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -15,7 +14,7 @@ import Home from './pages/Home';
 import Simulator from './pages/Simulator';
 import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
-import AdminLeisureMapping from './pages/AdminLeisureMapping';
+// AdminLeisureMapping removed
 import AdminRoles from './pages/AdminRoles';
 
 import ManagementSupport from './pages/ManagementSupport';
@@ -50,19 +49,18 @@ function App() {
       <ThemeProvider>
         <SimulationProvider>
           <MappingProvider>
-            <LeisureMappingProvider>
-              <DateProvider>
-                <CoreDataProvider>
-                  <BrowserRouter>
-                    <Routes>
-                    <Route path="/login" element={<Login />} />
+            <DateProvider>
+              <CoreDataProvider>
+                <BrowserRouter>
+                  <Routes>
+                  <Route path="/login" element={<Login />} />
                     
                     <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                       <Route index element={<Home />} />
                       <Route path="management-support" element={<ManagementSupport />} />
                       <Route path="resort-business" element={<ResortBusiness />} />
                       <Route path="golf-business" element={<GolfBusiness />} />
-                      <Route path="leisure/:groupId" element={<LeisureFacility />} />
+                      <Route path="leisure" element={<LeisureFacility />} />
                       <Route path="executive" element={<ExecutiveDashboard />} />
                     <Route path="matrix" element={<MatrixDashboard />} />
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
@@ -76,7 +74,7 @@ function App() {
                     <Route path="simulator" element={<Simulator />} />
                     <Route path="logs" element={<AdminLogs />} />
                     <Route path="mapping" element={<AdminMapping />} />
-                    <Route path="leisure-mapping" element={<AdminLeisureMapping />} />
+                    {/* <Route path="leisure-mapping" element={<AdminLeisureMapping />} /> */}
                     <Route path="roles" element={<AdminRoles />} />
                     <Route index element={<Navigate to="simulator" replace />} />
                   </Route>
@@ -86,7 +84,6 @@ function App() {
                 </BrowserRouter>
               </CoreDataProvider>
             </DateProvider>
-            </LeisureMappingProvider>
           </MappingProvider>
         </SimulationProvider>
       </ThemeProvider>

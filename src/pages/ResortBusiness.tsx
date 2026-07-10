@@ -9,7 +9,7 @@ import { transformResortData } from '../lib/dataTransformers';
 export default function ResortBusiness() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { startDate, endDate } = useDate();
+  const { startDate } = useDate();
 
 
 
@@ -29,9 +29,7 @@ export default function ResortBusiness() {
           console.error('Error fetching master capacities from Firebase:', firebaseErr);
         }
 
-        const queryParams = startDate === endDate 
-          ? `date=${endDate}` 
-          : `startDate=${startDate}&endDate=${endDate}`;
+        const queryParams = `date=${startDate}`;
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (!payload) throw new Error("Invalid payload");
@@ -46,7 +44,7 @@ export default function ResortBusiness() {
     };
 
     fetchSummary();
-  }, [startDate, endDate]);
+  }, [startDate]);
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val || 0);
@@ -172,7 +170,7 @@ export default function ResortBusiness() {
             <p className="text-white/80 mt-1">객실 판매 채널별 세부 객단가 및 정산 실적 리포트입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <GlobalDatePicker allowRange={true} />
+            <GlobalDatePicker />
           </div>
         </div>
 

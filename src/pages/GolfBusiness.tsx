@@ -21,32 +21,30 @@ interface SummaryData {
 export default function GolfBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { startDate, endDate } = useDate();
+  const { startDate } = useDate();
 
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const queryParams = startDate === endDate 
-          ? `date=${endDate}` 
-          : `startDate=${startDate}&endDate=${endDate}`;
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/dashboard/revenue-summary?${queryParams}`);
+        const queryParams = `date=${startDate}`;
+        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (payload) {
-          const golfBreakdown = payload.golfFacilityBreakdown ?? [];
-          const filteredBreakdown = golfBreakdown;
-          const golf_revenue = payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? golfBreakdown.reduce((sum: number, x: any) => sum + (Number(x.today_actual) || 0), 0);
+          // V5 Schema direct map (SSOT)
+          const golf_revenue = payload.summary?.golfRevenue ?? payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? 0;
+          
           setData({
             success: json.success ?? true,
-            date: payload.date ?? endDate,
+            date: payload.date ?? startDate,
             todaySummary: {
               golf_revenue: golf_revenue,
-              golf_visited_teams: payload.golfSummary?.visited_teams ?? payload.golfSummary?.visitedTeams ?? 0,
-              golf_visited_players: payload.golfSummary?.visited_players ?? payload.golfSummary?.visitedPlayers ?? 0,
-              golf_avg_green_fee: payload.golfSummary?.avg_green_fee ?? payload.golfSummary?.avgGreenFee ?? 0,
-              golf_ly_avg_green_fee: payload.golfSummary?.ly_avg_green_fee ?? payload.golfSummary?.ly_avgGreenFee ?? 0,
+              golf_visited_teams: payload.summary?.golfVisitedTeams ?? payload.golfSummary?.visited_teams ?? payload.golfSummary?.visitedTeams ?? 0,
+              golf_visited_players: payload.summary?.golfVisitedPlayers ?? payload.golfSummary?.visited_players ?? payload.golfSummary?.visitedPlayers ?? 0,
+              golf_avg_green_fee: payload.summary?.golfAvgGreenFee ?? payload.golfSummary?.avg_green_fee ?? payload.golfSummary?.avgGreenFee ?? 0,
+              golf_ly_avg_green_fee: payload.summary?.golfLyAvgGreenFee ?? payload.golfSummary?.ly_avg_green_fee ?? payload.golfSummary?.ly_avgGreenFee ?? 0,
             },
-            golfFacilityBreakdown: filteredBreakdown
+            golfFacilityBreakdown: payload.rawTickets ?? payload.golfFacilityBreakdown ?? []
           });
         }
       } catch (err) {
@@ -57,7 +55,7 @@ export default function GolfBusiness() {
     };
 
     fetchSummary();
-  }, [startDate, endDate]);
+  }, [startDate]);
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val ?? 0);
@@ -113,7 +111,7 @@ export default function GolfBusiness() {
             <p className="text-white/80 mt-1">골프 예약 현황 및 매장별 정산 실적 리포트입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <GlobalDatePicker allowRange={true} />
+            <GlobalDatePicker />
           </div>
         </div>
 
@@ -219,12 +217,18 @@ export default function GolfBusiness() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
-                  {golfDetails.map((row, index) => (
-                    <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td className="py-4 px-6 font-medium text-slate-700">{row.shop_name}</td>
-                      <td className="py-4 px-6 text-right font-medium text-slate-900">{formatCurrency(row.today_actual || 0)}</td>
-                    </tr>
-                  ))}
+                  {golfDetails
+                        .sort((a: { today_actual: number }, b: { today_actual: number }) => b.today_actual - a.today_actual)
+                        .map((f: { shop_name?: string, facility_name?: string, category?: string, revenue?: number, today_actual?: number, total_sales?: number }, idx: number) => (
+                          <tr key={`${f.shop_name}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td className="py-4 px-6 font-medium text-slate-700">
+                              {f.facility_name || f.shop_name || f.category || '기타'}
+                            </td>
+                            <td className="py-4 px-6 text-right font-medium text-slate-900">
+                              {formatCurrency(f.revenue || f.today_actual || f.total_sales || 0)}
+                            </td>
+                          </tr>
+                        ))}
                 </tbody>
               </table>
             </div>

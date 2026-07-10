@@ -3,7 +3,7 @@ import { useDate } from '../contexts/DateContext';
 import { auth } from '../lib/firebase';
 
 export default function Synergy() {
-  const { endDate } = useDate();
+  const { startDate } = useDate();
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,8 +26,8 @@ export default function Synergy() {
     );
   }
 
-  // Use endDate as the target date to sync with the dashboard's current selection
-  const targetDate = endDate;
+  // Use startDate as the target date to sync with the dashboard's current selection
+  const targetDate = startDate;
   const baseUrl = "https://synergy-board.web.app/";
   const iframeSrc = `${baseUrl}?date=${targetDate}&token=${token}`;
 

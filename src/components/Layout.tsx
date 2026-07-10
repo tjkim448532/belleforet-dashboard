@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useLeisureMapping } from '../contexts/LeisureMappingContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
   ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database, MonitorPlay, Maximize, Minimize 
@@ -77,8 +76,6 @@ export default function Layout() {
   ];
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
-
-  const { leisureGroups } = useLeisureMapping();
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
@@ -226,20 +223,17 @@ export default function Layout() {
             
             {leisureOpen && (
               <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
-                {leisureGroups.map((group) => (
-                  <NavLink
-                    key={group.id}
-                    to={`/leisure/${group.id}`}
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                    }`}
-                    onClick={() => { 
-                      if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                    }}
-                  >
-                    {group.name}
-                  </NavLink>
-                ))}
+                <NavLink
+                  to={`/leisure`}
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={() => { 
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                  }}
+                >
+                  레저 영업장 현황
+                </NavLink>
               </div>
             )}
           </div>

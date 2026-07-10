@@ -2,24 +2,26 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import { useDate } from './DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 
-export interface RawPayload {
-
-  chartData: any[];
-  adrTable: any[];
-  today: { actual: number; ly_actual: number };
-  ytd: { actual: number; ly_actual: number };
-  golfSummary: any;
-  roomTypeBreakdown: any[];
-  rooms?: any[];
-  channelBreakdown: any[];
-  golfFacilityBreakdown: any[];
-  fnbFacilityBreakdown: any[];
-  ticketFacilityBreakdown: any[];
-  otherFacilityBreakdown: any[];
-  banquetFacilityBreakdown: any[];
-  weeklyTrend: any[];
+export interface V5Payload {
   targetDate: string;
-  [key: string]: any;
+  summary: {
+    totalRevenue: number;
+    totalRooms: number;
+    totalRoomCap: number;
+    totalGolfTeams: number;
+    ytdRevenue?: number;
+    todayRevenue?: number;
+    todayGross?: number;
+  };
+  salesByCategory: Array<{ category: string; sales: number }>;
+  salesByFacility: Array<{ category_code: string; sub_group_name: string; total_sales: number; today_actual?: number; qty?: number; sales_qty?: number }>;
+  dailyTrends: Array<{ date: string; revenue: number }>;
+  weather?: { condition?: string; weatherDesc?: string; tempMax?: number; temp_max?: number; tempMin?: number; temp_min?: number; current?: any; lastYear?: any };
+  roomSummaryByType?: Array<{ room_type: string; revenue: number; rooms_sold: number }>;
+  salesByChannel?: Array<{ channel_group: string; revenue: number; rooms_sold: number }>;
+  dailyTrendsByCategory?: Array<{ date: string; category: string; revenue: number }>;
+  advancedRoomStats?: { occ_rate?: number; mix_percent?: Record<string, number> };
+  [key: string]: any; // Backward compatibility for legacy payloads
 }
 
 export interface CoreDataState {
@@ -33,7 +35,7 @@ export interface CoreDataState {
 const CoreDataContext = createContext<CoreDataState | undefined>(undefined);
 
 export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { startDate, endDate } = useDate();
+  const { startDate } = useDate();
   
   const [state, setState] = useState<CoreDataState>({
     core: null,
@@ -48,11 +50,11 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // 백엔드 V4 표준 파라미터인 startDate, endDate를 사용합니다. (캐시 무시용 타임스탬프 추가)
-      const queryParams = `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`;
+      // V5 SSOT: 단일 타겟 일자(date)만 사용 (기간 조회 영구 기각)
+      const queryParams = `date=${startDate}&_t=${Date.now()}`;
 
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v3/dashboard/revenue-summary?${queryParams}`);
+        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
 
         let corePayload = res.data || res;
         // 백엔드 응답에서 weather가 root 객체에 분리되어 내려올 경우 병합 처리
@@ -74,7 +76,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     fetchCoreData();
-  }, [startDate, endDate]);
+  }, [startDate]);
 
   return (
     <CoreDataContext.Provider value={state}>

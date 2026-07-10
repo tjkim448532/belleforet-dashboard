@@ -155,7 +155,7 @@ export default function MatrixDashboard() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-medium text-slate-800 tracking-tight">데이터 검증 (기존 대시보드 비교용)</h1>
         <div className="flex items-center gap-4">
-          <GlobalDatePicker allowRange={false} />
+          <GlobalDatePicker />
         </div>
       </div>
 

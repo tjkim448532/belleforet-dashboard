@@ -120,6 +120,7 @@ export const transformHomeData = (core: CoreDataState) => {
   const totalResortRevGross = c.summary?.totalRevenue || 0;
   const totalRoomsSold = c.summary?.totalRooms || 0;
   const totalRoomCap = c.summary?.totalRoomCap || c.summary?.totalGuests || 0;
+  const totalVisitors = c.summary?.totalVisitors || 0;
   
   // Total Inventory is still needed from some logic or if not provided by backend, default to 180 (for now)
   const days = Math.max(1, c.resortSummary?.days || 1);
@@ -138,7 +139,8 @@ export const transformHomeData = (core: CoreDataState) => {
       totalRoomsSold,
       totalInventory,
       totalResortRevGross,
-      totalRoomCap
+      totalRoomCap,
+      totalVisitors
     }
   };
 
@@ -197,6 +199,8 @@ export const transformExecutiveData = (core: CoreDataState) => {
     c.salesByFacility.forEach((t: any) => {
       details.push({
         depth_2_shop: t.sub_group_name || t.shop_name || t.facility_name,
+        team_name: t.team_name,
+        total_visitors: t.total_visitors || 0,
         total_sales: Number(t.total_sales || t.today_actual || t.revenue || 0)
       });
     });

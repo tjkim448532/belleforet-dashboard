@@ -9,12 +9,13 @@ export interface V5Payload {
     totalRooms: number;
     totalRoomCap: number;
     totalGolfTeams: number;
+    totalVisitors?: number;
     ytdRevenue?: number;
     todayRevenue?: number;
     todayGross?: number;
   };
   salesByCategory: Array<{ category: string; sales: number }>;
-  salesByFacility: Array<{ category_code: string; sub_group_name: string; total_sales: number; today_actual?: number; qty?: number; sales_qty?: number }>;
+  salesByFacility: Array<{ category_code: string; sub_group_name: string; total_sales: number; today_actual?: number; qty?: number; sales_qty?: number; total_visitors?: number; team_name?: string }>;
   dailyTrends: Array<{ date: string; revenue: number }>;
   weather?: { condition?: string; weatherDesc?: string; tempMax?: number; temp_max?: number; tempMin?: number; temp_min?: number; current?: any; lastYear?: any };
   roomSummaryByType?: Array<{ room_type: string; revenue: number; rooms_sold: number }>;
@@ -35,7 +36,7 @@ export interface CoreDataState {
 const CoreDataContext = createContext<CoreDataState | undefined>(undefined);
 
 export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { startDate } = useDate();
+  const { startDate, endDate } = useDate();
   
   const [state, setState] = useState<CoreDataState>({
     core: null,
@@ -50,8 +51,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // V5 SSOT: 단일 타겟 일자(date)만 사용 (기간 조회 영구 기각)
-      const queryParams = `date=${startDate}&_t=${Date.now()}`;
+      // V5 SSOT: 단일 타겟 일자(date)와 필요 시 endDate(기간)를 전달
+      const queryParams = endDate ? `date=${startDate}&endDate=${endDate}&_t=${Date.now()}` : `date=${startDate}&_t=${Date.now()}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
@@ -76,7 +77,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     fetchCoreData();
-  }, [startDate]);
+  }, [startDate, endDate]);
 
   return (
     <CoreDataContext.Provider value={state}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, Building2, Coins, AlertCircle, Calculator } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -68,6 +68,8 @@ export default function Home() {
   const ytdDiff = ytdGross - ytdLyGross;
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
+  const totalVisitors = displayData.kpiMetrics?.raw?.totalVisitors || 0;
+
   const adrData = (() => {
     let rev16 = 0, sold16 = 0;
     let rev35 = 0, sold35 = 0;
@@ -132,7 +134,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-12">
-          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
               <div className="flex justify-between items-start mb-6 relative z-10">
@@ -198,6 +200,19 @@ export default function Home() {
                 <span>전년 동기 대비</span>
                 <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
                 <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
+              <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-150" />
+              <h2 className="text-base font-semibold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
+                <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 방문객 수
+              </h2>
+              <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
+                {new Intl.NumberFormat('ko-KR').format(totalVisitors)}<span className="text-lg font-medium text-slate-500 ml-1">명</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 bg-slate-50 text-slate-500 border border-slate-100">
+                <span>리조트 전체 누적 집계</span>
               </div>
             </div>
           </div>

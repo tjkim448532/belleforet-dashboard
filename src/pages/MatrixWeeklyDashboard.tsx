@@ -4,27 +4,30 @@ import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
-// V5 백엔드가 내려주는 요일비교 Row 명세 (예상)
+// V5 백엔드가 내려주는 요일비교 Row 명세 (100% 바이블 준수)
 export interface V5MatrixRow {
-  category?: string;
+  category_code?: string;
+  category_name: string;
+  team_name: string;
+  part_name: string;
   shop_name: string;
   is_subtotal?: boolean;
-  is_total?: boolean;
+  is_grand_total?: boolean;
   
   // Today
   today_actual?: number;
   today_ly?: number;
-  today_growth_rate?: number; // Pre-baked from backend
+  today_growth?: number; // Pre-baked from backend
   
   // MTD
   mtd_actual?: number;
   mtd_ly?: number;
-  mtd_growth_rate?: number; // Pre-baked from backend
+  mtd_growth?: number; // Pre-baked from backend
   
   // YTD
   ytd_actual?: number;
   ytd_ly?: number;
-  ytd_growth_rate?: number; // Pre-baked from backend
+  ytd_growth?: number; // Pre-baked from backend
 }
 
 export default function MatrixWeeklyDashboard() {
@@ -157,7 +160,7 @@ export default function MatrixWeeklyDashboard() {
               ) : (
                 data.map((row, idx) => {
                   const isSub = row.is_subtotal;
-                  const isTotal = row.is_total;
+                  const isTotal = row.is_grand_total;
                   
                   // 스타일 분기
                   let rowClasses = "hover:bg-slate-50 transition-colors";
@@ -167,9 +170,9 @@ export default function MatrixWeeklyDashboard() {
 
                   if (isTotal) {
                     rowClasses = "bg-slate-800 hover:bg-slate-900";
-                    nameClasses = "text-white font-bold";
-                    valueClasses = "font-bold text-white";
-                    lyValueClasses = "text-slate-400";
+                    nameClasses = "text-white font-bold text-base";
+                    valueClasses = "font-bold text-white text-base";
+                    lyValueClasses = "text-slate-300";
                   } else if (isSub) {
                     rowClasses = "bg-brand-mint/10 hover:bg-brand-mint/20";
                     nameClasses = "text-brand-mint font-bold";
@@ -184,7 +187,12 @@ export default function MatrixWeeklyDashboard() {
                         isTotal ? 'bg-slate-800' : isSub ? 'bg-emerald-50' : 'bg-white'
                       }`}>
                         <div className="flex flex-col">
-                          {row.category && !isTotal && <span className="text-[10px] text-slate-400 font-medium mb-0.5 tracking-wider">{row.category}</span>}
+                          {!isTotal && !isSub && (
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                              <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded leading-none">{row.category_name}</span>
+                              <span className="text-[10px] font-medium text-slate-400 leading-none">{row.team_name} &gt; {row.part_name}</span>
+                            </div>
+                          )}
                           <span className={nameClasses}>{row.shop_name}</span>
                         </div>
                       </td>
@@ -192,17 +200,17 @@ export default function MatrixWeeklyDashboard() {
                       {/* Today */}
                       <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.today_actual)}</td>
                       <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.today_ly)}</td>
-                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.today_growth_rate)}</td>
+                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.today_growth)}</td>
 
                       {/* MTD */}
                       <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.mtd_actual)}</td>
                       <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.mtd_ly)}</td>
-                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.mtd_growth_rate)}</td>
+                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.mtd_growth)}</td>
 
                       {/* YTD */}
                       <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.ytd_actual)}</td>
                       <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.ytd_ly)}</td>
-                      <td className="p-3 bg-slate-50/30">{renderGrowth(row.ytd_growth_rate)}</td>
+                      <td className="p-3 bg-slate-50/30">{renderGrowth(row.ytd_growth)}</td>
                     </tr>
                   );
                 })

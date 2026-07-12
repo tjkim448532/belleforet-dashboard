@@ -19,7 +19,8 @@ export default function Home() {
   const apiError = coreData.error ? '데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.' : 
                   (coreData.isLoading ? null : (transformedData ? null : '데이터를 불러오는 데 실패했습니다.'));
 
-  const weather = coreData.core?.weather?.current || null;
+  // V5 에서는 current/lastYear 구분 없이 평탄화(Flat)된 weather 객체가 옵니다. 호환성을 위해 둘 다 체크합니다.
+  const weather = coreData.core?.weather?.current || coreData.core?.weather || null;
   const lastYearWeather = coreData.core?.weather?.lastYear || null;
 
   const displayData: any = data;
@@ -79,11 +80,11 @@ export default function Home() {
       coreData.core.roomSummaryByType.forEach((item: any) => {
         const typeName = item.room_type || '';
         if (typeName.includes('16평')) {
-          rev16 = Number(item.revenue || 0); sold16 = Number(item.rooms_sold || 0);
+          rev16 += Number(item.revenue || 0); sold16 += Number(item.rooms_sold || 0);
         } else if (typeName.includes('35평')) {
-          rev35 = Number(item.revenue || 0); sold35 = Number(item.rooms_sold || 0);
+          rev35 += Number(item.revenue || 0); sold35 += Number(item.rooms_sold || 0);
         } else if (typeName.includes('51평')) {
-          rev51 = Number(item.revenue || 0); sold51 = Number(item.rooms_sold || 0);
+          rev51 += Number(item.revenue || 0); sold51 += Number(item.rooms_sold || 0);
         }
       });
     }
@@ -147,11 +148,11 @@ export default function Home() {
                   <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
                     <div className="opacity-60 text-right pr-3 border-r border-slate-200">
                       <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
-                      {lastYearWeather && lastYearWeather.weatherDesc !== '데이터없음' ? (
+                      {lastYearWeather && (lastYearWeather.weatherDesc !== '데이터없음' && lastYearWeather.description !== '데이터없음') ? (
                         <>
                           <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
-                            {lastYearWeather.weatherDesc?.includes('비') ? '🌧️' : lastYearWeather.weatherDesc?.includes('눈') ? '❄️' : lastYearWeather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
-                            {lastYearWeather.weatherDesc || '맑음'}
+                            {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                            {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
                           </div>
                           <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
                         </>
@@ -161,11 +162,11 @@ export default function Home() {
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
-                      {weather && weather.weatherDesc !== '데이터없음' ? (
+                      {weather && (weather.weatherDesc !== '데이터없음' && weather.description !== '데이터없음') ? (
                         <>
                           <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
-                            {weather.weatherDesc?.includes('비') ? '🌧️' : weather.weatherDesc?.includes('눈') ? '❄️' : weather.weatherDesc?.includes('구름') ? '⛅' : '☀️'} 
-                            {weather.weatherDesc || '맑음'}
+                            {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                            {weather.weatherDesc || weather.description || '맑음'}
                           </div>
                           <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
                         </>
@@ -435,6 +436,22 @@ export default function Home() {
           </div>
         </div>
       </div>
+      
+      {/* 백엔드 API 응답 증명용 디버그 패널 */}
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 mt-4 text-xs bg-slate-900 text-green-400 font-mono rounded-xl overflow-auto">
+        <div className="font-bold mb-2">🚨 [프론트엔드 디버그] 실제 백엔드 수신 데이터 덤프</div>
+        <p className="mb-2 text-gray-400">// YTD가 0으로 나오는 원인: 백엔드가 'ytdRevenue' 대신 다른 이름으로 주고 있는지 확인하세요.</p>
+        <div>
+          c.summary.ytdRevenue = {coreData.core?.summary?.ytdRevenue === undefined ? 'undefined (데이터 없음!)' : coreData.core?.summary?.ytdRevenue}
+        </div>
+        <div>
+          c.summary.ytd_gross = {coreData.core?.summary?.ytd_gross === undefined ? 'undefined' : coreData.core?.summary?.ytd_gross}
+        </div>
+        <br/>
+        <p className="mb-2 text-gray-400">// 골프/객실이 0으로 나오는 원인: category_code가 'ROOM'/'GOLF'가 아니거나 totalSales가 없는지 확인하세요.</p>
+        <pre>{JSON.stringify(coreData.core?.salesByCategory, null, 2)}</pre>
+      </div>
+
     </div>
   );
 }

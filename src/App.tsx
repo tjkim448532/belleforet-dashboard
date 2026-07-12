@@ -23,7 +23,7 @@ import GolfBusiness from './pages/GolfBusiness';
 import LeisureFacility from './pages/LeisureFacility';
 import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
-import MatrixDashboard from './pages/MatrixDashboard';
+
 import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
 import Synergy from './pages/Synergy';
@@ -62,7 +62,7 @@ function App() {
                       <Route path="golf-business" element={<GolfBusiness />} />
                       <Route path="leisure" element={<LeisureFacility />} />
                       <Route path="executive" element={<ExecutiveDashboard />} />
-                    <Route path="matrix" element={<MatrixDashboard />} />
+
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="members" element={<Members />} />
                     <Route path="etl-status" element={<DataSyncStatus />} />

@@ -1,95 +1,5 @@
 import type { CoreDataState } from '../contexts/CoreDataContext';
-import { shopNameNormalizer } from './uiGroupDictionary';
 
-export interface MatrixRow {
-  category: string;
-  category_code?: string;
-  shop_name: string;
-  today: { actual: number; lastYear: number; growthRate: number };
-  mtd: { actual: number; lastYear: number; growthRate: number };
-  ytd: { actual: number; lastYear: number; growthRate: number };
-  isSubtotal?: boolean;
-}
-
-const calcGrowth = (actual: number, ly: number) => {
-  if (!ly) return actual ? 100 : 0;
-  return ((actual - ly) / Math.abs(ly)) * 100;
-};
-
-export const transformMatrixData = (core: CoreDataState): MatrixRow[] => {
-  if (!core.core || !core.core.gridData) return [];
-  const gridData = core.core.gridData;
-  const rowMap = new Map<string, MatrixRow>();
-
-  gridData.forEach((item: any) => {
-    // 백엔드에서 더 이상 서브토탈 데이터를 주지 않는다고 했으나 여전히 섞여 들어오는 경우가 있음
-    const isBackendSubtotalRow = item.depth3 === '전체' || item.shop_name === '전체' || item.shop_name === '합계';
-    // NET, VAT, SVC, Grand Total 등은 영업장이 아니라 백엔드의 합계행이므로 반드시 필터링!
-    const isTaxOrTotalRow = ['NET', 'VAT', 'SVC', 'GRAND TOTAL', 'TOTAL'].includes(String(item.shop_name || '').toUpperCase());
-    
-    if (isBackendSubtotalRow || isTaxOrTotalRow) return;
-
-    let categoryCode = item.category_code || 'OTHER';
-    let categoryName = item.category_name || '기타영업';
-
-    let shopName = item.shop_name ?? item.shopName ?? item.facility_name ?? item.name ?? (item.depth3 ? (item.depth3 === '전체' ? (item.depth2 ?? '알수없음') : item.depth3) : '알수없음');
-    
-    // 1. '- Posting' 병합 처리
-    shopName = shopName.replace(/-\s*posting/i, '').trim();
-
-    // 2. 띄어쓰기 및 미세 명칭 차이 병합 처리
-    shopName = shopName.replace(/\s+/g, '');
-    
-    // O(1) Dictionary Mapping for shopName normalization
-    shopName = shopNameNormalizer[shopName] || shopName;
-
-    // Backend category_code and name are trusted directly
-    categoryCode = item.category_code || categoryCode;
-    categoryName = item.category_name || item.category || categoryName;
-
-    const t_act = Number(item.today_actual ?? item.actual ?? item.today_sales ?? item.salesAmount ?? item.revenue) || 0;
-    const t_ly = Number(item.today_ly ?? item.ly_actual ?? item.today_last_year ?? item.lastYear) || 0;
-    const m_act = Number(item.mtd_actual ?? item.mtdActual ?? item.mtd_sales) || 0;
-    const m_ly = Number(item.mtd_ly ?? item.mtdLy ?? item.mtd_last_year) || 0;
-    const y_act = Number(item.ytd_actual ?? item.ytdActual ?? item.ytd_sales) || 0;
-    const y_ly = Number(item.ytd_ly ?? item.ytdLy ?? item.ytd_last_year) || 0;
-
-    const key = `${categoryCode}_${shopName}`;
-
-    if (rowMap.has(key)) {
-      const existing = rowMap.get(key)!;
-      existing.today.actual += t_act;
-      existing.today.lastYear += t_ly;
-      existing.today.growthRate = calcGrowth(existing.today.actual, existing.today.lastYear);
-      
-      existing.mtd.actual += m_act;
-      existing.mtd.lastYear += m_ly;
-      existing.mtd.growthRate = calcGrowth(existing.mtd.actual, existing.mtd.lastYear);
-      
-      existing.ytd.actual += y_act;
-      existing.ytd.lastYear += y_ly;
-      existing.ytd.growthRate = calcGrowth(existing.ytd.actual, existing.ytd.lastYear);
-    } else {
-      rowMap.set(key, {
-        category: categoryName,
-        category_code: categoryCode,
-        shop_name: shopName,
-        today: { actual: t_act, lastYear: t_ly, growthRate: calcGrowth(t_act, t_ly) },
-        mtd: { actual: m_act, lastYear: m_ly, growthRate: calcGrowth(m_act, m_ly) },
-        ytd: { actual: y_act, lastYear: y_ly, growthRate: calcGrowth(y_act, y_ly) },
-        isSubtotal: false
-      });
-    }
-  });
-
-  return Array.from(rowMap.values()).filter(row => {
-    // 제로(0) 필터링: 금일, 누계, 전년 모두 0원인 쓰레기 행은 렌더링에서 제외
-    const hasToday = row.today.actual > 0 || row.today.lastYear > 0;
-    const hasMtd = row.mtd.actual > 0 || row.mtd.lastYear > 0;
-    const hasYtd = row.ytd.actual > 0 || row.ytd.lastYear > 0;
-    return hasToday || hasMtd || hasYtd;
-  });
-};
 
 export const transformHomeData = (core: CoreDataState) => {
   if (!core.core) return null;
@@ -112,9 +22,18 @@ export const transformHomeData = (core: CoreDataState) => {
   // Use SSOT values explicitly
   // Find room revenue from salesByCategory as backend gives it per category
   let totalRoomRev = 0;
+  let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    const roomCat = c.salesByCategory.find((x: any) => x.category === '객실');
-    if (roomCat) totalRoomRev = Number(roomCat.sales || roomCat.revenue || 0);
+    // 구버전 및 신버전 모든 스펙 통합 매핑 (무적 방어벽)
+    const roomCat = c.salesByCategory.find((x: any) => 
+      x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_name === '객실' || x.category === '객실' || x.category === 'ROOM'
+    );
+    if (roomCat) totalRoomRev = Number(roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
+
+    const golfCat = c.salesByCategory.find((x: any) => 
+      x.categoryCode === 'GOLF' || x.category_code === 'GOLF' || x.category_name === '골프' || x.category === '골프' || x.category === 'GOLF'
+    );
+    if (golfCat) totalGolfRev = Number(golfCat.totalSales || golfCat.total_sales || golfCat.sales || golfCat.revenue || 0);
   }
   
   const totalResortRevGross = c.summary?.totalRevenue || 0;
@@ -122,9 +41,9 @@ export const transformHomeData = (core: CoreDataState) => {
   const totalRoomCap = c.summary?.totalRoomCap || c.summary?.totalGuests || 0;
   const totalVisitors = c.summary?.totalVisitors || 0;
   
-  // Total Inventory is still needed from some logic or if not provided by backend, default to 180 (for now)
   const days = Math.max(1, c.resortSummary?.days || 1);
-  const totalInventory = c.summary?.totalInventory || 180 * days;
+  // SSOT: 백엔드가 정확한 총 가용 객실수(totalInventory)를 주기로 약속함. 180실 하드코딩 폴백 완전 소각.
+  const totalInventory = c.summary?.totalInventory || 0;
 
 
 
@@ -149,18 +68,18 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: 0, 
-      ly_actual: 0,
-      gross: 0,
-      ly_gross: 0,
-      ly_day: 0
+      actual: c.summary?.ytdRevenue || c.summary?.ytdGross || c.summary?.ytd_gross || c.summary?.ytd_actual || c.ytd_gross || c.ytdRevenue || 0, 
+      ly_actual: c.summary?.lyYtdRevenue || c.summary?.lyYtdGross || c.summary?.ly_ytd_gross || c.ly_ytd_gross || 0,
+      gross: c.summary?.ytdRevenue || c.summary?.ytdGross || c.summary?.ytd_gross || c.summary?.ytd_actual || c.ytd_gross || c.ytdRevenue || 0,
+      ly_gross: c.summary?.lyYtdRevenue || c.summary?.lyYtdGross || c.summary?.ly_ytd_gross || c.ly_ytd_gross || 0,
+      ly_day: c.summary?.lyYtdRevenue || c.summary?.lyYtdGross || c.summary?.ly_ytd_gross || c.ly_ytd_gross || 0
     },
     today: { 
       actual: c.summary?.totalRevenue || 0, 
-      ly_actual: 0,
+      ly_actual: c.summary?.lyRevenue || 0,
       gross: c.summary?.totalRevenue || 0,
-      ly_gross: 0,
-      ly_day: 0
+      ly_gross: c.summary?.lyRevenue || 0,
+      ly_day: c.summary?.lyRevenue || 0
     },
     hq_today: hqToday,
     store_today: [] as { shop_name: string; actual: number; qty: number }[],
@@ -172,8 +91,8 @@ export const transformHomeData = (core: CoreDataState) => {
     golfSummary: {
       reservedTeams: c.summary?.totalGolfTeams || 0,
       visitedTeams: c.summary?.totalGolfTeams || 0,
-      visitedPlayers: 0, // 바이블에 없는 경우 0
-      avgGreenFee: 0,
+      visitedPlayers: c.summary?.visitedPlayers || 0,
+      avgGreenFee: c.summary?.visitedPlayers > 0 ? (totalGolfRev / c.summary.visitedPlayers) : 0,
       ly_avgGreenFee: 0,
     },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
@@ -244,11 +163,11 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       const rev = Number(item.revenue || 0);
 
       if (typeName.includes('16평')) {
-        roomOccupancyMap['16평'].sold = sold; roomOccupancyMap['16평'].rev = rev;
+        roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].rev += rev;
       } else if (typeName.includes('35평')) {
-        roomOccupancyMap['35평'].sold = sold; roomOccupancyMap['35평'].rev = rev;
+        roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].rev += rev;
       } else if (typeName.includes('51평')) {
-        roomOccupancyMap['51평'].sold = sold; roomOccupancyMap['51평'].rev = rev;
+        roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].rev += rev;
       } else {
         roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].rev += rev;
       }
@@ -280,8 +199,11 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   // SSOT Principle for Lodging Stats
   let summaryRevenue = 0;
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
-    const roomCat = payload.salesByCategory.find((x: any) => x.category === '객실');
-    if (roomCat) summaryRevenue = Number(roomCat.sales || roomCat.revenue || 0);
+    // 구버전/신버전 스펙 무적 방어벽
+    const roomCat = payload.salesByCategory.find((x: any) => 
+      x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_name === '객실' || x.category === '객실' || x.category === 'ROOM'
+    );
+    if (roomCat) summaryRevenue = Number(roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
   }
   
   let summaryRoomsSold = payload.summary?.totalRooms || 0;

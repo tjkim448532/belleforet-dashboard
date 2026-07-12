@@ -28,35 +28,11 @@ const processSalesData = (payload: any) => {
   const categories = payload.salesByCategory || [];
   const facilities = payload.salesByFacility || [];
   
-  const sortOrder = ['객실', '골프장', '티켓/레저', '식음', '모토아레나', '연회', '기타영업'];
-  
-  // Group facilities by category for rendering order
-  const groupedFacilities: Record<string, any[]> = {};
-  facilities.forEach((f: any) => {
-    let catName = f.category_name || f.category || f.category_code || '기타영업';
-    if (catName === 'ROOM') catName = '객실';
-    else if (catName === 'GOLF') catName = '골프장';
-    else if (catName === 'TICKET') catName = '티켓/레저';
-    else if (catName === 'FNB') catName = '식음';
-    
-    if (!groupedFacilities[catName]) groupedFacilities[catName] = [];
-    groupedFacilities[catName].push(f);
-  });
-  
-  // Sort categories
-  const sortedCategories = [...categories].sort((a: any, b: any) => {
-    const idxA = sortOrder.indexOf(a.category || a.category_name);
-    const idxB = sortOrder.indexOf(b.category || b.category_name);
-    return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
-  });
-
-  // Render Subtotals (isCategory) strictly using salesByCategory
-  sortedCategories.forEach((cat: any) => {
-    const catName = cat.category || cat.category_name || '기타영업';
-    
+  // Render Subtotals (isCategory) strictly using salesByCategory as provided by backend
+  categories.forEach((cat: any) => {
     finalArray.push({
       isCategory: true,
-      shop_name: catName,
+      shop_name: cat.category || cat.category_name || '기타영업',
       today_actual: Number(cat.sales || cat.revenue || cat.today_actual || 0),
       today_ly: Number(cat.today_ly || 0),
       mtd_actual: Number(cat.mtd_actual || 0),
@@ -64,19 +40,19 @@ const processSalesData = (payload: any) => {
       ytd_actual: Number(cat.ytd_actual || 0),
       ytd_ly: Number(cat.ytd_ly || 0),
     });
-    
-    const children = groupedFacilities[catName] || [];
-    children.forEach((child: any) => {
-      finalArray.push({
-        isChild: true,
-        shop_name: child.sub_group_name || child.shop_name || child.facility_name,
-        today_actual: Number(child.total_sales || child.today_actual || child.revenue || 0),
-        today_ly: Number(child.today_ly || 0),
-        mtd_actual: Number(child.mtd_actual || 0),
-        mtd_ly: Number(child.mtd_ly || 0),
-        ytd_actual: Number(child.ytd_actual || 0),
-        ytd_ly: Number(child.ytd_ly || 0),
-      });
+  });
+
+  // Render Facilities strictly using salesByFacility as provided by backend
+  facilities.forEach((child: any) => {
+    finalArray.push({
+      isChild: true,
+      shop_name: child.sub_group_name || child.shop_name || child.facility_name,
+      today_actual: Number(child.total_sales || child.today_actual || child.revenue || 0),
+      today_ly: Number(child.today_ly || 0),
+      mtd_actual: Number(child.mtd_actual || 0),
+      mtd_ly: Number(child.mtd_ly || 0),
+      ytd_actual: Number(child.ytd_actual || 0),
+      ytd_ly: Number(child.ytd_ly || 0),
     });
   });
   

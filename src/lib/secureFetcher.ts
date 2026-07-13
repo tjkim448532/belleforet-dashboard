@@ -24,12 +24,11 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
   const isV5Api = url.includes('/api/v5/');
   const token = isV5Api ? 'belleforet-m2m-secret' : await getAuthToken();
 
-  const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
-  headers.set('Authorization', `Bearer ${token}`);
-  headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-  headers.set('Pragma', 'no-cache');
-  headers.set('Expires', '0');
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000);

@@ -38,8 +38,8 @@ export const transformHomeData = (core: CoreDataState) => {
   const totalVisitors = c.summary?.totalVisitors || 0;
   
   const days = Math.max(1, c.resortSummary?.days || 1);
-  // SSOT: 백엔드가 정확한 총 가용 객실수(totalInventory)를 주기로 약속함. 180실 하드코딩 폴백 완전 소각.
-  const totalInventory = c.summary?.totalInventory || 0;
+  // 폴백 복구: 백엔드에서 totalInventory가 아직 내려오지 않는 경우를 대비해 180실을 하드코딩 폴백으로 유지
+  const totalInventory = c.summary?.totalInventory || 180;
 
 
 

@@ -3,25 +3,16 @@ import { useDate } from './DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 
 export interface V5Payload {
-  targetDate: string;
-  summary: {
-    totalRevenue: number;
-    totalRooms: number;
-    totalRoomCap: number;
-    totalGolfTeams: number;
-    totalVisitors?: number;
-    ytdRevenue?: number;
-    todayRevenue?: number;
-    todayGross?: number;
-  };
-  salesByCategory: Array<{ category: string; sales: number }>;
-  salesByFacility: Array<{ category_code: string; sub_group_name: string; total_sales: number; today_actual?: number; qty?: number; sales_qty?: number; total_visitors?: number; team_name?: string }>;
+  date: string;
+  summary: Record<string, any>;
+  salesByCategory: Array<{ categoryCode: string; categoryName: string; totalSales: number }>;
+  salesByFacility: Array<{ categoryCode: string; shopName: string; totalSales: number; todayActual?: number; qty?: number; salesQty?: number; totalVisitors?: number; teamName?: string; partName?: string }>;
   dailyTrends: Array<{ date: string; revenue: number }>;
   weather?: { condition?: string; weatherDesc?: string; tempMax?: number; temp_max?: number; tempMin?: number; temp_min?: number; current?: any; lastYear?: any };
-  roomSummaryByType?: Array<{ room_type: string; revenue: number; rooms_sold: number }>;
-  salesByChannel?: Array<{ channel_group: string; revenue: number; rooms_sold: number }>;
+  roomSummaryByType?: Array<{ roomType: string; revenue: number; roomsSold: number }>;
+  salesByChannel?: Array<{ channelGroup: string; revenue: number; roomsSold: number }>;
   dailyTrendsByCategory?: Array<{ date: string; category: string; revenue: number }>;
-  advancedRoomStats?: { occ_rate?: number; mix_percent?: Record<string, number> };
+  advancedRoomStats?: { occRate?: number; mixPercent?: Record<string, number> };
   [key: string]: any; // Backward compatibility for legacy payloads
 }
 

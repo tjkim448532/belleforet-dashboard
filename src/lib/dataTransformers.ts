@@ -24,16 +24,12 @@ export const transformHomeData = (core: CoreDataState) => {
   let totalRoomRev = 0;
   let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    // 구버전 및 신버전 모든 스펙 통합 매핑 (무적 방어벽)
-    const roomCat = c.salesByCategory.find((x: any) => 
-      x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_name === '객실' || x.category === '객실' || x.category === 'ROOM'
-    );
-    if (roomCat) totalRoomRev = Number(roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
+    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑
+    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
+    if (roomCat) totalRoomRev = Number(roomCat.totalSales || 0);
 
-    const golfCat = c.salesByCategory.find((x: any) => 
-      x.categoryCode === 'GOLF' || x.category_code === 'GOLF' || x.category_name === '골프' || x.category === '골프' || x.category === 'GOLF'
-    );
-    if (golfCat) totalGolfRev = Number(golfCat.totalSales || golfCat.total_sales || golfCat.sales || golfCat.revenue || 0);
+    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF');
+    if (golfCat) totalGolfRev = Number(golfCat.totalSales || 0);
   }
   
   const totalResortRevGross = c.summary?.totalRevenue || 0;
@@ -68,11 +64,11 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: c.summary?.ytdRevenue || c.summary?.ytdGross || c.summary?.ytd_gross || c.summary?.ytd_actual || c.ytd_gross || c.ytdRevenue || 0, 
-      ly_actual: c.summary?.lyYtdRevenue || c.summary?.lyYtdGross || c.summary?.ly_ytd_gross || c.ly_ytd_gross || 0,
-      gross: c.summary?.ytdRevenue || c.summary?.ytdGross || c.summary?.ytd_gross || c.summary?.ytd_actual || c.ytd_gross || c.ytdRevenue || 0,
-      ly_gross: c.summary?.lyYtdRevenue || c.summary?.lyYtdGross || c.summary?.ly_ytd_gross || c.ly_ytd_gross || 0,
-      ly_day: c.summary?.lyYtdRevenue || c.summary?.lyYtdGross || c.summary?.ly_ytd_gross || c.ly_ytd_gross || 0
+      actual: c.summary?.ytdRevenue || 0, 
+      ly_actual: c.summary?.lyYtdRevenue || 0,
+      gross: c.summary?.ytdRevenue || 0,
+      ly_gross: c.summary?.lyYtdRevenue || 0,
+      ly_day: c.summary?.lyYtdRevenue || 0
     },
     today: { 
       actual: c.summary?.totalRevenue || 0, 
@@ -199,11 +195,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   // SSOT Principle for Lodging Stats
   let summaryRevenue = 0;
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
-    // 구버전/신버전 스펙 무적 방어벽
-    const roomCat = payload.salesByCategory.find((x: any) => 
-      x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_name === '객실' || x.category === '객실' || x.category === 'ROOM'
-    );
-    if (roomCat) summaryRevenue = Number(roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
+    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑
+    const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
+    if (roomCat) summaryRevenue = Number(roomCat.totalSales || 0);
   }
   
   let summaryRoomsSold = payload.summary?.totalRooms || 0;

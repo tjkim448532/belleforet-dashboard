@@ -6,28 +6,28 @@ import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
 // V5 백엔드가 내려주는 요일비교 Row 명세 (100% 바이블 준수)
 export interface V5MatrixRow {
-  category_code?: string;
-  category_name: string;
-  team_name: string;
-  part_name: string;
-  shop_name: string;
-  is_subtotal?: boolean;
-  is_grand_total?: boolean;
+  categoryCode?: string;
+  categoryName: string;
+  teamName: string;
+  partName: string;
+  shopName: string;
+  isSubtotal?: boolean;
+  isGrandTotal?: boolean;
   
   // Today
-  today_actual?: number;
-  today_ly?: number;
-  today_growth?: number; // Pre-baked from backend
+  todayActual?: number;
+  todayLy?: number;
+  todayGrowth?: number; // Pre-baked from backend
   
   // MTD
-  mtd_actual?: number;
-  mtd_ly?: number;
-  mtd_growth?: number; // Pre-baked from backend
+  mtdActual?: number;
+  mtdLy?: number;
+  mtdGrowth?: number; // Pre-baked from backend
   
   // YTD
-  ytd_actual?: number;
-  ytd_ly?: number;
-  ytd_growth?: number; // Pre-baked from backend
+  ytdActual?: number;
+  ytdLy?: number;
+  ytdGrowth?: number; // Pre-baked from backend
 }
 
 export default function MatrixWeeklyDashboard() {
@@ -159,8 +159,8 @@ export default function MatrixWeeklyDashboard() {
                 </tr>
               ) : (
                 data.map((row, idx) => {
-                  const isSub = row.is_subtotal;
-                  const isTotal = row.is_grand_total;
+                  const isSub = row.isSubtotal;
+                  const isTotal = row.isGrandTotal;
                   
                   // 스타일 분기
                   let rowClasses = "hover:bg-slate-50 transition-colors";
@@ -181,7 +181,7 @@ export default function MatrixWeeklyDashboard() {
                   }
 
                   return (
-                    <tr key={`${row.shop_name}_${idx}`} className={rowClasses}>
+                    <tr key={`${row.shopName}_${idx}`} className={rowClasses}>
                       {/* Name Column */}
                       <td className={`p-4 border-r border-slate-200 text-left sticky left-0 z-10 ${
                         isTotal ? 'bg-slate-800' : isSub ? 'bg-emerald-50' : 'bg-white'
@@ -189,28 +189,28 @@ export default function MatrixWeeklyDashboard() {
                         <div className="flex flex-col">
                           {!isTotal && !isSub && (
                             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded leading-none">{row.category_name}</span>
-                              <span className="text-[10px] font-medium text-slate-400 leading-none">{row.team_name} &gt; {row.part_name}</span>
+                              <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded leading-none">{row.categoryName}</span>
+                              <span className="text-[10px] font-medium text-slate-400 leading-none">{row.teamName} &gt; {row.partName}</span>
                             </div>
                           )}
-                          <span className={nameClasses}>{row.shop_name}</span>
+                          <span className={nameClasses}>{row.shopName}</span>
                         </div>
                       </td>
 
                       {/* Today */}
-                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.today_actual)}</td>
-                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.today_ly)}</td>
-                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.today_growth)}</td>
+                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.todayActual)}</td>
+                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.todayLy)}</td>
+                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.todayGrowth)}</td>
 
                       {/* MTD */}
-                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.mtd_actual)}</td>
-                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.mtd_ly)}</td>
-                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.mtd_growth)}</td>
+                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.mtdActual)}</td>
+                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.mtdLy)}</td>
+                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.mtdGrowth)}</td>
 
                       {/* YTD */}
-                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.ytd_actual)}</td>
-                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.ytd_ly)}</td>
-                      <td className="p-3 bg-slate-50/30">{renderGrowth(row.ytd_growth)}</td>
+                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.ytdActual)}</td>
+                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.ytdLy)}</td>
+                      <td className="p-3 bg-slate-50/30">{renderGrowth(row.ytdGrowth)}</td>
                     </tr>
                   );
                 })

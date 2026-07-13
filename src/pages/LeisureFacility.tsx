@@ -14,7 +14,7 @@ export default function LeisureFacility() {
     }
 
     const ticketFacilities = core.salesByFacility.filter((item: any) => 
-      item.category_code === 'TICKET' || item.category === '티켓/레저' || item.category === '티켓'
+      item.categoryCode === 'TICKET'
     );
 
     let totalSales = 0;
@@ -22,12 +22,12 @@ export default function LeisureFacility() {
     const itemMap = new Map<string, { name: string; sales: number; qty: number; depth2?: string }>();
 
     ticketFacilities.forEach((item: any) => {
-      const sales = Number(item.total_sales || item.today_actual || item.revenue || 0);
-      const qty = Number(item.qty || item.sales_qty || 0);
+      const sales = Number(item.totalSales || 0);
+      const qty = Number(item.salesQty || item.qty || 0);
       totalSales += sales;
       totalQuantity += qty;
       
-      const name = item.sub_group_name || item.shop_name || '기타';
+      const name = item.shopName || '기타';
       const existing = itemMap.get(name);
       if (existing) {
         existing.sales += sales;

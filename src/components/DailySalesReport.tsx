@@ -6,14 +6,14 @@ import GlobalDatePicker from './GlobalDatePicker';
 
 interface SalesData {
   category?: string;
-  category_code?: string;
-  shop_name: string;
-  today_actual: number;
-  today_ly: number;
-  mtd_actual: number;
-  mtd_ly: number;
-  ytd_actual: number;
-  ytd_ly: number;
+  categoryCode?: string;
+  shopName: string;
+  todayActual: number;
+  todayLy: number;
+  mtdActual: number;
+  mtdLy: number;
+  ytdActual: number;
+  ytdLy: number;
   isCategory?: boolean;
   isChild?: boolean;
   isFooter?: boolean;
@@ -32,13 +32,13 @@ const processSalesData = (payload: any) => {
   categories.forEach((cat: any) => {
     finalArray.push({
       isCategory: true,
-      shop_name: cat.category || cat.category_name || '기타영업',
-      today_actual: Number(cat.sales || cat.revenue || cat.today_actual || 0),
-      today_ly: Number(cat.today_ly || 0),
-      mtd_actual: Number(cat.mtd_actual || 0),
-      mtd_ly: Number(cat.mtd_ly || 0),
-      ytd_actual: Number(cat.ytd_actual || 0),
-      ytd_ly: Number(cat.ytd_ly || 0),
+      shopName: cat.categoryName,
+      todayActual: Number(cat.todayActual || cat.totalSales || 0),
+      todayLy: Number(cat.todayLy || 0),
+      mtdActual: Number(cat.mtdActual || 0),
+      mtdLy: Number(cat.mtdLy || 0),
+      ytdActual: Number(cat.ytdActual || 0),
+      ytdLy: Number(cat.ytdLy || 0),
     });
   });
 
@@ -46,13 +46,13 @@ const processSalesData = (payload: any) => {
   facilities.forEach((child: any) => {
     finalArray.push({
       isChild: true,
-      shop_name: child.sub_group_name || child.shop_name || child.facility_name,
-      today_actual: Number(child.total_sales || child.today_actual || child.revenue || 0),
-      today_ly: Number(child.today_ly || 0),
-      mtd_actual: Number(child.mtd_actual || 0),
-      mtd_ly: Number(child.mtd_ly || 0),
-      ytd_actual: Number(child.ytd_actual || 0),
-      ytd_ly: Number(child.ytd_ly || 0),
+      shopName: child.shopName,
+      todayActual: Number(child.todayActual || child.totalSales || 0),
+      todayLy: Number(child.todayLy || 0),
+      mtdActual: Number(child.mtdActual || 0),
+      mtdLy: Number(child.mtdLy || 0),
+      ytdActual: Number(child.ytdActual || 0),
+      ytdLy: Number(child.ytdLy || 0),
     });
   });
   
@@ -60,13 +60,13 @@ const processSalesData = (payload: any) => {
   const summary = payload.summary || {};
   finalArray.push({
     isFooter: true,
-    shop_name: '총계 (Grand Total)',
-    today_actual: Number(summary.todayRevenue || summary.totalRevenue || summary.today_actual || 0),
-    today_ly: Number(summary.todayLyRevenue || summary.today_ly || 0),
-    mtd_actual: Number(summary.mtdRevenue || summary.mtd_actual || 0),
-    mtd_ly: Number(summary.mtdLyRevenue || summary.mtd_ly || 0),
-    ytd_actual: Number(summary.ytdRevenue || summary.ytd_actual || 0),
-    ytd_ly: Number(summary.ytdLyRevenue || summary.ytd_ly || 0),
+    shopName: '총계 (Grand Total)',
+    todayActual: Number(summary.totalRevenue || 0),
+    todayLy: Number(summary.todayLyRevenue || 0),
+    mtdActual: Number(summary.mtdRevenue || 0),
+    mtdLy: Number(summary.mtdLyRevenue || 0),
+    ytdActual: Number(summary.ytdRevenue || 0),
+    ytdLy: Number(summary.lyYtdRevenue || 0),
   });
   
   return finalArray;
@@ -214,9 +214,9 @@ export default function DailySalesReport() {
                 </tr>
               ) : (
                 data.map((row, idx) => {
-                  const dailyGrowth = getGrowthRate(row.today_actual, row.today_ly);
-                  const mtdGrowth = getGrowthRate(row.mtd_actual, row.mtd_ly);
-                  const ytdGrowth = getGrowthRate(row.ytd_actual, row.ytd_ly);
+                  const dailyGrowth = getGrowthRate(row.todayActual, row.todayLy);
+                  const mtdGrowth = getGrowthRate(row.mtdActual, row.mtdLy);
+                  const ytdGrowth = getGrowthRate(row.ytdActual, row.ytdLy);
                   
                   const isCategory = row.isCategory;
                   const isChild = row.isChild;
@@ -235,14 +235,14 @@ export default function DailySalesReport() {
                       <td className={`px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 ${isChild ? 'pl-10 text-slate-600 dark:text-slate-400' : 'pl-6'}`}>
                         {isCategory && <span className="mr-2 inline-block w-2 h-2 rounded-full bg-blue-500"></span>}
                         {isChild && <span className="mr-2 text-slate-400">ㄴ</span>}
-                        {row.shop_name}
+                        {row.shopName}
                       </td>
 
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
-                        {formatCurrency(row.today_actual)}
+                        {formatCurrency(row.todayActual)}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
-                        {formatCurrency(row.today_ly)}
+                        {formatCurrency(row.todayLy)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(dailyGrowth)}`}>
@@ -251,10 +251,10 @@ export default function DailySalesReport() {
                       </td>
 
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
-                        {formatCurrency(row.mtd_actual)}
+                        {formatCurrency(row.mtdActual)}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
-                        {formatCurrency(row.mtd_ly)}
+                        {formatCurrency(row.mtdLy)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(mtdGrowth)}`}>
@@ -263,10 +263,10 @@ export default function DailySalesReport() {
                       </td>
 
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
-                        {formatCurrency(row.ytd_actual)}
+                        {formatCurrency(row.ytdActual)}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
-                        {formatCurrency(row.ytd_ly)}
+                        {formatCurrency(row.ytdLy)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(ytdGrowth)}`}>

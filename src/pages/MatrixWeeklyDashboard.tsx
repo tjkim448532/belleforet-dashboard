@@ -12,6 +12,7 @@ export interface V5MatrixRow {
   partName: string;
   shopName: string;
   isSubtotal?: boolean;
+  subtotalType?: 'part' | 'team' | string; // 백엔드 신규 스펙
   isGrandTotal?: boolean;
   
   // Today
@@ -162,6 +163,8 @@ export default function MatrixWeeklyDashboard() {
               ) : (
                 data.map((row, idx) => {
                   const isSub = row.isSubtotal;
+                  const isPartSub = isSub && row.subtotalType === 'part';
+                  const isTeamSub = isSub && row.subtotalType === 'team';
                   const isTotal = row.isGrandTotal;
                   
                   // 스타일 분기
@@ -175,24 +178,39 @@ export default function MatrixWeeklyDashboard() {
                     nameClasses = "text-white font-bold text-base";
                     valueClasses = "font-bold text-white text-base";
                     lyValueClasses = "text-slate-300";
-                  } else if (isSub) {
-                    rowClasses = "bg-brand-mint/10 hover:bg-brand-mint/20";
+                  } else if (isTeamSub) {
+                    rowClasses = "bg-emerald-100 hover:bg-emerald-200 border-t-2 border-emerald-200";
+                    nameClasses = "text-emerald-800 font-bold text-[13px]";
+                    valueClasses = "font-bold text-emerald-800";
+                    lyValueClasses = "text-emerald-600/80";
+                  } else if (isPartSub || isSub) {
+                    rowClasses = "bg-brand-mint/10 hover:bg-brand-mint/20 border-t border-brand-mint/20";
                     nameClasses = "text-brand-mint font-bold";
                     valueClasses = "font-bold text-brand-mint";
-                    lyValueClasses = "text-emerald-600/70";
+                    lyValueClasses = "text-brand-mint/60";
                   }
 
                   return (
                     <tr key={`${row.shopName}_${idx}`} className={rowClasses}>
                       {/* Name Column */}
                       <td className={`p-4 border-r border-slate-200 text-left sticky left-0 z-10 ${
-                        isTotal ? 'bg-slate-800' : isSub ? 'bg-emerald-50' : 'bg-white'
+                        isTotal ? 'bg-slate-800' : isTeamSub ? 'bg-emerald-100' : isSub ? 'bg-[#e5f5f0]' : 'bg-white'
                       }`}>
                         <div className="flex flex-col">
                           {!isTotal && !isSub && (
                             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                               <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded leading-none">{row.categoryName}</span>
                               <span className="text-[10px] font-medium text-slate-400 leading-none">{row.teamName} &gt; {row.partName}</span>
+                            </div>
+                          )}
+                          {isTeamSub && (
+                            <div className="text-[10px] font-bold text-emerald-600/70 mb-0.5">
+                              {row.teamName} 본부 합계
+                            </div>
+                          )}
+                          {isPartSub && (
+                            <div className="text-[10px] font-bold text-brand-mint/70 mb-0.5">
+                              {row.partName} 파트 합계
                             </div>
                           )}
                           <span className={nameClasses}>{row.shopName}</span>

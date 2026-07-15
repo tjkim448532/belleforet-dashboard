@@ -24,12 +24,12 @@ export const transformHomeData = (core: CoreDataState) => {
   let totalRoomRev = 0;
   let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑
-    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
-    if (roomCat) totalRoomRev = Number(roomCat.totalSales || 0);
+    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑 (단, 실제 라이브 데이터는 snake_case와 한글 값을 반환할 수 있으므로 fallback 추가)
+    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_code === '객실');
+    if (roomCat) totalRoomRev = Number(roomCat.totalSales || roomCat.total_sales || 0);
 
-    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF');
-    if (golfCat) totalGolfRev = Number(golfCat.totalSales || 0);
+    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.category_code === 'GOLF' || x.category_code === '골프');
+    if (golfCat) totalGolfRev = Number(golfCat.totalSales || golfCat.total_sales || 0);
   }
   
   const totalResortRevGross = c.summary?.totalRevenue || 0;
@@ -64,11 +64,11 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: c.summary?.ytdRevenue || 0, 
-      ly_actual: c.summary?.lyYtdRevenue || 0,
-      gross: c.summary?.ytdRevenue || 0,
-      ly_gross: c.summary?.lyYtdRevenue || 0,
-      ly_day: c.summary?.lyYtdRevenue || 0
+      actual: c.summary?.ytdActual || c.summary?.ytd_gross || 0, 
+      ly_actual: c.summary?.ytdLy || c.summary?.ly_ytd_gross || 0,
+      gross: c.summary?.ytdActual || c.summary?.ytd_gross || 0,
+      ly_gross: c.summary?.ytdLy || c.summary?.ly_ytd_gross || 0,
+      ly_day: c.summary?.ytdLy || c.summary?.ly_ytd_gross || 0
     },
     today: { 
       actual: c.summary?.totalRevenue || 0, 
@@ -195,9 +195,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   // SSOT Principle for Lodging Stats
   let summaryRevenue = 0;
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
-    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑
-    const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
-    if (roomCat) summaryRevenue = Number(roomCat.totalSales || 0);
+    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑 (fallback 추가)
+    const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_code === '객실');
+    if (roomCat) summaryRevenue = Number(roomCat.totalSales || roomCat.total_sales || 0);
   }
   
   let summaryRoomsSold = payload.summary?.totalRooms || 0;

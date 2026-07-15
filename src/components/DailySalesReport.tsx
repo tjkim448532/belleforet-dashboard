@@ -65,8 +65,8 @@ const processSalesData = (payload: any) => {
     todayLy: Number(summary.todayLyRevenue || 0),
     mtdActual: Number(summary.mtdRevenue || 0),
     mtdLy: Number(summary.mtdLyRevenue || 0),
-    ytdActual: Number(summary.ytdRevenue || 0),
-    ytdLy: Number(summary.lyYtdRevenue || 0),
+    ytdActual: Number(summary.ytdActual || 0),
+    ytdLy: Number(summary.ytdLy || 0),
   });
   
   return finalArray;
@@ -87,7 +87,7 @@ export default function DailySalesReport() {
       if (payload) {
         setAccumulated({
           mtd_room_revenue: payload.summary?.mtdRoomRevenue || 0,
-          ytd_total_gross: payload.summary?.ytdRevenue || 0
+          ytd_total_gross: payload.summary?.ytdActual || 0
         });
         setData(processSalesData(payload));
       } else {

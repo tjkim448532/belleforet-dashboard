@@ -21,7 +21,7 @@ export default function Home() {
 
   // V5 에서는 current/lastYear 구분 없이 평탄화(Flat)된 weather 객체가 옵니다. 호환성을 위해 둘 다 체크합니다.
   const weather = coreData.core?.weather?.current || coreData.core?.weather || null;
-  const lastYearWeather = coreData.core?.weather?.lastYear || null;
+  const lastYearWeather = coreData.core?.weather?.lastYear || ((weather?.lyDescription || weather?.lyTempMax) ? { weatherDesc: weather.lyDescription || '', description: weather.lyDescription || '', tempMax: weather.lyTempMax, tempMin: weather.lyTempMin } : null);
 
   const displayData: any = data;
 

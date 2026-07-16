@@ -44,12 +44,12 @@ export default function MatrixWeeklyDashboard() {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         
-        // 백엔드의 새로운 통일 리포트 API (Flat Array 구조 수용)
-        const res = await secureFetcher(`${API_BASE}/api/v5/report/daily-sales?date=${startDate}`);
+        // 백엔드의 새로운 요일비교 매트릭스 API 호출 (Flat Array 구조 수용)
+        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?date=${startDate}`);
         const result = res.data || res;
         
-        // 새로 추가된 revenue 배열을 추출
-        const payloadArray = result.revenue || (Array.isArray(result) ? result : (result.data || []));
+        // matrix-weekly는 배열 최상단(Root Level)에 데이터를 던져줍니다.
+        const payloadArray = Array.isArray(result) ? result : (result.data || []);
         
         setData(payloadArray);
       } catch (err: any) {

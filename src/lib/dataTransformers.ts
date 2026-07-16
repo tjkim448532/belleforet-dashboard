@@ -26,10 +26,10 @@ export const transformHomeData = (core: CoreDataState) => {
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
     // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑 (단, 실제 라이브 데이터는 snake_case와 한글 값을 반환할 수 있으므로 fallback 추가)
     const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_code === '객실');
-    if (roomCat) totalRoomRev = Number(roomCat.totalSales || roomCat.total_sales || 0);
+    if (roomCat) totalRoomRev = Number(roomCat.todayActual || roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
 
     const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.category_code === 'GOLF' || x.category_code === '골프');
-    if (golfCat) totalGolfRev = Number(golfCat.totalSales || golfCat.total_sales || 0);
+    if (golfCat) totalGolfRev = Number(golfCat.todayActual || golfCat.totalSales || golfCat.total_sales || golfCat.sales || golfCat.revenue || 0);
   }
   
   const totalResortRevGross = c.summary?.totalRevenue || 0;
@@ -64,11 +64,11 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: c.summary?.ytdActual || c.summary?.ytd_gross || 0, 
-      ly_actual: c.summary?.ytdLy || c.summary?.ly_ytd_gross || 0,
-      gross: c.summary?.ytdActual || c.summary?.ytd_gross || 0,
-      ly_gross: c.summary?.ytdLy || c.summary?.ly_ytd_gross || 0,
-      ly_day: c.summary?.ytdLy || c.summary?.ly_ytd_gross || 0
+      actual: c.summary?.ytdActual || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0, 
+      ly_actual: c.summary?.ytdLy || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
+      gross: c.summary?.ytdActual || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0,
+      ly_gross: c.summary?.ytdLy || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
+      ly_day: c.summary?.ytdLy || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0
     },
     today: { 
       actual: c.summary?.totalRevenue || 0, 
@@ -87,8 +87,8 @@ export const transformHomeData = (core: CoreDataState) => {
     golfSummary: {
       reservedTeams: c.summary?.totalGolfTeams || 0,
       visitedTeams: c.summary?.totalGolfTeams || 0,
-      visitedPlayers: c.summary?.visitedPlayers || 0,
-      avgGreenFee: c.summary?.visitedPlayers > 0 ? (totalGolfRev / c.summary.visitedPlayers) : 0,
+      visitedPlayers: c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>x.categoryCode==='GOLF')?.visitors || 0,
+      avgGreenFee: (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>x.categoryCode==='GOLF')?.visitors || 0) > 0 ? (totalGolfRev / (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>x.categoryCode==='GOLF')?.visitors || 1)) : 0,
       ly_avgGreenFee: 0,
     },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],

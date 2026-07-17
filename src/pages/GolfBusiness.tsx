@@ -218,14 +218,14 @@ export default function GolfBusiness() {
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
                   {golfDetails
-                        .sort((a: { today_actual: number }, b: { today_actual: number }) => b.today_actual - a.today_actual)
-                        .map((f: { shop_name?: string, facility_name?: string, category?: string, revenue?: number, today_actual?: number, total_sales?: number }, idx: number) => (
+                        .sort((a: any, b: any) => (b.todayActual || b.today_actual || b.revenue || b.total_sales || 0) - (a.todayActual || a.today_actual || a.revenue || a.total_sales || 0))
+                        .map((f: { shop_name?: string, facility_name?: string, category?: string, revenue?: number, today_actual?: number, todayActual?: number, total_sales?: number }, idx: number) => (
                           <tr key={`${f.shop_name}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td className="py-4 px-6 font-medium text-slate-700">
                               {f.facility_name || f.shop_name || f.category || '기타'}
                             </td>
                             <td className="py-4 px-6 text-right font-medium text-slate-900">
-                              {formatCurrency(f.revenue || f.today_actual || f.total_sales || 0)}
+                              {formatCurrency(f.todayActual || f.revenue || f.today_actual || f.total_sales || 0)}
                             </td>
                           </tr>
                         ))}

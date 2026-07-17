@@ -14,33 +14,32 @@ export default function LeisureFacility() {
     }
 
     const ticketFacilities = core.salesByFacility.filter((item: any) => 
-      item.categoryCode === 'TICKET'
+      item.categoryCode === 'TICKET' || item.category_code === 'TICKET' || item.category_code === '티켓'
     );
 
-    let totalSales = 0;
-    let totalQuantity = 0;
-    const itemMap = new Map<string, { name: string; sales: number; qty: number; depth2?: string }>();
-
-    ticketFacilities.forEach((item: any) => {
-      const sales = Number(item.totalSales || 0);
-      const qty = Number(item.salesQty || item.qty || 0);
-      totalSales += sales;
-      totalQuantity += qty;
-      
-      const name = item.shopName || '기타';
-      const existing = itemMap.get(name);
-      if (existing) {
-        existing.sales += sales;
-        existing.qty += qty;
-      } else {
-        itemMap.set(name, { name, sales, qty, depth2: name });
+    // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory
+    let ssotTotalSales = 0;
+    let ssotTotalQuantity = 0;
+    
+    if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
+      const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET' || x.category_code === 'TICKET' || x.category_code === '티켓');
+      if (ticketCat) {
+        ssotTotalSales = Number(ticketCat.todayActual || ticketCat.totalSales || ticketCat.total_sales || ticketCat.sales || ticketCat.revenue || 0);
+        ssotTotalQuantity = Number(ticketCat.salesQty || ticketCat.qty || ticketCat.totalQuantity || ticketCat.visitors || 0);
       }
+    }
+
+    // 2. Map facility rows directly (No Array reduction/aggregation)
+    const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities.map((item: any) => {
+      const name = item.shopName || item.facility_name || item.shop_name || '기타';
+      const sales = Number(item.todayActual || item.totalSales || item.total_sales || item.revenue || 0);
+      const qty = Number(item.salesQty || item.qty || item.visitors || 0);
+      return { name, sales, qty, depth2: item.sub_group_name || name };
     });
 
-    const sortedTickets = Array.from(itemMap.values())
-      .sort((a, b) => b.sales - a.sales);
+    const sortedTickets = mappedTickets.sort((a: any, b: any) => b.sales - a.sales);
 
-    return { totalSales, topTickets: sortedTickets, totalQuantity };
+    return { totalSales: ssotTotalSales, topTickets: sortedTickets, totalQuantity: ssotTotalQuantity };
   }, [core]);
 
   if (isLoading) {

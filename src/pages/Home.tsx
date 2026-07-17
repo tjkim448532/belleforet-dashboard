@@ -437,20 +437,7 @@ export default function Home() {
         </div>
       </div>
       
-      {/* 백엔드 API 응답 증명용 디버그 패널 */}
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 mt-4 text-xs bg-slate-900 text-green-400 font-mono rounded-xl overflow-auto">
-        <div className="font-bold mb-2">🚨 [프론트엔드 디버그] 실제 백엔드 수신 데이터 덤프</div>
-        <p className="mb-2 text-gray-400">// YTD가 0으로 나오는 원인: 백엔드가 'ytdActual' 대신 다른 이름으로 주고 있는지 확인하세요.</p>
-        <div className="bg-black text-green-400 p-4 rounded text-sm overflow-auto mb-4 font-mono">
-          c.summary.ytdActual = {coreData.core?.summary?.ytdActual === undefined ? 'undefined (데이터 없음!)' : coreData.core?.summary?.ytdActual}
-        </div>
-        <div>
-          c.summary.ytd_gross = {coreData.core?.summary?.ytd_gross === undefined ? 'undefined' : coreData.core?.summary?.ytd_gross}
-        </div>
-        <br/>
-        <p className="mb-2 text-gray-400">// 골프/객실이 0으로 나오는 원인: category_code가 'ROOM'/'GOLF'가 아니거나 totalSales가 없는지 확인하세요.</p>
-        <pre>{JSON.stringify(coreData.core?.salesByCategory, null, 2)}</pre>
-      </div>
+
 
     </div>
   );

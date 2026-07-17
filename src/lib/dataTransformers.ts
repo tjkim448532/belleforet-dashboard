@@ -8,8 +8,8 @@ export const transformHomeData = (core: CoreDataState) => {
   const hqTodayMap: Record<string, number> = {};
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
     c.salesByCategory.forEach((m: any) => {
-      const cat = m.category || '기타업장';
-      hqTodayMap[cat] = Number(m.sales || m.revenue || 0);
+      const cat = m.categoryCode || m.category_code || m.category || '기타업장';
+      hqTodayMap[cat] = Number(m.todayActual || m.total_sales || m.totalSales || m.sales || m.revenue || 0);
     });
   }
   
@@ -64,11 +64,11 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: c.summary?.ytdActual || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0, 
-      ly_actual: c.summary?.ytdLy || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
-      gross: c.summary?.ytdActual || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0,
-      ly_gross: c.summary?.ytdLy || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
-      ly_day: c.summary?.ytdLy || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0
+      actual: c.summary?.ytdActual || c.summary?.ytdRevenue || c.summary?.ytd_revenue || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0, 
+      ly_actual: c.summary?.ytdLy || c.summary?.ytdLyRevenue || c.summary?.ytd_ly_revenue || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
+      gross: c.summary?.ytdActual || c.summary?.ytdRevenue || c.summary?.ytd_revenue || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0,
+      ly_gross: c.summary?.ytdLy || c.summary?.ytdLyRevenue || c.summary?.ytd_ly_revenue || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
+      ly_day: c.summary?.ytdLy || c.summary?.ytdLyRevenue || c.summary?.ytd_ly_revenue || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0
     },
     today: { 
       actual: c.summary?.totalRevenue || 0, 
@@ -106,7 +106,8 @@ export const transformExecutiveData = (core: CoreDataState) => {
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
     // V5 Schema
     c.salesByCategory.forEach((m: any) => {
-      hqGroups[m.category] = Number(m.sales || m.revenue || 0);
+      const cat = m.categoryCode || m.category_code || m.category || '기타업장';
+      hqGroups[cat] = Number(m.todayActual || m.total_sales || m.totalSales || m.sales || m.revenue || 0);
     });
   }
   
@@ -116,7 +117,7 @@ export const transformExecutiveData = (core: CoreDataState) => {
         depth_2_shop: t.sub_group_name || t.shop_name || t.facility_name,
         team_name: t.team_name,
         total_visitors: t.total_visitors || 0,
-        total_sales: Number(t.total_sales || t.today_actual || t.revenue || 0)
+        total_sales: Number(t.todayActual || t.total_sales || t.today_actual || t.revenue || 0)
       });
     });
   }
@@ -197,7 +198,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
     // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑 (fallback 추가)
     const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_code === '객실');
-    if (roomCat) summaryRevenue = Number(roomCat.totalSales || roomCat.total_sales || 0);
+    if (roomCat) summaryRevenue = Number(roomCat.todayActual || roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
   }
   
   let summaryRoomsSold = payload.summary?.totalRooms || 0;

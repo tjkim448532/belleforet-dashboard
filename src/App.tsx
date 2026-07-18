@@ -15,6 +15,7 @@ import Simulator from './pages/Simulator';
 import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
 // AdminLeisureMapping removed
+import AdminDaolRules from './pages/AdminDaolRules';
 import AdminRoles from './pages/AdminRoles';
 
 import ManagementSupport from './pages/ManagementSupport';
@@ -69,9 +70,9 @@ function App() {
                     <Route path="synergy" element={<Synergy />} />
                   </Route>
 
-                  {/* Admin Routes */}
                   <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                     <Route path="simulator" element={<Simulator />} />
+                    <Route path="daol-rules" element={<AdminDaolRules />} />
                     <Route path="logs" element={<AdminLogs />} />
                     <Route path="mapping" element={<AdminMapping />} />
                     {/* <Route path="leisure-mapping" element={<AdminLeisureMapping />} /> */}

@@ -72,10 +72,10 @@ export const transformHomeData = (core: CoreDataState) => {
     },
     today: { 
       actual: c.summary?.totalRevenue || 0, 
-      ly_actual: c.summary?.lyRevenue || 0,
+      ly_actual: c.summary?.todayLyRevenue || c.summary?.lyRevenue || 0,
       gross: c.summary?.totalRevenue || 0,
-      ly_gross: c.summary?.lyRevenue || 0,
-      ly_day: c.summary?.lyRevenue || 0
+      ly_gross: c.summary?.todayLyRevenue || c.summary?.lyRevenue || 0,
+      ly_day: c.summary?.todayLyRevenue || c.summary?.lyRevenue || 0
     },
     hq_today: hqToday,
     store_today: [] as { shop_name: string; actual: number; qty: number }[],

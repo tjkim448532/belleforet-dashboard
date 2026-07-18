@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -14,6 +14,26 @@ export default function ExecutiveDashboard() {
 
   const kpiData = transformed?.kpiData || null;
   const revenueData = transformed?.revenueData || null;
+
+  const [auditData, setAuditData] = useState<{ expectedTotal: number, actualTotal: number, diff: number, hasMismatch: boolean } | null>(null);
+
+  useEffect(() => {
+    const checkAudit = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/v5/admin/audit-status');
+        const data = await res.json();
+        if (data.success && data.data) {
+          setAuditData(data.data);
+        }
+      } catch (err) {
+        console.error('Audit check failed:', err);
+      }
+    };
+    checkAudit();
+    // Re-check every 5 minutes
+    const interval = setInterval(checkAudit, 300000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (coreData.isLoading) {
     return (
@@ -94,6 +114,30 @@ export default function ExecutiveDashboard() {
             <GlobalDatePicker />
           </div>
       </div>
+
+      {auditData?.hasMismatch && (
+        <div className="bg-red-500/10 border border-red-500 rounded-xl p-4 flex items-center justify-between shadow-lg shadow-red-500/20">
+          <div>
+            <h3 className="text-red-400 font-bold text-lg flex items-center gap-2">
+              <span className="text-2xl">⚠️</span> 데이터 불일치 경고 (DATA AUDIT ALERT)
+            </h3>
+            <p className="text-red-200 text-sm mt-1">
+              원천(Raw) 데이터 총합과 팩트(Fact) 테이블 총합 간에 차이가 발생했습니다. 담당자 확인이 필요합니다.
+            </p>
+            <div className="flex gap-6 mt-3 text-sm font-mono text-red-100 bg-red-950/50 p-2 rounded">
+              <span>원천 총합 (Expected): {formatKRW(auditData.expectedTotal)}</span>
+              <span>팩트 총합 (Actual): {formatKRW(auditData.actualTotal)}</span>
+              <span className="text-red-400 font-bold">오차 (Diff): {formatKRW(auditData.diff)} 원</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.open('/AdminDaolRules', '_self')}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium text-sm transition-colors"
+          >
+            티켓 비율 관리 바로가기
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

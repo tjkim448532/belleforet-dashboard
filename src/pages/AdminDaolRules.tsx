@@ -31,8 +31,9 @@ export default function AdminDaolRules() {
   const [sourceName, setSourceName] = useState('');
   const [allocations, setAllocations] = useState<Allocation[]>([{ target_name: '', ratio: 0 }]);
   const [saving, setSaving] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost/api/v3';
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v5';
 
   const fetchRules = async () => {
     try {
@@ -120,6 +121,28 @@ export default function AdminDaolRules() {
     } catch (err) {
       console.error(err);
       alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleBackfill = async () => {
+    if (!window.confirm('저장된 모든 룰을 기준으로 과거 데이터를 전체 재적재(Backfill) 하시겠습니까?\n이 작업은 데이터 양에 따라 수 초~수 분이 소요될 수 있습니다.')) return;
+    try {
+      setBackfilling(true);
+      const res = await fetch(`${API_BASE}/admin/trigger-etl`, {
+        method: 'POST'
+      });
+      if (!res.ok) throw new Error('백필 실패');
+      const data = await res.json();
+      if (data.success) {
+        alert('과거 데이터 재적재가 완료되었습니다.');
+      } else {
+        alert(`백필 실패: ${data.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('백필 실행 중 오류가 발생했습니다.');
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -274,6 +297,24 @@ export default function AdminDaolRules() {
           </table>
         </div>
       </div>
+
+      {/* 시스템 관리 도구 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 mt-8 border-l-4 border-l-brand-purple">
+        <h2 className="text-lg font-semibold text-slate-800 mb-2 flex items-center gap-2">
+          ⚙️ 시스템 관리 도구
+        </h2>
+        <p className="text-slate-500 text-sm mb-4">
+          비율이나 대상 영업장을 변경한 후, <strong>과거 매출 데이터</strong>에도 변경된 룰을 적용하려면 아래의 <strong>[과거 데이터 전체 재적재]</strong> 버튼을 반드시 눌러야 전체 대시보드(MariaDB)에 반영됩니다.
+        </p>
+        <button 
+          onClick={handleBackfill}
+          disabled={backfilling}
+          className="px-6 py-3 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+        >
+          {backfilling ? '재적재(Backfill) 진행 중...' : '과거 데이터 전체 재적재 (Backfill) 실행'}
+        </button>
+      </div>
+
     </div>
   );
 }

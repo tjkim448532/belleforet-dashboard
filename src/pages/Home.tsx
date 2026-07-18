@@ -138,14 +138,14 @@ export default function Home() {
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
-              <div className="flex justify-between items-start mb-6 relative z-10">
+              <div className="flex flex-col gap-3 mb-6 relative z-10">
                 <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
                   조회일자 ({startDate}) 
                   <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
                 </h2>
                 {(weather || lastYearWeather) && (
-                  <div className="text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
+                  <div className="self-start text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
                     <div className="opacity-60 text-right pr-3 border-r border-slate-200">
                       <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
                       {lastYearWeather && (lastYearWeather.weatherDesc !== '데이터없음' && lastYearWeather.description !== '데이터없음') ? (
@@ -235,10 +235,10 @@ export default function Home() {
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-2">객단가 (ADR)</div>
-                  <div className="flex justify-between px-1 text-teal-700 items-end">
-                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr16)}</span></div>
-                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr35)}</span></div>
-                    <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span><span className="text-lg font-extrabold">{formatCurrency(adrData.adr51)}</span></div>
+                  <div className="grid grid-cols-3 gap-1 w-full text-teal-700">
+                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr16)}</span></div>
+                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr35)}</span></div>
+                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span></div>
                   </div>
                   <div className="text-[11px] text-slate-500 mt-2 font-medium">매출액 ÷ 순수 결제건수</div>
                 </div>

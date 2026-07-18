@@ -155,8 +155,8 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType)) {
     payload.roomSummaryByType.forEach((item: any) => {
-      const typeName = item.room_type || '기타';
-      const sold = Number(item.rooms_sold || 0);
+      const typeName = item.room_type || item.roomType || '기타';
+      const sold = Number(item.rooms_sold || item.roomsSold || 0);
       const rev = Number(item.revenue || 0);
 
       if (typeName.includes('16평')) {

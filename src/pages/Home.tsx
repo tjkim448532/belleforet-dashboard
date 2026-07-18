@@ -78,13 +78,15 @@ export default function Home() {
     
     if (coreData.core?.roomSummaryByType) {
       coreData.core.roomSummaryByType.forEach((item: any) => {
-        const typeName = item.room_type || '';
+        const typeName = item.room_type || item.roomType || '';
+        const revenue = Number(item.revenue || 0);
+        const sold = Number(item.rooms_sold || item.roomsSold || 0);
         if (typeName.includes('16평')) {
-          rev16 += Number(item.revenue || 0); sold16 += Number(item.rooms_sold || 0);
+          rev16 += revenue; sold16 += sold;
         } else if (typeName.includes('35평')) {
-          rev35 += Number(item.revenue || 0); sold35 += Number(item.rooms_sold || 0);
+          rev35 += revenue; sold35 += sold;
         } else if (typeName.includes('51평')) {
-          rev51 += Number(item.revenue || 0); sold51 += Number(item.rooms_sold || 0);
+          rev51 += revenue; sold51 += sold;
         }
       });
     }

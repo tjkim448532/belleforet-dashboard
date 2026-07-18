@@ -138,11 +138,11 @@ export default function Home() {
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
-              <div className="flex flex-col gap-3 mb-6 relative z-10">
+              <div className="min-h-[96px] mb-2 relative z-10 flex flex-col gap-3">
                 <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
                   조회일자 ({startDate}) 
-                  <span className="text-xs text-slate-400 font-normal hidden sm:inline">(부가세 포함)</span>
+                  <span className="text-xs text-slate-400 font-normal hidden xl:inline">(부가세 포함)</span>
                 </h2>
                 {(weather || lastYearWeather) && (
                   <div className="self-start text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
@@ -191,9 +191,11 @@ export default function Home() {
 
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
-              <h2 className="text-base font-semibold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
-                <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) <span className="text-xs text-slate-400 font-normal">(부가세 포함)</span>
-              </h2>
+              <div className="min-h-[96px] mb-2 relative z-10 flex flex-col justify-start">
+                <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) <span className="text-xs text-slate-400 font-normal">(부가세 포함)</span>
+                </h2>
+              </div>
               <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
                 {formatCurrency(ytdGross)}
               </div>
@@ -206,9 +208,11 @@ export default function Home() {
 
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-150" />
-              <h2 className="text-base font-semibold text-slate-500 mb-6 flex items-center gap-2 relative z-10">
-                <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 방문객 수
-              </h2>
+              <div className="min-h-[96px] mb-2 relative z-10 flex flex-col justify-start">
+                <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 방문객 수
+                </h2>
+              </div>
               <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
                 {new Intl.NumberFormat('ko-KR').format(totalVisitors)}<span className="text-lg font-medium text-slate-500 ml-1">명</span>
               </div>

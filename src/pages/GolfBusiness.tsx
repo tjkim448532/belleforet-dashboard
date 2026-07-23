@@ -27,24 +27,38 @@ export default function GolfBusiness() {
     const fetchSummary = async () => {
       setLoading(true);
       try {
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = `date=${startDate}`;
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?${queryParams}`);
+        const json = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (payload) {
           // V5 Schema direct map (SSOT)
-          const golf_revenue = payload.summary?.golfRevenue ?? payload.golfSummary?.golfRevenue ?? payload.golfSummary?.gross ?? 0;
+          const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프');
+          const golf_revenue = Number(golfCategory?.totalSales || golfCategory?.todayActual || golfCategory?.sales || golfCategory?.revenue || 0);
+
+          const golf_visited_teams = Number(payload.summary?.totalGolfTeams || payload.summary?.golfVisitedTeams || 0);
+          const golf_visited_players = Number(payload.summary?.totalGolfVisitors || payload.summary?.golfVisitedPlayers || 0);
+
+          const golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프') || payload.golfFacilityBreakdown || [];
+
+          const golf_avg_green_fee = golf_visited_players > 0 ? Math.round(golf_revenue / golf_visited_players) : 0;
           
           setData({
             success: json.success ?? true,
             date: payload.date ?? startDate,
             todaySummary: {
-              golf_revenue: golf_revenue,
-              golf_visited_teams: payload.summary?.golfVisitedTeams ?? payload.golfSummary?.visited_teams ?? payload.golfSummary?.visitedTeams ?? 0,
-              golf_visited_players: payload.summary?.golfVisitedPlayers ?? payload.golfSummary?.visited_players ?? payload.golfSummary?.visitedPlayers ?? 0,
-              golf_avg_green_fee: payload.summary?.golfAvgGreenFee ?? payload.golfSummary?.avg_green_fee ?? payload.golfSummary?.avgGreenFee ?? 0,
-              golf_ly_avg_green_fee: payload.summary?.golfLyAvgGreenFee ?? payload.golfSummary?.ly_avg_green_fee ?? payload.golfSummary?.ly_avgGreenFee ?? 0,
+              golf_revenue,
+              golf_visited_teams,
+              golf_visited_players,
+              golf_avg_green_fee,
+              golf_ly_avg_green_fee: 0,
             },
-            golfFacilityBreakdown: payload.rawTickets ?? payload.golfFacilityBreakdown ?? []
+            golfFacilityBreakdown: golfFacilities.map((f: any) => ({
+              facility_name: f.subGroupName || f.shop_name || f.facility_name || '그린피',
+              shop_name: f.subGroupName || f.shop_name || f.facility_name || '그린피',
+              todayActual: Number(f.totalSales || f.todayActual || f.revenue || 0),
+              today_actual: Number(f.totalSales || f.todayActual || f.revenue || 0)
+            }))
           });
         }
       } catch (err) {

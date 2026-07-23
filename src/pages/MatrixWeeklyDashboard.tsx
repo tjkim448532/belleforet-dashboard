@@ -58,22 +58,34 @@ export default function MatrixWeeklyDashboard() {
     fetchV5Matrix();
   }, [startDate]);
 
-  // 중복 소계 행 정제 (동일한 금액의 연속된 파트/팀/카테고리 중복 소계를 최상위 1개만 깔끔하게 표출)
+  // 중복 소계 행 정제 및 실적 0원 매장/소계 숨김 필터 (바이블 준수: 백엔드 수치는 재계산하지 않고 화면 표시만 필터링)
   const displayRows = React.useMemo(() => {
     if (!data || data.length === 0) return [];
     
     return data.filter((row, idx, arr) => {
-      if (!row.isSubtotal || row.isGrandTotal) return true;
-      
-      const next = arr[idx + 1];
-      if (next && next.isSubtotal && !next.isGrandTotal &&
-          next.todayActual === row.todayActual &&
-          next.todayLy === row.todayLy &&
-          next.mtdActual === row.mtdActual &&
-          next.mtdLy === row.mtdLy &&
-          next.ytdActual === row.ytdActual &&
-          next.ytdLy === row.ytdLy) {
-        return false;
+      // 총계 행은 무조건 표출
+      if (row.isGrandTotal) return true;
+
+      // 금일, MTD, YTD 실적이 전년/올해 모두 0원인지 체크
+      const isAllZero = (row.todayActual || 0) === 0 && (row.todayLy || 0) === 0 &&
+                        (row.mtdActual || 0) === 0 && (row.mtdLy || 0) === 0 &&
+                        (row.ytdActual || 0) === 0 && (row.ytdLy || 0) === 0;
+
+      // 실적이 전혀 없는 (0원) 매장 또는 소계 행은 숨김
+      if (isAllZero) return false;
+
+      // 중복 소계 정제 (동일 수치의 연속된 파트/팀/카테고리 중복 소계 중 하위 소계 제거)
+      if (row.isSubtotal) {
+        const next = arr[idx + 1];
+        if (next && next.isSubtotal && !next.isGrandTotal &&
+            next.todayActual === row.todayActual &&
+            next.todayLy === row.todayLy &&
+            next.mtdActual === row.mtdActual &&
+            next.mtdLy === row.mtdLy &&
+            next.ytdActual === row.ytdActual &&
+            next.ytdLy === row.ytdLy) {
+          return false;
+        }
       }
       return true;
     });

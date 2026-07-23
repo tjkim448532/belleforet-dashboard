@@ -26,7 +26,6 @@ import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 
 import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
-import ExecutiveDashboard from './pages/ExecutiveDashboard';
 import Synergy from './pages/Synergy';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -62,7 +61,6 @@ function App() {
                       <Route path="resort-business" element={<ResortBusiness />} />
                       <Route path="golf-business" element={<GolfBusiness />} />
                       <Route path="leisure" element={<LeisureFacility />} />
-                      <Route path="executive" element={<ExecutiveDashboard />} />
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="members" element={<Members />} />

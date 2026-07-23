@@ -96,49 +96,7 @@ export const transformHomeData = (core: CoreDataState) => {
   };
 };
 
-export const transformExecutiveData = (core: CoreDataState) => {
-  if (!core.core) return null;
-  const c = core.core;
-  
-  const hqGroups: Record<string, number> = {};
-  const details: any[] = [];
-  
-  if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    // V5 Schema
-    c.salesByCategory.forEach((m: any) => {
-      const cat = m.categoryCode || m.category_code || m.category || '기타업장';
-      hqGroups[cat] = Number(m.todayActual || m.total_sales || m.totalSales || m.sales || m.revenue || 0);
-    });
-  }
-  
-  if (c.salesByFacility && Array.isArray(c.salesByFacility)) {
-    c.salesByFacility.forEach((t: any) => {
-      details.push({
-        depth_2_shop: t.sub_group_name || t.shop_name || t.facility_name,
-        team_name: t.team_name,
-        total_visitors: t.total_visitors || 0,
-        total_sales: Number(t.todayActual || t.total_sales || t.today_actual || t.revenue || 0)
-      });
-    });
-  }
-  
-  const summaryList = Object.keys(hqGroups).map(key => ({
-    depth_1_category: key,
-    total_sales: hqGroups[key]
-  }));
-  
-  return {
-    kpiData: {
-      total_revenue_today: c.summary?.totalRevenue || 0,
-      dod_growth: 0,
-      rooms_sold: c.summary?.totalRooms || 0,
-      golf_visited_players: c.summary?.totalGolfPlayers || 0,
-      golf_visited_teams: c.summary?.totalGolfTeams || 0,
-      ytd_goal_pct: c.summary?.ytdGoalPct || 0
-    },
-    revenueData: { summary: summaryList, details }
-  };
-};
+
 
 // Removed CHANNEL_ENUM and normalizeMarketType to comply with No Frontend Aggregation SSOT Rule
 

@@ -34,8 +34,8 @@ export default function Home() {
     if (!coreData.core?.salesByCategory) return [];
     
     return coreData.core.salesByCategory.map((c: any) => ({
-      name: c.category || '기타업장',
-      value: Number(c.sales || c.revenue || 0)
+      name: c.categoryName || c.categoryCode || c.category || '기타업장',
+      value: Number(c.totalSales || c.todayActual || c.sales || c.revenue || 0)
     })).filter((c: any) => c.value > 0).sort((a: any, b: any) => b.value - a.value);
   }, [coreData.core?.salesByCategory]);
 

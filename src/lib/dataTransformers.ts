@@ -25,10 +25,10 @@ export const transformHomeData = (core: CoreDataState) => {
   let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
     // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑 (단, 실제 라이브 데이터는 snake_case와 한글 값을 반환할 수 있으므로 fallback 추가)
-    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_code === '객실');
+    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryCode === '객실' || x.category_code === 'ROOM' || x.category_code === '객실');
     if (roomCat) totalRoomRev = Number(roomCat.todayActual || roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
 
-    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.category_code === 'GOLF' || x.category_code === '골프');
+    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.category_code === 'GOLF' || x.category_code === '골프');
     if (golfCat) totalGolfRev = Number(golfCat.todayActual || golfCat.totalSales || golfCat.total_sales || golfCat.sales || golfCat.revenue || 0);
   }
   
@@ -87,8 +87,8 @@ export const transformHomeData = (core: CoreDataState) => {
     golfSummary: {
       reservedTeams: c.summary?.totalGolfTeams || 0,
       visitedTeams: c.summary?.totalGolfTeams || 0,
-      visitedPlayers: c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>x.categoryCode==='GOLF')?.visitors || 0,
-      avgGreenFee: (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>x.categoryCode==='GOLF')?.visitors || 0) > 0 ? (totalGolfRev / (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>x.categoryCode==='GOLF')?.visitors || 1)) : 0,
+      visitedPlayers: c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0,
+      avgGreenFee: (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0) > 0 ? (totalGolfRev / (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 1)) : 0,
       ly_avgGreenFee: 0,
     },
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
@@ -176,10 +176,10 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   
   if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
     payload.salesByChannel.forEach((item: any) => {
-      const sold = Number(item.rooms_sold || 0);
+      const sold = Number(item.rooms_sold || item.roomsSold || 0);
       const rev = Number(item.revenue || 0);
       channelAdrData.push({
-        channel: item.channel_group || '기타',
+        channel: item.channel_group || item.channelGroup || '기타',
         roomsSold: sold,
         totalRevenue: rev,
         adr: sold > 0 ? Math.round(rev / sold) : 0
@@ -197,7 +197,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   let summaryRevenue = 0;
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
     // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑 (fallback 추가)
-    const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.category_code === 'ROOM' || x.category_code === '객실');
+    const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryCode === '객실' || x.category_code === 'ROOM' || x.category_code === '객실');
     if (roomCat) summaryRevenue = Number(roomCat.todayActual || roomCat.totalSales || roomCat.total_sales || roomCat.sales || roomCat.revenue || 0);
   }
   

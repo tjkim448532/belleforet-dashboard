@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
-// V5 백엔드가 내려주는 요일비교 Row 명세 (100% 바이블 준수)
 export interface V5MatrixRow {
   categoryCode?: string;
   categoryName: string;
@@ -12,23 +11,23 @@ export interface V5MatrixRow {
   partName: string;
   shopName: string;
   isSubtotal?: boolean;
-  subtotalType?: 'part' | 'team' | string; // 백엔드 신규 스펙
+  subtotalType?: 'part' | 'team' | 'category' | 'grand_total' | string;
   isGrandTotal?: boolean;
   
   // Today
   todayActual?: number;
   todayLy?: number;
-  todayGrowth?: number; // Pre-baked from backend
+  todayGrowth?: number;
   
   // MTD
   mtdActual?: number;
   mtdLy?: number;
-  mtdGrowth?: number; // Pre-baked from backend
+  mtdGrowth?: number;
   
   // YTD
   ytdActual?: number;
   ytdLy?: number;
-  ytdGrowth?: number; // Pre-baked from backend
+  ytdGrowth?: number;
 }
 
 export default function MatrixWeeklyDashboard() {
@@ -43,20 +42,13 @@ export default function MatrixWeeklyDashboard() {
       setError(null);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        
-        // 백엔드의 새로운 요일비교 매트릭스 API 호출 (Flat Array 구조 수용)
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?date=${startDate}`);
         const result = res.data || res;
-        
-        // matrix-weekly는 배열 최상단(Root Level)에 데이터를 던져줍니다.
         const payloadArray = Array.isArray(result) ? result : (result.data || []);
-        
         setData(payloadArray);
       } catch (err: any) {
         console.error('Failed to fetch V5 matrix weekly', err);
-        setError('데이터를 불러오는 중 문제가 발생했습니다. 백엔드 V5 엔드포인트를 아직 준비 중일 수 있습니다.');
-        
-        // Fallback for development without V5 API yet
+        setError('데이터를 불러오는 중 문제가 발생했습니다.');
         setData([]);
       } finally {
         setIsLoading(false);
@@ -65,6 +57,27 @@ export default function MatrixWeeklyDashboard() {
     
     fetchV5Matrix();
   }, [startDate]);
+
+  // 중복 소계 행 정제 (동일한 금액의 연속된 파트/팀/카테고리 중복 소계를 최상위 1개만 깔끔하게 표출)
+  const displayRows = React.useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
+    return data.filter((row, idx, arr) => {
+      if (!row.isSubtotal || row.isGrandTotal) return true;
+      
+      const next = arr[idx + 1];
+      if (next && next.isSubtotal && !next.isGrandTotal &&
+          next.todayActual === row.todayActual &&
+          next.todayLy === row.todayLy &&
+          next.mtdActual === row.mtdActual &&
+          next.mtdLy === row.mtdLy &&
+          next.ytdActual === row.ytdActual &&
+          next.ytdLy === row.ytdLy) {
+        return false;
+      }
+      return true;
+    });
+  }, [data]);
 
   const formatCurrency = (value?: number) => {
     if (value === undefined || value === null) return '-';
@@ -77,22 +90,31 @@ export default function MatrixWeeklyDashboard() {
     
     if (rate > 0) {
       return (
-        <span className="text-red-500 font-medium flex items-center gap-1 justify-end">
+        <span className="text-red-500 font-semibold flex items-center gap-1 justify-end">
           <ArrowUpRight size={14} />
           {rate.toFixed(1)}%
         </span>
       );
     }
     return (
-      <span className="text-blue-500 font-medium flex items-center gap-1 justify-end">
+      <span className="text-blue-500 font-semibold flex items-center gap-1 justify-end">
         <ArrowDownRight size={14} />
         {Math.abs(rate).toFixed(1)}%
       </span>
     );
   };
 
+  const getSubtotalLabel = (row: V5MatrixRow) => {
+    if (row.isGrandTotal) return '총계 (Grand Total)';
+    if (row.subtotalType === 'category') return `${row.categoryName || row.categoryCode} 소계`;
+    if (row.subtotalType === 'team') return `${row.teamName} 소계`;
+    if (row.subtotalType === 'part') return `${row.partName} 소계`;
+    if (row.shopName === '소계') return `${row.categoryName || row.teamName || '카테고리'} 소계`;
+    return row.shopName;
+  };
+
   const parsedDate = new Date(startDate);
-  const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000); // 정확히 52주 전(작년 동일 요일)
+  const lyDate = new Date(parsedDate.getTime() - 364 * 24 * 60 * 60 * 1000);
   
   const currFormatter = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
   const lyFormatter = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
@@ -115,9 +137,9 @@ export default function MatrixWeeklyDashboard() {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Notice */}
-        <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex items-center gap-2 text-sm text-blue-700 font-medium">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          백엔드 통합 데이터 통제 시스템(V5 API)에서 100% 정제된 데이터를 렌더링합니다. (프론트 자체 연산 0%)
+        <div className="bg-teal-50/70 px-6 py-3 border-b border-teal-100 flex items-center gap-2 text-sm text-teal-800 font-medium">
+          <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
+          백엔드 통합 데이터 통제 시스템(V5 API) 원천 렌더링 (순매출/부가세 별도)
         </div>
 
         <div className="overflow-x-auto">
@@ -133,15 +155,15 @@ export default function MatrixWeeklyDashboard() {
                 {/* Today */}
                 <th className="p-3 border-r border-slate-200 font-medium">실적</th>
                 <th className="p-3 border-r border-slate-200 font-medium">전년 동요일</th>
-                <th className="p-3 border-r border-slate-200 font-medium">증감율</th>
+                <th className="p-3 border-r border-slate-200 font-medium">증감률</th>
                 {/* MTD */}
                 <th className="p-3 border-r border-slate-200 font-medium">실적</th>
                 <th className="p-3 border-r border-slate-200 font-medium">전년 동기</th>
-                <th className="p-3 border-r border-slate-200 font-medium">증감율</th>
+                <th className="p-3 border-r border-slate-200 font-medium">증감률</th>
                 {/* YTD */}
                 <th className="p-3 border-r border-slate-200 font-medium">실적</th>
                 <th className="p-3 border-r border-slate-200 font-medium">전년 동기</th>
-                <th className="p-3 font-medium">증감율</th>
+                <th className="p-3 font-medium">증감률</th>
               </tr>
             </thead>
             
@@ -154,48 +176,58 @@ export default function MatrixWeeklyDashboard() {
                 <tr>
                   <td colSpan={10} className="p-12 text-center text-red-500">{error}</td>
                 </tr>
-              ) : data.length === 0 ? (
+              ) : displayRows.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="p-12 text-center text-slate-400">
                     조회된 데이터가 없습니다.
                   </td>
                 </tr>
               ) : (
-                data.map((row, idx) => {
+                displayRows.map((row, idx) => {
                   const isSub = row.isSubtotal;
-                  const isPartSub = isSub && row.subtotalType === 'part';
+                  const isCatSub = isSub && row.subtotalType === 'category';
                   const isTeamSub = isSub && row.subtotalType === 'team';
                   const isTotal = row.isGrandTotal;
                   
-                  // 스타일 분기
+                  // 레벨별 명확한 스타일 및 배경색 구분
                   let rowClasses = "hover:bg-slate-50 transition-colors";
                   let nameClasses = "text-slate-700 font-semibold";
-                  let valueClasses = "font-medium text-slate-700";
+                  let valueClasses = "font-medium text-slate-800";
                   let lyValueClasses = "text-slate-400";
+                  let stickyBg = "bg-white";
 
                   if (isTotal) {
-                    rowClasses = "bg-slate-800 hover:bg-slate-900";
+                    rowClasses = "bg-slate-800 hover:bg-slate-900 text-white font-bold";
                     nameClasses = "text-white font-bold text-base";
                     valueClasses = "font-bold text-white text-base";
                     lyValueClasses = "text-slate-300";
+                    stickyBg = "bg-slate-800";
+                  } else if (isCatSub) {
+                    rowClasses = "bg-teal-100/80 hover:bg-teal-100 border-t-2 border-teal-300";
+                    nameClasses = "text-teal-900 font-extrabold text-[13px]";
+                    valueClasses = "font-bold text-teal-900";
+                    lyValueClasses = "text-teal-700/80";
+                    stickyBg = "bg-teal-100";
                   } else if (isTeamSub) {
-                    rowClasses = "bg-emerald-100 hover:bg-emerald-200 border-t-2 border-emerald-200";
-                    nameClasses = "text-emerald-800 font-bold text-[13px]";
+                    rowClasses = "bg-emerald-50 hover:bg-emerald-100 border-t border-emerald-200";
+                    nameClasses = "text-emerald-800 font-bold text-[12px]";
                     valueClasses = "font-bold text-emerald-800";
                     lyValueClasses = "text-emerald-600/80";
-                  } else if (isPartSub || isSub) {
+                    stickyBg = "bg-emerald-50";
+                  } else if (isSub) {
                     rowClasses = "bg-brand-mint/10 hover:bg-brand-mint/20 border-t border-brand-mint/20";
                     nameClasses = "text-brand-mint font-bold";
                     valueClasses = "font-bold text-brand-mint";
                     lyValueClasses = "text-brand-mint/60";
+                    stickyBg = "bg-[#e5f5f0]";
                   }
 
+                  const rowLabel = getSubtotalLabel(row);
+
                   return (
-                    <tr key={`${row.shopName}_${idx}`} className={rowClasses}>
+                    <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className={rowClasses}>
                       {/* Name Column */}
-                      <td className={`p-4 border-r border-slate-200 text-left sticky left-0 z-10 ${
-                        isTotal ? 'bg-slate-800' : isTeamSub ? 'bg-emerald-100' : isSub ? 'bg-[#e5f5f0]' : 'bg-white'
-                      }`}>
+                      <td className={`p-4 border-r border-slate-200 text-left sticky left-0 z-10 ${stickyBg}`}>
                         <div className="flex flex-col">
                           {!isTotal && !isSub && (
                             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -203,17 +235,7 @@ export default function MatrixWeeklyDashboard() {
                               <span className="text-[10px] font-medium text-slate-400 leading-none">{row.teamName} &gt; {row.partName}</span>
                             </div>
                           )}
-                          {isTeamSub && (
-                            <div className="text-[10px] font-bold text-emerald-600/70 mb-0.5">
-                              {row.teamName} 본부 합계
-                            </div>
-                          )}
-                          {isPartSub && (
-                            <div className="text-[10px] font-bold text-brand-mint/70 mb-0.5">
-                              {row.partName} 파트 합계
-                            </div>
-                          )}
-                          <span className={nameClasses}>{row.shopName}</span>
+                          <span className={nameClasses}>{rowLabel}</span>
                         </div>
                       </td>
 

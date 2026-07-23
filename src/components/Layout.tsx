@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Briefcase, Hotel, Ticket, Key, Flag, Database, MonitorPlay, Maximize, Minimize 
+  ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay, Maximize, Minimize 
 } from 'lucide-react';
 
 export default function Layout() {
@@ -11,7 +11,6 @@ export default function Layout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
-  const [managementOpen, setManagementOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -170,37 +169,6 @@ export default function Layout() {
                   }}
                 >
                   회원관리
-                </NavLink>
-              </div>
-            )}
-          </div>
-          )}
-          {/* 경영지원실 Accordion */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'sales' || userRole === 'management') && (
-            <div className="mt-2">
-            <button
-              onClick={() => setManagementOpen(!managementOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <Briefcase size={20} />
-                경영지원실
-              </div>
-              {managementOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
-            
-            {managementOpen && (
-              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
-                <NavLink
-                  to="/management-support"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
-                >
-                  일일영업보고 문자보내기
                 </NavLink>
               </div>
             )}

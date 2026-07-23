@@ -18,7 +18,6 @@ import AdminMapping from './pages/AdminMapping';
 import AdminDaolRules from './pages/AdminDaolRules';
 import AdminRoles from './pages/AdminRoles';
 
-import ManagementSupport from './pages/ManagementSupport';
 import ResortBusiness from './pages/ResortBusiness';
 import GolfBusiness from './pages/GolfBusiness';
 import LeisureFacility from './pages/LeisureFacility';
@@ -57,7 +56,6 @@ function App() {
                     
                     <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                       <Route index element={<Home />} />
-                      <Route path="management-support" element={<ManagementSupport />} />
                       <Route path="resort-business" element={<ResortBusiness />} />
                       <Route path="golf-business" element={<GolfBusiness />} />
                       <Route path="leisure" element={<LeisureFacility />} />

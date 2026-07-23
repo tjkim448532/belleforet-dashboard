@@ -64,8 +64,8 @@ export default function ResortBusiness() {
       const g = groups[key];
       if (g.sold === 0 && g.cap === 0 && g.rev === 0) continue;
       
-      let rate = 0;
-      let displayRate = '0%';
+      let rate: number;
+      let displayRate: string;
       
       if (key === '16평') {
         rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;

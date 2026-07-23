@@ -62,25 +62,12 @@ export default function Simulator() {
         // [V3 마이그레이션] recent-transactions API 호출
         const res = await secureFetcher(`https://belleforet-data.vercel.app/api/v3/reports/recent-transactions?date=${selectedDate}`);
         const result = res.data || res;
-        if (result) {
+        if (result && result.transactions) {
           setTransactions(result.transactions);
           setDbGrandTotal(result.metadata?.grandTotal || 0);
           
           const initialAssignments: Record<string, string> = {};
           result.transactions.forEach((t: Transaction) => {
-            const fullCategory = getCategoryForStore(t.description);
-            if (fullCategory !== '미분류') {
-              initialAssignments[t.id] = fullCategory;
-            }
-          });
-          setAssignments(initialAssignments);
-        } else if (result && result.data && result.data.transactions) {
-          // Fallback if secureFetcher didn't unwrap
-          setTransactions(result.data.transactions);
-          setDbGrandTotal(result.data.metadata?.grandTotal || 0);
-          
-          const initialAssignments: Record<string, string> = {};
-          result.data.transactions.forEach((t: Transaction) => {
             const fullCategory = getCategoryForStore(t.description);
             if (fullCategory !== '미분류') {
               initialAssignments[t.id] = fullCategory;

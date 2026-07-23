@@ -62,24 +62,10 @@ export default function ResortBusiness() {
     
     for (const key of keys) {
       const g = groups[key];
-      if (g.sold === 0 && g.cap === 0 && g.rev === 0) continue;
+      if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
       
-      let rate: number;
-      let displayRate: string;
-      
-      if (key === '16평') {
-        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
-        displayRate = `${rate}%`;
-      } else if (key === '35평') {
-        rate = g.cap > 0 ? Math.round(((g.sold + groups['51평'].sold) / g.cap) * 100) : 0;
-        displayRate = `${rate}%`;
-      } else if (key === '51평') {
-        rate = 0; // N/A conceptually
-        displayRate = 'N/A';
-      } else {
-        rate = g.cap > 0 ? Math.round((g.sold / g.cap) * 100) : 0;
-        displayRate = `${rate}%`;
-      }
+      const rate = g.cap > 0 ? Math.round((g.sold / g.cap) * 100) : 0;
+      const displayRate = g.cap > 0 ? `${rate}%` : 'N/A';
 
       result.push({
         roomSize: key,

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useCoreData } from '../contexts/CoreDataContext';
-import { Ticket, Trophy, AlertCircle, Wallet } from 'lucide-react';
+import { Ticket, Trophy, AlertCircle, Wallet, Award } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
@@ -8,9 +8,9 @@ const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Ma
 export default function LeisureFacility() {
   const { core, isLoading } = useCoreData();
 
-  const { totalSales, topTickets, totalQuantity } = useMemo(() => {
+  const { totalSales, topTickets, totalQuantity, top5Quantity, top5Tickets } = useMemo(() => {
     if (!core?.salesByFacility) {
-      return { totalSales: 0, topTickets: [], totalQuantity: 0 };
+      return { totalSales: 0, topTickets: [], totalQuantity: 0, top5Quantity: 0, top5Tickets: [] };
     }
 
     const ticketFacilities = core.salesByFacility.filter((item: any) => 
@@ -19,27 +19,39 @@ export default function LeisureFacility() {
 
     // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory
     let ssotTotalSales = 0;
-    let ssotTotalQuantity = 0;
     
     if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
       const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET' || x.category_code === 'TICKET' || x.category_code === '티켓');
       if (ticketCat) {
         ssotTotalSales = Number(ticketCat.todayActual || ticketCat.totalSales || ticketCat.total_sales || ticketCat.sales || ticketCat.revenue || 0);
-        ssotTotalQuantity = Number(ticketCat.salesQty || ticketCat.qty || ticketCat.totalQuantity || ticketCat.visitors || 0);
       }
     }
 
-    // 2. Map facility rows directly (No Array reduction/aggregation)
+    // 2. Map facility rows directly (V5 schema subGroupName & totalVisitors)
     const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities.map((item: any) => {
-      const name = item.shopName || item.facility_name || item.shop_name || '기타';
+      const name = item.subGroupName || item.sub_group_name || item.facility_name || item.shopName || item.shop_name || '기타';
       const sales = Number(item.todayActual || item.totalSales || item.total_sales || item.revenue || 0);
-      const qty = Number(item.salesQty || item.qty || item.visitors || 0);
-      return { name, sales, qty, depth2: item.sub_group_name || name };
+      const qty = Number(item.totalVisitors || item.salesQty || item.qty || item.visitors || 0);
+      const depth2 = item.partName || item.teamName || '티켓/레저';
+      return { name, sales, qty, depth2 };
     });
 
     const sortedTickets = mappedTickets.sort((a: any, b: any) => b.sales - a.sales);
+    const sumQty = sortedTickets.reduce((sum: number, item: any) => sum + item.qty, 0);
+    const top5 = sortedTickets.slice(0, 5);
+    const top5Qty = top5.reduce((sum: number, item: any) => sum + item.qty, 0);
 
-    return { totalSales: ssotTotalSales, topTickets: sortedTickets, totalQuantity: ssotTotalQuantity };
+    if (ssotTotalSales === 0 && sortedTickets.length > 0) {
+      ssotTotalSales = sortedTickets.reduce((sum: number, item: any) => sum + item.sales, 0);
+    }
+
+    return { 
+      totalSales: ssotTotalSales, 
+      topTickets: sortedTickets, 
+      totalQuantity: sumQty,
+      top5Quantity: top5Qty,
+      top5Tickets: top5
+    };
   }, [core]);
 
   if (isLoading) {
@@ -108,17 +120,47 @@ export default function LeisureFacility() {
               <Ticket className="w-5 h-5 text-purple-500" /> 총 판매 수량
             </h2>
             <div className="text-3xl font-medium text-slate-800 mb-2 tracking-tight relative z-10">
-              {totalQuantity.toLocaleString()} <span className="text-xl text-slate-500">개</span>
+              {totalQuantity.toLocaleString()} <span className="text-xl text-slate-500">개(명)</span>
             </div>
-            <p className="text-slate-400 text-sm relative z-10 font-medium">전체 판매된 티켓/상품 총합</p>
+            <p className="text-slate-400 text-sm relative z-10 font-medium border-t border-slate-100 pt-3 mt-2">
+              최고 매출 TOP 5 영업장 수량: <strong className="text-purple-600 font-medium">{top5Quantity.toLocaleString()}개</strong>
+            </p>
+          </div>
+
+          {/* TOP 5 최고 매출 트랜잭션 영업장 요약 카드 */}
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <h2 className="text-base font-medium text-slate-800 mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-500" /> 최고 매출 TOP 5 트랜잭션
+            </h2>
+            <div className="space-y-3">
+              {top5Tickets.map((t, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                      idx === 0 ? 'bg-amber-400 text-white' :
+                      idx === 1 ? 'bg-slate-300 text-white' :
+                      idx === 2 ? 'bg-amber-700 text-white' :
+                      'bg-slate-200 text-slate-600'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <span className="font-medium text-slate-700 text-sm truncate">{t.name}</span>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="font-medium text-sm text-slate-900 block">{formatCurrency(t.sales)}원</span>
+                    <span className="text-xs text-slate-400">{t.qty.toLocaleString()}개</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Top 5 랭킹 */}
+        {/* 레저본부 영업장별 전체 실적 랭킹 */}
         <div className="lg:col-span-8">
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full">
             <h2 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-amber-400" /> 전체 영업장 실적
+              <Trophy className="w-6 h-6 text-amber-400" /> 전체 영업장 실적 (레저본부)
               <span className="text-xs font-normal text-slate-400 ml-2 bg-slate-100 px-2 py-1 rounded-md">매출액 기준 내림차순</span>
             </h2>
 
@@ -127,22 +169,23 @@ export default function LeisureFacility() {
                 {topTickets.map((ticket, idx) => (
                   <div key={idx} className="flex items-center p-4 rounded-2xl bg-[#f8fafc] border border-slate-100 hover:bg-white hover:shadow-md transition-all duration-300">
                     <div className="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm flex items-center justify-center font-medium text-xl mr-4 border border-slate-100">
-                      {idx === 0 ? <span className="text-amber-400">1</span> :
-                       idx === 1 ? <span className="text-slate-400">2</span> :
-                       idx === 2 ? <span className="text-amber-700">3</span> :
-                       <span className="text-slate-300">{idx + 1}</span>}
+                      {idx === 0 ? <span className="text-amber-400 font-medium">1</span> :
+                       idx === 1 ? <span className="text-slate-400 font-medium">2</span> :
+                       idx === 2 ? <span className="text-amber-700 font-medium">3</span> :
+                       <span className="text-slate-300 font-medium">{idx + 1}</span>}
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-brand-mint bg-brand-mint/10 px-2 py-0.5 rounded-full">{ticket.depth2}</span>
-                        <h3 className="font-medium text-slate-800 truncate">{ticket.name}</h3>
+                        <span className="text-xs font-medium text-brand-mint bg-brand-mint/10 px-2.5 py-0.5 rounded-full">
+                          {ticket.name}
+                        </span>
                       </div>
-                      <p className="text-xs text-slate-500">{ticket.qty.toLocaleString()}개 판매됨</p>
+                      <p className="text-xs text-slate-500 font-medium">{ticket.qty.toLocaleString()}개 판매(입장)됨</p>
                     </div>
                     
                     <div className="text-right ml-4">
-                      <div className="font-medium text-lg text-slate-800">{formatCurrency(ticket.sales)}</div>
+                      <div className="font-medium text-lg text-slate-800">{formatCurrency(ticket.sales)}원</div>
                       <div className="text-xs font-medium text-slate-400">
                         ({totalSales > 0 ? ((ticket.sales / totalSales) * 100).toFixed(1) : 0}%)
                       </div>

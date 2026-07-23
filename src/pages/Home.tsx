@@ -262,7 +262,7 @@ export default function Home() {
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">리조트 총매출 ÷ 전체 객실 수</div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">리조트 총매출(골프 포함) ÷ 전체 객실 수</div>
                 </div>
               </div>
 
@@ -348,14 +348,14 @@ export default function Home() {
                     </ResponsiveContainer>
                   </div>
                   <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
-                    {pieChartData.map((entry: any, index: number) => (
-                      <div key={entry.name} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                    {pieChartData.map((item: any, index: number) => (
+                      <div key={item.name} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                          <span className="text-sm font-semibold text-slate-700">{entry.name}</span>
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                          <span className="text-sm font-medium text-slate-700">{item.name}</span>
                         </div>
-                        <div className="text-xl font-medium text-slate-800">
-                          {formatCurrency(entry.value)}<span className="text-sm font-normal text-slate-500 ml-1">원</span>
+                        <div className="text-lg font-bold text-slate-800">
+                          {formatCurrency(item.value)} <span className="text-xs text-slate-500 font-normal">원</span>
                         </div>
                       </div>
                     ))}
@@ -364,17 +364,16 @@ export default function Home() {
               </div>
             )}
 
-            {/* Math Explanation Card */}
+            {/* QA & KPI 상세 가이드 Accordion */}
             <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <h3 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
                 <Calculator className="w-5 h-5 text-brand-mint" />
-                지표 산출 공식 및 근거 데이터
+                지표 산출 공식 및 경영 의미 가이드
               </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
-                
-                {/* Room ADR */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* ADR Breakdown */}
                 <div className="bg-slate-50 p-4 rounded-xl">
-                  <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">평형별 객단가 (ADR)</h4>
+                  <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">객단가 (ADR) 타입별 상세</h4>
                   <ul className="space-y-3 text-slate-600">
                     <li className="flex flex-col">
                       <span className="font-medium">16평: {formatCurrency(adrData.adr16)}원</span>
@@ -405,7 +404,7 @@ export default function Home() {
                       <li className="flex flex-col">
                         <span className="font-medium text-slate-800">객실당 매출 (RevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}원</span>
                         <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>경영 의미:</strong> 빈 방을 포함한 모든 보유 객실이 평균적으로 벌어들인 순수 객실 매출입니다. <strong>객실 판매의 실질적인 효율성</strong>을 나타냅니다.
+                          <strong>경영 의미:</strong> 빈 방을 포함한 모든 보유 객실이 평균적으로 벌어들인 순수 객실 매출입니다. <strong>객실 판매의 실질적인 효율성</strong>을 나타냅니다. (골프/식음/티켓 미포함)
                         </div>
                         <span className="text-xs text-slate-400 font-mono mt-1.5">
                           = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalRoomRev) : 0}원 (객실 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
@@ -414,10 +413,10 @@ export default function Home() {
                       <li className="flex flex-col pt-2 border-t border-slate-200 border-dashed">
                         <span className="font-medium text-slate-800">객실당 총매출 (TrevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}원</span>
                         <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>경영 의미:</strong> 식음료, 부대시설 등을 포함해 리조트 전체 시설이 객실 1개당 창출한 총매출입니다. <strong>리조트 전체의 종합적인 수익 창출 능력</strong>을 보여줍니다.
+                          <strong>경영 의미:</strong> 골프, 식음료, 부대시설(티켓) 등을 포함해 리조트 전체 시설이 객실 1개당 창출한 총매출입니다. <strong>리조트 전체의 종합적인 수익 창출 능력</strong>을 보여줍니다.
                         </div>
                         <span className="text-xs text-slate-400 font-mono mt-1.5">
-                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevGross) : 0}원 (리조트 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
+                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevGross) : 0}원 (리조트 총매출: 골프/객실/식음/티켓 포함) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
                         </span>
                       </li>
                     </ul>

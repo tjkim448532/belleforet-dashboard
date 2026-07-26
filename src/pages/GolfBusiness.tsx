@@ -21,14 +21,14 @@ interface SummaryData {
 export default function GolfBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { startDate } = useDate();
+  const { startDate, endDate } = useDate();
 
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const queryParams = `date=${startDate}`;
+        const queryParams = endDate ? `startDate=${startDate}&endDate=${endDate}` : `date=${startDate}`;
         const json = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (payload) {
@@ -69,7 +69,7 @@ export default function GolfBusiness() {
     };
 
     fetchSummary();
-  }, [startDate]);
+  }, [startDate, endDate]);
 
   const formatCurrency = (val: number) => {
     const rounded = Math.round(val ?? 0);

@@ -31,7 +31,7 @@ export interface V5MatrixRow {
 }
 
 export default function MatrixWeeklyDashboard() {
-  const { startDate } = useDate();
+  const { startDate, endDate } = useDate();
   const [data, setData] = useState<V5MatrixRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +42,8 @@ export default function MatrixWeeklyDashboard() {
       setError(null);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?date=${startDate}`);
+        const queryParams = endDate ? `startDate=${startDate}&endDate=${endDate}` : `date=${startDate}`;
+        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`);
         const result = res.data || res;
         const payloadArray = Array.isArray(result) ? result : (result.data || []);
         setData(payloadArray);
@@ -56,7 +57,7 @@ export default function MatrixWeeklyDashboard() {
     };
     
     fetchV5Matrix();
-  }, [startDate]);
+  }, [startDate, endDate]);
 
   // 중복 소계 행 정제 및 실적 0원 매장/소계 숨김 필터 (바이블 준수: 백엔드 수치는 재계산하지 않고 화면 표시만 필터링)
   const displayRows = React.useMemo(() => {

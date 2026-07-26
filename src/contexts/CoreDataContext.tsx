@@ -42,14 +42,21 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // V5 SSOT: revenue-summary API는 단일 타겟 일자(date) 파라미터로 호출하여 백엔드가 계산한 단일 객체만 사용 (NO FRONTEND SUMMATION)
-      const targetDate = startDate || endDate || '2026-07-24';
-      const queryParams = `date=${targetDate}&_t=${Date.now()}`;
+      // V5 SSOT [REQ-V5-20260726-01]: 백엔드 단일 객체 리턴 개편 반영
+      const queryParams = endDate && startDate !== endDate
+        ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
+        : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
 
         let corePayload = res.data || res;
+        
+        // Vercel Edge Cache 방어: 배열 형태로 응답될 경우 최신 일자 객체 안전 추출
+        if (Array.isArray(corePayload)) {
+          corePayload = corePayload[corePayload.length - 1] || corePayload[0] || {};
+        }
+
         if (res.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
         }

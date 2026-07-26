@@ -28,10 +28,14 @@ export default function GolfBusiness() {
       setLoading(true);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const targetDate = startDate || endDate || '2026-07-24';
-        const queryParams = `date=${targetDate}&_t=${Date.now()}`;
+        const queryParams = endDate && startDate !== endDate
+          ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
+          : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
         const json = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
-        const payload = json.data ?? json;
+        let payload = json.data ?? json;
+        if (Array.isArray(payload)) {
+          payload = payload[payload.length - 1] || payload[0] || {};
+        }
         if (payload) {
           // V5 Schema direct map (SSOT)
           const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프');

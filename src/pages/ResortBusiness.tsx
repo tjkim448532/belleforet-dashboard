@@ -29,7 +29,7 @@ export default function ResortBusiness() {
           console.error('Error fetching master capacities from Firebase:', firebaseErr);
         }
 
-        const targetDate = endDate || startDate;
+        const targetDate = startDate || endDate || '2026-07-24';
         const queryParams = `date=${targetDate}&_t=${Date.now()}`;
         const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;

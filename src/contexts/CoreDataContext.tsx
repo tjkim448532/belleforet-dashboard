@@ -43,7 +43,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
       // V5 SSOT: revenue-summary API는 단일 타겟 일자(date) 파라미터로 호출해야 요약 지표 및 카테고리별 매출을 반환함
-      const targetDate = endDate || startDate;
+      const targetDate = startDate || endDate || '2026-07-24';
       const queryParams = `date=${targetDate}&_t=${Date.now()}`;
 
       try {

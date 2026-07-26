@@ -85,8 +85,8 @@ export default function LeisureFacility() {
             <h1 className="text-3xl font-medium tracking-tight mb-2">
               레저 영업장 대시보드
             </h1>
-            <p className="text-emerald-50">
-              티켓/레저 카테고리에 속한 전체 영업장의 요약 데이터입니다.
+            <p className="text-[13px] text-emerald-50 font-medium">
+              레저본부 카테고리에 속한 전체 영업장의 요약 데이터입니다.
             </p>
           </div>
           

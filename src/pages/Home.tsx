@@ -422,7 +422,7 @@ export default function Home() {
                       <li className="flex flex-col">
                         <span className="font-medium text-slate-800">객실당 매출 (RevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}원</span>
                         <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>경영 의미:</strong> 빈 방을 포함한 모든 보유 객실이 평균적으로 벌어들인 순수 객실 매출입니다. <strong>객실 판매의 실질적인 효율성</strong>을 나타냅니다. (골프/식음/티켓 미포함)
+                          <strong>경영 의미:</strong> 빈 방을 포함한 모든 보유 객실이 평균적으로 벌어들인 순수 객실 매출입니다. <strong>객실 판매의 실질적인 효율성</strong>을 나타냅니다. (골프/식음/레저본부 미포함)
                         </div>
                         <span className="text-xs text-slate-400 font-mono mt-1.5">
                           = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalRoomRev) : 0}원 (객실 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
@@ -431,7 +431,6 @@ export default function Home() {
                       <li className="flex flex-col pt-2 border-t border-slate-200 border-dashed">
                         <span className="font-medium text-slate-800">객실당 총매출 (TrevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}원</span>
                         <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>경영 의미:</strong> 골프, 식음료, 부대시설(티켓) 등을 포함해 리조트 전체 시설이 객실 1개당 창출한 총매출입니다. <strong>리조트 전체의 종합적인 수익 창출 능력</strong>을 보여줍니다.
                         </div>
                         <span className="text-xs text-slate-400 font-mono mt-1.5">
                           = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevGross) : 0}원 (리조트 총매출: 골프/객실/식음/티켓 포함) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)

@@ -225,9 +225,12 @@ export default function Synergy() {
     return Array.from(set);
   }, [channelData]);
 
-  // Filtered Table Rows
+  // Filtered Table Rows: Default to channel subtotals & grand total for clean summary view
   const filteredTableRows = useMemo(() => {
-    if (selectedChannel === 'ALL') return channelData;
+    if (selectedChannel === 'ALL') {
+      const subtotals = channelData.filter(r => r.isChannelSubtotal || r.isGrandTotal || r.channelName === '전체 합계');
+      return subtotals.length > 0 ? subtotals : channelData;
+    }
     return channelData.filter(r => r.channelName === selectedChannel || r.isGrandTotal);
   }, [channelData, selectedChannel]);
 

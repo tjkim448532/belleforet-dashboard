@@ -138,7 +138,10 @@ export default function MatrixWeeklyDashboard() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">전년 동요일 비교</h1>
           <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
-            <span className="font-medium text-brand-mint bg-brand-mint/10 px-2 py-0.5 rounded-md">조회일</span> {currFormatter.format(parsedDate)} 
+            <span className="font-medium text-brand-mint bg-brand-mint/10 px-2 py-0.5 rounded-md">
+              {endDate && startDate !== endDate ? '조회기간' : '조회일'}
+            </span> 
+            {endDate && startDate !== endDate ? `${startDate} ~ ${endDate}` : currFormatter.format(parsedDate)} 
             <span className="text-slate-300">|</span> 
             <span className="font-medium text-slate-500 bg-slate-200 px-2 py-0.5 rounded-md">비교일(전년)</span> {lyFormatter.format(lyDate)}
           </p>

@@ -143,7 +143,7 @@ export default function Home() {
               <div className="min-h-[96px] mb-2 relative z-10 flex flex-col gap-3">
                 <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
-                  조회일자 ({startDate}) 
+                  {coreData.core?.isRangeQuery && coreData.core?.endDate ? `조회기간 (${startDate} ~ ${coreData.core.endDate})` : `조회일자 (${startDate})`}
                   <span className="text-xs text-slate-400 font-normal hidden xl:inline">(부가세 별도)</span>
                 </h2>
                 {(weather || lastYearWeather) && (

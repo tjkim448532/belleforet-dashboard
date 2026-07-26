@@ -42,16 +42,98 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // V5 SSOT: revenue-summary API는 단일 타겟 일자(date) 파라미터로 호출해야 요약 지표 및 카테고리별 매출을 반환함
-      const targetDate = startDate || endDate || '2026-07-24';
-      const queryParams = `date=${targetDate}&_t=${Date.now()}`;
+      const isRange = Boolean(startDate && endDate && startDate !== endDate);
+      const queryParams = isRange 
+        ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
+        : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
 
         let corePayload = res.data || res;
-        // 백엔드 응답에서 weather가 root 객체에 분리되어 내려올 경우 병합 처리
-        if (res.weather && !corePayload.weather) {
+
+        // If backend returned daily array for period range query, synthesize range metrics
+        if (Array.isArray(corePayload)) {
+          const dailyArray = corePayload;
+          const latestDay = dailyArray[dailyArray.length - 1] || dailyArray[0] || {};
+          const firstDay = dailyArray[0] || {};
+
+          let totalRev = 0;
+          let totalRooms = 0;
+          let totalVisitors = 0;
+          let todayLyRev = 0;
+
+          const categoryMap: Record<string, { code: string; name: string; actual: number }> = {};
+          const roomTypeMap: Record<string, { type: string; sold: number; rev: number }> = {};
+
+          dailyArray.forEach((dayItem: any) => {
+            const s = dayItem.summary || {};
+            totalRev += Number(s.totalRevenue || dayItem.totalRevenue || 0);
+            totalRooms += Number(s.totalRooms || dayItem.totalRooms || 0);
+            totalVisitors += Number(s.totalVisitors || dayItem.totalVisitors || 0);
+            todayLyRev += Number(s.todayLyRevenue || s.lyRevenue || dayItem.todayLyRevenue || 0);
+
+            if (dayItem.salesByCategory && Array.isArray(dayItem.salesByCategory)) {
+              dayItem.salesByCategory.forEach((cat: any) => {
+                const code = cat.categoryCode || cat.category_code || 'OTHER';
+                const name = cat.categoryName || cat.category_name || code;
+                const amt = Number(cat.todayActual || cat.totalSales || cat.sales || cat.revenue || 0);
+                if (!categoryMap[code]) {
+                  categoryMap[code] = { code, name, actual: 0 };
+                }
+                categoryMap[code].actual += amt;
+              });
+            }
+
+            if (dayItem.roomSummaryByType && Array.isArray(dayItem.roomSummaryByType)) {
+              dayItem.roomSummaryByType.forEach((rt: any) => {
+                const type = rt.room_type || rt.roomType || '기타';
+                const sold = Number(rt.rooms_sold || rt.roomsSold || 0);
+                const rev = Number(rt.revenue || 0);
+                if (!roomTypeMap[type]) {
+                  roomTypeMap[type] = { type, sold: 0, rev: 0 };
+                }
+                roomTypeMap[type].sold += sold;
+                roomTypeMap[type].rev += rev;
+              });
+            }
+          });
+
+          const salesByCategory = Object.values(categoryMap).map(c => ({
+            categoryCode: c.code,
+            categoryName: c.name,
+            todayActual: c.actual,
+            totalSales: c.actual
+          }));
+
+          const roomSummaryByType = Object.values(roomTypeMap).map(rt => ({
+            roomType: rt.type,
+            roomsSold: rt.sold,
+            revenue: rt.rev
+          }));
+
+          corePayload = {
+            isRangeQuery: true,
+            startDate,
+            endDate,
+            summary: {
+              totalRevenue: totalRev,
+              totalRooms: totalRooms,
+              totalVisitors: totalVisitors,
+              totalRoomCap: (firstDay.summary?.totalRoomCap || 180) * dailyArray.length,
+              ytdRevenue: latestDay.summary?.ytdRevenue || 0,
+              ytdLyRevenue: latestDay.summary?.ytdLyRevenue || 0,
+              todayLyRevenue: todayLyRev,
+              totalGolfTeams: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfTeams || 0), 0),
+              totalGolfVisitors: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfVisitors || 0), 0),
+            },
+            salesByCategory,
+            salesByFacility: [],
+            roomSummaryByType,
+            dailyTrends: dailyArray,
+            weather: latestDay.weather || null
+          };
+        } else if (res.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
         }
 

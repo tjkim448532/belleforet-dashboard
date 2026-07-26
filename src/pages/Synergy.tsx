@@ -146,6 +146,11 @@ export default function Synergy() {
     }
   };
 
+  // Determine if query is an actual multi-day date range (startDate !== endDate)
+  const isActualRange = useMemo(() => {
+    return isRangeMode && !!endDate && startDate !== endDate;
+  }, [isRangeMode, startDate, endDate]);
+
   // Aggregate Segment Subtotals
   const segmentSummaries = useMemo(() => {
     if (!segmentData || segmentData.length === 0) return [];
@@ -155,8 +160,8 @@ export default function Synergy() {
     
     if (subtotals.length > 0) {
       return subtotals.map(s => {
-        const rooms = isRangeMode ? s.mtdRooms : s.todayRooms;
-        const revenue = isRangeMode ? s.mtdRevenue : s.todayRevenue;
+        const rooms = isActualRange ? s.mtdRooms : s.todayRooms;
+        const revenue = isActualRange ? s.mtdRevenue : s.todayRevenue;
         return {
           name: s.segmentName,
           rooms,
@@ -178,8 +183,8 @@ export default function Synergy() {
       if (!groups[seg]) {
         groups[seg] = { rooms: 0, revenue: 0, mtdRooms: 0, mtdRevenue: 0 };
       }
-      const itemRooms = isRangeMode ? (item.mtdRooms || 0) : (item.todayRooms || 0);
-      const itemRev = isRangeMode ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
+      const itemRooms = isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0);
+      const itemRev = isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
       groups[seg].rooms += itemRooms;
       groups[seg].revenue += itemRev;
       groups[seg].mtdRooms += item.mtdRooms || 0;
@@ -196,7 +201,7 @@ export default function Synergy() {
       ytdRevenue: 0,
       adr: val.rooms > 0 ? Math.round(val.revenue / val.rooms) : 0
     }));
-  }, [segmentData, isRangeMode]);
+  }, [segmentData, isActualRange]);
 
   const sourceForChannelTable = useMemo(() => {
     return channelData.length > 0 ? channelData : segmentData;
@@ -217,8 +222,8 @@ export default function Synergy() {
   const grandTotal = useMemo(() => {
     const gt = segmentData.find(item => item.isGrandTotal);
     if (gt) {
-      const rooms = isRangeMode ? gt.mtdRooms : gt.todayRooms;
-      const revenue = isRangeMode ? gt.mtdRevenue : gt.todayRevenue;
+      const rooms = isActualRange ? gt.mtdRooms : gt.todayRooms;
+      const revenue = isActualRange ? gt.mtdRevenue : gt.todayRevenue;
       return {
         rooms,
         revenue,
@@ -232,7 +237,7 @@ export default function Synergy() {
       revenue: totRev,
       adr: totRooms > 0 ? Math.round(totRev / totRooms) : 0
     };
-  }, [segmentData, summaryData, isRangeMode]);
+  }, [segmentData, summaryData, isActualRange]);
 
   // Resort Ancillary Sales (Golf, FNB, Leisure)
   const ancillarySales = useMemo(() => {
@@ -439,7 +444,7 @@ export default function Synergy() {
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Hotel className="w-5 h-5 text-teal-600" /> {isRangeMode ? '구간 총 점유 객실수' : '금일 점유 객실수'}
+              <Hotel className="w-5 h-5 text-teal-600" /> {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
             </span>
             <span className="text-xs font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full">
               총 {grandTotal.rooms}실
@@ -454,7 +459,7 @@ export default function Synergy() {
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" /> {isRangeMode ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
+              <Building2 className="w-5 h-5 text-emerald-600" /> {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
             </span>
             <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
               ROOM
@@ -469,7 +474,7 @@ export default function Synergy() {
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-500" /> {isRangeMode ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
+              <Zap className="w-5 h-5 text-amber-500" /> {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
             </span>
             <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
               SPILLOVER

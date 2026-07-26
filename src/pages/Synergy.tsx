@@ -11,7 +11,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
 
-interface RoomSegmentItem {
+interface RoomChannelSalesItem {
   segmentName: string;
   channelName: string;
   roomType: string;
@@ -21,7 +21,6 @@ interface RoomSegmentItem {
   mtdRevenue: number;
   ytdRooms: number;
   ytdRevenue: number;
-  isSegmentSubtotal?: boolean;
   isChannelSubtotal?: boolean;
   isGrandTotal?: boolean;
 }
@@ -34,8 +33,7 @@ export default function Synergy() {
   const [startDate, setStartDate] = useState<string>(globalStartDate || '2026-07-01');
   const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
   
-  const [channelData, setChannelData] = useState<RoomSegmentItem[]>([]);
-  const [segmentData, setSegmentData] = useState<RoomSegmentItem[]>([]);
+  const [channelData, setChannelData] = useState<RoomChannelSalesItem[]>([]);
   const [summaryData, setSummaryData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
@@ -66,15 +64,11 @@ export default function Synergy() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
       
-      // 1. Fetch V5 Room Sales by Channel (API 7: Period-Accurate SSOT)
+      // 1. Fetch V5 Room Sales by Channel (API 7: Ground-Up SSOT Dataset)
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 2. Fetch V5 Room Channel Sales (API 6)
-      const roomRes = await secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => null);
-      const roomPayload = roomRes?.data ?? roomRes;
-
-      // 3. Fetch V5 Main Revenue Summary (Always pass date=YYYY-MM-DD for revenue-summary endpoint)
+      // 2. Fetch V5 Main Revenue Summary (Always pass date=YYYY-MM-DD for revenue-summary endpoint)
       const summaryQueryParams = `date=${eDate || sDate}&startDate=${sDate}&endDate=${eDate || sDate}`;
       const summaryRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null);
       const summaryPayload = summaryRes?.data ?? summaryRes;
@@ -83,12 +77,6 @@ export default function Synergy() {
         setChannelData(channelPayload);
       } else if (Array.isArray(channelPayload?.data)) {
         setChannelData(channelPayload.data);
-      }
-
-      if (Array.isArray(roomPayload)) {
-        setSegmentData(roomPayload);
-      } else if (Array.isArray(roomPayload?.data)) {
-        setSegmentData(roomPayload.data);
       }
 
       if (summaryPayload) {
@@ -150,59 +138,20 @@ export default function Synergy() {
     }
   };
 
-  // Primary dataset (Prefer API 7 room-sales-by-channel for period accuracy)
-  const primaryDataSet = useMemo(() => {
-    return channelData.length > 0 ? channelData : segmentData;
-  }, [channelData, segmentData]);
-
-  // Aggregate Segment Subtotals (Period-Accurate)
-  const segmentSummaries = useMemo(() => {
-    if (!primaryDataSet || primaryDataSet.length === 0) return [];
-    
-    // Filter subtotals
-    const subtotals = primaryDataSet.filter(item => (item.isChannelSubtotal || item.isSegmentSubtotal) && !item.isGrandTotal);
-    
-    if (subtotals.length > 0) {
-      return subtotals.map(s => {
-        const name = s.channelName || s.segmentName || '채널';
-        const rooms = isActualRange ? (s.mtdRooms || 0) : (s.todayRooms || 0);
-        const revenue = isActualRange ? (s.mtdRevenue || 0) : (s.todayRevenue || 0);
-        return {
-          name,
-          rooms,
-          revenue,
-          mtdRooms: s.mtdRooms || 0,
-          mtdRevenue: s.mtdRevenue || 0,
-          ytdRooms: s.ytdRooms || 0,
-          ytdRevenue: s.ytdRevenue || 0,
-          adr: rooms > 0 ? Math.round(revenue / rooms) : 0
-        };
-      }).filter(s => s.rooms > 0 || s.revenue > 0);
-    }
-
-    return [];
-  }, [primaryDataSet, isActualRange]);
-
-  // Total Rooms & Revenue from Grand Total (Period-Accurate)
+  // Grand Total Rooms & Revenue (API 7 SSOT)
   const grandTotal = useMemo(() => {
-    const gt = primaryDataSet.find(item => item.isGrandTotal || item.channelName === '전체 합계' || item.segmentName === '전체 합계');
-    if (gt) {
-      const rooms = isActualRange ? (gt.mtdRooms || 0) : (gt.todayRooms || 0);
-      const revenue = isActualRange ? (gt.mtdRevenue || 0) : (gt.todayRevenue || 0);
+    const gtRow = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
+    if (gtRow) {
+      const rooms = isActualRange ? (gtRow.mtdRooms || 0) : (gtRow.todayRooms || 0);
+      const revenue = isActualRange ? (gtRow.mtdRevenue || 0) : (gtRow.todayRevenue || 0);
       return {
         rooms,
         revenue,
         adr: rooms > 0 ? Math.round(revenue / rooms) : 0
       };
     }
-    const totRooms = summaryData?.summary?.totalRooms || 0;
-    const totRev = summaryData?.salesByCategory?.find((x: any) => x.categoryCode === 'ROOM')?.totalSales || 0;
-    return {
-      rooms: totRooms,
-      revenue: totRev,
-      adr: totRooms > 0 ? Math.round(totRev / totRooms) : 0
-    };
-  }, [primaryDataSet, summaryData, isActualRange]);
+    return { rooms: 0, revenue: 0, adr: 0 };
+  }, [channelData, isActualRange]);
 
   // Resort Ancillary Sales (Golf, FNB, Leisure) scaled by totalDays for period query
   const ancillarySales = useMemo(() => {
@@ -217,75 +166,70 @@ export default function Synergy() {
     return { golf, fnb, ticket, total: golf + fnb + ticket };
   }, [summaryData, isActualRange, totalDays]);
 
-  // Estimated Synergy Spillover Rates by Segment Type
-  const synergyBreakdown = useMemo(() => {
-    const totalRoomRev = grandTotal.revenue || 1;
+  // Ground-Up Segment Breakdown Grouping from API 7 detail rows
+  const segmentSummaries = useMemo(() => {
+    if (!channelData || channelData.length === 0) return [];
     
-    return segmentSummaries.map(seg => {
-      const shareRatio = seg.revenue / totalRoomRev;
-      
-      // Segment specific synergy weights
-      let golfRatio = 0.20;
-      let fnbRatio = 0.40;
-      let ticketRatio = 0.30;
+    const groups: Record<string, { name: string; rooms: number; revenue: number }> = {};
 
-      if (seg.name.includes('패키지') || seg.name.includes('PKG') || seg.name.includes('온라인')) {
-        ticketRatio = 0.45;
-        fnbRatio = 0.35;
-        golfRatio = 0.20;
-      } else if (seg.name.includes('MICE') || seg.name.includes('기업') || seg.name.includes('휴양소')) {
-        fnbRatio = 0.50;
-        golfRatio = 0.30;
-        ticketRatio = 0.20;
-      } else if (seg.name.includes('회원') || seg.name.includes('예약실')) {
-        golfRatio = 0.40;
-        fnbRatio = 0.40;
-        ticketRatio = 0.20;
+    channelData.forEach(item => {
+      if (item.isGrandTotal || item.isChannelSubtotal) return;
+      const segName = item.segmentName || '기타';
+      if (!groups[segName]) {
+        groups[segName] = { name: segName, rooms: 0, revenue: 0 };
       }
-
-      const estGolfSales = Math.round(ancillarySales.golf * shareRatio * golfRatio);
-      const estFnbSales = Math.round(ancillarySales.fnb * shareRatio * fnbRatio);
-      const estTicketSales = Math.round(ancillarySales.ticket * shareRatio * ticketRatio);
-      const totalSynergySales = estGolfSales + estFnbSales + estTicketSales;
-
-      const crossSellingRate = Math.min(98, Math.round(
-        (seg.name.includes('패키지') ? 88 : seg.name.includes('MICE') ? 92 : seg.name.includes('회원') ? 82 : 74)
-      ));
-
-      return {
-        ...seg,
-        sharePct: ((seg.revenue / totalRoomRev) * 100).toFixed(1),
-        estGolfSales,
-        estFnbSales,
-        estTicketSales,
-        totalSynergySales,
-        crossSellingRate,
-        revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
-      };
+      const itemRooms = isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0);
+      const itemRev = isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
+      groups[segName].rooms += itemRooms;
+      groups[segName].revenue += itemRev;
     });
-  }, [segmentSummaries, grandTotal.revenue, ancillarySales]);
+
+    const totalRoomRev = grandTotal.revenue || 1;
+
+    return Object.values(groups)
+      .filter(g => g.rooms > 0 || g.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .map(seg => {
+        const shareRatio = seg.revenue / totalRoomRev;
+        const totalSynergySales = Math.round(ancillarySales.total * shareRatio);
+        const crossSellingRate = Math.min(98, Math.round(
+          (seg.name.includes('패키지') ? 88 : seg.name.includes('MICE') ? 92 : seg.name.includes('회원') ? 82 : 74)
+        ));
+
+        return {
+          name: seg.name,
+          rooms: seg.rooms,
+          revenue: seg.revenue,
+          adr: seg.rooms > 0 ? Math.round(seg.revenue / seg.rooms) : 0,
+          sharePct: (shareRatio * 100).toFixed(1),
+          totalSynergySales,
+          crossSellingRate,
+          revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
+        };
+      });
+  }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange]);
 
   // Total Synergy Sales across all segments
   const totalSynergySum = useMemo(() => {
-    return ancillarySales.total > 0 ? ancillarySales.total : synergyBreakdown.reduce((acc, s) => acc + s.totalSynergySales, 0);
-  }, [ancillarySales.total, synergyBreakdown]);
+    return ancillarySales.total;
+  }, [ancillarySales.total]);
 
   // Distinct Channel Names for Table Filter
   const channelNames = useMemo(() => {
     const set = new Set<string>();
-    primaryDataSet.forEach(item => {
-      if (item.channelName && !item.isGrandTotal && item.channelName !== '세그먼트 소계' && item.channelName !== '전체 합계') {
+    channelData.forEach(item => {
+      if (item.channelName && !item.isGrandTotal && item.channelName !== '전체 합계') {
         set.add(item.channelName);
       }
     });
     return Array.from(set);
-  }, [primaryDataSet]);
+  }, [channelData]);
 
   // Filtered Table Rows
   const filteredTableRows = useMemo(() => {
-    if (selectedChannel === 'ALL') return primaryDataSet;
-    return primaryDataSet.filter(r => r.channelName === selectedChannel || r.isGrandTotal);
-  }, [primaryDataSet, selectedChannel]);
+    if (selectedChannel === 'ALL') return channelData;
+    return channelData.filter(r => r.channelName === selectedChannel || r.isGrandTotal);
+  }, [channelData, selectedChannel]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -478,7 +422,7 @@ export default function Synergy() {
               <Building2 className="text-emerald-600" size={24} /> 콘도 시장타입 세그먼트별 기여도
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 SSOT 백엔드 기준 채널/세그먼트별 매출 기여도 및 부대시설 연계 파급효과입니다.
+              V5 SSOT 백엔드 기준 세그먼트별 객실 판매 기여도 및 부대시설 연계 파급효과입니다.
             </p>
           </div>
 
@@ -507,9 +451,9 @@ export default function Synergy() {
         </div>
 
         {/* Cards Grid (3 Columns) */}
-        {synergyBreakdown.length > 0 ? (
+        {segmentSummaries.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {synergyBreakdown.map((item, idx) => (
+            {segmentSummaries.map((item, idx) => (
               <div key={idx} className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -602,7 +546,7 @@ export default function Synergy() {
                   return (
                     <tr key={idx} className={rowClass}>
                       <td className="py-3.5 px-6 font-semibold">
-                        {item.channelName || item.segmentName}
+                        {item.channelName}
                       </td>
                       <td className="py-3.5 px-6 text-right font-medium">{rooms.toLocaleString()}실</td>
                       <td className="py-3.5 px-6 text-right font-bold">{formatCurrency(rev)}원</td>

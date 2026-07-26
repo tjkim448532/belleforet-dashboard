@@ -42,11 +42,11 @@ export const transformHomeData = (core: CoreDataState) => {
   const totalRoomCap = c.summary?.totalRoomCap || c.summary?.totalGuests || 0;
   const totalVisitors = c.summary?.totalVisitors || 0;
   
-  const days = Math.max(1, c.resortSummary?.days || 1);
-  // V5 SSOT: totalRoomCap 또는 totalInventory 사용
-  const totalInventory = c.summary?.totalRoomCap || c.summary?.totalInventory || 180;
-
-
+  const days = (Array.isArray(c.dailyTrends) && c.dailyTrends.length > 1) ? c.dailyTrends.length : Math.max(1, c.resortSummary?.days || c.days || 1);
+  const dailyInventory = 180; // 16평 90 + 35평 90 원천 물리 재고
+  const totalInventory = (c.summary?.totalRoomCap && c.summary?.totalRoomCap >= dailyInventory * days) 
+    ? c.summary.totalRoomCap 
+    : (dailyInventory * days);
 
   const kpiMetrics = {
     totalOcc: totalInventory > 0 ? (totalRoomsSold / totalInventory) * 100 : 0,

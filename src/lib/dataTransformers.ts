@@ -31,6 +31,11 @@ export const transformHomeData = (core: CoreDataState) => {
     const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.category_code === 'GOLF' || x.category_code === '골프');
     if (golfCat) totalGolfRev = Number(golfCat.todayActual || golfCat.totalSales || golfCat.total_sales || golfCat.sales || golfCat.revenue || 0);
   }
+
+  // Fallback: If salesByCategory missing ROOM category, read from roomSummaryByType
+  if (totalRoomRev === 0 && c.roomSummaryByType && Array.isArray(c.roomSummaryByType)) {
+    totalRoomRev = c.roomSummaryByType.reduce((sum: number, item: any) => sum + Number(item.revenue || 0), 0);
+  }
   
   const totalResortRevGross = c.summary?.totalRevenue || 0;
   const totalRoomsSold = c.summary?.totalRooms || 0;

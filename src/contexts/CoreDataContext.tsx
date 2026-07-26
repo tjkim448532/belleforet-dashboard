@@ -52,12 +52,88 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         let corePayload = res.data || res;
         
-        // Vercel Edge Cache 방어: 배열 형태로 응답될 경우 최신 일자 객체 안전 추출
+        // Array response handling: Synthesize period range metrics with valid settled day fallback
         if (Array.isArray(corePayload)) {
-          corePayload = corePayload[corePayload.length - 1] || corePayload[0] || {};
-        }
+          const dailyArray = corePayload;
+          const validDay = dailyArray.find((d: any) => (d.summary?.totalRevenue || 0) > 0) || dailyArray[0] || {};
+          const latestYtdDay = [...dailyArray].reverse().find((d: any) => (d.summary?.ytdRevenue || 0) > 0) || validDay;
 
-        if (res.weather && !corePayload.weather) {
+          let totalRev = 0;
+          let totalRooms = 0;
+          let totalVisitors = 0;
+          let todayLyRev = 0;
+
+          const categoryMap: Record<string, { code: string; name: string; actual: number }> = {};
+          const roomTypeMap: Record<string, { type: string; sold: number; rev: number }> = {};
+
+          dailyArray.forEach((dayItem: any) => {
+            const s = dayItem.summary || {};
+            totalRev += Number(s.totalRevenue || dayItem.totalRevenue || 0);
+            totalRooms += Number(s.totalRooms || dayItem.totalRooms || 0);
+            totalVisitors += Number(s.totalVisitors || dayItem.totalVisitors || 0);
+            todayLyRev += Number(s.todayLyRevenue || s.lyRevenue || dayItem.todayLyRevenue || 0);
+
+            if (dayItem.salesByCategory && Array.isArray(dayItem.salesByCategory)) {
+              dayItem.salesByCategory.forEach((cat: any) => {
+                const code = cat.categoryCode || cat.category_code || 'OTHER';
+                const name = cat.categoryName || cat.category_name || code;
+                const amt = Number(cat.todayActual || cat.totalSales || cat.sales || cat.revenue || 0);
+                if (!categoryMap[code]) {
+                  categoryMap[code] = { code, name, actual: 0 };
+                }
+                categoryMap[code].actual += amt;
+              });
+            }
+
+            if (dayItem.roomSummaryByType && Array.isArray(dayItem.roomSummaryByType)) {
+              dayItem.roomSummaryByType.forEach((rt: any) => {
+                const type = rt.room_type || rt.roomType || '기타';
+                const sold = Number(rt.rooms_sold || rt.roomsSold || 0);
+                const rev = Number(rt.revenue || 0);
+                if (!roomTypeMap[type]) {
+                  roomTypeMap[type] = { type, sold: 0, rev: 0 };
+                }
+                roomTypeMap[type].sold += sold;
+                roomTypeMap[type].rev += rev;
+              });
+            }
+          });
+
+          const salesByCategory = Object.values(categoryMap).map(c => ({
+            categoryCode: c.code,
+            categoryName: c.name,
+            todayActual: c.actual,
+            totalSales: c.actual
+          }));
+
+          const roomSummaryByType = Object.values(roomTypeMap).map(rt => ({
+            roomType: rt.type,
+            roomsSold: rt.sold,
+            revenue: rt.rev
+          }));
+
+          corePayload = {
+            isRangeQuery: true,
+            startDate,
+            endDate,
+            summary: {
+              totalRevenue: totalRev > 0 ? totalRev : (validDay.summary?.totalRevenue || 0),
+              totalRooms: totalRooms > 0 ? totalRooms : (validDay.summary?.totalRooms || 0),
+              totalVisitors: totalVisitors > 0 ? totalVisitors : (validDay.summary?.totalVisitors || 0),
+              totalRoomCap: (validDay.summary?.totalRoomCap || 180) * dailyArray.length,
+              ytdRevenue: latestYtdDay.summary?.ytdRevenue || validDay.summary?.ytdRevenue || 0,
+              ytdLyRevenue: latestYtdDay.summary?.ytdLyRevenue || validDay.summary?.ytdLyRevenue || 0,
+              todayLyRevenue: todayLyRev > 0 ? todayLyRev : (validDay.summary?.todayLyRevenue || 0),
+              totalGolfTeams: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfTeams || 0), 0),
+              totalGolfVisitors: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfVisitors || 0), 0),
+            },
+            salesByCategory: salesByCategory.length > 0 ? salesByCategory : (validDay.salesByCategory || []),
+            salesByFacility: validDay.salesByFacility || [],
+            roomSummaryByType: roomSummaryByType.length > 0 ? roomSummaryByType : (validDay.roomSummaryByType || []),
+            dailyTrends: dailyArray,
+            weather: validDay.weather || latestYtdDay.weather || null
+          };
+        } else if (res.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
         }
 

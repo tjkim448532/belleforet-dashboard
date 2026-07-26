@@ -154,28 +154,36 @@ export default function MatrixWeeklyDashboard() {
           백엔드 통합 데이터 통제 시스템(V5 API) 원천 렌더링 (순매출/부가세 별도)
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-right whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-              <tr>
-                <th className="p-4 text-left border-r border-slate-200 sticky left-0 bg-slate-50 z-10" rowSpan={2}>분류 / 영업장명</th>
-                <th className="p-3 text-center border-r border-slate-200" colSpan={3}>금일 (Today)</th>
-                <th className="p-3 text-center border-r border-slate-200" colSpan={3}>월누계 (MTD)</th>
-                <th className="p-3 text-center" colSpan={3}>연누계 (YTD)</th>
+        <div className="overflow-auto max-h-[calc(100vh-200px)]">
+          <table className="w-full text-sm text-right whitespace-nowrap border-collapse">
+            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+              <tr className="bg-slate-100/95">
+                <th className="p-4 text-left border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 shadow-sm" rowSpan={2}>
+                  분류 / 영업장명
+                </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
+                  금일 (Today)
+                </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
+                  월누계 (MTD)
+                </th>
+                <th className="p-3 text-center border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
+                  연누계 (YTD)
+                </th>
               </tr>
-              <tr className="bg-slate-100/50 text-xs">
+              <tr className="bg-slate-100/95 text-xs">
                 {/* Today */}
-                <th className="p-3 border-r border-slate-200 font-medium">실적</th>
-                <th className="p-3 border-r border-slate-200 font-medium">전년 동요일</th>
-                <th className="p-3 border-r border-slate-200 font-medium">증감률</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">전년 동요일</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
                 {/* MTD */}
-                <th className="p-3 border-r border-slate-200 font-medium">실적</th>
-                <th className="p-3 border-r border-slate-200 font-medium">전년 동기</th>
-                <th className="p-3 border-r border-slate-200 font-medium">증감률</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">전년 동기</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
                 {/* YTD */}
-                <th className="p-3 border-r border-slate-200 font-medium">실적</th>
-                <th className="p-3 border-r border-slate-200 font-medium">전년 동기</th>
-                <th className="p-3 font-medium">증감률</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">전년 동기</th>
+                <th className="p-3 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
               </tr>
             </thead>
             

@@ -108,11 +108,11 @@ export const transformHomeData = (core: CoreDataState) => {
 export const transformResortData = (payload: any, masterCapacities?: Record<string, number>) => {
   if (!payload) return null;
 
-  // 1. Map directly from SSOT roomSummaryByType with default fallback capacities (72실/72실/36실 = 총 180실)
+  // 1. Map directly from SSOT roomSummaryByType with default fallback capacities (물리 재고: 16평 90실 + 35평 90실 = 총 180실, 51평/52평은 16+35 커넥팅 조합)
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
-    '16평': { sold: 0, cap: Number(masterCapacities?.['16평']) || 72, rev: 0 },
-    '35평': { sold: 0, cap: Number(masterCapacities?.['35평']) || 72, rev: 0 },
-    '51평': { sold: 0, cap: Number(masterCapacities?.['51평']) || 36, rev: 0, isVirtual: true },
+    '16평': { sold: 0, cap: Number(masterCapacities?.['16평']) || 90, rev: 0 },
+    '35평': { sold: 0, cap: Number(masterCapacities?.['35평']) || 90, rev: 0 },
+    '51평': { sold: 0, cap: Number(masterCapacities?.['51평']) || 0, rev: 0, isVirtual: true },
     '기타': { sold: 0, cap: Number(masterCapacities?.['기타']) || 0, rev: 0 }
   };
 

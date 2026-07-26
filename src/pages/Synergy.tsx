@@ -68,8 +68,8 @@ export default function Synergy() {
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 2. Fetch V5 Main Revenue Summary (Always pass date=YYYY-MM-DD for revenue-summary endpoint)
-      const summaryQueryParams = `date=${eDate || sDate}&startDate=${sDate}&endDate=${eDate || sDate}`;
+      // 2. Fetch V5 Main Revenue Summary (always pass date=YYYY-MM-DD for revenue-summary endpoint)
+      const summaryQueryParams = `date=${eDate || sDate}`;
       const summaryRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null);
       const summaryPayload = summaryRes?.data ?? summaryRes;
 

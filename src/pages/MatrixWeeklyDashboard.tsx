@@ -166,7 +166,7 @@ export default function MatrixWeeklyDashboard() {
                   분류 / 영업장명
                 </th>
                 <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
-                  금일 (Today)
+                  {endDate && startDate !== endDate ? '선택 기간 (Period)' : '금일 (Today)'}
                 </th>
                 <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
                   월누계 (MTD)
@@ -176,9 +176,13 @@ export default function MatrixWeeklyDashboard() {
                 </th>
               </tr>
               <tr className="bg-slate-100/95 text-xs">
-                {/* Today */}
-                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>
-                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">전년 동요일</th>
+                {/* Period / Today */}
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">
+                  {endDate && startDate !== endDate ? '기간 실적' : '실적'}
+                </th>
+                <th className="p-3 border-r border-slate-200 font-medium text-slate-400 sticky top-[45px] z-20 bg-slate-100">
+                  {endDate && startDate !== endDate ? '전년 동기간' : '전년 동요일'}
+                </th>
                 <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
                 {/* MTD */}
                 <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>

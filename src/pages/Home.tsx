@@ -30,13 +30,31 @@ export default function Home() {
     return new Intl.NumberFormat('ko-KR').format(rounded);
   };
 
+  const categoryNameMap: Record<string, string> = {
+    'ROOM': '콘도본부',
+    'GOLF': '골프본부',
+    'FNB': 'F&B본부',
+    'TICKET': '레저본부',
+    'LEISURE': '레저본부',
+    'MOTO': '모토아레나',
+    'GOODS': '벨포레굿즈',
+    'PARKING': '주차관제',
+    'PROMOTION': '기획전',
+    'UNEARNED': '미사용 티켓',
+    'OTHER': '기타업장 (Room Other)',
+    'ETC': '기타업장'
+  };
+
   const pieChartData = React.useMemo(() => {
     if (!coreData.core?.salesByCategory) return [];
     
-    return coreData.core.salesByCategory.map((c: any) => ({
-      name: c.categoryName || c.categoryCode || c.category || '기타업장',
-      value: Number(c.totalSales || c.todayActual || c.sales || c.revenue || 0)
-    })).filter((c: any) => c.value > 0).sort((a: any, b: any) => b.value - a.value);
+    return coreData.core.salesByCategory.map((c: any) => {
+      const code = String(c.categoryCode || c.category_code || c.category || '').toUpperCase();
+      const rawName = c.categoryName || c.category_name || c.categoryCode;
+      const name = categoryNameMap[code] || rawName || '기타업장';
+      const value = Number(c.todayActual || c.totalSales || c.sales || c.revenue || 0);
+      return { name, value, code };
+    }).filter((c: any) => c.value > 0).sort((a: any, b: any) => b.value - a.value);
   }, [coreData.core?.salesByCategory]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];

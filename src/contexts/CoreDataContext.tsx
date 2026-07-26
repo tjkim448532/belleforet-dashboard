@@ -43,7 +43,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
       // V5 SSOT: 단일 타겟 일자(date)와 필요 시 endDate(기간)를 전달
-      const queryParams = endDate ? `date=${startDate}&endDate=${endDate}&_t=${Date.now()}` : `date=${startDate}&_t=${Date.now()}`;
+      const queryParams = endDate ? `date=${endDate}&startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}` : `date=${startDate}&_t=${Date.now()}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);

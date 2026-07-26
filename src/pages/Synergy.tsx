@@ -3,9 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { 
-  Zap, Building2, Users, TrendingUp, Sparkles, 
-  Layers, ArrowRight, Hotel, Activity,
-  Calendar, RefreshCw, ShieldCheck, ShoppingCart
+  Zap, Building2, TrendingUp, Sparkles, 
+  Hotel, Activity, Calendar, RefreshCw, ShieldCheck
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -39,7 +38,6 @@ export default function Synergy() {
   const [segmentData, setSegmentData] = useState<RoomSegmentItem[]>([]);
   const [summaryData, setSummaryData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSegment, setSelectedSegment] = useState<string>('ALL');
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
 
   // Days difference calculation
@@ -52,6 +50,11 @@ export default function Synergy() {
     return diffDays > 0 ? diffDays : 1;
   }, [startDate, endDate, isRangeMode]);
 
+  // Determine if query is an actual multi-day date range (startDate !== endDate)
+  const isActualRange = useMemo(() => {
+    return isRangeMode && !!endDate && startDate !== endDate;
+  }, [isRangeMode, startDate, endDate]);
+
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     setLoading(true);
     const sDate = overrideStart || startDate;
@@ -63,29 +66,29 @@ export default function Synergy() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
       
-      // 1. Fetch V5 Room Channel Sales (Segment SSOT)
-      const roomRes = await secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => null);
-      const roomPayload = roomRes?.data ?? roomRes;
-      
-      // 2. Fetch V5 Room Sales by Channel (Channel-first SSOT - New Deployed API)
+      // 1. Fetch V5 Room Sales by Channel (API 7: Period-Accurate SSOT)
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 3. Fetch V5 Main Revenue Summary (always pass date=YYYY-MM-DD for revenue-summary endpoint)
-      const summaryQueryParams = rangeActive && eDate ? `date=${eDate}&startDate=${sDate}&endDate=${eDate}` : `date=${sDate}`;
+      // 2. Fetch V5 Room Channel Sales (API 6)
+      const roomRes = await secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => null);
+      const roomPayload = roomRes?.data ?? roomRes;
+
+      // 3. Fetch V5 Main Revenue Summary (Always pass date=YYYY-MM-DD for revenue-summary endpoint)
+      const summaryQueryParams = `date=${eDate || sDate}&startDate=${sDate}&endDate=${eDate || sDate}`;
       const summaryRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null);
       const summaryPayload = summaryRes?.data ?? summaryRes;
-
-      if (Array.isArray(roomPayload)) {
-        setSegmentData(roomPayload);
-      } else if (Array.isArray(roomPayload?.data)) {
-        setSegmentData(roomPayload.data);
-      }
 
       if (Array.isArray(channelPayload)) {
         setChannelData(channelPayload);
       } else if (Array.isArray(channelPayload?.data)) {
         setChannelData(channelPayload.data);
+      }
+
+      if (Array.isArray(roomPayload)) {
+        setSegmentData(roomPayload);
+      } else if (Array.isArray(roomPayload?.data)) {
+        setSegmentData(roomPayload.data);
       }
 
       if (summaryPayload) {
@@ -147,84 +150,45 @@ export default function Synergy() {
     }
   };
 
-  // Determine if query is an actual multi-day date range (startDate !== endDate)
-  const isActualRange = useMemo(() => {
-    return isRangeMode && !!endDate && startDate !== endDate;
-  }, [isRangeMode, startDate, endDate]);
-
-  // Aggregate Segment Subtotals
-  const segmentSummaries = useMemo(() => {
-    if (!segmentData || segmentData.length === 0) return [];
-    
-    // Filter only segment subtotals
-    const subtotals = segmentData.filter(item => item.isSegmentSubtotal && !item.isGrandTotal);
-    
-    if (subtotals.length > 0) {
-      return subtotals.map(s => {
-        const rooms = isActualRange ? s.mtdRooms : s.todayRooms;
-        const revenue = isActualRange ? s.mtdRevenue : s.todayRevenue;
-        return {
-          name: s.segmentName,
-          rooms,
-          revenue,
-          mtdRooms: s.mtdRooms,
-          mtdRevenue: s.mtdRevenue,
-          ytdRooms: s.ytdRooms,
-          ytdRevenue: s.ytdRevenue,
-          adr: rooms > 0 ? Math.round(revenue / rooms) : 0
-        };
-      });
-    }
-
-    // Fallback grouping if isSegmentSubtotal flags are missing
-    const groups: Record<string, { rooms: number; revenue: number; mtdRooms: number; mtdRevenue: number }> = {};
-    segmentData.forEach(item => {
-      if (item.isGrandTotal || item.isChannelSubtotal || item.isSegmentSubtotal) return;
-      const seg = item.segmentName || '기타 세그먼트';
-      if (!groups[seg]) {
-        groups[seg] = { rooms: 0, revenue: 0, mtdRooms: 0, mtdRevenue: 0 };
-      }
-      const itemRooms = isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0);
-      const itemRev = isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
-      groups[seg].rooms += itemRooms;
-      groups[seg].revenue += itemRev;
-      groups[seg].mtdRooms += item.mtdRooms || 0;
-      groups[seg].mtdRevenue += item.mtdRevenue || 0;
-    });
-
-    return Object.entries(groups).map(([name, val]) => ({
-      name,
-      rooms: val.rooms,
-      revenue: val.revenue,
-      mtdRooms: val.mtdRooms,
-      mtdRevenue: val.mtdRevenue,
-      ytdRooms: 0,
-      ytdRevenue: 0,
-      adr: val.rooms > 0 ? Math.round(val.revenue / val.rooms) : 0
-    }));
-  }, [segmentData, isActualRange]);
-
-  const sourceForChannelTable = useMemo(() => {
+  // Primary dataset (Prefer API 7 room-sales-by-channel for period accuracy)
+  const primaryDataSet = useMemo(() => {
     return channelData.length > 0 ? channelData : segmentData;
   }, [channelData, segmentData]);
 
-  // Distinct Channel Names for Table 2 Filter
-  const channelNames = useMemo(() => {
-    const set = new Set<string>();
-    sourceForChannelTable.forEach(item => {
-      if (item.channelName && !item.isGrandTotal && item.channelName !== '세그먼트 소계' && item.channelName !== '전체 합계') {
-        set.add(item.channelName);
-      }
-    });
-    return Array.from(set);
-  }, [sourceForChannelTable]);
+  // Aggregate Segment Subtotals (Period-Accurate)
+  const segmentSummaries = useMemo(() => {
+    if (!primaryDataSet || primaryDataSet.length === 0) return [];
+    
+    // Filter subtotals
+    const subtotals = primaryDataSet.filter(item => (item.isChannelSubtotal || item.isSegmentSubtotal) && !item.isGrandTotal);
+    
+    if (subtotals.length > 0) {
+      return subtotals.map(s => {
+        const name = s.channelName || s.segmentName || '채널';
+        const rooms = isActualRange ? (s.mtdRooms || 0) : (s.todayRooms || 0);
+        const revenue = isActualRange ? (s.mtdRevenue || 0) : (s.todayRevenue || 0);
+        return {
+          name,
+          rooms,
+          revenue,
+          mtdRooms: s.mtdRooms || 0,
+          mtdRevenue: s.mtdRevenue || 0,
+          ytdRooms: s.ytdRooms || 0,
+          ytdRevenue: s.ytdRevenue || 0,
+          adr: rooms > 0 ? Math.round(revenue / rooms) : 0
+        };
+      }).filter(s => s.rooms > 0 || s.revenue > 0);
+    }
 
-  // Total Rooms & Revenue from Grand Total or Summary
+    return [];
+  }, [primaryDataSet, isActualRange]);
+
+  // Total Rooms & Revenue from Grand Total (Period-Accurate)
   const grandTotal = useMemo(() => {
-    const gt = segmentData.find(item => item.isGrandTotal);
+    const gt = primaryDataSet.find(item => item.isGrandTotal || item.channelName === '전체 합계' || item.segmentName === '전체 합계');
     if (gt) {
-      const rooms = isActualRange ? gt.mtdRooms : gt.todayRooms;
-      const revenue = isActualRange ? gt.mtdRevenue : gt.todayRevenue;
+      const rooms = isActualRange ? (gt.mtdRooms || 0) : (gt.todayRooms || 0);
+      const revenue = isActualRange ? (gt.mtdRevenue || 0) : (gt.todayRevenue || 0);
       return {
         rooms,
         revenue,
@@ -238,19 +202,20 @@ export default function Synergy() {
       revenue: totRev,
       adr: totRooms > 0 ? Math.round(totRev / totRooms) : 0
     };
-  }, [segmentData, summaryData, isActualRange]);
+  }, [primaryDataSet, summaryData, isActualRange]);
 
-  // Resort Ancillary Sales (Golf, FNB, Leisure)
+  // Resort Ancillary Sales (Golf, FNB, Leisure) scaled by totalDays for period query
   const ancillarySales = useMemo(() => {
     if (!summaryData?.salesByCategory) {
       return { golf: 0, fnb: 0, ticket: 0, total: 0 };
     }
     const cats = summaryData.salesByCategory;
-    const golf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0);
-    const fnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0);
-    const ticket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0);
+    const multiplier = isActualRange ? totalDays : 1;
+    const golf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0) * multiplier;
+    const fnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0) * multiplier;
+    const ticket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0) * multiplier;
     return { golf, fnb, ticket, total: golf + fnb + ticket };
-  }, [summaryData]);
+  }, [summaryData, isActualRange, totalDays]);
 
   // Estimated Synergy Spillover Rates by Segment Type
   const synergyBreakdown = useMemo(() => {
@@ -264,23 +229,23 @@ export default function Synergy() {
       let fnbRatio = 0.40;
       let ticketRatio = 0.30;
 
-      if (seg.name.includes('패키지') || seg.name.includes('PKG')) {
-        ticketRatio = 0.55;
+      if (seg.name.includes('패키지') || seg.name.includes('PKG') || seg.name.includes('온라인')) {
+        ticketRatio = 0.45;
         fnbRatio = 0.35;
-        golfRatio = 0.10;
-      } else if (seg.name.includes('MICE') || seg.name.includes('기업')) {
+        golfRatio = 0.20;
+      } else if (seg.name.includes('MICE') || seg.name.includes('기업') || seg.name.includes('휴양소')) {
         fnbRatio = 0.50;
         golfRatio = 0.30;
         ticketRatio = 0.20;
-      } else if (seg.name.includes('회원')) {
+      } else if (seg.name.includes('회원') || seg.name.includes('예약실')) {
         golfRatio = 0.40;
         fnbRatio = 0.40;
         ticketRatio = 0.20;
       }
 
-      const estGolfSales = Math.round(ancillarySales.golf * shareRatio * golfRatio * 2.2);
-      const estFnbSales = Math.round(ancillarySales.fnb * shareRatio * fnbRatio * 1.5);
-      const estTicketSales = Math.round(ancillarySales.ticket * shareRatio * ticketRatio * 1.8);
+      const estGolfSales = Math.round(ancillarySales.golf * shareRatio * golfRatio);
+      const estFnbSales = Math.round(ancillarySales.fnb * shareRatio * fnbRatio);
+      const estTicketSales = Math.round(ancillarySales.ticket * shareRatio * ticketRatio);
       const totalSynergySales = estGolfSales + estFnbSales + estTicketSales;
 
       const crossSellingRate = Math.min(98, Math.round(
@@ -298,39 +263,36 @@ export default function Synergy() {
         revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
       };
     });
-  }, [segmentSummaries, grandTotal, ancillarySales]);
+  }, [segmentSummaries, grandTotal.revenue, ancillarySales]);
 
-  // Table 1: Filtered Segment Channels
-  const filteredChannels = useMemo(() => {
-    if (selectedSegment === 'ALL') {
-      return segmentData.filter(item => !item.isGrandTotal && !item.isSegmentSubtotal && (isRangeMode ? (item.mtdRooms > 0 || item.todayRooms > 0) : item.todayRooms > 0));
-    }
-    return segmentData.filter(item => 
-      !item.isGrandTotal && 
-      !item.isSegmentSubtotal && 
-      item.segmentName === selectedSegment &&
-      (isRangeMode ? (item.mtdRooms > 0 || item.todayRooms > 0) : item.todayRooms > 0)
-    );
-  }, [segmentData, selectedSegment, isRangeMode]);
+  // Total Synergy Sales across all segments
+  const totalSynergySum = useMemo(() => {
+    return ancillarySales.total > 0 ? ancillarySales.total : synergyBreakdown.reduce((acc, s) => acc + s.totalSynergySales, 0);
+  }, [ancillarySales.total, synergyBreakdown]);
 
-  // Table 2: Filtered By Channel Name
-  const filteredByChannel = useMemo(() => {
-    if (selectedChannel === 'ALL') {
-      return sourceForChannelTable.filter(item => !item.isGrandTotal && (isRangeMode ? (item.mtdRooms > 0 || item.todayRooms > 0) : item.todayRooms > 0));
-    }
-    return sourceForChannelTable.filter(item => 
-      !item.isGrandTotal && 
-      item.channelName === selectedChannel &&
-      (isRangeMode ? (item.mtdRooms > 0 || item.todayRooms > 0) : item.todayRooms > 0)
-    );
-  }, [sourceForChannelTable, selectedChannel, isRangeMode]);
+  // Distinct Channel Names for Table Filter
+  const channelNames = useMemo(() => {
+    const set = new Set<string>();
+    primaryDataSet.forEach(item => {
+      if (item.channelName && !item.isGrandTotal && item.channelName !== '세그먼트 소계' && item.channelName !== '전체 합계') {
+        set.add(item.channelName);
+      }
+    });
+    return Array.from(set);
+  }, [primaryDataSet]);
+
+  // Filtered Table Rows
+  const filteredTableRows = useMemo(() => {
+    if (selectedChannel === 'ALL') return primaryDataSet;
+    return primaryDataSet.filter(r => r.channelName === selectedChannel || r.isGrandTotal);
+  }, [primaryDataSet, selectedChannel]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
       
-      {/* Top Banner Header with Multi-Date Period Control */}
-      <div className="bg-gradient-to-r from-teal-800 via-emerald-800 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
+      {/* Top Banner Header with Navigation Sub-Tabs */}
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -341,8 +303,9 @@ export default function Synergy() {
                 <ShieldCheck size={12} className="text-emerald-400" /> V5 SSOT Engine
               </span>
             </div>
+            
             <h1 className="text-3xl lg:text-4xl font-medium tracking-tight mt-1 flex items-center gap-3">
-              <Sparkles className="text-amber-300 animate-pulse" size={32} />
+              <Sparkles className="text-emerald-400" size={32} />
               콘도 세그먼트 연계 시너지 대시보드
             </h1>
             <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-2xl">
@@ -354,14 +317,18 @@ export default function Synergy() {
               <NavLink 
                 to="/synergy" 
                 end
-                className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-emerald-500 text-white shadow-md ring-2 ring-emerald-400/30"
+                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  isActive ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
               >
                 <Sparkles size={14} /> 1. 콘도 세그먼트/채널 시너지 대시보드
               </NavLink>
 
               <NavLink 
                 to="/synergy/correlation" 
-                className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-white/10 text-slate-300 hover:bg-white/20"
+                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  isActive ? 'bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
               >
                 <Activity size={14} /> 2. 영업장별 연계 상관관계 분석
               </NavLink>
@@ -369,7 +336,7 @@ export default function Synergy() {
           </div>
 
           {/* Period Range Selection Bar */}
-          <div className="bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 min-w-[420px]">
+          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 min-w-[420px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <span className="text-xs font-medium text-emerald-300 flex items-center gap-1.5">
                 <Calendar size={14} /> 조회 기간 설정
@@ -434,7 +401,7 @@ export default function Synergy() {
 
             <div className="text-[11px] text-slate-300 bg-white/5 px-2.5 py-1 rounded-lg flex items-center justify-between">
               <span>조회 기간: <strong>{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
-              <span className="text-emerald-300 font-semibold">{isRangeMode ? `총 ${totalDays}일간 합계` : '단일 1일 실적'}</span>
+              <span className="text-emerald-300 font-semibold">{isActualRange ? `총 ${totalDays}일간 합계` : '단일 1일 실적'}</span>
             </div>
           </div>
         </div>
@@ -448,11 +415,11 @@ export default function Synergy() {
               <Hotel className="w-5 h-5 text-teal-600" /> {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
             </span>
             <span className="text-xs font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full">
-              총 {grandTotal.rooms}실
+              총 {grandTotal.rooms.toLocaleString()}실
             </span>
           </div>
           <div className="text-3xl font-medium text-slate-900 mb-1">
-            {grandTotal.rooms} <span className="text-lg text-slate-500 font-normal">실</span>
+            {grandTotal.rooms.toLocaleString()} <span className="text-lg text-slate-500 font-normal">실</span>
           </div>
           <p className="text-xs text-slate-400 font-medium">객실 평균 단가 (ADR): {formatCurrency(grandTotal.adr)}원</p>
         </div>
@@ -482,7 +449,7 @@ export default function Synergy() {
             </span>
           </div>
           <div className="text-3xl font-medium text-amber-600 mb-1">
-            {formatCurrency(synergyBreakdown.reduce((acc, s) => acc + s.totalSynergySales, 0))} <span className="text-lg text-slate-500 font-normal">원</span>
+            {formatCurrency(totalSynergySum)} <span className="text-lg text-slate-500 font-normal">원</span>
           </div>
           <p className="text-xs text-slate-400 font-medium">숙박객이 부대시설(골프/F&B/레저)에서 창출한 매출</p>
         </div>
@@ -497,175 +464,25 @@ export default function Synergy() {
             </span>
           </div>
           <div className="text-3xl font-medium text-indigo-600 mb-1">
-            {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + synergyBreakdown.reduce((acc, s) => acc + s.totalSynergySales, 0)) / grandTotal.rooms) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
           </div>
           <p className="text-xs text-slate-400 font-medium">(객실 순매출 + 부대시설 시너지) ÷ 판매 객실수</p>
         </div>
       </div>
 
-      {/* Main Section: Segment Breakdown Grid */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-            <Layers className="text-teal-600" size={22} /> 콘도 시장타입 세그먼트별 기여도
-          </h2>
-          <span className="text-xs text-slate-400 font-medium">세그먼트 선택 시 세부 채널 필터링</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {synergyBreakdown.map((seg, idx) => (
-            <div 
-              key={idx}
-              onClick={() => setSelectedSegment(selectedSegment === seg.name ? 'ALL' : seg.name)}
-              className={`p-6 rounded-[28px] border transition-all duration-300 cursor-pointer ${
-                selectedSegment === seg.name 
-                  ? 'bg-gradient-to-r from-teal-50 to-emerald-50 border-teal-400 shadow-md ring-2 ring-teal-400/20' 
-                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                    idx === 0 ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-2">
-                      {seg.name}
-                      <span className="text-xs font-normal text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">
-                        비중 {seg.sharePct}%
-                      </span>
-                    </h3>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold text-slate-900">{seg.rooms} <span className="text-xs font-normal text-slate-500">실</span></div>
-                  <div className="text-xs text-slate-400">ADR: {formatCurrency(seg.adr)}원</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100 mt-3 text-center">
-                <div className="bg-slate-50 p-2.5 rounded-xl">
-                  <span className="text-xs text-slate-400 font-medium block mb-1">객실 순매출</span>
-                  <span className="text-sm font-semibold text-slate-800">{formatCurrency(seg.revenue)}원</span>
-                </div>
-                <div className="bg-amber-50 p-2.5 rounded-xl">
-                  <span className="text-xs text-amber-700 font-medium block mb-1">부대시너지 매출</span>
-                  <span className="text-sm font-semibold text-amber-700">+{formatCurrency(seg.totalSynergySales)}원</span>
-                </div>
-                <div className="bg-indigo-50 p-2.5 rounded-xl">
-                  <span className="text-xs text-indigo-700 font-medium block mb-1">통합 1실당가치</span>
-                  <span className="text-sm font-semibold text-indigo-700">{formatCurrency(seg.revPas)}원</span>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-2">
-                <span className="flex items-center gap-1">
-                  <Users size={14} className="text-teal-600" /> 부대시설 연계 이용률: <strong className="text-slate-800">{seg.crossSellingRate}%</strong>
-                </span>
-                <span className="text-teal-600 font-medium flex items-center gap-1 hover:underline">
-                  상세 채널 보기 <ArrowRight size={12} />
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Table 1: Segment-First Detailed Channels Table (Existing) */}
+      {/* Main Section 1: Segment Breakdown Grid */}
       <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              📊 숙박객 세그먼트별 세부 채널 실적 리포트
+              <Building2 className="text-emerald-600" size={24} /> 콘도 시장타입 세그먼트별 기여도
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 API 원천 데이터 기준 세그먼트 중심 및 상세 채널별 판매 실적입니다. (선택 세그먼트: <strong className="text-teal-600">{selectedSegment === 'ALL' ? '전체 세그먼트' : selectedSegment}</strong>)
+              V5 SSOT 백엔드 기준 채널/세그먼트별 매출 기여도 및 부대시설 연계 파급효과입니다.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedSegment('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedSegment === 'ALL' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              전체 보기
-            </button>
-            {segmentSummaries.map((s, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedSegment(s.name)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedSegment === s.name ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl">세그먼트</th>
-                <th className="py-3.5 px-6">상세 판매 채널</th>
-                <th className="py-3.5 px-6">평형 타입</th>
-                <th className="py-3.5 px-6 text-right">{isRangeMode ? '조회구간 객실수' : '금일 객실수'}</th>
-                <th className="py-3.5 px-6 text-right">{isRangeMode ? '조회구간 순매출' : '금일 순매출'}</th>
-                <th className="py-3.5 px-6 text-right">MTD 누적 객실수</th>
-                <th className="py-3.5 px-6 text-right rounded-r-xl">MTD 누적 매출</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredChannels.length > 0 ? (
-                filteredChannels.map((item, idx) => {
-                  const rooms = isRangeMode ? item.mtdRooms : item.todayRooms;
-                  const rev = isRangeMode ? item.mtdRevenue : item.todayRevenue;
-                  return (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-slate-800">
-                        <span className="bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                          {item.segmentName}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-medium text-slate-700">{item.channelName}</td>
-                      <td className="py-4 px-6 text-slate-500">{item.roomType || '전체'}</td>
-                      <td className="py-4 px-6 text-right font-medium text-slate-900">{rooms}실</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(rev)}원</td>
-                      <td className="py-4 px-6 text-right font-medium text-slate-600">{item.mtdRooms}실</td>
-                      <td className="py-4 px-6 text-right font-semibold text-slate-700">{formatCurrency(item.mtdRevenue)}원</td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
-                    선택하신 세그먼트 조건의 객실 채널 실적 데이터가 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Table 2: Channel-First Detailed Performance Table (New Requirement) */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <div>
-            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <ShoppingCart className="text-emerald-600" size={22} /> 🛒 상세 판매 채널별 통합 실적 리포트
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 API 원천 데이터 기준 상세 판매 채널(전화/메신저, 온라인 여행사, 기업영업 등) 중심 통합 실적입니다. (선택 채널: <strong className="text-emerald-600">{selectedChannel === 'ALL' ? '전체 상세 채널' : selectedChannel}</strong>)
-            </p>
-          </div>
-
+          {/* Segment Filter Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSelectedChannel('ALL')}
@@ -675,17 +492,82 @@ export default function Synergy() {
             >
               전체 채널
             </button>
-            {channelNames.map((chName, idx) => (
+            {channelNames.map((name, idx) => (
               <button
                 key={idx}
-                onClick={() => setSelectedChannel(chName)}
+                onClick={() => setSelectedChannel(name)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedChannel === chName ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  selectedChannel === name ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {chName}
+                {name}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Cards Grid (3 Columns) */}
+        {synergyBreakdown.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {synergyBreakdown.map((item, idx) => (
+              <div key={idx} className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <h3 className="font-semibold text-base text-slate-800">{item.name}</h3>
+                  </div>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    비중 {item.sharePct}%
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-4 pb-3 border-b border-slate-200/60">
+                  <span>판매 객실수: <strong className="text-slate-800">{item.rooms.toLocaleString()}실</strong></span>
+                  <span>ADR: <strong className="text-slate-800">{formatCurrency(item.adr)}원</strong></span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-xs mb-4">
+                  <div className="p-2 bg-white rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[10px] block mb-1">객실 순매출</span>
+                    <span className="font-bold text-slate-800 text-[13px]">{formatCurrency(item.revenue)}원</span>
+                  </div>
+                  <div className="p-2 bg-amber-50/70 rounded-xl border border-amber-100">
+                    <span className="text-amber-700 text-[10px] block mb-1">부대시너지 매출</span>
+                    <span className="font-bold text-amber-800 text-[13px]">+{formatCurrency(item.totalSynergySales)}원</span>
+                  </div>
+                  <div className="p-2 bg-indigo-50/70 rounded-xl border border-indigo-100">
+                    <span className="text-indigo-700 text-[10px] block mb-1">통합 1실당가치</span>
+                    <span className="font-bold text-indigo-800 text-[13px]">{formatCurrency(item.revPas)}원</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                  <span className="flex items-center gap-1">
+                    <Zap size={12} className="text-amber-500" /> 부대시설 연계 이용률: <strong>{item.crossSellingRate}%</strong>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl">
+            조회된 세그먼트 데이터가 없습니다.
+          </div>
+        )}
+      </div>
+
+      {/* Main Section 2: Table 2 - 상세 판매 채널별 통합 실적 리포트 */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
+              <Activity className="text-indigo-600" size={24} /> 상세 판매 채널별 통합 실적 리포트 (V5 API 7 SSOT 연동)
+            </h2>
+            <p className="text-xs text-slate-400 mt-1 font-medium">
+              온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 판매 채널 기준 객실 판매 실적합계입니다.
+            </p>
           </div>
         </div>
 
@@ -693,51 +575,47 @@ export default function Synergy() {
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl">상세 판매 채널</th>
-                <th className="py-3.5 px-6">소속 세그먼트</th>
-                <th className="py-3.5 px-6">평형 타입</th>
-                <th className="py-3.5 px-6 text-right">{isRangeMode ? '조회구간 객실수' : '금일 객실수'}</th>
-                <th className="py-3.5 px-6 text-right">{isRangeMode ? '조회구간 순매출' : '금일 순매출'}</th>
-                <th className="py-3.5 px-6 text-right">MTD 누적 객실수</th>
-                <th className="py-3.5 px-6 text-right rounded-r-xl">MTD 누적 매출</th>
+                <th className="py-3.5 px-6 rounded-l-xl">판매 채널명</th>
+                <th className="py-3.5 px-6 text-right">조회기간 판매 객실수</th>
+                <th className="py-3.5 px-6 text-right">조회기간 객실 순매출</th>
+                <th className="py-3.5 px-6 text-right">객실 단가 (ADR)</th>
+                <th className="py-3.5 px-6 text-right">월누계(MTD) 객실수</th>
+                <th className="py-3.5 px-6 text-right rounded-r-xl">월누계(MTD) 객실매출</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredByChannel.length > 0 ? (
-                filteredByChannel.map((item, idx) => {
-                  const rooms = isRangeMode ? item.mtdRooms : item.todayRooms;
-                  const rev = isRangeMode ? item.mtdRevenue : item.todayRevenue;
-                  const isChSub = item.isChannelSubtotal;
+              {filteredTableRows.length > 0 ? (
+                filteredTableRows.map((item, idx) => {
+                  const isGrand = item.isGrandTotal || item.channelName === '전체 합계';
+                  const isSub = item.isChannelSubtotal;
+                  
+                  const rowClass = isGrand 
+                    ? 'bg-slate-900 text-white font-bold'
+                    : isSub 
+                    ? 'bg-emerald-50/80 font-bold text-emerald-900' 
+                    : 'hover:bg-slate-50/60 transition-colors';
+
+                  const rooms = isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0);
+                  const rev = isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
+                  const adr = rooms > 0 ? Math.round(rev / rooms) : 0;
 
                   return (
-                    <tr 
-                      key={idx} 
-                      className={`transition-colors ${
-                        isChSub 
-                          ? 'bg-emerald-50/70 hover:bg-emerald-100/70 font-semibold border-t-2 border-emerald-300' 
-                          : 'hover:bg-slate-50/80'
-                      }`}
-                    >
-                      <td className="py-4 px-6 text-slate-800 font-semibold">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                          isChSub ? 'bg-emerald-600 text-white font-bold' : 'bg-emerald-50 text-emerald-700'
-                        }`}>
-                          {item.channelName}
-                        </span>
+                    <tr key={idx} className={rowClass}>
+                      <td className="py-3.5 px-6 font-semibold">
+                        {item.channelName || item.segmentName}
                       </td>
-                      <td className="py-4 px-6 font-medium text-slate-700">{item.segmentName}</td>
-                      <td className="py-4 px-6 text-slate-500">{item.roomType || (isChSub ? '채널 소계' : '전체')}</td>
-                      <td className="py-4 px-6 text-right font-medium text-slate-900">{rooms}실</td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(rev)}원</td>
-                      <td className="py-4 px-6 text-right font-medium text-slate-600">{item.mtdRooms}실</td>
-                      <td className="py-4 px-6 text-right font-semibold text-slate-700">{formatCurrency(item.mtdRevenue)}원</td>
+                      <td className="py-3.5 px-6 text-right font-medium">{rooms.toLocaleString()}실</td>
+                      <td className="py-3.5 px-6 text-right font-bold">{formatCurrency(rev)}원</td>
+                      <td className="py-3.5 px-6 text-right font-medium">{formatCurrency(adr)}원</td>
+                      <td className="py-3.5 px-6 text-right text-slate-500">{(item.mtdRooms || 0).toLocaleString()}실</td>
+                      <td className="py-3.5 px-6 text-right text-slate-500">{formatCurrency(item.mtdRevenue || 0)}원</td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
-                    선택하신 상세 채널 조건의 객실 실적 데이터가 없습니다.
+                  <td colSpan={6} className="py-8 text-center text-slate-400">
+                    조회된 채널 실적 데이터가 없습니다.
                   </td>
                 </tr>
               )}

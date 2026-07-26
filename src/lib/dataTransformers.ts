@@ -39,27 +39,23 @@ export const transformHomeData = (core: CoreDataState) => {
   
   const totalResortRevGross = c.summary?.totalRevenue || 0;
   const totalRoomsSold = c.summary?.totalRooms || 0;
-  const totalRoomCap = c.summary?.totalRoomCap || c.summary?.totalGuests || 0;
   const totalVisitors = c.summary?.totalVisitors || 0;
   
-  const days = (Array.isArray(c.dailyTrends) && c.dailyTrends.length > 1) ? c.dailyTrends.length : Math.max(1, c.resortSummary?.days || c.days || 1);
-  const dailyInventory = 180; // 16평 90 + 35평 90 원천 물리 재고
-  const totalInventory = (c.summary?.totalRoomCap && c.summary?.totalRoomCap >= dailyInventory * days) 
-    ? c.summary.totalRoomCap 
-    : (dailyInventory * days);
+  const days = c.resortSummary?.days || c.days || 1;
+  const totalInventory = c.summary?.totalRoomCap || c.summary?.totalInventory || (180 * days);
 
   const kpiMetrics = {
-    totalOcc: totalInventory > 0 ? (totalRoomsSold / totalInventory) * 100 : 0,
-    totalADR: totalRoomsSold > 0 ? (totalRoomRev / totalRoomsSold) : 0,
-    revPAR: totalInventory > 0 ? (totalRoomRev / totalInventory) : 0,
-    trevPAR: totalInventory > 0 ? (totalResortRevGross / totalInventory) : 0,
+    totalOcc: c.summary?.totalOcc !== undefined ? Number(c.summary.totalOcc) : (totalInventory > 0 ? (totalRoomsSold / totalInventory) * 100 : 0),
+    totalADR: c.summary?.totalADR !== undefined ? Number(c.summary.totalADR) : (totalRoomsSold > 0 ? (totalRoomRev / totalRoomsSold) : 0),
+    revPAR: c.summary?.revPAR !== undefined ? Number(c.summary.revPAR) : (totalInventory > 0 ? (totalRoomRev / totalInventory) : 0),
+    trevPAR: c.summary?.trevPAR !== undefined ? Number(c.summary.trevPAR) : (totalInventory > 0 ? (totalResortRevGross / totalInventory) : 0),
     days: days,
     raw: {
       totalRoomRev,
       totalRoomsSold,
       totalInventory,
       totalResortRevGross,
-      totalRoomCap,
+      totalRoomCap: c.summary?.totalRoomCap || 0,
       totalVisitors
     }
   };

@@ -551,7 +551,11 @@ export default function Synergy() {
                   return (
                     <tr key={idx} className={rowClass}>
                       <td className="py-3.5 px-6 font-semibold">
-                        {item.channelName}
+                        {isGrand 
+                          ? '전체 합계' 
+                          : isSub 
+                          ? `${item.channelName || '채널'} [소계]` 
+                          : `${item.segmentName || item.channelName || '세그먼트'}`}
                       </td>
                       <td className="py-3.5 px-6 text-right font-medium">{rooms.toLocaleString()}실</td>
                       <td className="py-3.5 px-6 text-right font-bold">{formatCurrency(rev)}원</td>

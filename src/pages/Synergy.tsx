@@ -555,6 +555,8 @@ export default function Synergy() {
                           ? '전체 합계' 
                           : isSub 
                           ? `${item.channelName || '채널'} [소계]` 
+                          : item.roomType && item.roomType !== '채널 소계' && item.roomType !== '전체 합계'
+                          ? `${item.segmentName || item.channelName || '세그먼트'} (${item.roomType})`
                           : `${item.segmentName || item.channelName || '세그먼트'}`}
                       </td>
                       <td className="py-3.5 px-6 text-right font-medium">{rooms.toLocaleString()}실</td>

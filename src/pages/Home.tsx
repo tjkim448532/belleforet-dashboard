@@ -262,7 +262,7 @@ export default function Home() {
                   <div className="grid grid-cols-3 gap-1 w-full text-teal-700">
                     <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr16)}</span></div>
                     <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr35)}</span></div>
-                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span></div>
+                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">52평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span></div>
                   </div>
                   <div className="text-[11px] text-slate-500 mt-2 font-medium">매출액 ÷ 순수 결제건수</div>
                 </div>

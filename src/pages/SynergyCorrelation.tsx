@@ -139,14 +139,19 @@ export default function SynergyCorrelation() {
     }
   };
 
+  // Determine if query is an actual multi-day date range (startDate !== endDate)
+  const isActualRange = useMemo(() => {
+    return isRangeMode && !!endDate && startDate !== endDate;
+  }, [isRangeMode, startDate, endDate]);
+
   // Real Total Rooms Sold in Period
   const totalRoomsSold = useMemo(() => {
-    const gt = channelData.find(item => item.isGrandTotal);
+    const gt = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
     if (gt) {
-      return isRangeMode ? (gt.mtdRooms || 2110) : (gt.todayRooms || 82);
+      return isActualRange ? (gt.mtdRooms || 0) : (gt.todayRooms || 0);
     }
-    return isRangeMode ? 2110 : 82;
-  }, [channelData, isRangeMode]);
+    return 0;
+  }, [channelData, isActualRange]);
 
   // Pure Dynamic SSOT Extraction for Leisure Stores from V5 Matrix Data
   const leisureStoreAnalysis = useMemo(() => {

@@ -29,7 +29,7 @@ export default function GolfBusiness() {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const targetDate = endDate || startDate;
-        const queryParams = endDate ? `date=${targetDate}&startDate=${startDate}&endDate=${endDate}` : `date=${startDate}`;
+        const queryParams = `date=${targetDate}&_t=${Date.now()}`;
         const json = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
         const payload = json.data ?? json;
         if (payload) {

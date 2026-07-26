@@ -41,10 +41,6 @@ export default function LeisureFacility() {
     const top5 = sortedTickets.slice(0, 5);
     const top5Qty = top5.reduce((sum: number, item: any) => sum + item.qty, 0);
 
-    if (ssotTotalSales === 0 && sortedTickets.length > 0) {
-      ssotTotalSales = sortedTickets.reduce((sum: number, item: any) => sum + item.sales, 0);
-    }
-
     return { 
       totalSales: ssotTotalSales, 
       topTickets: sortedTickets, 

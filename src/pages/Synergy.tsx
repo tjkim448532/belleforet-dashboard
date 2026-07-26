@@ -174,6 +174,8 @@ export default function Synergy() {
 
     channelData.forEach(item => {
       if (item.isGrandTotal || item.isChannelSubtotal) return;
+      if (selectedChannel !== 'ALL' && item.channelName !== selectedChannel) return;
+      
       const segName = item.segmentName || '기타';
       if (!groups[segName]) {
         groups[segName] = { name: segName, rooms: 0, revenue: 0 };
@@ -207,7 +209,7 @@ export default function Synergy() {
           revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
         };
       });
-  }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange]);
+  }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
 
   // Total Synergy Sales across all segments
   const totalSynergySum = useMemo(() => {

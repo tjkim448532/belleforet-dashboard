@@ -42,7 +42,7 @@ export const transformHomeData = (core: CoreDataState) => {
   const totalVisitors = c.summary?.totalVisitors || 0;
   
   const days = (Array.isArray(c.dailyTrends) && c.dailyTrends.length > 1) ? c.dailyTrends.length : (c.resortSummary?.days || c.days || 1);
-  const physicalRoomInventory = 180 * days; // 16평 90 + 35평 90 = 총 180실/일
+  const physicalRoomInventory = 175 * days; // 16평 85 + 35평 85 + 51평 단독 5 = 총 175실/일
 
   const kpiMetrics = {
     totalOcc: physicalRoomInventory > 0 ? (totalRoomsSold / physicalRoomInventory) * 100 : 0,
@@ -104,11 +104,11 @@ export const transformHomeData = (core: CoreDataState) => {
 export const transformResortData = (payload: any, masterCapacities?: Record<string, number>) => {
   if (!payload) return null;
 
-  // 1. Map directly from SSOT roomSummaryByType with default fallback capacities (물리 재고: 16평 90실 + 35평 90실 = 총 180실, 51평/52평은 16+35 커넥팅 조합)
+  // 1. Map directly from SSOT roomSummaryByType with default fallback capacities (물리 재고: 16평 85실 + 35평 85실 + 51평 단독 5실 = 총 175실)
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
-    '16평': { sold: 0, cap: Number(masterCapacities?.['16평']) || 90, rev: 0 },
-    '35평': { sold: 0, cap: Number(masterCapacities?.['35평']) || 90, rev: 0 },
-    '51평': { sold: 0, cap: Number(masterCapacities?.['51평']) || 0, rev: 0, isVirtual: true },
+    '16평': { sold: 0, cap: Number(masterCapacities?.['16평']) || 85, rev: 0 },
+    '35평': { sold: 0, cap: Number(masterCapacities?.['35평']) || 85, rev: 0 },
+    '51평': { sold: 0, cap: Number(masterCapacities?.['51평']) || 5, rev: 0 },
     '기타': { sold: 0, cap: Number(masterCapacities?.['기타']) || 0, rev: 0 }
   };
 

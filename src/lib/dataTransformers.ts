@@ -41,7 +41,8 @@ export const transformHomeData = (core: CoreDataState) => {
   const totalRoomsSold = c.summary?.totalRooms || 0;
   const totalVisitors = c.summary?.totalVisitors || 0;
   
-  const days = (Array.isArray(c.dailyTrends) && c.dailyTrends.length > 1) ? c.dailyTrends.length : (c.resortSummary?.days || c.days || 1);
+  const isRange = Boolean(c.isRangeQuery || (c.startDate && c.endDate && c.startDate !== c.endDate));
+  const days = isRange ? Math.max(1, c.resortSummary?.days || c.days || (Array.isArray(c.dailyTrends) ? c.dailyTrends.length : 1)) : 1;
   const physicalRoomInventory = 175 * days; // 16평 85 + 35평 85 + 51평 단독 5 = 총 175실/일
 
   const kpiMetrics = {

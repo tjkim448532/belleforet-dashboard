@@ -42,10 +42,18 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // V5 SSOT [REQ-V5-20260726-01]: 백엔드 단일 객체 리턴 개편 반영
-      const queryParams = endDate && startDate !== endDate
-        ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-        : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
+      // V5 SSOT [REQ-V5-20260726-01]: 백엔드 단일 객체 리턴 개편 반영 및 날짜 반전 보정
+      let validStart = startDate;
+      let validEnd = endDate;
+      if (validStart && validEnd && validStart > validEnd) {
+        const temp = validStart;
+        validStart = validEnd;
+        validEnd = temp;
+      }
+
+      const queryParams = validEnd && validStart !== validEnd
+        ? `startDate=${validStart}&endDate=${validEnd}&_t=${Date.now()}`
+        : `date=${validStart || '2026-07-24'}&_t=${Date.now()}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);

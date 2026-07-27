@@ -22,8 +22,18 @@ export default function GlobalDatePicker() {
 
   const handleApply = () => {
     if (isRangeMode && draftEnd) {
-      setStartDate(draftStart);
-      setEndDate(draftEnd);
+      let start = draftStart;
+      let end = draftEnd;
+      // Auto-swap if start > end to prevent 404 API error
+      if (start > end) {
+        const temp = start;
+        start = end;
+        end = temp;
+        setDraftStart(start);
+        setDraftEnd(end);
+      }
+      setStartDate(start);
+      setEndDate(end);
     } else {
       setStartDate(draftStart);
       setEndDate(null);

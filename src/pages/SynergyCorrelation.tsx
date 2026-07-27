@@ -51,9 +51,15 @@ export default function SynergyCorrelation() {
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     setLoading(true);
-    const sDate = overrideStart || startDate;
-    const eDate = overrideEnd !== undefined ? overrideEnd : endDate;
+    let sDate = overrideStart || startDate;
+    let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate);
+
+    if (rangeActive && sDate && eDate && sDate > eDate) {
+      const temp = sDate;
+      sDate = eDate;
+      eDate = temp;
+    }
 
     try {
       const queryParams = rangeActive && eDate

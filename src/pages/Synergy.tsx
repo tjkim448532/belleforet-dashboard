@@ -55,9 +55,15 @@ export default function Synergy() {
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     setLoading(true);
-    const sDate = overrideStart || startDate;
-    const eDate = overrideEnd !== undefined ? overrideEnd : endDate;
+    let sDate = overrideStart || startDate;
+    let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate);
+
+    if (rangeActive && sDate && eDate && sDate > eDate) {
+      const temp = sDate;
+      sDate = eDate;
+      eDate = temp;
+    }
 
     try {
       const queryParams = rangeActive && eDate
@@ -68,8 +74,10 @@ export default function Synergy() {
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 2. Fetch V5 Main Revenue Summary (always pass date=YYYY-MM-DD for revenue-summary endpoint)
-      const summaryQueryParams = `date=${eDate || sDate}`;
+      // 2. Fetch V5 Main Revenue Summary
+      const summaryQueryParams = rangeActive && eDate
+        ? `startDate=${sDate}&endDate=${eDate}`
+        : `date=${eDate || sDate}`;
       const summaryRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null);
       const summaryPayload = summaryRes?.data ?? summaryRes;
 

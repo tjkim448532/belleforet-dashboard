@@ -178,29 +178,34 @@ export default function AdminRoles() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-2xl font-medium text-slate-800 flex items-center gap-2">
             <Users className="text-brand-mint" />
             임직원 권한 관리
           </h1>
-          <p className="text-slate-500 mt-1">Firebase 계정에 가입된 이메일 주소별로 대시보드 접근 권한을 설정합니다.</p>
+          <p className="text-slate-500 mt-1 text-sm">Firebase 계정에 가입된 이메일 주소별로 대시보드 접근 권한을 설정합니다.</p>
         </div>
-        <div className="flex items-center gap-2 w-full max-w-lg">
-          <input 
-            type="text" 
-            placeholder="구글 시트 링크를 입력하세요" 
-            value={sheetUrl}
-            onChange={(e) => setSheetUrl(e.target.value)}
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-          />
-          <button
-            onClick={handleBulkImport}
-            disabled={importing || !sheetUrl}
-            className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            {importing ? '전송 중...' : '시트 내용 동기화'}
-          </button>
+        <div className="flex flex-col gap-1 w-full max-w-lg">
+          <div className="flex items-center gap-2">
+            <input 
+              type="text" 
+              placeholder="구글 시트 공유 링크를 입력하세요 (예: https://docs.google.com/spreadsheets/d/...)" 
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+            />
+            <button
+              onClick={handleBulkImport}
+              disabled={importing || !sheetUrl}
+              className="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs"
+            >
+              {importing ? '전송 중...' : '시트 내용 일괄 동기화'}
+            </button>
+          </div>
+          <span className="text-[11px] text-slate-500 flex items-center gap-1 pl-1">
+            💡 <strong>시트 동기화 용도:</strong> 인사팀 구글 엑셀 시트[이름, 이메일, 부서명] 명단을 1초 만에 전사 일괄 등록합니다.
+          </span>
         </div>
       </div>
 

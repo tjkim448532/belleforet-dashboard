@@ -64,6 +64,7 @@ export const defaultMappings: Omit<StoreMapping, 'id'>[] = [
   { storeName: '원더풀', category: '레져사업본부' },
   { storeName: '벨포레 리조트', category: '레져사업본부' },
   { storeName: '썸머랜드', category: '레져사업본부' },
+  { storeName: '미니포렛', category: '레져사업본부' },
   { storeName: '펫포레', category: '레져사업본부' },
 
   // 온라인 구매처 -> 레져사업본부 (티켓 판매)

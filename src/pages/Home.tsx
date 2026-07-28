@@ -309,43 +309,43 @@ export default function Home() {
                 </div>
                 
                 {/* Major Leisure Facilities Visitors Breakdown */}
-                <div className="mt-2 pt-2 border-t border-slate-100 relative z-10">
-                  <div className="text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center justify-between">
+                <div className="mt-3 pt-3 border-t border-slate-100 relative z-10">
+                  <div className="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
                     <span>주요 레저/어트랙션 이용객 수</span>
-                    <span className="text-[10px] text-slate-400 font-normal">{isRangeMode ? '(선택 기간 누적)' : '(당일 실적)'}</span>
+                    <span className="text-[11px] text-slate-400 font-normal">{isRangeMode ? '(선택 기간 누적)' : '(당일 실적)'}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1 text-[11px]">
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🎨 미디어아트</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['미디어아트센터'] || 0)}명</span>
+                  <div className="grid grid-cols-2 gap-1.5 text-xs">
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🎨 미디어아트</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['미디어아트센터'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🏊 썸머랜드</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['썸머랜드'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🏊 썸머랜드</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['썸머랜드'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🐑 벨포레 목장</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['벨포레 목장'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🐑 벨포레 목장</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['벨포레 목장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🎡 원더풀</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['원더풀'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🎡 원더풀</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['원더풀'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🛷 사계절썰매</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['사계절썰매장'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🛷 사계절썰매</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['사계절썰매장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🚤 마리나 클럽</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마리나 클럽'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🚤 마리나 클럽</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마리나 클럽'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🏎️ 마운틴카트</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🏎️ 마운틴카트</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
-                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
-                      <span className="text-slate-600 font-medium truncate">🏁 모토아레나</span>
-                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}명</span>
+                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                      <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                   </div>
                 </div>

@@ -86,14 +86,22 @@ export const transformHomeData = (core: CoreDataState) => {
     weekly_trend: [], 
     rooms: c.rooms || [],
     roomTypeBreakdown: c.roomTypeBreakdown || [],
-    golfSummary: {
-      reservedTeams: c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || c.summary?.totalGolfTeams || 0,
-      visitedTeams: c.summary?.totalGolfTeams || c.summary?.visitedGolfTeams || 0,
-      pendingTeams: c.summary?.pendingGolfTeams || c.summary?.cancelledGolfTeams || c.summary?.totalGolfCanceledTeams || Math.max(0, (c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || c.summary?.totalGolfTeams || 0) - (c.summary?.totalGolfTeams || 0)),
-      visitedPlayers: c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0,
-      avgGreenFee: (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0) > 0 ? (totalGolfRev / (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 1)) : 0,
-      ly_avgGreenFee: 0,
-    },
+    golfSummary: (() => {
+      const visited = Number(c.summary?.totalGolfTeams || c.summary?.visitedGolfTeams || 0);
+      const canceled = Number(c.summary?.totalGolfCanceledTeams || c.summary?.pendingGolfTeams || c.summary?.cancelledGolfTeams || 0);
+      const rawReserved = Number(c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || 0);
+      const reserved = rawReserved > 0 ? rawReserved : (visited + canceled);
+      const visitedPlayers = Number(c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0);
+      
+      return {
+        reservedTeams: reserved,
+        visitedTeams: visited,
+        pendingTeams: canceled,
+        visitedPlayers: visitedPlayers,
+        avgGreenFee: visitedPlayers > 0 ? (totalGolfRev / visitedPlayers) : 0,
+        ly_avgGreenFee: 0,
+      };
+    })(),
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
     qa_metrics: c.qa_metrics || null
   };

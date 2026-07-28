@@ -201,10 +201,10 @@ export default function Home() {
                   {isRangeMode && coreData.core?.endDate ? `조회기간 (${startDate} ~ ${coreData.core.endDate})` : `조회일자 (${startDate})`}
                   <span className="text-xs text-slate-400 font-normal hidden xl:inline">(부가세 별도)</span>
                 </h2>
-                {(weather || lastYearWeather) && (
+                {!isRangeMode && (weather || lastYearWeather) && (
                   <div className="self-start text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
                     <div className="opacity-60 text-right pr-3 border-r border-slate-200">
-                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">{isRangeMode ? '전년 동기간' : '전년 동요일'}</div>
+                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
                       {lastYearWeather && (lastYearWeather.weatherDesc !== '데이터없음' && lastYearWeather.description !== '데이터없음') ? (
                         <>
                           <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
@@ -218,7 +218,7 @@ export default function Home() {
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">{isRangeMode ? '선택 기간' : '현재 날씨'}</div>
+                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
                       {weather && (weather.weatherDesc !== '데이터없음' && weather.description !== '데이터없음') ? (
                         <>
                           <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">

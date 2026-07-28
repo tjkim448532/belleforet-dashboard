@@ -376,7 +376,7 @@ export default function Home() {
 
             {/* 본부별 매출 파이 차트 */}
             {pieChartData.length > 0 && (
-              <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="lg:col-span-12 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
                   <Coins className="w-5 h-5 text-brand-mint" />
                   그룹별 매출 비중
@@ -425,7 +425,7 @@ export default function Home() {
             )}
 
             {/* QA & KPI 상세 가이드 Accordion */}
-            <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="lg:col-span-12 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <h3 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
                 <Calculator className="w-5 h-5 text-brand-mint" />
                 지표 산출 공식 및 경영 의미 가이드

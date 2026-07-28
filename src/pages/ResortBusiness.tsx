@@ -72,16 +72,19 @@ export default function ResortBusiness() {
       if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
       
       const rate = g.cap > 0 ? Math.round((g.sold / g.cap) * 100) : 0;
-      const displayRate = g.cap > 0 ? `${rate}%` : 'N/A';
+      const cappedRate = Math.min(rate, 100);
+      const displayRate = g.cap > 0 ? `${cappedRate}%` : 'N/A';
 
       result.push({
         roomSize: key,
         sold: g.sold,
         capacity: g.cap,
-        rate,
+        rate: cappedRate,
+        rawRate: rate,
         displayRate,
         revenue: g.rev,
-        adr: g.sold > 0 ? Math.round(g.rev / g.sold) : 0
+        adr: g.sold > 0 ? Math.round(g.rev / g.sold) : 0,
+        isConnectedType: key === '51평'
       });
     }
 
@@ -123,7 +126,7 @@ export default function ResortBusiness() {
           },
           label: {
             show: true,
-            formatter: '{b}\\n{d}%'
+            formatter: '{b}\n{d}%'
           },
           data: pieData
         }
@@ -131,109 +134,115 @@ export default function ResortBusiness() {
     };
   })();
 
-  if (loading || !data) {
-    return (
-      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-xl font-medium text-brand-mint animate-pulse">리조트사업본부 데이터를 불러오는 중입니다...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
-      
-      {/* Decorative Header Background */}
-      <div className="w-full bg-gradient-to-r from-teal-600 to-emerald-500 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
-        <div className="absolute top-10 right-[15%] w-36 h-36 bg-white/10 rounded-full blur-2xl" />
-        <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
+    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
+      {/* Top Controls Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div>
+          <div className="flex items-center gap-2">
+            <Hotel className="w-6 h-6 text-emerald-500" />
+            <h1 className="text-2xl font-medium text-slate-800 tracking-tight">리조트사업본부 경영 현황</h1>
+          </div>
+          <p className="text-slate-400 text-xs mt-1">객실 실적, 채널별 ADR 및 실시간 가동률 분석 대시보드</p>
+        </div>
+        <GlobalDatePicker />
       </div>
 
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-          <div className="text-white">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-black text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
-                BELLE FORET
+      {loading ? (
+        <div className="py-24 text-center text-slate-400 font-medium animate-pulse">
+          데이터를 불러오는 중입니다...
+        </div>
+      ) : !data ? (
+        <div className="py-24 text-center text-slate-400">
+          데이터가 없습니다.
+        </div>
+      ) : (
+        <>
+          {/* Main KPI Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Total Revenue */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+              <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
+                <Coins className="w-5 h-5 text-emerald-500" /> 객실 총 매출
+              </h2>
+              <div className="text-3xl font-medium text-slate-800 tracking-tight">
+                {formatCurrency(lodgingStats.revenue)} <span className="text-lg text-slate-400 font-normal">원</span>
+              </div>
+              <p className="text-xs text-slate-400 mt-2">선택 기간 내 순수 객실 판매 총액 (부가세 별도)</p>
+            </div>
+
+            {/* Rooms Sold */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+              <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-emerald-500" /> 판매된 객실 수
+              </h2>
+              <div className="text-3xl font-medium text-slate-800 tracking-tight">
+                {lodgingStats.roomsSold}실
+              </div>
+              <p className="text-xs text-slate-400 mt-2">선택 기간 내 정산 완료된 총 객실 수</p>
+            </div>
+
+            {/* Overall ADR */}
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+              <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
+                <Coins className="w-5 h-5 text-emerald-500" /> 객실 평균 단가 (ADR)
+              </h2>
+              <div className="text-3xl font-medium text-emerald-600 tracking-tight">
+                {formatCurrency(lodgingStats.adr)}
+              </div>
+              <p className="text-xs text-slate-400 mt-2">선택 기간 총 객실 매출 ÷ 총 판매 객실 수</p>
+            </div>
+          </div>
+
+          {/* Room Occupancy Status Card */}
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+              <h2 className="text-base font-medium text-slate-800 flex items-center gap-2">
+                🏨 평형별 객실 실시간 가동률 (Occupancy Status)
+              </h2>
+              <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full font-medium">
+                💡 51평은 전용 5실 외 16평+35평 커넥티드 룸 조합 판매 실수가 포함됩니다.
               </span>
-              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-medium tracking-tight mt-3">리조트사업본부 경영 현황 🏨</h1>
-            <p className="text-white/80 mt-1">객실 판매 채널별 세부 객단가 및 정산 실적 리포트입니다.</p>
-          </div>
-          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <GlobalDatePicker />
-          </div>
-        </div>
-
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
-          {/* Room Revenue */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
-              <Hotel className="w-5 h-5 text-emerald-500" /> 선택 기간 객실 매출
-            </h2>
-            <div className="text-3xl font-medium text-slate-800 tracking-tight">
-              {formatCurrency(lodgingStats.revenue)}
-            </div>
-            <p className="text-xs text-slate-400 mt-2">정산 시트 기준 Room Charge 매출액 누적 합계</p>
-          </div>
-
-          {/* Rooms Sold */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-emerald-500" /> 판매된 객실 수
-            </h2>
-            <div className="text-3xl font-medium text-slate-800 tracking-tight">
-              {lodgingStats.roomsSold}실
-            </div>
-            <p className="text-xs text-slate-400 mt-2">선택 기간 내 정산 완료된 총 객실 수</p>
-          </div>
-
-          {/* Overall ADR */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-            <h2 className="text-base font-medium text-slate-500 mb-4 flex items-center gap-2">
-              <Coins className="w-5 h-5 text-emerald-500" /> 객실 평균 단가 (ADR)
-            </h2>
-            <div className="text-3xl font-medium text-emerald-600 tracking-tight">
-              {formatCurrency(lodgingStats.adr)}
-            </div>
-            <p className="text-xs text-slate-400 mt-2">선택 기간 총 객실 매출 ÷ 총 판매 객실 수</p>
-          </div>
-        </div>
-
-        {/* Room Occupancy Status Card */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
-          <h2 className="text-base font-medium text-slate-800 mb-6 flex items-center gap-2">
-            🏨 평형별 객실 실시간 가동률 (Occupancy Status)
-          </h2>
-          {roomOccupancyData.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
-              {roomOccupancyData.map((row) => (
-                <div key={row.roomSize} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400 mb-3">{row.roomSize}</span>
-                  <div className="relative w-20 h-20 flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="40" cy="40" r="34" stroke="#e2e8f0" strokeWidth="6" fill="transparent" />
-                      <circle cx="40" cy="40" r="34" stroke="#10b981" strokeWidth="6" fill="transparent" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - Math.min(row.rate, 100) / 100)} />
-                    </svg>
-                    <span className="absolute text-base font-medium text-slate-800">{row.displayRate}</span>
+            {roomOccupancyData.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {roomOccupancyData.map((row) => (
+                  <div key={row.roomSize} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col items-center justify-between">
+                    <div className="flex flex-col items-center mb-3">
+                      <span className="text-sm font-bold text-slate-700">{row.roomSize}</span>
+                      {row.isConnectedType && (
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full mt-1">
+                          🔗 전용+커넥티드
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative w-20 h-20 flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="40" cy="40" r="34" stroke="#e2e8f0" strokeWidth="6" fill="transparent" />
+                        <circle cx="40" cy="40" r="34" stroke="#10b981" strokeWidth="6" fill="transparent" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - Math.min(row.rate, 100) / 100)} />
+                      </svg>
+                      <span className="absolute text-base font-bold text-slate-800">{row.displayRate}</span>
+                    </div>
+                    <div className="flex flex-col items-center mt-4 space-y-1 text-center">
+                      {row.isConnectedType && row.sold > row.capacity ? (
+                        <span className="text-xs font-semibold text-slate-700">
+                          {row.sold}실 <span className="text-[10px] text-emerald-600 font-bold">(전용 {row.capacity}실+커넥티드)</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-600">{row.sold}실 / {row.capacity}실</span>
+                      )}
+                      <span className="text-[10px] text-slate-400">매출: {formatCurrency(row.revenue)}</span>
+                      <span className="text-[10px] text-emerald-600 font-bold">ADR: {formatCurrency(row.adr)}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center mt-4 space-y-1">
-                    <span className="text-xs font-medium text-slate-500">{row.sold}실 / {row.capacity}실</span>
-                    <span className="text-[10px] text-slate-400">매출: {formatCurrency(row.revenue)}</span>
-                    <span className="text-[10px] text-emerald-500 font-medium">ADR: {formatCurrency(row.adr)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 text-center text-slate-400">
-              해당 날짜에 가동률 데이터가 없습니다.
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-400">
+                해당 날짜에 가동률 데이터가 없습니다.
+              </div>
+            )}
+          </div>
 
         {/* Pie Chart Section */}
         {pieOptions && (
@@ -316,8 +325,8 @@ export default function ResortBusiness() {
             )}
           </div>
         </div>
-
-      </div>
+        </>
+      )}
     </div>
   );
 }

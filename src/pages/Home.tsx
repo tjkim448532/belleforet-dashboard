@@ -5,12 +5,34 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { secureFetcher } from '../lib/secureFetcher';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
+  const [periodRoomSummary, setPeriodRoomSummary] = React.useState<any[]>([]);
 
   const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && (coreData.core?.endDate || endDate) && startDate !== (coreData.core?.endDate || endDate)));
+
+  React.useEffect(() => {
+    if (isRangeMode) {
+      const eDate = coreData.core?.endDate || endDate || startDate;
+      const sDate = startDate;
+      const queryParams = `startDate=${sDate}&endDate=${eDate}`;
+      secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`)
+        .then(res => {
+          const items = res?.data || res;
+          if (Array.isArray(items)) {
+            setPeriodRoomSummary(items);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setPeriodRoomSummary([]);
+    }
+  }, [isRangeMode, startDate, endDate, coreData.core?.endDate]);
 
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -92,17 +114,22 @@ export default function Home() {
 
   const totalVisitors = displayData.kpiMetrics?.raw?.totalVisitors || 0;
 
-  // V5 SSOT Direct Binding: 메인 요약 API가 내려주는 roomSummaryByType 배열을 1:1 직결
+  // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {
     let rev16 = 0, sold16 = 0;
     let rev35 = 0, sold35 = 0;
     let rev51 = 0, sold51 = 0;
     
-    if (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType)) {
-      coreData.core.roomSummaryByType.forEach((item: any) => {
-        const typeName = item.room_type || item.roomType || '';
-        const revenue = Number(item.revenue || 0);
-        const sold = Number(item.rooms_sold || item.roomsSold || 0);
+    const sourceArray = (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType) && coreData.core.roomSummaryByType.length > 0)
+      ? coreData.core.roomSummaryByType
+      : periodRoomSummary;
+    
+    if (Array.isArray(sourceArray) && sourceArray.length > 0) {
+      sourceArray.forEach((item: any) => {
+        if (item.isChannelSubtotal || item.isGrandTotal) return;
+        const typeName = item.roomType || item.room_type || '';
+        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || item.roomRevenue || 0);
+        const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || 0);
         if (typeName.includes('16평')) {
           rev16 += revenue; sold16 += sold;
         } else if (typeName.includes('35평')) {

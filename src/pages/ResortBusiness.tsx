@@ -38,6 +38,8 @@ export default function ResortBusiness() {
           payload = payload[payload.length - 1] || payload[0] || {};
         }
         if (!payload) throw new Error("Invalid payload");
+        payload.startDate = startDate;
+        payload.endDate = endDate;
         
         setData(transformResortData(payload, caps));
       } catch (err) {

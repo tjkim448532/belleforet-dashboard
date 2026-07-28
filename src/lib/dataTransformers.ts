@@ -114,12 +114,27 @@ export const transformHomeData = (core: CoreDataState) => {
 export const transformResortData = (payload: any, masterCapacities?: Record<string, number>) => {
   if (!payload) return null;
 
-  // 1. Map directly from SSOT roomSummaryByType with default fallback capacities (물리 재고: 16평 85실 + 35평 85실 + 51평 단독 5실 = 총 175실)
+  const isRange = Boolean(payload.isRangeQuery || (payload.startDate && payload.endDate && payload.startDate !== payload.endDate));
+  let days = isRange ? Math.max(1, payload.resortSummary?.days || payload.days || (Array.isArray(payload.dailyTrends) ? payload.dailyTrends.length : 1)) : 1;
+
+  // Fallback days calculation from startDate and endDate if dailyTrends missing
+  if (isRange && days === 1 && payload.startDate && payload.endDate) {
+    const s = new Date(payload.startDate);
+    const e = new Date(payload.endDate);
+    const diff = Math.ceil(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (diff > 0) days = diff;
+  }
+
+  const dailyCap16 = Number(masterCapacities?.['16평']) || 85;
+  const dailyCap35 = Number(masterCapacities?.['35평']) || 85;
+  const dailyCap51 = Number(masterCapacities?.['51평']) || 5;
+
+  // 1. Map directly from SSOT roomSummaryByType with period capacity (물리 재고: 16평 85실 + 35평 85실 + 51평 단독 5실 = 총 175실/일)
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
-    '16평': { sold: 0, cap: Number(masterCapacities?.['16평']) || 85, rev: 0 },
-    '35평': { sold: 0, cap: Number(masterCapacities?.['35평']) || 85, rev: 0 },
-    '51평': { sold: 0, cap: Number(masterCapacities?.['51평']) || 5, rev: 0 },
-    '기타': { sold: 0, cap: Number(masterCapacities?.['기타']) || 0, rev: 0 }
+    '16평': { sold: 0, cap: dailyCap16 * days, rev: 0 },
+    '35평': { sold: 0, cap: dailyCap35 * days, rev: 0 },
+    '51평': { sold: 0, cap: dailyCap51 * days, rev: 0 },
+    '기타': { sold: 0, cap: 0, rev: 0 }
   };
 
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType)) {

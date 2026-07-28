@@ -252,39 +252,25 @@ export default function Layout() {
         </div>
           
         <div className="p-4 space-y-2 border-t border-slate-100">
-            {['admin', 'executive'].some(r => userRole === r) && (
-              <>
-                <NavLink
-                  to="/matrix"
-                  className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
-                    isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                  }`}
-                >
-                  <Database size={20} />
-                  데이터 검증
-                </NavLink>
-              </>
-            )}
-            
             {isAdmin && (
               <NavLink
-                to="/admin/simulator"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
+                to="/admin/roles"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
               >
                 <ShieldCheck size={20} className="text-brand-mint" />
-                관리자 데이터 공장
+                최고경영진 어드민
               </NavLink>
             )}
             <button
               onClick={toggleFullscreen}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
                 isFullscreen 
-                  ? 'bg-brand-mint/10 text-brand-mint'
+                  ? 'bg-brand-mint/10 text-brand-mint font-bold'
                   : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
               }`}
             >
               {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-              {isFullscreen ? '일반 화면' : 'TV 프리젠테이션'}
+              {isFullscreen ? '일반 화면 복귀' : '전체화면 모드'}
             </button>
             <button
               onClick={() => setPwdModalOpen(true)}

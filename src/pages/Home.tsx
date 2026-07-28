@@ -5,10 +5,35 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { secureFetcher } from '../lib/secureFetcher';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function Home() {
-  const { startDate } = useDate();
+  const { startDate, endDate } = useDate();
   const coreData = useCoreData();
+  const [periodRoomSummary, setPeriodRoomSummary] = React.useState<any[]>([]);
+
+  const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && (coreData.core?.endDate || endDate) && startDate !== (coreData.core?.endDate || endDate)));
+
+  React.useEffect(() => {
+    if (isRangeMode) {
+      const eDate = coreData.core?.endDate || endDate || startDate;
+      const sDate = startDate;
+      const queryParams = `startDate=${sDate}&endDate=${eDate}`;
+      secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`)
+        .then(res => {
+          const items = res?.data || res;
+          if (Array.isArray(items)) {
+            setPeriodRoomSummary(items);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setPeriodRoomSummary([]);
+    }
+  }, [isRangeMode, startDate, endDate, coreData.core?.endDate]);
+
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
     return transformHomeData(coreData);
@@ -40,13 +65,13 @@ export default function Home() {
     'GOODS': '벨포레굿즈',
     'PARKING': '주차관제',
     'PROMOTION': '기획전',
-    'UNEARNED': '미사용 티켓',
+    'UNEARNED': '기타업장',
     'OTHER': '기타업장 (Room Other)',
     'ETC': '기타업장'
   };
 
   const pieChartData = React.useMemo(() => {
-    if (!coreData.core?.salesByCategory) return [];
+    if (!coreData.core?.salesByCategory || !Array.isArray(coreData.core.salesByCategory)) return [];
     
     return coreData.core.salesByCategory.map((c: any) => {
       const code = String(c.categoryCode || c.category_code || c.category || '').toUpperCase();
@@ -89,38 +114,26 @@ export default function Home() {
 
   const totalVisitors = displayData.kpiMetrics?.raw?.totalVisitors || 0;
 
-  const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && coreData.core?.endDate && startDate !== coreData.core?.endDate));
-
   const adrData = (() => {
     let rev16 = 0, sold16 = 0;
     let rev35 = 0, sold35 = 0;
     let rev51 = 0, sold51 = 0;
     
-    if (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType) && coreData.core.roomSummaryByType.length > 0) {
-      coreData.core.roomSummaryByType.forEach((item: any) => {
-        const typeName = item.room_type || item.roomType || '';
-        const revenue = Number(item.revenue || 0);
-        const sold = Number(item.rooms_sold || item.roomsSold || 0);
-        if (typeName.includes('16평')) {
-          rev16 += revenue; sold16 += sold;
-        } else if (typeName.includes('35평')) {
-          rev35 += revenue; sold35 += sold;
-        } else if (typeName.includes('51평')) {
-          rev51 += revenue; sold51 += sold;
-        }
-      });
-    } else if (coreData.core?.salesByChannel && Array.isArray(coreData.core.salesByChannel)) {
-      // Fallback from salesByChannel if roomSummaryByType is empty in Period Range Query
-      coreData.core.salesByChannel.forEach((item: any) => {
+    const sourceArray = (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType) && coreData.core.roomSummaryByType.length > 0)
+      ? coreData.core.roomSummaryByType
+      : periodRoomSummary;
+    
+    if (Array.isArray(sourceArray) && sourceArray.length > 0) {
+      sourceArray.forEach((item: any) => {
         if (item.isChannelSubtotal || item.isGrandTotal) return;
         const typeName = item.roomType || item.room_type || '';
-        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || 0);
+        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || item.roomRevenue || 0);
         const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || 0);
         if (typeName.includes('16평')) {
           rev16 += revenue; sold16 += sold;
         } else if (typeName.includes('35평')) {
           rev35 += revenue; sold35 += sold;
-        } else if (typeName.includes('51평')) {
+        } else if (typeName.includes('51평') || typeName.includes('52평')) {
           rev51 += revenue; sold51 += sold;
         }
       });

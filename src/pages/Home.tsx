@@ -368,15 +368,15 @@ export default function Home() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">입장 예정 (미도착)</div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">{isRangeMode ? '취소 / 미내장' : '입장 예정 (미도착)'}</div>
                         <div className="text-3xl font-semibold text-brand-mint">
-                          {isRangeMode ? '0팀' : `${displayData.golfSummary ? (displayData.golfSummary.pendingTeams || 0) : 0}팀`}
+                          {displayData.golfSummary ? `${displayData.golfSummary.pendingTeams ?? Math.max(0, (displayData.golfSummary.reservedTeams || 0) - (displayData.golfSummary.visitedTeams || 0))}팀` : '0팀'}
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">
-                    {isRangeMode ? '선택 기간 골프 총 예약 및 입장 실적 데이터' : '선택 기간 골프 실시간 예약 및 입장 데이터 (아직 도착하지 않은 잔여 예약 포함)'}
+                    {isRangeMode ? '선택 기간 골프 총 예약/취소 및 실제 내장 실적 데이터' : '오늘 골프 실시간 예약 및 입장 데이터 (아직 도착하지 않은 잔여 예약 포함)'}
                   </div>
                 </div>
               </div>

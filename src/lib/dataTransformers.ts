@@ -87,8 +87,9 @@ export const transformHomeData = (core: CoreDataState) => {
     rooms: c.rooms || [],
     roomTypeBreakdown: c.roomTypeBreakdown || [],
     golfSummary: {
-      reservedTeams: c.summary?.totalGolfTeams || 0,
-      visitedTeams: c.summary?.totalGolfTeams || 0,
+      reservedTeams: c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || c.summary?.totalGolfTeams || 0,
+      visitedTeams: c.summary?.totalGolfTeams || c.summary?.visitedGolfTeams || 0,
+      pendingTeams: c.summary?.pendingGolfTeams || c.summary?.cancelledGolfTeams || c.summary?.totalGolfCanceledTeams || Math.max(0, (c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || c.summary?.totalGolfTeams || 0) - (c.summary?.totalGolfTeams || 0)),
       visitedPlayers: c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0,
       avgGreenFee: (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0) > 0 ? (totalGolfRev / (c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 1)) : 0,
       ly_avgGreenFee: 0,

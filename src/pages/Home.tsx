@@ -249,8 +249,11 @@ export default function Home() {
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
               <div className="min-h-[96px] mb-2 relative z-10 flex flex-col justify-start">
-                <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) <span className="text-xs text-slate-400 font-normal">(부가세 별도)</span>
+                <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap">
+                  <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) 
+                  <span className="text-xs text-slate-400 font-normal">
+                    ({startDate.slice(0, 4)}-01-01 ~ {isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate})
+                  </span>
                 </h2>
               </div>
               <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">

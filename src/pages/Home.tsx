@@ -118,7 +118,7 @@ export default function Home() {
   const ytdDiff = ytdGross - ytdLyGross;
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
-  const totalVisitors = displayData.kpiMetrics?.raw?.totalVisitors || 0;
+  const totalRoomCap = coreData.core?.summary?.totalRoomCap || displayData.kpiMetrics?.raw?.totalRoomCap || 0;
 
   // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {
@@ -270,14 +270,12 @@ export default function Home() {
               <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-150" />
               <div className="min-h-[96px] mb-2 relative z-10 flex flex-col justify-start">
                 <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 방문객 수
+                  <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 숙박객 수 <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
                 </h2>
               </div>
               <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
-                {new Intl.NumberFormat('ko-KR').format(totalVisitors)}<span className="text-lg font-medium text-slate-500 ml-1">명</span>
+                {new Intl.NumberFormat('ko-KR').format(totalRoomCap)}<span className="text-lg font-medium text-slate-500 ml-1">명</span>
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 bg-slate-50 text-slate-500 border border-slate-100">
-                <span>{isRangeMode ? '선택 기간 누적 집계' : '리조트 당일 집계'}</span>
               </div>
             </div>
           </div>
@@ -508,6 +506,5 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

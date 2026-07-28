@@ -120,6 +120,35 @@ export default function Home() {
 
   const totalRoomCap = coreData.core?.summary?.totalRoomCap || displayData.kpiMetrics?.raw?.totalRoomCap || 0;
 
+  const leisureVisitorsMap = React.useMemo(() => {
+    const map: Record<string, number> = {
+      '미디어아트센터': 0,
+      '마리나 클럽': 0,
+      '마운틴카트': 0,
+      '사계절썰매장': 0,
+      '벨포레 목장': 0,
+      '원더풀': 0,
+      '썸머랜드': 0,
+      '모토아레나': 0
+    };
+
+    const facilities = coreData.core?.salesByFacility || [];
+    if (Array.isArray(facilities)) {
+      facilities.forEach((f: any) => {
+        const name = String(f.shopName || f.facilityName || f.shop_name || '');
+        const visitors = Number(f.totalVisitors || f.visitors || f.qty || f.todayQty || 0);
+
+        Object.keys(map).forEach(key => {
+          if (name.includes(key) || (key === '마리나 클럽' && name.includes('마리나')) || (key === '사계절썰매장' && name.includes('썰매')) || (key === '벨포레 목장' && name.includes('목장'))) {
+            map[key] += visitors;
+          }
+        });
+      });
+    }
+
+    return map;
+  }, [coreData.core?.salesByFacility]);
+
   // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {
     let rev16 = 0, sold16 = 0;
@@ -266,16 +295,64 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
               <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-150" />
-              <div className="min-h-[96px] mb-2 relative z-10 flex flex-col justify-start">
-                <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 숙박객 수 <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
-                </h2>
+              <div>
+                <div className="min-h-[44px] mb-1 relative z-10 flex flex-col justify-start">
+                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 숙박객 수 <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
+                  </h2>
+                </div>
+                <div className="text-3xl font-semibold text-slate-800 mb-3 tracking-tight relative z-10 flex items-baseline gap-2">
+                  <span>{new Intl.NumberFormat('ko-KR').format(totalRoomCap)}</span>
+                  <span className="text-lg font-medium text-slate-500">명</span>
+                </div>
+                
+                {/* Major Leisure Facilities Visitors Breakdown */}
+                <div className="mt-2 pt-2 border-t border-slate-100 relative z-10">
+                  <div className="text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center justify-between">
+                    <span>주요 레저/어트랙션 이용객 수</span>
+                    <span className="text-[10px] text-slate-400 font-normal">{isRangeMode ? '(선택 기간 누적)' : '(당일 실적)'}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[11px]">
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🎨 미디어아트</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['미디어아트센터'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🏊 썸머랜드</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['썸머랜드'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🐑 벨포레 목장</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['벨포레 목장'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🎡 원더풀</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['원더풀'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🛷 사계절썰매</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['사계절썰매장'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🚤 마리나 클럽</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마리나 클럽'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🏎️ 마운틴카트</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}명</span>
+                    </div>
+                    <div className="bg-slate-50 px-2 py-1 rounded flex items-center justify-between border border-slate-100">
+                      <span className="text-slate-600 font-medium truncate">🏁 모토아레나</span>
+                      <span className="font-bold text-brand-mint">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}명</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
-                {new Intl.NumberFormat('ko-KR').format(totalRoomCap)}<span className="text-lg font-medium text-slate-500 ml-1">명</span>
-              </div>
+              
+              <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 bg-slate-50 text-slate-500 border border-slate-100 self-start">
+                <span>{isRangeMode ? '선택 기간 객실 투숙객 누적 집계' : '당일 객실 투숙객 집계'}</span>
               </div>
             </div>
           </div>
@@ -506,5 +583,6 @@ export default function Home() {
           </div>
         </div>
       </div>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useMapping } from '../contexts/MappingContext';
 import type { Category } from '../lib/defaultMappings';
-import { Save, AlertCircle, Plus, Trash2, Layers, Hotel, CheckCircle, RefreshCw, Sparkles, Zap, LayoutGrid, List } from 'lucide-react';
+import { Save, AlertCircle, Plus, Trash2, Layers, Hotel, RefreshCw, Sparkles, Zap, LayoutGrid, List, ArrowUpRight } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 
 interface RoomSegmentItem {
@@ -47,7 +47,6 @@ export default function AdminMapping() {
   const [mappedItems, setMappedItems] = useState<RoomSegmentItem[]>([]);
   const [bins, setBins] = useState<string[]>(['MICE', 'OTA', '자사채널', '법인', '분양회원', '제휴&기타']);
   const [savingItemKey, setSavingItemKey] = useState<string | null>(null);
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'KANBAN' | 'TABLE'>('KANBAN');
 
   // Bulk Approval State
@@ -87,7 +86,6 @@ export default function AdminMapping() {
   const handleRoomSegmentSave = async (item: RoomSegmentItem, newSegment: string) => {
     const itemKey = `${item.sourceName || 'src'}_${item.productName}`;
     setSavingItemKey(itemKey);
-    setSaveSuccessMsg(null);
 
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -100,9 +98,6 @@ export default function AdminMapping() {
           subGroupName: newSegment
         })
       });
-
-      setSaveSuccessMsg(`'${item.productName}' 요금제가 '${newSegment}' 세그먼트로 승인 배정되었습니다.`);
-      setTimeout(() => setSaveSuccessMsg(null), 4000);
       await fetchRoomSegmentMapping();
     } catch (err) {
       console.error('Failed to update room segment mapping:', err);
@@ -139,9 +134,6 @@ export default function AdminMapping() {
         count++;
         setBulkProgress({ current: count, total: unmappedItems.length });
       }
-
-      setSaveSuccessMsg(`🎉 AI 추천 ${unmappedItems.length}개 미분류 항목이 모두 정식 세그먼트로 일괄 승인 완료되었습니다!`);
-      setTimeout(() => setSaveSuccessMsg(null), 5000);
       await fetchRoomSegmentMapping();
     } catch (err) {
       console.error('Failed bulk confirmation:', err);
@@ -256,12 +248,32 @@ export default function AdminMapping() {
         </div>
       </div>
 
-      {saveSuccessMsg && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium animate-fadeIn shadow-sm">
-          <CheckCircle size={18} className="text-emerald-600" />
-          {saveSuccessMsg}
+      {/* SSOT Single Source of Truth Banner */}
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 shadow-sm text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <AlertCircle size={24} className="text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
+              <span>[SSOT 단일 원천 정책] 매핑 전담 관리자 어플리케이션 연동 완료</span>
+              <span className="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black">충돌 방지 고정</span>
+            </div>
+            <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+              데이터 충돌을 100% 차단하기 위해 본 대시보드 앱은 <strong>[읽기 전용 (Read-Only 조회 전용)]</strong>으로 운영됩니다. 
+              매장 및 객실 요금제 신규 배정 및 수정은 단일 원천인 <strong>Vercel 어드민 어플리케이션</strong>에서 전담 진행됩니다.
+            </p>
+          </div>
         </div>
-      )}
+
+        <a
+          href="https://belleforet-data-git-main-tjkim448532s-projects.vercel.app/admin/mapping"
+          target="_blank"
+          rel="noreferrer"
+          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md hover:scale-105 transition-all shrink-0"
+        >
+          <span>Vercel 어드민 매핑 관리 앱 이동</span>
+          <ArrowUpRight size={14} className="text-brand-mint" />
+        </a>
+      </div>
 
       {/* TAB 1: POS 매장/시설 매핑 */}
       {activeTab === 'FACILITY' && (

@@ -134,8 +134,8 @@ export default function Home() {
       sourceArray.forEach((item: any) => {
         if (item.isChannelSubtotal || item.isGrandTotal) return;
         const typeName = item.roomType || item.room_type || '';
-        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || item.roomRevenue || 0);
-        const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || 0);
+        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || item.roomRevenue || item.periodRevenue || item.mtdRevenue || item.totalRevenue || 0);
+        const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || item.periodRooms || item.mtdRooms || item.rooms || 0);
         if (typeName.includes('16평')) {
           rev16 += revenue; sold16 += sold;
         } else if (typeName.includes('35평')) {

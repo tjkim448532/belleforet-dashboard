@@ -58,12 +58,15 @@ export default function GolfBusiness() {
               golf_avg_green_fee,
               golf_ly_avg_green_fee: 0,
             },
-            golfFacilityBreakdown: golfFacilities.map((f: any) => ({
-              facility_name: f.subGroupName || f.shop_name || f.facility_name || '그린피',
-              shop_name: f.subGroupName || f.shop_name || f.facility_name || '그린피',
-              todayActual: Number(f.totalSales || f.todayActual || f.revenue || 0),
-              today_actual: Number(f.totalSales || f.todayActual || f.revenue || 0)
-            }))
+            golfFacilityBreakdown: golfFacilities.map((f: any) => {
+              const name = f.shopName || f.facilityName || f.shop_name || f.facility_name || f.subGroupName || '기타업장';
+              return {
+                facility_name: name,
+                shop_name: name,
+                todayActual: Number(f.totalSales || f.todayActual || f.revenue || 0),
+                today_actual: Number(f.totalSales || f.todayActual || f.revenue || 0)
+              };
+            })
           });
         }
       } catch (err) {

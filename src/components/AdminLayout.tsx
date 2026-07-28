@@ -1,6 +1,6 @@
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, Calculator, Database, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ExternalLink, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function AdminLayout() {
@@ -41,12 +41,14 @@ export default function AdminLayout() {
   }
 
   const menuItems = [
-    { name: '본부지정', path: '/admin/simulator', icon: <Calculator size={20} /> },
-    { name: '매장 분류 매핑 관리', path: '/admin/mapping', icon: <Database size={20} /> },
-    { name: '객실/티켓 패키지 분배 관리', path: '/admin/daol-rules', icon: <Calculator size={20} /> },
-    { name: '레져본부 묶음 설정', path: '/admin/leisure-mapping', icon: <Database size={20} /> },
-    { name: '접속 로그 모니터링', path: '/admin/logs', icon: <ShieldCheck size={20} /> },
-    { name: '임직원 권한 관리', path: '/admin/roles', icon: <Users size={20} /> },
+    { 
+      name: 'Vercel 통합 매핑어드민 바로가기', 
+      path: 'https://belleforet-data-git-main-tjkim448532s-projects.vercel.app/admin/mapping', 
+      icon: <ExternalLink size={20} className="text-brand-mint" />, 
+      isExternal: true 
+    },
+    { name: '임직원 대시보드 권한 관리', path: '/admin/roles', icon: <Users size={20} /> },
+    { name: '대시보드 접속 및 보안 로그', path: '/admin/logs', icon: <ShieldCheck size={20} /> },
   ];
 
   return (
@@ -63,20 +65,33 @@ export default function AdminLayout() {
 
         <nav className="flex-1 px-4 py-4 space-y-2">
           {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
-                  isActive
-                    ? 'bg-brand-mint text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                }`
-              }
-            >
-              {item.icon}
-              {item.name}
-            </NavLink>
+            item.isExternal ? (
+              <a
+                key={item.path}
+                href={item.path}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-xs text-brand-mint hover:bg-slate-800 hover:text-white border border-brand-mint/30 shadow-xs"
+              >
+                {item.icon}
+                <span>{item.name}</span>
+              </a>
+            ) : (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
+                    isActive
+                      ? 'bg-brand-mint text-white shadow-lg font-bold'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`
+                }
+              >
+                {item.icon}
+                {item.name}
+              </NavLink>
+            )
           ))}
         </nav>
         

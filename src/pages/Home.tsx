@@ -89,16 +89,33 @@ export default function Home() {
 
   const totalVisitors = displayData.kpiMetrics?.raw?.totalVisitors || 0;
 
+  const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && coreData.core?.endDate && startDate !== coreData.core?.endDate));
+
   const adrData = (() => {
     let rev16 = 0, sold16 = 0;
     let rev35 = 0, sold35 = 0;
     let rev51 = 0, sold51 = 0;
     
-    if (coreData.core?.roomSummaryByType) {
+    if (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType) && coreData.core.roomSummaryByType.length > 0) {
       coreData.core.roomSummaryByType.forEach((item: any) => {
         const typeName = item.room_type || item.roomType || '';
         const revenue = Number(item.revenue || 0);
         const sold = Number(item.rooms_sold || item.roomsSold || 0);
+        if (typeName.includes('16평')) {
+          rev16 += revenue; sold16 += sold;
+        } else if (typeName.includes('35평')) {
+          rev35 += revenue; sold35 += sold;
+        } else if (typeName.includes('51평')) {
+          rev51 += revenue; sold51 += sold;
+        }
+      });
+    } else if (coreData.core?.salesByChannel && Array.isArray(coreData.core.salesByChannel)) {
+      // Fallback from salesByChannel if roomSummaryByType is empty in Period Range Query
+      coreData.core.salesByChannel.forEach((item: any) => {
+        if (item.isChannelSubtotal || item.isGrandTotal) return;
+        const typeName = item.roomType || item.room_type || '';
+        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || 0);
+        const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || 0);
         if (typeName.includes('16평')) {
           rev16 += revenue; sold16 += sold;
         } else if (typeName.includes('35평')) {
@@ -161,13 +178,13 @@ export default function Home() {
               <div className="min-h-[96px] mb-2 relative z-10 flex flex-col gap-3">
                 <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
-                  {coreData.core?.isRangeQuery && coreData.core?.endDate ? `조회기간 (${startDate} ~ ${coreData.core.endDate})` : `조회일자 (${startDate})`}
+                  {isRangeMode && coreData.core?.endDate ? `조회기간 (${startDate} ~ ${coreData.core.endDate})` : `조회일자 (${startDate})`}
                   <span className="text-xs text-slate-400 font-normal hidden xl:inline">(부가세 별도)</span>
                 </h2>
                 {(weather || lastYearWeather) && (
                   <div className="self-start text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
                     <div className="opacity-60 text-right pr-3 border-r border-slate-200">
-                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
+                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">{isRangeMode ? '전년 동기간' : '전년 동요일'}</div>
                       {lastYearWeather && (lastYearWeather.weatherDesc !== '데이터없음' && lastYearWeather.description !== '데이터없음') ? (
                         <>
                           <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
@@ -181,7 +198,7 @@ export default function Home() {
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
+                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">{isRangeMode ? '선택 기간' : '현재 날씨'}</div>
                       {weather && (weather.weatherDesc !== '데이터없음' && weather.description !== '데이터없음') ? (
                         <>
                           <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
@@ -203,7 +220,7 @@ export default function Home() {
               </div>
               
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                <span>전년 동요일 대비</span>
+                <span>{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
                 <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
                 <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
               </div>
@@ -237,7 +254,7 @@ export default function Home() {
                 {new Intl.NumberFormat('ko-KR').format(totalVisitors)}<span className="text-lg font-medium text-slate-500 ml-1">명</span>
               </div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 bg-slate-50 text-slate-500 border border-slate-100">
-                <span>리조트 전체 누적 집계</span>
+                <span>{isRangeMode ? '선택 기간 누적 집계' : '리조트 당일 집계'}</span>
               </div>
             </div>
           </div>
@@ -254,7 +271,9 @@ export default function Home() {
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">물리적 판매 객실 ÷ 전체 객실 수</div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                    {isRangeMode ? `기간 물리적 판매 객실 ÷ 기간 총 가용 객실수 (175실 × ${displayData.kpiMetrics?.days || 1}일)` : '물리적 판매 객실 ÷ 전체 객실 수 (175실)'}
+                  </div>
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
@@ -264,7 +283,9 @@ export default function Home() {
                     <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr35)}</span></div>
                     <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">52평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span></div>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">매출액 ÷ 순수 결제건수</div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                    {isRangeMode ? '기간 매출액 ÷ 기간 결제건수' : '매출액 ÷ 순수 결제건수'}
+                  </div>
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
@@ -272,7 +293,9 @@ export default function Home() {
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">객실 총매출 ÷ 전체 객실 수</div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                    {isRangeMode ? `기간 객실 총매출 ÷ 기간 총 가용 객실수 (175실 × ${displayData.kpiMetrics?.days || 1}일)` : '객실 총매출 ÷ 전체 객실 수 (175실)'}
+                  </div>
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
@@ -280,7 +303,9 @@ export default function Home() {
                   <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                     {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">리조트 총매출(골프 포함) ÷ 전체 객실 수</div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                    {isRangeMode ? `기간 리조트 총매출(골프 포함) ÷ 기간 총 가용 객실수 (175실 × ${displayData.kpiMetrics?.days || 1}일)` : '리조트 총매출(골프 포함) ÷ 전체 객실 수 (175실)'}
+                  </div>
                 </div>
               </div>
 
@@ -289,17 +314,19 @@ export default function Home() {
                   <div className="text-slate-500 font-semibold mb-2">골프 1인당 평균 그린피</div>
                   <div className="flex items-center gap-8 mb-4">
                     <div>
-                      <div className="text-xs text-brand-mint font-medium mb-1">선택 기간</div>
+                      <div className="text-xs text-brand-mint font-medium mb-1">{isRangeMode ? '선택 기간' : '금일 실적'}</div>
                       <div className="text-3xl font-semibold text-brand-mint">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
                     </div>
                     {displayData.golfSummary?.ly_avgGreenFee > 0 && (
                       <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">작년 동요일</div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">{isRangeMode ? '전년 동기간' : '전년 동요일'}</div>
                         <div className="text-3xl font-semibold text-slate-400">{formatCurrency(displayData.golfSummary.ly_avgGreenFee)}</div>
                       </div>
                     )}
                   </div>
-                  <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">선택 기간 그린피 매출 ÷ 입장객 수</div>
+                  <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">
+                    {isRangeMode ? '선택 기간 그린피 매출 ÷ 선택 기간 총 입장객 수' : '선택 기간 그린피 매출 ÷ 입장객 수'}
+                  </div>
                 </div>
                 <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
                   <div>
@@ -320,17 +347,18 @@ export default function Home() {
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">입장 예정 (미도착)</div>
                         <div className="text-3xl font-semibold text-brand-mint">
-                          {displayData.golfSummary ? `${Math.max(0, golfReservedTeams - displayData.golfSummary.visitedTeams)}팀` : '0팀'}
+                          {isRangeMode ? '0팀' : `${displayData.golfSummary ? (displayData.golfSummary.pendingTeams || 0) : 0}팀`}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-slate-400 mt-4">
-                    선택 기간 골프 실시간 예약 및 입장 데이터 (아직 도착하지 않은 잔여 예약 포함)
+                  <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">
+                    {isRangeMode ? '선택 기간 골프 총 예약 및 입장 실적 데이터' : '선택 기간 골프 실시간 예약 및 입장 데이터 (아직 도착하지 않은 잔여 예약 포함)'}
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
             {/* 본부별 매출 파이 차트 */}
             {pieChartData.length > 0 && (
@@ -451,16 +479,12 @@ export default function Home() {
                       </span>
                     </li>
                   </ul>
-                </div>
               </div>
             </div>
 
           </div>
         </div>
       </div>
-      
-
-
     </div>
   );
 }

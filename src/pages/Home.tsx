@@ -88,6 +88,35 @@ export default function Home() {
       .sort((a, b) => b.value - a.value);
   }, [coreData.core?.salesByCategory]);
 
+  const leisureVisitorsMap = React.useMemo(() => {
+    const map: Record<string, number> = {
+      '미디어아트센터': 0,
+      '마리나 클럽': 0,
+      '마운틴카트': 0,
+      '사계절썰매장': 0,
+      '벨포레 목장': 0,
+      '원더풀': 0,
+      '썸머랜드': 0,
+      '모토아레나': 0
+    };
+
+    const facilities = coreData.core?.salesByFacility || [];
+    if (Array.isArray(facilities)) {
+      facilities.forEach((f: any) => {
+        const name = String(f.shopName || f.facilityName || f.shop_name || '');
+        const visitors = Number(f.totalVisitors || f.visitors || f.qty || f.todayQty || 0);
+
+        Object.keys(map).forEach(key => {
+          if (name.includes(key) || (key === '마리나 클럽' && name.includes('마리나')) || (key === '사계절썰매장' && name.includes('썰매')) || (key === '벨포레 목장' && name.includes('목장'))) {
+            map[key] += visitors;
+          }
+        });
+      });
+    }
+
+    return map;
+  }, [coreData.core?.salesByFacility]);
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];
 
 
@@ -119,35 +148,6 @@ export default function Home() {
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
   const totalRoomCap = coreData.core?.summary?.totalRoomCap || displayData.kpiMetrics?.raw?.totalRoomCap || 0;
-
-  const leisureVisitorsMap = React.useMemo(() => {
-    const map: Record<string, number> = {
-      '미디어아트센터': 0,
-      '마리나 클럽': 0,
-      '마운틴카트': 0,
-      '사계절썰매장': 0,
-      '벨포레 목장': 0,
-      '원더풀': 0,
-      '썸머랜드': 0,
-      '모토아레나': 0
-    };
-
-    const facilities = coreData.core?.salesByFacility || [];
-    if (Array.isArray(facilities)) {
-      facilities.forEach((f: any) => {
-        const name = String(f.shopName || f.facilityName || f.shop_name || '');
-        const visitors = Number(f.totalVisitors || f.visitors || f.qty || f.todayQty || 0);
-
-        Object.keys(map).forEach(key => {
-          if (name.includes(key) || (key === '마리나 클럽' && name.includes('마리나')) || (key === '사계절썰매장' && name.includes('썰매')) || (key === '벨포레 목장' && name.includes('목장'))) {
-            map[key] += visitors;
-          }
-        });
-      });
-    }
-
-    return map;
-  }, [coreData.core?.salesByFacility]);
 
   // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {

@@ -176,11 +176,16 @@ export default function SynergyCorrelation() {
     leisureRows.forEach(r => {
       const shop = r.shopName.trim();
       const sales = Number(r.todayActual || 0);
-      const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedVisitors: 0, spilloverRate: 80, revPasContribution: 0 };
+      
+      const matchedCorr = correlationData.find(c => c.shopName === shop);
+      const realSpillover = matchedCorr?.spilloverRate ? matchedCorr.spilloverRate : 65;
+
+      const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedVisitors: 0, spilloverRate: realSpillover, revPasContribution: 0 };
       curr.totalSales += sales;
-      curr.correlatedSales += Math.round(sales * 0.65);
+      curr.correlatedSales += Math.round(sales * (realSpillover / 100));
+      curr.spilloverRate = realSpillover;
       curr.correlatedVisitors += sales > 0 ? Math.round(sales / 18000) : 0;
-      curr.revPasContribution += totalRoomsSold > 0 ? Math.round((sales * 0.65) / totalRoomsSold) : 0;
+      curr.revPasContribution += totalRoomsSold > 0 ? Math.round((sales * (realSpillover / 100)) / totalRoomsSold) : 0;
       map.set(shop, curr);
     });
 
@@ -189,7 +194,7 @@ export default function SynergyCorrelation() {
       ...val,
       color: 'border-purple-200 bg-purple-50/40 text-purple-900'
     })).sort((a, b) => b.totalSales - a.totalSales);
-  }, [matrixData, totalRoomsSold]);
+  }, [matrixData, totalRoomsSold, correlationData]);
 
   // Pure Dynamic SSOT Extraction for F&B Stores from V5 Matrix Data
   const fnbStoreAnalysis = useMemo(() => {
@@ -207,11 +212,16 @@ export default function SynergyCorrelation() {
     fnbRows.forEach(r => {
       const shop = r.shopName.trim();
       const sales = Number(r.todayActual || 0);
-      const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedGuests: 0, spilloverRate: 85, revPasContribution: 0 };
+      
+      const matchedCorr = correlationData.find(c => c.shopName === shop);
+      const realSpillover = matchedCorr?.spilloverRate ? matchedCorr.spilloverRate : 78;
+
+      const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedGuests: 0, spilloverRate: realSpillover, revPasContribution: 0 };
       curr.totalSales += sales;
-      curr.correlatedSales += Math.round(sales * 0.78);
+      curr.correlatedSales += Math.round(sales * (realSpillover / 100));
+      curr.spilloverRate = realSpillover;
       curr.correlatedGuests += sales > 0 ? Math.round(sales / 25000) : 0;
-      curr.revPasContribution += totalRoomsSold > 0 ? Math.round((sales * 0.78) / totalRoomsSold) : 0;
+      curr.revPasContribution += totalRoomsSold > 0 ? Math.round((sales * (realSpillover / 100)) / totalRoomsSold) : 0;
       map.set(shop, curr);
     });
 
@@ -220,7 +230,7 @@ export default function SynergyCorrelation() {
       ...val,
       color: 'border-amber-200 bg-amber-50/40 text-amber-900'
     })).sort((a, b) => b.totalSales - a.totalSales);
-  }, [matrixData, totalRoomsSold]);
+  }, [matrixData, totalRoomsSold, correlationData]);
 
   // Overall Division Summary KPIs
   const totalLeisureSynergy = useMemo(() => {

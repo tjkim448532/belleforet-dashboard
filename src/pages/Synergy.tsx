@@ -237,14 +237,20 @@ export default function Synergy() {
     return Array.from(set);
   }, [channelData]);
 
-  // Filtered Table Rows: Default to channel subtotals & grand total for clean summary view
+  // Filtered Table Rows: Default to channel subtotals & grand total; hide 0-sales detail rows when drilling down
   const filteredTableRows = useMemo(() => {
     if (selectedChannel === 'ALL') {
       const subtotals = channelData.filter(r => r.isChannelSubtotal || r.isGrandTotal || r.channelName === '전체 합계');
       return subtotals.length > 0 ? subtotals : channelData;
     }
-    return channelData.filter(r => r.channelName === selectedChannel || r.isGrandTotal);
-  }, [channelData, selectedChannel]);
+    return channelData.filter(r => {
+      if (r.isGrandTotal) return true;
+      if (r.channelName !== selectedChannel && !r.channelName?.startsWith(selectedChannel)) return false;
+      const rooms = isActualRange ? (r.mtdRooms || r.todayRooms || 0) : (r.todayRooms || 0);
+      const rev = isActualRange ? (r.mtdRevenue || r.todayRevenue || 0) : (r.todayRevenue || 0);
+      return rooms > 0 || rev > 0 || r.isChannelSubtotal;
+    });
+  }, [channelData, selectedChannel, isActualRange]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">

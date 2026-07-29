@@ -409,10 +409,10 @@ export default function AdminMapping() {
               <div className="bg-amber-50/70 border-b border-amber-100 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-base font-semibold text-amber-900 flex items-center gap-2">
                   <AlertCircle size={18} className="text-amber-600" />
-                  미분류 객실 요금제 (Unmapped Rate Types)
+                  미분류 객실 마켓타입 (Unmapped Market Types)
                 </h2>
                 <span className="text-xs bg-amber-200 text-amber-900 px-2.5 py-1 rounded-full font-bold">
-                  {unmappedItems.length}개 요금제 미분류 보관 중
+                  {unmappedItems.length}개 마켓타입 미분류 보관 중
                 </span>
               </div>
 
@@ -421,7 +421,7 @@ export default function AdminMapping() {
                   <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-3 font-semibold">원천 테이블 / 출처</th>
-                      <th className="px-6 py-3 font-semibold">원천 요금제 / 상품명 (Rate Type)</th>
+                      <th className="px-6 py-3 font-semibold">원천 마켓타입 / 상품명 (Market Type)</th>
                       <th className="px-6 py-3 font-semibold text-center">AI 추천 세그먼트</th>
                       <th className="px-6 py-3 font-semibold text-right">정식 세그먼트 지정 및 승인</th>
                     </tr>
@@ -496,7 +496,7 @@ export default function AdminMapping() {
               <table className="w-full text-left border-collapse text-sm">
                 <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 font-semibold">원천 요금제 (Rate Type)</th>
+                    <th className="px-6 py-3 font-semibold">원천 마켓타입 (Market Type)</th>
                     <th className="px-6 py-3 font-semibold">배정된 정식 세그먼트</th>
                     <th className="px-6 py-3 font-semibold text-right">변경</th>
                   </tr>

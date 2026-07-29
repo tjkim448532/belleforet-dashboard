@@ -309,7 +309,7 @@ export default function ResortBusiness() {
                   <tbody className="divide-y divide-slate-50 text-sm">
                     {rateAdrData.map((row: any, idx: number) => (
                       <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.marketType || row.rateType}</td>
+                        <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.marketType}</td>
                         <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}실</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
                         <td className="py-3.5 px-4 text-right font-medium text-slate-900">{formatCurrency(row.adr)}</td>

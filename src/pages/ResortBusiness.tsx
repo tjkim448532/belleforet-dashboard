@@ -73,7 +73,7 @@ export default function ResortBusiness() {
       
       const rate = g.cap > 0 ? Math.round((g.sold / g.cap) * 100) : 0;
       const cappedRate = Math.min(rate, 100);
-      const displayRate = g.cap > 0 ? `${cappedRate}%` : 'N/A';
+      const displayRate = g.cap > 0 ? `${rate}%` : 'N/A';
 
       result.push({
         roomSize: key,
@@ -226,7 +226,7 @@ export default function ResortBusiness() {
                     <div className="flex flex-col items-center mt-4 space-y-1 text-center">
                       {row.isConnectedType && row.sold > row.capacity ? (
                         <span className="text-xs font-semibold text-slate-700">
-                          {row.sold}실 <span className="text-[10px] text-emerald-600 font-bold">(전용 {row.capacity}실+커넥티드)</span>
+                          {row.sold}실 <span className="text-[10px] text-emerald-600 font-bold">(전용 {row.capacity}실 + 커넥티드 {row.sold - row.capacity}실)</span>
                         </span>
                       ) : (
                         <span className="text-xs font-semibold text-slate-600">{row.sold}실 / {row.capacity}실</span>

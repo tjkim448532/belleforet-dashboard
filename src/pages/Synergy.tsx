@@ -34,7 +34,6 @@ export default function Synergy() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
   
   const [channelData, setChannelData] = useState<RoomChannelSalesItem[]>([]);
-  const [segmentData, setSegmentData] = useState<any[]>([]);
   const [summaryData, setSummaryData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
@@ -75,11 +74,7 @@ export default function Synergy() {
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 2. Fetch V5 Room Channel Sales (API 6: Segment Market Type Dataset)
-      const segmentRes = await secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => null);
-      const segmentPayload = segmentRes?.data ?? segmentRes;
-
-      // 3. Fetch V5 Main Revenue Summary
+      // 2. Fetch V5 Main Revenue Summary
       const summaryQueryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${eDate || sDate}`;
@@ -90,12 +85,6 @@ export default function Synergy() {
         setChannelData(channelPayload);
       } else if (Array.isArray(channelPayload?.data)) {
         setChannelData(channelPayload.data);
-      }
-
-      if (Array.isArray(segmentPayload)) {
-        setSegmentData(segmentPayload);
-      } else if (Array.isArray(segmentPayload?.data)) {
-        setSegmentData(segmentPayload.data);
       }
 
       if (summaryPayload) {
@@ -185,33 +174,43 @@ export default function Synergy() {
     return { golf, fnb, ticket, total: golf + fnb + ticket };
   }, [summaryData, isActualRange, totalDays]);
 
-  // Ground-Up Segment Breakdown Grouping 100% by Market Type
+  // Ground-Up Breakdown Grouping 100% by Pure Sales Channels
   const segmentSummaries = useMemo(() => {
-    const sourceData = segmentData.length > 0 ? segmentData : channelData;
-    if (!sourceData || sourceData.length === 0) return [];
+    if (!channelData || channelData.length === 0) return [];
     
-    const groups: Record<string, { name: string; rooms: number; revenue: number }> = {};
+    const groups: Record<string, { name: string; rooms: number; revenue: number }> = {
+      '자사채널': { name: '자사채널', rooms: 0, revenue: 0 },
+      '단체영업(세미나)': { name: '단체영업(세미나)', rooms: 0, revenue: 0 },
+      'OTA': { name: 'OTA', rooms: 0, revenue: 0 },
+      '예약실': { name: '예약실', rooms: 0, revenue: 0 },
+      '휴양소': { name: '휴양소', rooms: 0, revenue: 0 },
+      '제휴&기타': { name: '제휴&기타', rooms: 0, revenue: 0 }
+    };
 
-    sourceData.forEach((item: any) => {
-      if (item.isGrandTotal || item.isChannelSubtotal || item.isSegmentSubtotal) return;
-      
-      // Standardize to 6 Market Type Segment Names
-      let segName = item.segmentName || item.segment_name || item.marketType || item.market_type || item.channelName || '제휴&기타';
-      if (segName.includes('기업영업') || segName.includes('휴양소')) segName = '휴양소';
-      else if (segName.includes('단체영업') || segName.includes('세미나') || segName.includes('MICE')) segName = '단체영업(세미나)';
-      else if (segName.includes('전화') || segName.includes('메신저') || segName.includes('예약실')) segName = '예약실';
-      else if (segName.includes('홈페이지') || segName.includes('앱') || segName.includes('자사')) segName = '자사채널';
-      else if (segName.includes('온라인 여행사') || segName.includes('OTA') || segName.includes('야놀자') || segName.includes('여기어때')) segName = 'OTA';
-
+    channelData.forEach((item: any) => {
+      if (item.isGrandTotal || item.isChannelSubtotal) return;
       if (selectedChannel !== 'ALL' && item.channelName && item.channelName !== selectedChannel) return;
+
+      const str = `${item.channelName || ''} ${item.segmentName || ''} ${item.marketType || ''}`.trim();
       
-      if (!groups[segName]) {
-        groups[segName] = { name: segName, rooms: 0, revenue: 0 };
+      let targetChannel = '제휴&기타';
+      if (/기업영업|휴양소|복지|공제회|법인/i.test(str)) {
+        targetChannel = '휴양소';
+      } else if (/단체영업|세미나|MICE|학회|연수|행사/i.test(str)) {
+        targetChannel = '단체영업(세미나)';
+      } else if (/전화|메신저|예약실/i.test(str)) {
+        targetChannel = '예약실';
+      } else if (/홈페이지|앱|APP|자사|분양회원|회원/i.test(str)) {
+        targetChannel = '자사채널';
+      } else if (/온라인 여행사|OTA|야놀자|여기어때|아고다|네이버|인터파크|쿠팡|트립|부킹|플엠|컴퍼니/i.test(str)) {
+        targetChannel = 'OTA';
       }
+
       const itemRooms = isActualRange ? (item.mtdRooms || item.rooms_sold || item.roomsSold || 0) : (item.todayRooms || item.rooms_sold || item.roomsSold || 0);
       const itemRev = isActualRange ? (item.mtdRevenue || item.revenue || item.totalSales || 0) : (item.todayRevenue || item.revenue || item.totalSales || 0);
-      groups[segName].rooms += itemRooms;
-      groups[segName].revenue += itemRev;
+      
+      groups[targetChannel].rooms += itemRooms;
+      groups[targetChannel].revenue += itemRev;
     });
 
     const totalRoomRev = grandTotal.revenue || 1;
@@ -223,11 +222,11 @@ export default function Synergy() {
         const shareRatio = seg.revenue / totalRoomRev;
         const totalSynergySales = Math.round(ancillarySales.total * shareRatio);
         let crossSellingRate = 75;
-        if (seg.name.includes('휴양소')) crossSellingRate = 86;
-        else if (seg.name.includes('세미나') || seg.name.includes('MICE') || seg.name.includes('단체')) crossSellingRate = 92;
-        else if (seg.name.includes('예약실')) crossSellingRate = 80;
-        else if (seg.name.includes('자사채널')) crossSellingRate = 88;
-        else if (seg.name.includes('OTA')) crossSellingRate = 78;
+        if (seg.name === '휴양소') crossSellingRate = 86;
+        else if (seg.name === '단체영업(세미나)') crossSellingRate = 92;
+        else if (seg.name === '예약실') crossSellingRate = 80;
+        else if (seg.name === '자사채널') crossSellingRate = 88;
+        else if (seg.name === 'OTA') crossSellingRate = 78;
 
         return {
           name: seg.name,
@@ -240,7 +239,7 @@ export default function Synergy() {
           revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
         };
       });
-  }, [segmentData, channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
+  }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
 
   // Total Synergy Sales across all segments
   const totalSynergySum = useMemo(() => {
@@ -455,10 +454,10 @@ export default function Synergy() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <Building2 className="text-emerald-600" size={24} /> 콘도 시장타입 세그먼트별 기여도
+              <Building2 className="text-emerald-600" size={24} /> 콘도 순수 판매채널별 기여도 (Pure Sales Channel Synergy)
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 SSOT 백엔드 기준 세그먼트별 객실 판매 기여도 및 부대시설 연계 파급효과입니다.
+              V5 SSOT 순수 판매채널(자사채널, OTA, 휴양소, 단체영업, 예약실) 기준 객실 실적 및 부대시설 연계 파급효과입니다.
             </p>
           </div>
 

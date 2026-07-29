@@ -34,6 +34,7 @@ export default function Synergy() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
   
   const [channelData, setChannelData] = useState<RoomChannelSalesItem[]>([]);
+  const [segmentData, setSegmentData] = useState<any[]>([]);
   const [summaryData, setSummaryData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
@@ -74,7 +75,11 @@ export default function Synergy() {
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 2. Fetch V5 Main Revenue Summary
+      // 2. Fetch V5 Room Channel Sales (API 6: Segment Market Type Dataset)
+      const segmentRes = await secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => null);
+      const segmentPayload = segmentRes?.data ?? segmentRes;
+
+      // 3. Fetch V5 Main Revenue Summary
       const summaryQueryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${eDate || sDate}`;
@@ -85,6 +90,12 @@ export default function Synergy() {
         setChannelData(channelPayload);
       } else if (Array.isArray(channelPayload?.data)) {
         setChannelData(channelPayload.data);
+      }
+
+      if (Array.isArray(segmentPayload)) {
+        setSegmentData(segmentPayload);
+      } else if (Array.isArray(segmentPayload?.data)) {
+        setSegmentData(segmentPayload.data);
       }
 
       if (summaryPayload) {
@@ -174,22 +185,31 @@ export default function Synergy() {
     return { golf, fnb, ticket, total: golf + fnb + ticket };
   }, [summaryData, isActualRange, totalDays]);
 
-  // Ground-Up Segment Breakdown Grouping from API 7 detail rows
+  // Ground-Up Segment Breakdown Grouping 100% by Market Type
   const segmentSummaries = useMemo(() => {
-    if (!channelData || channelData.length === 0) return [];
+    const sourceData = segmentData.length > 0 ? segmentData : channelData;
+    if (!sourceData || sourceData.length === 0) return [];
     
     const groups: Record<string, { name: string; rooms: number; revenue: number }> = {};
 
-    channelData.forEach(item => {
-      if (item.isGrandTotal || item.isChannelSubtotal) return;
-      if (selectedChannel !== 'ALL' && item.channelName !== selectedChannel) return;
+    sourceData.forEach((item: any) => {
+      if (item.isGrandTotal || item.isChannelSubtotal || item.isSegmentSubtotal) return;
       
-      const segName = item.segmentName || '기타';
+      // Standardize to 6 Market Type Segment Names
+      let segName = item.segmentName || item.segment_name || item.marketType || item.market_type || item.channelName || '제휴&기타';
+      if (segName.includes('기업영업') || segName.includes('휴양소')) segName = '휴양소';
+      else if (segName.includes('단체영업') || segName.includes('세미나') || segName.includes('MICE')) segName = '단체영업(세미나)';
+      else if (segName.includes('전화') || segName.includes('메신저') || segName.includes('예약실')) segName = '예약실';
+      else if (segName.includes('홈페이지') || segName.includes('앱') || segName.includes('자사')) segName = '자사채널';
+      else if (segName.includes('온라인 여행사') || segName.includes('OTA') || segName.includes('야놀자') || segName.includes('여기어때')) segName = 'OTA';
+
+      if (selectedChannel !== 'ALL' && item.channelName && item.channelName !== selectedChannel) return;
+      
       if (!groups[segName]) {
         groups[segName] = { name: segName, rooms: 0, revenue: 0 };
       }
-      const itemRooms = isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0);
-      const itemRev = isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
+      const itemRooms = isActualRange ? (item.mtdRooms || item.rooms_sold || item.roomsSold || 0) : (item.todayRooms || item.rooms_sold || item.roomsSold || 0);
+      const itemRev = isActualRange ? (item.mtdRevenue || item.revenue || item.totalSales || 0) : (item.todayRevenue || item.revenue || item.totalSales || 0);
       groups[segName].rooms += itemRooms;
       groups[segName].revenue += itemRev;
     });
@@ -220,7 +240,7 @@ export default function Synergy() {
           revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
         };
       });
-  }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
+  }, [segmentData, channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
 
   // Total Synergy Sales across all segments
   const totalSynergySum = useMemo(() => {

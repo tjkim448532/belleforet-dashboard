@@ -174,71 +174,51 @@ export default function Synergy() {
     return { golf, fnb, ticket, total: golf + fnb + ticket };
   }, [summaryData, isActualRange, totalDays]);
 
-  // Ground-Up Breakdown Grouping 100% by Pure Sales Channels
+  // Ground-Up Breakdown Grouping 100% directly from API 7 Backend Subtotal Rows (0% Discrepancy SSOT)
   const segmentSummaries = useMemo(() => {
     if (!channelData || channelData.length === 0) return [];
     
-    const groups: Record<string, { name: string; rooms: number; revenue: number }> = {
-      '자사채널': { name: '자사채널', rooms: 0, revenue: 0 },
-      '단체영업(세미나)': { name: '단체영업(세미나)', rooms: 0, revenue: 0 },
-      'OTA': { name: 'OTA', rooms: 0, revenue: 0 },
-      '예약실': { name: '예약실', rooms: 0, revenue: 0 },
-      '휴양소': { name: '휴양소', rooms: 0, revenue: 0 },
-      '제휴&기타': { name: '제휴&기타', rooms: 0, revenue: 0 }
-    };
-
-    channelData.forEach((item: any) => {
-      if (item.isGrandTotal || item.isChannelSubtotal) return;
-      if (selectedChannel !== 'ALL' && item.channelName && item.channelName !== selectedChannel) return;
-
-      const str = `${item.channelName || ''} ${item.segmentName || ''} ${item.marketType || ''}`.trim();
-      
-      let targetChannel = '제휴&기타';
-      if (/기업영업|휴양소|복지|공제회|법인/i.test(str)) {
-        targetChannel = '휴양소';
-      } else if (/단체영업|세미나|MICE|학회|연수|행사/i.test(str)) {
-        targetChannel = '단체영업(세미나)';
-      } else if (/전화|메신저|예약실/i.test(str)) {
-        targetChannel = '예약실';
-      } else if (/홈페이지|앱|APP|자사|분양회원|회원/i.test(str)) {
-        targetChannel = '자사채널';
-      } else if (/온라인 여행사|OTA|야놀자|여기어때|아고다|네이버|인터파크|쿠팡|트립|부킹|플엠|컴퍼니/i.test(str)) {
-        targetChannel = 'OTA';
-      }
-
-      const itemRooms = isActualRange ? (item.mtdRooms || item.rooms_sold || item.roomsSold || 0) : (item.todayRooms || item.rooms_sold || item.roomsSold || 0);
-      const itemRev = isActualRange ? (item.mtdRevenue || item.revenue || item.totalSales || 0) : (item.todayRevenue || item.revenue || item.totalSales || 0);
-      
-      groups[targetChannel].rooms += itemRooms;
-      groups[targetChannel].revenue += itemRev;
-    });
+    // Pick backend SSOT subtotal rows (isChannelSubtotal === true or channelName containing '[소계]')
+    let subtotalRows = channelData.filter(item => item.isChannelSubtotal || (item.channelName && item.channelName.includes('[소계]')));
+    
+    // If selectedChannel is active, filter by selectedChannel
+    if (selectedChannel !== 'ALL') {
+      subtotalRows = subtotalRows.filter(item => item.channelName === selectedChannel || item.channelName?.startsWith(selectedChannel));
+    }
 
     const totalRoomRev = grandTotal.revenue || 1;
 
-    return Object.values(groups)
-      .filter(g => g.rooms > 0 || g.revenue > 0)
-      .sort((a, b) => b.revenue - a.revenue)
-      .map(seg => {
-        const shareRatio = seg.revenue / totalRoomRev;
+    return subtotalRows
+      .map(item => {
+        // Clean up channel name (e.g. "기업영업(휴양소) [소계]" -> "기업영업(휴양소)")
+        let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
+        
+        const rooms = isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0);
+        const revenue = isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0);
+        
+        const shareRatio = revenue / totalRoomRev;
         const totalSynergySales = Math.round(ancillarySales.total * shareRatio);
+        
         let crossSellingRate = 75;
-        if (seg.name === '휴양소') crossSellingRate = 86;
-        else if (seg.name === '단체영업(세미나)') crossSellingRate = 92;
-        else if (seg.name === '예약실') crossSellingRate = 80;
-        else if (seg.name === '자사채널') crossSellingRate = 88;
-        else if (seg.name === 'OTA') crossSellingRate = 78;
+        if (cleanName.includes('휴양소')) crossSellingRate = 86;
+        else if (cleanName.includes('세미나') || cleanName.includes('단체')) crossSellingRate = 92;
+        else if (cleanName.includes('예약실')) crossSellingRate = 80;
+        else if (cleanName.includes('자사') || cleanName.includes('홈페이지')) crossSellingRate = 88;
+        else if (cleanName.includes('여행사') || cleanName.includes('OTA')) crossSellingRate = 78;
 
         return {
-          name: seg.name,
-          rooms: seg.rooms,
-          revenue: seg.revenue,
-          adr: seg.rooms > 0 ? Math.round(seg.revenue / seg.rooms) : 0,
+          name: cleanName,
+          rooms,
+          revenue,
+          adr: rooms > 0 ? Math.round(revenue / rooms) : 0,
           sharePct: (shareRatio * 100).toFixed(1),
           totalSynergySales,
           crossSellingRate,
-          revPas: seg.rooms > 0 ? Math.round((seg.revenue + totalSynergySales) / seg.rooms) : 0
+          revPas: rooms > 0 ? Math.round((revenue + totalSynergySales) / rooms) : 0
         };
-      });
+      })
+      .filter(g => g.rooms > 0 || g.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue);
   }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
 
   // Total Synergy Sales across all segments

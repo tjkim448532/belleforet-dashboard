@@ -127,9 +127,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   const dailyCap16 = Number(masterCapacities?.['16평']) || 85;
   const dailyCap35 = Number(masterCapacities?.['35평']) || 85;
-  const dailyCap51 = Number(masterCapacities?.['51평']) || 5;
+  const dailyCap51 = Number(masterCapacities?.['51평']) || 90; // Option A: 5 dedicated + 85 connected limit = 90 rooms/day
 
-  // 1. Map directly from SSOT roomSummaryByType with period capacity (물리 재고: 16평 85실 + 35평 85실 + 51평 단독 5실 = 총 175실/일)
+  // 1. Map directly from SSOT roomSummaryByType with period capacity
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
     '16평': { sold: 0, cap: dailyCap16 * days, rev: 0 },
     '35평': { sold: 0, cap: dailyCap35 * days, rev: 0 },

@@ -224,13 +224,7 @@ export default function ResortBusiness() {
                       <span className="absolute text-base font-bold text-slate-800">{row.displayRate}</span>
                     </div>
                     <div className="flex flex-col items-center mt-4 space-y-1 text-center">
-                      {row.isConnectedType && row.sold > row.capacity ? (
-                        <span className="text-xs font-semibold text-slate-700">
-                          {row.sold}실 <span className="text-[10px] text-emerald-600 font-bold">(전용 {row.capacity}실 + 커넥티드 {row.sold - row.capacity}실)</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-600">{row.sold}실 / {row.capacity}실</span>
-                      )}
+                      <span className="text-xs font-semibold text-slate-600">{row.sold}실 / {row.capacity}실</span>
                       <span className="text-[10px] text-slate-400">매출: {formatCurrency(row.revenue)}</span>
                       <span className="text-[10px] text-emerald-600 font-bold">ADR: {formatCurrency(row.adr)}</span>
                     </div>

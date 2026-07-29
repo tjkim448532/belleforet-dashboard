@@ -293,14 +293,14 @@ export default function ResortBusiness() {
 
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <h2 className="text-base font-medium text-slate-800 mb-8 flex items-center gap-2">
-              💳 요금타입별 비중 및 객단가 (회원/비회원 분석)
+              🏷️ 마켓타입 세그먼트별 실적 및 객단가 (Market Type Analysis)
             </h2>
             {rateAdrData.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      <th className="py-3 px-4">요금 타입명</th>
+                      <th className="py-3 px-4">마켓타입 세그먼트명</th>
                       <th className="py-3 px-4 text-right">판매 객실수</th>
                       <th className="py-3 px-4 text-right">총 매출액</th>
                       <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
@@ -309,7 +309,7 @@ export default function ResortBusiness() {
                   <tbody className="divide-y divide-slate-50 text-sm">
                     {rateAdrData.map((row: any, idx: number) => (
                       <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.rateType}</td>
+                        <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.marketType || row.rateType}</td>
                         <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}실</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
                         <td className="py-3.5 px-4 text-right font-medium text-slate-900">{formatCurrency(row.adr)}</td>
@@ -320,7 +320,7 @@ export default function ResortBusiness() {
               </div>
             ) : (
               <div className="py-12 text-center text-slate-400">
-                해당 날짜의 요금타입 데이터가 없습니다.
+                해당 날짜의 마켓타입 세그먼트 데이터가 없습니다.
               </div>
             )}
           </div>

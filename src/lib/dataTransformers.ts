@@ -174,8 +174,22 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   // Sort descending by revenue
   channelAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-  // 3. Rate Type Data (Fallback removal, safely returning empty)
-  // removed rateMap loop completely
+  // 3. Market Type Segment Data (SSOT salesBySegment / marketType)
+  const marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
+
+  if (payload.salesBySegment && Array.isArray(payload.salesBySegment)) {
+    payload.salesBySegment.forEach((item: any) => {
+      const sold = Number(item.rooms_sold || item.roomsSold || 0);
+      const rev = Number(item.revenue || item.todayRevenue || item.totalSales || 0);
+      marketTypeAdrData.push({
+        marketType: item.segmentName || item.marketType || item.segment_name || item.market_type || '기타',
+        roomsSold: sold,
+        totalRevenue: rev,
+        adr: sold > 0 ? Math.round(rev / sold) : 0
+      });
+    });
+  }
+  marketTypeAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
   // SSOT Principle for Lodging Stats
   let summaryRevenue = 0;
@@ -187,8 +201,6 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   
   let summaryRoomsSold = payload.summary?.totalRooms || 0;
   let summaryTotalCapacity = payload.summary?.totalRoomCap || payload.summary?.totalGuests || 0;
-
-
 
   const lodgingStats = {
     revenue: summaryRevenue,
@@ -204,7 +216,8 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
     roomOccupancyMap,
     channelAdrData,
-    rateAdrData: [], // rateType is deprecated in V5 payload
+    marketTypeAdrData,
+    rateAdrData: marketTypeAdrData, // Fallback alias for backward compatibility
     lodgingStats,
     rawRooms: [], 
     rawRoomTypeBreakdown: []

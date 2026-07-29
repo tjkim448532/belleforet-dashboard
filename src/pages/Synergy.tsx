@@ -202,9 +202,12 @@ export default function Synergy() {
       .map(seg => {
         const shareRatio = seg.revenue / totalRoomRev;
         const totalSynergySales = Math.round(ancillarySales.total * shareRatio);
-        const crossSellingRate = Math.min(98, Math.round(
-          (seg.name.includes('패키지') ? 88 : seg.name.includes('MICE') ? 92 : seg.name.includes('회원') ? 82 : 74)
-        ));
+        let crossSellingRate = 75;
+        if (seg.name.includes('휴양소')) crossSellingRate = 86;
+        else if (seg.name.includes('세미나') || seg.name.includes('MICE') || seg.name.includes('단체')) crossSellingRate = 92;
+        else if (seg.name.includes('예약실')) crossSellingRate = 80;
+        else if (seg.name.includes('자사채널')) crossSellingRate = 88;
+        else if (seg.name.includes('OTA')) crossSellingRate = 78;
 
         return {
           name: seg.name,
@@ -263,10 +266,10 @@ export default function Synergy() {
             
             <h1 className="text-3xl lg:text-4xl font-medium tracking-tight mt-1 flex items-center gap-3">
               <Sparkles className="text-emerald-400" size={32} />
-              콘도 세그먼트 연계 시너지 대시보드
+              콘도 마켓타입 세그먼트 연계 시너지 대시보드
             </h1>
             <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-2xl">
-              숙박객 시장타입(MICE, FIT/OTA, 패키지, 콘도회원)별 객실 판매와 타 부대시설(골프, 식음, 레저)간의 복합 상관관계 및 기간별 매출 파급효과를 분석합니다.
+              숙박객 마켓타입(휴양소, 단체영업(세미나), 예약실, 자사채널, OTA)별 객실 판매와 타 부대시설(골프, 식음, 레저) 간의 복합 시너지 파급효과를 분석합니다. (마켓타입 6종 100% 정규화 연동)
             </p>
 
             {/* Navigation Sub-Tabs Bar */}

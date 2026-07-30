@@ -197,6 +197,39 @@ export default function AdminRoles() {
     );
   }, [roles, searchTerm]);
 
+  const handleSeedInitialRoles = async () => {
+    setSaving(true);
+    try {
+      const initialUsers = [
+        { email: 'tjkim448532@gmail.com', name: '김태종 대표이사', role: 'admin' },
+        { email: 'ceo@bsbelleforet.com', name: '대표이사', role: 'executive' },
+        { email: 'resort@bsbelleforet.com', name: '리조트 본부장', role: 'resort' },
+        { email: 'leisure@bsbelleforet.com', name: '레저 본부장', role: 'leisure' },
+        { email: 'fnb@bsbelleforet.com', name: '식음 본부장', role: 'fnb' },
+        { email: 'sales@bsbelleforet.com', name: '세일즈 팀장', role: 'sales' },
+        { email: 'planning@bsbelleforet.com', name: '기획조정실장', role: 'management' }
+      ];
+
+      const batch = writeBatch(db);
+      initialUsers.forEach(u => {
+        batch.set(doc(db, 'userRoles', u.email), {
+          role: u.role,
+          name: u.name,
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      await batch.commit();
+      await fetchRoles();
+      alert('기본 임직원 권한 명단이 성공적으로 생성되었습니다!');
+    } catch (err) {
+      console.error('Initial seed error:', err);
+      alert('초기 명단 생성에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -329,8 +362,17 @@ export default function AdminRoles() {
         {loading ? (
           <div className="p-12 text-center text-slate-400 font-medium animate-pulse">데이터를 불러오는 중입니다...</div>
         ) : filteredRoles.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
-            {searchTerm ? `'${searchTerm}' 검색 결과가 없습니다.` : '등록된 권한 명단이 없습니다.'}
+          <div className="p-12 text-center text-slate-500 space-y-4">
+            <p className="text-sm font-medium">아직 등록된 임직원 명단 데이터가 없습니다.</p>
+            <p className="text-xs text-slate-400">상단 양식에서 신규 임직원을 직접 등록하시거나, 아래 버튼을 눌러 초기 명단을 자동 생성하세요.</p>
+            <button
+              type="button"
+              onClick={handleSeedInitialRoles}
+              disabled={saving}
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
+            >
+              ⚡ 대표님 및 주요 임직원 기본 명단 1초 자동 생성
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">

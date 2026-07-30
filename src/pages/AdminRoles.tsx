@@ -21,6 +21,15 @@ export default function AdminRoles() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
 
+  const FAKE_TEST_EMAILS = [
+    'ceo@bsbelleforet.com',
+    'fnb@bsbelleforet.com',
+    'leisure@bsbelleforet.com',
+    'planning@bsbelleforet.com',
+    'resort@bsbelleforet.com',
+    'sales@bsbelleforet.com'
+  ];
+
   const fetchRoles = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'userRoles'));
@@ -29,8 +38,10 @@ export default function AdminRoles() {
 
       querySnapshot.forEach((docSnap) => {
         const email = docSnap.id;
-        fetchedRoles.push({ email, role: docSnap.data().role, name: docSnap.data().name || '' });
-        emailSet.add(email.toLowerCase());
+        if (!FAKE_TEST_EMAILS.includes(email)) {
+          fetchedRoles.push({ email, role: docSnap.data().role, name: docSnap.data().name || '' });
+          emailSet.add(email.toLowerCase());
+        }
       });
 
       // Auto-discover accounts registered/logged-in via Firebase Authentication
@@ -38,7 +49,7 @@ export default function AdminRoles() {
         const logSnap = await getDocs(collection(db, 'loginLogs'));
         logSnap.forEach((docSnap) => {
           const email = docSnap.data().email;
-          if (email && email.includes('@') && !emailSet.has(email.toLowerCase())) {
+          if (email && email.includes('@') && !FAKE_TEST_EMAILS.includes(email) && !emailSet.has(email.toLowerCase())) {
             emailSet.add(email.toLowerCase());
             const nameFromEmail = email.split('@')[0];
             fetchedRoles.push({ email, role: 'guest', name: nameFromEmail });
@@ -248,34 +259,20 @@ export default function AdminRoles() {
     }
   };
 
-  const handleSeedInitialRoles = async () => {
+  const handlePurgeFakeAccounts = async () => {
+    if (!confirm('테스트용 가짜 샘플 계정(ceo@, fnb@, leisure@ 등)을 DB에서 완전히 삭제하시겠습니까?')) return;
     setSaving(true);
     try {
-      const initialUsers = [
-        { email: 'tjkim448532@gmail.com', name: '김태종 대표이사', role: 'admin' },
-        { email: 'ceo@bsbelleforet.com', name: '대표이사', role: 'executive' },
-        { email: 'resort@bsbelleforet.com', name: '리조트 본부장', role: 'resort' },
-        { email: 'leisure@bsbelleforet.com', name: '레저 본부장', role: 'leisure' },
-        { email: 'fnb@bsbelleforet.com', name: '식음 본부장', role: 'fnb' },
-        { email: 'sales@bsbelleforet.com', name: '세일즈 팀장', role: 'sales' },
-        { email: 'planning@bsbelleforet.com', name: '기획조정실장', role: 'management' }
-      ];
-
       const batch = writeBatch(db);
-      initialUsers.forEach(u => {
-        batch.set(doc(db, 'userRoles', u.email), {
-          role: u.role,
-          name: u.name,
-          updatedAt: new Date().toISOString()
-        });
+      FAKE_TEST_EMAILS.forEach(email => {
+        batch.delete(doc(db, 'userRoles', email));
       });
-
       await batch.commit();
       await fetchRoles();
-      alert('기본 임직원 권한 명단이 성공적으로 생성되었습니다!');
+      alert('테스트용 가짜 계정이 깔끔하게 모두 삭제되었습니다!');
     } catch (err) {
-      console.error('Initial seed error:', err);
-      alert('초기 명단 생성에 실패했습니다.');
+      console.error('Purge error:', err);
+      alert('삭제 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
     }
@@ -300,6 +297,14 @@ export default function AdminRoles() {
               title="Firebase Authentication에 가입되어 있거나 접속했던 실계정을 불러와 자동 추가합니다"
             >
               🔥 Firebase Auth 계정 동기화
+            </button>
+            <button
+              onClick={handlePurgeFakeAccounts}
+              disabled={saving}
+              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors whitespace-nowrap border border-rose-200"
+              title="테스트용 가짜 예시 계정을 모두 정리합니다"
+            >
+              🗑️ 테스트 계정 정리
             </button>
             <input 
               type="text" 
@@ -426,11 +431,11 @@ export default function AdminRoles() {
             <p className="text-xs text-slate-400">상단 양식에서 신규 임직원을 직접 등록하시거나, 아래 버튼을 눌러 초기 명단을 자동 생성하세요.</p>
             <button
               type="button"
-              onClick={handleSeedInitialRoles}
+              onClick={handleSyncAuthUsers}
               disabled={saving}
               className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
             >
-              ⚡ 대표님 및 주요 임직원 기본 명단 1초 자동 생성
+              🔥 Firebase Auth 가입 계정 자동 가져오기
             </button>
           </div>
         ) : (

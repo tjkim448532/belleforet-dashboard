@@ -25,9 +25,29 @@ export default function AdminRoles() {
     try {
       const querySnapshot = await getDocs(collection(db, 'userRoles'));
       const fetchedRoles: UserRole[] = [];
-      querySnapshot.forEach((doc) => {
-        fetchedRoles.push({ email: doc.id, role: doc.data().role, name: doc.data().name || '' });
+      const emailSet = new Set<string>();
+
+      querySnapshot.forEach((docSnap) => {
+        const email = docSnap.id;
+        fetchedRoles.push({ email, role: docSnap.data().role, name: docSnap.data().name || '' });
+        emailSet.add(email.toLowerCase());
       });
+
+      // Auto-discover accounts registered/logged-in via Firebase Authentication
+      try {
+        const logSnap = await getDocs(collection(db, 'loginLogs'));
+        logSnap.forEach((docSnap) => {
+          const email = docSnap.data().email;
+          if (email && email.includes('@') && !emailSet.has(email.toLowerCase())) {
+            emailSet.add(email.toLowerCase());
+            const nameFromEmail = email.split('@')[0];
+            fetchedRoles.push({ email, role: 'guest', name: nameFromEmail });
+          }
+        });
+      } catch (e) {
+        console.warn('Could not fetch loginLogs for auto-discovery:', e);
+      }
+
       setRoles(fetchedRoles);
     } catch (error) {
       console.error('Failed to fetch roles:', error);
@@ -197,6 +217,37 @@ export default function AdminRoles() {
     );
   }, [roles, searchTerm]);
 
+  const handleSyncAuthUsers = async () => {
+    setSaving(true);
+    try {
+      const logSnap = await getDocs(collection(db, 'loginLogs'));
+      const batch = writeBatch(db);
+      let count = 0;
+
+      logSnap.forEach((docSnap) => {
+        const email = docSnap.data().email;
+        if (email && email.includes('@')) {
+          const nameFromEmail = email.split('@')[0];
+          batch.set(doc(db, 'userRoles', email), {
+            role: 'guest',
+            name: nameFromEmail,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          count++;
+        }
+      });
+
+      await batch.commit();
+      await fetchRoles();
+      alert(`Firebase Authentication 실제 가입/접속 계정(${count}건)이 동기화되었습니다!`);
+    } catch (err) {
+      console.error('Auth sync error:', err);
+      alert('동기화 중 오류가 발생했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSeedInitialRoles = async () => {
     setSaving(true);
     try {
@@ -242,19 +293,27 @@ export default function AdminRoles() {
         </div>
         <div className="flex flex-col gap-1 w-full max-w-lg">
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleSyncAuthUsers}
+              disabled={saving}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap shadow-xs flex items-center gap-1.5"
+              title="Firebase Authentication에 가입되어 있거나 접속했던 실계정을 불러와 자동 추가합니다"
+            >
+              🔥 Firebase Auth 계정 동기화
+            </button>
             <input 
               type="text" 
-              placeholder="구글 시트 공유 링크를 입력하세요 (예: https://docs.google.com/spreadsheets/d/...)" 
+              placeholder="구글 시트 공유 링크 (옵션)..." 
               value={sheetUrl}
               onChange={(e) => setSheetUrl(e.target.value)}
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
             />
             <button
               onClick={handleBulkImport}
               disabled={importing || !sheetUrl}
-              className="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs"
+              className="px-3.5 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs"
             >
-              {importing ? '전송 중...' : '시트 내용 일괄 동기화'}
+              {importing ? '전송 중...' : '시트 동기화'}
             </button>
           </div>
           <span className="text-[11px] text-slate-500 flex items-center gap-1 pl-1">

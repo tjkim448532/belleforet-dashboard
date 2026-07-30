@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Save, Trash2, Plus, Users, ShieldAlert } from 'lucide-react';
@@ -18,6 +18,8 @@ export default function AdminRoles() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [sheetUrl, setSheetUrl] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
 
   const fetchRoles = async () => {
     try {
@@ -172,19 +174,38 @@ export default function AdminRoles() {
     } catch (error) {
       console.error('Bulk import error:', error);
       alert('일괄 등록에 실패했습니다. 링크 또는 방화벽 차단 문제를 확인해주세요.');
+    } finally {
       setImporting(false);
     }
   };
 
+  const handleSelectUserForEdit = (user: UserRole) => {
+    setNewName(user.name || '');
+    setNewEmail(user.email);
+    setNewRole(user.role);
+    setEditingEmail(user.email);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const filteredRoles = useMemo(() => {
+    if (!searchTerm.trim()) return roles;
+    const term = searchTerm.toLowerCase();
+    return roles.filter(r => 
+      (r.name && r.name.toLowerCase().includes(term)) || 
+      (r.email && r.email.toLowerCase().includes(term)) ||
+      (r.role && r.role.toLowerCase().includes(term))
+    );
+  }, [roles, searchTerm]);
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-2xl font-medium text-slate-800 flex items-center gap-2">
             <Users className="text-brand-mint" />
-            임직원 권한 관리
+            임직원 대시보드 권한 관리
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">Firebase 계정에 가입된 이메일 주소별로 대시보드 접근 권한을 설정합니다.</p>
+          <p className="text-slate-500 mt-1 text-sm">등록된 임직원 목록에서 권한을 직접 수정하거나, 신규 임직원을 등록합니다.</p>
         </div>
         <div className="flex flex-col gap-1 w-full max-w-lg">
           <div className="flex items-center gap-2">
@@ -209,15 +230,26 @@ export default function AdminRoles() {
         </div>
       </div>
 
-      {/* Add or Update Role */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
-          <Plus size={20} className="text-slate-400" />
-          임직원 권한 부여 및 수정
+      {/* Add or Update Role Form */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <h2 className="text-lg font-medium text-slate-800 mb-4 flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Plus size={20} className="text-emerald-500" />
+            {editingEmail ? `임직원 정보/권한 수정 (${editingEmail})` : '임직원 신규 권한 등록 및 수정'}
+          </span>
+          {editingEmail && (
+            <button 
+              type="button" 
+              onClick={() => { setEditingEmail(null); setNewName(''); setNewEmail(''); setNewRole('guest'); }}
+              className="text-xs text-slate-400 hover:text-slate-600 underline font-medium"
+            >
+              신규 등록 모드로 전환
+            </button>
+          )}
         </h2>
-        <form onSubmit={handleAddOrUpdateRole} className="flex gap-4 items-end">
-          <div className="flex-1 max-w-[200px]">
-            <label className="block text-sm font-medium text-slate-600 mb-1">이름</label>
+        <form onSubmit={handleAddOrUpdateRole} className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="w-full md:w-48">
+            <label className="block text-sm font-medium text-slate-600 mb-1">임직원 이름</label>
             <input
               type="text"
               value={newName}
@@ -227,8 +259,8 @@ export default function AdminRoles() {
               required
             />
           </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-600 mb-1">회사 이메일 주소</label>
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium text-slate-600 mb-1">회사 이메일 계정</label>
             <input
               type="email"
               value={newEmail}
@@ -238,77 +270,93 @@ export default function AdminRoles() {
               required
             />
           </div>
-          <div className="w-48">
-            <label className="block text-sm font-medium text-slate-600 mb-1">권한(본부) 선택</label>
+          <div className="w-full md:w-56">
+            <label className="block text-sm font-medium text-slate-600 mb-1">부여할 대시보드 권한 (역할)</label>
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50 bg-white"
             >
-              <option value="guest">게스트 (조회 제한)</option>
-              <option value="leisure">레져본부 (모토아레나 포함)</option>
-              <option value="resort">리조트사업본부</option>
-              <option value="sales">세일즈본부</option>
-              <option value="fnb">식음본부</option>
-              <option value="management">경영지원실 / 지원본부</option>
-              <option value="content">콘텐츠기획실</option>
-              <option value="executive">임원 (모든 대시보드 조회)</option>
-              <option value="admin">슈퍼 관리자 (시스템 제어 권한 포함)</option>
+              <option value="admin">👑 슈퍼 관리자 (전체 제어)</option>
+              <option value="executive">⭐ CEO / 임원 (전사 대시보드)</option>
+              <option value="resort">🏨 리조트사업본부</option>
+              <option value="leisure">🎢 레져본부 (모토아레나 포함)</option>
+              <option value="sales">💼 세일즈본부</option>
+              <option value="fnb">🍽️ 식음본부</option>
+              <option value="management">📋 경영지원실 / 지원본부</option>
+              <option value="content">🎨 콘텐츠기획실</option>
+              <option value="guest">👤 게스트 (조회 제한)</option>
             </select>
           </div>
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-brand-mint text-white font-medium rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="w-full md:w-auto px-6 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
           >
             <Save size={18} />
-            {saving ? '저장 중...' : '저장하기'}
+            {saving ? '저장 중...' : editingEmail ? '수정 내용 저장' : '권한 등록/저장'}
           </button>
         </form>
         <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 flex items-start gap-3">
           <ShieldAlert className="text-amber-500 shrink-0 mt-0.5" size={18} />
-          <div className="text-sm text-amber-800">
-            <strong>주의사항:</strong> 권한을 부여하기 전, 대상자가 반드시 <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="underline font-medium text-amber-900">Firebase 콘솔 (Authentication)</a>에 가입(등록)되어 있어야 실제로 로그인이 가능합니다. 이 화면은 등록된 사용자가 어떤 메뉴를 볼 수 있는지만 결정합니다.
+          <div className="text-xs text-amber-800">
+            <strong>권한 안내:</strong> 하단 <strong>등록된 사용자 리스트</strong>에서 드롭다운을 직접 바꾸시면 1초 만에 즉시 수정됩니다.
           </div>
         </div>
       </div>
 
-      {/* Role List */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <h2 className="text-lg font-medium text-slate-800">등록된 권한 목록</h2>
-          <div className="text-sm text-slate-500">총 {roles.length}명</div>
+      {/* Role List with Search */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50">
+          <div>
+            <h2 className="text-lg font-medium text-slate-800">전체 등록 임직원 명단 및 권한 리스트</h2>
+            <p className="text-xs text-slate-400 mt-0.5">등록된 사용자의 권한을 아래 테이블에서 바로 변경하거나 수정 버튼을 눌러 관리하세요.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <input 
+              type="text"
+              placeholder="이름, 이메일, 권한 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3.5 py-1.5 border border-slate-300 rounded-xl text-xs outline-none focus:border-emerald-500 w-56"
+            />
+            <span className="text-xs font-bold text-slate-600 bg-slate-200 px-3 py-1.5 rounded-xl whitespace-nowrap">
+              총 {filteredRoles.length}명 / {roles.length}명
+            </span>
+          </div>
         </div>
         
         {loading ? (
-          <div className="p-8 text-center text-slate-500">데이터를 불러오는 중입니다...</div>
-        ) : roles.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">등록된 권한이 없습니다.</div>
+          <div className="p-12 text-center text-slate-400 font-medium animate-pulse">데이터를 불러오는 중입니다...</div>
+        ) : filteredRoles.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">
+            {searchTerm ? `'${searchTerm}' 검색 결과가 없습니다.` : '등록된 권한 명단이 없습니다.'}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                  <th className="px-6 py-3 font-semibold">이름</th>
-                  <th className="px-6 py-3 font-semibold">이메일 계정</th>
-                  <th className="px-6 py-3 font-semibold">부여된 권한 (역할)</th>
-                  <th className="px-6 py-3 font-semibold text-right">관리</th>
+                <tr className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 font-semibold">임직원 성명</th>
+                  <th className="px-6 py-3.5 font-semibold">회사 이메일 계정</th>
+                  <th className="px-6 py-3.5 font-semibold">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
+                  <th className="px-6 py-3.5 font-semibold text-right">수정 / 삭제</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {roles.map((roleObj) => (
-                  <tr key={roleObj.email} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-800 font-medium">{roleObj.name || '-'}</td>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {filteredRoles.map((roleObj: UserRole) => (
+                  <tr key={roleObj.email} className={`hover:bg-slate-50 transition-colors ${editingEmail === roleObj.email ? 'bg-emerald-50/60' : ''}`}>
+                    <td className="px-6 py-4 text-slate-800 font-semibold">{roleObj.name || '-'}</td>
                     <td className="px-6 py-4 text-slate-600 font-medium">{roleObj.email}</td>
                     <td className="px-6 py-4">
                       <select
                         value={roleObj.role}
                         onChange={(e) => handleInlineRoleChange(roleObj.email, e.target.value)}
-                        className={`inline-block px-3 py-1.5 rounded-lg text-sm font-medium border-0 cursor-pointer focus:ring-2 focus:ring-brand-mint/50 outline-none
+                        className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold border-0 cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs
                           ${roleObj.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                            roleObj.role === 'executive' ? 'bg-yellow-100 text-yellow-800' :
+                            roleObj.role === 'executive' ? 'bg-amber-100 text-amber-800' :
                             roleObj.role === 'leisure' ? 'bg-blue-100 text-blue-800' :
-                            roleObj.role === 'resort' ? 'bg-green-100 text-green-800' :
+                            roleObj.role === 'resort' ? 'bg-emerald-100 text-emerald-800' :
                             roleObj.role === 'sales' ? 'bg-orange-100 text-orange-800' :
                             roleObj.role === 'fnb' ? 'bg-amber-100 text-amber-800' :
                             roleObj.role === 'management' ? 'bg-indigo-100 text-indigo-800' :
@@ -316,25 +364,32 @@ export default function AdminRoles() {
                             'bg-slate-100 text-slate-800'}
                         `}
                       >
-                        <option value="admin">👑 슈퍼 관리자</option>
-                        <option value="executive">⭐ 임원</option>
-                        <option value="leisure">🎢 레져본부</option>
+                        <option value="admin">👑 슈퍼 관리자 (전체 제어)</option>
+                        <option value="executive">⭐ CEO / 임원 (전사 대시보드)</option>
                         <option value="resort">🏨 리조트사업본부</option>
+                        <option value="leisure">🎢 레져본부 (모토아레나 포함)</option>
                         <option value="sales">💼 세일즈본부</option>
                         <option value="fnb">🍽️ 식음본부</option>
-                        <option value="management">📋 경영지원실</option>
+                        <option value="management">📋 경영지원실 / 지원본부</option>
                         <option value="content">🎨 콘텐츠기획실</option>
-                        <option value="guest">👤 게스트</option>
+                        <option value="guest">👤 게스트 (조회 제한)</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
+                          onClick={() => handleSelectUserForEdit(roleObj)}
+                          className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-800 font-semibold rounded-lg transition-colors flex items-center gap-1"
+                          title="상단 양식에서 수정"
+                        >
+                          ✎ 수정
+                        </button>
+                        <button
                           onClick={() => handleDeleteRole(roleObj.email)}
-                          className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                          className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                           title="권한 삭제"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>

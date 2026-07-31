@@ -5,7 +5,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { 
   Building2, TrendingUp, Sparkles, 
   Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
-  Activity, Grid, HelpCircle
+  Activity, Grid, HelpCircle, CreditCard
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -399,7 +399,7 @@ export default function SynergyCorrelation() {
             </p>
 
             {/* Navigation Sub-Tabs Bar */}
-            <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10 flex-wrap">
               <NavLink 
                 to="/synergy" 
                 end
@@ -415,6 +415,15 @@ export default function SynergyCorrelation() {
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30"
               >
                 <Activity size={14} /> 2. 영업장별 연계 상관관계 분석
+              </NavLink>
+
+              <NavLink 
+                to="/synergy/bundles" 
+                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  isActive ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                <CreditCard size={14} /> 3. 💳 카드결제 추적 고객 묶음(Bundle) 분석 [NEW]
               </NavLink>
             </div>
           </div>

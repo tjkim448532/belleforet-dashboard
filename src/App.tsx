@@ -27,23 +27,31 @@ import { DataSyncStatus } from './pages/DataSyncStatus';
 import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
+import SynergyBundles from './pages/SynergyBundles';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
   const isSessionAuth = sessionStorage.getItem('auth') === 'true';
   
   if (!authReady) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 text-slate-500">잠시만 기다려주세요...</div>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium text-slate-400">인증 확인 중...</p>
+        </div>
+      </div>
+    );
   }
 
-  // React 상태 업데이트 지연(Race condition)으로 인해 방금 로그인했는데도 다시 튕기는 현상 방지
   if (!isAuthenticated && !isSessionAuth) {
     return <Navigate to="/login" replace />;
   }
+
   return <>{children}</>;
 };
 
-function App() {
+export function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
@@ -67,6 +75,8 @@ function App() {
                     <Route path="synergy" element={<Synergy />} />
                     <Route path="synergy/correlation" element={<SynergyCorrelation />} />
                     <Route path="synergy-correlation" element={<SynergyCorrelation />} />
+                    <Route path="synergy/bundles" element={<SynergyBundles />} />
+                    <Route path="synergy-bundles" element={<SynergyBundles />} />
                   </Route>
 
                   <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

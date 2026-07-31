@@ -171,6 +171,18 @@ export default function Layout() {
                 >
                   영업장별 연계 상관관계
                 </NavLink>
+
+                <NavLink
+                  to="/synergy/bundles"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={() => { 
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                  }}
+                >
+                  💳 카드 추적 묶음(Bundle) 동선
+                </NavLink>
               </div>
             )}
           </div>

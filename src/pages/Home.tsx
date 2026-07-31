@@ -148,7 +148,20 @@ export default function Home() {
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
   const totalRoomCap = coreData.core?.summary?.totalRoomCap || displayData.kpiMetrics?.raw?.totalRoomCap || 0;
-  const multiNight = coreData.core?.summary?.multiNight || null;
+  const multiNight = (() => {
+    const s = coreData.core?.summary || {};
+    if (s.multiNight) return s.multiNight;
+    if (s.multiNightGuests !== undefined || s.multiNightRatio !== undefined) {
+      return {
+        multiNightRooms: s.multiNightRooms,
+        multiNightGuests: s.multiNightGuests,
+        multiNightRatio: s.multiNightRatio,
+        guestsGrowth: s.guestsGrowth,
+        ratioDiff: s.ratioDiff,
+      };
+    }
+    return null;
+  })();
 
   // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {

@@ -134,6 +134,15 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
               todayLyRevenue: todayLyRev > 0 ? todayLyRev : (validDay.summary?.todayLyRevenue || 0),
               totalGolfTeams: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfTeams || 0), 0),
               totalGolfVisitors: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfVisitors || 0), 0),
+              multiNightRooms: dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightRooms || 0), 0),
+              multiNightGuests: dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuests || 0), 0),
+              multiNightGuestsLy: dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuestsLy || 0), 0),
+              multiNightRatio: (totalVisitors > 0) ? (dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuests || 0), 0) / totalVisitors) * 100 : 0,
+              guestsGrowth: (() => {
+                const g = dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuests || 0), 0);
+                const gLy = dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuestsLy || 0), 0);
+                return gLy > 0 ? ((g - gLy) / gLy) * 100 : 0;
+              })(),
             },
             salesByCategory: salesByCategory.length > 0 ? salesByCategory : (validDay.salesByCategory || []),
             salesByFacility: validDay.salesByFacility || [],

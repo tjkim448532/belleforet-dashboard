@@ -331,7 +331,7 @@ export default function Home() {
                     </div>
                     {multiNight.guestsGrowth !== undefined && (
                       <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        <span className="text-slate-500 font-normal">전년 동요일 대비</span>
+                        <span className="text-slate-500 font-normal">{isRangeMode ? '전년 동기 대비' : '전년 동요일 대비'}</span>
                         <span>{multiNight.guestsGrowth >= 0 ? '▲' : '▼'}{Math.abs(multiNight.guestsGrowth).toFixed(1)}%</span>
                       </div>
                     )}

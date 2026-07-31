@@ -4,7 +4,7 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { secureFetcher } from '../lib/secureFetcher';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';

@@ -323,15 +323,16 @@ export default function Home() {
                 </div>
                 
                 {multiNight && (
-                  <div className="mb-3 relative z-10 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100/90 flex items-center justify-between text-xs shadow-xs">
+                  <div className="mb-3 relative z-10 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100/90 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-xs">
                     <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                       <span className="bg-brand-mint text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">연박(2박+)</span>
                       <span className="font-bold text-slate-800">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
-                      <span className="text-slate-500">({(multiNight.multiNightRatio || 0).toFixed(1)}%)</span>
+                      <span className="text-slate-500 text-[11px]">(전체 대비 <strong className="text-slate-700 font-semibold">{(multiNight.multiNightRatio || 0).toFixed(1)}%</strong>)</span>
                     </div>
                     {multiNight.guestsGrowth !== undefined && (
-                      <div className={`font-bold text-[11px] flex items-center gap-0.5 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        <span>전년동요일 {multiNight.guestsGrowth >= 0 ? '▲' : '▼'}{Math.abs(multiNight.guestsGrowth).toFixed(1)}%</span>
+                      <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        <span className="text-slate-500 font-normal">전년 동요일 대비</span>
+                        <span>{multiNight.guestsGrowth >= 0 ? '▲' : '▼'}{Math.abs(multiNight.guestsGrowth).toFixed(1)}%</span>
                       </div>
                     )}
                   </div>

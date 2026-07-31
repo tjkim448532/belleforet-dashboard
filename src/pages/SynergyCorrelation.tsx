@@ -5,7 +5,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { 
   Building2, TrendingUp, Sparkles, 
   Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
-  Activity, Grid
+  Activity, Grid, HelpCircle
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -551,6 +551,63 @@ export default function SynergyCorrelation() {
             {formatCurrency(totalRoomsSold > 0 ? Math.round(totalFnbSynergy / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
           </div>
           <p className="text-xs text-slate-400 font-medium">판매 1실당 F&B 식음 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
+        </div>
+      </div>
+
+      {/* 💡 상관관계 지표 정의 및 분석 가이드 (Info Guide Banner) */}
+      <div className="bg-slate-900 text-white rounded-[28px] p-6 lg:p-7 shadow-xl mb-8 relative overflow-hidden">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+          <h3 className="font-semibold text-lg flex items-center gap-2 text-indigo-300">
+            <HelpCircle size={20} /> 💡 객실-영업장 상관관계 및 시너지 분석 지표 가이드
+          </h3>
+          <span className="text-xs font-semibold px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
+            통계 분석 표준 명세 (V5 SSOT)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
+            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-purple-300">
+              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              1. 시계열 피어슨 상관계수 (r)
+            </div>
+            <p className="leading-relaxed text-slate-300">
+              객실 투숙객 변화($X$)와 영업장 매출 변화($Y$)가 **얼마나 동반 상승/하강하는지** 변동성을 측정하는 지표입니다. ($-1.00 \sim +1.00$)
+            </p>
+            <div className="pt-2 text-[11px] space-y-1 text-slate-400 border-t border-white/10">
+              <div className="flex justify-between"><span className="text-purple-300 font-semibold">r ≥ +0.70</span> <span>강력한 시너지 (동반 급증)</span></div>
+              <div className="flex justify-between"><span className="text-indigo-300 font-semibold">+0.30 ≤ r &lt; +0.70</span> <span>중립적 시너지</span></div>
+              <div className="flex justify-between"><span className="text-slate-400 font-semibold">r &lt; +0.30</span> <span>독립 영업장 (투숙 무관)</span></div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
+            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              2. 향상도 지수 (Lift Value, 배수)
+            </div>
+            <p className="leading-relaxed text-slate-300">
+              일반 방문객 대비 **객실 투숙객이 해당 영업장을 추가 선택할 확률적 시너지 배수**입니다.
+            </p>
+            <div className="pt-2 text-[11px] space-y-1 text-slate-400 border-t border-white/10">
+              <div><strong className="text-emerald-300">Lift &gt; 1.0배</strong>: 투숙객 이용 확률이 비투숙객보다 높음</div>
+              <div><strong className="text-emerald-300">예: Lift 2.35x</strong>: 투숙객이 해당 영업장을 이용할 확률이 <span className="text-white font-semibold">2.35배 높음</span></div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
+            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-amber-300">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              3. 양방향 파급률 (Spillover Rate, %)
+            </div>
+            <p className="leading-relaxed text-slate-300">
+              객실과 영업장 간의 **상호 유입 비율**을 양방향으로 정밀 측정합니다.
+            </p>
+            <div className="pt-2 text-[11px] space-y-1 text-slate-400 border-t border-white/10">
+              <div><strong className="text-amber-300">순방향 (Forward)</strong>: 전체 객실 투숙객 중 영업장으로 유입된 비중(%)</div>
+              <div><strong className="text-amber-300">역방향 (Reverse)</strong>: 영업장 이용객 중 객실 투숙으로 이어진 비율(%)</div>
+            </div>
+          </div>
         </div>
       </div>
 

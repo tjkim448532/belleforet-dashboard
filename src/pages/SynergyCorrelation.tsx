@@ -22,6 +22,11 @@ interface StoreCorrelationItem {
   correlatedVisitors: number;
   correlatedGuests?: number;
   spilloverRate: number;
+  forwardSpillover?: number;
+  reverseSpillover?: number;
+  correlationCoefficient?: number;
+  liftValue?: number;
+  interactionGrade?: string;
   revPasContribution?: number;
 }
 
@@ -82,29 +87,47 @@ export default function SynergyCorrelation() {
       const chRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const chPayload = chRes?.data ?? chRes;
 
-      let corrList: any[] = [];
+      const processCorrItem = (item: any, defaultDiv: string, defaultRate: number): StoreCorrelationItem => {
+        const shopName = item.shopName || item.storeName || item.shop_name || '';
+        const spilloverRate = item.spilloverRate !== undefined 
+          ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) 
+          : defaultRate;
+        const forwardSpillover = item.forwardSpillover !== undefined 
+          ? (item.forwardSpillover <= 1 ? Number((item.forwardSpillover * 100).toFixed(1)) : Number(item.forwardSpillover.toFixed(1)))
+          : spilloverRate;
+        const reverseSpillover = item.reverseSpillover !== undefined 
+          ? (item.reverseSpillover <= 1 ? Number((item.reverseSpillover * 100).toFixed(1)) : Number(item.reverseSpillover.toFixed(1)))
+          : undefined;
+        const correlationCoefficient = item.correlationCoefficient !== undefined ? Number(Number(item.correlationCoefficient).toFixed(2)) : undefined;
+        const liftValue = item.liftValue !== undefined ? Number(Number(item.liftValue).toFixed(2)) : undefined;
+        const interactionGrade = item.interactionGrade || (
+          correlationCoefficient !== undefined 
+            ? (correlationCoefficient >= 0.7 ? 'HIGH_SYNERGY' : correlationCoefficient >= 0.3 ? 'MODERATE_SYNERGY' : 'INDEPENDENT')
+            : undefined
+        );
+
+        return {
+          ...item,
+          divisionName: item.divisionName || (item.storeName === '모토아레나' ? '모토아레나' : defaultDiv),
+          shopName,
+          storeName: shopName,
+          correlatedSales: item.correlatedSales || 0,
+          correlatedVisitors: item.correlatedVisitors || item.correlatedGuests || 0,
+          spilloverRate,
+          forwardSpillover,
+          reverseSpillover,
+          correlationCoefficient,
+          liftValue,
+          interactionGrade,
+        };
+      };
+
+      let corrList: StoreCorrelationItem[] = [];
       if (Array.isArray(corrPayload)) {
-        corrList = corrPayload.map(item => ({
-          ...item,
-          shopName: item.shopName || item.storeName || item.shop_name || '',
-          storeName: item.storeName || item.shopName || item.shop_name || '',
-          spilloverRate: item.spilloverRate !== undefined ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) : 65
-        }));
+        corrList = corrPayload.map(item => processCorrItem(item, '레저본부', 65));
       } else if (corrPayload && typeof corrPayload === 'object') {
-        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => ({
-          ...item,
-          divisionName: item.divisionName || (item.storeName === '모토아레나' ? '모토아레나' : '레저본부'),
-          shopName: item.shopName || item.storeName || '',
-          storeName: item.storeName || item.shopName || '',
-          spilloverRate: item.spilloverRate !== undefined ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) : 65
-        }));
-        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => ({
-          ...item,
-          divisionName: item.divisionName || '식음팀',
-          shopName: item.shopName || item.storeName || '',
-          storeName: item.storeName || item.shopName || '',
-          spilloverRate: item.spilloverRate !== undefined ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) : 78
-        }));
+        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item, '레저본부', 65));
+        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item, '식음팀', 78));
         corrList = [...ticketList, ...fnbList];
       }
       setCorrelationData(corrList);
@@ -198,7 +221,18 @@ export default function SynergyCorrelation() {
       Number(r.todayActual || 0) > 0
     );
 
-    const map = new Map<string, { totalSales: number; correlatedSales: number; correlatedVisitors: number; spilloverRate: number; revPasContribution: number }>();
+    const map = new Map<string, { 
+      totalSales: number; 
+      correlatedSales: number; 
+      correlatedVisitors: number; 
+      spilloverRate: number; 
+      revPasContribution: number;
+      correlationCoefficient?: number;
+      liftValue?: number;
+      interactionGrade?: string;
+      forwardSpillover?: number;
+      reverseSpillover?: number;
+    }>();
 
     leisureRows.forEach(r => {
       const shop = r.shopName.trim();
@@ -210,7 +244,18 @@ export default function SynergyCorrelation() {
       });
       const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 65;
 
-      const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedVisitors: 0, spilloverRate: realSpillover, revPasContribution: 0 };
+      const curr = map.get(shop) || { 
+        totalSales: 0, 
+        correlatedSales: 0, 
+        correlatedVisitors: 0, 
+        spilloverRate: realSpillover, 
+        revPasContribution: 0,
+        correlationCoefficient: matchedCorr?.correlationCoefficient,
+        liftValue: matchedCorr?.liftValue,
+        interactionGrade: matchedCorr?.interactionGrade,
+        forwardSpillover: matchedCorr?.forwardSpillover,
+        reverseSpillover: matchedCorr?.reverseSpillover,
+      };
       curr.totalSales += sales;
       curr.correlatedSales += Math.round(sales * (realSpillover / 100));
       curr.spilloverRate = realSpillover;
@@ -237,7 +282,18 @@ export default function SynergyCorrelation() {
       Number(r.todayActual || 0) > 0
     );
 
-    const map = new Map<string, { totalSales: number; correlatedSales: number; correlatedGuests: number; spilloverRate: number; revPasContribution: number }>();
+    const map = new Map<string, { 
+      totalSales: number; 
+      correlatedSales: number; 
+      correlatedGuests: number; 
+      spilloverRate: number; 
+      revPasContribution: number;
+      correlationCoefficient?: number;
+      liftValue?: number;
+      interactionGrade?: string;
+      forwardSpillover?: number;
+      reverseSpillover?: number;
+    }>();
 
     fnbRows.forEach(r => {
       const shop = r.shopName.trim();
@@ -249,7 +305,18 @@ export default function SynergyCorrelation() {
       });
       const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 78;
 
-      const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedGuests: 0, spilloverRate: realSpillover, revPasContribution: 0 };
+      const curr = map.get(shop) || { 
+        totalSales: 0, 
+        correlatedSales: 0, 
+        correlatedGuests: 0, 
+        spilloverRate: realSpillover, 
+        revPasContribution: 0,
+        correlationCoefficient: matchedCorr?.correlationCoefficient,
+        liftValue: matchedCorr?.liftValue,
+        interactionGrade: matchedCorr?.interactionGrade,
+        forwardSpillover: matchedCorr?.forwardSpillover,
+        reverseSpillover: matchedCorr?.reverseSpillover,
+      };
       curr.totalSales += sales;
       curr.correlatedSales += Math.round(sales * (realSpillover / 100));
       curr.spilloverRate = realSpillover;
@@ -531,19 +598,47 @@ export default function SynergyCorrelation() {
                   <h3 className="font-semibold text-base flex items-center gap-2">
                     <Ticket size={18} /> {store.shopName}
                   </h3>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                    파급률 {store.spilloverRate}%
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {store.interactionGrade && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow-xs ${
+                        store.interactionGrade === 'HIGH_SYNERGY' ? 'bg-purple-600 text-white' :
+                        store.interactionGrade === 'MODERATE_SYNERGY' ? 'bg-indigo-500 text-white' : 'bg-slate-500 text-white'
+                      }`}>
+                        {store.interactionGrade === 'HIGH_SYNERGY' ? '강력 시너지' :
+                         store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
+                      </span>
+                    )}
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
+                      파급률 {store.spilloverRate}%
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2 text-xs">
+                  {store.correlationCoefficient !== undefined && (
+                    <div className="flex justify-between items-center p-2 rounded-xl bg-purple-50/80 border border-purple-200 text-purple-900">
+                      <span className="font-semibold">시계열 상관계수 (r)</span>
+                      <span className="font-extrabold text-purple-700">
+                        {store.correlationCoefficient >= 0 ? `+${store.correlationCoefficient}` : store.correlationCoefficient}
+                        {store.liftValue !== undefined && <span className="ml-1 text-slate-500 font-normal"> (Lift <strong>{store.liftValue}x</strong>)</span>}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center bg-white/60 p-2 rounded-xl">
                     <span className="text-slate-500 font-medium">영업장 총 매출</span>
                     <span className="font-bold text-slate-800">{formatCurrency(store.totalSales)}원</span>
                   </div>
 
                   <div className="flex justify-between items-center bg-purple-100/70 p-2 rounded-xl">
-                    <span className="text-purple-800 font-semibold">객실 연계 파급매출</span>
+                    <div>
+                      <span className="text-purple-800 font-semibold block">객실 연계 파급매출</span>
+                      {store.reverseSpillover !== undefined && (
+                        <span className="text-[10px] text-purple-600 font-medium">
+                          순방향 {store.forwardSpillover ?? store.spilloverRate}% | 역방향 {store.reverseSpillover}%
+                        </span>
+                      )}
+                    </div>
                     <span className="font-bold text-purple-900">{formatCurrency(store.correlatedSales)}원</span>
                   </div>
 
@@ -659,19 +754,47 @@ export default function SynergyCorrelation() {
                   <h3 className="font-semibold text-base flex items-center gap-2">
                     <Utensils size={18} /> {store.shopName}
                   </h3>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                    파급률 {store.spilloverRate}%
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {store.interactionGrade && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow-xs ${
+                        store.interactionGrade === 'HIGH_SYNERGY' ? 'bg-amber-600 text-white' :
+                        store.interactionGrade === 'MODERATE_SYNERGY' ? 'bg-indigo-500 text-white' : 'bg-slate-500 text-white'
+                      }`}>
+                        {store.interactionGrade === 'HIGH_SYNERGY' ? '강력 시너지' :
+                         store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
+                      </span>
+                    )}
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
+                      파급률 {store.spilloverRate}%
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2 text-xs">
+                  {store.correlationCoefficient !== undefined && (
+                    <div className="flex justify-between items-center p-2 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900">
+                      <span className="font-semibold">시계열 상관계수 (r)</span>
+                      <span className="font-extrabold text-amber-800">
+                        {store.correlationCoefficient >= 0 ? `+${store.correlationCoefficient}` : store.correlationCoefficient}
+                        {store.liftValue !== undefined && <span className="ml-1 text-slate-500 font-normal"> (Lift <strong>{store.liftValue}x</strong>)</span>}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center bg-white/60 p-2 rounded-xl">
                     <span className="text-slate-500 font-medium">영업장 총 매출</span>
                     <span className="font-bold text-slate-800">{formatCurrency(store.totalSales)}원</span>
                   </div>
 
                   <div className="flex justify-between items-center bg-amber-100/70 p-2 rounded-xl">
-                    <span className="text-amber-800 font-semibold">객실 연계 파급매출</span>
+                    <div>
+                      <span className="text-amber-800 font-semibold block">객실 연계 파급매출</span>
+                      {store.reverseSpillover !== undefined && (
+                        <span className="text-[10px] text-amber-700 font-medium">
+                          순방향 {store.forwardSpillover ?? store.spilloverRate}% | 역방향 {store.reverseSpillover}%
+                        </span>
+                      )}
+                    </div>
                     <span className="font-bold text-amber-900">{formatCurrency(store.correlatedSales)}원</span>
                   </div>
 

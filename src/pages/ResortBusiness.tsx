@@ -29,17 +29,27 @@ export default function ResortBusiness() {
           console.error('Error fetching master capacities from Firebase:', firebaseErr);
         }
 
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = endDate && startDate !== endDate
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
-        const json = await secureFetcher(`https://belleforet-data.vercel.app/api/v5/dashboard/revenue-summary?${queryParams}`);
-        let payload = json.data ?? json;
+          
+        const [summaryRes, channelRes, segmentRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => ({ data: [] }))
+        ]);
+
+        let payload = summaryRes.data ?? summaryRes;
         if (Array.isArray(payload)) {
           payload = payload[payload.length - 1] || payload[0] || {};
         }
         if (!payload) throw new Error("Invalid payload");
+        
         payload.startDate = startDate;
         payload.endDate = endDate;
+        payload.salesByChannel = channelRes.data ?? channelRes ?? [];
+        payload.salesBySegment = segmentRes.data ?? segmentRes ?? [];
         
         setData(transformResortData(payload, caps));
       } catch (err) {

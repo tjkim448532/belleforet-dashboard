@@ -148,6 +148,7 @@ export default function Home() {
   const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
 
   const totalRoomCap = coreData.core?.summary?.totalRoomCap || displayData.kpiMetrics?.raw?.totalRoomCap || 0;
+  const multiNight = coreData.core?.summary?.multiNight || null;
 
   // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {
@@ -308,6 +309,21 @@ export default function Home() {
                   <span className="text-lg font-medium text-slate-500">명</span>
                 </div>
                 
+                {multiNight && (
+                  <div className="mb-3 relative z-10 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100/90 flex items-center justify-between text-xs shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+                      <span className="bg-brand-mint text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">연박(2박+)</span>
+                      <span className="font-bold text-slate-800">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
+                      <span className="text-slate-500">({(multiNight.multiNightRatio || 0).toFixed(1)}%)</span>
+                    </div>
+                    {multiNight.guestsGrowth !== undefined && (
+                      <div className={`font-bold text-[11px] flex items-center gap-0.5 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        <span>전년동요일 {multiNight.guestsGrowth >= 0 ? '▲' : '▼'}{Math.abs(multiNight.guestsGrowth).toFixed(1)}%</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {/* Major Leisure Facilities Visitors Breakdown */}
                 <div className="mt-3 pt-3 border-t border-slate-100 relative z-10">
                   <div className="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
@@ -467,8 +483,7 @@ export default function Home() {
                 </h3>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-8">
                   <div className="w-full md:w-1/2 h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                    <PieChart width={300} height={300}>
                         <Pie
                           data={pieChartData}
                           cx="50%"
@@ -489,8 +504,7 @@ export default function Home() {
                         />
                         <Legend verticalAlign="bottom" height={36} />
                       </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                    </div>
                   <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
                     {pieChartData.map((item: any, index: number) => (
                       <div key={item.name} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">

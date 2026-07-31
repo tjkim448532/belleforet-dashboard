@@ -163,7 +163,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       const sold = Number(item.rooms_sold || item.roomsSold || 0);
       const rev = Number(item.revenue || 0);
       channelAdrData.push({
-        channel: item.channel_group || item.channelGroup || '기타',
+        channel: item.channelName || item.channel_name || item.channel_group || item.channelGroup || '기타',
         roomsSold: sold,
         totalRevenue: rev,
         adr: sold > 0 ? Math.round(rev / sold) : 0

@@ -31,7 +31,7 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
 
   let response;
   try {
@@ -42,7 +42,7 @@ export const secureFetcher = async (url: string, options: RequestInit = {}) => {
     });
   } catch (err: any) {
     if (err.name === 'AbortError') {
-      throw new Error('API 응답 시간이 초과되었습니다 (60초). 백엔드 서버 상태를 확인해주세요.');
+      throw new Error('API 응답 시간이 초과되었습니다 (120초). 백엔드 서버 상태를 확인해주세요.');
     }
     throw err;
   } finally {

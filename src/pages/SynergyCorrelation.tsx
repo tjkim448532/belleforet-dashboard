@@ -548,8 +548,8 @@ export default function SynergyCorrelation() {
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 이용객수: <strong>{store.correlatedVisitors.toLocaleString()}명</strong></span>
-                    <span className="text-indigo-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution)}원</span>
+                    <span>추정 연계 이용객수: <strong>{(store.correlatedVisitors || 0).toLocaleString()}명</strong></span>
+                    <span className="text-indigo-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution || 0)}원</span>
                   </div>
                 </div>
               </div>
@@ -586,7 +586,7 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-700 font-medium">
                       {item.channelName} <span className="text-xs text-slate-400 font-normal">({item.segmentName})</span>
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{item.correlatedVisitors.toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-purple-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-indigo-600">{item.spilloverRate}%</td>
                     <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
@@ -603,10 +603,10 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-600 font-medium">
                       V5 원천 영업장 (SSOT 연동)
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{item.correlatedVisitors.toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || 0).toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-purple-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-indigo-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution)}원/실</td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
                   </tr>
                 ))
               )}
@@ -676,8 +676,8 @@ export default function SynergyCorrelation() {
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 고객수: <strong>{store.correlatedGuests.toLocaleString()}명</strong></span>
-                    <span className="text-emerald-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution)}원</span>
+                    <span>추정 연계 고객수: <strong>{(store.correlatedGuests || 0).toLocaleString()}명</strong></span>
+                    <span className="text-emerald-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution || 0)}원</span>
                   </div>
                 </div>
               </div>
@@ -714,7 +714,7 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-700 font-medium">
                       {item.channelName} <span className="text-xs text-slate-400 font-normal">({item.segmentName})</span>
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{item.correlatedVisitors.toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedGuests || item.correlatedVisitors || 0).toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
                     <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
@@ -731,10 +731,10 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-600 font-medium">
                       V5 원천 영업장 (SSOT 연동)
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{item.correlatedGuests.toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedGuests || 0).toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution)}원/실</td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
                   </tr>
                 ))
               )}

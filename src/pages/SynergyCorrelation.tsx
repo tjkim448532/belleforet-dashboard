@@ -13,14 +13,16 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
 
 interface StoreCorrelationItem {
-  divisionName: string;
+  divisionName?: string;
   shopName: string;
-  channelName: string;
-  segmentName: string;
+  storeName?: string;
+  channelName?: string;
+  segmentName?: string;
   correlatedSales: number;
   correlatedVisitors: number;
+  correlatedGuests?: number;
   spilloverRate: number;
-  revPasContribution: number;
+  revPasContribution?: number;
 }
 
 export default function SynergyCorrelation() {
@@ -66,8 +68,10 @@ export default function SynergyCorrelation() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
       
+      const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
+
       // 1. Fetch V5 Synergy Store Correlation API (API 8)
-      const corrRes = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${queryParams}`).catch(() => null);
+      const corrRes = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null);
       const corrPayload = corrRes?.data ?? corrRes;
 
       // 2. Fetch V5 Matrix Weekly (SSOT store sales)
@@ -78,9 +82,32 @@ export default function SynergyCorrelation() {
       const chRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const chPayload = chRes?.data ?? chRes;
 
+      let corrList: any[] = [];
       if (Array.isArray(corrPayload)) {
-        setCorrelationData(corrPayload);
+        corrList = corrPayload.map(item => ({
+          ...item,
+          shopName: item.shopName || item.storeName || item.shop_name || '',
+          storeName: item.storeName || item.shopName || item.shop_name || '',
+          spilloverRate: item.spilloverRate !== undefined ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) : 65
+        }));
+      } else if (corrPayload && typeof corrPayload === 'object') {
+        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => ({
+          ...item,
+          divisionName: item.divisionName || (item.storeName === '모토아레나' ? '모토아레나' : '레저본부'),
+          shopName: item.shopName || item.storeName || '',
+          storeName: item.storeName || item.shopName || '',
+          spilloverRate: item.spilloverRate !== undefined ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) : 65
+        }));
+        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => ({
+          ...item,
+          divisionName: item.divisionName || '식음팀',
+          shopName: item.shopName || item.storeName || '',
+          storeName: item.storeName || item.shopName || '',
+          spilloverRate: item.spilloverRate !== undefined ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) : 78
+        }));
+        corrList = [...ticketList, ...fnbList];
       }
+      setCorrelationData(corrList);
 
       if (Array.isArray(matrixPayload)) {
         setMatrixData(matrixPayload);
@@ -177,8 +204,11 @@ export default function SynergyCorrelation() {
       const shop = r.shopName.trim();
       const sales = Number(r.todayActual || 0);
       
-      const matchedCorr = correlationData.find(c => c.shopName === shop);
-      const realSpillover = matchedCorr?.spilloverRate ? matchedCorr.spilloverRate : 65;
+      const matchedCorr = correlationData.find(c => {
+        const cName = (c.shopName || c.storeName || '').trim();
+        return cName === shop || shop.includes(cName) || cName.includes(shop);
+      });
+      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 65;
 
       const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedVisitors: 0, spilloverRate: realSpillover, revPasContribution: 0 };
       curr.totalSales += sales;
@@ -213,8 +243,11 @@ export default function SynergyCorrelation() {
       const shop = r.shopName.trim();
       const sales = Number(r.todayActual || 0);
       
-      const matchedCorr = correlationData.find(c => c.shopName === shop);
-      const realSpillover = matchedCorr?.spilloverRate ? matchedCorr.spilloverRate : 78;
+      const matchedCorr = correlationData.find(c => {
+        const cName = (c.shopName || c.storeName || '').trim();
+        return cName === shop || shop.includes(cName) || cName.includes(shop);
+      });
+      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 78;
 
       const curr = map.get(shop) || { totalSales: 0, correlatedSales: 0, correlatedGuests: 0, spilloverRate: realSpillover, revPasContribution: 0 };
       curr.totalSales += sales;
@@ -556,7 +589,7 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-right font-medium text-slate-800">{item.correlatedVisitors.toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-purple-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-indigo-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution)}원/실</td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
                   </tr>
                 ))
               ) : (
@@ -684,7 +717,7 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-right font-medium text-slate-800">{item.correlatedVisitors.toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution)}원/실</td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
                   </tr>
                 ))
               ) : (

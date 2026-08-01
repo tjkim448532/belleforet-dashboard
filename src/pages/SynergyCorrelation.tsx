@@ -214,13 +214,13 @@ export default function SynergyCorrelation() {
   // Pure Dynamic SSOT Extraction for Leisure Stores from V5 Matrix Data
   const leisureStoreAnalysis = useMemo(() => {
     const leisureRows = matrixData.filter(r => 
-      r.categoryCode === 'TICKET' && 
+      (r.categoryCode === 'TICKET' || r.categoryCode === 'MOTO') && 
       !r.isSubtotal && 
       !r.isGrandTotal && 
       r.shopName && 
       r.shopName !== '소계' && 
       !r.shopName.includes('미사용 티켓') &&
-      Number(r.todayActual || 0) > 0
+      Number(isActualRange ? (r.ytdActual || r.todayActual || 0) : (r.todayActual || 0)) > 0
     );
 
     const map = new Map<string, { 
@@ -238,7 +238,7 @@ export default function SynergyCorrelation() {
 
     leisureRows.forEach(r => {
       const shop = r.shopName.trim();
-      const sales = Number(r.todayActual || 0);
+      const sales = Number(isActualRange ? (r.ytdActual || r.todayActual || 0) : (r.todayActual || 0));
       
       const matchedCorr = correlationData.find(c => {
         const cName = (c.shopName || c.storeName || '').trim();
@@ -271,7 +271,7 @@ export default function SynergyCorrelation() {
       ...val,
       color: 'border-purple-200 bg-purple-50/40 text-purple-900'
     })).sort((a, b) => b.totalSales - a.totalSales);
-  }, [matrixData, totalRoomsSold, correlationData]);
+  }, [matrixData, totalRoomsSold, correlationData, isActualRange]);
 
   // Pure Dynamic SSOT Extraction for F&B Stores from V5 Matrix Data
   const fnbStoreAnalysis = useMemo(() => {
@@ -281,7 +281,7 @@ export default function SynergyCorrelation() {
       !r.isGrandTotal && 
       r.shopName && 
       r.shopName !== '소계' &&
-      Number(r.todayActual || 0) > 0
+      Number(isActualRange ? (r.ytdActual || r.todayActual || 0) : (r.todayActual || 0)) > 0
     );
 
     const map = new Map<string, { 
@@ -299,7 +299,7 @@ export default function SynergyCorrelation() {
 
     fnbRows.forEach(r => {
       const shop = r.shopName.trim();
-      const sales = Number(r.todayActual || 0);
+      const sales = Number(isActualRange ? (r.ytdActual || r.todayActual || 0) : (r.todayActual || 0));
       
       const matchedCorr = correlationData.find(c => {
         const cName = (c.shopName || c.storeName || '').trim();

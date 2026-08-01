@@ -37,9 +37,9 @@ export const transformHomeData = (core: CoreDataState) => {
     totalRoomRev = c.roomSummaryByType.reduce((sum: number, item: any) => sum + Number(item.revenue || 0), 0);
   }
   
-  const totalResortRevGross = c.summary?.totalRevenue || 0;
-  const totalRoomsSold = c.summary?.totalRooms || 0;
-  const totalVisitors = c.summary?.totalVisitors || 0;
+  const totalResortRevGross = Number(c.summary?.totalRevenue ?? c.totalRevenue ?? 0);
+  const totalRoomsSold = Number(c.summary?.totalRooms ?? c.totalRooms ?? 0);
+  const totalVisitors = Number(c.summary?.totalVisitors ?? c.totalVisitors ?? 0);
   
   const isRange = Boolean(c.isRangeQuery || (c.startDate && c.endDate && c.startDate !== c.endDate));
   const days = isRange ? Math.max(1, c.resortSummary?.days || c.days || (Array.isArray(c.dailyTrends) ? c.dailyTrends.length : 1)) : 1;
@@ -66,18 +66,18 @@ export const transformHomeData = (core: CoreDataState) => {
     date: c.date || '',
     kpiMetrics: kpiMetrics,
     ytd: { 
-      actual: c.summary?.ytdActual || c.summary?.ytdRevenue || c.summary?.ytd_revenue || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0, 
-      ly_actual: c.summary?.ytdLy || c.summary?.ytdLyRevenue || c.summary?.ytd_ly_revenue || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
-      gross: c.summary?.ytdActual || c.summary?.ytdRevenue || c.summary?.ytd_revenue || c.ytd?.revenue || c.ytd?.actual || c.ytdActual || c.summary?.ytd_gross || 0,
-      ly_gross: c.summary?.ytdLy || c.summary?.ytdLyRevenue || c.summary?.ytd_ly_revenue || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0,
-      ly_day: c.summary?.ytdLy || c.summary?.ytdLyRevenue || c.summary?.ytd_ly_revenue || c.ytd?.lyRevenue || c.ytd?.lyActual || c.ytdLy || c.summary?.ly_ytd_gross || 0
+      actual: Number(c.summary?.ytdActual ?? c.summary?.ytdRevenue ?? c.summary?.ytd_revenue ?? c.ytd?.revenue ?? c.ytd?.actual ?? c.ytdActual ?? c.summary?.ytd_gross ?? 0), 
+      ly_actual: Number(c.summary?.ytdLy ?? c.summary?.ytdLyRevenue ?? c.summary?.ytd_ly_revenue ?? c.ytd?.lyRevenue ?? c.ytd?.lyActual ?? c.ytdLy ?? c.summary?.ly_ytd_gross ?? 0),
+      gross: Number(c.summary?.ytdActual ?? c.summary?.ytdRevenue ?? c.summary?.ytd_revenue ?? c.ytd?.revenue ?? c.ytd?.actual ?? c.ytdActual ?? c.summary?.ytd_gross ?? 0),
+      ly_gross: Number(c.summary?.ytdLy ?? c.summary?.ytdLyRevenue ?? c.summary?.ytd_ly_revenue ?? c.ytd?.lyRevenue ?? c.ytd?.lyActual ?? c.ytdLy ?? c.summary?.ly_ytd_gross ?? 0),
+      ly_day: Number(c.summary?.ytdLy ?? c.summary?.ytdLyRevenue ?? c.summary?.ytd_ly_revenue ?? c.ytd?.lyRevenue ?? c.ytd?.lyActual ?? c.ytdLy ?? c.summary?.ly_ytd_gross ?? 0)
     },
     today: { 
-      actual: c.summary?.totalRevenue || 0, 
-      ly_actual: c.summary?.todayLyRevenue || c.summary?.lyRevenue || 0,
-      gross: c.summary?.totalRevenue || 0,
-      ly_gross: c.summary?.todayLyRevenue || c.summary?.lyRevenue || 0,
-      ly_day: c.summary?.todayLyRevenue || c.summary?.lyRevenue || 0
+      actual: Number(c.summary?.totalRevenue ?? c.totalRevenue ?? 0), 
+      ly_actual: Number(c.summary?.todayLyRevenue ?? c.summary?.lyRevenue ?? 0),
+      gross: Number(c.summary?.totalRevenue ?? c.totalRevenue ?? 0),
+      ly_gross: Number(c.summary?.todayLyRevenue ?? c.summary?.lyRevenue ?? 0),
+      ly_day: Number(c.summary?.todayLyRevenue ?? c.summary?.lyRevenue ?? 0)
     },
     hq_today: hqToday,
     store_today: [] as { shop_name: string; actual: number; qty: number }[],

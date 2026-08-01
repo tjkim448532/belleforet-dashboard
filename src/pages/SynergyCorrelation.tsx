@@ -214,7 +214,7 @@ export default function SynergyCorrelation() {
   // Pure Dynamic SSOT Extraction for Leisure Stores from V5 Matrix Data
   const leisureStoreAnalysis = useMemo(() => {
     const leisureRows = matrixData.filter(r => 
-      (r.categoryCode === 'TICKET' || r.categoryCode === 'MOTO') && 
+      r.categoryCode === 'TICKET' && 
       !r.isSubtotal && 
       !r.isGrandTotal && 
       r.shopName && 

@@ -334,13 +334,13 @@ export default function SynergyCorrelation() {
     })).sort((a, b) => b.totalSales - a.totalSales);
   }, [matrixData, totalRoomsSold, correlationData]);
 
-  // Overall Division Summary KPIs
-  const totalLeisureSynergy = useMemo(() => {
-    return leisureStoreAnalysis.reduce((acc, cur) => acc + cur.correlatedSales, 0);
+  // Overall Division Summary KPIs (100% Total Revenue directly as requested)
+  const totalLeisureSales = useMemo(() => {
+    return leisureStoreAnalysis.reduce((acc, cur) => acc + cur.totalSales, 0);
   }, [leisureStoreAnalysis]);
 
-  const totalFnbSynergy = useMemo(() => {
-    return fnbStoreAnalysis.reduce((acc, cur) => acc + cur.correlatedSales, 0);
+  const totalFnbSales = useMemo(() => {
+    return fnbStoreAnalysis.reduce((acc, cur) => acc + cur.totalSales, 0);
   }, [fnbStoreAnalysis]);
 
   // Extract Leisure Items from API 8 or fallback
@@ -507,31 +507,31 @@ export default function SynergyCorrelation() {
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-purple-600" /> 레저본부 객실연계 매출
+              <Ticket className="w-5 h-5 text-purple-600" /> 레저본부 전체 매출
             </span>
             <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
-              LEISURE SYNERGY
+              LEISURE REVENUE
             </span>
           </div>
           <div className="text-3xl font-medium text-slate-900 mb-1">
-            {formatCurrency(totalLeisureSynergy)} <span className="text-lg text-slate-500 font-normal">원</span>
+            {formatCurrency(totalLeisureSales)} <span className="text-lg text-slate-500 font-normal">원</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">객실 투숙객이 레저 영업장에서 지출한 실적합계</p>
+          <p className="text-xs text-slate-400 font-medium">레저본부 관할 영업장 전체 실적합계 (100% 원천 매출)</p>
         </div>
 
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Utensils className="w-5 h-5 text-amber-600" /> 식음팀 객실연계 매출
+              <Utensils className="w-5 h-5 text-amber-600" /> 식음팀 전체 매출
             </span>
             <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-              F&B SYNERGY
+              F&B REVENUE
             </span>
           </div>
           <div className="text-3xl font-medium text-slate-900 mb-1">
-            {formatCurrency(totalFnbSynergy)} <span className="text-lg text-slate-500 font-normal">원</span>
+            {formatCurrency(totalFnbSales)} <span className="text-lg text-slate-500 font-normal">원</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">객실 투숙객이 F&B 식음 영업장에서 지출한 실적합계</p>
+          <p className="text-xs text-slate-400 font-medium">F&B 식음 영업장 전체 실적합계 (100% 원천 매출)</p>
         </div>
 
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
@@ -544,9 +544,9 @@ export default function SynergyCorrelation() {
             </span>
           </div>
           <div className="text-3xl font-medium text-indigo-600 mb-1">
-            {formatCurrency(totalRoomsSold > 0 ? Math.round(totalLeisureSynergy / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            {formatCurrency(totalRoomsSold > 0 ? Math.round(totalLeisureSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">판매 1실당 레저 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
+          <p className="text-xs text-slate-400 font-medium">판매 1실당 레저 영업장 평균 매출 기여액 (실측 100% 기준)</p>
         </div>
 
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
@@ -559,9 +559,9 @@ export default function SynergyCorrelation() {
             </span>
           </div>
           <div className="text-3xl font-medium text-emerald-600 mb-1">
-            {formatCurrency(totalRoomsSold > 0 ? Math.round(totalFnbSynergy / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            {formatCurrency(totalRoomsSold > 0 ? Math.round(totalFnbSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">판매 1실당 F&B 식음 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
+          <p className="text-xs text-slate-400 font-medium">판매 1실당 F&B 식음 영업장 평균 매출 기여액 (실측 100% 기준)</p>
         </div>
       </div>
 

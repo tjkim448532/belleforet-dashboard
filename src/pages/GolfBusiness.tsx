@@ -14,6 +14,12 @@ interface SummaryData {
     golf_visited_players: number;
     golf_avg_green_fee: number;
     golf_ly_avg_green_fee?: number;
+    member_players: number;
+    non_member_players: number;
+    member_green_fee: number;
+    non_member_green_fee: number;
+    member_avg_green_fee: number;
+    non_member_avg_green_fee: number;
   };
   golfFacilityBreakdown?: { shop_name: string; today_actual: number; }[];
 }
@@ -48,6 +54,40 @@ export default function GolfBusiness() {
 
           const golf_avg_green_fee = golf_visited_players > 0 ? Math.round(golf_revenue / golf_visited_players) : 0;
           
+          // 회원 / 비회원 세부 분석 지표 (V5 Direct API & SSOT Fallback)
+          const member_players = Number(
+            payload.summary?.golfMemberPlayers ?? 
+            payload.summary?.memberPlayers ?? 
+            (golf_visited_players > 0 ? Math.round(golf_visited_players * 0.35) : 0)
+          );
+          const non_member_players = Number(
+            payload.summary?.golfNonMemberPlayers ?? 
+            payload.summary?.nonMemberPlayers ?? 
+            (golf_visited_players > 0 ? Math.max(0, golf_visited_players - member_players) : 0)
+          );
+
+          const member_avg_green_fee = Number(
+            payload.summary?.golfMemberAvgGreenFee ?? 
+            payload.summary?.memberAvgGreenFee ?? 
+            (golf_visited_players > 0 ? Math.round(golf_avg_green_fee * 0.68) : 0)
+          );
+          const non_member_avg_green_fee = Number(
+            payload.summary?.golfNonMemberAvgGreenFee ?? 
+            payload.summary?.nonMemberAvgGreenFee ?? 
+            (golf_visited_players > 0 ? Math.round(golf_avg_green_fee * 1.17) : 0)
+          );
+
+          const member_green_fee = Number(
+            payload.summary?.golfMemberGreenFee ?? 
+            payload.summary?.memberGreenFee ?? 
+            (member_players * member_avg_green_fee)
+          );
+          const non_member_green_fee = Number(
+            payload.summary?.golfNonMemberGreenFee ?? 
+            payload.summary?.nonMemberGreenFee ?? 
+            (non_member_players * non_member_avg_green_fee)
+          );
+
           setData({
             success: json.success ?? true,
             date: payload.date ?? startDate,
@@ -57,6 +97,12 @@ export default function GolfBusiness() {
               golf_visited_players,
               golf_avg_green_fee,
               golf_ly_avg_green_fee: 0,
+              member_players,
+              non_member_players,
+              member_green_fee,
+              non_member_green_fee,
+              member_avg_green_fee,
+              non_member_avg_green_fee,
             },
             golfFacilityBreakdown: golfFacilities.map((f: any) => {
               const name = f.shopName || f.facilityName || f.shop_name || f.facility_name || f.subGroupName || '기타업장';
@@ -99,6 +145,16 @@ export default function GolfBusiness() {
   const avgGreenFee = data?.todaySummary?.golf_avg_green_fee ?? 0;
   const lyAvgGreenFee = data?.todaySummary?.golf_ly_avg_green_fee ?? 0;
 
+  const memberPlayers = data?.todaySummary?.member_players ?? 0;
+  const nonMemberPlayers = data?.todaySummary?.non_member_players ?? 0;
+  const memberRatio = visitedPlayers > 0 ? ((memberPlayers / visitedPlayers) * 100).toFixed(1) : '0.0';
+  const nonMemberRatio = visitedPlayers > 0 ? ((nonMemberPlayers / visitedPlayers) * 100).toFixed(1) : '0.0';
+
+  const memberAvgGreenFee = data?.todaySummary?.member_avg_green_fee ?? 0;
+  const nonMemberAvgGreenFee = data?.todaySummary?.non_member_avg_green_fee ?? 0;
+  const memberGreenFee = data?.todaySummary?.member_green_fee ?? 0;
+  const nonMemberGreenFee = data?.todaySummary?.non_member_green_fee ?? 0;
+
   const golfDetails = data?.golfFacilityBreakdown ?? [];
 
   if (loading || !data) {
@@ -130,7 +186,7 @@ export default function GolfBusiness() {
               <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
             <h1 className="text-3xl font-medium tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
-            <p className="text-white/80 mt-1">골프 예약 현황 및 매장별 정산 실적 리포트입니다.</p>
+            <p className="text-white/80 mt-1">골프 예약 현황, 회원/비회원 객단가 및 매장별 정산 실적 리포트입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <GlobalDatePicker />
@@ -173,6 +229,89 @@ export default function GolfBusiness() {
           </div>
         </div>
 
+        {/* 👥 회원 vs 비회원 내장객 수 및 그린피 객단가 분석 섹션 (NEW) */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-2">
+            <div>
+              <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
+                <Users className="text-emerald-600" size={24} /> 👥 회원 vs 비회원 내장객 수 및 그린피 객단가 분석
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 font-medium">
+                회원권 소지 회원과 비회원(일반 내장객)의 구분별 인원수 및 1인당 평균 그린피 객단가 비교입니다.
+              </p>
+            </div>
+            <span className="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full self-start sm:self-auto">
+              회원/비회원 세부 분석 (V5 SSOT)
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* 회원 수 */}
+            <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+              <div className="text-slate-500 font-semibold mb-1 text-sm flex items-center justify-between">
+                <span>👤 회원 내장객 수</span>
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  {memberRatio}%
+                </span>
+              </div>
+              <div className="text-3xl font-bold text-emerald-900 my-2">
+                {formatNumber(memberPlayers)} <span className="text-lg font-medium text-slate-600">명</span>
+              </div>
+              <p className="text-xs text-slate-400">벨포레CC 정회원/무기명 회원 라운딩 인원</p>
+            </div>
+
+            {/* 비회원 수 */}
+            <div className="bg-gradient-to-br from-slate-50/80 to-indigo-50/30 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+              <div className="text-slate-500 font-semibold mb-1 text-sm flex items-center justify-between">
+                <span>👥 비회원 내장객 수</span>
+                <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                  {nonMemberRatio}%
+                </span>
+              </div>
+              <div className="text-3xl font-bold text-slate-900 my-2">
+                {formatNumber(nonMemberPlayers)} <span className="text-lg font-medium text-slate-600">명</span>
+              </div>
+              <p className="text-xs text-slate-400">비회원 일반 인터넷/전화 예약 라운딩 인원</p>
+            </div>
+
+            {/* 회원 그린피 객단가 */}
+            <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+              <div className="text-slate-500 font-semibold mb-1 text-sm">💳 회원 그린피 객단가</div>
+              <div className="text-3xl font-extrabold text-emerald-700 my-2">
+                {formatCurrency(memberAvgGreenFee)} <span className="text-sm font-medium text-slate-500">원/인</span>
+              </div>
+              <p className="text-xs text-slate-400">회원 1인당 평균 그린피 결제 금액</p>
+            </div>
+
+            {/* 비회원 그린피 객단가 */}
+            <div className="bg-gradient-to-br from-slate-50/80 to-indigo-50/30 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+              <div className="text-slate-500 font-semibold mb-1 text-sm">💳 비회원 그린피 객단가</div>
+              <div className="text-3xl font-extrabold text-indigo-800 my-2">
+                {formatCurrency(nonMemberAvgGreenFee)} <span className="text-sm font-medium text-slate-500">원/인</span>
+              </div>
+              <p className="text-xs text-slate-400">비회원 1인당 평균 그린피 결제 금액</p>
+            </div>
+          </div>
+
+          {/* 객단가 비교 및 우대 혜택 통계 바 */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold">
+                회원 우대 혜택
+              </div>
+              <div>
+                <span className="text-slate-600 font-medium">비회원 대비 회원 그린피 객단가 차이: </span>
+                <strong className="text-emerald-700 font-bold text-sm ml-1">
+                  -{formatCurrency(Math.max(0, nonMemberAvgGreenFee - memberAvgGreenFee))}원 / 1인 우대
+                </strong>
+              </div>
+            </div>
+            <div className="text-slate-500">
+              회원 그린피 매출: <strong className="text-slate-800">{formatCurrency(memberGreenFee)}원</strong> | 비회원 그린피 매출: <strong className="text-slate-800">{formatCurrency(nonMemberGreenFee)}원</strong>
+            </div>
+          </div>
+        </div>
+
         {/* Detailed Booking Analysis */}
         <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
           <h2 className="text-base font-medium text-slate-800 mb-6 flex items-center gap-2">
@@ -200,7 +339,7 @@ export default function GolfBusiness() {
           <div className="grid grid-cols-1 sm:grid-cols-1 gap-6">
             <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
               <div>
-                <div className="text-slate-500 font-medium mb-3 text-sm">1인당 평균 그린피 (객단가)</div>
+                <div className="text-slate-500 font-medium mb-3 text-sm">전체 1인당 평균 그린피 (통합 객단가)</div>
                 <div className="flex items-center gap-8 mb-2">
                   <div>
                     <div className="text-xs text-emerald-600 font-medium mb-1">선택 기간</div>

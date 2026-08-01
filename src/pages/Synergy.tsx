@@ -14,6 +14,7 @@ const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Ma
 interface RoomChannelSalesItem {
   segmentName: string;
   channelName: string;
+  partnerName?: string;
   roomType: string;
   todayRooms: number;
   todayRevenue: number;
@@ -580,6 +581,8 @@ export default function Synergy() {
                           ? '전체 합계' 
                           : isSub 
                           ? `${item.channelName || '채널'} [소계]` 
+                          : item.partnerName && item.partnerName !== item.channelName && item.partnerName !== item.segmentName
+                          ? `${item.channelName || item.segmentName || '채널'} - ${item.partnerName}${item.roomType ? ` (${item.roomType})` : ''}`
                           : item.roomType && item.roomType !== '채널 소계' && item.roomType !== '전체 합계'
                           ? `${item.segmentName || item.channelName || '세그먼트'} (${item.roomType})`
                           : `${item.segmentName || item.channelName || '세그먼트'}`}

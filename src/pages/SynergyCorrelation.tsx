@@ -244,7 +244,7 @@ export default function SynergyCorrelation() {
         const cName = (c.shopName || c.storeName || '').trim();
         return cName === shop || shop.includes(cName) || cName.includes(shop);
       });
-      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 65;
+      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 0;
 
       const curr = map.get(shop) || { 
         totalSales: 0, 
@@ -305,7 +305,7 @@ export default function SynergyCorrelation() {
         const cName = (c.shopName || c.storeName || '').trim();
         return cName === shop || shop.includes(cName) || cName.includes(shop);
       });
-      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 78;
+      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 0;
 
       const curr = map.get(shop) || { 
         totalSales: 0, 

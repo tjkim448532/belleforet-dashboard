@@ -32,6 +32,7 @@ export default function SynergyBundles() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
   
   const [bundleData, setBundleData] = useState<CustomerBundleItem[]>([]);
+  const [apiMeta, setApiMeta] = useState<{ totalUniqueCustomers?: number; multiFacilityRatioPct?: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>('ALL');
 
@@ -157,26 +158,28 @@ export default function SynergyBundles() {
       const res = await secureFetcher(`${API_BASE}/api/v5/report/customer-journey-bundles?${queryParams}`).catch(() => null);
       const payload = res?.data ?? res;
 
-      if (Array.isArray(payload) && payload.length > 0) {
+      if (payload && (payload.totalUniqueCustomers !== undefined || (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0))) {
+        if (payload.totalUniqueCustomers !== undefined) {
+          setApiMeta({
+            totalUniqueCustomers: payload.totalUniqueCustomers,
+            multiFacilityRatioPct: payload.multiFacilityRatioPct
+          });
+        }
+        if (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0) {
+          setBundleData(payload.bundleClusters);
+        } else if (Array.isArray(payload) && payload.length > 0) {
+          setBundleData(payload);
+        }
+      } else if (Array.isArray(payload) && payload.length > 0) {
+        setApiMeta(null);
         setBundleData(payload);
-      } else if (Array.isArray(payload?.bundleClusters) && payload.bundleClusters.length > 0) {
-        setBundleData(payload.bundleClusters);
       } else {
-        // Multiplier scaling for date range
-        const multiplier = rangeActive ? Math.max(1, totalDays / 7) : 1;
-        const scaled = defaultBundles.map(b => {
-          const count = Math.round(b.customerCount * multiplier);
-          const sales = count * b.avgSpendPerCustomer;
-          return {
-            ...b,
-            customerCount: count,
-            totalSales: sales
-          };
-        });
-        setBundleData(scaled);
+        setApiMeta(null);
+        setBundleData(defaultBundles);
       }
     } catch (err) {
       console.error('Customer Bundles API Error:', err);
+      setApiMeta(null);
       setBundleData(defaultBundles);
     } finally {
       setLoading(false);
@@ -240,12 +243,15 @@ export default function SynergyBundles() {
 
   // Top KPIs
   const kpiStats = useMemo(() => {
-    const totalCustomers = bundleData.reduce((acc, b) => acc + (b.customerCount || 0), 0);
+    const calculatedCustomers = bundleData.reduce((acc, b) => acc + (b.customerCount || 0), 0);
+    const totalCustomers = apiMeta?.totalUniqueCustomers ?? calculatedCustomers;
     const totalSalesSum = bundleData.reduce((acc, b) => acc + (b.totalSales || 0), 0);
     const multiFacilityCustomers = bundleData
       .filter(b => b.storeList && b.storeList.length >= 2)
       .reduce((acc, b) => acc + (b.customerCount || 0), 0);
-    const multiFacilityRatio = totalCustomers > 0 ? ((multiFacilityCustomers / totalCustomers) * 100).toFixed(1) : '0';
+    const multiFacilityRatio = apiMeta?.multiFacilityRatioPct !== undefined
+      ? apiMeta.multiFacilityRatioPct.toFixed(1)
+      : (totalCustomers > 0 ? ((multiFacilityCustomers / totalCustomers) * 100).toFixed(1) : '0');
 
     const topCountBundle = [...bundleData].sort((a, b) => b.customerCount - a.customerCount)[0];
     const topRevenueBundle = [...bundleData].sort((a, b) => b.totalSales - a.totalSales)[0];
@@ -258,7 +264,7 @@ export default function SynergyBundles() {
       topCountBundle,
       topRevenueBundle
     };
-  }, [bundleData]);
+  }, [bundleData, apiMeta]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">

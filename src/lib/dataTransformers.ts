@@ -98,7 +98,11 @@ export const transformHomeData = (core: CoreDataState) => {
         visitedTeams: visited,
         pendingTeams: canceled,
         visitedPlayers: visitedPlayers,
-        avgGreenFee: visitedPlayers > 0 ? (totalGolfRev / visitedPlayers) : 0,
+        avgGreenFee: Number(
+          c.summary?.golfAvgGreenFee ?? 
+          c.summary?.golf_avg_green_fee ?? 
+          (visitedPlayers > 0 ? Math.round(totalGolfRev / visitedPlayers) : 0)
+        ),
         ly_avgGreenFee: 0,
       };
     })(),

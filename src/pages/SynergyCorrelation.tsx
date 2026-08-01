@@ -722,7 +722,7 @@ export default function SynergyCorrelation() {
                       </span>
                     )}
                     <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                      파급률 {store.spilloverRate}%
+                      숙박객 비율 {store.spilloverRate}%
                     </span>
                   </div>
                 </div>
@@ -748,7 +748,7 @@ export default function SynergyCorrelation() {
                       <span className="text-purple-800 font-semibold block">객실 연계 파급매출</span>
                       {store.reverseSpillover !== undefined && (
                         <span className="text-[10px] text-purple-600 font-medium">
-                          순방향 {store.forwardSpillover ?? store.spilloverRate}% | 역방향 {store.reverseSpillover}%
+                          이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
                         </span>
                       )}
                     </div>
@@ -778,7 +778,7 @@ export default function SynergyCorrelation() {
                 <th className="py-3.5 px-6">유입 채널 / 세그먼트</th>
                 <th className="py-3.5 px-6 text-right">연계 이용객수</th>
                 <th className="py-3.5 px-6 text-right">객실 연계 파급 매출</th>
-                <th className="py-3.5 px-6 text-right">파급 연계 이용률</th>
+                <th className="py-3.5 px-6 text-right">숙박객 연계 비율</th>
                 <th className="py-3.5 px-6 text-right rounded-r-xl">1실당 RevPAS 기여액</th>
               </tr>
             </thead>
@@ -878,7 +878,7 @@ export default function SynergyCorrelation() {
                       </span>
                     )}
                     <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                      파급률 {store.spilloverRate}%
+                      숙박객 비율 {store.spilloverRate}%
                     </span>
                   </div>
                 </div>
@@ -904,7 +904,7 @@ export default function SynergyCorrelation() {
                       <span className="text-amber-800 font-semibold block">객실 연계 파급매출</span>
                       {store.reverseSpillover !== undefined && (
                         <span className="text-[10px] text-amber-700 font-medium">
-                          순방향 {store.forwardSpillover ?? store.spilloverRate}% | 역방향 {store.reverseSpillover}%
+                          이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
                         </span>
                       )}
                     </div>
@@ -934,7 +934,7 @@ export default function SynergyCorrelation() {
                 <th className="py-3.5 px-6">유입 채널 / 세그먼트</th>
                 <th className="py-3.5 px-6 text-right">연계 이용객수</th>
                 <th className="py-3.5 px-6 text-right">객실 연계 파급 매출</th>
-                <th className="py-3.5 px-6 text-right">파급 연계 이용률</th>
+                <th className="py-3.5 px-6 text-right">숙박객 연계 비율</th>
                 <th className="py-3.5 px-6 text-right rounded-r-xl">1실당 RevPAS 기여액</th>
               </tr>
             </thead>

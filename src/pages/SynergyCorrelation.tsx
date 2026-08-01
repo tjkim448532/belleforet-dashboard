@@ -211,10 +211,10 @@ export default function SynergyCorrelation() {
     return 0;
   }, [channelData, isActualRange]);
 
-  // Pure Dynamic SSOT Extraction for Leisure Stores from V5 Matrix Data
+  // Pure Dynamic SSOT Extraction for Leisure & Moto Stores from V5 Matrix Data
   const leisureStoreAnalysis = useMemo(() => {
     const leisureRows = matrixData.filter(r => 
-      r.categoryCode === 'TICKET' && 
+      (r.categoryCode === 'TICKET' || r.categoryCode === 'MOTO') && 
       !r.isSubtotal && 
       !r.isGrandTotal && 
       r.shopName && 
@@ -504,66 +504,101 @@ export default function SynergyCorrelation() {
 
       {/* Overview KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-purple-600" /> 레저본부 전체 매출
-            </span>
-            <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
-              LEISURE REVENUE
-            </span>
+        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-purple-600" /> 레저본부 & 모토아레나 전체 매출
+              </span>
+              <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full whitespace-nowrap">
+                LEISURE & MOTO
+              </span>
+            </div>
+            <div className="text-3xl font-medium text-slate-900 mb-1">
+              {formatCurrency(totalLeisureSales)} <span className="text-lg text-slate-500 font-normal">원</span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium mb-3">레저본부 및 모토아레나 관할 영업장 100% 원천 매출 합계</p>
           </div>
-          <div className="text-3xl font-medium text-slate-900 mb-1">
-            {formatCurrency(totalLeisureSales)} <span className="text-lg text-slate-500 font-normal">원</span>
+          
+          {/* Calculated Store List Badge */}
+          <div className="mt-2 pt-2.5 border-t border-slate-100">
+            <span className="text-[11px] font-semibold text-purple-700 block mb-1">
+              📊 계산 포함 영업장 (총 {leisureStoreAnalysis.length}개):
+            </span>
+            <p className="text-[11px] text-purple-900/80 bg-purple-50/80 border border-purple-100/80 p-2 rounded-xl leading-relaxed max-h-20 overflow-y-auto">
+              {leisureStoreAnalysis.map(s => s.shopName).join(', ') || '영업장 데이터 로딩 중...'}
+            </p>
           </div>
-          <p className="text-xs text-slate-400 font-medium">레저본부 관할 영업장 전체 실적합계 (100% 원천 매출)</p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Utensils className="w-5 h-5 text-amber-600" /> 식음팀 전체 매출
-            </span>
-            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-              F&B REVENUE
-            </span>
+        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-amber-600" /> 식음팀 전체 매출
+              </span>
+              <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full whitespace-nowrap">
+                F&B REVENUE
+              </span>
+            </div>
+            <div className="text-3xl font-medium text-slate-900 mb-1">
+              {formatCurrency(totalFnbSales)} <span className="text-lg text-slate-500 font-normal">원</span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium mb-3">F&B 식음 영업장 100% 원천 매출 합계</p>
           </div>
-          <div className="text-3xl font-medium text-slate-900 mb-1">
-            {formatCurrency(totalFnbSales)} <span className="text-lg text-slate-500 font-normal">원</span>
+
+          {/* Calculated Store List Badge */}
+          <div className="mt-2 pt-2.5 border-t border-slate-100">
+            <span className="text-[11px] font-semibold text-amber-700 block mb-1">
+              📊 계산 포함 영업장 (총 {fnbStoreAnalysis.length}개):
+            </span>
+            <p className="text-[11px] text-amber-900/80 bg-amber-50/80 border border-amber-100/80 p-2 rounded-xl leading-relaxed max-h-20 overflow-y-auto">
+              {fnbStoreAnalysis.map(s => s.shopName).join(', ') || '영업장 데이터 로딩 중...'}
+            </p>
           </div>
-          <p className="text-xs text-slate-400 font-medium">F&B 식음 영업장 전체 실적합계 (100% 원천 매출)</p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-600" /> 1실당 레저 파급가치
-            </span>
-            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-              LEISURE RevPAS
-            </span>
+        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-indigo-600" /> 1실당 레저 & 모토 파급가치
+              </span>
+              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap">
+                LEISURE RevPAS
+              </span>
+            </div>
+            <div className="text-3xl font-medium text-indigo-600 mb-1">
+              {formatCurrency(totalRoomsSold > 0 ? Math.round(totalLeisureSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">판매 1실당 레저+모토아레나 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
           </div>
-          <div className="text-3xl font-medium text-indigo-600 mb-1">
-            {formatCurrency(totalRoomsSold > 0 ? Math.round(totalLeisureSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+          <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
+            수식: (레저본부 + 모토아레나 매출) ÷ 총 객실수
           </div>
-          <p className="text-xs text-slate-400 font-medium">판매 1실당 레저 영업장 평균 매출 기여액 (실측 100% 기준)</p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" /> 1실당 식음 파급가치
-            </span>
-            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              F&B RevPAS
-            </span>
+        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-emerald-600" /> 1실당 식음 파급가치
+              </span>
+              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full whitespace-nowrap">
+                F&B RevPAS
+              </span>
+            </div>
+            <div className="text-3xl font-medium text-emerald-600 mb-1">
+              {formatCurrency(totalRoomsSold > 0 ? Math.round(totalFnbSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">판매 1실당 F&B 식음 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
           </div>
-          <div className="text-3xl font-medium text-emerald-600 mb-1">
-            {formatCurrency(totalRoomsSold > 0 ? Math.round(totalFnbSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+          <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
+            수식: (식음팀 영업장 매출) ÷ 총 객실수
           </div>
-          <p className="text-xs text-slate-400 font-medium">판매 1실당 F&B 식음 영업장 평균 매출 기여액 (실측 100% 기준)</p>
         </div>
       </div>
+
 
       {/* 💡 상관관계 지표 정의 및 분석 가이드 (Info Guide Banner) */}
       <div className="bg-slate-900 text-white rounded-[28px] p-6 lg:p-7 shadow-xl mb-8 relative overflow-hidden">

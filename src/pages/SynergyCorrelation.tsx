@@ -66,6 +66,8 @@ export default function SynergyCorrelation() {
       const temp = sDate;
       sDate = eDate;
       eDate = temp;
+      setStartDate(sDate);
+      setEndDate(eDate);
     }
 
     try {

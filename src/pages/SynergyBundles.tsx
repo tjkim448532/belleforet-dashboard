@@ -148,6 +148,8 @@ export default function SynergyBundles() {
       const temp = sDate;
       sDate = eDate;
       eDate = temp;
+      setStartDate(sDate);
+      setEndDate(eDate);
     }
 
     try {
@@ -191,9 +193,18 @@ export default function SynergyBundles() {
   }, []);
 
   const handleSearch = () => {
-    setGlobalStartDate(startDate);
-    setGlobalEndDate(isRangeMode ? endDate : null);
-    fetchData();
+    let s = startDate;
+    let e = endDate;
+    if (isRangeMode && s && e && s > e) {
+      const temp = s;
+      s = e;
+      e = temp;
+      setStartDate(s);
+      setEndDate(e);
+    }
+    setGlobalStartDate(s);
+    setGlobalEndDate(isRangeMode ? e : null);
+    fetchData(s, e, isRangeMode);
   };
 
   // Preset Handler

@@ -261,9 +261,10 @@ export default function SynergyCorrelation() {
         reverseSpillover: matchedCorr?.reverseSpillover,
       };
       curr.totalSales += sales;
-      curr.correlatedSales += Math.round(sales * (realSpillover / 100));
+      const correlatedSalesThisRow = Math.round(sales * (realSpillover / 100));
+      curr.correlatedSales += correlatedSalesThisRow;
       curr.spilloverRate = realSpillover;
-      curr.correlatedVisitors += sales > 0 ? Math.round(sales / 18000) : 0;
+      curr.correlatedVisitors += correlatedSalesThisRow > 0 ? Math.round(correlatedSalesThisRow / 18000) : 0;
       curr.revPasContribution = matchedCorr?.revPasContribution || curr.revPasContribution;
       map.set(shop, curr);
     });
@@ -322,9 +323,10 @@ export default function SynergyCorrelation() {
         reverseSpillover: matchedCorr?.reverseSpillover,
       };
       curr.totalSales += sales;
-      curr.correlatedSales += Math.round(sales * (realSpillover / 100));
+      const correlatedSalesThisRow = Math.round(sales * (realSpillover / 100));
+      curr.correlatedSales += correlatedSalesThisRow;
       curr.spilloverRate = realSpillover;
-      curr.correlatedGuests += sales > 0 ? Math.round(sales / 25000) : 0;
+      curr.correlatedGuests += correlatedSalesThisRow > 0 ? Math.round(correlatedSalesThisRow / 25000) : 0;
       curr.revPasContribution = matchedCorr?.revPasContribution || curr.revPasContribution;
       map.set(shop, curr);
     });

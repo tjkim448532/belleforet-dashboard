@@ -107,6 +107,7 @@ export default function SynergyCorrelation() {
             ? (correlationCoefficient >= 0.7 ? 'HIGH_SYNERGY' : correlationCoefficient >= 0.3 ? 'MODERATE_SYNERGY' : 'INDEPENDENT')
             : undefined
         );
+        const revPasContribution = item.revPasContribution !== undefined ? Number(item.revPasContribution) : undefined;
 
         return {
           ...item,
@@ -121,6 +122,7 @@ export default function SynergyCorrelation() {
           correlationCoefficient,
           liftValue,
           interactionGrade,
+          revPasContribution,
         };
       };
 
@@ -251,7 +253,7 @@ export default function SynergyCorrelation() {
         correlatedSales: 0, 
         correlatedVisitors: 0, 
         spilloverRate: realSpillover, 
-        revPasContribution: 0,
+        revPasContribution: matchedCorr?.revPasContribution || 0,
         correlationCoefficient: matchedCorr?.correlationCoefficient,
         liftValue: matchedCorr?.liftValue,
         interactionGrade: matchedCorr?.interactionGrade,
@@ -262,7 +264,7 @@ export default function SynergyCorrelation() {
       curr.correlatedSales += Math.round(sales * (realSpillover / 100));
       curr.spilloverRate = realSpillover;
       curr.correlatedVisitors += sales > 0 ? Math.round(sales / 18000) : 0;
-      curr.revPasContribution += totalRoomsSold > 0 ? Math.round((sales * (realSpillover / 100)) / totalRoomsSold) : 0;
+      curr.revPasContribution = matchedCorr?.revPasContribution || curr.revPasContribution;
       map.set(shop, curr);
     });
 
@@ -312,7 +314,7 @@ export default function SynergyCorrelation() {
         correlatedSales: 0, 
         correlatedGuests: 0, 
         spilloverRate: realSpillover, 
-        revPasContribution: 0,
+        revPasContribution: matchedCorr?.revPasContribution || 0,
         correlationCoefficient: matchedCorr?.correlationCoefficient,
         liftValue: matchedCorr?.liftValue,
         interactionGrade: matchedCorr?.interactionGrade,
@@ -323,7 +325,7 @@ export default function SynergyCorrelation() {
       curr.correlatedSales += Math.round(sales * (realSpillover / 100));
       curr.spilloverRate = realSpillover;
       curr.correlatedGuests += sales > 0 ? Math.round(sales / 25000) : 0;
-      curr.revPasContribution += totalRoomsSold > 0 ? Math.round((sales * (realSpillover / 100)) / totalRoomsSold) : 0;
+      curr.revPasContribution = matchedCorr?.revPasContribution || curr.revPasContribution;
       map.set(shop, curr);
     });
 
@@ -339,8 +341,16 @@ export default function SynergyCorrelation() {
     return leisureStoreAnalysis.reduce((acc, cur) => acc + cur.totalSales, 0);
   }, [leisureStoreAnalysis]);
 
+  const totalLeisureRevPas = useMemo(() => {
+    return leisureStoreAnalysis.reduce((acc, cur) => acc + (cur.revPasContribution || 0), 0);
+  }, [leisureStoreAnalysis]);
+
   const totalFnbSales = useMemo(() => {
     return fnbStoreAnalysis.reduce((acc, cur) => acc + cur.totalSales, 0);
+  }, [fnbStoreAnalysis]);
+
+  const totalFnbRevPas = useMemo(() => {
+    return fnbStoreAnalysis.reduce((acc, cur) => acc + (cur.revPasContribution || 0), 0);
   }, [fnbStoreAnalysis]);
 
   // Extract Leisure Items from API 8 or fallback
@@ -569,12 +579,12 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-3xl font-medium text-indigo-600 mb-1">
-              {formatCurrency(totalRoomsSold > 0 ? Math.round(totalLeisureSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+              {formatCurrency(totalLeisureRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">판매 1실당 레저+모토아레나 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
+            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 레저+모토아레나 예상 증가 매출 (통계적 회귀 기울기 합산)</p>
           </div>
           <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: (레저본부 + 모토아레나 매출) ÷ 총 객실수
+            수식: ∑(각 영업장별 revPasContribution)
           </div>
         </div>
 
@@ -589,12 +599,12 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-3xl font-medium text-emerald-600 mb-1">
-              {formatCurrency(totalRoomsSold > 0 ? Math.round(totalFnbSales / totalRoomsSold) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+              {formatCurrency(totalFnbRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">판매 1실당 F&B 식음 영업장 평균 매출 기여액 ({totalRoomsSold.toLocaleString()}실 기준)</p>
+            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 식음팀 예상 증가 매출 (통계적 회귀 기울기 합산)</p>
           </div>
           <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: (식음팀 영업장 매출) ÷ 총 객실수
+            수식: ∑(각 영업장별 revPasContribution)
           </div>
         </div>
       </div>

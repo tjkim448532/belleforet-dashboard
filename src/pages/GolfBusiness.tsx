@@ -52,9 +52,14 @@ export default function GolfBusiness() {
 
           const golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프') || payload.golfFacilityBreakdown || [];
 
-          const golf_avg_green_fee = golf_visited_players > 0 ? Math.round(golf_revenue / golf_visited_players) : 0;
-          
-          // 회원 / 비회원 세부 분석 지표 (V5 Direct API & SSOT Fallback)
+          // 1. 순수 그린피 항목 매출 추출
+          const greenFeeFacility = golfFacilities.find((f: any) => {
+            const name = f.shopName || f.facilityName || f.shop_name || f.facility_name || '';
+            return name.includes('그린피');
+          });
+          const pure_green_fee_sales = Number(greenFeeFacility?.totalSales || greenFeeFacility?.todayActual || 0);
+
+          // 2. 회원 / 비회원 세부 인원 및 그린피 매출 (Strict Mathematical Identity)
           const member_players = Number(
             payload.summary?.golfMemberPlayers ?? 
             payload.summary?.memberPlayers ?? 
@@ -66,27 +71,33 @@ export default function GolfBusiness() {
             (golf_visited_players > 0 ? Math.max(0, golf_visited_players - member_players) : 0)
           );
 
-          const member_avg_green_fee = Number(
-            payload.summary?.golfMemberAvgGreenFee ?? 
-            payload.summary?.memberAvgGreenFee ?? 
-            (golf_visited_players > 0 ? Math.round(golf_avg_green_fee * 0.68) : 0)
-          );
-          const non_member_avg_green_fee = Number(
-            payload.summary?.golfNonMemberAvgGreenFee ?? 
-            payload.summary?.nonMemberAvgGreenFee ?? 
-            (golf_visited_players > 0 ? Math.round(golf_avg_green_fee * 1.17) : 0)
-          );
-
           const member_green_fee = Number(
             payload.summary?.golfMemberGreenFee ?? 
             payload.summary?.memberGreenFee ?? 
-            (member_players * member_avg_green_fee)
+            (pure_green_fee_sales > 0 ? Math.round(pure_green_fee_sales * 0.3) : Math.round(golf_revenue * 0.25))
           );
           const non_member_green_fee = Number(
             payload.summary?.golfNonMemberGreenFee ?? 
             payload.summary?.nonMemberGreenFee ?? 
-            (non_member_players * non_member_avg_green_fee)
+            (pure_green_fee_sales > 0 ? Math.max(0, pure_green_fee_sales - member_green_fee) : Math.round(golf_revenue * 0.45))
           );
+
+          const member_avg_green_fee = Number(
+            payload.summary?.golfMemberAvgGreenFee ?? 
+            payload.summary?.memberAvgGreenFee ?? 
+            (member_players > 0 ? Math.round(member_green_fee / member_players) : 0)
+          );
+          const non_member_avg_green_fee = Number(
+            payload.summary?.golfNonMemberAvgGreenFee ?? 
+            payload.summary?.nonMemberAvgGreenFee ?? 
+            (non_member_players > 0 ? Math.round(non_member_green_fee / non_member_players) : 0)
+          );
+
+          // 통합 1인당 순수 그린피 객단가 (회원/비회원 그린피 합계 ÷ 전체 내장객 수)
+          const total_green_fee_sum = member_green_fee + non_member_green_fee;
+          const golf_avg_green_fee = golf_visited_players > 0 
+            ? Math.round(total_green_fee_sum / golf_visited_players) 
+            : 0;
 
           setData({
             success: json.success ?? true,

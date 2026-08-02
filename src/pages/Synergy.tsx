@@ -179,10 +179,9 @@ export default function Synergy() {
       return { golf: 0, fnb: 0, ticket: 0, total: 0 };
     }
     const cats = summaryData.salesByCategory;
-    const multiplier = isActualRange ? totalDays : 1;
-    const golf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0) * multiplier;
-    const fnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0) * multiplier;
-    const ticket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0) * multiplier;
+    const golf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0);
+    const fnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0);
+    const ticket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0);
     return { golf, fnb, ticket, total: golf + fnb + ticket };
   }, [summaryData, isActualRange, totalDays]);
 

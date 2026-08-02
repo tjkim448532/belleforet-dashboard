@@ -260,12 +260,16 @@ export default function SynergyCorrelation() {
         forwardSpillover: matchedCorr?.forwardSpillover,
         reverseSpillover: matchedCorr?.reverseSpillover,
       };
+      
       curr.totalSales += sales;
-      const correlatedSalesThisRow = Math.round(sales * (realSpillover / 100));
-      curr.correlatedSales += correlatedSalesThisRow;
+      
+      // SSOT 위반 수정: 프론트엔드에서 매출 * 비율로 직접 재계산하거나 18000원 하드코딩으로 객수 추정하지 않음. 
+      // 백엔드가 제공한 값을 100% 그대로 사용
+      curr.correlatedSales = matchedCorr?.correlatedSales || 0;
+      curr.correlatedVisitors = matchedCorr?.correlatedVisitors || 0;
       curr.spilloverRate = realSpillover;
-      curr.correlatedVisitors += correlatedSalesThisRow > 0 ? Math.round(correlatedSalesThisRow / 18000) : 0;
-      curr.revPasContribution = matchedCorr?.revPasContribution || curr.revPasContribution;
+      curr.revPasContribution = matchedCorr?.revPasContribution || 0;
+      
       map.set(shop, curr);
     });
 
@@ -323,11 +327,11 @@ export default function SynergyCorrelation() {
         reverseSpillover: matchedCorr?.reverseSpillover,
       };
       curr.totalSales += sales;
-      const correlatedSalesThisRow = Math.round(sales * (realSpillover / 100));
-      curr.correlatedSales += correlatedSalesThisRow;
+      // SSOT 위반 수정: 백엔드가 제공한 값만 사용
+      curr.correlatedSales = matchedCorr?.correlatedSales || 0;
+      curr.correlatedGuests = matchedCorr?.correlatedVisitors || 0;
       curr.spilloverRate = realSpillover;
-      curr.correlatedGuests += correlatedSalesThisRow > 0 ? Math.round(correlatedSalesThisRow / 25000) : 0;
-      curr.revPasContribution = matchedCorr?.revPasContribution || curr.revPasContribution;
+      curr.revPasContribution = matchedCorr?.revPasContribution || 0;
       map.set(shop, curr);
     });
 

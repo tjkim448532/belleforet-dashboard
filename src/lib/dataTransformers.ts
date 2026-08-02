@@ -32,10 +32,8 @@ export const transformHomeData = (core: CoreDataState) => {
     if (golfCat) totalGolfRev = Number(golfCat.todayActual || golfCat.totalSales || golfCat.total_sales || golfCat.sales || golfCat.revenue || 0);
   }
 
-  // Fallback: If salesByCategory missing ROOM category, read from roomSummaryByType
-  if (totalRoomRev === 0 && c.roomSummaryByType && Array.isArray(c.roomSummaryByType)) {
-    totalRoomRev = c.roomSummaryByType.reduce((sum: number, item: any) => sum + Number(item.revenue || 0), 0);
-  }
+  // Fallback: 백엔드의 salesByCategory에 ROOM이 없을 경우 프론트엔드가 자체적으로 roomSummaryByType를
+  // reduce()로 합산하여 소계를 생성하는 행위(Slice Summation)는 바이블 원칙에 위배되므로 제거.
   
   const totalResortRevGross = Number(c.summary?.totalRevenue ?? c.totalRevenue ?? 0);
   const totalRoomsSold = Number(c.summary?.totalRooms ?? c.totalRooms ?? 0);

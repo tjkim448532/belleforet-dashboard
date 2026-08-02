@@ -180,15 +180,10 @@ export default function Synergy() {
     }
     const cats = summaryData.salesByCategory;
     
-    // 부대시설 전체 매출
-    const rawGolf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0);
-    const rawFnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0);
-    const rawTicket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0);
-    
-    // 숙박객 점유 비중(Spillover Rate) 추정치 적용 (골프 25%, 식음 15%, 티켓/레저 4%)
-    const golf = Math.round(rawGolf * 0.25);
-    const fnb = Math.round(rawFnb * 0.15);
-    const ticket = Math.round(rawTicket * 0.04);
+    // SSOT 원칙에 따라 프론트엔드 임의 연산 없이 백엔드 합산 총액 그대로 사용
+    const golf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0);
+    const fnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0);
+    const ticket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0);
     
     return { golf, fnb, ticket, total: golf + fnb + ticket };
   }, [summaryData, isActualRange, totalDays]);

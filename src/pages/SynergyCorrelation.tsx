@@ -298,7 +298,7 @@ export default function SynergyCorrelation() {
     const map = new Map<string, { 
       totalSales: number; 
       correlatedSales: number; 
-      correlatedGuests: number; 
+      correlatedVisitors: number; 
       spilloverRate: number; 
       revPasContribution: number;
       correlationCoefficient?: number;
@@ -321,7 +321,7 @@ export default function SynergyCorrelation() {
       const curr = map.get(shop) || { 
         totalSales: 0, 
         correlatedSales: 0, 
-        correlatedGuests: 0, 
+        correlatedVisitors: 0, 
         spilloverRate: realSpillover, 
         revPasContribution: matchedCorr?.revPasContribution || 0,
         correlationCoefficient: matchedCorr?.correlationCoefficient,
@@ -333,7 +333,7 @@ export default function SynergyCorrelation() {
       curr.totalSales += sales;
       // SSOT 위반 수정: 백엔드가 제공한 값만 사용
       curr.correlatedSales = matchedCorr?.correlatedSales || 0;
-      curr.correlatedGuests = matchedCorr?.correlatedVisitors || 0;
+      curr.correlatedVisitors = matchedCorr?.correlatedVisitors || 0;
       curr.spilloverRate = realSpillover;
       curr.revPasContribution = matchedCorr?.revPasContribution || 0;
       map.set(shop, curr);
@@ -385,14 +385,18 @@ export default function SynergyCorrelation() {
 
   // Filtered Leisure Items for Cards
   const filteredLeisureStores = useMemo(() => {
-    if (selectedLeisureShop === 'ALL') return leisureStoreAnalysis;
-    return leisureStoreAnalysis.filter(s => s.shopName === selectedLeisureShop);
+    // 0으로만 표현되는(연계 시너지 데이터가 아예 없는) 항목 숨김 처리
+    const base = leisureStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
+    if (selectedLeisureShop === 'ALL') return base;
+    return base.filter(s => s.shopName === selectedLeisureShop);
   }, [leisureStoreAnalysis, selectedLeisureShop]);
 
   // Filtered FNB Items for Cards
   const filteredFnbStores = useMemo(() => {
-    if (selectedFnbShop === 'ALL') return fnbStoreAnalysis;
-    return fnbStoreAnalysis.filter(s => s.shopName === selectedFnbShop);
+    // 0으로만 표현되는(연계 시너지 데이터가 아예 없는) 항목 숨김 처리
+    const base = fnbStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
+    if (selectedFnbShop === 'ALL') return base;
+    return base.filter(s => s.shopName === selectedFnbShop);
   }, [fnbStoreAnalysis, selectedFnbShop]);
 
   return (
@@ -922,7 +926,7 @@ export default function SynergyCorrelation() {
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 고객수: <strong>{(store.correlatedGuests || 0).toLocaleString()}명</strong></span>
+                    <span>추정 연계 고객수: <strong>{(store.correlatedVisitors || 0).toLocaleString()}명</strong></span>
                     <span className="text-emerald-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution || 0)}원</span>
                   </div>
                 </div>
@@ -960,7 +964,7 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-700 font-medium">
                       {item.channelName} <span className="text-xs text-slate-400 font-normal">({item.segmentName})</span>
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedGuests || item.correlatedVisitors || 0).toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || 0).toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
                     <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
@@ -977,7 +981,7 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-600 font-medium">
                       V5 원천 영업장 (SSOT 연동)
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedGuests || 0).toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || 0).toLocaleString()}명</td>
                     <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
                     <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
                     <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>

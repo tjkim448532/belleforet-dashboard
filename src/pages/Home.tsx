@@ -166,9 +166,9 @@ export default function Home() {
 
   // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
   const adrData = (() => {
-    let rev16 = 0, sold16 = 0;
-    let rev35 = 0, sold35 = 0;
-    let rev51 = 0, sold51 = 0;
+    let rev16 = 0, sold16 = 0, mem16 = 0;
+    let rev35 = 0, sold35 = 0, mem35 = 0;
+    let rev51 = 0, sold51 = 0, mem51 = 0;
     
     const sourceArray = (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType) && coreData.core.roomSummaryByType.length > 0)
       ? coreData.core.roomSummaryByType
@@ -180,12 +180,14 @@ export default function Home() {
         const typeName = item.roomType || item.room_type || '';
         const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || item.roomRevenue || item.periodRevenue || item.mtdRevenue || item.totalRevenue || 0);
         const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || item.periodRooms || item.mtdRooms || item.rooms || 0);
+        const mem = Number(item.memberRooms || item.member_rooms || item.memberRoomsSold || 0);
+        
         if (typeName.includes('16평')) {
-          rev16 += revenue; sold16 += sold;
+          rev16 += revenue; sold16 += sold; mem16 += mem;
         } else if (typeName.includes('35평')) {
-          rev35 += revenue; sold35 += sold;
+          rev35 += revenue; sold35 += sold; mem35 += mem;
         } else if (typeName.includes('51평') || typeName.includes('52평')) {
-          rev51 += revenue; sold51 += sold;
+          rev51 += revenue; sold51 += sold; mem51 += mem;
         }
       });
     }
@@ -194,7 +196,10 @@ export default function Home() {
       adr16: sold16 > 0 ? Math.round(rev16 / sold16) : 0,
       adr35: sold35 > 0 ? Math.round(rev35 / sold35) : 0,
       adr51: sold51 > 0 ? Math.round(rev51 / sold51) : 0,
-      raw: { rev16, sold16, rev35, sold35, rev51, sold51 }
+      memRatio16: sold16 > 0 ? Math.round((mem16 / sold16) * 100) : 0,
+      memRatio35: sold35 > 0 ? Math.round((mem35 / sold35) * 100) : 0,
+      memRatio51: sold51 > 0 ? Math.round((mem51 / sold51) * 100) : 0,
+      raw: { rev16, sold16, mem16, rev35, sold35, mem35, rev51, sold51, mem51 }
     };
   })();
 
@@ -408,11 +413,23 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-2">객단가 (ADR)</div>
                   <div className="grid grid-cols-3 gap-1 w-full text-teal-700">
-                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr16)}</span></div>
-                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr35)}</span></div>
-                    <div className="flex flex-col items-center justify-end"><span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span><span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span></div>
+                    <div className="flex flex-col items-center justify-end">
+                      <span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span>
+                      <span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr16)}</span>
+                      {adrData.memRatio16 > 0 && <span className="text-[9px] text-indigo-500 font-bold mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded-md shadow-sm border border-indigo-100">회원 {adrData.memRatio16}%</span>}
+                    </div>
+                    <div className="flex flex-col items-center justify-end">
+                      <span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span>
+                      <span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr35)}</span>
+                      {adrData.memRatio35 > 0 && <span className="text-[9px] text-indigo-500 font-bold mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded-md shadow-sm border border-indigo-100">회원 {adrData.memRatio35}%</span>}
+                    </div>
+                    <div className="flex flex-col items-center justify-end">
+                      <span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span>
+                      <span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span>
+                      {adrData.memRatio51 > 0 && <span className="text-[9px] text-indigo-500 font-bold mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded-md shadow-sm border border-indigo-100">회원 {adrData.memRatio51}%</span>}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium" title="회원 비중 = 평형별 회원 자격 판매객실 ÷ 총판매객실">
                     {isRangeMode ? '기간 매출액 ÷ 기간 결제건수' : '매출액 ÷ 순수 결제건수'}
                   </div>
                 </div>

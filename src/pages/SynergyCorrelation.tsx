@@ -89,29 +89,33 @@ export default function SynergyCorrelation() {
       const chRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const chPayload = chRes?.data ?? chRes;
 
-      const processCorrItem = (item: any, defaultDiv: string, defaultRate: number): StoreCorrelationItem => {
+      const processCorrItem = (item: any): StoreCorrelationItem => {
         const shopName = item.shopName || item.storeName || item.shop_name || '';
+        
+        // SSOT 위반 수정: 백엔드에서 누락될 경우 프론트엔드가 임의로 65%나 78%를 할당하는 가짜 폴백 제거
         const spilloverRate = item.spilloverRate !== undefined 
           ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) 
-          : defaultRate;
+          : 0;
+
         const forwardSpillover = item.forwardSpillover !== undefined 
           ? (item.forwardSpillover <= 1 ? Number((item.forwardSpillover * 100).toFixed(1)) : Number(item.forwardSpillover.toFixed(1)))
-          : spilloverRate;
+          : 0;
+
         const reverseSpillover = item.reverseSpillover !== undefined 
           ? (item.reverseSpillover <= 1 ? Number((item.reverseSpillover * 100).toFixed(1)) : Number(item.reverseSpillover.toFixed(1)))
           : undefined;
+          
         const correlationCoefficient = item.correlationCoefficient !== undefined ? Number(Number(item.correlationCoefficient).toFixed(2)) : undefined;
         const liftValue = item.liftValue !== undefined ? Number(Number(item.liftValue).toFixed(2)) : undefined;
-        const interactionGrade = item.interactionGrade || (
-          correlationCoefficient !== undefined 
-            ? (correlationCoefficient >= 0.7 ? 'HIGH_SYNERGY' : correlationCoefficient >= 0.3 ? 'MODERATE_SYNERGY' : 'INDEPENDENT')
-            : undefined
-        );
+        
+        // SSOT 위반 수정: 상관계수를 기반으로 한 등급 추정 로직(HIGH_SYNERGY 등)을 제거하고 백엔드 응답만 신뢰
+        const interactionGrade = item.interactionGrade;
+        
         const revPasContribution = item.revPasContribution !== undefined ? Number(item.revPasContribution) : undefined;
 
         return {
           ...item,
-          divisionName: item.divisionName || (item.storeName === '모토아레나' ? '모토아레나' : defaultDiv),
+          divisionName: item.divisionName || (item.storeName === '모토아레나' ? '모토아레나' : '기타'),
           shopName,
           storeName: shopName,
           correlatedSales: item.correlatedSales || 0,
@@ -128,10 +132,10 @@ export default function SynergyCorrelation() {
 
       let corrList: StoreCorrelationItem[] = [];
       if (Array.isArray(corrPayload)) {
-        corrList = corrPayload.map(item => processCorrItem(item, '레저본부', 65));
+        corrList = corrPayload.map(item => processCorrItem(item));
       } else if (corrPayload && typeof corrPayload === 'object') {
-        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item, '레저본부', 65));
-        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item, '식음팀', 78));
+        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item));
+        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item));
         corrList = [...ticketList, ...fnbList];
       }
       setCorrelationData(corrList);

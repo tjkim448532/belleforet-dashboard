@@ -87,8 +87,7 @@ export const transformHomeData = (core: CoreDataState) => {
     golfSummary: (() => {
       const visited = Number(c.summary?.totalGolfTeams || c.summary?.visitedGolfTeams || 0);
       const canceled = Number(c.summary?.totalGolfCanceledTeams || c.summary?.pendingGolfTeams || c.summary?.cancelledGolfTeams || 0);
-      const rawReserved = Number(c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || 0);
-      const reserved = rawReserved > 0 ? rawReserved : (visited + canceled);
+      const reserved = Number(c.summary?.totalGolfReservedTeams || c.summary?.reservedGolfTeams || 0);
       const visitedPlayers = Number(c.summary?.totalGolfVisitors || c.summary?.visitedPlayers || c.salesByCategory?.find((x:any)=>(x.categoryCode==='GOLF' || x.categoryCode==='골프'))?.visitors || 0);
       
       return {

@@ -209,26 +209,14 @@ export default function Synergy() {
         
         const rooms = isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0);
         const revenue = isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0);
-        
         const shareRatio = revenue / totalRoomRev;
-        const totalSynergySales = Math.round(ancillarySales.total * shareRatio);
-        
-        let crossSellingRate = 75;
-        if (cleanName.includes('휴양소')) crossSellingRate = 86;
-        else if (cleanName.includes('세미나') || cleanName.includes('단체')) crossSellingRate = 92;
-        else if (cleanName.includes('예약실')) crossSellingRate = 80;
-        else if (cleanName.includes('자사') || cleanName.includes('홈페이지')) crossSellingRate = 88;
-        else if (cleanName.includes('여행사') || cleanName.includes('OTA')) crossSellingRate = 78;
 
         return {
           name: cleanName,
           rooms,
           revenue,
           adr: rooms > 0 ? Math.round(revenue / rooms) : 0,
-          sharePct: (shareRatio * 100).toFixed(1),
-          totalSynergySales,
-          crossSellingRate,
-          revPas: rooms > 0 ? Math.round((revenue + totalSynergySales) / rooms) : 0
+          sharePct: (shareRatio * 100).toFixed(1)
         };
       })
       .filter(g => g.rooms > 0 || g.revenue > 0)
@@ -516,25 +504,12 @@ export default function Synergy() {
                   <span>ADR: <strong className="text-slate-800">{formatCurrency(item.adr)}원</strong></span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-center text-xs mb-4">
-                  <div className="p-2 bg-white rounded-xl border border-slate-100">
-                    <span className="text-slate-400 text-[10px] block mb-1">객실 순매출</span>
-                    <span className="font-bold text-slate-800 text-[13px]">{formatCurrency(item.revenue)}원</span>
+                <div className="flex flex-col gap-2 text-center text-xs mb-4">
+                  <div className="p-3 bg-white rounded-xl border border-slate-100 flex flex-col items-center justify-center">
+                    <span className="text-slate-400 text-xs block mb-1">객실 순매출</span>
+                    <span className="font-bold text-slate-800 text-base">{formatCurrency(item.revenue)}원</span>
                   </div>
-                  <div className="p-2 bg-amber-50/70 rounded-xl border border-amber-100">
-                    <span className="text-amber-700 text-[10px] block mb-1">부대시너지 매출</span>
-                    <span className="font-bold text-amber-800 text-[13px]">+{formatCurrency(item.totalSynergySales)}원</span>
-                  </div>
-                  <div className="p-2 bg-indigo-50/70 rounded-xl border border-indigo-100">
-                    <span className="text-indigo-700 text-[10px] block mb-1">통합 1실당가치</span>
-                    <span className="font-bold text-indigo-800 text-[13px]">{formatCurrency(item.revPas)}원</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                  <span className="flex items-center gap-1">
-                    <Zap size={12} className="text-amber-500" /> 부대시설 연계 이용률: <strong>{item.crossSellingRate}%</strong>
-                  </span>
+                  {/* SSOT 위반: 프론트엔드 임의 배분으로 생성된 부대시너지 매출 및 연계 이용률 표시 제거 */}
                 </div>
               </div>
             ))}

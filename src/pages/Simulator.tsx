@@ -23,8 +23,6 @@ const getHqColor = (hq: string) => {
   return colors[hash % colors.length];
 };
 
-// 결제 영업장 명칭 목록 (삭제 - 실제 데이터 사용)
-// MOCK_TRANSACTIONS (삭제 - 실제 데이터 사용)
 
 interface Transaction {
   id: string;

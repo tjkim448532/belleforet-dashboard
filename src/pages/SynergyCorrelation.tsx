@@ -363,7 +363,7 @@ export default function SynergyCorrelation() {
     return fnbStoreAnalysis.reduce((acc, cur) => acc + (cur.revPasContribution || 0), 0);
   }, [fnbStoreAnalysis]);
 
-  // Extract Leisure Items from API 8 or fallback
+
   const leisureCorrelationRows = useMemo(() => {
     if (correlationData.length > 0) {
       const rows = correlationData.filter(r => r.divisionName === '레저본부' || r.divisionName === '모토아레나');
@@ -373,7 +373,7 @@ export default function SynergyCorrelation() {
     return [];
   }, [correlationData, selectedLeisureShop]);
 
-  // Extract FNB Items from API 8 or fallback
+
   const fnbCorrelationRows = useMemo(() => {
     if (correlationData.length > 0) {
       const rows = correlationData.filter(r => r.divisionName === '식음팀');

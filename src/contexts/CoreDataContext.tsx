@@ -60,96 +60,13 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         let corePayload = res.data || res;
         
-        // Array response handling: Synthesize period range metrics with valid settled day fallback
+        // V5 SSOT 강제화: 백엔드가 startDate ~ endDate 구간에 대해 
+        // 100% 계산 완료된 단일 객체(Unified Object)를 반환한다고 가정합니다.
+        // 프론트엔드 단에서의 배열 reduce(Slice Summation) 가공 로직은 바이블 원칙에 따라 전면 철거되었습니다.
         if (Array.isArray(corePayload)) {
-          const dailyArray = corePayload;
-          const validDay = dailyArray.find((d: any) => (d.summary?.totalRevenue || 0) > 0) || dailyArray[0] || {};
-          const latestYtdDay = [...dailyArray].reverse().find((d: any) => (d.summary?.ytdRevenue || 0) > 0) || validDay;
-
-          let totalRev = 0;
-          let totalRooms = 0;
-          let totalVisitors = 0;
-          let todayLyRev = 0;
-
-          const categoryMap: Record<string, { code: string; name: string; actual: number }> = {};
-          const roomTypeMap: Record<string, { type: string; sold: number; rev: number }> = {};
-
-          dailyArray.forEach((dayItem: any) => {
-            const s = dayItem.summary || {};
-            totalRev += Number(s.totalRevenue || dayItem.totalRevenue || 0);
-            totalRooms += Number(s.totalRooms || dayItem.totalRooms || 0);
-            totalVisitors += Number(s.totalVisitors || dayItem.totalVisitors || 0);
-            todayLyRev += Number(s.todayLyRevenue || s.lyRevenue || dayItem.todayLyRevenue || 0);
-
-            if (dayItem.salesByCategory && Array.isArray(dayItem.salesByCategory)) {
-              dayItem.salesByCategory.forEach((cat: any) => {
-                const code = cat.categoryCode || cat.category_code || 'OTHER';
-                const name = cat.categoryName || cat.category_name || code;
-                const amt = Number(cat.todayActual || cat.totalSales || cat.sales || cat.revenue || 0);
-                if (!categoryMap[code]) {
-                  categoryMap[code] = { code, name, actual: 0 };
-                }
-                categoryMap[code].actual += amt;
-              });
-            }
-
-            if (dayItem.roomSummaryByType && Array.isArray(dayItem.roomSummaryByType)) {
-              dayItem.roomSummaryByType.forEach((rt: any) => {
-                const type = rt.room_type || rt.roomType || '기타';
-                const sold = Number(rt.rooms_sold || rt.roomsSold || 0);
-                const rev = Number(rt.revenue || 0);
-                if (!roomTypeMap[type]) {
-                  roomTypeMap[type] = { type, sold: 0, rev: 0 };
-                }
-                roomTypeMap[type].sold += sold;
-                roomTypeMap[type].rev += rev;
-              });
-            }
-          });
-
-          const salesByCategory = Object.values(categoryMap).map(c => ({
-            categoryCode: c.code,
-            categoryName: c.name,
-            todayActual: c.actual,
-            totalSales: c.actual
-          }));
-
-          const roomSummaryByType = Object.values(roomTypeMap).map(rt => ({
-            roomType: rt.type,
-            roomsSold: rt.sold,
-            revenue: rt.rev
-          }));
-
-          corePayload = {
-            isRangeQuery: true,
-            startDate,
-            endDate,
-            summary: {
-              totalRevenue: totalRev > 0 ? totalRev : (validDay.summary?.totalRevenue || 0),
-              totalRooms: totalRooms > 0 ? totalRooms : (validDay.summary?.totalRooms || 0),
-              totalVisitors: totalVisitors > 0 ? totalVisitors : (validDay.summary?.totalVisitors || 0),
-              totalRoomCap: (validDay.summary?.totalRoomCap || 180) * dailyArray.length,
-              ytdRevenue: latestYtdDay.summary?.ytdRevenue || validDay.summary?.ytdRevenue || 0,
-              ytdLyRevenue: latestYtdDay.summary?.ytdLyRevenue || validDay.summary?.ytdLyRevenue || 0,
-              todayLyRevenue: todayLyRev > 0 ? todayLyRev : (validDay.summary?.todayLyRevenue || 0),
-              totalGolfTeams: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfTeams || 0), 0),
-              totalGolfVisitors: dailyArray.reduce((acc, d) => acc + Number(d.summary?.totalGolfVisitors || 0), 0),
-              multiNightRooms: dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightRooms || 0), 0),
-              multiNightGuests: dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuests || 0), 0),
-              multiNightGuestsLy: dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuestsLy || 0), 0),
-              multiNightRatio: (totalVisitors > 0) ? (dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuests || 0), 0) / totalVisitors) * 100 : 0,
-              guestsGrowth: (() => {
-                const g = dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuests || 0), 0);
-                const gLy = dailyArray.reduce((acc, d) => acc + Number(d.summary?.multiNightGuestsLy || 0), 0);
-                return gLy > 0 ? ((g - gLy) / gLy) * 100 : 0;
-              })(),
-            },
-            salesByCategory: salesByCategory.length > 0 ? salesByCategory : (validDay.salesByCategory || []),
-            salesByFacility: validDay.salesByFacility || [],
-            roomSummaryByType: roomSummaryByType.length > 0 ? roomSummaryByType : (validDay.roomSummaryByType || []),
-            dailyTrends: dailyArray,
-            weather: validDay.weather || latestYtdDay.weather || null
-          };
+          console.error("SSOT 위반 에러: 백엔드가 구간 요약 데이터 대신 배열을 반환했습니다. 통합된 객체 응답이 필요합니다.");
+          // 배열이 올 경우 첫 번째 요소라도 사용하거나 빈 객체로 폴백 (에러 방지)
+          corePayload = corePayload[0] || { summary: {} };
         } else if (res.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
         }

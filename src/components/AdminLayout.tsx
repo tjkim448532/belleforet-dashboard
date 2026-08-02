@@ -11,8 +11,8 @@ export default function AdminLayout() {
     if (isAdmin) {
       const fetchEtlStatus = async () => {
         try {
-          const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost/api/v3';
-          const res = await fetch(`${API_BASE}/admin/system/etl-status`);
+          const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+          const res = await fetch(`${API_BASE}/api/v3/admin/system/etl-status`);
           if (res.ok) {
             const data = await res.json();
             if (data.status === 'SUCCESS' && data.data) {

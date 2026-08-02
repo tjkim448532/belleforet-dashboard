@@ -33,11 +33,11 @@ export default function AdminDaolRules() {
   const [saving, setSaving] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v5';
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
   const fetchRules = async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/daol-rules`);
+      const res = await fetch(`${API_BASE}/api/v5/admin/daol-rules`);
       if (!res.ok) throw new Error('Failed to fetch rules');
       const data = await res.json();
       
@@ -87,7 +87,7 @@ export default function AdminDaolRules() {
 
     try {
       setSaving(true);
-      const res = await fetch(`${API_BASE}/admin/daol-rules`, {
+      const res = await fetch(`${API_BASE}/api/v5/admin/daol-rules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,7 +113,7 @@ export default function AdminDaolRules() {
   const handleDeleteRule = async (rType: string, sName: string) => {
     if (!window.confirm(`'${sName}' 매핑 룰을 정말 삭제하시겠습니까?`)) return;
     try {
-      const res = await fetch(`${API_BASE}/admin/daol-rules?rule_type=${rType}&source_name=${encodeURIComponent(sName)}`, {
+      const res = await fetch(`${API_BASE}/api/v5/admin/daol-rules?rule_type=${rType}&source_name=${encodeURIComponent(sName)}`, {
         method: 'DELETE'
       });
       if (!res.ok) throw new Error('삭제 실패');
@@ -128,7 +128,7 @@ export default function AdminDaolRules() {
     if (!window.confirm('저장된 모든 룰을 기준으로 과거 데이터를 전체 재적재(Backfill) 하시겠습니까?\n이 작업은 데이터 양에 따라 수 초~수 분이 소요될 수 있습니다.')) return;
     try {
       setBackfilling(true);
-      const res = await fetch(`${API_BASE}/admin/trigger-etl`, {
+      const res = await fetch(`${API_BASE}/api/v5/admin/trigger-etl`, {
         method: 'POST'
       });
       if (!res.ok) throw new Error('백필 실패');

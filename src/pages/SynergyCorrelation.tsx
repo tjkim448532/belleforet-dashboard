@@ -30,6 +30,7 @@ interface StoreCorrelationItem {
   interactionGrade?: string;
   revPasContribution?: number;
   isGuestRatioTrackable?: boolean;
+  calculationMethod?: string;
 }
 
 export default function SynergyCorrelation() {
@@ -114,6 +115,7 @@ export default function SynergyCorrelation() {
           interactionGrade,
           revPasContribution,
           isGuestRatioTrackable: item.isGuestRatioTrackable !== false,
+          calculationMethod: item.calculationMethod || (item.isGuestRatioTrackable !== false ? 'HARD_FACT_MATCHING' : 'UNTRACKABLE'),
         };
       };
 
@@ -594,9 +596,11 @@ export default function SynergyCorrelation() {
                          store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
                       </span>
                     )}
-                    {store.isGuestRatioTrackable ? (
+                    {store.calculationMethod !== 'UNTRACKABLE' ? (
                       <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
                         숙박객 비율 {store.spilloverRate}%
+                        {store.calculationMethod === 'HARD_FACT_MATCHING' && <span className="ml-1 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">건수 실측</span>}
+                        {store.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="ml-1 text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">통계적 추정치</span>}
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
@@ -625,23 +629,23 @@ export default function SynergyCorrelation() {
                   <div className="flex justify-between items-center bg-purple-100/70 p-2 rounded-xl">
                     <div>
                       <span className="text-purple-800 font-semibold block">객실 연계 파급매출</span>
-                      {store.isGuestRatioTrackable && store.reverseSpillover !== undefined && (
+                      {store.calculationMethod !== 'UNTRACKABLE' && store.reverseSpillover !== undefined && (
                         <span className="text-[10px] text-purple-600 font-medium">
                           이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
                         </span>
                       )}
-                      {!store.isGuestRatioTrackable && (
+                      {store.calculationMethod === 'UNTRACKABLE' && (
                         <span className="text-[10px] text-slate-500 font-medium">매표 연동 불가 등 식별 불가</span>
                       )}
                     </div>
                     <span className="font-bold text-purple-900">
-                      {store.isGuestRatioTrackable ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
+                      {store.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 이용객수: <strong>{store.isGuestRatioTrackable ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
-                    <span className="text-indigo-700 font-semibold">1실당 기여액: {store.isGuestRatioTrackable ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
+                    <span>추정 연계 이용객수: <strong>{store.calculationMethod !== 'UNTRACKABLE' ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
+                    <span className="text-indigo-700 font-semibold">1실당 기여액: {store.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
                   </div>
                 </div>
               </div>
@@ -696,16 +700,21 @@ export default function SynergyCorrelation() {
                       V5 원천 영업장 (SSOT 연동)
                     </td>
                     <td className="py-4 px-6 text-right font-medium text-slate-800">
-                      {item.isGuestRatioTrackable ? `${(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명` : '-'}
+                      {item.calculationMethod !== 'UNTRACKABLE' ? `${(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명` : '-'}
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-purple-700">
-                      {item.isGuestRatioTrackable ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
+                      {item.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
                     </td>
-                    <td className="py-4 px-6 text-right font-semibold text-indigo-600">
-                      {item.isGuestRatioTrackable ? `${item.spilloverRate}%` : '-'}
+                    <td className="py-4 px-6 text-right font-semibold text-indigo-600 flex flex-col items-end gap-1">
+                      {item.calculationMethod !== 'UNTRACKABLE' ? (
+                        <>
+                          <span>{item.spilloverRate}%</span>
+                          {item.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-normal">추정치</span>}
+                        </>
+                      ) : '-'}
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-slate-900">
-                      {item.isGuestRatioTrackable ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
+                      {item.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
                     </td>
                   </tr>
                 ))
@@ -769,9 +778,11 @@ export default function SynergyCorrelation() {
                          store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
                       </span>
                     )}
-                    {store.isGuestRatioTrackable ? (
+                    {store.calculationMethod !== 'UNTRACKABLE' ? (
                       <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
                         숙박객 비율 {store.spilloverRate}%
+                        {store.calculationMethod === 'HARD_FACT_MATCHING' && <span className="ml-1 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">건수 실측</span>}
+                        {store.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="ml-1 text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">통계적 추정치</span>}
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
@@ -800,23 +811,23 @@ export default function SynergyCorrelation() {
                   <div className="flex justify-between items-center bg-amber-100/70 p-2 rounded-xl">
                     <div>
                       <span className="text-amber-800 font-semibold block">객실 연계 파급매출</span>
-                      {store.isGuestRatioTrackable && store.reverseSpillover !== undefined && (
+                      {store.calculationMethod !== 'UNTRACKABLE' && store.reverseSpillover !== undefined && (
                         <span className="text-[10px] text-amber-700 font-medium">
                           이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
                         </span>
                       )}
-                      {!store.isGuestRatioTrackable && (
+                      {store.calculationMethod === 'UNTRACKABLE' && (
                         <span className="text-[10px] text-slate-500 font-medium">결제 연동 불가 등 식별 불가</span>
                       )}
                     </div>
                     <span className="font-bold text-amber-900">
-                      {store.isGuestRatioTrackable ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
+                      {store.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 고객수: <strong>{store.isGuestRatioTrackable ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
-                    <span className="text-emerald-700 font-semibold">1실당 기여액: {store.isGuestRatioTrackable ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
+                    <span>추정 연계 고객수: <strong>{store.calculationMethod !== 'UNTRACKABLE' ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
+                    <span className="text-emerald-700 font-semibold">1실당 기여액: {store.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
                   </div>
                 </div>
               </div>
@@ -871,16 +882,21 @@ export default function SynergyCorrelation() {
                       V5 원천 영업장 (SSOT 연동)
                     </td>
                     <td className="py-4 px-6 text-right font-medium text-slate-800">
-                      {item.isGuestRatioTrackable ? `${(item.correlatedVisitors || 0).toLocaleString()}명` : '-'}
+                      {item.calculationMethod !== 'UNTRACKABLE' ? `${(item.correlatedVisitors || 0).toLocaleString()}명` : '-'}
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-amber-700">
-                      {item.isGuestRatioTrackable ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
+                      {item.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
                     </td>
-                    <td className="py-4 px-6 text-right font-semibold text-emerald-600">
-                      {item.isGuestRatioTrackable ? `${item.spilloverRate}%` : '-'}
+                    <td className="py-4 px-6 text-right font-semibold text-emerald-600 flex flex-col items-end gap-1">
+                      {item.calculationMethod !== 'UNTRACKABLE' ? (
+                        <>
+                          <span>{item.spilloverRate}%</span>
+                          {item.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-normal">추정치</span>}
+                        </>
+                      ) : '-'}
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-slate-900">
-                      {item.isGuestRatioTrackable ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
+                      {item.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
                     </td>
                   </tr>
                 ))

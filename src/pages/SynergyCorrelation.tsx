@@ -29,6 +29,7 @@ interface StoreCorrelationItem {
   liftValue?: number;
   interactionGrade?: string;
   revPasContribution?: number;
+  isGuestRatioTrackable?: boolean;
 }
 
 export default function SynergyCorrelation() {
@@ -112,6 +113,7 @@ export default function SynergyCorrelation() {
           liftValue,
           interactionGrade,
           revPasContribution,
+          isGuestRatioTrackable: item.isGuestRatioTrackable !== false,
         };
       };
 
@@ -122,7 +124,7 @@ export default function SynergyCorrelation() {
         const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
         const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
         const golfList = (Array.isArray(corrPayload.golf) ? corrPayload.golf : []).map((item: any) => processCorrItem(item, '골프본부'));
-        corrList = [...ticketList, ...fnbList, ...golfList];
+        corrList = [...ticketList, ...fnbList, ...golfList].filter(item => item.isGuestRatioTrackable);
       }
       setCorrelationData(corrList);
     } catch (err) {

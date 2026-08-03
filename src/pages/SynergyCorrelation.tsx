@@ -124,7 +124,7 @@ export default function SynergyCorrelation() {
         const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
         const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
         const golfList = (Array.isArray(corrPayload.golf) ? corrPayload.golf : []).map((item: any) => processCorrItem(item, '골프본부'));
-        corrList = [...ticketList, ...fnbList, ...golfList].filter(item => item.isGuestRatioTrackable);
+        corrList = [...ticketList, ...fnbList, ...golfList];
       }
       setCorrelationData(corrList);
     } catch (err) {
@@ -594,9 +594,15 @@ export default function SynergyCorrelation() {
                          store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
                       </span>
                     )}
-                    <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                      숙박객 비율 {store.spilloverRate}%
-                    </span>
+                    {store.isGuestRatioTrackable ? (
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
+                        숙박객 비율 {store.spilloverRate}%
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                        숙박객 식별 불가
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -619,18 +625,23 @@ export default function SynergyCorrelation() {
                   <div className="flex justify-between items-center bg-purple-100/70 p-2 rounded-xl">
                     <div>
                       <span className="text-purple-800 font-semibold block">객실 연계 파급매출</span>
-                      {store.reverseSpillover !== undefined && (
+                      {store.isGuestRatioTrackable && store.reverseSpillover !== undefined && (
                         <span className="text-[10px] text-purple-600 font-medium">
                           이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
                         </span>
                       )}
+                      {!store.isGuestRatioTrackable && (
+                        <span className="text-[10px] text-slate-500 font-medium">매표 연동 불가 등 식별 불가</span>
+                      )}
                     </div>
-                    <span className="font-bold text-purple-900">{formatCurrency(store.correlatedSales)}원</span>
+                    <span className="font-bold text-purple-900">
+                      {store.isGuestRatioTrackable ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 이용객수: <strong>{(store.correlatedVisitors || 0).toLocaleString()}명</strong></span>
-                    <span className="text-indigo-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution || 0)}원</span>
+                    <span>추정 연계 이용객수: <strong>{store.isGuestRatioTrackable ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
+                    <span className="text-indigo-700 font-semibold">1실당 기여액: {store.isGuestRatioTrackable ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
                   </div>
                 </div>
               </div>
@@ -684,10 +695,18 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-600 font-medium">
                       V5 원천 영업장 (SSOT 연동)
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || 0).toLocaleString()}명</td>
-                    <td className="py-4 px-6 text-right font-bold text-purple-700">{formatCurrency(item.correlatedSales)}원</td>
-                    <td className="py-4 px-6 text-right font-semibold text-indigo-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">
+                      {item.isGuestRatioTrackable ? `${(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명` : '-'}
+                    </td>
+                    <td className="py-4 px-6 text-right font-bold text-purple-700">
+                      {item.isGuestRatioTrackable ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
+                    </td>
+                    <td className="py-4 px-6 text-right font-semibold text-indigo-600">
+                      {item.isGuestRatioTrackable ? `${item.spilloverRate}%` : '-'}
+                    </td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900">
+                      {item.isGuestRatioTrackable ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
+                    </td>
                   </tr>
                 ))
               )}
@@ -750,9 +769,15 @@ export default function SynergyCorrelation() {
                          store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
                       </span>
                     )}
-                    <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                      숙박객 비율 {store.spilloverRate}%
-                    </span>
+                    {store.isGuestRatioTrackable ? (
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
+                        숙박객 비율 {store.spilloverRate}%
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                        숙박객 식별 불가
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -775,18 +800,23 @@ export default function SynergyCorrelation() {
                   <div className="flex justify-between items-center bg-amber-100/70 p-2 rounded-xl">
                     <div>
                       <span className="text-amber-800 font-semibold block">객실 연계 파급매출</span>
-                      {store.reverseSpillover !== undefined && (
+                      {store.isGuestRatioTrackable && store.reverseSpillover !== undefined && (
                         <span className="text-[10px] text-amber-700 font-medium">
                           이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
                         </span>
                       )}
+                      {!store.isGuestRatioTrackable && (
+                        <span className="text-[10px] text-slate-500 font-medium">결제 연동 불가 등 식별 불가</span>
+                      )}
                     </div>
-                    <span className="font-bold text-amber-900">{formatCurrency(store.correlatedSales)}원</span>
+                    <span className="font-bold text-amber-900">
+                      {store.isGuestRatioTrackable ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 고객수: <strong>{(store.correlatedVisitors || 0).toLocaleString()}명</strong></span>
-                    <span className="text-emerald-700 font-semibold">1실당 기여액: +{formatCurrency(store.revPasContribution || 0)}원</span>
+                    <span>추정 연계 고객수: <strong>{store.isGuestRatioTrackable ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
+                    <span className="text-emerald-700 font-semibold">1실당 기여액: {store.isGuestRatioTrackable ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
                   </div>
                 </div>
               </div>
@@ -840,10 +870,18 @@ export default function SynergyCorrelation() {
                     <td className="py-4 px-6 text-slate-600 font-medium">
                       V5 원천 영업장 (SSOT 연동)
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || 0).toLocaleString()}명</td>
-                    <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
-                    <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800">
+                      {item.isGuestRatioTrackable ? `${(item.correlatedVisitors || 0).toLocaleString()}명` : '-'}
+                    </td>
+                    <td className="py-4 px-6 text-right font-bold text-amber-700">
+                      {item.isGuestRatioTrackable ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
+                    </td>
+                    <td className="py-4 px-6 text-right font-semibold text-emerald-600">
+                      {item.isGuestRatioTrackable ? `${item.spilloverRate}%` : '-'}
+                    </td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900">
+                      {item.isGuestRatioTrackable ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
+                    </td>
                   </tr>
                 ))
               )}

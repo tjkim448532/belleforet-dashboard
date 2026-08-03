@@ -254,13 +254,19 @@ export default function Home() {
                   <div className="self-start text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
                     <div className="opacity-60 text-right pr-3 border-r border-slate-200">
                       <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
-                      {lastYearWeather && (lastYearWeather.weatherDesc !== '데이터없음' && lastYearWeather.description !== '데이터없음') ? (
+                      {lastYearWeather ? (
                         <>
                           <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
-                            {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
-                            {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
+                            {lastYearWeather.weatherDesc === '데이터없음' || lastYearWeather.description === '데이터없음' ? '☁️ 알수없음' : (
+                              <>
+                                {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                                {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
+                              </>
+                            )}
                           </div>
-                          <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
+                          {(lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0) && (
+                            <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
+                          )}
                         </>
                       ) : (
                         <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">❓ 날씨없음</div>
@@ -268,13 +274,19 @@ export default function Home() {
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
-                      {weather && (weather.weatherDesc !== '데이터없음' && weather.description !== '데이터없음') ? (
+                      {weather ? (
                         <>
                           <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
-                            {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
-                            {weather.weatherDesc || weather.description || '맑음'}
+                            {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
+                              <>
+                                {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                                {weather.weatherDesc || weather.description || '맑음'}
+                              </>
+                            )}
                           </div>
-                          <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                          {(weather.tempMax !== 0 || weather.tempMin !== 0) && (
+                            <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                          )}
                         </>
                       ) : (
                         <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">❓ 날씨없음</div>

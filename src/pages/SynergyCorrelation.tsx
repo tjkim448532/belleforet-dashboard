@@ -18,6 +18,7 @@ interface StoreCorrelationItem {
   storeName?: string;
   channelName?: string;
   segmentName?: string;
+  totalSales: number;
   correlatedSales: number;
   correlatedVisitors: number;
   correlatedGuests?: number;
@@ -39,8 +40,6 @@ export default function SynergyCorrelation() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
   
   const [correlationData, setCorrelationData] = useState<StoreCorrelationItem[]>([]);
-  const [matrixData, setMatrixData] = useState<any[]>([]);
-  const [channelData, setChannelData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedLeisureShop, setSelectedLeisureShop] = useState<string>('ALL');
@@ -71,28 +70,15 @@ export default function SynergyCorrelation() {
     }
 
     try {
-      const queryParams = rangeActive && eDate
-        ? `startDate=${sDate}&endDate=${eDate}`
-        : `date=${sDate}`;
-      
       const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
 
-      // 1. Fetch V5 Synergy Store Correlation API (API 8)
+      // 1. Fetch V5 Synergy Store Correlation API (API 8) - Now contains EVERYTHING
       const corrRes = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null);
       const corrPayload = corrRes?.data ?? corrRes;
 
-      // 2. Fetch V5 Matrix Weekly (SSOT store sales)
-      const matrixRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null);
-      const matrixPayload = matrixRes?.data ?? matrixRes;
-
-      // 3. Fetch V5 Channel Sales
-      const chRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
-      const chPayload = chRes?.data ?? chRes;
-
-      const processCorrItem = (item: any): StoreCorrelationItem => {
+      const processCorrItem = (item: any, defaultDivision: string): StoreCorrelationItem => {
         const shopName = item.shopName || item.storeName || item.shop_name || '';
         
-        // SSOT 위반 수정: 백엔드에서 누락될 경우 프론트엔드가 임의로 65%나 78%를 할당하는 가짜 폴백 제거
         const spilloverRate = item.spilloverRate !== undefined 
           ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) 
           : 0;
@@ -107,17 +93,16 @@ export default function SynergyCorrelation() {
           
         const correlationCoefficient = item.correlationCoefficient !== undefined ? Number(Number(item.correlationCoefficient).toFixed(2)) : undefined;
         const liftValue = item.liftValue !== undefined ? Number(Number(item.liftValue).toFixed(2)) : undefined;
-        
-        // SSOT 위반 수정: 상관계수를 기반으로 한 등급 추정 로직(HIGH_SYNERGY 등)을 제거하고 백엔드 응답만 신뢰
         const interactionGrade = item.interactionGrade;
-        
         const revPasContribution = item.revPasContribution !== undefined ? Number(item.revPasContribution) : undefined;
+        const totalSales = item.totalSales !== undefined ? Number(item.totalSales) : 0;
 
         return {
           ...item,
-          divisionName: item.divisionName || (item.storeName === '모토아레나' ? '모토아레나' : '기타'),
+          divisionName: item.divisionName || (shopName.includes('모토아레나') ? '모토아레나' : defaultDivision),
           shopName,
           storeName: shopName,
+          totalSales,
           correlatedSales: item.correlatedSales || 0,
           correlatedVisitors: item.correlatedVisitors || item.correlatedGuests || 0,
           spilloverRate,
@@ -132,21 +117,14 @@ export default function SynergyCorrelation() {
 
       let corrList: StoreCorrelationItem[] = [];
       if (Array.isArray(corrPayload)) {
-        corrList = corrPayload.map(item => processCorrItem(item));
+        corrList = corrPayload.map(item => processCorrItem(item, '기타'));
       } else if (corrPayload && typeof corrPayload === 'object') {
-        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item));
-        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item));
-        corrList = [...ticketList, ...fnbList];
+        const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
+        const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
+        const golfList = (Array.isArray(corrPayload.golf) ? corrPayload.golf : []).map((item: any) => processCorrItem(item, '골프본부'));
+        corrList = [...ticketList, ...fnbList, ...golfList];
       }
       setCorrelationData(corrList);
-
-      if (Array.isArray(matrixPayload)) {
-        setMatrixData(matrixPayload);
-      }
-
-      if (Array.isArray(chPayload)) {
-        setChannelData(chPayload);
-      }
     } catch (err) {
       console.error('Synergy Correlation API Error:', err);
     } finally {
@@ -203,148 +181,27 @@ export default function SynergyCorrelation() {
     }
   };
 
-  // Determine if query is an actual multi-day date range (startDate !== endDate)
-  const isActualRange = useMemo(() => {
-    return isRangeMode && !!endDate && startDate !== endDate;
-  }, [isRangeMode, startDate, endDate]);
-
-  // Real Total Rooms Sold in Period
-  const totalRoomsSold = useMemo(() => {
-    const gt = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
-    if (gt) {
-      return isActualRange ? (gt.mtdRooms || 0) : (gt.todayRooms || 0);
-    }
-    return 0;
-  }, [channelData, isActualRange]);
-
-  // Pure Dynamic SSOT Extraction for Leisure & Moto Stores from V5 Matrix Data
+  // Pure Dynamic SSOT Extraction for Leisure, Moto, and Golf Stores directly from V5 Correlation API
   const leisureStoreAnalysis = useMemo(() => {
-    const leisureRows = matrixData.filter(r => 
-      (r.categoryCode === 'TICKET' || r.categoryCode === 'MOTO') && 
-      !r.isSubtotal && 
-      !r.isGrandTotal && 
-      r.shopName && 
-      r.shopName !== '소계' && 
-      !r.shopName.includes('미사용 티켓') &&
-      Number(r.todayActual || r.ytdActual || 0) > 0
-    );
+    return correlationData
+      .filter(c => c.divisionName === '레저본부' || c.divisionName === '모토아레나' || c.divisionName === '골프본부')
+      .map(c => ({
+        ...c,
+        color: 'border-purple-200 bg-purple-50/40 text-purple-900'
+      }))
+      .sort((a, b) => b.totalSales - a.totalSales);
+  }, [correlationData]);
 
-    const map = new Map<string, { 
-      totalSales: number; 
-      correlatedSales: number; 
-      correlatedVisitors: number; 
-      spilloverRate: number; 
-      revPasContribution: number;
-      correlationCoefficient?: number;
-      liftValue?: number;
-      interactionGrade?: string;
-      forwardSpillover?: number;
-      reverseSpillover?: number;
-    }>();
-
-    leisureRows.forEach(r => {
-      const shop = r.shopName.trim();
-      const sales = Number(r.todayActual || r.ytdActual || 0);
-      
-      const matchedCorr = correlationData.find(c => {
-        const cName = (c.shopName || c.storeName || '').trim();
-        return cName === shop || shop.includes(cName) || cName.includes(shop);
-      });
-      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 0;
-
-      const curr = map.get(shop) || { 
-        totalSales: 0, 
-        correlatedSales: 0, 
-        correlatedVisitors: 0, 
-        spilloverRate: realSpillover, 
-        revPasContribution: matchedCorr?.revPasContribution || 0,
-        correlationCoefficient: matchedCorr?.correlationCoefficient,
-        liftValue: matchedCorr?.liftValue,
-        interactionGrade: matchedCorr?.interactionGrade,
-        forwardSpillover: matchedCorr?.forwardSpillover,
-        reverseSpillover: matchedCorr?.reverseSpillover,
-      };
-      
-      curr.totalSales += sales;
-      
-      // SSOT 위반 수정: 프론트엔드에서 매출 * 비율로 직접 재계산하거나 18000원 하드코딩으로 객수 추정하지 않음. 
-      // 백엔드가 제공한 값을 100% 그대로 사용
-      curr.correlatedSales = matchedCorr?.correlatedSales || 0;
-      curr.correlatedVisitors = matchedCorr?.correlatedVisitors || 0;
-      curr.spilloverRate = realSpillover;
-      curr.revPasContribution = matchedCorr?.revPasContribution || 0;
-      
-      map.set(shop, curr);
-    });
-
-    return Array.from(map.entries()).map(([shopName, val]) => ({
-      shopName,
-      ...val,
-      color: 'border-purple-200 bg-purple-50/40 text-purple-900'
-    })).sort((a, b) => b.totalSales - a.totalSales);
-  }, [matrixData, totalRoomsSold, correlationData]);
-
-  // Pure Dynamic SSOT Extraction for F&B Stores from V5 Matrix Data
+  // Pure Dynamic SSOT Extraction for F&B Stores directly from V5 Correlation API
   const fnbStoreAnalysis = useMemo(() => {
-    const fnbRows = matrixData.filter(r => 
-      r.categoryCode === 'FNB' && 
-      !r.isSubtotal && 
-      !r.isGrandTotal && 
-      r.shopName && 
-      r.shopName !== '소계' &&
-      Number(r.todayActual || r.ytdActual || 0) > 0
-    );
-
-    const map = new Map<string, { 
-      totalSales: number; 
-      correlatedSales: number; 
-      correlatedVisitors: number; 
-      spilloverRate: number; 
-      revPasContribution: number;
-      correlationCoefficient?: number;
-      liftValue?: number;
-      interactionGrade?: string;
-      forwardSpillover?: number;
-      reverseSpillover?: number;
-    }>();
-
-    fnbRows.forEach(r => {
-      const shop = r.shopName.trim();
-      const sales = Number(r.todayActual || r.ytdActual || 0);
-      
-      const matchedCorr = correlationData.find(c => {
-        const cName = (c.shopName || c.storeName || '').trim();
-        return cName === shop || shop.includes(cName) || cName.includes(shop);
-      });
-      const realSpillover = matchedCorr && matchedCorr.spilloverRate !== undefined ? matchedCorr.spilloverRate : 0;
-
-      const curr = map.get(shop) || { 
-        totalSales: 0, 
-        correlatedSales: 0, 
-        correlatedVisitors: 0, 
-        spilloverRate: realSpillover, 
-        revPasContribution: matchedCorr?.revPasContribution || 0,
-        correlationCoefficient: matchedCorr?.correlationCoefficient,
-        liftValue: matchedCorr?.liftValue,
-        interactionGrade: matchedCorr?.interactionGrade,
-        forwardSpillover: matchedCorr?.forwardSpillover,
-        reverseSpillover: matchedCorr?.reverseSpillover,
-      };
-      curr.totalSales += sales;
-      // SSOT 위반 수정: 백엔드가 제공한 값만 사용
-      curr.correlatedSales = matchedCorr?.correlatedSales || 0;
-      curr.correlatedVisitors = matchedCorr?.correlatedVisitors || 0;
-      curr.spilloverRate = realSpillover;
-      curr.revPasContribution = matchedCorr?.revPasContribution || 0;
-      map.set(shop, curr);
-    });
-
-    return Array.from(map.entries()).map(([shopName, val]) => ({
-      shopName,
-      ...val,
-      color: 'border-amber-200 bg-amber-50/40 text-amber-900'
-    })).sort((a, b) => b.totalSales - a.totalSales);
-  }, [matrixData, totalRoomsSold, correlationData]);
+    return correlationData
+      .filter(c => c.divisionName === '식음팀')
+      .map(c => ({
+        ...c,
+        color: 'border-amber-200 bg-amber-50/40 text-amber-900'
+      }))
+      .sort((a, b) => b.totalSales - a.totalSales);
+  }, [correlationData]);
 
   // Overall Division Summary KPIs (100% Total Revenue directly as requested)
   const totalLeisureSales = useMemo(() => {

@@ -173,20 +173,21 @@ export default function Synergy() {
     return { rooms: 0, revenue: 0, adr: 0 };
   }, [channelData, isActualRange]);
 
-  // Resort Ancillary Sales (Golf, FNB, Leisure) scaled by totalDays for period query
+  // SSOT: 백엔드가 계산해주는 실제 투숙객 부대시설 시너지 매출만 직접 사용
   const ancillarySales = useMemo(() => {
-    if (!summaryData?.salesByCategory) {
+    // API 응답 구조에 따라 summary 뎁스가 있을 수도 있고 없을 수도 있으므로 유연하게 접근
+    const synergy = summaryData?.summary?.synergySales || summaryData?.synergySales;
+    if (!synergy) {
       return { golf: 0, fnb: 0, ticket: 0, total: 0 };
     }
-    const cats = summaryData.salesByCategory;
     
-    // SSOT 원칙에 따라 프론트엔드 임의 연산 없이 백엔드 합산 총액 그대로 사용
-    const golf = Number(cats.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프')?.totalSales || 0);
-    const fnb = Number(cats.find((x: any) => x.categoryCode === 'FNB' || x.categoryCode === '식음')?.totalSales || 0);
-    const ticket = Number(cats.find((x: any) => x.categoryCode === 'TICKET' || x.categoryCode === '티켓' || x.categoryCode === 'LEISURE')?.totalSales || 0);
-    
-    return { golf, fnb, ticket, total: golf + fnb + ticket };
-  }, [summaryData, isActualRange, totalDays]);
+    return { 
+      golf: Number(synergy.golf || 0), 
+      fnb: Number(synergy.fnb || 0), 
+      ticket: Number(synergy.ticket || 0), 
+      total: Number(synergy.total || 0) 
+    };
+  }, [summaryData]);
 
   // Ground-Up Breakdown Grouping 100% directly from API 7 Backend Subtotal Rows (0% Discrepancy SSOT)
   const segmentSummaries = useMemo(() => {

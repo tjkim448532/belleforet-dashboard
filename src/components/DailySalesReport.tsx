@@ -33,7 +33,7 @@ const processSalesData = (payload: any) => {
     finalArray.push({
       isCategory: true,
       shopName: cat.categoryName,
-      todayActual: Number(cat.todayActual || cat.totalSales || 0),
+      todayActual: Number(cat.totalSales || 0), // SSOT strict map
       todayLy: Number(cat.todayLy || 0),
       mtdActual: Number(cat.mtdActual || 0),
       mtdLy: Number(cat.mtdLy || 0),
@@ -47,7 +47,7 @@ const processSalesData = (payload: any) => {
     finalArray.push({
       isChild: true,
       shopName: child.shopName,
-      todayActual: Number(child.todayActual || child.totalSales || 0),
+      todayActual: Number(child.totalSales || 0), // SSOT strict map
       todayLy: Number(child.todayLy || 0),
       mtdActual: Number(child.mtdActual || 0),
       mtdLy: Number(child.mtdLy || 0),

@@ -1,43 +1,50 @@
 import React from 'react';
-import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, Activity } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import { secureFetcher } from '../lib/secureFetcher';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
-  const [periodRoomSummary, setPeriodRoomSummary] = React.useState<any[]>([]);
-
   const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && (coreData.core?.endDate || endDate) && startDate !== (coreData.core?.endDate || endDate)));
-
-  React.useEffect(() => {
-    if (isRangeMode) {
-      const eDate = coreData.core?.endDate || endDate || startDate;
-      const sDate = startDate;
-      const queryParams = `startDate=${sDate}&endDate=${eDate}`;
-      secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`)
-        .then(res => {
-          const items = res?.data || res;
-          if (Array.isArray(items)) {
-            setPeriodRoomSummary(items);
-          }
-        })
-        .catch(() => {});
-    } else {
-      setPeriodRoomSummary([]);
-    }
-  }, [isRangeMode, startDate, endDate, coreData.core?.endDate]);
 
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
     return transformHomeData(coreData);
   }, [coreData]);
+
+  // 💡 [NEW] LOS Correlation Trend Data State
+  const [losTrendData, setLosTrendData] = React.useState<any[]>([]);
+  const [loadingLos, setLoadingLos] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!startDate) return;
+    const fetchLosTrend = async () => {
+      setLoadingLos(true);
+      try {
+        const { secureFetcher } = await import('../lib/secureFetcher');
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+        let queryParams = `startDate=${startDate}`;
+        // LOS API requires endDate
+        if (endDate && startDate !== endDate) {
+          queryParams += `&endDate=${endDate}`;
+        } else {
+          queryParams += `&endDate=${startDate}`;
+        }
+        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/los-correlation-trend?${queryParams}`);
+        const resultData = res.data ?? res;
+        setLosTrendData(resultData?.trendData || []);
+      } catch (e) {
+        console.error('LOS Trend fetch error', e);
+      } finally {
+        setLoadingLos(false);
+      }
+    };
+    fetchLosTrend();
+  }, [startDate, endDate]);
 
   const data = transformedData;
   const loading = coreData.isLoading;
@@ -56,65 +63,13 @@ export default function Home() {
   };
 
   const pieChartData = React.useMemo(() => {
-    if (!coreData.core?.salesByCategory || !Array.isArray(coreData.core.salesByCategory)) return [];
-    
-    const getHqName = (item: any) => {
-      const code = String(item.categoryCode || item.category_code || item.category || '').toUpperCase();
-      const rawName = String(item.categoryName || item.category_name || item.categoryCode || '').trim();
-
-      if (code === 'ROOM' || code === '객실' || rawName.includes('콘도') || rawName.includes('객실')) return '콘도본부';
-      if (code === 'GOLF' || code === '골프' || rawName.includes('골프')) return '골프본부';
-      if (code === 'FNB' || code === '식음' || rawName.includes('식음') || rawName.includes('F&B')) return 'F&B본부';
-      if (code === 'BANQUET' || code === '연회' || rawName.includes('연회')) return '연회';
-      if (code === 'TICKET' || code === '티켓' || code === 'LEISURE' || rawName.includes('레저') || rawName.includes('티켓')) return '레저본부';
-      if (code === 'MOTO' || rawName.includes('모토')) return '모토아레나';
-      if (code === 'GOODS' || rawName.includes('굿즈')) return '벨포레굿즈';
-      if (code === 'PARKING' || rawName.includes('주차')) return '주차관제';
-      if (code === 'PROMOTION' || rawName.includes('기획전')) return '기획전';
-      if (code === 'UNEARNED' || rawName.includes('미사용')) return '미사용 티켓';
-      return rawName || '기타업장';
-    };
-
-    const hqMap: Record<string, number> = {};
-    coreData.core.salesByCategory.forEach((item: any) => {
-      const hqName = getHqName(item);
-      const value = Number(item.todayActual || item.totalSales || item.sales || item.revenue || 0);
-      if (value > 0) {
-        hqMap[hqName] = (hqMap[hqName] || 0) + value;
-      }
-    });
-
-    return Object.entries(hqMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    // [SSOT 무관용 원칙 적용] 프론트엔드 자체 forEach 합산 금지 -> 백엔드 연동 전까지 빈 배열
+    return [];
   }, [coreData.core?.salesByCategory]);
 
   const leisureVisitorsMap = React.useMemo(() => {
-    const map: Record<string, number> = {
-      '미디어아트센터': 0,
-      '마리나 클럽': 0,
-      '마운틴카트': 0,
-      '사계절썰매장': 0,
-      '벨포레 목장': 0,
-      '원더풀': 0,
-      '썸머랜드': 0,
-      '모토아레나': 0
-    };
-
-    const facilities = coreData.core?.salesByFacility || [];
-    if (Array.isArray(facilities)) {
-      facilities.forEach((f: any) => {
-        const name = String(f.shopName || f.facilityName || f.shop_name || '');
-        const visitors = Number(f.totalVisitors || f.visitors || f.qty || f.todayQty || 0);
-
-        Object.keys(map).forEach(key => {
-          if (name.includes(key) || (key === '마리나 클럽' && name.includes('마리나')) || (key === '사계절썰매장' && name.includes('썰매')) || (key === '벨포레 목장' && name.includes('목장'))) {
-            map[key] += visitors;
-          }
-        });
-      });
-    }
-
+    // [SSOT 무관용 원칙 적용] 프론트엔드 자체 forEach 합산 및 오타(Typo) 유추 매핑 금지
+    const map: Record<string, number> = {};
     return map;
   }, [coreData.core?.salesByFacility]);
 
@@ -137,18 +92,16 @@ export default function Home() {
     );
   }
 
-  // Use gross revenue (VAT inclusive)
   const todayGross = displayData.today.gross;
-  const todayLyGross = displayData.today.ly_gross;
-  const todayDiff = todayGross - todayLyGross;
-  const todayPct = todayLyGross > 0 ? (todayDiff / todayLyGross) * 100 : 0;
+  // [SSOT 무관용] 프론트엔드 자체 성장률(%) 연산 금지. 백엔드가 제공하는 todayGrowth/ytdGrowth 만 사용
+  const todayGrowth = coreData.core?.summary?.todayGrowth;
+  const todayDiff = coreData.core?.summary?.todayDiff;
   
   const ytdGross = displayData.ytd.gross;
-  const ytdLyGross = displayData.ytd.ly_gross;
-  const ytdDiff = ytdGross - ytdLyGross;
-  const ytdPct = ytdLyGross > 0 ? (ytdDiff / ytdLyGross) * 100 : 0;
+  const ytdGrowth = coreData.core?.summary?.ytdGrowth;
+  const ytdDiff = coreData.core?.summary?.ytdDiff;
 
-  const totalRoomCap = coreData.core?.summary?.totalRoomCap || displayData.kpiMetrics?.raw?.totalRoomCap || 0;
+  const totalRoomInventory = coreData.core?.summary?.totalRoomInventory || 0;
   const multiNight = (() => {
     const s = coreData.core?.summary || {};
     if (s.multiNight) return s.multiNight;
@@ -164,44 +117,6 @@ export default function Home() {
     return null;
   })();
 
-  // 객단가 (ADR) 바인딩: 1순위 백엔드 roomSummaryByType, 미탑재 시 API 7 실시간 보완
-  const adrData = (() => {
-    let rev16 = 0, sold16 = 0, mem16 = 0;
-    let rev35 = 0, sold35 = 0, mem35 = 0;
-    let rev51 = 0, sold51 = 0, mem51 = 0;
-    
-    const sourceArray = (coreData.core?.roomSummaryByType && Array.isArray(coreData.core.roomSummaryByType) && coreData.core.roomSummaryByType.length > 0)
-      ? coreData.core.roomSummaryByType
-      : periodRoomSummary;
-    
-    if (Array.isArray(sourceArray) && sourceArray.length > 0) {
-      sourceArray.forEach((item: any) => {
-        if (item.isChannelSubtotal || item.isGrandTotal) return;
-        const typeName = item.roomType || item.room_type || '';
-        const revenue = Number(item.todayRevenue || item.revenue || item.netRevenue || item.roomRevenue || item.periodRevenue || item.mtdRevenue || item.totalRevenue || 0);
-        const sold = Number(item.todayRooms || item.roomsSold || item.rooms_sold || item.periodRooms || item.mtdRooms || item.rooms || 0);
-        const mem = Number(item.memberRooms || item.member_rooms || item.memberRoomsSold || 0);
-        
-        if (typeName.includes('16평')) {
-          rev16 += revenue; sold16 += sold; mem16 += mem;
-        } else if (typeName.includes('35평')) {
-          rev35 += revenue; sold35 += sold; mem35 += mem;
-        } else if (typeName.includes('51평') || typeName.includes('52평')) {
-          rev51 += revenue; sold51 += sold; mem51 += mem;
-        }
-      });
-    }
-    
-    return {
-      adr16: sold16 > 0 ? Math.round(rev16 / sold16) : 0,
-      adr35: sold35 > 0 ? Math.round(rev35 / sold35) : 0,
-      adr51: sold51 > 0 ? Math.round(rev51 / sold51) : 0,
-      memRatio16: sold16 > 0 ? Math.round((mem16 / sold16) * 100) : 0,
-      memRatio35: sold35 > 0 ? Math.round((mem35 / sold35) * 100) : 0,
-      memRatio51: sold51 > 0 ? Math.round((mem51 / sold51) * 100) : 0,
-      raw: { rev16, sold16, mem16, rev35, sold35, mem35, rev51, sold51, mem51 }
-    };
-  })();
 
   const golfReservedTeams = displayData?.golfSummary?.reservedTeams || 0;
 
@@ -299,12 +214,19 @@ export default function Home() {
               <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight transition-all duration-300">
                 {formatCurrency(todayGross)}
               </div>
-              
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${todayPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                <span>{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                <span>{todayPct >= 0 ? '▲' : '▼'} {Math.abs(todayPct).toFixed(1)}%</span>
-                <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
-              </div>
+              {todayGrowth !== undefined ? (
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${todayGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                  <span>{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                  <span>{todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(todayGrowth).toFixed(1)}%</span>
+                  {todayDiff !== undefined && (
+                    <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
+                  )}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-400">
+                  <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
@@ -320,11 +242,19 @@ export default function Home() {
               <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
                 {formatCurrency(ytdGross)}
               </div>
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 ${ytdPct >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                <span>전년 동기 대비</span>
-                <span>{ytdPct >= 0 ? '▲' : '▼'} {Math.abs(ytdPct).toFixed(1)}%</span>
-                <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
-              </div>
+              {ytdGrowth !== undefined ? (
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 ${ytdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                  <span>전년 동기 대비</span>
+                  <span>{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
+                  {ytdDiff !== undefined && (
+                    <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
+                  )}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-400 relative z-10">
+                  <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
@@ -336,7 +266,7 @@ export default function Home() {
                   </h2>
                 </div>
                 <div className="text-3xl font-semibold text-slate-800 mb-3 tracking-tight relative z-10 flex items-baseline gap-2">
-                  <span>{new Intl.NumberFormat('ko-KR').format(totalRoomCap)}</span>
+                  <span>{new Intl.NumberFormat('ko-KR').format(totalRoomInventory)}</span>
                   <span className="text-lg font-medium text-slate-500">명</span>
                 </div>
                 
@@ -345,7 +275,7 @@ export default function Home() {
                     <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                       <span className="bg-brand-mint text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">연박(2박+)</span>
                       <span className="font-bold text-slate-800">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
-                      <span className="text-slate-500 text-[11px]">(투숙객 대비 <strong className="text-slate-700 font-semibold">{totalRoomCap > 0 ? (((multiNight.multiNightGuests || 0) / totalRoomCap) * 100).toFixed(1) : (multiNight.multiNightRatio || 0).toFixed(1)}%</strong>)</span>
+                      <span className="text-slate-500 text-[11px]">(투숙객 대비 <strong className="text-slate-700 font-semibold">{totalRoomInventory > 0 ? (((multiNight.multiNightGuests || 0) / totalRoomInventory) * 100).toFixed(1) : (multiNight.multiNightRatio || 0).toFixed(1)}%</strong>)</span>
                     </div>
                     {multiNight.guestsGrowth !== undefined && (
                       <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
@@ -414,56 +344,68 @@ export default function Home() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실 점유율 (Occ)</div>
-                  <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.totalOcc) ? displayData.kpiMetrics.totalOcc.toFixed(1) : 0}%
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                    {isRangeMode ? `기간 물리적 판매 객실 ÷ 기간 총 가용 객실수 (175실 × ${displayData.kpiMetrics?.days || 1}일)` : '물리적 판매 객실 ÷ 전체 객실 수 (175실)'}
-                  </div>
+                  {coreData.core?.summary?.occRate !== undefined ? (
+                    <>
+                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        {coreData.core.summary.occRate.toFixed(1)}%
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        (Inventory 기준 자동 산출)
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                      전체 객실 재고 데이터 산출 불가<br/>(API 연동 대기)
+                    </div>
+                  )}
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-2">객단가 (ADR)</div>
-                  <div className="grid grid-cols-3 gap-1 w-full text-teal-700">
-                    <div className="flex flex-col items-center justify-end">
-                      <span className="text-[10px] text-slate-500 font-medium mb-0.5">16평</span>
-                      <span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr16)}</span>
-                      {adrData.memRatio16 > 0 && <span className="text-[9px] text-indigo-500 font-bold mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded-md shadow-sm border border-indigo-100">회원 {adrData.memRatio16}%</span>}
-                    </div>
-                    <div className="flex flex-col items-center justify-end">
-                      <span className="text-[10px] text-slate-500 font-medium mb-0.5">35평</span>
-                      <span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr35)}</span>
-                      {adrData.memRatio35 > 0 && <span className="text-[9px] text-indigo-500 font-bold mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded-md shadow-sm border border-indigo-100">회원 {adrData.memRatio35}%</span>}
-                    </div>
-                    <div className="flex flex-col items-center justify-end">
-                      <span className="text-[10px] text-slate-500 font-medium mb-0.5">51평</span>
-                      <span className="text-[13px] xl:text-[15px] font-extrabold whitespace-nowrap">{formatCurrency(adrData.adr51)}</span>
-                      {adrData.memRatio51 > 0 && <span className="text-[9px] text-indigo-500 font-bold mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded-md shadow-sm border border-indigo-100">회원 {adrData.memRatio51}%</span>}
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium" title="회원 비중 = 평형별 회원 자격 판매객실 ÷ 총판매객실">
-                    {isRangeMode ? '기간 매출액 ÷ 기간 결제건수' : '매출액 ÷ 순수 결제건수'}
+                  <div className="text-sm text-slate-700 font-medium mb-2">객단가 (RevPAR)</div>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-2xl font-extrabold text-teal-700">
+                      {coreData.core?.summary?.revPAR !== undefined 
+                        ? formatCurrency(coreData.core.summary.revPAR) 
+                        : '0'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium mt-1">판매가능 객실당 수익</span>
                   </div>
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실당 매출 (RevPAR)</div>
-                  <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.revPAR) ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                    {isRangeMode ? `기간 객실 총매출 ÷ 기간 총 가용 객실수 (175실 × ${displayData.kpiMetrics?.days || 1}일)` : '객실 총매출 ÷ 전체 객실 수 (175실)'}
-                  </div>
+                  {coreData.core?.summary?.revPAR !== undefined ? (
+                    <>
+                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        {formatCurrency(coreData.core.summary.revPAR)}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        객실 총매출 ÷ 전체 객실 수
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                      RevPAR 산출 불가<br/>(API 연동 대기)
+                    </div>
+                  )}
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
-                  <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                    {displayData.kpiMetrics && isFinite(displayData.kpiMetrics.trevPAR) ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                    {isRangeMode ? `기간 리조트 총매출(골프 포함) ÷ 기간 총 가용 객실수 (175실 × ${displayData.kpiMetrics?.days || 1}일)` : '리조트 총매출(골프 포함) ÷ 전체 객실 수 (175실)'}
-                  </div>
+                  {coreData.core?.summary?.trevPAR !== undefined ? (
+                    <>
+                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        {formatCurrency(coreData.core.summary.trevPAR)}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        리조트 총매출 ÷ 전체 객실 수
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                      TrevPAR 산출 불가<br/>(API 연동 대기)
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -517,6 +459,44 @@ export default function Home() {
               </div>
             </div>
           </div>
+          
+          {/* LOS (연박) 비중 vs 부대시설 매출 상관관계 분석 차트 */}
+          {losTrendData && losTrendData.length > 0 && (
+            <div className="lg:col-span-12 bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6 border border-slate-100 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-500" /> 연박 비중(%) vs 부대시설 매출 추이 상관관계 분석
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">체류 기간(LOS)의 증감에 따른 F&B 및 레저 시설 매출 증감율(YoY) 비교</p>
+                </div>
+                <div className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-semibold flex items-center gap-2">
+                  {loadingLos && <span className="animate-spin w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full"></span>}
+                  LOS IMPACT
+                </div>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={losTrendData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dx={-10} tickFormatter={(val) => `${val}%`} />
+                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dx={10} tickFormatter={(val) => `${(val / 10000).toFixed(0)}만`} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
+                      formatter={(value: any, name: any) => {
+                        if (name === '연박 비중') return [`${value}%`, name];
+                        return [`${new Intl.NumberFormat('ko-KR').format(value)}원`, name];
+                      }}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
+                    <Bar yAxisId="right" dataKey="totalSynergySales" name="부대시설 총매출" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={40} opacity={0.3} />
+                    <Line yAxisId="left" type="monotone" dataKey="multiNightRatio" name="연박 비중" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
 
             {/* 본부별 매출 파이 차트 */}
             {pieChartData.length > 0 && (
@@ -573,52 +553,16 @@ export default function Home() {
                 지표 산출 공식 및 경영 의미 가이드
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* ADR Breakdown */}
-                <div className="bg-slate-50 p-4 rounded-xl">
-                  <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">객단가 (ADR) 타입별 상세</h4>
-                  <ul className="space-y-3 text-slate-600">
-                    <li className="flex flex-col">
-                      <span className="font-medium">16평: {formatCurrency(adrData.adr16)}원</span>
-                      <span className="text-xs text-slate-400 font-mono mt-1">
-                        = {formatCurrency(adrData.raw.rev16)}원 (매출액) ÷ {formatCurrency(adrData.raw.sold16)}건 (순수 결제건수)
-                      </span>
-                    </li>
-                    <li className="flex flex-col">
-                      <span className="font-medium">35평: {formatCurrency(adrData.adr35)}원</span>
-                      <span className="text-xs text-slate-400 font-mono mt-1">
-                        = {formatCurrency(adrData.raw.rev35)}원 (매출액) ÷ {formatCurrency(adrData.raw.sold35)}건 (순수 결제건수)
-                      </span>
-                    </li>
-                    <li className="flex flex-col">
-                      <span className="font-medium">51평: {formatCurrency(adrData.adr51)}원</span>
-                      <span className="text-xs text-slate-400 font-mono mt-1">
-                        = {formatCurrency(adrData.raw.rev51)}원 (매출액) ÷ {formatCurrency(adrData.raw.sold51)}건 (순수 결제건수)
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* RevPAR & TrevPAR */}
+                {/* RevPAR & Occ */}
                 <div className="bg-slate-50 p-4 rounded-xl flex flex-col justify-between">
                   <div>
-                    <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">수익성 지표 (RevPAR / TrevPAR)</h4>
+                    <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">지표 산출 방식 안내</h4>
                     <ul className="space-y-4 text-slate-600">
                       <li className="flex flex-col">
-                        <span className="font-medium text-slate-800">객실당 매출 (RevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.revPAR) : 0}원</span>
+                        <span className="font-medium text-slate-800">객실 점유율 (Occ) 및 객단가 (RevPAR)</span>
                         <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>경영 의미:</strong> 빈 방을 포함한 모든 보유 객실이 평균적으로 벌어들인 순수 객실 매출입니다. <strong>객실 판매의 실질적인 효율성</strong>을 나타냅니다. (골프/식음/레저본부 미포함)
+                          <strong>V5 API 팩트 기반:</strong> 모든 지표(Occ, RevPAR 등)는 프론트엔드 연산 없이 데이터랩 통합 통제 센터(백엔드 DB)에서 완성된 값으로 제공됩니다.
                         </div>
-                        <span className="text-xs text-slate-400 font-mono mt-1.5">
-                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalRoomRev) : 0}원 (객실 총매출) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
-                        </span>
-                      </li>
-                      <li className="flex flex-col pt-2 border-t border-slate-200 border-dashed">
-                        <span className="font-medium text-slate-800">객실당 총매출 (TrevPAR): {displayData.kpiMetrics ? formatCurrency(displayData.kpiMetrics.trevPAR) : 0}원</span>
-                        <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                        </div>
-                        <span className="text-xs text-slate-400 font-mono mt-1.5">
-                          = {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalResortRevGross) : 0}원 (리조트 총매출: 골프/객실/식음/티켓 포함) ÷ {displayData.kpiMetrics?.raw ? formatCurrency(displayData.kpiMetrics.raw.totalInventory) : 0}실 (운영 가능 객실수)
-                        </span>
                       </li>
                     </ul>
                   </div>

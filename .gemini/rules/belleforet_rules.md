@@ -10,6 +10,7 @@
 ## 3. 벨포레 데이터 통합 통제 바이블 (The Bible v4.2) 엄수
 - **NO SLICE SUMMATION**: 프론트엔드는 배열 데이터를 `reduce`나 `for`문으로 직접 더해서 총합이나 소계를 구해서는 안 되며, 백엔드가 제공하는 완성된 `camelCase` 정규화 수치만 사용합니다.
 - **다중 월/기간 조회 원칙**: 대시보드 기간 조회 시 API를 반복 호출하지 않고 `startDate`와 `endDate` 파라미터를 사용하여 1회 호출로 처리합니다.
+- **NO FALLBACK CHAINS (Strict Typing)**: 프론트엔드 코드 내에서 스네이크 케이스 필드나 임시 필드들을 혼용하는 방어적 폴백 체인(예: `totalSales || todayActual || total_sales`)을 절대 사용하지 마십시오. 백엔드가 보장하는 단일 SSOT 키(예: `totalSales`, `categoryCode`, `shopName`)에만 완벽하게 1:1로 매핑하여야 하며, 데이터 누락 시 화면에 0으로 노출되더라도 프론트엔드가 임의로 연산하거나 다른 필드를 끌어다 쓰지 않습니다.
 
 ## 4. 100% 무결점 검증 & 원스톱 운영 배포
 - 코드 수정 후에는 항상 사전 `npm run build`를 실행하여 0 에러/0 경고를 확인합니다.

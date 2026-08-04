@@ -13,33 +13,34 @@ export default function LeisureFacility() {
       return { totalSales: 0, topTickets: [], totalQuantity: 0, top5Quantity: 0, top5Tickets: [] };
     }
 
-    const ticketFacilities = core.salesByFacility.filter((item: any) => 
-      item.categoryCode === 'TICKET' || item.category_code === 'TICKET' || item.category_code === '티켓'
-    );
+    const ticketFacilities = core.salesByFacility.filter((item: any) => item.categoryCode === 'TICKET');
 
     // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory
     let ssotTotalSales = 0;
     
     if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
-      const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET' || x.category_code === 'TICKET' || x.category_code === '티켓');
+      const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
       if (ticketCat) {
-        ssotTotalSales = Number(ticketCat.todayActual || ticketCat.totalSales || ticketCat.total_sales || ticketCat.sales || ticketCat.revenue || 0);
+        ssotTotalSales = Number(ticketCat.totalSales || 0);
       }
     }
 
     // 2. Map facility rows directly (V5 schema subGroupName & totalVisitors)
     const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities.map((item: any) => {
-      const name = item.subGroupName || item.sub_group_name || item.facility_name || item.shopName || item.shop_name || '기타';
-      const sales = Number(item.todayActual || item.totalSales || item.total_sales || item.revenue || 0);
-      const qty = Number(item.totalVisitors || item.salesQty || item.qty || item.visitors || 0);
-      const depth2 = item.partName || item.teamName || '티켓/레저';
+      const name = item.shopName || '기타';
+      const sales = Number(item.totalSales || 0);
+      const qty = Number(item.totalVisitors || 0);
+      const depth2 = item.partName || '티켓/레저';
       return { name, sales, qty, depth2 };
     });
 
     const sortedTickets = mappedTickets.sort((a: any, b: any) => b.sales - a.sales);
-    const sumQty = sortedTickets.reduce((sum: number, item: any) => sum + item.qty, 0);
+    
+    // [SSOT 무관용 원칙 적용] 프론트엔드 자체 reduce 합산 금지 -> 백엔드 연동 또는 산출 불가 0 처리
+    const sumQty = 0; // TODO: API (core.salesByCategory의 해당 카테고리 totalVisitors 등) 연동 필요
+    
     const top5 = sortedTickets.slice(0, 5);
-    const top5Qty = top5.reduce((sum: number, item: any) => sum + item.qty, 0);
+    const top5Qty = 0; // TODO: 백엔드 지원 시 연동 (상위 5개 합산 또한 쿼리에서 가져와야 함)
 
     return { 
       totalSales: ssotTotalSales, 

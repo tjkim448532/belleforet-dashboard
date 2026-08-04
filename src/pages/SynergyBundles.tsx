@@ -32,7 +32,7 @@ export default function SynergyBundles() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
   
   const [bundleData, setBundleData] = useState<CustomerBundleItem[]>([]);
-  const [apiMeta, setApiMeta] = useState<{ totalUniqueCustomers?: number; multiFacilityRatioPct?: number } | null>(null);
+  const [apiMeta, setApiMeta] = useState<{ totalUniqueCustomers?: number; multiFacilityRatioPct?: number; totalSales?: number; multiFacilityCustomers?: number; singleFacilityArpu?: number; multiFacilityArpu?: number; arpuLiftMultiplier?: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>('ALL');
 
@@ -166,12 +166,13 @@ export default function SynergyBundles() {
 
   // Top KPIs
   const kpiStats = useMemo(() => {
-    const calculatedCustomers = bundleData.reduce((acc, b) => acc + (b.customerCount || 0), 0);
-    const totalCustomers = apiMeta?.totalUniqueCustomers ?? calculatedCustomers;
-    const totalSalesSum = bundleData.reduce((acc, b) => acc + (b.totalSales || 0), 0);
-    const multiFacilityCustomers = bundleData
-      .filter(b => b.storeList && b.storeList.length >= 2)
-      .reduce((acc, b) => acc + (b.customerCount || 0), 0);
+    // [SSOT 무관용 원칙 적용] 프론트엔드 reduce 연산 금지 -> 백엔드 meta 필드 100% 참조
+    const totalCustomers = apiMeta?.totalUniqueCustomers || 0;
+    const totalSalesSum = apiMeta?.totalSales || 0; // 백엔드에서 내려주는 총 매출 합계 사용 (없을 시 0)
+    
+    // 다중 시설 이용객 수도 백엔드에서 계산해준 값을 사용
+    const multiFacilityCustomers = apiMeta?.multiFacilityCustomers || 0;
+    
     const multiFacilityRatio = apiMeta?.multiFacilityRatioPct !== undefined
       ? apiMeta.multiFacilityRatioPct.toFixed(1)
       : (totalCustomers > 0 ? ((multiFacilityCustomers / totalCustomers) * 100).toFixed(1) : '0');
@@ -319,7 +320,7 @@ export default function SynergyBundles() {
       </div>
 
       {/* Top Overview KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
@@ -382,6 +383,33 @@ export default function SynergyBundles() {
           <p className="text-xs text-slate-500 font-medium truncate" title={kpiStats.topRevenueBundle?.bundleName}>
             {kpiStats.topRevenueBundle?.bundleName} (1인당 {formatCurrency(kpiStats.topRevenueBundle?.avgSpendPerCustomer || 0)}원)
           </p>
+        </div>
+        
+        {/* ARPU LTV Card (SSOT Enforced) */}
+        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" /> 다중 이용객 ARPU 리프트
+            </span>
+            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+              LTV IMPACT
+            </span>
+          </div>
+          {apiMeta?.arpuLiftMultiplier !== undefined ? (
+            <>
+              <div className="text-3xl font-black text-amber-600 mb-1 flex items-baseline gap-1">
+                {apiMeta.arpuLiftMultiplier.toFixed(1)}<span className="text-xl">배</span>
+              </div>
+              <div className="text-xs text-slate-500 font-medium">
+                단일 이용객 ({formatCurrency(apiMeta.singleFacilityArpu || 0)}원) 대비<br/>
+                <strong className="text-amber-600">다중 이용객 ({formatCurrency(apiMeta.multiFacilityArpu || 0)}원)</strong>
+              </div>
+            </>
+          ) : (
+            <div className="text-xs text-slate-400 font-medium h-[60px] flex flex-col justify-center text-center bg-slate-50 rounded-xl">
+              ARPU 산출 불가 (API 연동 대기)
+            </div>
+          )}
         </div>
       </div>
 

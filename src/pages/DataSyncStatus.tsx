@@ -57,7 +57,8 @@ export const DataSyncStatus: React.FC = () => {
     return parts[parts.length - 1];
   };
 
-  const totalRecords = logs.reduce((sum, log) => sum + log.record_count, 0);
+  // [SSOT 무관용 원칙 적용] 클라이언트 측 reduce 합산 제거. 향후 API 지원 시 대체
+  const totalRecords = 0;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 font-sans">

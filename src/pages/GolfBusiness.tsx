@@ -21,7 +21,7 @@ interface SummaryData {
     member_avg_green_fee: number;
     non_member_avg_green_fee: number;
   };
-  golfFacilityBreakdown?: { shop_name: string; today_actual: number; }[];
+  golfFacilityBreakdown?: { shopName?: string; totalSales?: number; }[];
 }
 
 export default function GolfBusiness() {
@@ -44,53 +44,25 @@ export default function GolfBusiness() {
         }
         if (payload) {
           // V5 Schema direct map (SSOT)
-          const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프');
-          const golf_revenue = Number(golfCategory?.totalSales || golfCategory?.todayActual || golfCategory?.sales || golfCategory?.revenue || 0);
+          const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF');
+          const golf_revenue = Number(golfCategory?.totalSales || 0);
 
-          const golf_visited_teams = Number(payload.summary?.totalGolfTeams || payload.summary?.golfVisitedTeams || 0);
-          const golf_visited_players = Number(payload.summary?.totalGolfVisitors || payload.summary?.golfVisitedPlayers || 0);
+          const golf_visited_teams = Number(payload.summary?.totalGolfTeams || 0);
+          const golf_visited_players = Number(payload.summary?.totalGolfVisitors || 0);
 
-          const golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프') || payload.golfFacilityBreakdown || [];
+          const golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF') || payload.golfFacilityBreakdown || [];
 
           // 백엔드가 제공하는 완성된 SSOT 데이터 직접 바인딩 (바이블 원칙: 프론트엔드 연산/추정 금지)
-          const member_players = Number(
-            payload.summary?.golfMemberPlayers ?? 
-            payload.summary?.memberPlayers ?? 
-            0
-          );
-          const non_member_players = Number(
-            payload.summary?.golfNonMemberPlayers ?? 
-            payload.summary?.nonMemberPlayers ?? 
-            0
-          );
+          const member_players = Number(payload.summary?.golfMemberPlayers || 0);
+          const non_member_players = Number(payload.summary?.golfNonMemberPlayers || 0);
 
-          const member_green_fee = Number(
-            payload.summary?.golfMemberGreenFee ?? 
-            payload.summary?.memberGreenFee ?? 
-            0
-          );
-          const non_member_green_fee = Number(
-            payload.summary?.golfNonMemberGreenFee ?? 
-            payload.summary?.nonMemberGreenFee ?? 
-            0
-          );
+          const member_green_fee = Number(payload.summary?.golfMemberGreenFee || 0);
+          const non_member_green_fee = Number(payload.summary?.golfNonMemberGreenFee || 0);
 
-          const member_avg_green_fee = Number(
-            payload.summary?.golfMemberAvgGreenFee ?? 
-            payload.summary?.memberAvgGreenFee ?? 
-            0
-          );
-          const non_member_avg_green_fee = Number(
-            payload.summary?.golfNonMemberAvgGreenFee ?? 
-            payload.summary?.nonMemberAvgGreenFee ?? 
-            0
-          );
+          const member_avg_green_fee = Number(payload.summary?.golfMemberAvgGreenFee || 0);
+          const non_member_avg_green_fee = Number(payload.summary?.golfNonMemberAvgGreenFee || 0);
 
-          const golf_avg_green_fee = Number(
-            payload.summary?.golfAvgGreenFee ?? 
-            payload.summary?.golf_avg_green_fee ?? 
-            0
-          );
+          const golf_avg_green_fee = Number(payload.summary?.golfAvgGreenFee || 0);
 
           setData({
             success: json.success ?? true,
@@ -383,14 +355,14 @@ export default function GolfBusiness() {
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
                   {golfDetails
-                        .sort((a: any, b: any) => (b.todayActual || b.today_actual || b.revenue || b.total_sales || 0) - (a.todayActual || a.today_actual || a.revenue || a.total_sales || 0))
-                        .map((f: { shop_name?: string, facility_name?: string, category?: string, revenue?: number, today_actual?: number, todayActual?: number, total_sales?: number }, idx: number) => (
-                          <tr key={`${f.shop_name}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        .sort((a: any, b: any) => (b.totalSales || 0) - (a.totalSales || 0))
+                        .map((f: { shopName?: string, totalSales?: number }, idx: number) => (
+                          <tr key={`${f.shopName}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td className="py-4 px-6 font-medium text-slate-700">
-                              {f.facility_name || f.shop_name || f.category || '기타'}
+                              {f.shopName || '기타'}
                             </td>
                             <td className="py-4 px-6 text-right font-medium text-slate-900">
-                              {formatCurrency(f.todayActual || f.revenue || f.today_actual || f.total_sales || 0)}
+                              {formatCurrency(f.totalSales || 0)}
                             </td>
                           </tr>
                         ))}

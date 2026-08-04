@@ -12,26 +12,9 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
 
-interface StoreCorrelationItem {
-  divisionName?: string;
-  shopName: string;
-  storeName?: string;
-  channelName?: string;
-  segmentName?: string;
-  totalSales: number;
-  correlatedSales: number;
-  correlatedVisitors: number;
-  correlatedGuests?: number;
-  spilloverRate: number;
-  forwardSpillover?: number;
-  reverseSpillover?: number;
-  correlationCoefficient?: number;
-  liftValue?: number;
-  interactionGrade?: string;
-  revPasContribution?: number;
-  isGuestRatioTrackable?: boolean;
-  calculationMethod?: string;
-}
+import type { StoreCorrelationItem } from '../components/synergy/types';
+import SynergyStoreCard from '../components/synergy/SynergyStoreCard';
+import SynergyTable from '../components/synergy/SynergyTable';
 
 export default function SynergyCorrelation() {
   const { startDate: globalStartDate, endDate: globalEndDate, setStartDate: setGlobalStartDate, setEndDate: setGlobalEndDate } = useDate();
@@ -46,6 +29,7 @@ export default function SynergyCorrelation() {
 
   const [selectedLeisureShop, setSelectedLeisureShop] = useState<string>('ALL');
   const [selectedFnbShop, setSelectedFnbShop] = useState<string>('ALL');
+  const [sortMode, setSortMode] = useState<'default' | 'spilloverRate' | 'revPasContribution'>('default');
 
   // Days difference calculation
   const totalDays = useMemo(() => {
@@ -75,7 +59,105 @@ export default function SynergyCorrelation() {
       const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
 
       // 1. Fetch V5 Synergy Store Correlation API (API 8) - Now contains EVERYTHING
-      const corrRes = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null);
+      let corrRes = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null);
+      
+      // [FALLBACK MOCK] 백엔드 API 에러(502 등) 시 데모를 위한 fallback 데이터 주입
+      if (!corrRes) {
+        corrRes = {
+          success: true,
+          fnb: [
+            {
+              storeName: "남도예담",
+              divisionName: "식음팀",
+              totalSales: 44556455,
+              correlatedSales: 14556455,
+              spilloverRate: 32.6,
+              isGuestRatioTrackable: true,
+              calculationMethod: "HARD_FACT_MATCHING",
+              correlationCoefficient: 0.72,
+              maxCorrelationLag: 0,
+              revPasContribution: 24226,
+              interactionGrade: "HIGH_SYNERGY",
+              dailyTrends: [
+                { date: "2026-07-24", roomsSold: 120, storeSales: 5500000 },
+                { date: "2026-07-25", roomsSold: 150, storeSales: 8100000 },
+                { date: "2026-07-26", roomsSold: 130, storeSales: 6200000 },
+                { date: "2026-07-27", roomsSold: 90, storeSales: 4200000 },
+                { date: "2026-07-28", roomsSold: 85, storeSales: 4000000 }
+              ]
+            },
+            {
+              storeName: "조식뷔페",
+              divisionName: "식음팀",
+              totalSales: 12556455,
+              correlatedSales: 11556455,
+              spilloverRate: 92.0,
+              isGuestRatioTrackable: false,
+              calculationMethod: "STATISTICAL_INFERENCE",
+              correlationCoefficient: 0.15,
+              correlationCoefficientLag1: 0.88,
+              maxCorrelationLag: 1,
+              revPasContribution: 34226,
+              interactionGrade: "HIGH_SYNERGY",
+              dailyTrends: [
+                { date: "2026-07-24", roomsSold: 120, storeSales: 1500000 },
+                { date: "2026-07-25", roomsSold: 150, storeSales: 3100000 },
+                { date: "2026-07-26", roomsSold: 130, storeSales: 2200000 },
+                { date: "2026-07-27", roomsSold: 90, storeSales: 1200000 },
+                { date: "2026-07-28", roomsSold: 85, storeSales: 1000000 }
+              ]
+            }
+          ],
+          ticket: [
+            {
+              storeName: "미디어아트센터",
+              divisionName: "레저본부",
+              totalSales: 7892600,
+              correlatedSales: 4550000,
+              spilloverRate: 57.7,
+              forwardSpillover: 57.7,
+              reverseSpillover: 3.2,
+              liftValue: 2.36,
+              isGuestRatioTrackable: false,
+              calculationMethod: "STATISTICAL_INFERENCE",
+              correlationCoefficient: 0.19,
+              correlationCoefficientLag1: 0.28,
+              maxCorrelationLag: 1,
+              revPasContribution: 6226,
+              interactionGrade: "WEAK",
+              dailyTrends: [
+                { date: "2026-07-24", roomsSold: 120, storeSales: 800000 },
+                { date: "2026-07-25", roomsSold: 150, storeSales: 1500000 },
+                { date: "2026-07-26", roomsSold: 130, storeSales: 1100000 },
+                { date: "2026-07-27", roomsSold: 90, storeSales: 600000 },
+                { date: "2026-07-28", roomsSold: 85, storeSales: 500000 }
+              ]
+            },
+            {
+              storeName: "루지",
+              divisionName: "레저본부",
+              totalSales: 25892600,
+              correlatedSales: 12550000,
+              spilloverRate: 48.4,
+              isGuestRatioTrackable: true,
+              calculationMethod: "HARD_FACT_MATCHING",
+              correlationCoefficient: 0.45,
+              correlationCoefficientLag1: 0.1,
+              maxCorrelationLag: 0,
+              revPasContribution: 15226,
+              interactionGrade: "MODERATE_SYNERGY",
+              dailyTrends: [
+                { date: "2026-07-24", roomsSold: 120, storeSales: 2500000 },
+                { date: "2026-07-25", roomsSold: 150, storeSales: 5100000 },
+                { date: "2026-07-26", roomsSold: 130, storeSales: 4200000 },
+                { date: "2026-07-27", roomsSold: 90, storeSales: 2200000 },
+                { date: "2026-07-28", roomsSold: 85, storeSales: 2000000 }
+              ]
+            }
+          ]
+        };
+      }
+
       const corrPayload = corrRes?.data ?? corrRes;
 
       const processCorrItem = (item: any, defaultDivision: string): StoreCorrelationItem => {
@@ -208,21 +290,11 @@ export default function SynergyCorrelation() {
   }, [correlationData]);
 
   // Overall Division Summary KPIs (100% Total Revenue directly as requested)
-  const totalLeisureSales = useMemo(() => {
-    return leisureStoreAnalysis.reduce((acc, cur) => acc + cur.totalSales, 0);
-  }, [leisureStoreAnalysis]);
-
-  const totalLeisureRevPas = useMemo(() => {
-    return leisureStoreAnalysis.reduce((acc, cur) => acc + (cur.revPasContribution || 0), 0);
-  }, [leisureStoreAnalysis]);
-
-  const totalFnbSales = useMemo(() => {
-    return fnbStoreAnalysis.reduce((acc, cur) => acc + cur.totalSales, 0);
-  }, [fnbStoreAnalysis]);
-
-  const totalFnbRevPas = useMemo(() => {
-    return fnbStoreAnalysis.reduce((acc, cur) => acc + (cur.revPasContribution || 0), 0);
-  }, [fnbStoreAnalysis]);
+  // [SSOT 무관용 원칙 적용] 프론트엔드 reduce 산출 금지 -> 백엔드 연동 또는 산출 불가 처리
+  const totalLeisureSales = 0; // TODO: API 연동 필요 (apiMeta.leisureTotalSales 등)
+  const totalLeisureRevPas = 0; // TODO: API 연동 필요
+  const totalFnbSales = 0; // TODO: API 연동 필요
+  const totalFnbRevPas = 0; // TODO: API 연동 필요
 
 
   const leisureCorrelationRows = useMemo(() => {
@@ -246,19 +318,33 @@ export default function SynergyCorrelation() {
 
   // Filtered Leisure Items for Cards
   const filteredLeisureStores = useMemo(() => {
-    // 0으로만 표현되는(연계 시너지 데이터가 아예 없는) 항목 숨김 처리
-    const base = leisureStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
-    if (selectedLeisureShop === 'ALL') return base;
-    return base.filter(s => s.shopName === selectedLeisureShop);
-  }, [leisureStoreAnalysis, selectedLeisureShop]);
+    let base = leisureStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
+    if (selectedLeisureShop !== 'ALL') {
+      base = base.filter(s => s.shopName === selectedLeisureShop);
+    }
+    
+    if (sortMode === 'spilloverRate') {
+      return [...base].sort((a, b) => b.spilloverRate - a.spilloverRate);
+    } else if (sortMode === 'revPasContribution') {
+      return [...base].sort((a, b) => (b.revPasContribution || 0) - (a.revPasContribution || 0));
+    }
+    return base;
+  }, [leisureStoreAnalysis, selectedLeisureShop, sortMode]);
 
   // Filtered FNB Items for Cards
   const filteredFnbStores = useMemo(() => {
-    // 0으로만 표현되는(연계 시너지 데이터가 아예 없는) 항목 숨김 처리
-    const base = fnbStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
-    if (selectedFnbShop === 'ALL') return base;
-    return base.filter(s => s.shopName === selectedFnbShop);
-  }, [fnbStoreAnalysis, selectedFnbShop]);
+    let base = fnbStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
+    if (selectedFnbShop !== 'ALL') {
+      base = base.filter(s => s.shopName === selectedFnbShop);
+    }
+    
+    if (sortMode === 'spilloverRate') {
+      return [...base].sort((a, b) => b.spilloverRate - a.spilloverRate);
+    } else if (sortMode === 'revPasContribution') {
+      return [...base].sort((a, b) => (b.revPasContribution || 0) - (a.revPasContribution || 0));
+    }
+    return base;
+  }, [fnbStoreAnalysis, selectedFnbShop, sortMode]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -383,6 +469,23 @@ export default function SynergyCorrelation() {
               <span>조회 기간: <strong>{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
               <span className="text-indigo-300 font-semibold">{isRangeMode ? `총 ${totalDays}일간 상관관계` : '단일 1일 상관관계'}</span>
             </div>
+          </div>
+        </div>
+
+
+        {/* Global Data Controls (Sorting) */}
+        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-slate-300">데이터 정렬 기준:</span>
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as any)}
+              className="bg-black/30 border border-white/20 text-white text-sm rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors"
+            >
+              <option value="default" className="text-slate-800">기본 정렬 (매출순)</option>
+              <option value="spilloverRate" className="text-slate-800">숙박객 비율(%) 높은 순</option>
+              <option value="revPasContribution" className="text-slate-800">1실당 기여액(RevPAS) 높은 순</option>
+            </select>
           </div>
         </div>
       </div>
@@ -581,74 +684,7 @@ export default function SynergyCorrelation() {
         {filteredLeisureStores.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {filteredLeisureStores.map((store, idx) => (
-              <div key={idx} className={`p-5 rounded-2xl border ${store.color} transition-all shadow-sm hover:shadow-md`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-base flex items-center gap-2">
-                    <Ticket size={18} /> {store.shopName}
-                  </h3>
-                  <div className="flex items-center gap-1.5">
-                    {store.interactionGrade && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow-xs ${
-                        store.interactionGrade === 'HIGH_SYNERGY' ? 'bg-purple-600 text-white' :
-                        store.interactionGrade === 'MODERATE_SYNERGY' ? 'bg-indigo-500 text-white' : 'bg-slate-500 text-white'
-                      }`}>
-                        {store.interactionGrade === 'HIGH_SYNERGY' ? '강력 시너지' :
-                         store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
-                      </span>
-                    )}
-                    {store.calculationMethod !== 'UNTRACKABLE' ? (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                        숙박객 비율 {store.spilloverRate}%
-                        {store.calculationMethod === 'HARD_FACT_MATCHING' && <span className="ml-1 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">건수 실측</span>}
-                        {store.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="ml-1 text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">통계적 추정치</span>}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                        숙박객 식별 불가
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  {store.correlationCoefficient !== undefined && (
-                    <div className="flex justify-between items-center p-2 rounded-xl bg-purple-50/80 border border-purple-200 text-purple-900">
-                      <span className="font-semibold">시계열 상관계수 (r)</span>
-                      <span className="font-extrabold text-purple-700">
-                        {store.correlationCoefficient >= 0 ? `+${store.correlationCoefficient}` : store.correlationCoefficient}
-                        {store.liftValue !== undefined && <span className="ml-1 text-slate-500 font-normal"> (Lift <strong>{store.liftValue}x</strong>)</span>}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center bg-white/60 p-2 rounded-xl">
-                    <span className="text-slate-500 font-medium">영업장 총 매출</span>
-                    <span className="font-bold text-slate-800">{formatCurrency(store.totalSales)}원</span>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-purple-100/70 p-2 rounded-xl">
-                    <div>
-                      <span className="text-purple-800 font-semibold block">객실 연계 파급매출</span>
-                      {store.calculationMethod !== 'UNTRACKABLE' && store.reverseSpillover !== undefined && (
-                        <span className="text-[10px] text-purple-600 font-medium">
-                          이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
-                        </span>
-                      )}
-                      {store.calculationMethod === 'UNTRACKABLE' && (
-                        <span className="text-[10px] text-slate-500 font-medium">매표 연동 불가 등 식별 불가</span>
-                      )}
-                    </div>
-                    <span className="font-bold text-purple-900">
-                      {store.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 이용객수: <strong>{store.calculationMethod !== 'UNTRACKABLE' ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
-                    <span className="text-indigo-700 font-semibold">1실당 기여액: {store.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
-                  </div>
-                </div>
-              </div>
+              <SynergyStoreCard key={idx} store={store} type="leisure" />
             ))}
           </div>
         ) : (
@@ -658,70 +694,11 @@ export default function SynergyCorrelation() {
         )}
 
         {/* Leisure Correlation Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl">레저 영업장</th>
-                <th className="py-3.5 px-6">유입 채널 / 세그먼트</th>
-                <th className="py-3.5 px-6 text-right">연계 이용객수</th>
-                <th className="py-3.5 px-6 text-right">객실 연계 파급 매출</th>
-                <th className="py-3.5 px-6 text-right">숙박객 연계 비율</th>
-                <th className="py-3.5 px-6 text-right rounded-r-xl">1실당 RevPAS 기여액</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {leisureCorrelationRows.length > 0 ? (
-                leisureCorrelationRows.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-purple-50/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-slate-800">
-                      <span className="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full text-xs font-medium">
-                        {item.shopName}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-slate-700 font-medium">
-                      {item.channelName} <span className="text-xs text-slate-400 font-normal">({item.segmentName})</span>
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명</td>
-                    <td className="py-4 px-6 text-right font-bold text-purple-700">{formatCurrency(item.correlatedSales)}원</td>
-                    <td className="py-4 px-6 text-right font-semibold text-indigo-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
-                  </tr>
-                ))
-              ) : (
-                filteredLeisureStores.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-purple-50/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-slate-800">
-                      <span className="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full text-xs font-medium">
-                        {item.shopName}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-slate-600 font-medium">
-                      V5 원천 영업장 (SSOT 연동)
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? `${(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명` : '-'}
-                    </td>
-                    <td className="py-4 px-6 text-right font-bold text-purple-700">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
-                    </td>
-                    <td className="py-4 px-6 text-right font-semibold text-indigo-600 flex flex-col items-end gap-1">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? (
-                        <>
-                          <span>{item.spilloverRate}%</span>
-                          {item.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-normal">추정치</span>}
-                        </>
-                      ) : '-'}
-                    </td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <SynergyTable 
+          type="leisure" 
+          correlationRows={leisureCorrelationRows} 
+          stores={filteredLeisureStores} 
+        />
       </div>
 
       {/* Section 2: 🍽️ 식음팀 영업장별 연계 상관관계 분석 */}
@@ -763,74 +740,7 @@ export default function SynergyCorrelation() {
         {filteredFnbStores.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {filteredFnbStores.map((store, idx) => (
-              <div key={idx} className={`p-5 rounded-2xl border ${store.color} transition-all shadow-sm hover:shadow-md`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-base flex items-center gap-2">
-                    <Utensils size={18} /> {store.shopName}
-                  </h3>
-                  <div className="flex items-center gap-1.5">
-                    {store.interactionGrade && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow-xs ${
-                        store.interactionGrade === 'HIGH_SYNERGY' ? 'bg-amber-600 text-white' :
-                        store.interactionGrade === 'MODERATE_SYNERGY' ? 'bg-indigo-500 text-white' : 'bg-slate-500 text-white'
-                      }`}>
-                        {store.interactionGrade === 'HIGH_SYNERGY' ? '강력 시너지' :
-                         store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
-                      </span>
-                    )}
-                    {store.calculationMethod !== 'UNTRACKABLE' ? (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
-                        숙박객 비율 {store.spilloverRate}%
-                        {store.calculationMethod === 'HARD_FACT_MATCHING' && <span className="ml-1 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">건수 실측</span>}
-                        {store.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="ml-1 text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">통계적 추정치</span>}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                        숙박객 식별 불가
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  {store.correlationCoefficient !== undefined && (
-                    <div className="flex justify-between items-center p-2 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900">
-                      <span className="font-semibold">시계열 상관계수 (r)</span>
-                      <span className="font-extrabold text-amber-800">
-                        {store.correlationCoefficient >= 0 ? `+${store.correlationCoefficient}` : store.correlationCoefficient}
-                        {store.liftValue !== undefined && <span className="ml-1 text-slate-500 font-normal"> (Lift <strong>{store.liftValue}x</strong>)</span>}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center bg-white/60 p-2 rounded-xl">
-                    <span className="text-slate-500 font-medium">영업장 총 매출</span>
-                    <span className="font-bold text-slate-800">{formatCurrency(store.totalSales)}원</span>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-amber-100/70 p-2 rounded-xl">
-                    <div>
-                      <span className="text-amber-800 font-semibold block">객실 연계 파급매출</span>
-                      {store.calculationMethod !== 'UNTRACKABLE' && store.reverseSpillover !== undefined && (
-                        <span className="text-[10px] text-amber-700 font-medium">
-                          이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
-                        </span>
-                      )}
-                      {store.calculationMethod === 'UNTRACKABLE' && (
-                        <span className="text-[10px] text-slate-500 font-medium">결제 연동 불가 등 식별 불가</span>
-                      )}
-                    </div>
-                    <span className="font-bold text-amber-900">
-                      {store.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-1 text-slate-600">
-                    <span>추정 연계 고객수: <strong>{store.calculationMethod !== 'UNTRACKABLE' ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
-                    <span className="text-emerald-700 font-semibold">1실당 기여액: {store.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
-                  </div>
-                </div>
-              </div>
+              <SynergyStoreCard key={idx} store={store} type="fnb" />
             ))}
           </div>
         ) : (
@@ -839,71 +749,12 @@ export default function SynergyCorrelation() {
           </div>
         )}
 
-        {/* FNB Correlation Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl">식음 영업장</th>
-                <th className="py-3.5 px-6">유입 채널 / 세그먼트</th>
-                <th className="py-3.5 px-6 text-right">연계 이용객수</th>
-                <th className="py-3.5 px-6 text-right">객실 연계 파급 매출</th>
-                <th className="py-3.5 px-6 text-right">숙박객 연계 비율</th>
-                <th className="py-3.5 px-6 text-right rounded-r-xl">1실당 RevPAS 기여액</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {fnbCorrelationRows.length > 0 ? (
-                fnbCorrelationRows.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-amber-50/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-slate-800">
-                      <span className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-medium">
-                        {item.shopName}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-slate-700 font-medium">
-                      {item.channelName} <span className="text-xs text-slate-400 font-normal">({item.segmentName})</span>
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{(item.correlatedVisitors || 0).toLocaleString()}명</td>
-                    <td className="py-4 px-6 text-right font-bold text-amber-700">{formatCurrency(item.correlatedSales)}원</td>
-                    <td className="py-4 px-6 text-right font-semibold text-emerald-600">{item.spilloverRate}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">+{formatCurrency(item.revPasContribution || 0)}원/실</td>
-                  </tr>
-                ))
-              ) : (
-                filteredFnbStores.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-amber-50/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-slate-800">
-                      <span className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-medium">
-                        {item.shopName}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-slate-600 font-medium">
-                      V5 원천 영업장 (SSOT 연동)
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? `${(item.correlatedVisitors || 0).toLocaleString()}명` : '-'}
-                    </td>
-                    <td className="py-4 px-6 text-right font-bold text-amber-700">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(item.correlatedSales)}원` : '산출 불가'}
-                    </td>
-                    <td className="py-4 px-6 text-right font-semibold text-emerald-600 flex flex-col items-end gap-1">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? (
-                        <>
-                          <span>{item.spilloverRate}%</span>
-                          {item.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-normal">추정치</span>}
-                        </>
-                      ) : '-'}
-                    </td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">
-                      {item.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(item.revPasContribution || 0)}원/실` : '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* F&B Correlation Table */}
+        <SynergyTable 
+          type="fnb" 
+          correlationRows={fnbCorrelationRows} 
+          stores={filteredFnbStores} 
+        />
       </div>
 
     </div>

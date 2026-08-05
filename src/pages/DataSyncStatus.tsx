@@ -15,11 +15,13 @@ export const DataSyncStatus: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+
   const fetchLogs = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://belleforet-data.vercel.app/api/v3/etl/logs');
+      const response = await fetch(`${API_BASE}/api/v3/etl/logs`);
       if (!response.ok) throw new Error('Failed to fetch data sync status');
       
       const data = await response.json();

@@ -99,8 +99,9 @@ export default function Members() {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const data = await secureFetcher(
-          `https://belleforet-data.vercel.app/api/v3/members/usage?hash=${hashHex}&startDate=${localStartDate}&endDate=${localEndDate}`
+          `${API_BASE}/api/v3/members/usage?hash=${hashHex}&startDate=${localStartDate}&endDate=${localEndDate}`
         );
 
         if (data.success) {

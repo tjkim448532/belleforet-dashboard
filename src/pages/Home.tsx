@@ -5,6 +5,7 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import SalesPieChart from '../components/dashboard/SalesPieChart';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
@@ -63,13 +64,25 @@ export default function Home() {
   };
 
   const pieChartData = React.useMemo(() => {
-    // [SSOT 무관용 원칙 적용] 프론트엔드 자체 forEach 합산 금지 -> 백엔드 연동 전까지 빈 배열
-    return [];
+    if (!coreData.core?.salesByCategory) return [];
+    // [SSOT 바이블 준수] 백엔드가 제공하는 카테고리별 소계를 1:1 매핑하여 그대로 렌더링
+    return coreData.core.salesByCategory.map((cat: any) => ({
+      name: cat.categoryName || cat.categoryCode || '기타',
+      value: Number(cat.totalSales || 0)
+    })).filter((item: any) => item.value > 0);
   }, [coreData.core?.salesByCategory]);
 
   const leisureVisitorsMap = React.useMemo(() => {
-    // [SSOT 무관용 원칙 적용] 프론트엔드 자체 forEach 합산 및 오타(Typo) 유추 매핑 금지
+    // [SSOT 바이블 준수] 백엔드가 매핑 완료한 salesByFacility의 객수 데이터를 1:1로 활용 (프론트 단 유추 금지)
     const map: Record<string, number> = {};
+    if (coreData.core?.salesByFacility) {
+      coreData.core.salesByFacility.forEach((fac: any) => {
+        const name = fac.shopName || fac.facilityName;
+        if (name) {
+          map[name] = Number(fac.visitors || fac.totalVisitors || 0);
+        }
+      });
+    }
     return map;
   }, [coreData.core?.salesByFacility]);
 
@@ -500,50 +513,7 @@ export default function Home() {
 
             {/* 본부별 매출 파이 차트 */}
             {pieChartData.length > 0 && (
-              <div className="lg:col-span-12 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-brand-mint" />
-                  그룹별 매출 비중
-                </h3>
-                <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-                  <div className="w-full md:w-1/2 h-[300px]">
-                    <PieChart width={300} height={300}>
-                        <Pie
-                          data={pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          innerRadius={60}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {pieChartData.map((_: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          formatter={(value: any) => [`${formatCurrency(value)}원`, '매출액']}
-                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        />
-                        <Legend verticalAlign="bottom" height={36} />
-                      </PieChart>
-                    </div>
-                  <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
-                    {pieChartData.map((item: any, index: number) => (
-                      <div key={item.name} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                          <span className="text-sm font-medium text-slate-700">{item.name}</span>
-                        </div>
-                        <div className="text-lg font-bold text-slate-800">
-                          {formatCurrency(item.value)} <span className="text-xs text-slate-500 font-normal">원</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <SalesPieChart data={pieChartData} />
             )}
 
             {/* QA & KPI 상세 가이드 Accordion */}

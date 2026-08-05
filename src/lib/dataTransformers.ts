@@ -27,7 +27,7 @@ export const transformHomeData = (core: CoreDataState) => {
       storeToday.push({
         shop_name: m.shopName || m.facilityName || '알수없음', // facilityName은 구버전 호환용으로 남김
         actual: Number(m.totalSales || 0),
-        qty: Number(m.totalVisitors || 0)
+        qty: Number(m.visitors || m.totalVisitors || 0)
       });
     });
   }

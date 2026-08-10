@@ -4,7 +4,7 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import SalesPieChart from '../components/dashboard/SalesPieChart';
 
 export default function Home() {
@@ -49,7 +49,7 @@ export default function Home() {
 
   const data = transformedData;
   const loading = coreData.isLoading;
-  const apiError = coreData.error ? '데이터를 불러오는 데 실패했습니다. 서버 연결 상태를 확인해주세요.' : 
+  const apiError = coreData.error ? '[데이터를 로딩 중이거나 동기화 중입니다. 잠시 후 새로고침 해주세요.]' : 
                   (coreData.isLoading ? null : (transformedData ? null : '데이터를 불러오는 데 실패했습니다.'));
 
   // V5 에서는 current/lastYear 구분 없이 평탄화(Flat)된 weather 객체가 옵니다. 호환성을 위해 둘 다 체크합니다.
@@ -85,8 +85,6 @@ export default function Home() {
     }
     return map;
   }, [coreData.core?.salesByFacility]);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];
 
 
   if (apiError && !loading) {
@@ -312,7 +310,7 @@ export default function Home() {
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🏊 썸머랜드</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['썸머랜드'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['[썸머랜드 전체 소계]'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🐑 벨포레 목장</span>

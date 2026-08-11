@@ -277,7 +277,7 @@ export default function Home() {
                   </h2>
                 </div>
                 <div className="text-3xl font-semibold text-slate-800 mb-3 tracking-tight relative z-10 flex items-baseline gap-2">
-                  <span>{new Intl.NumberFormat('ko-KR').format(coreData.core?.summary?.totalVisitors || 0)}</span>
+                  <span>{new Intl.NumberFormat('ko-KR').format(coreData.core?.summary?.totalRoomCap || (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.visitors || 0))}</span>
                   <span className="text-lg font-medium text-slate-500">명</span>
                 </div>
                 

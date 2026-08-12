@@ -87,9 +87,13 @@ export default function AdminMapping() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sourceName: item.sourceName || 'raw_객실_정산',
-          productName: item.productName,
-          subGroupName: newSegment
+          updates: [
+            {
+              productName: item.productName,
+              subGroupName: newSegment
+            }
+          ],
+          rebuildEtl: true
         })
       });
       await fetchRoomSegmentMapping();
@@ -113,21 +117,26 @@ export default function AdminMapping() {
     const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
     try {
-      let count = 0;
-      for (const item of unmappedItems) {
+      const updates = unmappedItems.map(item => {
         const rec = getAiRecommendation(item.productName);
-        await secureFetcher(`${API_BASE}/api/v5/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sourceName: item.sourceName || 'raw_객실_정산',
-            productName: item.productName,
-            subGroupName: rec.segment
-          })
-        });
-        count++;
-        setBulkProgress({ current: count, total: unmappedItems.length });
-      }
+        return {
+          productName: item.productName,
+          subGroupName: rec.segment
+        };
+      });
+
+      setBulkProgress({ current: Math.floor(unmappedItems.length / 2), total: unmappedItems.length });
+
+      await secureFetcher(`${API_BASE}/api/v5/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updates,
+          rebuildEtl: true
+        })
+      });
+      
+      setBulkProgress({ current: unmappedItems.length, total: unmappedItems.length });
       await fetchRoomSegmentMapping();
     } catch (err) {
       console.error('Failed bulk confirmation:', err);

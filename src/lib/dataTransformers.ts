@@ -117,7 +117,8 @@ export const transformHomeData = (core: CoreDataState) => {
       return {
         reservedTeams: reserved,
         visitedTeams: visited,
-        pendingTeams: canceled,
+        canceledTeams: canceled,
+        pendingTeams: Math.max(0, reserved - visited - canceled),
         visitedPlayers: visitedPlayers,
         avgGreenFee: parseNum(
           c.summary?.golfAvgGreenFee ?? 

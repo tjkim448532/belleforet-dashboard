@@ -1,1 +1,4 @@
-{"success":false,"error":"Internal Server Error"}
+{
+  "success": false,
+  "error": "Internal Server Error"
+}

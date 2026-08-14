@@ -30,7 +30,7 @@ export default function LeisureFacility() {
       }
     }
 
-    // 2. Map facility rows directly (V5 schema subGroupName & totalVisitors)
+    // 2. Map facility rows directly (V6 schema subGroupName & totalVisitors)
     const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities.map((item: any) => {
       const name = item.shopName || '기타';
       const sales = Number(item.totalSales || 0);

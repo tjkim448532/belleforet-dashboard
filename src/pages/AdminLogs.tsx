@@ -70,7 +70,7 @@ export default function AdminLogs() {
               임직원 접속 및 보안 로그 <ShieldCheck size={18} className="text-brand-mint" />
             </h1>
             <p className="text-slate-400 text-xs">
-              대시보드 로그인 이력 및 접근 계정을 모니터링합니다. (백엔드 V5 API 완전연동 완료)
+              대시보드 로그인 이력 및 접근 계정을 모니터링합니다. (백엔드 V6 API 완전연동 완료)
             </p>
           </div>
         </div>

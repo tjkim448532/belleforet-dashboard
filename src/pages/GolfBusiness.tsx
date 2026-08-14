@@ -43,7 +43,7 @@ export default function GolfBusiness() {
           payload = payload[payload.length - 1] || payload[0] || {};
         }
         if (payload) {
-          // V5 Schema direct map (SSOT)
+          // V6 Schema direct map (SSOT)
           const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF');
           const golf_revenue = Number(golfCategory?.totalSales || 0);
 
@@ -221,7 +221,7 @@ export default function GolfBusiness() {
               </p>
             </div>
             <span className="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full self-start sm:self-auto">
-              회원/비회원 세부 분석 (V5 SSOT)
+              회원/비회원 세부 분석 (V6 SSOT)
             </span>
           </div>
 

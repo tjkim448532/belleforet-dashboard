@@ -21,7 +21,7 @@ interface SalesData {
   isFooter?: boolean;
 }
 
-// V5 Bible Strict adherence: No frontend calculation. Use backend SSOT.
+// V6 Bible Strict adherence: No frontend calculation. Use backend SSOT.
 const processSalesData = (payload: any) => {
   if (!payload) return [];
   
@@ -87,7 +87,7 @@ export default function DailySalesReport() {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       const result = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${date}`);
       const payload = result.data || result;
-      // V5 SSOT: Pass the full payload to processSalesData
+      // V6 SSOT: Pass the full payload to processSalesData
       if (payload) {
         setAccumulated({
           mtd_room_revenue: payload.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.mtdActual || 0,

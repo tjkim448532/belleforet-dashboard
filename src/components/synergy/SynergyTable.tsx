@@ -63,7 +63,7 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
                   </span>
                 </td>
                 <td className="py-4 px-6 text-slate-600 font-medium">
-                  V5 원천 영업장 (SSOT 연동)
+                  V6 원천 영업장 (SSOT 연동)
                 </td>
                 <td className="py-4 px-6 text-right font-medium text-slate-800">
                   {item.calculationMethod !== 'UNTRACKABLE' ? `${(item.correlatedVisitors || item.correlatedGuests || 0).toLocaleString()}명` : '-'}

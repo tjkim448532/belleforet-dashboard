@@ -21,8 +21,8 @@ const getAuthToken = async (): Promise<string> => {
 };
 
 export const secureFetcher = async (url: string, options: RequestInit = {}) => {
-  const isV5Api = url.includes('/api/v5/');
-  const token = isV5Api ? 'belleforet-m2m-secret' : await getAuthToken();
+  const isV6Api = url.includes('/api/v5/');
+  const token = isV6Api ? 'belleforet-m2m-secret' : await getAuthToken();
 
   const headers = {
     ...options.headers,

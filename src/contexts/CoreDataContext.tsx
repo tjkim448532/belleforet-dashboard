@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import { useDate } from './DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 
-export interface V5Payload {
+export interface V6Payload {
   date: string;
   summary: Record<string, any>;
   salesByCategory: Array<{ categoryCode: string; categoryName: string; totalSales: number }>;
@@ -42,7 +42,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       
-      // V5 SSOT [REQ-V5-20260726-01]: 백엔드 단일 객체 리턴 개편 반영 및 날짜 반전 보정
+      // V6 SSOT [REQ-V6-20260726-01]: 백엔드 단일 객체 리턴 개편 반영 및 날짜 반전 보정
       let validStart = startDate;
       let validEnd = endDate;
       if (validStart && validEnd && validStart > validEnd) {
@@ -60,7 +60,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         let corePayload = res.data || res;
         
-        // V5 SSOT 강제화: 백엔드가 startDate ~ endDate 구간에 대해 
+        // V6 SSOT 강제화: 백엔드가 startDate ~ endDate 구간에 대해 
         // 100% 계산 완료된 단일 객체(Unified Object)를 반환한다고 가정합니다.
         // 프론트엔드 단에서의 배열 reduce(Slice Summation) 가공 로직은 바이블 원칙에 따라 전면 철거되었습니다.
         if (Array.isArray(corePayload)) {

@@ -4,7 +4,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
-export interface V5MatrixRow {
+export interface V6MatrixRow {
   categoryCode?: string;
   categoryName: string;
   teamName: string;
@@ -32,12 +32,12 @@ export interface V5MatrixRow {
 
 export default function MatrixWeeklyDashboard() {
   const { startDate, endDate } = useDate();
-  const [data, setData] = useState<V5MatrixRow[]>([]);
+  const [data, setData] = useState<V6MatrixRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchV5Matrix = async () => {
+    const fetchV6Matrix = async () => {
       setIsLoading(true);
       setError(null);
       try {
@@ -48,7 +48,7 @@ export default function MatrixWeeklyDashboard() {
         const payloadArray = Array.isArray(result) ? result : (result.data || []);
         setData(payloadArray);
       } catch (err: any) {
-        console.error('Failed to fetch V5 matrix weekly', err);
+        console.error('Failed to fetch V6 matrix weekly', err);
         setError('데이터를 불러오는 중 문제가 발생했습니다.');
         setData([]);
       } finally {
@@ -56,7 +56,7 @@ export default function MatrixWeeklyDashboard() {
       }
     };
     
-    fetchV5Matrix();
+    fetchV6Matrix();
   }, [startDate, endDate]);
 
   // 중복 소계 행 정제 및 실적 0원 매장/소계 숨김 필터 (바이블 준수: 백엔드 수치는 재계산하지 않고 화면 표시만 필터링)
@@ -119,7 +119,7 @@ export default function MatrixWeeklyDashboard() {
     );
   };
 
-  const getSubtotalLabel = (row: V5MatrixRow) => {
+  const getSubtotalLabel = (row: V6MatrixRow) => {
     if (row.isGrandTotal) return '총계 (Grand Total)';
     if (row.subtotalType === 'category') return `${row.categoryName || row.categoryCode} 소계`;
     if (row.subtotalType === 'team') return `${row.teamName} 소계`;
@@ -157,7 +157,7 @@ export default function MatrixWeeklyDashboard() {
         {/* Header Notice */}
         <div className="bg-teal-50/70 px-6 py-3 border-b border-teal-100 flex items-center gap-2 text-sm text-teal-800 font-medium">
           <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-          백엔드 통합 데이터 통제 시스템(V5 API) 원천 렌더링 (순매출/부가세 별도)
+          백엔드 통합 데이터 통제 시스템(V6 API) 원천 렌더링 (순매출/부가세 별도)
         </div>
 
         <div className="overflow-auto max-h-[calc(100vh-200px)]">

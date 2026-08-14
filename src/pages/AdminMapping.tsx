@@ -40,7 +40,7 @@ export default function AdminMapping() {
   const { mappings, loading } = useMapping();
   const [activeTab, setActiveTab] = useState<'FACILITY' | 'ROOM_SEGMENT'>('FACILITY');
 
-  // V5 Room Segment State
+  // V6 Room Segment State
   const [roomSegmentLoading, setRoomSegmentLoading] = useState(false);
   const [unmappedItems, setUnmappedItems] = useState<RoomSegmentItem[]>([]);
   const [mappedItems, setMappedItems] = useState<RoomSegmentItem[]>([]);
@@ -177,7 +177,7 @@ export default function AdminMapping() {
     <div className="p-4 lg:p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-medium text-slate-800 tracking-tight">V5 통합 매핑 관리 센터</h1>
+          <h1 className="text-2xl font-medium text-slate-800 tracking-tight">V6 통합 매핑 관리 센터</h1>
           <p className="text-slate-500 mt-1 text-sm">
             POS 매장 및 원천 객실 요금제(Rate Type)를 정식 본부 및 세그먼트로 동적 매핑합니다.
           </p>

@@ -63,7 +63,7 @@ export default function SynergyCorrelation() {
     try {
       const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
 
-      // 1. Fetch V5 Synergy Store Correlation API (API 8) - Now contains EVERYTHING
+      // 1. Fetch V6 Synergy Store Correlation API (API 8) - Now contains EVERYTHING
       let corrRes = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null);
       
       // [FALLBACK MOCK] 백엔드 API 에러(502 등) 시 데모를 위한 fallback 데이터 주입
@@ -272,7 +272,7 @@ export default function SynergyCorrelation() {
     }
   };
 
-  // Pure Dynamic SSOT Extraction for Leisure, Moto, and Golf Stores directly from V5 Correlation API
+  // Pure Dynamic SSOT Extraction for Leisure, Moto, and Golf Stores directly from V6 Correlation API
   const leisureStoreAnalysis = useMemo(() => {
     return correlationData
       .filter(c => c.divisionName === '레저본부' || c.divisionName === '모토아레나' || c.divisionName === '골프본부')
@@ -283,7 +283,7 @@ export default function SynergyCorrelation() {
       .sort((a, b) => b.totalSales - a.totalSales);
   }, [correlationData]);
 
-  // Pure Dynamic SSOT Extraction for F&B Stores directly from V5 Correlation API
+  // Pure Dynamic SSOT Extraction for F&B Stores directly from V6 Correlation API
   const fnbStoreAnalysis = useMemo(() => {
     return correlationData
       .filter(c => c.divisionName === '식음팀')
@@ -364,7 +364,7 @@ export default function SynergyCorrelation() {
                 BELLE FORET CORRELATION ENGINE
               </span>
               <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
-                <ShieldCheck size={12} className="text-indigo-400" /> V5 SSOT Engine
+                <ShieldCheck size={12} className="text-indigo-400" /> V6 SSOT Engine
               </span>
             </div>
             
@@ -600,7 +600,7 @@ export default function SynergyCorrelation() {
             <HelpCircle size={20} /> 💡 객실-영업장 상관관계 및 시너지 분석 지표 가이드
           </h3>
           <span className="text-xs font-semibold px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
-            통계 분석 표준 명세 (V5 SSOT)
+            통계 분석 표준 명세 (V6 SSOT)
           </span>
         </div>
 
@@ -658,7 +658,7 @@ export default function SynergyCorrelation() {
               <Ticket className="text-purple-600" size={24} /> 🎟️ 레저본부 영업장별 객실 연계 상관관계 분석 (SSOT 동적 렌더링)
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 API 원천 데이터 기준 실시간 매출 발생 레저 영업장별 투숙객 연계 지출액 및 파급률입니다.
+              V6 API 원천 데이터 기준 실시간 매출 발생 레저 영업장별 투숙객 연계 지출액 및 파급률입니다.
             </p>
           </div>
 
@@ -714,7 +714,7 @@ export default function SynergyCorrelation() {
               <Utensils className="text-amber-600" size={24} /> 🍽️ 식음팀 영업장별 객실 연계 상관관계 분석 (SSOT 동적 렌더링)
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 API 원천 데이터 기준 실시간 매출 발생 식음 영업장별 투숙객 연계 지출액 및 파급률입니다.
+              V6 API 원천 데이터 기준 실시간 매출 발생 식음 영업장별 투숙객 연계 지출액 및 파급률입니다.
             </p>
           </div>
 

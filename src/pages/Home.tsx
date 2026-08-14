@@ -53,7 +53,7 @@ export default function Home() {
   const apiError = coreData.error ? '[데이터를 로딩 중이거나 동기화 중입니다. 잠시 후 새로고침 해주세요.]' : 
                   (coreData.isLoading ? null : (transformedData ? null : '데이터를 불러오는 데 실패했습니다.'));
 
-  // V5 에서는 current/lastYear 구분 없이 평탄화(Flat)된 weather 객체가 옵니다. 호환성을 위해 둘 다 체크합니다.
+  // V6 에서는 current/lastYear 구분 없이 평탄화(Flat)된 weather 객체가 옵니다. 호환성을 위해 둘 다 체크합니다.
   const weather = coreData.core?.weather?.current || coreData.core?.weather || null;
   const lastYearWeather = coreData.core?.weather?.lastYear || ((weather?.lyDescription || weather?.lyTempMax) ? { weatherDesc: weather.lyDescription || '', description: weather.lyDescription || '', tempMax: weather.lyTempMax, tempMin: weather.lyTempMin } : null);
 
@@ -531,7 +531,7 @@ export default function Home() {
                       <li className="flex flex-col">
                         <span className="font-medium text-slate-800">객실 점유율 (Occ) 및 객단가 (RevPAR)</span>
                         <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>V5 API 팩트 기반:</strong> 모든 지표(Occ, RevPAR 등)는 프론트엔드 연산 없이 데이터랩 통합 통제 센터(백엔드 DB)에서 완성된 값으로 제공됩니다.
+                          <strong>V6 API 팩트 기반:</strong> 모든 지표(Occ, RevPAR 등)는 프론트엔드 연산 없이 데이터랩 통합 통제 센터(백엔드 DB)에서 완성된 값으로 제공됩니다.
                         </div>
                       </li>
                     </ul>

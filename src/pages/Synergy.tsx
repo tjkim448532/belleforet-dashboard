@@ -77,11 +77,11 @@ export default function Synergy() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
       
-      // 1. Fetch V5 Room Sales by Channel (API 7: Ground-Up SSOT Dataset)
+      // 1. Fetch V6 Room Sales by Channel (API 7: Ground-Up SSOT Dataset)
       const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
       const channelPayload = channelRes?.data ?? channelRes;
 
-      // 2. Fetch V5 Main Revenue Summary
+      // 2. Fetch V6 Main Revenue Summary
       const summaryQueryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${eDate || sDate}`;
@@ -272,7 +272,7 @@ export default function Synergy() {
                 BELLE FORET SYNERGY MATRIX
               </span>
               <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
-                <ShieldCheck size={12} className="text-emerald-400" /> V5 SSOT Engine
+                <ShieldCheck size={12} className="text-emerald-400" /> V6 SSOT Engine
               </span>
             </div>
             
@@ -459,7 +459,7 @@ export default function Synergy() {
               <Building2 className="text-emerald-600" size={24} /> 콘도 순수 판매채널별 기여도 (Pure Sales Channel Synergy)
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              V5 SSOT 순수 판매채널(자사채널, OTA, 휴양소, 단체영업, 예약실) 기준 객실 실적 및 부대시설 연계 파급효과입니다.
+              V6 SSOT 순수 판매채널(자사채널, OTA, 휴양소, 단체영업, 예약실) 기준 객실 실적 및 부대시설 연계 파급효과입니다.
             </p>
           </div>
 
@@ -531,7 +531,7 @@ export default function Synergy() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <Activity className="text-indigo-600" size={24} /> 상세 판매 채널별 통합 실적 리포트 (V5 API 7 SSOT 연동)
+              <Activity className="text-indigo-600" size={24} /> 상세 판매 채널별 통합 실적 리포트 (V6 API 7 SSOT 연동)
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
               온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 판매 채널 기준 객실 판매 실적합계입니다.

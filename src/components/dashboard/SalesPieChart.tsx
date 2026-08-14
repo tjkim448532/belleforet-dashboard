@@ -3,9 +3,10 @@ import { Coins } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#4ECDC4'];
 
-const formatCurrency = (val: number) => {
-  const rounded = Math.round(val || 0);
-  return new Intl.NumberFormat('ko-KR').format(rounded);
+const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
 interface SalesPieChartProps {

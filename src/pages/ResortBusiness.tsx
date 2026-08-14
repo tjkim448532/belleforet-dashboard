@@ -63,10 +63,11 @@ export default function ResortBusiness() {
     fetchSummary();
   }, [startDate, endDate]);
 
-  const formatCurrency = (val: number) => {
-    const rounded = Math.round(val || 0);
-    return new Intl.NumberFormat('ko-KR').format(rounded);
-  };
+  const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
 
   const lodgingStats = data?.lodgingStats || { revenue: 0, roomsSold: 0, adr: 0, totalCapacity: 0 };
   

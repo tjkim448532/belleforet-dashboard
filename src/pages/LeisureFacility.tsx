@@ -3,7 +3,12 @@ import { useCoreData } from '../contexts/CoreDataContext';
 import { Ticket, Trophy, AlertCircle, Wallet, Award } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
-const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
+const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
+
 
 export default function LeisureFacility() {
   const { core, isLoading } = useCoreData();

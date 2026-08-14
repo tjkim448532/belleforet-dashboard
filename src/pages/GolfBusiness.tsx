@@ -101,14 +101,12 @@ export default function GolfBusiness() {
     fetchSummary();
   }, [startDate, endDate]);
 
-  const formatCurrency = (val: number) => {
-    const rounded = Math.round(val ?? 0);
-    return new Intl.NumberFormat('ko-KR').format(rounded);
-  };
+  const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
 
-  const formatNumber = (val: number) => {
-    return new Intl.NumberFormat('ko-KR').format(val ?? 0);
-  };
 
   const golfRevenue = data?.todaySummary?.golf_revenue ?? 0;
   const visitedTeams = data?.todaySummary?.golf_visited_teams ?? 0;

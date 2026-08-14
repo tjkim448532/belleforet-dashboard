@@ -2,7 +2,11 @@ import { Ticket, Utensils } from 'lucide-react';
 import type { StoreCorrelationItem } from './types';
 import { ComposedChart, Area, Line, ResponsiveContainer, Tooltip as RechartsTooltip, YAxis } from 'recharts';
 
-const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
+const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
 
 interface SynergyStoreCardProps {
   store: StoreCorrelationItem & { color?: string };

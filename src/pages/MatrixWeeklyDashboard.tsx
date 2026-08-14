@@ -92,10 +92,12 @@ export default function MatrixWeeklyDashboard() {
     });
   }, [data]);
 
-  const formatCurrency = (value?: number) => {
-    if (value === undefined || value === null) return '-';
-    return new Intl.NumberFormat('ko-KR').format(Math.round(value));
-  };
+  const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
+
 
   const renderGrowth = (rate?: number) => {
     if (rate === undefined || rate === null) return <span className="text-slate-400">-</span>;

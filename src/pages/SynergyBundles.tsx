@@ -9,7 +9,11 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-const formatCurrency = (val: number) => new Intl.NumberFormat('ko-KR').format(Math.round(val));
+const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
 
 export interface CustomerBundleItem {
   bundleKey: string;

@@ -111,10 +111,12 @@ export default function DailySalesReport() {
     fetchSalesData();
   }, [date]);
 
-  const formatCurrency = (num: number | string) => {
-    if (!num) return '0';
-    return new Intl.NumberFormat('ko-KR').format(Math.round(parseNum(num)));
-  };
+  const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
+
 
   const getGrowthRate = (actual: number | string, ly: number | string) => {
     const act = parseNum(actual) || 0;

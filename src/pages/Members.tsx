@@ -224,9 +224,12 @@ export default function Members() {
     );
   });
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('ko-KR').format(Math.round(val || 0)) + '원';
-  };
+  const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
+
 
   return (
     <div className="p-6 max-w-[1920px] mx-auto space-y-6">

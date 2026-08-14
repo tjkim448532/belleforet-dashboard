@@ -3,6 +3,7 @@ import { RefreshCw, Download } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
+import { parseNum } from '../lib/dataTransformers';
 
 interface SalesData {
   category?: string;
@@ -16,6 +17,7 @@ interface SalesData {
   ytdLy: number;
   isCategory?: boolean;
   isChild?: boolean;
+  isSubtotal?: boolean;
   isFooter?: boolean;
 }
 
@@ -33,26 +35,27 @@ const processSalesData = (payload: any) => {
     finalArray.push({
       isCategory: true,
       shopName: cat.categoryName,
-      todayActual: Number(cat.totalSales || 0), // SSOT strict map
-      todayLy: Number(cat.todayLy || 0),
-      mtdActual: Number(cat.mtdActual || 0),
-      mtdLy: Number(cat.mtdLy || 0),
-      ytdActual: Number(cat.ytdActual || 0),
-      ytdLy: Number(cat.ytdLy || 0),
+      todayActual: parseNum(cat.totalSales || 0), // SSOT strict map
+      todayLy: parseNum(cat.todayLy || 0),
+      mtdActual: parseNum(cat.mtdActual || 0),
+      mtdLy: parseNum(cat.mtdLy || 0),
+      ytdActual: parseNum(cat.ytdActual || 0),
+      ytdLy: parseNum(cat.ytdLy || 0),
     });
   });
 
   // Render Facilities strictly using salesByFacility as provided by backend
   facilities.forEach((child: any) => {
     finalArray.push({
-      isChild: true,
-      shopName: child.shopName,
-      todayActual: Number(child.totalSales || 0), // SSOT strict map
-      todayLy: Number(child.todayLy || 0),
-      mtdActual: Number(child.mtdActual || 0),
-      mtdLy: Number(child.mtdLy || 0),
-      ytdActual: Number(child.ytdActual || 0),
-      ytdLy: Number(child.ytdLy || 0),
+      isChild: !child.isSubtotal,
+      isSubtotal: child.isSubtotal,
+      shopName: child.shopName || child.facilityName,
+      todayActual: parseNum(child.totalSales || child.todayActual || 0), // SSOT strict map
+      todayLy: parseNum(child.todayLy || 0),
+      mtdActual: parseNum(child.mtdActual || 0),
+      mtdLy: parseNum(child.mtdLy || 0),
+      ytdActual: parseNum(child.ytdActual || 0),
+      ytdLy: parseNum(child.ytdLy || 0),
     });
   });
   
@@ -61,12 +64,12 @@ const processSalesData = (payload: any) => {
   finalArray.push({
     isFooter: true,
     shopName: '총계 (Grand Total)',
-    todayActual: Number(summary.totalRevenue || 0),
-    todayLy: Number(summary.todayLyRevenue || 0),
-    mtdActual: Number(summary.mtdRevenue || 0),
-    mtdLy: Number(summary.mtdLyRevenue || 0),
-    ytdActual: Number(summary.ytdActual || 0),
-    ytdLy: Number(summary.ytdLy || 0),
+    todayActual: parseNum(summary.totalRevenue || 0),
+    todayLy: parseNum(summary.todayLyRevenue || 0),
+    mtdActual: parseNum(summary.mtdRevenue || 0),
+    mtdLy: parseNum(summary.mtdLyRevenue || 0),
+    ytdActual: parseNum(summary.ytdActual || 0),
+    ytdLy: parseNum(summary.ytdLy || 0),
   });
   
   return finalArray;
@@ -87,7 +90,7 @@ export default function DailySalesReport() {
       // V5 SSOT: Pass the full payload to processSalesData
       if (payload) {
         setAccumulated({
-          mtd_room_revenue: payload.summary?.mtdRoomRevenue || 0,
+          mtd_room_revenue: payload.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.mtdActual || 0,
           ytd_total_gross: payload.summary?.ytdActual || 0
         });
         setData(processSalesData(payload));
@@ -110,18 +113,18 @@ export default function DailySalesReport() {
 
   const formatCurrency = (num: number | string) => {
     if (!num) return '0';
-    return new Intl.NumberFormat('ko-KR').format(Math.round(Number(num)));
+    return new Intl.NumberFormat('ko-KR').format(Math.round(parseNum(num)));
   };
 
   const getGrowthRate = (actual: number | string, ly: number | string) => {
-    const act = Number(actual) || 0;
-    const lastYear = Number(ly) || 0;
+    const act = parseNum(actual) || 0;
+    const lastYear = parseNum(ly) || 0;
     if (lastYear === 0) return act > 0 ? '100.0' : '0.0';
     return (((act - lastYear) / Math.abs(lastYear)) * 100).toFixed(1);
   };
 
   const getGrowthColor = (rate: string) => {
-    const num = Number(rate);
+    const num = parseNum(rate);
     if (num > 0) return 'text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10';
     if (num < 0) return 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10';
     return 'text-slate-500 dark:text-slate-400';
@@ -222,6 +225,7 @@ export default function DailySalesReport() {
                   const isCategory = row.isCategory;
                   const isChild = row.isChild;
                   const isFooter = row.isFooter;
+                  const isSubtotal = row.isSubtotal;
 
                   return (
                     <tr 
@@ -230,6 +234,7 @@ export default function DailySalesReport() {
                         transition-colors
                         ${isFooter ? 'bg-indigo-50 dark:bg-indigo-900/30 font-bold border-t-2 border-indigo-200 dark:border-indigo-800' : ''}
                         ${isCategory ? 'bg-slate-100 dark:bg-slate-800/80 font-semibold' : ''}
+                        ${isSubtotal ? 'bg-brand-mint/10 dark:bg-brand-mint/20 font-semibold border-t border-brand-mint/30' : ''}
                         ${isChild ? 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50' : ''}
                       `}
                     >
@@ -247,7 +252,7 @@ export default function DailySalesReport() {
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(dailyGrowth)}`}>
-                          {Number(dailyGrowth) > 0 ? '+' : ''}{dailyGrowth}%
+                          {parseNum(dailyGrowth) > 0 ? '+' : ''}{dailyGrowth}%
                         </span>
                       </td>
 
@@ -259,7 +264,7 @@ export default function DailySalesReport() {
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(mtdGrowth)}`}>
-                          {Number(mtdGrowth) > 0 ? '+' : ''}{mtdGrowth}%
+                          {parseNum(mtdGrowth) > 0 ? '+' : ''}{mtdGrowth}%
                         </span>
                       </td>
 
@@ -271,7 +276,7 @@ export default function DailySalesReport() {
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(ytdGrowth)}`}>
-                          {Number(ytdGrowth) > 0 ? '+' : ''}{ytdGrowth}%
+                          {parseNum(ytdGrowth) > 0 ? '+' : ''}{ytdGrowth}%
                         </span>
                       </td>
                     </tr>

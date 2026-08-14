@@ -2,6 +2,7 @@ import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LayoutDashboard, ExternalLink, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { parseNum } from '../lib/dataTransformers';
 
 export default function AdminLayout() {
   const { isAdmin } = useAuth();
@@ -16,7 +17,7 @@ export default function AdminLayout() {
           if (res.ok) {
             const data = await res.json();
             if (data.status === 'SUCCESS' && data.data) {
-              const gap = Number(data.data.ticket_gap) || 0;
+              const gap = parseNum(data.data.ticket_gap) || 0;
               if (Math.abs(gap) >= 1000) {
                 setEtlAlert({
                   gap,

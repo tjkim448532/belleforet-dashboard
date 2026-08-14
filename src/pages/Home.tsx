@@ -6,6 +6,7 @@ import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import SalesPieChart from '../components/dashboard/SalesPieChart';
+import { parseNum } from '../lib/dataTransformers';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
@@ -68,7 +69,7 @@ export default function Home() {
     // [SSOT 바이블 준수] 백엔드가 제공하는 카테고리별 소계를 1:1 매핑하여 그대로 렌더링
     return coreData.core.salesByCategory.map((cat: any) => ({
       name: cat.categoryName || cat.categoryCode || '기타',
-      value: Number(cat.totalSales || 0)
+      value: parseNum(cat.totalSales || 0)
     })).filter((item: any) => item.value > 0);
   }, [coreData.core?.salesByCategory]);
 
@@ -79,7 +80,7 @@ export default function Home() {
       coreData.core.salesByFacility.forEach((fac: any) => {
         const name = fac.shopName || fac.facilityName;
         if (name) {
-          map[name] = Number(fac.visitors || fac.totalVisitors || 0);
+          map[name] = parseNum(fac.visitors || fac.totalVisitors || 0);
         }
       });
     }

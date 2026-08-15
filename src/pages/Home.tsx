@@ -114,7 +114,7 @@ export default function Home() {
   const ytdGrowth = coreData.core?.summary?.ytdGrowth;
   const ytdDiff = coreData.core?.summary?.ytdDiff;
 
-  const totalRoomInventory = coreData.core?.summary?.totalRoomInventory || 0;
+  
   const multiNight = (() => {
     const s = coreData.core?.summary || {};
     if (s.multiNight) return s.multiNight;
@@ -288,7 +288,7 @@ export default function Home() {
                     <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                       <span className="bg-brand-mint text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">연박(2박+)</span>
                       <span className="font-bold text-slate-800">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
-                      <span className="text-slate-500 text-[11px]">(투숙객 대비 <strong className="text-slate-700 font-semibold">{totalRoomInventory > 0 ? (((multiNight.multiNightGuests || 0) / totalRoomInventory) * 100).toFixed(1) : (multiNight.multiNightRatio || 0).toFixed(1)}%</strong>)</span>
+                      <span className="text-slate-500 text-[11px]">(투숙객 대비 <strong className="text-slate-700 font-semibold">{parseNum(multiNight.multiNightRatio ?? 0).toFixed(1)}%</strong>)</span>
                     </div>
                     {multiNight.guestsGrowth !== undefined && (
                       <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>

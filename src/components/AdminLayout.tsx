@@ -1,6 +1,6 @@
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, ExternalLink, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { parseNum } from '../lib/dataTransformers';
 
@@ -42,12 +42,7 @@ export default function AdminLayout() {
   }
 
   const menuItems = [
-    { 
-      name: 'Vercel 통합 매핑어드민 바로가기', 
-      path: 'https://belleforet-data-git-main-tjkim448532s-projects.vercel.app/admin/mapping', 
-      icon: <ExternalLink size={20} className="text-brand-mint" />, 
-      isExternal: true 
-    },
+
     { name: '임직원 대시보드 권한 관리', path: '/admin/roles', icon: <Users size={20} /> },
     { name: '대시보드 접속 및 보안 로그', path: '/admin/logs', icon: <ShieldCheck size={20} /> },
   ];
@@ -66,18 +61,6 @@ export default function AdminLayout() {
 
         <nav className="flex-1 px-4 py-4 space-y-2">
           {menuItems.map((item) => (
-            item.isExternal ? (
-              <a
-                key={item.path}
-                href={item.path}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-xs text-brand-mint hover:bg-slate-800 hover:text-white border border-brand-mint/30 shadow-xs"
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </a>
-            ) : (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -92,7 +75,6 @@ export default function AdminLayout() {
                 {item.icon}
                 {item.name}
               </NavLink>
-            )
           ))}
         </nav>
         

@@ -72,8 +72,8 @@ export default function MatrixWeeklyDashboard() {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = endDate 
-          ? `startDate=${startDate}&endDate=${endDate}&compareDate=${activeCompareDate}` 
-          : `date=${startDate}&compareDate=${activeCompareDate}`;
+          ? `startDate=${startDate}&endDate=${endDate}&compareDate=${activeCompareDate}&_t=${Date.now()}` 
+          : `date=${startDate}&compareDate=${activeCompareDate}&_t=${Date.now()}`;
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`);
         const result = res.data || res;
         const payloadArray = Array.isArray(result) ? result : (result.data || []);

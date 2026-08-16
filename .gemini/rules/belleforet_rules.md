@@ -15,3 +15,7 @@
 ## 4. 100% 무결점 검증 & 원스톱 운영 배포
 - 코드 수정 후에는 항상 사전 `npm run build`를 실행하여 0 에러/0 경고를 확인합니다.
 - 작업 완료 후 **Firebase Hosting 배포 (`firebase deploy --only hosting`)** 및 **Git 커밋/푸시 (`git commit & git push`)**까지 한 호흡으로 깔끔하게 마칩니다.
+
+## 5. 프로젝트 및 워크스페이스 경계 준수 (Strict Project Boundary & Context Isolation)
+- **NO EXTERNAL PROJECT MUTATION**: 사용자가 제공한 화면이나 요청이 본 대시보드 프로젝트(`e:\앱\belleforet-dashboard`)의 코드가 아닌 경우(예: 외부 어드민 화면, 타 리포지토리), 본 프로젝트의 기존 컴포넌트에 임의로 이식하거나 변형하지 마십시오.
+- **CLARIFY BEFORE EDITING**: 프로젝트에 존재하지 않는 외부 화면/기능에 대한 레이아웃 변경 요청을 받았을 때는, 즉시 코드를 수정하지 말고 대상 프로젝트/화면 위치를 사용자에게 먼저 명확히 확인한 후 조치합니다.

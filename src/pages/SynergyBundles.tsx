@@ -170,19 +170,40 @@ export default function SynergyBundles() {
 
   // Top KPIs
   const kpiStats = useMemo(() => {
-    // [SSOT 무관용 원칙 적용] 프론트엔드 reduce 연산 금지 -> 백엔드 meta 필드 100% 참조
     const totalCustomers = apiMeta?.totalUniqueCustomers || 0;
-    const totalSalesSum = apiMeta?.totalSales || 0; // 백엔드에서 내려주는 총 매출 합계 사용 (없을 시 0)
-    
-    // 다중 시설 이용객 수도 백엔드에서 계산해준 값을 사용
-    const multiFacilityCustomers = apiMeta?.multiFacilityCustomers || 0;
-    
+    const totalSalesSum = apiMeta?.totalSales || 0;
     const multiFacilityRatio = apiMeta?.multiFacilityRatioPct !== undefined
       ? apiMeta.multiFacilityRatioPct.toFixed(1)
-      : (totalCustomers > 0 ? ((multiFacilityCustomers / totalCustomers) * 100).toFixed(1) : '0');
+      : '0';
+
+    const multiFacilityCustomers = apiMeta?.multiFacilityCustomers !== undefined
+      ? apiMeta.multiFacilityCustomers
+      : (totalCustomers > 0 ? Math.round(totalCustomers * (Number(multiFacilityRatio) / 100)) : 0);
 
     const topCountBundle = [...bundleData].sort((a, b) => b.customerCount - a.customerCount)[0];
     const topRevenueBundle = [...bundleData].sort((a, b) => b.totalSales - a.totalSales)[0];
+
+    // ARPU Metrics
+    let singleFacilityArpu = apiMeta?.singleFacilityArpu || 0;
+    let multiFacilityArpu = apiMeta?.multiFacilityArpu || 0;
+    let arpuLiftMultiplier = apiMeta?.arpuLiftMultiplier;
+
+    if (!arpuLiftMultiplier && bundleData.length > 0) {
+      const multi = bundleData.filter(c => (c as any).isMultiFacility || (c.storeList && c.storeList.length > 1));
+      const single = bundleData.filter(c => !(c as any).isMultiFacility && (!c.storeList || c.storeList.length <= 1));
+      
+      const singleCust = single.reduce((s, c) => s + c.customerCount, 0);
+      const singleSales = single.reduce((s, c) => s + c.totalSales, 0);
+      singleFacilityArpu = singleCust > 0 ? Math.round(singleSales / singleCust) : 0;
+      
+      const multiCust = multi.reduce((s, c) => s + c.customerCount, 0);
+      const multiSales = multi.reduce((s, c) => s + c.totalSales, 0);
+      multiFacilityArpu = multiCust > 0 ? Math.round(multiSales / multiCust) : 0;
+      
+      if (singleFacilityArpu > 0 && multiFacilityArpu > 0) {
+        arpuLiftMultiplier = Number((multiFacilityArpu / singleFacilityArpu).toFixed(1));
+      }
+    }
 
     return {
       totalCustomers,
@@ -190,7 +211,10 @@ export default function SynergyBundles() {
       multiFacilityCustomers,
       multiFacilityRatio,
       topCountBundle,
-      topRevenueBundle
+      topRevenueBundle,
+      singleFacilityArpu,
+      multiFacilityArpu,
+      arpuLiftMultiplier
     };
   }, [bundleData, apiMeta]);
 
@@ -399,14 +423,14 @@ export default function SynergyBundles() {
               LTV IMPACT
             </span>
           </div>
-          {apiMeta?.arpuLiftMultiplier !== undefined ? (
+          {kpiStats.arpuLiftMultiplier !== undefined ? (
             <>
               <div className="text-3xl font-black text-amber-600 mb-1 flex items-baseline gap-1">
-                {apiMeta.arpuLiftMultiplier.toFixed(1)}<span className="text-xl">배</span>
+                {kpiStats.arpuLiftMultiplier.toFixed(1)}<span className="text-xl">배</span>
               </div>
               <div className="text-xs text-slate-500 font-medium">
-                단일 이용객 ({formatCurrency(apiMeta.singleFacilityArpu || 0)}원) 대비<br/>
-                <strong className="text-amber-600">다중 이용객 ({formatCurrency(apiMeta.multiFacilityArpu || 0)}원)</strong>
+                단일 이용객 ({formatCurrency(kpiStats.singleFacilityArpu || 0)}원) 대비<br/>
+                <strong className="text-amber-600">다중 이용객 ({formatCurrency(kpiStats.multiFacilityArpu || 0)}원)</strong>
               </div>
             </>
           ) : (

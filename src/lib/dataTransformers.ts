@@ -1,18 +1,66 @@
-export const parseNum = (val: any): number => {
-  if (val === null || val === undefined) return 0;
-  if (typeof val === 'number') return val;
+import type { CoreDataState } from '../contexts/CoreDataContext';
+
+export const parseNum = (val: unknown): number => {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
   if (typeof val === 'string') {
-    const num = Number(val.replace(/,/g, ''));
+    const num = Number(val.replace(/,/g, '').trim());
     return isNaN(num) ? 0 : num;
   }
   const num = Number(val);
   return isNaN(num) ? 0 : num;
 };
 
-import type { CoreDataState } from '../contexts/CoreDataContext';
+export interface TransformedHomeData {
+  success: boolean;
+  date: string;
+  kpiMetrics: {
+    totalOcc: number;
+    totalADR: number;
+    revPAR: number;
+    trevPAR: number;
+    days: number;
+    raw: {
+      totalRoomRev: number;
+      totalRoomsSold: number;
+      totalInventory: number;
+      totalResortRevGross: number;
+      totalRoomCap: number;
+      totalVisitors: number;
+    };
+  };
+  ytd: {
+    actual: number;
+    ly_actual: number;
+    gross: number;
+    ly_gross: number;
+    ly_day: number;
+  };
+  today: {
+    actual: number;
+    ly_actual: number;
+    gross: number;
+    ly_gross: number;
+    ly_day: number;
+  };
+  hq_today: Array<{ hq: string; actual: number; qty: number }>;
+  store_today: Array<{ shop_name: string; actual: number; qty: number }>;
+  rooms: any[];
+  roomTypeBreakdown: any[];
+  golfSummary: {
+    reservedTeams: number;
+    visitedTeams: number;
+    canceledTeams: number;
+    pendingTeams: number;
+    visitedPlayers: number;
+    avgGreenFee: number;
+    ly_avgGreenFee: number;
+  };
+  golfFacilityBreakdown: any[];
+  qa_metrics: any;
+}
 
-
-export const transformHomeData = (core: CoreDataState) => {
+export const transformHomeData = (core: CoreDataState): TransformedHomeData | null => {
   if (!core.core) return null;
   const c = core.core;
   
@@ -20,7 +68,6 @@ export const transformHomeData = (core: CoreDataState) => {
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
     c.salesByCategory.forEach((m: any) => {
       const cat = m.categoryCode || '기타업장';
-      // [SSOT 무관용] 월간 조회시 단일 매출(todayActual)이 아닌 월간 매출이 정상 반영되도록 strict mapping
       hqTodayMap[cat] = parseNum(m.totalSales || 0);
     });
   }
@@ -31,33 +78,26 @@ export const transformHomeData = (core: CoreDataState) => {
     qty: 0
   })).filter(h => h.actual > 0);
 
-  // [SSOT 무관용] 누락된 부대시설(단일 매출) 테이블 복구. salesByFacility를 직접 활용
   const storeToday: { shop_name: string; actual: number; qty: number }[] = [];
   if (c.salesByFacility && Array.isArray(c.salesByFacility)) {
     c.salesByFacility.forEach((m: any) => {
       storeToday.push({
-        shop_name: m.shopName || m.facilityName || '알수없음', // facilityName은 구버전 호환용으로 남김
+        shop_name: m.shopName || m.facilityName || '알수없음',
         actual: parseNum(m.totalSales || 0),
         qty: parseNum(m.visitors || m.totalVisitors || 0)
       });
     });
   }
 
-  // Use SSOT values explicitly
-  // Find room revenue from salesByCategory as backend gives it per category
   let totalRoomRev = 0;
   let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑
     const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
     if (roomCat) totalRoomRev = parseNum(roomCat.totalSales || 0);
 
     const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF');
     if (golfCat) totalGolfRev = parseNum(golfCat.totalSales || 0);
   }
-
-  // Fallback: 백엔드의 salesByCategory에 ROOM이 없을 경우 프론트엔드가 자체적으로 roomSummaryByType를
-  // reduce()로 합산하여 소계를 생성하는 행위(Slice Summation)는 바이블 원칙에 위배되므로 제거.
   
   const totalResortRevGross = parseNum(c.summary?.totalRevenue || 0);
   const totalRoomsSold = parseNum(c.summary?.totalRooms || 0);
@@ -65,7 +105,7 @@ export const transformHomeData = (core: CoreDataState) => {
   
   const isRange = Boolean(c.isRangeQuery || (c.startDate && c.endDate && c.startDate !== c.endDate));
   const days = isRange ? Math.max(1, c.resortSummary?.days || c.days || (Array.isArray(c.dailyTrends) ? c.dailyTrends.length : 1)) : 1;
-  const physicalRoomInventory = 175 * days; // 16평 85 + 35평 85 + 51평 단독 5 = 총 175실/일
+  const physicalRoomInventory = 175 * days;
 
   const kpiMetrics = {
     totalOcc: physicalRoomInventory > 0 ? (totalRoomsSold / physicalRoomInventory) * 100 : 0,
@@ -83,29 +123,31 @@ export const transformHomeData = (core: CoreDataState) => {
     }
   };
 
+  const actualRev = parseNum(c.summary?.totalRevenue || 0);
+  const lyRev = parseNum(c.summary?.todayLyRevenue || 0);
+  const ytdRev = parseNum(c.summary?.ytdActual || c.summary?.ytdRevenue || 0);
+  const ytdLyRev = parseNum(c.summary?.ytdLy || 0);
+
   return {
     success: true,
     date: c.date || '',
-    kpiMetrics: kpiMetrics,
+    kpiMetrics,
     ytd: { 
-      actual: parseNum(c.summary?.ytdActual || c.summary?.ytdRevenue || 0), 
-      ly_actual: parseNum(c.summary?.ytdLy || 0),
-      gross: parseNum(c.summary?.ytdActual || c.summary?.ytdRevenue || 0),
-      ly_gross: parseNum(c.summary?.ytdLy || 0),
-      ly_day: parseNum(c.summary?.ytdLy || 0)
+      actual: ytdRev, 
+      ly_actual: ytdLyRev,
+      gross: ytdRev,
+      ly_gross: ytdLyRev,
+      ly_day: ytdLyRev
     },
     today: { 
-      actual: parseNum(c.summary?.totalRevenue || 0), 
-      ly_actual: parseNum(c.summary?.todayLyRevenue || 0),
-      gross: parseNum(c.summary?.totalRevenue || 0),
-      ly_gross: parseNum(c.summary?.todayLyRevenue || 0),
-      ly_day: parseNum(c.summary?.todayLyRevenue || 0)
+      actual: actualRev, 
+      ly_actual: lyRev,
+      gross: actualRev,
+      ly_gross: lyRev,
+      ly_day: lyRev
     },
     hq_today: hqToday,
     store_today: storeToday,
-    adr: 0, 
-    avg_green_fee: 0, 
-    weekly_trend: [], 
     rooms: c.rooms || [],
     roomTypeBreakdown: c.roomTypeBreakdown || [],
     golfSummary: (() => {
@@ -134,17 +176,29 @@ export const transformHomeData = (core: CoreDataState) => {
   };
 };
 
+export interface TransformedResortData {
+  success: boolean;
+  date?: string;
+  ytd: { actual: number; ly_actual: number };
+  today: { actual: number; ly_actual: number };
+  roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }>;
+  channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }>;
+  marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
+  rateAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
+  lodgingStats: {
+    revenue: number;
+    roomsSold: number;
+    totalCapacity: number;
+    adr: number;
+  };
+}
 
-
-// Removed CHANNEL_ENUM and normalizeMarketType to comply with No Frontend Aggregation SSOT Rule
-
-export const transformResortData = (payload: any, masterCapacities?: Record<string, number>) => {
+export const transformResortData = (payload: any, masterCapacities?: Record<string, number>): TransformedResortData | null => {
   if (!payload) return null;
 
   const isRange = Boolean(payload.isRangeQuery || (payload.startDate && payload.endDate && payload.startDate !== payload.endDate));
   let days = isRange ? Math.max(1, payload.resortSummary?.days || payload.days || (Array.isArray(payload.dailyTrends) ? payload.dailyTrends.length : 1)) : 1;
 
-  // Fallback days calculation from startDate and endDate if dailyTrends missing
   if (isRange && days === 1 && payload.startDate && payload.endDate) {
     const s = new Date(payload.startDate);
     const e = new Date(payload.endDate);
@@ -154,9 +208,8 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   const dailyCap16 = parseNum(masterCapacities?.['16평']) || 85;
   const dailyCap35 = parseNum(masterCapacities?.['35평']) || 85;
-  const dailyCap51 = parseNum(masterCapacities?.['51평']) || 90; // Option A: 5 dedicated + 85 connected limit = 90 rooms/day
+  const dailyCap51 = parseNum(masterCapacities?.['51평']) || 90;
 
-  // 1. Map directly from SSOT roomSummaryByType with period capacity
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
     '16평': { sold: 0, cap: dailyCap16 * days, rev: 0 },
     '35평': { sold: 0, cap: dailyCap35 * days, rev: 0 },
@@ -182,9 +235,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     });
   }
 
-  // 2. Map directly from SSOT salesByChannel
   const channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
-  
   if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
     payload.salesByChannel.forEach((item: any) => {
       const sold = parseNum(item.roomsSold || 0);
@@ -197,13 +248,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       });
     });
   }
-  
-  // Sort descending by revenue
   channelAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-  // 3. Market Type Segment Data (SSOT salesBySegment / marketType)
   const marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
-
   if (payload.salesBySegment && Array.isArray(payload.salesBySegment)) {
     payload.salesBySegment.forEach((item: any) => {
       const sold = parseNum(item.roomsSold || 0);
@@ -220,13 +267,12 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   let summaryRevenue = 0;
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
-    // 백엔드의 완벽한 카멜케이스화에 따른 SSOT 단일 매핑
     const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
     if (roomCat) summaryRevenue = parseNum(roomCat.totalSales || 0);
   }
   
-  let summaryRoomsSold = parseNum(payload.summary?.totalRooms || 0);
-  let summaryTotalCapacity = parseNum(payload.summary?.totalRoomCap || 0);
+  const summaryRoomsSold = parseNum(payload.summary?.totalRooms || 0);
+  const summaryTotalCapacity = parseNum(payload.summary?.totalRoomCap || 0);
 
   const lodgingStats = {
     revenue: summaryRevenue,
@@ -243,9 +289,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     roomOccupancyMap,
     channelAdrData,
     marketTypeAdrData,
-    rateAdrData: marketTypeAdrData, // Fallback alias for backward compatibility
-    lodgingStats,
-    rawRooms: [], 
-    rawRoomTypeBreakdown: []
+    rateAdrData: marketTypeAdrData,
+    lodgingStats
   };
 };

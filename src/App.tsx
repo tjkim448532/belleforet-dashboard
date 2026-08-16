@@ -14,7 +14,6 @@ import Home from './pages/Home';
 import Simulator from './pages/Simulator';
 import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
-// AdminLeisureMapping removed
 import AdminDaolRules from './pages/AdminDaolRules';
 import AdminRoles from './pages/AdminRoles';
 
@@ -84,7 +83,6 @@ export function App() {
                     <Route path="daol-rules" element={<AdminDaolRules />} />
                     <Route path="logs" element={<AdminLogs />} />
                     <Route path="mapping" element={<AdminMapping />} />
-                    {/* <Route path="leisure-mapping" element={<AdminLeisureMapping />} /> */}
                     <Route path="roles" element={<AdminRoles />} />
                     <Route index element={<Navigate to="simulator" replace />} />
                   </Route>

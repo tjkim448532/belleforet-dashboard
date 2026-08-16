@@ -7,10 +7,34 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node / Build Output
 node_modules
 dist
 dist-ssr
 *.local
+
+# Temporary / Debug files
+*.json.bak
+api*.json
+corr*.json
+daily-sales.json
+data.json
+final_*.json
+matrix-weekly.json
+output*.json
+payload.json
+response.json
+rev_check.json
+revenue-summary*.json
+room-*.json
+summary_*.json
+temp*.json
+test*.json
+git_log*.txt
+gitlog.txt
+c.txt
+*.csv
+scratch/
 
 # Editor directories and files
 .vscode/*

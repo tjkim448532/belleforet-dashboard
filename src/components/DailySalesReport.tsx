@@ -85,7 +85,7 @@ export default function DailySalesReport() {
     setLoading(true);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-      const result = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${date}`);
+      const result = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${date}&_t=${Date.now()}`);
       const payload = result.data || result;
       // V6 SSOT: Pass the full payload to processSalesData
       if (payload) {

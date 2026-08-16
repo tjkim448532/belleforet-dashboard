@@ -162,102 +162,167 @@ export default function Synergy() {
     }
   };
 
-  // Grand Total Rooms & Revenue (API 7 SSOT)
+  // Grand Total Rooms & Revenue (API 7 SSOT with revenue-summary fallback)
   const grandTotal = useMemo(() => {
     const gtRow = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
     if (gtRow) {
-      const rooms = isActualRange ? (gtRow.mtdRooms || 0) : (gtRow.todayRooms || 0);
-      const revenue = isActualRange ? (gtRow.mtdRevenue || 0) : (gtRow.todayRevenue || 0);
+      const rooms = isActualRange ? (gtRow.mtdRooms || gtRow.todayRooms || 0) : (gtRow.todayRooms || 0);
+      const revenue = isActualRange ? (gtRow.mtdRevenue || gtRow.todayRevenue || 0) : (gtRow.todayRevenue || 0);
       return {
-        rooms,
-        revenue,
-        adr: rooms > 0 ? Math.round(revenue / rooms) : 0
+        rooms: Number(rooms) || 0,
+        revenue: Number(revenue) || 0,
+        adr: Number(rooms) > 0 ? Math.round(Number(revenue) / Number(rooms)) : 0
       };
     }
-    return { rooms: 0, revenue: 0, adr: 0 };
-  }, [channelData, isActualRange]);
 
-  // SSOT: 백엔드가 계산해주는 실제 투숙객 부대시설 시너지 매출만 직접 사용
-  const ancillarySales = useMemo(() => {
-    // API 응답 구조에 따라 summary 뎁스가 있을 수도 있고 없을 수도 있으므로 유연하게 접근
-    const synergy = summaryData?.summary?.synergySales || summaryData?.synergySales;
-    if (!synergy) {
-      return { golf: 0, fnb: 0, ticket: 0, total: 0 };
-    }
+    // Fallback: Bind directly from revenue-summary SSOT
+    const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM');
+    const roomRev = Number(roomCat?.totalSales || roomCat?.todayActual || 0);
+    const roomsSold = Number(summaryData?.summary?.totalRooms || 0);
     
-    return { 
-      golf: Number(synergy.golf || 0), 
-      fnb: Number(synergy.fnb || 0), 
-      ticket: Number(synergy.ticket || 0), 
-      total: Number(synergy.total || 0) 
+    return {
+      rooms: roomsSold,
+      revenue: roomRev,
+      adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : Number(summaryData?.summary?.totalADR || 0)
     };
-  }, [summaryData]);
+  }, [channelData, summaryData, isActualRange]);
 
-  // Ground-Up Breakdown Grouping 100% directly from API 7 Backend Subtotal Rows (0% Discrepancy SSOT)
-  const segmentSummaries = useMemo(() => {
-    if (!channelData || channelData.length === 0) return [];
-    
-    // Pick backend SSOT subtotal rows (isChannelSubtotal === true or channelName containing '[소계]')
-    let subtotalRows = channelData.filter(item => item.isChannelSubtotal || (item.channelName && item.channelName.includes('[소계]')));
-    
-    // If selectedChannel is active, filter by selectedChannel
-    if (selectedChannel !== 'ALL') {
-      subtotalRows = subtotalRows.filter(item => item.channelName === selectedChannel || item.channelName?.startsWith(selectedChannel));
+  // SSOT: 부대시설 연계 시너지 매출 (총매출 - 객실매출 또는 부대시설 카테고리 합)
+  const ancillarySales = useMemo(() => {
+    const synergy = summaryData?.summary?.synergySales || summaryData?.synergySales;
+    if (synergy && Number(synergy.total) > 0) {
+      return { 
+        golf: Number(synergy.golf || 0), 
+        fnb: Number(synergy.fnb || 0), 
+        ticket: Number(synergy.ticket || 0), 
+        total: Number(synergy.total || 0) 
+      };
     }
 
-    const totalRoomRev = grandTotal.revenue || 1;
+    // Calculate directly from salesByCategory (GOLF, FNB, TICKET, MOTO, etc.)
+    const cats = summaryData?.salesByCategory || [];
+    const golfRev = Number(cats.find((c: any) => c.categoryCode === 'GOLF')?.totalSales || 0);
+    const fnbRev = Number(cats.find((c: any) => c.categoryCode === 'FNB')?.totalSales || 0);
+    const leisureRev = Number(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO')?.totalSales || 0);
+    
+    const totalRev = Number(summaryData?.summary?.totalRevenue || 0);
+    const roomRev = grandTotal.revenue || 0;
+    const totalAncillary = Math.max(0, totalRev > 0 ? (totalRev - roomRev) : (golfRev + fnbRev + leisureRev));
 
-    return subtotalRows
-      .map(item => {
-        // Clean up channel name (e.g. "기업영업(휴양소) [소계]" -> "기업영업(휴양소)")
-        let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
-        
-        const rooms = isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0);
-        const revenue = isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0);
-        const shareRatio = revenue / totalRoomRev;
+    return {
+      golf: golfRev,
+      fnb: fnbRev,
+      ticket: leisureRev,
+      total: totalAncillary
+    };
+  }, [summaryData, grandTotal.revenue]);
 
-        return {
-          name: cleanName,
-          rooms,
-          revenue,
-          adr: rooms > 0 ? Math.round(revenue / rooms) : 0,
-          sharePct: (shareRatio * 100).toFixed(1)
-        };
-      })
-      .filter(g => g.rooms > 0 || g.revenue > 0)
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [channelData, grandTotal.revenue, ancillarySales.total, isActualRange, selectedChannel]);
+  // Ground-Up Breakdown Grouping
+  const segmentSummaries = useMemo(() => {
+    if (channelData && channelData.length > 0) {
+      let subtotalRows = channelData.filter(item => item.isChannelSubtotal || (item.channelName && item.channelName.includes('[소계]')));
+      if (selectedChannel !== 'ALL') {
+        subtotalRows = subtotalRows.filter(item => item.channelName === selectedChannel || item.channelName?.startsWith(selectedChannel));
+      }
+      const totalRoomRev = grandTotal.revenue || 1;
+
+      return subtotalRows
+        .map(item => {
+          let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
+          const rooms = isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0);
+          const revenue = isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0);
+          const shareRatio = revenue / totalRoomRev;
+
+          return {
+            name: cleanName,
+            rooms: Number(rooms) || 0,
+            revenue: Number(revenue) || 0,
+            adr: Number(rooms) > 0 ? Math.round(Number(revenue) / Number(rooms)) : 0,
+            sharePct: (shareRatio * 100).toFixed(1)
+          };
+        })
+        .filter(g => g.rooms > 0 || g.revenue > 0)
+        .sort((a, b) => b.revenue - a.revenue);
+    }
+
+    // Fallback when API 7 is pending: Map from salesByCategory
+    const cats = (summaryData?.salesByCategory || []).filter((c: any) => c.categoryCode !== 'ROOM');
+    const totalAncillary = ancillarySales.total || 1;
+
+    return cats.map((c: any) => {
+      const rev = Number(c.totalSales || c.todayActual || 0);
+      const share = (rev / totalAncillary) * 100;
+      const rooms = grandTotal.rooms || 0;
+      const revpas = rooms > 0 ? Math.round(rev / rooms) : 0;
+      return {
+        name: `${c.categoryName || c.categoryCode} 시너지`,
+        rooms: rooms,
+        revenue: rev,
+        adr: revpas,
+        sharePct: share.toFixed(1)
+      };
+    }).filter((g: any) => g.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
+  }, [channelData, summaryData, grandTotal, ancillarySales.total, isActualRange, selectedChannel]);
 
   // Total Synergy Sales across all segments
   const totalSynergySum = useMemo(() => {
     return ancillarySales.total;
   }, [ancillarySales.total]);
 
-  // Distinct Channel Names for Table Filter
+  // Distinct Channel / Category Names for Table Filter
   const channelNames = useMemo(() => {
     const set = new Set<string>();
-    channelData.forEach(item => {
-      if (item.channelName && !item.isGrandTotal && item.channelName !== '전체 합계') {
-        set.add(item.channelName);
-      }
-    });
-    return Array.from(set);
-  }, [channelData]);
-
-  // Filtered Table Rows: Default to channel subtotals & grand total; hide 0-sales detail rows when drilling down
-  const filteredTableRows = useMemo(() => {
-    if (selectedChannel === 'ALL') {
-      const subtotals = channelData.filter(r => r.isChannelSubtotal || r.isGrandTotal || r.channelName === '전체 합계');
-      return subtotals.length > 0 ? subtotals : channelData;
+    if (channelData && channelData.length > 0) {
+      channelData.forEach(item => {
+        if (item.channelName && !item.isGrandTotal && item.channelName !== '전체 합계') {
+          set.add(item.channelName);
+        }
+      });
+    } else if (summaryData?.salesByCategory) {
+      summaryData.salesByCategory.forEach((c: any) => {
+        if (c.categoryName) set.add(c.categoryName);
+      });
     }
-    return channelData.filter(r => {
-      if (r.isGrandTotal) return true;
-      if (r.channelName !== selectedChannel && !r.channelName?.startsWith(selectedChannel)) return false;
-      const rooms = isActualRange ? (r.mtdRooms || r.todayRooms || 0) : (r.todayRooms || 0);
-      const rev = isActualRange ? (r.mtdRevenue || r.todayRevenue || 0) : (r.todayRevenue || 0);
-      return rooms > 0 || rev > 0 || r.isChannelSubtotal;
-    });
-  }, [channelData, selectedChannel, isActualRange]);
+    return Array.from(set);
+  }, [channelData, summaryData]);
+
+  // Filtered Table Rows
+  const filteredTableRows = useMemo(() => {
+    if (channelData && channelData.length > 0) {
+      if (selectedChannel === 'ALL') {
+        const subtotals = channelData.filter(r => r.isChannelSubtotal || r.isGrandTotal || r.channelName === '전체 합계');
+        return subtotals.length > 0 ? subtotals : channelData;
+      }
+      return channelData.filter(r => {
+        if (r.isGrandTotal) return true;
+        if (r.channelName !== selectedChannel && !r.channelName?.startsWith(selectedChannel)) return false;
+        const rooms = isActualRange ? (r.mtdRooms || r.todayRooms || 0) : (r.todayRooms || 0);
+        const rev = isActualRange ? (r.mtdRevenue || r.todayRevenue || 0) : (r.todayRevenue || 0);
+        return rooms > 0 || rev > 0 || r.isChannelSubtotal;
+      });
+    }
+
+    // Fallback: Map from salesByFacility for deep breakdown
+    const facilities = summaryData?.salesByFacility || [];
+    if (facilities.length > 0) {
+      return facilities
+        .filter((f: any) => selectedChannel === 'ALL' || f.categoryName === selectedChannel || f.categoryCode === selectedChannel)
+        .map((f: any) => {
+          const rev = Number(f.totalSales || f.todayActual || 0);
+          return {
+            channelName: `[${f.categoryName || f.categoryCode}] ${f.shopName || f.facilityName}`,
+            todayRooms: Number(f.totalVisitors || 0),
+            todayRevenue: rev,
+            mtdRooms: Number(f.totalVisitors || 0),
+            mtdRevenue: rev,
+            isChannelSubtotal: false,
+            isGrandTotal: false
+          };
+        });
+    }
+
+    return [];
+  }, [channelData, summaryData, selectedChannel, isActualRange]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -490,7 +555,7 @@ export default function Synergy() {
         {/* Cards Grid (3 Columns) */}
         {segmentSummaries.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {segmentSummaries.map((item, idx) => (
+            {segmentSummaries.map((item: any, idx: number) => (
               <div key={idx} className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -514,7 +579,6 @@ export default function Synergy() {
                     <span className="text-slate-400 text-xs block mb-1">객실 순매출</span>
                     <span className="font-bold text-slate-800 text-base">{formatCurrency(item.revenue)}원</span>
                   </div>
-                  {/* SSOT 위반: 프론트엔드 임의 배분으로 생성된 부대시너지 매출 및 연계 이용률 표시 제거 */}
                 </div>
               </div>
             ))}
@@ -553,7 +617,7 @@ export default function Synergy() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredTableRows.length > 0 ? (
-                filteredTableRows.map((item, idx) => {
+                filteredTableRows.map((item: any, idx: number) => {
                   const isGrand = item.isGrandTotal || item.channelName === '전체 합계';
                   const isSub = item.isChannelSubtotal;
                   

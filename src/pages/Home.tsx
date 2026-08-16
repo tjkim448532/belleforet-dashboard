@@ -374,15 +374,21 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-2">객단가 (RevPAR)</div>
-                  <div className="flex flex-col items-center justify-center">
-                    <span className="text-2xl font-extrabold text-teal-700">
-                      {coreData.core?.summary?.revPAR !== undefined 
-                        ? formatCurrency(coreData.core.summary.revPAR) 
-                        : '0'}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium mt-1">판매가능 객실당 수익</span>
-                  </div>
+                  <div className="text-sm text-slate-700 font-medium mb-1">객단가 (ADR)</div>
+                  {(coreData.core?.summary?.totalADR !== undefined || coreData.core?.summary?.adr !== undefined) ? (
+                    <>
+                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        {formatCurrency(coreData.core.summary.totalADR ?? coreData.core.summary.adr)}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        객실 총매출 ÷ 판매 객실 수
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                      ADR 산출 불가<br/>(API 연동 대기)
+                    </div>
+                  )}
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
@@ -460,8 +466,13 @@ export default function Home() {
                       <div>
                         <div className="text-xs text-slate-400 font-medium mb-1">{isRangeMode ? '취소 / 미내장' : '입장 예정 (미도착)'}</div>
                         <div className="text-3xl font-semibold text-brand-mint">
-                          {displayData.golfSummary ? `${displayData.golfSummary.pendingTeams ?? Math.max(0, (displayData.golfSummary.reservedTeams || 0) - (displayData.golfSummary.visitedTeams || 0))}팀` : '0팀'}
+                          {displayData.golfSummary ? `${displayData.golfSummary.pendingTeams ?? 0}팀` : '0팀'}
                         </div>
+                        {displayData.golfSummary?.canceledTeams > 0 && (
+                          <div className="text-[11px] text-rose-500 font-semibold mt-1">
+                            (취소 {displayData.golfSummary.canceledTeams}팀)
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

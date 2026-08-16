@@ -71,9 +71,22 @@ export default function MatrixWeeklyDashboard() {
       setError(null);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const queryParams = endDate 
-          ? `startDate=${startDate}&endDate=${endDate}&compareDate=${activeCompareDate}&_t=${Date.now()}` 
-          : `date=${startDate}&compareDate=${activeCompareDate}&_t=${Date.now()}`;
+        let queryParams = '';
+        const isActualRange = Boolean(endDate && startDate !== endDate);
+        
+        if (isActualRange) {
+          // 기간 조회 시 startDate & endDate 전달 (단일 compareDate 배제)
+          queryParams = `startDate=${startDate}&endDate=${endDate}`;
+        } else {
+          // 단일 일자 조회 시 date 단일 파라미터 전달 (동일 일자 중복 range 파라미터 전송 방지)
+          queryParams = `date=${startDate}`;
+          // 커스텀 비교일 모드일 때만 명시적으로 compareDate 전달
+          if (compareMode === 'custom' && customCompareDate) {
+            queryParams += `&compareDate=${customCompareDate}`;
+          }
+        }
+        queryParams += `&_t=${Date.now()}`;
+
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`);
         const result = res.data || res;
         const payloadArray = Array.isArray(result) ? result : (result.data || []);
@@ -88,7 +101,7 @@ export default function MatrixWeeklyDashboard() {
     };
     
     fetchV6Matrix();
-  }, [startDate, endDate, activeCompareDate]);
+  }, [startDate, endDate, compareMode, customCompareDate]);
 
   // 날씨 데이터 조회 (기준일 및 비교일 듀얼 패칭)
   useEffect(() => {

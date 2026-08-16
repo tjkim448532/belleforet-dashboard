@@ -29,12 +29,16 @@ export default function Home() {
       try {
         const { secureFetcher } = await import('../lib/secureFetcher');
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        let queryParams = `startDate=${startDate}`;
-        // LOS API requires endDate
+        let queryParams = '';
         if (endDate && startDate !== endDate) {
-          queryParams += `&endDate=${endDate}`;
+          // 기간 조회 시 지정된 전체 범위 전달
+          queryParams = `startDate=${startDate}&endDate=${endDate}`;
         } else {
-          queryParams += `&endDate=${startDate}`;
+          // 단일일 조회 시 단일 점(Dot) 표출 문제를 방지하고 직관적인 추이를 볼 수 있도록 최근 14일 윈도우 자동 산출
+          const cur = new Date(startDate);
+          const past14 = new Date(cur.getTime() - 13 * 24 * 60 * 60 * 1000);
+          const past14Str = past14.toISOString().split('T')[0];
+          queryParams = `startDate=${past14Str}&endDate=${startDate}`;
         }
         const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/los-correlation-trend?${queryParams}`);
         const resultData = res.data ?? res;
@@ -487,35 +491,101 @@ export default function Home() {
           {/* LOS (연박) 비중 vs 부대시설 매출 상관관계 분석 차트 */}
           {losTrendData && losTrendData.length > 0 && (
             <div className="lg:col-span-12 bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6 border border-slate-100 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-2">
                 <div>
-                  <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-indigo-500" /> 연박 비중(%) vs 부대시설 매출 추이 상관관계 분석
+                  <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-500" /> 🏨 연박(2박 이상) 비중 vs 🎡 식음·레저 부대시설 매출 시너지 추이
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">체류 기간(LOS)의 증감에 따른 F&B 및 레저 시설 매출 증감율(YoY) 비교</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    체류 기간(2박 이상)이 길어질수록 리조트 내 F&B 및 레저 시설 이용 지출이 동반 상승하는 선순환 상관관계를 나타냅니다.
+                    {!isRangeMode && ' (단일일 조회 시 직관적인 패턴 비교를 위해 최근 14일간의 추이를 자동 표출합니다)'}
+                  </p>
                 </div>
-                <div className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-semibold flex items-center gap-2">
+                <div className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-3.5 py-1.5 rounded-full font-bold flex items-center gap-2 self-start sm:self-auto">
                   {loadingLos && <span className="animate-spin w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full"></span>}
-                  LOS IMPACT
+                  <span>체류 시너지 분석 (LOS Impact)</span>
                 </div>
               </div>
-              <div className="h-[300px] w-full">
+
+              {/* Quick Insight Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-200/70 text-xs">
+                <div>
+                  <span className="text-slate-500 font-medium">선택일({startDate}) 연박 비중: </span>
+                  <strong className="text-indigo-600 font-bold text-sm ml-1">
+                    {losTrendData[losTrendData.length - 1]?.multiNightRatio ?? 0}%
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-medium">당일 식음·레저 부대시설 매출: </span>
+                  <strong className="text-emerald-700 font-bold text-sm ml-1">
+                    {formatCurrency(losTrendData[losTrendData.length - 1]?.totalSynergySales ?? 0)}원
+                  </strong>
+                </div>
+                <div className="text-slate-500 font-medium">
+                  <span className="text-indigo-600 font-bold">🟣 꺾은선:</span> 연박 비중(%) | <span className="text-emerald-600 font-bold">🟩 막대:</span> 부대시설 매출액
+                </div>
+              </div>
+
+              <div className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={losTrendData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                  <ComposedChart data={losTrendData} margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dx={-10} tickFormatter={(val) => `${val}%`} />
-                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dx={10} tickFormatter={(val) => `${(val / 10000).toFixed(0)}만`} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
-                      formatter={(value: any, name: any) => {
-                        if (name === '연박 비중') return [`${value}%`, name];
-                        return [`${new Intl.NumberFormat('ko-KR').format(value)}원`, name];
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 11, fill: '#64748b' }} 
+                      dy={10} 
+                      tickFormatter={(val: string) => {
+                        const parts = val.split('-');
+                        return parts.length === 3 ? `${Number(parts[1])}/${Number(parts[2])}` : val;
                       }}
                     />
+                    <YAxis 
+                      yAxisId="left" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 11, fill: '#6366f1' }} 
+                      dx={-10} 
+                      tickFormatter={(val) => `${val}%`} 
+                    />
+                    <YAxis 
+                      yAxisId="right" 
+                      orientation="right" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 11, fill: '#059669' }} 
+                      dx={10} 
+                      tickFormatter={(val) => `${(val / 10000).toFixed(0)}만`} 
+                    />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)' }}
+                      formatter={(value: any, name: any) => {
+                        if (name === '연박(2박+) 비중') return [`${value}%`, name];
+                        return [`${new Intl.NumberFormat('ko-KR').format(value)}원`, name];
+                      }}
+                      labelFormatter={(label) => `📅 일자: ${label}`}
+                    />
                     <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-                    <Bar yAxisId="right" dataKey="totalSynergySales" name="부대시설 총매출" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={40} opacity={0.3} />
-                    <Line yAxisId="left" type="monotone" dataKey="multiNightRatio" name="연박 비중" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    <Bar 
+                      yAxisId="right" 
+                      dataKey="totalSynergySales" 
+                      name="식음·레저 부대시설 총매출" 
+                      fill="#10b981" 
+                      radius={[6, 6, 0, 0]} 
+                      barSize={losTrendData.length > 20 ? 15 : 28} 
+                      opacity={0.65} 
+                    />
+                    <Line 
+                      yAxisId="left" 
+                      type="monotone" 
+                      dataKey="multiNightRatio" 
+                      name="연박(2박+) 비중" 
+                      stroke="#6366f1" 
+                      strokeWidth={3} 
+                      dot={{ r: 4, strokeWidth: 2, fill: '#ffffff', stroke: '#6366f1' }} 
+                      activeDot={{ r: 7, fill: '#6366f1' }} 
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>

@@ -72,11 +72,19 @@ export default function Home() {
 
   const pieChartData = React.useMemo(() => {
     if (!coreData.core?.salesByCategory) return [];
-    // [SSOT 바이블 준수] 백엔드가 제공하는 카테고리별 소계를 1:1 매핑하여 그대로 렌더링
-    return coreData.core.salesByCategory.map((cat: any) => ({
-      name: cat.categoryName || cat.categoryCode || '기타',
-      value: parseNum(cat.totalSales || 0)
-    })).filter((item: any) => item.value > 0);
+    // [SSOT 바이블 준수] 백엔드 카테고리 소계를 바인딩하되, 영문 ETC는 '임대업장(ETC)', OTHER는 '기타부대'로 명확히 표시
+    return coreData.core.salesByCategory.map((cat: any) => {
+      let displayName = cat.categoryName || cat.categoryCode || '기타';
+      if (cat.categoryCode === 'ETC' || displayName === 'ETC') {
+        displayName = '임대업장(CU/투썸/BHC)';
+      } else if (cat.categoryCode === 'OTHER') {
+        displayName = '기타부대(잡수익)';
+      }
+      return {
+        name: displayName,
+        value: parseNum(cat.totalSales || 0)
+      };
+    }).filter((item: any) => item.value > 0);
   }, [coreData.core?.salesByCategory]);
 
   const leisureVisitorsMap = React.useMemo(() => {

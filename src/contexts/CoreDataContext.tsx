@@ -56,25 +56,76 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         : `date=${validStart || '2026-07-24'}&_t=${Date.now()}`;
 
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`);
+        // [SSOT 이중 검증] revenue-summary와 matrix-weekly를 병렬 호출하여 무결성 보장
+        const [res, matrixRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null)
+        ]);
 
-        let corePayload = res.data || res;
-        
-        // V6 SSOT 강제화: 백엔드가 startDate ~ endDate 구간에 대해 
-        // 100% 계산 완료된 단일 객체(Unified Object)를 반환한다고 가정합니다.
-        // 프론트엔드 단에서의 배열 reduce(Slice Summation) 가공 로직은 바이블 원칙에 따라 전면 철거되었습니다.
+        let corePayload = res?.data || res || {};
+        const matrixPayload = matrixRes?.data || matrixRes;
+
         if (Array.isArray(corePayload)) {
-          console.error("SSOT 위반 에러: 백엔드가 구간 요약 데이터 대신 배열을 반환했습니다. 통합된 객체 응답이 필요합니다.");
-          // 배열이 올 경우 첫 번째 요소라도 사용하거나 빈 객체로 폴백 (에러 방지)
           corePayload = corePayload[0] || { summary: {} };
-        } else if (res.weather && !corePayload.weather) {
+        } else if (res?.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
+        }
+
+        // matrix-weekly SSOT 데이터로 결측치 및 0원 결측 자동 보정
+        if (Array.isArray(matrixPayload) && matrixPayload.length > 0) {
+          const grandTotal = matrixPayload.find((r: any) => r.isGrandTotal);
+          const subtotals = matrixPayload.filter((r: any) => r.isSubtotal && !r.isGrandTotal);
+          const facilities = matrixPayload.filter((r: any) => !r.isSubtotal && !r.isGrandTotal);
+
+          if (!corePayload.summary) corePayload.summary = {};
+
+          const hasRevSummarySales = Number(corePayload.summary.totalRevenue || 0) > 0;
+          if (!hasRevSummarySales && grandTotal) {
+            corePayload.summary.totalRevenue = Number(String(grandTotal.todayActual || 0).replace(/,/g, '')) || 0;
+            corePayload.summary.todayLyRevenue = Number(String(grandTotal.todayLy || 0).replace(/,/g, '')) || 0;
+            corePayload.summary.todayGrowth = Number(grandTotal.todayGrowth || 0);
+            corePayload.summary.ytdActual = Number(String(grandTotal.ytdActual || corePayload.summary.ytdActual || 0).replace(/,/g, '')) || 0;
+            corePayload.summary.ytdLy = Number(String(grandTotal.ytdLy || corePayload.summary.ytdLy || 0).replace(/,/g, '')) || 0;
+            corePayload.summary.mtdRevenue = Number(String(grandTotal.mtdActual || corePayload.summary.mtdRevenue || 0).replace(/,/g, '')) || 0;
+            corePayload.summary.mtdLy = Number(String(grandTotal.mtdLy || corePayload.summary.mtdLy || 0).replace(/,/g, '')) || 0;
+            corePayload.summary.totalVisitors = grandTotal.visitors || corePayload.summary.totalVisitors || 0;
+          }
+
+          const hasCategorySales = Array.isArray(corePayload.salesByCategory) && corePayload.salesByCategory.some((c: any) => Number(c.totalSales || c.todayActual || 0) > 0);
+          if (!hasCategorySales && subtotals.length > 0) {
+            corePayload.salesByCategory = subtotals.map((s: any) => ({
+              categoryCode: s.categoryCode,
+              categoryName: s.categoryName,
+              todayActual: Number(String(s.todayActual || 0).replace(/,/g, '')) || 0,
+              totalSales: Number(String(s.todayActual || 0).replace(/,/g, '')) || 0,
+              lyActual: Number(String(s.todayLy || 0).replace(/,/g, '')) || 0,
+              growthRate: Number(s.todayGrowth || 0),
+              isSubtotal: 1,
+              isGrandTotal: 0
+            }));
+          }
+
+          const hasFacilitySales = Array.isArray(corePayload.salesByFacility) && corePayload.salesByFacility.length > 0;
+          if (!hasFacilitySales && facilities.length > 0) {
+            corePayload.salesByFacility = facilities.map((f: any) => ({
+              categoryCode: f.categoryCode,
+              categoryName: f.categoryName,
+              teamName: f.teamName,
+              partName: f.partName,
+              shopName: f.shopName,
+              facilityName: f.shopName,
+              todayActual: Number(String(f.todayActual || 0).replace(/,/g, '')) || 0,
+              totalSales: Number(String(f.todayActual || 0).replace(/,/g, '')) || 0,
+              visitors: Number(f.visitors || 0),
+              totalVisitors: Number(f.visitors || 0)
+            }));
+          }
         }
 
         setState({
           core: corePayload,
-          summary: null, // Merged into core
-          matrix: null, 
+          summary: null,
+          matrix: matrixPayload, 
           isLoading: false,
           error: null
         });

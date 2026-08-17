@@ -82,13 +82,27 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           const hasRevSummarySales = Number(corePayload.summary.totalRevenue || 0) > 0;
           if (!hasRevSummarySales && grandTotal) {
             corePayload.summary.totalRevenue = Number(String(grandTotal.todayActual || 0).replace(/,/g, '')) || 0;
-            corePayload.summary.todayLyRevenue = Number(String(grandTotal.todayLy || 0).replace(/,/g, '')) || 0;
-            corePayload.summary.todayGrowth = Number(grandTotal.todayGrowth || 0);
-            corePayload.summary.ytdActual = Number(String(grandTotal.ytdActual || corePayload.summary.ytdActual || 0).replace(/,/g, '')) || 0;
-            corePayload.summary.ytdLy = Number(String(grandTotal.ytdLy || corePayload.summary.ytdLy || 0).replace(/,/g, '')) || 0;
-            corePayload.summary.mtdRevenue = Number(String(grandTotal.mtdActual || corePayload.summary.mtdRevenue || 0).replace(/,/g, '')) || 0;
-            corePayload.summary.mtdLy = Number(String(grandTotal.mtdLy || corePayload.summary.mtdLy || 0).replace(/,/g, '')) || 0;
-            corePayload.summary.totalVisitors = grandTotal.visitors || corePayload.summary.totalVisitors || 0;
+            if (!corePayload.summary.todayLyRevenue || Number(corePayload.summary.todayLyRevenue) === 0) {
+              corePayload.summary.todayLyRevenue = Number(String(grandTotal.todayLy || 0).replace(/,/g, '')) || 0;
+            }
+            if (corePayload.summary.todayGrowth === undefined || corePayload.summary.todayGrowth === null || Number(corePayload.summary.todayGrowth) === -100) {
+              corePayload.summary.todayGrowth = Number(grandTotal.todayGrowth || 0);
+            }
+            if (!corePayload.summary.ytdActual || Number(corePayload.summary.ytdActual) === 0) {
+              corePayload.summary.ytdActual = Number(String(grandTotal.ytdActual || 0).replace(/,/g, '')) || 0;
+            }
+            if (!corePayload.summary.ytdLy || Number(corePayload.summary.ytdLy) === 0) {
+              corePayload.summary.ytdLy = Number(String(grandTotal.ytdLy || 0).replace(/,/g, '')) || 0;
+            }
+            if (!corePayload.summary.mtdRevenue || Number(corePayload.summary.mtdRevenue) === 0) {
+              corePayload.summary.mtdRevenue = Number(String(grandTotal.mtdActual || 0).replace(/,/g, '')) || 0;
+            }
+            if (!corePayload.summary.mtdLy || Number(corePayload.summary.mtdLy) === 0) {
+              corePayload.summary.mtdLy = Number(String(grandTotal.mtdLy || 0).replace(/,/g, '')) || 0;
+            }
+            if (!corePayload.summary.totalVisitors || Number(corePayload.summary.totalVisitors) === 0) {
+              corePayload.summary.totalVisitors = grandTotal.visitors || 0;
+            }
           }
 
           const hasCategorySales = Array.isArray(corePayload.salesByCategory) && corePayload.salesByCategory.some((c: any) => Number(c.totalSales || c.todayActual || 0) > 0);

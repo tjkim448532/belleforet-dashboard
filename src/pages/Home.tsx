@@ -717,9 +717,14 @@ export default function Home() {
 
               {/* 1일 vs 1일 단위 경영 비교 테이블 */}
               <div className="mt-6 pt-5 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
-                  📊 1일 단위 (Day-by-Day) 1박 vs 연박 세부 소비 및 생산성 대조표
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    📊 1일 단위 (Day-by-Day) 1박 vs 연박 세부 소비 및 생산성 대조표
+                  </h3>
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 self-start sm:self-auto">
+                    24일간(7/24~8/16) 투숙객 전수 카드결제 추적 실측 모델
+                  </span>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
                     <thead className="bg-slate-100/80 text-slate-600 font-bold">
@@ -741,7 +746,7 @@ export default function Home() {
                         <td className="py-2.5 px-4 font-bold text-slate-800">체류 일자별 소비 패턴</td>
                         <td className="py-2.5 px-4 text-slate-500">1일차: ₩21.9만 (저녁 1끼+체험 1회)</td>
                         <td className="py-2.5 px-4 text-indigo-700 bg-indigo-50/30">
-                          1일차: ₩18.2만 (체크인)<br />
+                          1일차: ₩18.2만 (체크인 당일)<br />
                           <strong>2일차: ₩29.2만 (온전한 체류일 +33.3% 폭증🔥)</strong>
                         </td>
                         <td className="py-2.5 px-4 font-bold text-emerald-600">2일차 Full Day 체류로 조·중·석식+레저 집중 결제</td>

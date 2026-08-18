@@ -636,19 +636,19 @@ export default function Synergy() {
                 <TrendingUp size={20} />
               </div>
               <span className="text-xs font-bold text-indigo-700 bg-indigo-50/90 px-3 py-1 rounded-full border border-indigo-200/60">
-                TOTAL SYNERGY
+                골프 포함 전사 통합
               </span>
             </div>
             <span className="text-xs font-semibold text-slate-400 block mb-1">
-              통합 객실당 가치 (RevPAS)
+              통합 객실당 가치 (RevPAS · 골프 포함)
             </span>
             <div className="text-3xl lg:text-4xl font-extrabold text-indigo-600 tracking-tight tabular-nums">
               {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-lg text-slate-500 font-medium">원/실</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>(객실매출 + 시너지) ÷ 객실수</span>
-            <span className="text-indigo-600 font-semibold">복합 가치 지표</span>
+            <span>(객실 + 골프 + 식음 + 레저) ÷ 객실수</span>
+            <span className="text-indigo-600 font-bold">전사 총합 기준</span>
           </div>
         </div>
       </div>

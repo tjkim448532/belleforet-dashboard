@@ -10,10 +10,18 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
+const parseNum = (val: any): number => {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const cleaned = String(val).replace(/,/g, '').trim();
+  const num = Number(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
 const formatCurrency = (val: any) => {
   if (!val) return '0';
-  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
-  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+  const num = parseNum(val);
+  return new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
 interface RoomChannelSalesItem {
@@ -137,47 +145,47 @@ export default function Synergy() {
   const grandTotal = useMemo(() => {
     const gtRow = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
     if (gtRow) {
-      const rooms = isActualRange ? (gtRow.mtdRooms || gtRow.todayRooms || 0) : (gtRow.todayRooms || 0);
-      const revenue = isActualRange ? (gtRow.mtdRevenue || gtRow.todayRevenue || 0) : (gtRow.todayRevenue || 0);
+      const rooms = parseNum(isActualRange ? (gtRow.mtdRooms || gtRow.todayRooms || 0) : (gtRow.todayRooms || 0));
+      const revenue = parseNum(isActualRange ? (gtRow.mtdRevenue || gtRow.todayRevenue || 0) : (gtRow.todayRevenue || 0));
       return {
-        rooms: Number(rooms) || 0,
-        revenue: Number(revenue) || 0,
-        adr: Number(rooms) > 0 ? Math.round(Number(revenue) / Number(rooms)) : 0
+        rooms,
+        revenue,
+        adr: rooms > 0 ? Math.round(revenue / rooms) : 0
       };
     }
 
     // Fallback: Bind directly from revenue-summary SSOT
     const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM');
-    const roomRev = Number(roomCat?.totalSales || roomCat?.todayActual || 0);
-    const roomsSold = Number(summaryData?.summary?.totalRooms || 0);
+    const roomRev = parseNum(roomCat?.totalSales || roomCat?.todayActual || 0);
+    const roomsSold = parseNum(summaryData?.summary?.totalRooms || 0);
     
     return {
       rooms: roomsSold,
       revenue: roomRev,
-      adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : Number(summaryData?.summary?.totalADR || 0)
+      adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : parseNum(summaryData?.summary?.totalADR || 0)
     };
   }, [channelData, summaryData, isActualRange]);
 
   // SSOT: 부대시설 연계 시너지 매출 (총매출 - 객실매출 또는 부대시설 카테고리 합)
   const ancillarySales = useMemo(() => {
     const synergy = summaryData?.summary?.synergySales || summaryData?.synergySales;
-    if (synergy && Number(synergy.total) > 0) {
+    if (synergy && parseNum(synergy.total) > 0) {
       return { 
-        golf: Number(synergy.golf || 0), 
-        fnb: Number(synergy.fnb || 0), 
-        ticket: Number(synergy.ticket || 0), 
-        total: Number(synergy.total || 0) 
+        golf: parseNum(synergy.golf || 0), 
+        fnb: parseNum(synergy.fnb || 0), 
+        ticket: parseNum(synergy.ticket || 0), 
+        total: parseNum(synergy.total || 0) 
       };
     }
 
     // Calculate directly from salesByCategory (GOLF, FNB, TICKET, MOTO, etc.)
     const cats = summaryData?.salesByCategory || [];
-    const golfRev = Number(cats.find((c: any) => c.categoryCode === 'GOLF')?.totalSales || 0);
-    const fnbRev = Number(cats.find((c: any) => c.categoryCode === 'FNB')?.totalSales || 0);
-    const leisureRev = Number(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO')?.totalSales || 0);
+    const golfRev = parseNum(cats.find((c: any) => c.categoryCode === 'GOLF')?.totalSales || cats.find((c: any) => c.categoryCode === 'GOLF')?.todayActual || 0);
+    const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB')?.todayActual || 0);
+    const leisureRev = parseNum(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO')?.totalSales || cats.find((c: any) => c.categoryCode === 'TICKET')?.todayActual || 0);
     
-    const totalRev = Number(summaryData?.summary?.totalRevenue || 0);
-    const roomRev = grandTotal.revenue || 0;
+    const totalRev = parseNum(summaryData?.summary?.totalRevenue || 0);
+    const roomRev = grandTotal.revenue || parseNum(cats.find((c: any) => c.categoryCode === 'ROOM')?.totalSales || cats.find((c: any) => c.categoryCode === 'ROOM')?.todayActual || 0);
     const totalAncillary = Math.max(0, totalRev > 0 ? (totalRev - roomRev) : (golfRev + fnbRev + leisureRev));
 
     return {
@@ -200,15 +208,15 @@ export default function Synergy() {
       return subtotalRows
         .map(item => {
           let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
-          const rooms = isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0);
-          const revenue = isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0);
-          const shareRatio = revenue / totalRoomRev;
+          const rooms = parseNum(isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0));
+          const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
+          const shareRatio = totalRoomRev > 0 ? revenue / totalRoomRev : 0;
 
           return {
             name: cleanName,
-            rooms: Number(rooms) || 0,
-            revenue: Number(revenue) || 0,
-            adr: Number(rooms) > 0 ? Math.round(Number(revenue) / Number(rooms)) : 0,
+            rooms,
+            revenue,
+            adr: rooms > 0 ? Math.round(revenue / rooms) : 0,
             sharePct: (shareRatio * 100).toFixed(1)
           };
         })
@@ -221,8 +229,8 @@ export default function Synergy() {
     const totalAncillary = ancillarySales.total || 1;
 
     return cats.map((c: any) => {
-      const rev = Number(c.totalSales || c.todayActual || 0);
-      const share = (rev / totalAncillary) * 100;
+      const rev = parseNum(c.totalSales || c.todayActual || 0);
+      const share = totalAncillary > 0 ? (rev / totalAncillary) * 100 : 0;
       const rooms = grandTotal.rooms || 0;
       const revpas = rooms > 0 ? Math.round(rev / rooms) : 0;
       return {
@@ -279,12 +287,13 @@ export default function Synergy() {
       return facilities
         .filter((f: any) => selectedChannel === 'ALL' || f.categoryName === selectedChannel || f.categoryCode === selectedChannel)
         .map((f: any) => {
-          const rev = Number(f.totalSales || f.todayActual || 0);
+          const rev = parseNum(f.totalSales || f.todayActual || 0);
+          const visitors = parseNum(f.totalVisitors || f.visitors || 0);
           return {
             channelName: `[${f.categoryName || f.categoryCode}] ${f.shopName || f.facilityName}`,
-            todayRooms: Number(f.totalVisitors || 0),
+            todayRooms: visitors,
             todayRevenue: rev,
-            mtdRooms: Number(f.totalVisitors || 0),
+            mtdRooms: visitors,
             mtdRevenue: rev,
             isChannelSubtotal: false,
             isGrandTotal: false

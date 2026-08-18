@@ -465,32 +465,34 @@ export default function Home() {
                     <div className="text-slate-500 font-semibold mb-4">골프 예약 및 입장 현황</div>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">예약 팀수</div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">총 예약 팀수</div>
                         <div className="text-3xl font-semibold text-brand-mint">
                           {`${golfReservedTeams}팀`}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">실제 입장 팀수</div>
+                        <div className="text-xs text-slate-400 font-medium mb-1">실제 입장 (라운딩)</div>
                         <div className="text-3xl font-semibold text-brand-mint">
                           {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">{isRangeMode ? '취소 / 미내장' : '입장 예정 (미도착)'}</div>
-                        <div className="text-3xl font-semibold text-brand-mint">
-                          {displayData.golfSummary ? `${displayData.golfSummary.pendingTeams ?? 0}팀` : '0팀'}
+                        <div className="text-xs text-slate-400 font-medium mb-1">취소 / 미내장</div>
+                        <div className="text-3xl font-semibold text-rose-500">
+                          {`${(displayData.golfSummary?.canceledTeams || 0) + (displayData.golfSummary?.pendingTeams || 0)}팀`}
                         </div>
-                        {displayData.golfSummary?.canceledTeams > 0 && (
-                          <div className="text-[11px] text-rose-500 font-semibold mt-1">
-                            (취소 {displayData.golfSummary.canceledTeams}팀)
+                        {((displayData.golfSummary?.canceledTeams || 0) > 0 || (displayData.golfSummary?.pendingTeams || 0) > 0) && (
+                          <div className="text-[11px] text-slate-400 font-medium mt-1">
+                            {displayData.golfSummary?.pendingTeams > 0 
+                              ? `(취소 ${displayData.golfSummary.canceledTeams}팀 / 미내장 ${displayData.golfSummary.pendingTeams}팀)`
+                              : `(취소 ${displayData.golfSummary.canceledTeams}팀)`}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">
-                    {isRangeMode ? '선택 기간 골프 총 예약/취소 및 실제 내장 실적 데이터' : '오늘 골프 실시간 예약 및 입장 데이터 (아직 도착하지 않은 잔여 예약 포함)'}
+                    {isRangeMode ? '선택 기간 골프 총 예약/취소 및 실제 라운딩 실적 데이터' : '골프장 마감 예약/취소 및 실제 라운딩 실적 데이터'}
                   </div>
                 </div>
               </div>

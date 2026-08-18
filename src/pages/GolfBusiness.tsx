@@ -81,9 +81,10 @@ export default function GolfBusiness() {
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
 
-        // 1. Fetch main revenue summary & 2. Fetch new channel & teetime analysis in parallel
-        const [summaryRes, channelTeetimeRes] = await Promise.all([
+        // 1. Fetch main revenue summary, 2. matrix-weekly (for range sync SSOT), and 3. channel & teetime analysis in parallel
+        const [summaryRes, matrixRes, channelTeetimeRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(e => ({ error: e })),
+          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(e => ({ error: e })),
           secureFetcher(`${API_BASE}/api/v5/report/golf-channel-teetime-analysis?${queryParams}`).catch(e => ({ error: e }))
         ]);
 
@@ -91,6 +92,14 @@ export default function GolfBusiness() {
         if (Array.isArray(payload)) {
           payload = payload[payload.length - 1] || payload[0] || {};
         }
+
+        const matrixRows = matrixRes?.data || matrixRes;
+        const golfSubtotalInMatrix = Array.isArray(matrixRows) 
+          ? parseNum(matrixRows.find((r: any) => r.isSubtotal && r.categoryCode === 'GOLF')?.todayActual || 0)
+          : 0;
+        const golfFacilitiesInMatrix = Array.isArray(matrixRows)
+          ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal && r.categoryCode === 'GOLF')
+          : [];
 
         const channelData = channelTeetimeRes?.data ?? channelTeetimeRes ?? {};
         const salesByChannel: GolfChannelSales[] = channelData.salesByChannel || [];
@@ -100,12 +109,18 @@ export default function GolfBusiness() {
         if (payload) {
           // V6 Schema direct map (SSOT)
           const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF');
-          const golf_revenue = parseNum(golfCategory?.totalSales || golfCategory?.todayActual || 0);
+          let golf_revenue = parseNum(golfCategory?.totalSales || golfCategory?.todayActual || 0);
+          if (golf_revenue === 0 && golfSubtotalInMatrix > 0) {
+            golf_revenue = golfSubtotalInMatrix;
+          }
 
           const golf_visited_teams = parseNum(golfSummary.totalVisitedTeams || payload.summary?.totalGolfTeams || 0);
           const golf_visited_players = parseNum(payload.summary?.totalGolfVisitors || 0);
 
-          const golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF') || payload.golfFacilityBreakdown || [];
+          let golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF') || payload.golfFacilityBreakdown || [];
+          if (golfFacilities.length === 0 && golfFacilitiesInMatrix.length > 0) {
+            golfFacilities = golfFacilitiesInMatrix;
+          }
 
           const member_players = parseNum(payload.summary?.golfMemberPlayers || 0);
           const non_member_players = parseNum(payload.summary?.golfNonMemberPlayers || 0);

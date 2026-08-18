@@ -176,7 +176,12 @@ export default function LeisureFacility() {
               {totalQuantity.toLocaleString()} <span className="text-xl text-slate-500">개(명)</span>
             </div>
             <p className="text-slate-400 text-sm relative z-10 font-medium border-t border-slate-100 pt-3 mt-2">
-              최고 매출 TOP 5 영업장 수량: <strong className="text-purple-600 font-medium">{top5Quantity.toLocaleString()}개</strong>
+              TOP 5 인기 티켓 합산: <strong className="text-purple-600 font-bold">
+                {(apiTopItems.length > 0
+                  ? apiTopItems.reduce((sum, item) => sum + item.quantity, 0)
+                  : top5Quantity
+                ).toLocaleString()}개
+              </strong>
             </p>
           </div>
 

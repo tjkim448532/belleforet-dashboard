@@ -7,11 +7,17 @@ import { transformHomeData } from '../lib/dataTransformers';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import SalesPieChart from '../components/dashboard/SalesPieChart';
 import { parseNum } from '../lib/dataTransformers';
+import { getMtdHolidayComparison } from '../lib/holidayUtils';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
   const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && (coreData.core?.endDate || endDate) && startDate !== (coreData.core?.endDate || endDate)));
+
+  const currentEndDateStr = isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate;
+  const mtdHolidays = React.useMemo(() => {
+    return getMtdHolidayComparison(startDate, currentEndDateStr);
+  }, [startDate, currentEndDateStr]);
 
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -291,32 +297,60 @@ export default function Home() {
                 )}
               </div>
 
-              {/* 2. 💡 [NEW] 월별 누적 매출 (MTD) - 매달 1일부터 오늘(조회일)까지의 누적 매출 및 전년 동기간 대비 등락율 */}
+              {/* 2. 💡 [NEW] 월별 누적 매출 (MTD) - 매달 1일부터 오늘(조회일)까지의 누적 매출 및 전년 동기간 대비 등락율 + 공휴일(토·일·국가지정공휴일) 일수 비교 */}
               <div className="mt-4 pt-3.5 border-t border-slate-100 relative z-10">
                 <div className="mb-1 flex flex-col justify-start">
-                  <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5 flex-wrap">
-                    <CalendarDays className="w-4 h-4 text-emerald-600" /> 월별 누적 매출 (MTD)
-                    <span className="text-xs text-slate-400 font-normal">
-                      ({startDate.slice(0, 7)}-01 ~ {isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate})
-                    </span>
-                  </h3>
+                  <div className="flex items-center justify-between flex-wrap gap-1.5 mb-1">
+                    <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5 flex-wrap">
+                      <CalendarDays className="w-4 h-4 text-emerald-600" /> 월별 누적 매출 (MTD)
+                      <span className="text-xs text-slate-400 font-normal">
+                        ({startDate.slice(0, 7)}-01 ~ {currentEndDateStr})
+                      </span>
+                    </h3>
+
+                    {/* 🎈 공휴일수 (토·일·국가지정공휴일) 비교 배지 */}
+                    <div 
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs"
+                      title={`[당해 MTD] 총 ${mtdHolidays.currentPeriod.totalDays}일 중 휴일 ${mtdHolidays.currentPeriod.totalHolidays}일 (토 ${mtdHolidays.currentPeriod.saturdays}, 일 ${mtdHolidays.currentPeriod.sundays}, 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 MTD] 총 ${mtdHolidays.lastYearPeriod.totalDays}일 중 휴일 ${mtdHolidays.lastYearPeriod.totalHolidays}일 (토 ${mtdHolidays.lastYearPeriod.saturdays}, 일 ${mtdHolidays.lastYearPeriod.sundays}, 평일공휴일 ${mtdHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
+                    >
+                      <span className="text-amber-800">🎈 공휴일(주말+공휴일):</span>
+                      <strong className="text-amber-950 font-black">{mtdHolidays.currentPeriod.totalHolidays}일</strong>
+                      <span className="text-amber-700 font-normal">vs 전년 {mtdHolidays.lastYearPeriod.totalHolidays}일</span>
+                      {mtdHolidays.diffHolidays !== 0 ? (
+                        <span className={`text-[10px] font-black ${mtdHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          ({mtdHolidays.diffHolidays > 0 ? `+${mtdHolidays.diffHolidays}일` : `${mtdHolidays.diffHolidays}일`})
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight">
                   {formatCurrency(mtdGross)}
                 </div>
-                {mtdGrowth !== undefined ? (
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${mtdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                    <span>전년 동기간 대비</span>
-                    <span>{mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdGrowth).toFixed(1)}%</span>
-                    {mtdDiff !== undefined && (
-                      <span className="font-medium opacity-80">({mtdDiff > 0 ? '+' : ''}{formatCurrency(mtdDiff)})</span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
-                    <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {mtdGrowth !== undefined ? (
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${mtdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                      <span>전년 동기간 대비</span>
+                      <span>{mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdGrowth).toFixed(1)}%</span>
+                      {mtdDiff !== undefined && (
+                        <span className="font-medium opacity-80">({mtdDiff > 0 ? '+' : ''}{formatCurrency(mtdDiff)})</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
+                      <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                    </div>
+                  )}
+
+                  {/* 세부 휴일 구성 안내 (토/일/국경일) */}
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    (토 {mtdHolidays.currentPeriod.saturdays}일 · 일 {mtdHolidays.currentPeriod.sundays}일
+                    {mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`}
+                    {mtdHolidays.currentPeriod.holidaysList.length > 0 && ` [${mtdHolidays.currentPeriod.holidaysList.map(h => h.name).join(', ')}]`})
+                  </span>
+                </div>
               </div>
             </div>
 

@@ -624,7 +624,7 @@ export default function Home() {
                     <Activity className="w-5 h-5 text-indigo-600" /> 1박 vs 연박(2박+) 고객의 객실당 부대시설 소비 파급력 대조
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    "방이 많이 팔린 날은 무조건 좋은가?" ➔ <strong>단순 판매량(Volume)을 넘어, 연박 비중이 높아질 때 1객실당 식음·레저 소비액(RevPAS)이 2.16배 폭증하는 실질적인 수익성 시너지</strong>를 분석합니다.
+                    "방이 많이 팔린 날은 무조건 좋은가?" ➔ <strong>단순 판매량(Volume)을 넘어, 연박 비중이 높아질 때 1객실당 식음·레저 소비액(RevPAS, 골프 매출 불포함)이 2.16배 폭증하는 실질적인 수익성 시너지</strong>를 분석합니다.
                   </p>
                 </div>
 
@@ -639,7 +639,7 @@ export default function Home() {
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
-                      객실 1실당 소비액 (RevPAS)
+                      객실 1실당 소비액 (RevPAS · 골프 불포함)
                     </button>
                     <button
                       onClick={() => setLosMetricMode('total')}
@@ -722,7 +722,7 @@ export default function Home() {
                       <div>
                         <div className="text-xs font-bold text-indigo-800 mb-1 flex items-center justify-between">
                           <span>💎 1객실당 총 부대소비 (RevPAS)</span>
-                          <span className="text-[11px] font-extrabold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">식음+레저 합산</span>
+                          <span className="text-[11px] font-extrabold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">식음+레저 합산 (골프 불포함)</span>
                         </div>
                         <div className="text-2xl font-extrabold text-indigo-700 my-2">
                           ₩{formatCurrency(liveTotal)} <span className="text-xs font-normal text-indigo-500">/ 1실</span>
@@ -738,8 +738,8 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-[11px] text-indigo-900/80 mt-3 pt-2 border-t border-indigo-200/40 font-medium">
-                        💡 선택일({startDate}) 연박 비중 <strong>{liveMultiRatio}%</strong> 기준 실질 부대창출액
+                      <p className="text-[11px] text-indigo-900/80 mt-3 pt-2 border-t border-indigo-200/40">
+                        ※ 리조트 직영 식음·레저 결합 지표로, <strong>골프장 매출은 불포함</strong>되어 있습니다.
                       </p>
                     </div>
                   </div>

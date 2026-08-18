@@ -511,16 +511,16 @@ export default function SynergyCorrelation() {
                 <TrendingUp className="w-5 h-5 text-indigo-600" /> 1실당 레저 & 모토 파급가치
               </span>
               <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                LEISURE RevPAS
+                LEISURE RevPAS (골프 불포함)
               </span>
             </div>
             <div className="text-3xl font-medium text-indigo-600 mb-1">
               {formatCurrency(totalLeisureRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 레저+모토아레나 예상 증가 매출 (통계적 회귀 기울기 합산)</p>
+            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 레저+모토아레나 예상 증가 매출 (골프 불포함 · 통계적 회귀 합산)</p>
           </div>
           <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: ∑(각 영업장별 revPasContribution)
+            수식: ∑(각 영업장별 revPasContribution) · 골프 매출 불포함
           </div>
         </div>
 
@@ -531,16 +531,16 @@ export default function SynergyCorrelation() {
                 <Building2 className="w-5 h-5 text-emerald-600" /> 1실당 식음 파급가치
               </span>
               <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                F&B RevPAS
+                F&B RevPAS (골프 불포함)
               </span>
             </div>
             <div className="text-3xl font-medium text-emerald-600 mb-1">
               {formatCurrency(totalFnbRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 식음팀 예상 증가 매출 (통계적 회귀 기울기 합산)</p>
+            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 리조트 식음팀 예상 증가 매출 (골프 불포함 · 통계적 회귀 합산)</p>
           </div>
           <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: ∑(각 영업장별 revPasContribution)
+            수식: ∑(각 영업장별 revPasContribution) · 골프장 식음 제외
           </div>
         </div>
       </div>

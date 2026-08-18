@@ -33,7 +33,7 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
             <th className="py-3.5 px-6 text-right">연계 이용객수</th>
             <th className="py-3.5 px-6 text-right">객실 연계 파급 매출</th>
             <th className="py-3.5 px-6 text-right">숙박객 연계 비율</th>
-            <th className="py-3.5 px-6 text-right rounded-r-xl">1실당 RevPAS 기여액</th>
+            <th className="py-3.5 px-6 text-right rounded-r-xl">1실당 RevPAS 기여액 (골프 불포함)</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">

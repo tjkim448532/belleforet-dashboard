@@ -44,15 +44,15 @@ export default function SynergyStoreCard({ store, type }: SynergyStoreCardProps)
                store.interactionGrade === 'MODERATE_SYNERGY' ? '중립 시너지' : '독립 영업장'}
             </span>
           )}
-          {store.calculationMethod !== 'UNTRACKABLE' ? (
+          {store.calculationMethod !== 'UNTRACKABLE' && (store.spilloverRate || 0) > 0 ? (
             <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-white/80 border border-slate-200">
               숙박객 비율 {store.spilloverRate}%
               {store.calculationMethod === 'HARD_FACT_MATCHING' && <span className="ml-1 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">결제 건수 기반 실측</span>}
               {store.calculationMethod === 'STATISTICAL_INFERENCE' && <span className="ml-1 text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">통계적 추정치</span>}
             </span>
           ) : (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-              숙박객 식별 불가
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+              연계 분석 대기
             </span>
           )}
         </div>
@@ -77,17 +77,17 @@ export default function SynergyStoreCard({ store, type }: SynergyStoreCardProps)
         <div className={`flex justify-between items-center p-2 rounded-xl ${theme.spilloverBox}`}>
           <div>
             <span className={`font-semibold block ${theme.spilloverTitle}`}>객실 연계 파급매출</span>
-            {store.calculationMethod !== 'UNTRACKABLE' && store.reverseSpillover !== undefined && (
+            {store.calculationMethod !== 'UNTRACKABLE' && (store.spilloverRate || 0) > 0 && store.reverseSpillover !== undefined && (
               <span className={`text-[10px] font-medium ${theme.spilloverSub}`}>
                 이용객 중 숙박객 {store.forwardSpillover ?? store.spilloverRate}% | 전체 숙박객의 이용률 {store.reverseSpillover}%
               </span>
             )}
-            {store.calculationMethod === 'UNTRACKABLE' && (
-              <span className="text-[10px] text-slate-500 font-medium">매표 연동 불가 등 식별 불가</span>
+            {(store.calculationMethod === 'UNTRACKABLE' || (store.spilloverRate || 0) <= 0) && (
+              <span className="text-[10px] text-slate-500 font-medium">단일일자 또는 연계 식별 데이터 수집 중</span>
             )}
           </div>
           <span className={`font-bold ${theme.spilloverValue}`}>
-            {store.calculationMethod !== 'UNTRACKABLE' ? `${formatCurrency(store.correlatedSales)}원` : '산출 불가'}
+            {store.calculationMethod !== 'UNTRACKABLE' && (store.spilloverRate || 0) > 0 ? `${formatCurrency(store.correlatedSales)}원` : '데이터 연동 중'}
           </span>
         </div>
 

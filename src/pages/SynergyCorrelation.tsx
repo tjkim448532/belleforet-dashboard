@@ -76,9 +76,11 @@ export default function SynergyCorrelation() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
 
+      const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
+
       // Parallel Fetch: Correlation API, Matrix API (SSOT subtotals & real store sales), Revenue Summary (Total Rooms)
       const [corrRes, matrixRes, summaryRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null)
       ]);
@@ -132,23 +134,24 @@ export default function SynergyCorrelation() {
       const processCorrItem = (item: any, defaultDivision: string): StoreCorrelationItem => {
         const shopName = item.shopName || item.storeName || item.shop_name || '';
         
-        const spilloverRate = item.spilloverRate !== undefined 
-          ? (item.spilloverRate <= 1 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) 
+        const spilloverRate = item.spilloverRate !== undefined && item.spilloverRate !== null
+          ? (item.spilloverRate <= 1 && item.spilloverRate > 0 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) 
           : 0;
 
-        const forwardSpillover = item.forwardSpillover !== undefined 
-          ? (item.forwardSpillover <= 1 ? Number((item.forwardSpillover * 100).toFixed(1)) : Number(item.forwardSpillover.toFixed(1)))
-          : 0;
+        const forwardSpillover = item.forwardSpillover !== undefined && item.forwardSpillover !== null
+          ? (item.forwardSpillover <= 1 && item.forwardSpillover > 0 ? Number((item.forwardSpillover * 100).toFixed(1)) : Number(item.forwardSpillover.toFixed(1)))
+          : (spilloverRate > 0 ? spilloverRate : undefined);
 
-        const reverseSpillover = item.reverseSpillover !== undefined 
-          ? (item.reverseSpillover <= 1 ? Number((item.reverseSpillover * 100).toFixed(1)) : Number(item.reverseSpillover.toFixed(1)))
+        const reverseSpillover = item.reverseSpillover !== undefined && item.reverseSpillover !== null
+          ? (item.reverseSpillover <= 1 && item.reverseSpillover > 0 ? Number((item.reverseSpillover * 100).toFixed(1)) : Number(item.reverseSpillover.toFixed(1)))
           : undefined;
           
-        const correlationCoefficient = item.correlationCoefficient !== undefined ? Number(Number(item.correlationCoefficient).toFixed(2)) : undefined;
-        const liftValue = item.liftValue !== undefined ? Number(Number(item.liftValue).toFixed(2)) : undefined;
-        const interactionGrade = item.interactionGrade;
-        const revPasContribution = item.revPasContribution !== undefined ? Number(item.revPasContribution) : undefined;
+        const correlationCoefficient = item.correlationCoefficient !== undefined && item.correlationCoefficient !== null ? Number(Number(item.correlationCoefficient).toFixed(2)) : undefined;
+        const liftValue = item.liftValue !== undefined && item.liftValue !== null ? Number(Number(item.liftValue).toFixed(2)) : undefined;
+        const interactionGrade = item.interactionGrade || (spilloverRate > 30 ? 'HIGH_SYNERGY' : (spilloverRate > 10 ? 'MODERATE_SYNERGY' : 'WEAK'));
+        const revPasContribution = item.revPasContribution !== undefined && item.revPasContribution !== null ? Number(item.revPasContribution) : undefined;
         const totalSales = item.totalSales !== undefined ? Number(item.totalSales) : 0;
+        const isTrackable = spilloverRate > 0;
 
         return {
           ...item,
@@ -156,7 +159,7 @@ export default function SynergyCorrelation() {
           shopName,
           storeName: shopName,
           totalSales,
-          correlatedSales: item.correlatedSales || 0,
+          correlatedSales: item.correlatedSales || (isTrackable ? Math.round(totalSales * (spilloverRate / 100)) : 0),
           correlatedVisitors: item.correlatedVisitors || item.correlatedGuests || 0,
           spilloverRate,
           forwardSpillover,
@@ -164,9 +167,9 @@ export default function SynergyCorrelation() {
           correlationCoefficient,
           liftValue,
           interactionGrade,
-          revPasContribution,
-          isGuestRatioTrackable: item.isGuestRatioTrackable !== false,
-          calculationMethod: item.calculationMethod || (item.isGuestRatioTrackable !== false ? 'HARD_FACT_MATCHING' : 'UNTRACKABLE'),
+          revPasContribution: revPasContribution !== undefined ? revPasContribution : (totalRooms > 0 ? Math.round((item.correlatedSales || 0) / totalRooms) : 0),
+          isGuestRatioTrackable: isTrackable,
+          calculationMethod: item.calculationMethod || (isTrackable ? 'HARD_FACT_MATCHING' : 'UNTRACKABLE'),
         };
       };
 
@@ -174,12 +177,16 @@ export default function SynergyCorrelation() {
 
       const rawList = Array.isArray(corrRes?.data) ? corrRes.data : (Array.isArray(corrRes) ? corrRes : []);
       if (rawList.length > 0) {
-        corrList = rawList.map((item: any) => processCorrItem(item, '기타'));
-      } else if (corrRes && (corrRes.ticket || corrRes.fnb || corrRes.golf)) {
+        corrList = rawList
+          .filter((item: any) => {
+            const name = item.shopName || item.storeName || '';
+            return !name.includes('그린피') && !name.includes('카트대여');
+          })
+          .map((item: any) => processCorrItem(item, '기타'));
+      } else if (corrRes && (corrRes.ticket || corrRes.fnb)) {
         const ticketList = (Array.isArray(corrRes.ticket) ? corrRes.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
         const fnbList = (Array.isArray(corrRes.fnb) ? corrRes.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
-        const golfList = (Array.isArray(corrRes.golf) ? corrRes.golf : []).map((item: any) => processCorrItem(item, '골프본부'));
-        corrList = [...ticketList, ...fnbList, ...golfList];
+        corrList = [...ticketList, ...fnbList];
       }
 
       // Dynamic Extraction from Real Matrix Rows when correlation endpoint list is empty
@@ -188,38 +195,37 @@ export default function SynergyCorrelation() {
         
         physicalShops.forEach((r: any) => {
           const cat = String(r.categoryCode || '').toUpperCase();
-          if (cat !== 'TICKET' && cat !== 'MOTO' && cat !== 'FNB' && cat !== 'GOLF') return;
+          // STRICT EXCLUSION: Only TICKET, MOTO, FNB (Never GOLF)
+          if (cat !== 'TICKET' && cat !== 'MOTO' && cat !== 'FNB') return;
 
           const shopName = r.shopName || r.facilityName || '';
-          if (!shopName || shopName.includes('소계') || shopName.includes('합계')) return;
+          if (!shopName || shopName.includes('소계') || shopName.includes('합계') || shopName.includes('그린피') || shopName.includes('카트')) return;
 
           const sales = rangeActive 
             ? cleanNum(r.rangeActual || r.mtdActual || r.todayActual)
             : cleanNum(r.todayActual);
           if (sales <= 0) return;
 
-          const division = cat === 'FNB' ? '식음팀' : (cat === 'MOTO' ? '모토아레나' : (cat === 'GOLF' ? '골프본부' : '레저본부'));
-          const corrRatio = cat === 'FNB' ? 0.48 : (cat === 'TICKET' ? 0.54 : 0.35);
-          const correlatedSales = Math.round(sales * corrRatio);
-          const spilloverRate = Number((corrRatio * 100).toFixed(1));
-          const revPasContribution = totalRooms > 0 ? Math.round(correlatedSales / totalRooms) : 0;
+          const division = cat === 'FNB' ? '식음팀' : (cat === 'MOTO' ? '모토아레나' : '레저본부');
+          const revPasContribution = totalRooms > 0 ? Math.round(sales / totalRooms) : 0;
 
+          // Pure SSOT: Zero artificial/fabricated ratio fallback
           corrList.push({
             storeName: shopName,
             shopName: shopName,
             divisionName: division,
             totalSales: sales,
-            correlatedSales: correlatedSales,
-            correlatedVisitors: Math.round(sales / 25000),
-            spilloverRate: spilloverRate,
-            forwardSpillover: spilloverRate,
-            reverseSpillover: Number((spilloverRate * 0.12).toFixed(1)),
-            liftValue: Number((1.2 + corrRatio).toFixed(2)),
-            correlationCoefficient: Number((0.4 + corrRatio * 0.5).toFixed(2)),
+            correlatedSales: 0,
+            correlatedVisitors: 0,
+            spilloverRate: 0,
+            forwardSpillover: undefined,
+            reverseSpillover: undefined,
+            liftValue: undefined,
+            correlationCoefficient: undefined,
             revPasContribution: revPasContribution,
-            interactionGrade: revPasContribution > 20000 ? 'HIGH_SYNERGY' : (revPasContribution > 5000 ? 'MODERATE_SYNERGY' : 'WEAK'),
-            isGuestRatioTrackable: true,
-            calculationMethod: 'HARD_FACT_MATCHING'
+            interactionGrade: 'WEAK',
+            isGuestRatioTrackable: false,
+            calculationMethod: 'UNTRACKABLE'
           });
         });
       }

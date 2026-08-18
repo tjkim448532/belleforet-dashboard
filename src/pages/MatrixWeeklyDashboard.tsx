@@ -430,11 +430,15 @@ export default function MatrixWeeklyDashboard() {
                 <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
                 {/* MTD */}
                 <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>
-                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">전년 동기</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">
+                  {compareMode === 'yoy_same_day' ? '전년 동기(동요일)' : '전년 동기'}
+                </th>
                 <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
                 {/* YTD */}
                 <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">실적</th>
-                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">전년 동기</th>
+                <th className="p-3 border-r border-slate-200 font-medium sticky top-[45px] z-20 bg-slate-100">
+                  {compareMode === 'yoy_same_day' ? '전년 동기(동요일)' : '전년 동기'}
+                </th>
                 <th className="p-3 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
               </tr>
             </thead>

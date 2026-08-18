@@ -273,10 +273,17 @@ export default function Home() {
               <div className="relative z-10">
                 <div className="mb-1 flex flex-col justify-start">
                   <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap">
-                    <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) 
-                    <span className="text-xs text-slate-400 font-normal">
-                      ({startDate.slice(0, 4)}-01-01 ~ {isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate})
-                    </span>
+                    <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" />
+                    <span>올해 누적 매출 (YTD)</span>
+                    {isRangeMode ? (
+                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                        종료일({currentEndDateStr}) 기준 연누계 ({currentEndDateStr.slice(0, 4)}-01-01 ~ {currentEndDateStr})
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-normal">
+                        ({startDate.slice(0, 4)}-01-01 ~ {startDate})
+                      </span>
+                    )}
                   </h2>
                 </div>
                 <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight">
@@ -302,10 +309,17 @@ export default function Home() {
                 <div className="mb-1 flex flex-col justify-start">
                   <div className="flex items-center justify-between flex-wrap gap-1.5 mb-1">
                     <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5 flex-wrap">
-                      <CalendarDays className="w-4 h-4 text-emerald-600" /> 월별 누적 매출 (MTD)
-                      <span className="text-xs text-slate-400 font-normal">
-                        ({startDate.slice(0, 7)}-01 ~ {currentEndDateStr})
-                      </span>
+                      <CalendarDays className="w-4 h-4 text-emerald-600" />
+                      <span>월별 누적 매출 (MTD)</span>
+                      {isRangeMode ? (
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
+                          종료일({currentEndDateStr}) 기준 당월누계 ({currentEndDateStr.slice(0, 7)}-01 ~ {currentEndDateStr})
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-normal">
+                          ({startDate.slice(0, 7)}-01 ~ {startDate})
+                        </span>
+                      )}
                     </h3>
 
                     {/* 🎈 공휴일수 (토·일·국가지정공휴일) 비교 배지 */}

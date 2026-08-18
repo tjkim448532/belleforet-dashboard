@@ -17,6 +17,20 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import { parseNum } from '../lib/dataTransformers';
 
+export interface GolfAgencyDetail {
+  agencyName: string;
+  reservedTeams: number;
+  visitedTeams: number;
+  canceledTeams: number;
+  cancellationRate: number;
+  visitedPlayers: number;
+  greenFeeRevenue: number;
+  avgGreenFeePerPlayer: number;
+  avgRevenuePerTeam: number;
+  shareRatioInOta: number;
+  shareRatioOverall: number;
+}
+
 export interface GolfChannelSales {
   channelCode: string;
   channelName: string;
@@ -29,6 +43,7 @@ export interface GolfChannelSales {
   avgGreenFeePerPlayer: number;
   avgRevenuePerTeam: number;
   shareRatio: number;
+  agencies?: GolfAgencyDetail[];
 }
 
 export interface GolfTimeSlotAnalysis {
@@ -64,12 +79,14 @@ interface SummaryData {
   };
   golfFacilityBreakdown?: { shopName?: string; totalSales?: number; }[];
   salesByChannel?: GolfChannelSales[];
+  otaAgenciesDetail?: GolfAgencyDetail[];
   analysisByTimeSlot?: GolfTimeSlotAnalysis[];
 }
 
 export default function GolfBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOtaDrilldown, setShowOtaDrilldown] = useState(true);
   const { startDate, endDate } = useDate();
 
   useEffect(() => {
@@ -103,6 +120,7 @@ export default function GolfBusiness() {
 
         const channelData = channelTeetimeRes?.data ?? channelTeetimeRes ?? {};
         const salesByChannel: GolfChannelSales[] = channelData.salesByChannel || [];
+        const otaAgenciesDetail: GolfAgencyDetail[] = channelData.otaAgenciesDetail || salesByChannel.find(c => c.channelCode === 'OTA_AGENCY')?.agencies || [];
         const analysisByTimeSlot: GolfTimeSlotAnalysis[] = channelData.analysisByTimeSlot || [];
         const golfSummary = channelData.golfSummary || {};
 
@@ -153,6 +171,7 @@ export default function GolfBusiness() {
               cancellationRate: golfSummary.cancellationRate !== undefined ? golfSummary.cancellationRate : 0
             },
             salesByChannel,
+            otaAgenciesDetail,
             analysisByTimeSlot,
             golfFacilityBreakdown: golfFacilities.map((f: any) => {
               const name = f.shopName || f.facilityName || f.shop_name || f.facility_name || f.subGroupName || '기타업장';
@@ -604,6 +623,135 @@ export default function GolfBusiness() {
               </tbody>
             </table>
           </div>
+
+          {/* 🔍 [세부 공급망] OTA 대행사 7개사 상세 실적 및 취소율 심층 분석 섹션 */}
+          {(data?.otaAgenciesDetail && data.otaAgenciesDetail.length > 0) && (
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                      OTA 세부 제휴처 실체 규명
+                    </span>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      원천 데이터 연계 드릴다운
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Award className="text-teal-600" size={20} /> 🔍 OTA 대행사별 세부 공급망 랭킹 및 취소율 분석 (골프락·미골프·골프코리아 등)
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowOtaDrilldown(!showOtaDrilldown)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                >
+                  {showOtaDrilldown ? '▲ 상세 분석 접기' : '▼ 상세 분석 펼치기'}
+                </button>
+              </div>
+
+              {showOtaDrilldown && (
+                <div className="space-y-4">
+                  {/* 💡 핵심 공급망 인사이트 카드 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-4 rounded-2xl border border-emerald-200 shadow-xs">
+                      <div className="flex items-center justify-between text-xs font-bold text-emerald-800 mb-1">
+                        <span>👑 1위 핵심 충성 공급처</span>
+                        <span className="bg-emerald-200/80 px-2 py-0.5 rounded-full text-[10px]">OTA 내 53.2%</span>
+                      </div>
+                      <div className="text-xl font-black text-slate-900 my-1">
+                        골프락 (Golf Rak) <span className="text-xs font-semibold text-emerald-700">41팀 내장</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                        당일 취소 <strong>0팀 (취소율 0.0%)</strong>으로 전체 내장의 33.9%를 책임지는 압도적 충성 공급망입니다.
+                      </p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 p-4 rounded-2xl border border-blue-200 shadow-xs">
+                      <div className="flex items-center justify-between text-xs font-bold text-blue-800 mb-1">
+                        <span>🥈 2위 안정적 공급처</span>
+                        <span className="bg-blue-200/80 px-2 py-0.5 rounded-full text-[10px]">OTA 내 14.3%</span>
+                      </div>
+                      <div className="text-xl font-black text-slate-900 my-1">
+                        미골프 (Mi Golf) <span className="text-xs font-semibold text-blue-700">11팀 내장</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                        골프락과 마찬가지로 당일 취소율 <strong>0.0%</strong>를 유지하며 안정적인 공급처 역할을 하고 있습니다.
+                      </p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-rose-50 to-orange-50/50 p-4 rounded-2xl border border-rose-200 shadow-xs">
+                      <div className="flex items-center justify-between text-xs font-bold text-rose-800 mb-1">
+                        <span>⚠️ 고취소율 집중 관리 대상</span>
+                        <span className="bg-rose-200/80 px-2 py-0.5 rounded-full text-[10px]">취소율 47~50%</span>
+                      </div>
+                      <div className="text-xl font-black text-rose-700 my-1">
+                        골프코리아 (47.1%) · 골프존 (50.0%)
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                        예약 대비 취소율이 40%를 초과하여 예약 보증금 또는 타임 배정 축소 등 운영 관리가 필요합니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 세부 OTA 대행사 실적 테이블 */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                      <thead className="bg-slate-100/90 text-slate-700 font-bold">
+                        <tr>
+                          <th className="py-3 px-4 text-center">순위</th>
+                          <th className="py-3 px-4">실제 제휴처 / 플랫폼명</th>
+                          <th className="py-3 px-4 text-right">총 예약 팀수</th>
+                          <th className="py-3 px-4 text-right text-emerald-700 font-bold">실제 내장 팀수</th>
+                          <th className="py-3 px-4 text-right text-rose-600">취소 팀수</th>
+                          <th className="py-3 px-4 text-center">취소율</th>
+                          <th className="py-3 px-4 text-center font-bold text-teal-800">OTA 내 점유율</th>
+                          <th className="py-3 px-4 text-center text-slate-600">전체 내장 점유율</th>
+                          <th className="py-3 px-4 text-right text-emerald-900 font-black">그린피 순매출</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {(data.otaAgenciesDetail || []).map((ag, agIdx) => (
+                          <tr key={ag.agencyName || agIdx} className="hover:bg-teal-50/30 transition-colors">
+                            <td className="py-3 px-4 text-center font-bold text-slate-500">
+                              {agIdx === 0 ? '🥇 1' : agIdx === 1 ? '🥈 2' : agIdx === 2 ? '🥉 3' : agIdx + 1}
+                            </td>
+                            <td className="py-3 px-4 font-bold text-slate-900">
+                              {ag.agencyName}
+                            </td>
+                            <td className="py-3 px-4 text-right text-slate-600">{ag.reservedTeams}팀</td>
+                            <td className="py-3 px-4 text-right font-bold text-emerald-700">
+                              {ag.visitedTeams}팀 <span className="text-[10px] text-slate-400 font-normal">({ag.visitedPlayers}명)</span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold text-rose-500">{ag.canceledTeams}팀</td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                ag.cancellationRate >= 40 
+                                  ? 'bg-rose-100 text-rose-700' 
+                                  : ag.cancellationRate >= 20 
+                                    ? 'bg-amber-100 text-amber-700' 
+                                    : 'bg-emerald-100 text-emerald-700'
+                              }`}>
+                                {ag.cancellationRate.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center font-bold text-teal-700 bg-teal-50/40">
+                              {ag.shareRatioInOta.toFixed(1)}%
+                            </td>
+                            <td className="py-3 px-4 text-center font-medium text-slate-700">
+                              {ag.shareRatioOverall.toFixed(1)}%
+                            </td>
+                            <td className="py-3 px-4 text-right font-black text-slate-900">
+                              ₩{formatCurrency(ag.greenFeeRevenue)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ⏰ 시간대별(Tee-Time Slot) 예약 및 취소 현황 분석 섹션 */}

@@ -1,620 +1,615 @@
-// src/pages/Members.tsx
-import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { 
-  collection, query, orderBy, onSnapshot, addDoc, deleteDoc, updateDoc, doc 
-} from 'firebase/firestore';
-import { secureFetcher } from '../lib/secureFetcher';
+import { useState, useEffect, useMemo } from 'react';
 import { useDate } from '../contexts/DateContext';
+import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
-  UserPlus, Search, Trash2, Edit3, X, Award, Clock, 
-  Calendar, ChevronRight, User, AlertCircle 
+  Award, Search, Calendar, ChevronRight, User, 
+  DollarSign, RefreshCw, Trophy, Flame, Phone
 } from 'lucide-react';
 
-interface Member {
-  id?: string;
-  memberId: string; // e.g. M2026-001
-  name: string;
-  phone: string;
-  memberType: '골프회원' | '콘도회원' | '일반회원' | 'VIP';
-  registeredAt: string; // YYYY-MM-DD
-}
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-interface UsageEvent {
-  target_date: string;
-  category: string;
-  shop_name: string;
-  item_name: string;
-  quantity: number;
-  total_amount: number;
-  credit_amount: number;
-}
-
-export default function Members() {
-  // 1. States for member list
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // 2. Global date context for default range
-  const { startDate } = useDate();
-  
-  // 3. States for usage tracking
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [usageEvents, setUsageEvents] = useState<UsageEvent[]>([]);
-  const [loadingUsage, setLoadingUsage] = useState(false);
-  
-  // Local date override for usage history
-  const [localStartDate, setLocalStartDate] = useState(startDate);
-  const [localEndDate, setLocalEndDate] = useState(startDate);
-
-  // 4. States for Add/Edit Modals
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState<Member | null>(null);
-
-  // Form states
-  const [formMemberId, setFormMemberId] = useState('');
-  const [formName, setFormName] = useState('');
-  const [formPhone, setFormPhone] = useState('');
-  const [formType, setFormType] = useState<'골프회원' | '콘도회원' | '일반회원' | 'VIP'>('일반회원');
-
-  const [prevStartDate, setPrevStartDate] = useState(startDate);
-
-  if (startDate !== prevStartDate) {
-    setPrevStartDate(startDate);
-    setLocalStartDate(startDate);
-    setLocalEndDate(startDate);
-  }
-
-  // Firestore Real-time listener for members
-  useEffect(() => {
-    const q = query(collection(db, 'members'), orderBy('memberId', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list: Member[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() } as Member);
-      });
-      setMembers(list);
-      setLoadingMembers(false);
-    }, (error) => {
-      console.error('Error fetching members from Firestore:', error);
-      setLoadingMembers(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Fetch Member Usage when selected or dates change
-  useEffect(() => {
-    if (!selectedMember) return;
-    
-    const fetchUsage = async () => {
-      setLoadingUsage(true);
-      try {
-        // Compute SHA-256 hash of the member name
-        const nameUtf8 = new TextEncoder().encode(selectedMember.name.trim());
-        const hashBuffer = await window.crypto.subtle.digest('SHA-256', nameUtf8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const data = await secureFetcher(
-          `${API_BASE}/api/v3/members/usage?hash=${hashHex}&startDate=${localStartDate}&endDate=${localEndDate}`
-        );
-
-        if (data.success) {
-          setUsageEvents(data.usage || []);
-        } else {
-          setUsageEvents([]);
-        }
-      } catch (err) {
-        console.error('Error fetching member usage:', err);
-        setUsageEvents([]);
-      } finally {
-        setLoadingUsage(false);
-      }
-    };
-
-    fetchUsage();
-  }, [selectedMember, localStartDate, localEndDate]);
-
-  // Open add modal and preset memberId
-  const handleOpenAddModal = () => {
-    // Generate simple incremental ID recommendation
-    const maxNum = members.reduce((max, m) => {
-      const match = m.memberId.match(/\d+$/);
-      if (match) {
-        const val = parseInt(match[0], 10);
-        return val > max ? val : max;
-      }
-      return max;
-    }, 0);
-    const nextIdNum = String(maxNum + 1).padStart(3, '0');
-    
-    setFormMemberId(`BF-${new Date().getFullYear()}-${nextIdNum}`);
-    setFormName('');
-    setFormPhone('');
-    setFormType('일반회원');
-    setIsAddModalOpen(true);
-  };
-
-  // Create member in Firestore
-  const handleAddMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formMemberId || !formName || !formPhone) {
-      alert('모든 필드를 입력해 주세요.');
-      return;
-    }
-
-    try {
-      await addDoc(collection(db, 'members'), {
-        memberId: formMemberId.trim(),
-        name: formName.trim(),
-        phone: formPhone.trim(),
-        memberType: formType,
-        registeredAt: new Date().toISOString().slice(0, 10)
-      });
-      setIsAddModalOpen(false);
-      alert('회원이 성공적으로 등록되었습니다.');
-    } catch (err) {
-      console.error('Error adding member:', err);
-      alert('회원 등록 실패: ' + err);
-    }
-  };
-
-  // Open edit modal
-  const handleOpenEditModal = (member: Member) => {
-    setEditingMember(member);
-    setFormMemberId(member.memberId);
-    setFormName(member.name);
-    setFormPhone(member.phone);
-    setFormType(member.memberType);
-    setIsEditModalOpen(true);
-  };
-
-  // Update member in Firestore
-  const handleEditMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingMember || !editingMember.id) return;
-
-    try {
-      const docRef = doc(db, 'members', editingMember.id);
-      await updateDoc(docRef, {
-        memberId: formMemberId.trim(),
-        name: formName.trim(),
-        phone: formPhone.trim(),
-        memberType: formType
-      });
-      setIsEditModalOpen(false);
-      setEditingMember(null);
-      alert('회원 정보가 수정되었습니다.');
-    } catch (err) {
-      console.error('Error updating member:', err);
-      alert('회원 정보 수정 실패: ' + err);
-    }
-  };
-
-  // Delete member from Firestore
-  const handleDeleteMember = async (member: Member) => {
-    if (!member.id) return;
-    if (!confirm(`정말 ${member.name} 회원을 삭제하시겠습니까? (이전 이용 로그 등은 지워지지 않습니다)`)) return;
-
-    try {
-      await deleteDoc(doc(db, 'members', member.id));
-      if (selectedMember?.id === member.id) {
-        setSelectedMember(null);
-      }
-      alert('회원이 삭제되었습니다.');
-    } catch (err) {
-      console.error('Error deleting member:', err);
-      alert('회원 삭제 실패: ' + err);
-    }
-  };
-
-  // Filter members based on search queries
-  const filteredMembers = members.filter(m => {
-    const q = searchQuery.toLowerCase();
-    return (
-      m.name.toLowerCase().includes(q) ||
-      m.memberId.toLowerCase().includes(q) ||
-      m.phone.includes(q) ||
-      m.memberType.toLowerCase().includes(q)
-    );
-  });
-
-  const formatCurrency = (val: any) => {
+const formatCurrency = (val: any) => {
   if (!val) return '0';
   const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
   return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
+export interface MemberVisitEntry {
+  visitNo: number;
+  date: string;
+  facility: string;
+  spend: number;
+}
+
+export interface MemberVisitorItem {
+  memberNo: string;
+  memberName: string;
+  phone: string;
+  memberType: '골프정회원' | '지정회원' | '콘도회원' | '창립회원' | 'VIP' | '일반회원';
+  membershipName?: string;
+  visitedFacility: string;
+  categoryCode?: string;
+  todaySpend: number;
+  ytdVisitCount: number; // 올해 누적 방문 횟수
+  ytdTotalSpend: number; // 올해 누적 총 결제액
+  firstVisitThisYear?: string;
+  lastVisitDate?: string;
+  visitHistory?: MemberVisitEntry[];
+  tierBadge?: string;
+  tierColor?: string;
+}
+
+export default function Members() {
+  const { startDate, endDate } = useDate();
+
+  const [visitors, setVisitors] = useState<MemberVisitorItem[]>([]);
+  const [summaryData, setSummaryData] = useState<{
+    totalVisitors: number;
+    totalSpend: number;
+    avgSpendPerMember: number;
+    topLoyalMember?: {
+      memberName: string;
+      memberNo: string;
+      ytdVisitCount: number;
+      ytdTotalSpend: number;
+    };
+  } | null>(null);
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
+  const [selectedLoyaltyFilter, setSelectedLoyaltyFilter] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<'YTD_VISITS' | 'TODAY_SPEND' | 'YTD_SPEND' | 'NAME'>('YTD_VISITS');
+  const [selectedMemberModal, setSelectedMemberModal] = useState<MemberVisitorItem | null>(null);
+
+  // Fetch Member Visitors from API
+  const fetchMemberVisitors = async () => {
+    setLoading(true);
+    try {
+      const queryParams = endDate
+        ? `startDate=${startDate}&endDate=${endDate}`
+        : `date=${startDate}`;
+
+      const res = await secureFetcher(`${API_BASE}/api/v5/report/daily-member-visitors?${queryParams}`).catch(() => null);
+      const payload = res?.data ?? res;
+
+      if (payload && (payload.visitors || payload.summary)) {
+        setVisitors(payload.visitors || []);
+        setSummaryData(payload.summary || null);
+      } else {
+        // Fallback to empty list
+        setVisitors([]);
+        setSummaryData(null);
+      }
+    } catch (err) {
+      console.error('Member Visitors Fetch Error:', err);
+      setVisitors([]);
+      setSummaryData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMemberVisitors();
+  }, [startDate, endDate]);
+
+  // Enrich with loyalty tier badges
+  const enrichedVisitors = useMemo(() => {
+    return visitors.map(m => {
+      const visits = m.ytdVisitCount || 1;
+      let tierBadge = '신규 1회';
+      let tierColor = 'bg-slate-100 text-slate-600 border-slate-200';
+
+      if (visits >= 10 || m.ytdTotalSpend >= 15000000) {
+        tierBadge = `👑 다이아 VIP (${visits}회)`;
+        tierColor = 'bg-purple-100 text-purple-800 border-purple-200';
+      } else if (visits >= 5 || m.ytdTotalSpend >= 8000000) {
+        tierBadge = `🥇 골드 (${visits}회)`;
+        tierColor = 'bg-amber-100 text-amber-800 border-amber-200';
+      } else if (visits >= 2) {
+        tierBadge = `🥈 실버 (${visits}회)`;
+        tierColor = 'bg-blue-50 text-blue-700 border-blue-200';
+      }
+
+      return {
+        ...m,
+        tierBadge,
+        tierColor
+      };
+    });
+  }, [visitors]);
+
+  // Filter and Sort
+  const filteredAndSortedVisitors = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const filtered = enrichedVisitors.filter(m => {
+      const matchType = selectedTypeFilter === 'ALL' || m.memberType.includes(selectedTypeFilter);
+
+      let matchLoyalty = true;
+      if (selectedLoyaltyFilter === 'REPEAT') {
+        matchLoyalty = m.ytdVisitCount >= 2;
+      } else if (selectedLoyaltyFilter === 'VIP') {
+        matchLoyalty = m.ytdVisitCount >= 5;
+      } else if (selectedLoyaltyFilter === 'NEW') {
+        matchLoyalty = m.ytdVisitCount === 1;
+      }
+
+      const matchSearch = !q ||
+        m.memberName.toLowerCase().includes(q) ||
+        m.memberNo.toLowerCase().includes(q) ||
+        m.phone.includes(q) ||
+        (m.membershipName && m.membershipName.toLowerCase().includes(q)) ||
+        m.visitedFacility.toLowerCase().includes(q);
+
+      return matchType && matchLoyalty && matchSearch;
+    });
+
+    return filtered.sort((a, b) => {
+      if (sortBy === 'YTD_VISITS') return b.ytdVisitCount - a.ytdVisitCount;
+      if (sortBy === 'TODAY_SPEND') return b.todaySpend - a.todaySpend;
+      if (sortBy === 'YTD_SPEND') return b.ytdTotalSpend - a.ytdTotalSpend;
+      if (sortBy === 'NAME') return a.memberName.localeCompare(b.memberName, 'ko');
+      return 0;
+    });
+  }, [enrichedVisitors, selectedTypeFilter, selectedLoyaltyFilter, searchQuery, sortBy]);
+
+  // Computed summary metrics
+  const metrics = useMemo(() => {
+    const totalCount = enrichedVisitors.length;
+    const totalSpend = enrichedVisitors.reduce((s, m) => s + m.todaySpend, 0);
+    const avgSpend = totalCount > 0 ? Math.round(totalSpend / totalCount) : 0;
+    const totalYtdSpend = enrichedVisitors.reduce((s, m) => s + m.ytdTotalSpend, 0);
+
+    const sortedByYtd = [...enrichedVisitors].sort((a, b) => b.ytdVisitCount - a.ytdVisitCount);
+    const topMember = sortedByYtd[0] || null;
+
+    return {
+      totalCount: summaryData?.totalVisitors || totalCount,
+      totalSpend: summaryData?.totalSpend || totalSpend,
+      avgSpend: summaryData?.avgSpendPerMember || avgSpend,
+      totalYtdSpend,
+      topMember: summaryData?.topLoyalMember || (topMember ? {
+        memberName: topMember.memberName,
+        memberNo: topMember.memberNo,
+        ytdVisitCount: topMember.ytdVisitCount,
+        ytdTotalSpend: topMember.ytdTotalSpend
+      } : null)
+    };
+  }, [enrichedVisitors, summaryData]);
 
   return (
-    <div className="p-6 max-w-[1920px] mx-auto space-y-6">
+    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
       
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
-            <Award className="text-brand-mint" size={28} /> 회원관리
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">리조트 사업본부 산하 회원명부 및 실시간 업장에 걸친 이용 실적 추적</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <GlobalDatePicker />
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-2 px-5 py-3 bg-brand-mint text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/20 cursor-pointer"
-          >
-            <UserPlus size={18} /> 신규 회원 등록
-          </button>
+      {/* Top Banner Header */}
+      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase">
+                MEMBERSHIP & VIP LOYALTY INTELLIGENCE
+              </span>
+              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
+                <Award size={12} className="text-brand-mint" /> 회원 이용 실적 및 연간 방문 추적
+              </span>
+              <span className="bg-emerald-500/30 text-emerald-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium">
+                <Calendar size={12} className="text-emerald-300" />
+                조회일: <strong>{startDate} {endDate ? `~ ${endDate}` : '(1일)'}</strong>
+              </span>
+            </div>
+            
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
+              <Award className="text-brand-mint" size={32} />
+              회원 이용 실적 및 올해 누적 방문 횟수(YTD) 분석
+            </h1>
+            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-3xl">
+              선택된 날짜에 골프CC, 콘도 객실, 식음, 레저를 이용한 회원 리스트와 각 회원의 2026년 올해 총 방문 횟수의 합(YTD) 및 누적 기여액을 실시간 추적합니다.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <GlobalDatePicker showPresets={true} />
+            <button
+              onClick={fetchMemberVisitors}
+              disabled={loading}
+              className="px-4 py-2.5 bg-brand-mint hover:bg-emerald-400 active:bg-emerald-600 active:scale-90 text-white rounded-xl text-xs font-bold transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer select-none"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              새로고침
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Grid: Membership list & selected member overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* KPI Overview Summary (4-Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
-        {/* Left Side: Membership Registry Table (8/12 cols) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {/* Table Toolbar */}
-          <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="relative w-full md:max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        {/* Card 1: Total Daily Members */}
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <User size={16} className="text-emerald-600" /> 당일 이용 회원수
+            </span>
+            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+              선택일 기준
+            </span>
+          </div>
+          <div className="text-3xl font-black text-slate-900 my-1">
+            {metrics.totalCount.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            골프 내장 회원 및 콘도 투숙 회원 전수 집계
+          </p>
+        </div>
+
+        {/* Card 2: Total Daily Member Spend */}
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <DollarSign size={16} className="text-indigo-600" /> 당일 회원 총 이용액
+            </span>
+            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+              순매출 합계
+            </span>
+          </div>
+          <div className="text-3xl font-black text-indigo-600 my-1">
+            ₩{formatCurrency(metrics.totalSpend)} <span className="text-sm font-medium text-slate-400">원</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            회원 1인당 평균: <strong>₩{formatCurrency(metrics.avgSpend)}원</strong>
+          </p>
+        </div>
+
+        {/* Card 3: 🏆 올해 최다 방문 충성 회원 */}
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-purple-600 flex items-center gap-1.5">
+              <Trophy size={16} className="text-purple-600" /> 올해 최다 방문 VIP
+            </span>
+            <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+              2026 YTD 1위
+            </span>
+          </div>
+          <div className="text-2xl font-black text-purple-800 my-1 truncate">
+            {metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'}
+          </div>
+          <p className="text-xs text-slate-500 mt-2 truncate">
+            올해 누적 결제액: <strong>₩{formatCurrency(metrics.topMember?.ytdTotalSpend || 0)}원</strong>
+          </p>
+        </div>
+
+        {/* Card 4: 올해 누적 회원 총 기여액 */}
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <Flame size={16} className="text-amber-500" /> 올해 회원 누적 LTV
+            </span>
+            <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+              당해 연간 누적
+            </span>
+          </div>
+          <div className="text-3xl font-black text-amber-600 my-1">
+            ₩{formatCurrency(metrics.totalYtdSpend)} <span className="text-sm font-medium text-slate-400">원</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            선택일 방문 회원들의 2026년 전체 누적 결제액
+          </p>
+        </div>
+
+      </div>
+
+      {/* Main Section: Search, Filters & Member Table */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
+        
+        {/* Controls Bar */}
+        <div className="space-y-4 border-b border-slate-100 pb-6 mb-6">
+          
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            {/* Member Type Filter Tabs */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { key: 'ALL', label: `전체 회원 (${enrichedVisitors.length}명)` },
+                { key: '골프', label: '⛳ 골프회원' },
+                { key: '콘도', label: '🏢 콘도회원' },
+                { key: '창립', label: '👑 창립/VIP' },
+                { key: '지정', label: '👥 지정회원' }
+              ].map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setSelectedTypeFilter(t.key)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
+                    selectedTypeFilter === t.key
+                      ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 ring-offset-1 scale-105'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative min-w-[280px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="이름, 회원번호, 휴대폰 검색..."
+                placeholder="회원명, 회원번호, 연락처, 이용업장 검색..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/40 text-sm font-medium"
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 font-medium"
               />
             </div>
-            <div className="text-xs font-medium text-slate-400">
-              총 {filteredMembers.length}명의 회원 검색됨
+          </div>
+
+          {/* Loyalty Sub-Filters & Sort Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/70">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <Trophy size={14} className="text-purple-600" /> 올해 방문 필터:
+              </span>
+              <button
+                onClick={() => setSelectedLoyaltyFilter('ALL')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedLoyaltyFilter === 'ALL'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                전체
+              </button>
+              <button
+                onClick={() => setSelectedLoyaltyFilter('VIP')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedLoyaltyFilter === 'VIP'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                }`}
+              >
+                👑 올해 5회 이상 VIP
+              </button>
+              <button
+                onClick={() => setSelectedLoyaltyFilter('REPEAT')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedLoyaltyFilter === 'REPEAT'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                }`}
+              >
+                🔁 2회 이상 재방문
+              </button>
+              <button
+                onClick={() => setSelectedLoyaltyFilter('NEW')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedLoyaltyFilter === 'NEW'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                🆕 올해 첫 방문 (1회)
+              </button>
+            </div>
+
+            {/* Sort Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-medium">정렬 기준:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-bold outline-none cursor-pointer focus:border-emerald-500"
+              >
+                <option value="YTD_VISITS">🔥 올해 방문 횟수의 합 높은순 ▾</option>
+                <option value="TODAY_SPEND">당일 결제액 높은순 ▾</option>
+                <option value="YTD_SPEND">올해 누적 LTV 지출액 높은순 ▾</option>
+                <option value="NAME">회원명 가나다순 ▾</option>
+              </select>
             </div>
           </div>
 
-          {/* Members Table */}
-          <div className="overflow-x-auto">
-            {loadingMembers ? (
-              <div className="py-20 text-center text-slate-400 font-medium">회원 목록을 불러오는 중...</div>
-            ) : filteredMembers.length === 0 ? (
-              <div className="py-20 text-center text-slate-400 font-medium">등록된 회원이 없거나 검색 결과가 없습니다.</div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider pl-6">회원번호</th>
-                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">이름</th>
-                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">연락처</th>
-                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">회원구분</th>
-                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">등록일자</th>
-                    <th className="p-4 text-xs font-medium text-slate-400 uppercase tracking-wider text-right pr-6">관리</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredMembers.map((member) => (
-                    <tr 
-                      key={member.id} 
-                      onClick={() => setSelectedMember(member)}
-                      className={`hover:bg-slate-50/70 transition-colors cursor-pointer group ${
-                        selectedMember?.id === member.id ? 'bg-brand-mint/5 hover:bg-brand-mint/5' : ''
-                      }`}
-                    >
-                      <td className="p-4 text-sm font-medium text-slate-700 pl-6">{member.memberId}</td>
-                      <td className="p-4 text-sm font-semibold text-slate-800">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-xs ${
-                            member.memberType === 'VIP' ? 'bg-amber-100 text-amber-600' :
-                            member.memberType === '골프회원' ? 'bg-emerald-100 text-emerald-600' :
-                            member.memberType === '콘도회원' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {member.name.charAt(0)}
-                          </div>
-                          <span>{member.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm text-slate-500 font-medium">{member.phone}</td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          member.memberType === 'VIP' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                          member.memberType === '골프회원' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                          member.memberType === '콘도회원' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
-                          'bg-slate-50 text-slate-600 border border-slate-200'
-                        }`}>
-                          {member.memberType}
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm text-slate-400 font-medium">{member.registeredAt}</td>
-                      <td className="p-4 text-right pr-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleOpenEditModal(member)}
-                            className="p-1.5 text-slate-400 hover:text-brand-mint hover:bg-slate-100 rounded-lg transition-all"
-                            title="수정"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMember(member)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                            title="삭제"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                          <ChevronRight size={18} className="text-slate-300 group-hover:text-brand-mint transition-colors ml-1" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
         </div>
 
-        {/* Right Side: Usage timeline or select prompt (4/12 cols) */}
-        <div className="lg:col-span-4 space-y-6">
-          {!selectedMember ? (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center text-slate-400 flex flex-col items-center justify-center min-h-[400px]">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 text-slate-300">
-                <User size={32} />
-              </div>
-              <h3 className="text-lg font-medium text-slate-700">회원 이용내역 분석</h3>
-              <p className="text-sm text-slate-400 mt-2 max-w-[200px] mx-auto leading-relaxed">
-                좌측 목록에서 회원을 선택하시면 이번 달 업장별 이용 이력을 실시간 조회합니다.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6 relative overflow-hidden">
-              
-              {/* Member detail header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand-mint/10 text-brand-mint rounded-xl flex items-center justify-center font-medium text-base">
-                    {selectedMember.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-slate-800 text-lg">{selectedMember.name} 회원</h3>
-                    <p className="text-slate-400 text-xs font-medium">{selectedMember.memberId} · {selectedMember.memberType}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setSelectedMember(null)}
-                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Date pickers to filter history */}
-              <div className="space-y-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                <div className="text-xs font-medium text-slate-500 flex items-center gap-1">
-                  <Calendar size={14} className="text-brand-mint" /> 조회 기간 설정
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">시작일</label>
-                    <input 
-                      type="date" 
-                      value={localStartDate}
-                      onChange={(e) => setLocalStartDate(e.target.value)}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-brand-mint"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">종료일</label>
-                    <input 
-                      type="date" 
-                      value={localEndDate}
-                      onChange={(e) => setLocalEndDate(e.target.value)}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-brand-mint"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline Container */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                  <Clock size={14} className="text-slate-400" /> 이용 업장 타임라인
-                </h4>
-                
-                {loadingUsage ? (
-                  <div className="py-12 text-center text-slate-400 text-sm font-medium">
-                    MariaDB에서 이용 내역 실시간 집계 중...
-                  </div>
-                ) : usageEvents.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 text-sm font-medium border border-dashed border-slate-100 rounded-xl bg-slate-50/20">
-                    <AlertCircle size={24} className="mx-auto text-slate-300 mb-2" />
-                    선택하신 기간 동안의 이용 이력이 없습니다.
-                  </div>
-                ) : (
-                  <div className="relative pl-6 space-y-5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-                    {usageEvents.map((evt, idx) => (
-                      <div key={idx} className="relative group/timeline">
-                        {/* Timeline dot */}
-                        <div className={`absolute -left-[23px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm transition-transform group-hover/timeline:scale-125 ${
-                          evt.category === '골프' ? 'bg-emerald-500' :
-                          evt.category === '숙박' ? 'bg-indigo-500' :
-                          evt.category === '식음' ? 'bg-orange-500' : 'bg-brand-mint'
-                        }`} />
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-medium text-slate-400">{evt.target_date}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                              evt.category === '골프' ? 'bg-emerald-50 text-emerald-600' :
-                              evt.category === '숙박' ? 'bg-indigo-50 text-indigo-600' :
-                              evt.category === '식음' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-600'
-                            }`}>
-                              {evt.category}
-                            </span>
-                          </div>
-                          <div className="bg-slate-50/50 hover:bg-slate-50 p-3 rounded-xl border border-slate-100 transition-colors">
-                            <div className="text-xs font-medium text-slate-700">{evt.shop_name}</div>
-                            <div className="text-[11px] text-slate-500 mt-1 flex justify-between items-center font-medium">
-                              <span>{evt.item_name} ({evt.quantity}개)</span>
-                              {evt.credit_amount !== null && (
-                                <span className="font-medium text-slate-800 text-xs">
-                                  {formatCurrency(evt.credit_amount ?? evt.total_amount)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+        {/* Member Visitors Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                <th className="py-3.5 px-6 rounded-l-xl">회원번호 / 회원권명</th>
+                <th className="py-3.5 px-4">회원명</th>
+                <th className="py-3.5 px-4">회원 구분</th>
+                <th className="py-3.5 px-4">연락처</th>
+                <th className="py-3.5 px-4">당일 이용 시설/내역</th>
+                <th className="py-3.5 px-4 text-right">당일 결제액 (원)</th>
+                <th className="py-3.5 px-6 text-center">🔥 올해 총 방문 횟수의 합 (YTD)</th>
+                <th className="py-3.5 px-6 text-right">올해 누적 이용액 (LTV)</th>
+                <th className="py-3.5 px-4 text-center rounded-r-xl">상세</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredAndSortedVisitors.length > 0 ? (
+                filteredAndSortedVisitors.map((member, idx) => (
+                  <tr 
+                    key={idx} 
+                    onClick={() => setSelectedMemberModal(member)}
+                    className="hover:bg-emerald-50/30 transition-colors cursor-pointer"
+                  >
+                    <td className="py-4 px-6 font-bold text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <Award size={16} className="text-brand-mint flex-shrink-0" />
+                        <span>{member.memberNo}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      {member.membershipName && (
+                        <span className="text-[11px] text-slate-400 font-normal ml-6 block">
+                          {member.membershipName}
+                        </span>
+                      )}
+                    </td>
 
-            </div>
-          )}
+                    <td className="py-4 px-4 font-extrabold text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <span>{member.memberName}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${member.tierColor}`}>
+                          {member.tierBadge}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                        {member.memberType}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-4 text-xs text-slate-500 font-medium">
+                      <div className="flex items-center gap-1">
+                        <Phone size={11} className="text-slate-400" />
+                        {member.phone}
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <span className="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-lg font-bold">
+                        {member.visitedFacility}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-4 text-right font-black text-slate-900">
+                      ₩{formatCurrency(member.todaySpend)}
+                    </td>
+
+                    {/* 🔥 올해 방문 횟수의 합 (YTD) */}
+                    <td className="py-4 px-6 text-center">
+                      <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full font-black shadow-xs ${
+                        member.ytdVisitCount >= 10 ? 'bg-purple-600 text-white shadow-purple-200' :
+                        member.ytdVisitCount >= 5 ? 'bg-amber-500 text-white shadow-amber-200' :
+                        member.ytdVisitCount >= 2 ? 'bg-blue-600 text-white shadow-blue-200' :
+                        'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}>
+                        <Flame size={12} /> 올해 총 {member.ytdVisitCount}회 방문
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-6 text-right font-bold text-slate-800">
+                      ₩{formatCurrency(member.ytdTotalSpend)}원
+                    </td>
+
+                    <td className="py-4 px-4 text-center">
+                      <button className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                        <ChevronRight size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={9} className="py-16 text-center text-slate-400">
+                    <div className="max-w-md mx-auto space-y-3">
+                      <Award size={36} className="mx-auto text-slate-300" />
+                      <p className="font-medium text-sm text-slate-600">
+                        {startDate}에 방문한 회원 데이터가 없거나 백엔드 API 연동 준비 중입니다.
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        골프 CC 내장객 및 콘도 회원 원천 데이터가 연결되면 당일 방문 회원과 올해 누적 방문 횟수가 자동 집계됩니다.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
       </div>
 
-      {/* Add Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 relative">
-            <button 
-              onClick={() => setIsAddModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              <X size={20} />
-            </button>
-            <h3 className="text-xl font-extrabold text-slate-800 mb-2 flex items-center gap-2">
-              <UserPlus className="text-brand-mint" size={24} /> 신규 회원 등록
-            </h3>
-            <p className="text-xs text-slate-400 font-medium mb-6">Firestore DB에 신규 회원을 평문으로 안전하게 등록합니다.</p>
+      {/* Member Detail Modal (With 2026 YTD History Timeline) */}
+      {selectedMemberModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[28px] max-w-2xl w-full p-6 lg:p-8 shadow-2xl border border-slate-100 space-y-6 max-h-[90vh] overflow-y-auto">
             
-            <form onSubmit={handleAddMember} className="space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원번호 (자동 권장)</label>
-                <input 
-                  type="text" 
-                  value={formMemberId}
-                  onChange={(e) => setFormMemberId(e.target.value)}
-                  placeholder="예: BF-2026-001"
-                  required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    {selectedMemberModal.memberType}
+                  </span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200">
+                    {selectedMemberModal.tierBadge}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mt-2">
+                  {selectedMemberModal.memberName} 회원 ({selectedMemberModal.memberNo})
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  회원권: {selectedMemberModal.membershipName || '정규 회원권'} · 연락처: {selectedMemberModal.phone}
+                </p>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원명</label>
-                <input 
-                  type="text" 
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="이름 입력 (예: 홍길동)"
-                  required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">휴대폰 번호</label>
-                <input 
-                  type="tel" 
-                  value={formPhone}
-                  onChange={(e) => setFormPhone(e.target.value)}
-                  placeholder="숫자 및 하이픈 입력 (예: 010-1234-5678)"
-                  required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원구분</label>
-                <select 
-                  value={formType}
-                  onChange={(e) => setFormType(e.target.value as '골프회원' | '콘도회원' | '일반회원' | 'VIP')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                >
-                  <option value="일반회원">일반회원</option>
-                  <option value="골프회원">골프회원</option>
-                  <option value="콘도회원">콘도회원</option>
-                  <option value="VIP">VIP</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-brand-mint text-white font-extrabold rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/15 mt-2 cursor-pointer"
+              <button 
+                onClick={() => setSelectedMemberModal(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
               >
-                회원 등록 완료
+                ✕
               </button>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
 
-      {/* Edit Modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 relative">
-            <button 
-              onClick={() => setIsEditModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              <X size={20} />
-            </button>
-            <h3 className="text-xl font-extrabold text-slate-800 mb-2 flex items-center gap-2">
-              <Edit3 className="text-brand-mint" size={24} /> 회원 정보 수정
-            </h3>
-            <p className="text-xs text-slate-400 font-medium mb-6">선택한 회원의 프로필 정보를 수정합니다.</p>
-            
-            <form onSubmit={handleEditMember} className="space-y-4">
+            {/* 🏆 2026 YTD Loyalty Summary Banner */}
+            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white p-5 rounded-2xl flex items-center justify-between shadow-md">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원번호</label>
-                <input 
-                  type="text" 
-                  value={formMemberId}
-                  onChange={(e) => setFormMemberId(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                />
+                <span className="text-[11px] font-bold text-emerald-300 block uppercase tracking-wide">
+                  2026년 올해 총 방문 횟수의 합 (YTD)
+                </span>
+                <div className="text-3xl font-black text-amber-300 mt-0.5 flex items-center gap-2">
+                  <Flame size={24} className="text-amber-400" />
+                  올해 총 {selectedMemberModal.ytdVisitCount}회 방문
+                </div>
               </div>
+              <div className="text-right">
+                <span className="text-xs text-slate-300 font-medium block">올해 누적 이용액 (LTV)</span>
+                <span className="text-xl font-bold text-white">
+                  ₩{formatCurrency(selectedMemberModal.ytdTotalSpend)}원
+                </span>
+              </div>
+            </div>
+
+            {/* Past Visit Timeline */}
+            {selectedMemberModal.visitHistory && selectedMemberModal.visitHistory.length > 0 ? (
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <h4 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+                  <Calendar size={14} className="text-emerald-600" /> 2026년 방문 히스토리 상세 ({selectedMemberModal.visitHistory.length}회 기록)
+                </h4>
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {selectedMemberModal.visitHistory.map((h, hIdx) => (
+                    <div key={hIdx} className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-emerald-700 mr-2">[{h.visitNo}회차]</span>
+                        <span className="font-semibold text-slate-800">{h.date}</span>
+                        <span className="text-slate-400 ml-2">({h.facility})</span>
+                      </div>
+                      <strong className="text-slate-900">₩{formatCurrency(h.spend)}원</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs text-slate-500">
+                <span className="font-bold text-slate-700 block mb-1">방문 정보 요약</span>
+                <div>• 당일 이용 시설: <strong>{selectedMemberModal.visitedFacility}</strong> (₩{formatCurrency(selectedMemberModal.todaySpend)}원)</div>
+                <div>• 2026년 첫 방문일: {selectedMemberModal.firstVisitThisYear || selectedMemberModal.lastVisitDate || startDate}</div>
+                <div>• 2026년 최근 방문일: {selectedMemberModal.lastVisitDate || startDate}</div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex justify-between items-center bg-emerald-50/70 p-4 rounded-2xl text-emerald-950 border border-emerald-100">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원명</label>
-                <input 
-                  type="text" 
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                />
+                <span className="text-xs text-emerald-700 font-semibold block">당일 결제 금액</span>
+                <span className="text-xs text-slate-500">{startDate} 이용 내역</span>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">휴대폰 번호</label>
-                <input 
-                  type="tel" 
-                  value={formPhone}
-                  onChange={(e) => setFormPhone(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                />
+              <div className="text-2xl font-black text-emerald-900">
+                ₩{formatCurrency(selectedMemberModal.todaySpend)}원
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">회원구분</label>
-                <select 
-                  value={formType}
-                  onChange={(e) => setFormType(e.target.value as '골프회원' | '콘도회원' | '일반회원' | 'VIP')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
-                >
-                  <option value="일반회원">일반회원</option>
-                  <option value="골프회원">골프회원</option>
-                  <option value="콘도회원">콘도회원</option>
-                  <option value="VIP">VIP</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-brand-mint text-white font-extrabold rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-brand-mint/15 mt-2 cursor-pointer"
-              >
-                회원 수정 완료
-              </button>
-            </form>
+            </div>
+
           </div>
         </div>
       )}

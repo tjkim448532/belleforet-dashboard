@@ -36,18 +36,27 @@ export default function LeisureFacility() {
 
   const [apiTopItems, setApiTopItems] = useState<TopTicketItem[]>([]);
 
-  // Fetch item-level top tickets from backend API
+  // Fetch item-level top tickets from backend API (excluding Moto Arena)
   useEffect(() => {
     const fetchTopItems = async () => {
       try {
         const queryParams = endDate
-          ? `startDate=${startDate}&endDate=${endDate}&limit=5`
-          : `date=${startDate}&limit=5`;
+          ? `startDate=${startDate}&endDate=${endDate}&limit=15`
+          : `date=${startDate}&limit=15`;
         const res = await secureFetcher(`${API_BASE}/api/v5/report/top-ticket-items?${queryParams}`).catch(() => null);
         const payload = res?.data ?? res;
         if (payload?.topItems && Array.isArray(payload.topItems) && payload.topItems.length > 0) {
-          setApiTopItems(payload.topItems.map((item: any, idx: number) => ({
-            rank: item.rank || idx + 1,
+          const filtered = payload.topItems
+            .filter((item: any) => {
+              const fac = String(item.facilityName || item.shopName || '');
+              const cat = String(item.categoryCode || '');
+              const name = String(item.itemName || item.name || '');
+              return !fac.includes('모토아레나') && !name.includes('모토아레나') && cat !== 'MOTO';
+            })
+            .slice(0, 5);
+
+          setApiTopItems(filtered.map((item: any, idx: number) => ({
+            rank: idx + 1,
             itemName: item.itemName || item.name || '티켓 상품',
             facilityName: item.facilityName || item.shopName,
             sales: parseNumber(item.sales || item.totalSales || 0),
@@ -64,22 +73,23 @@ export default function LeisureFacility() {
     fetchTopItems();
   }, [startDate, endDate]);
 
-  const { totalSales, topTickets, totalQuantity, top5Quantity, top5Tickets } = useMemo(() => {
+  const { totalSales, topTickets, top5Tickets } = useMemo(() => {
     if (!core?.salesByFacility) {
-      return { totalSales: 0, topTickets: [], totalQuantity: 0, top5Quantity: 0, top5Tickets: [] };
+      return { totalSales: 0, topTickets: [], top5Tickets: [] };
     }
 
-    const ticketFacilities = core.salesByFacility.filter((item: any) => item.categoryCode === 'TICKET');
+    const ticketFacilities = core.salesByFacility.filter((item: any) => 
+      item.categoryCode === 'TICKET' && 
+      !String(item.shopName || item.facilityName || '').includes('모토아레나')
+    );
 
     // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory
     let ssotTotalSales = 0;
-    let ssotTotalVisitors = 0;
     
     if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
       const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
       if (ticketCat) {
         ssotTotalSales = parseNumber(ticketCat.todayActual || ticketCat.totalSales || 0);
-        ssotTotalVisitors = parseNumber(ticketCat.visitors || ticketCat.totalVisitors || 0);
       }
     }
 
@@ -96,13 +106,10 @@ export default function LeisureFacility() {
 
     const sortedTickets = mappedTickets.sort((a, b) => b.sales - a.sales);
     const top5 = sortedTickets.slice(0, 5);
-    const top5Qty = top5.reduce((sum, t) => sum + t.qty, 0);
 
     return { 
       totalSales: ssotTotalSales, 
       topTickets: sortedTickets, 
-      totalQuantity: ssotTotalVisitors,
-      top5Quantity: top5Qty,
       top5Tickets: top5
     };
   }, [core]);
@@ -167,36 +174,19 @@ export default function LeisureFacility() {
             <p className="text-slate-400 text-sm relative z-10 font-medium">총매출 기준 합산</p>
           </div>
 
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
-            <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-50 transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12 rounded-full" />
-            <h2 className="text-base font-medium text-slate-500 mb-6 flex items-center gap-2 relative z-10">
-              <Ticket className="w-5 h-5 text-purple-500" /> 총 판매 수량
-            </h2>
-            <div className="text-3xl font-medium text-slate-800 mb-2 tracking-tight relative z-10">
-              {totalQuantity.toLocaleString()} <span className="text-xl text-slate-500">개(명)</span>
-            </div>
-            <p className="text-slate-400 text-sm relative z-10 font-medium border-t border-slate-100 pt-3 mt-2">
-              TOP 5 인기 티켓 합산: <strong className="text-purple-600 font-bold">
-                {(apiTopItems.length > 0
-                  ? apiTopItems.reduce((sum, item) => sum + item.quantity, 0)
-                  : top5Quantity
-                ).toLocaleString()}개
-              </strong>
-            </p>
-          </div>
-
           {/* TOP 5 가장 많이 팔린 티켓 상품(트랜잭션) 요약 카드 */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Award className="w-5 h-5 text-amber-500" /> 가장 많이 팔린 티켓 TOP 5
+                <span className="text-xs font-normal text-slate-400">(모토아레나 제외)</span>
               </h2>
               <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 flex items-center gap-1">
                 <Ticket size={11} /> 티켓 품목
               </span>
             </div>
             <p className="text-xs text-slate-400 font-medium mb-4">
-              영업장이 아닌 단일 티켓/패스 상품(트랜잭션) 기준 순위
+              영업장이 아닌 레저본부 단일 티켓/패스 상품(트랜잭션) 기준 순위
             </p>
 
             <div className="space-y-3">

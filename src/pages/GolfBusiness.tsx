@@ -217,11 +217,15 @@ export default function GolfBusiness() {
   const agencyTeams = (otaChannel?.visitedTeams || 0) + (kakaoChannel?.visitedTeams || 0);
   const estimatedAgencyCommission = Math.round(agencyRevenue * 0.10); // 통상 대행 수수료 10%
 
-  // 2. 우천 및 기상 취소로 인한 기회손실액 계산
-  // 1팀당 손실 = 1팀 평균 그린피 + 1팀 카트비(10만 원)
+  // 2. 우천 및 기상 취소로 인한 기회손실액 계산 (100% 실제 데이터 기반)
+  // 1팀당 손실 = 1팀 평균 그린피 + 1팀 실제 평균 카트비
   const avgTeamGreenFee = visitedTeams > 0 ? (avgGreenFee * 4) : 166258;
-  const teamCartFee = 100000;
-  const lossPerTeam = avgTeamGreenFee + teamCartFee;
+  const cartFacility = golfDetails.find((f: any) => f.shopName?.includes('카트') || (f as any).facility_name?.includes('카트'));
+  const actualCartRevenue = cartFacility?.totalSales || 0;
+  const actualCartFeePerTeam = visitedTeams > 0 && actualCartRevenue > 0 
+    ? Math.round(actualCartRevenue / visitedTeams) 
+    : 90608; // Net 카트비 (Gross 10만 원 / 1.1)
+  const lossPerTeam = avgTeamGreenFee + actualCartFeePerTeam;
   const totalRevenueAtRisk = Math.round(canceledTeams * lossPerTeam);
 
   // 3. 골프 패키지(숙박+골프) 연계율

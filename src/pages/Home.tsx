@@ -549,85 +549,95 @@ export default function Home() {
               </div>
 
               {/* 1일 단위 (Day-by-Day) 1박 vs 연박 정밀 대조 카드 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {/* 1박 고객 1일 소비 */}
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
-                  <div>
-                    <div className="text-xs font-bold text-slate-500 mb-1 flex items-center justify-between">
-                      <span>🏨 1박 투숙객 (1일당 소비)</span>
-                      <span className="text-[11px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">단발 체류형</span>
-                    </div>
-                    <div className="text-2xl font-extrabold text-slate-900 my-2">
-                      ₩219,000 <span className="text-xs font-normal text-slate-500">/ 1일</span>
-                    </div>
-                    <div className="space-y-1 text-xs text-slate-600 pt-2 border-t border-slate-200/60">
-                      <div className="flex justify-between">
-                        <span>• 식음(F&B) 지출:</span>
-                        <strong>₩117,000 / 일 (저녁 1회)</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>• 레저·체험 지출:</span>
-                        <strong>₩102,000 / 일 (단발 1회)</strong>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-200/40">
-                    체크인(15시)~체크아웃(11시) 이동으로 <strong>낮 시간대 체류 공백</strong> 발생
-                  </p>
-                </div>
+              {(() => {
+                const latestLos = losTrendData && losTrendData.length > 0 ? losTrendData[losTrendData.length - 1] : null;
+                const liveFnb = Math.round(latestLos?.fnbRevPAS || 0);
+                const liveLeisure = Math.round(latestLos?.leisureRevPAS || 0);
+                const liveTotal = liveFnb + liveLeisure;
+                const liveMultiRatio = latestLos?.multiNightRatio !== undefined ? Number(latestLos.multiNightRatio).toFixed(1) : '0.0';
 
-                {/* 2박 연박객 1일 평균 소비 & 일자별 지출 */}
-                <div className="bg-gradient-to-br from-indigo-50/90 to-purple-50/50 p-5 rounded-2xl border border-indigo-200 flex flex-col justify-between shadow-xs">
-                  <div>
-                    <div className="text-xs font-bold text-indigo-800 mb-1 flex items-center justify-between">
-                      <span>💎 2박 연박객 (1일당 일평균 소비)</span>
-                      <span className="text-[11px] font-extrabold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">1일 평균 +8.2%</span>
-                    </div>
-                    <div className="text-2xl font-extrabold text-indigo-700 my-2">
-                      ₩237,000 <span className="text-xs font-normal text-indigo-500">/ 1일 (2박 총 ₩474,000)</span>
-                    </div>
-                    <div className="space-y-1 text-xs text-indigo-900 pt-2 border-t border-indigo-200/60">
-                      <div className="flex justify-between">
-                        <span>• 1일차 (입실일 지출):</span>
-                        <strong>₩182,000 / 일 (석식/야간)</strong>
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {/* 카드 1: 선택일 1실당 식음 소비 */}
+                    <div className="bg-gradient-to-br from-amber-50/70 to-orange-50/30 p-5 rounded-2xl border border-amber-200/70 flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-amber-800 mb-1 flex items-center justify-between">
+                          <span>🍽️ 1객실당 식음(F&B) 소비액</span>
+                          <span className="text-[11px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">실시간 실적</span>
+                        </div>
+                        <div className="text-2xl font-extrabold text-slate-900 my-2">
+                          ₩{formatCurrency(liveFnb)} <span className="text-xs font-normal text-slate-500">/ 1실</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-slate-600 pt-2 border-t border-amber-200/60">
+                          <div className="flex justify-between">
+                            <span>• 1박 고객 기준치:</span>
+                            <span className="text-slate-500">약 ₩117,000 / 일 (저녁 1회)</span>
+                          </div>
+                          <div className="flex justify-between font-semibold text-amber-900">
+                            <span>• 선택일 연박 비중:</span>
+                            <span>{liveMultiRatio}%</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-emerald-700 font-bold">
-                        <span>• 2일차 (온전한 체류일):</span>
-                        <strong>₩292,000 / 일 (+33.3% 폭증🔥)</strong>
-                      </div>
+                      <p className="text-[11px] text-amber-900/80 mt-3 pt-2 border-t border-amber-200/40">
+                        연박 비중이 높을수록 <strong>조식·중식·석식·베이커리 다회 결제</strong>로 식음 매출 급증
+                      </p>
                     </div>
-                  </div>
-                  <p className="text-[11px] text-indigo-900/80 mt-3 pt-2 border-t border-indigo-200/40 font-medium">
-                    2일차는 체크아웃 부담 없이 <strong>조·중·석식+레저 풀코스 집중 소비</strong>
-                  </p>
-                </div>
 
-                {/* 방 1개를 2일간 운영할 때 총 생산성 비교 */}
-                <div className="bg-gradient-to-br from-emerald-50/90 to-teal-50/50 p-5 rounded-2xl border border-emerald-200 flex flex-col justify-between shadow-xs">
-                  <div>
-                    <div className="text-xs font-bold text-emerald-800 mb-1 flex items-center justify-between">
-                      <span>📈 객실 1개당 2일간 총 부대매출 비교</span>
-                      <span className="text-[11px] font-extrabold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">+3.6만 원 추가 매출</span>
-                    </div>
-                    <div className="text-2xl font-extrabold text-emerald-700 my-2">
-                      ₩474,000 <span className="text-xs font-normal text-slate-500">vs ₩438,000 (1박 2팀시)</span>
-                    </div>
-                    <div className="space-y-1 text-xs text-emerald-950 pt-2 border-t border-emerald-200/60">
-                      <div className="flex justify-between">
-                        <span>• 1박 2팀 연속 유치:</span>
-                        <span>₩21.9만 × 2일 = <strong>₩438,000</strong></span>
+                    {/* 카드 2: 선택일 1실당 레저·체험 소비 */}
+                    <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/30 p-5 rounded-2xl border border-emerald-200/70 flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-emerald-800 mb-1 flex items-center justify-between">
+                          <span>🎢 1객실당 레저·체험 소비액</span>
+                          <span className="text-[11px] font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">실시간 실적</span>
+                        </div>
+                        <div className="text-2xl font-extrabold text-slate-900 my-2">
+                          ₩{formatCurrency(liveLeisure)} <span className="text-xs font-normal text-slate-500">/ 1실</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-slate-600 pt-2 border-t border-emerald-200/60">
+                          <div className="flex justify-between">
+                            <span>• 1박 고객 기준치:</span>
+                            <span className="text-slate-500">약 ₩102,000 / 일 (단발 1회)</span>
+                          </div>
+                          <div className="flex justify-between font-semibold text-emerald-800">
+                            <span>• 낮 시간 상주율:</span>
+                            <span>체류형 시설 풀가동</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex justify-between font-bold text-emerald-700">
-                        <span>• 2박 1팀 연박 유치:</span>
-                        <span>₩18.2만 + ₩29.2만 = <strong>₩474,000</strong></span>
+                      <p className="text-[11px] text-emerald-900/80 mt-3 pt-2 border-t border-emerald-200/40">
+                        낮 시간대 리조트 체류로 <strong>목장체험, 썰매, 마리나, 미디어아트 풀코스 이용</strong>
+                      </p>
+                    </div>
+
+                    {/* 카드 3: 1실당 총 부대소비 파급력 (RevPAS) */}
+                    <div className="bg-gradient-to-br from-indigo-50/90 to-purple-50/50 p-5 rounded-2xl border border-indigo-200 flex flex-col justify-between shadow-xs">
+                      <div>
+                        <div className="text-xs font-bold text-indigo-800 mb-1 flex items-center justify-between">
+                          <span>💎 1객실당 총 부대소비 (RevPAS)</span>
+                          <span className="text-[11px] font-extrabold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">식음+레저 합산</span>
+                        </div>
+                        <div className="text-2xl font-extrabold text-indigo-700 my-2">
+                          ₩{formatCurrency(liveTotal)} <span className="text-xs font-normal text-indigo-500">/ 1실</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-indigo-950 pt-2 border-t border-indigo-200/60">
+                          <div className="flex justify-between">
+                            <span>• 1박 고객 기준치:</span>
+                            <span className="text-slate-400">약 ₩219,000 / 실</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-emerald-700">
+                            <span>• 연박 고객(2박) 기준치:</span>
+                            <span>약 ₩474,000 / 실 (일평균 ₩23.7만)</span>
+                          </div>
+                        </div>
                       </div>
+                      <p className="text-[11px] text-indigo-900/80 mt-3 pt-2 border-t border-indigo-200/40 font-medium">
+                        💡 선택일({startDate}) 연박 비중 <strong>{liveMultiRatio}%</strong> 기준 실질 부대창출액
+                      </p>
                     </div>
                   </div>
-                  <p className="text-[11px] text-emerald-900 font-semibold mt-3 pt-2 border-t border-emerald-200/40">
-                    💡 <strong>부대매출 +3.6만 원 증가 + 객실 청소비 50% 절감 ➔ 영업이익 극대화</strong>
-                  </p>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Chart Component */}
               <div className="h-[320px] w-full">

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { getLatestClosedDateStr } from '../lib/dateUtils';
 
 interface DateContextType {
   startDate: string;
@@ -11,7 +12,7 @@ const DateContext = createContext<DateContextType | undefined>(undefined);
 
 export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [startDate, setStartDateState] = useState<string>(() => {
-    return localStorage.getItem('startDate') || '2026-05-27';
+    return localStorage.getItem('startDate') || getLatestClosedDateStr();
   });
   
   const [endDate, setEndDateState] = useState<string | null>(() => {

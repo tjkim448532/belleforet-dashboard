@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
+import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import { 
   CreditCard, Sparkles, Activity, Calendar, RefreshCw, ShieldCheck,
@@ -141,42 +142,14 @@ export default function SynergyBundles() {
   };
 
   // Preset Handler
-  const applyPreset = (preset: 'TODAY' | 'WEEK' | 'MTD' | 'H1') => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-
-    if (preset === 'TODAY') {
-      setIsRangeMode(false);
-      setStartDate(todayStr);
-      setEndDate(todayStr);
-      fetchData(todayStr, todayStr, false);
-    } else if (preset === 'WEEK') {
-      setIsRangeMode(true);
-      const weekAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-      const wYyyy = weekAgo.getFullYear();
-      const wMm = String(weekAgo.getMonth() + 1).padStart(2, '0');
-      const wDd = String(weekAgo.getDate()).padStart(2, '0');
-      const weekAgoStr = `${wYyyy}-${wMm}-${wDd}`;
-      setStartDate(weekAgoStr);
-      setEndDate(todayStr);
-      fetchData(weekAgoStr, todayStr, true);
-    } else if (preset === 'MTD') {
-      setIsRangeMode(true);
-      const firstDayStr = `${yyyy}-${mm}-01`;
-      setStartDate(firstDayStr);
-      setEndDate(todayStr);
-      fetchData(firstDayStr, todayStr, true);
-    } else if (preset === 'H1') {
-      setIsRangeMode(true);
-      const h1Start = `${yyyy}-01-01`;
-      const h1End = `${yyyy}-06-30`;
-      setStartDate(h1Start);
-      setEndDate(h1End);
-      fetchData(h1Start, h1End, true);
-    }
+  const applyPreset = (preset: DatePresetType) => {
+    const res = getPresetDateRange(preset);
+    setIsRangeMode(res.isRange);
+    setStartDate(res.startDate);
+    setEndDate(res.endDate || res.startDate);
+    setGlobalStartDate(res.startDate);
+    setGlobalEndDate(res.endDate);
+    fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 
   const multiBundlesCount = useMemo(() => bundleData.filter(b => b.storeList && b.storeList.length >= 2).length, [bundleData]);

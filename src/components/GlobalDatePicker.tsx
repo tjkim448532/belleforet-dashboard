@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
+import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { Calendar, RefreshCw } from 'lucide-react';
 
 export default function GlobalDatePicker() {
@@ -40,46 +41,13 @@ export default function GlobalDatePicker() {
     }
   };
 
-  const applyPreset = (preset: 'TODAY' | 'WEEK' | 'MTD' | 'H1') => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-
-    if (preset === 'TODAY') {
-      setIsRangeMode(false);
-      setDraftStart(todayStr);
-      setDraftEnd(todayStr);
-      setStartDate(todayStr);
-      setEndDate(null);
-    } else if (preset === 'WEEK') {
-      setIsRangeMode(true);
-      const weekAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-      const wYyyy = weekAgo.getFullYear();
-      const wMm = String(weekAgo.getMonth() + 1).padStart(2, '0');
-      const wDd = String(weekAgo.getDate()).padStart(2, '0');
-      const weekAgoStr = `${wYyyy}-${wMm}-${wDd}`;
-      setDraftStart(weekAgoStr);
-      setDraftEnd(todayStr);
-      setStartDate(weekAgoStr);
-      setEndDate(todayStr);
-    } else if (preset === 'MTD') {
-      setIsRangeMode(true);
-      const firstDayStr = `${yyyy}-${mm}-01`;
-      setDraftStart(firstDayStr);
-      setDraftEnd(todayStr);
-      setStartDate(firstDayStr);
-      setEndDate(todayStr);
-    } else if (preset === 'H1') {
-      setIsRangeMode(true);
-      const h1Start = `${yyyy}-01-01`;
-      const h1End = `${yyyy}-06-30`;
-      setDraftStart(h1Start);
-      setDraftEnd(h1End);
-      setStartDate(h1Start);
-      setEndDate(h1End);
-    }
+  const applyPreset = (preset: DatePresetType) => {
+    const res = getPresetDateRange(preset);
+    setIsRangeMode(res.isRange);
+    setDraftStart(res.startDate);
+    setDraftEnd(res.endDate || res.startDate);
+    setStartDate(res.startDate);
+    setEndDate(res.endDate);
   };
 
   return (
@@ -117,22 +85,25 @@ export default function GlobalDatePicker() {
           type="button"
           onClick={() => applyPreset('TODAY')} 
           className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] font-medium text-slate-200 transition-colors"
+          title="마감된 최신 영업일 (어제)"
         >
-          오늘
+          오늘(어제)
         </button>
         <button 
           type="button"
           onClick={() => applyPreset('WEEK')} 
           className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] font-medium text-slate-200 transition-colors"
+          title="어제 기준 최근 7일간"
         >
-          최근7일
+          최근 7일
         </button>
         <button 
           type="button"
           onClick={() => applyPreset('MTD')} 
           className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] font-medium text-slate-200 transition-colors"
+          title="당월 1일 ~ 어제"
         >
-          금월
+          금월(당월)
         </button>
         <button 
           type="button"

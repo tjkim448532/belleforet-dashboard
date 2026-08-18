@@ -5,7 +5,8 @@ import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import { 
   Zap, Building2, TrendingUp, Sparkles, 
-  Hotel, Activity, Calendar, RefreshCw, ShieldCheck, CreditCard
+  Hotel, Activity, Calendar, RefreshCw, ShieldCheck, CreditCard,
+  Globe, Smartphone, PhoneCall, Users, Layers, Landmark
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -22,6 +23,69 @@ const formatCurrency = (val: any) => {
   if (!val) return '0';
   const num = parseNum(val);
   return new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
+
+const getChannelMeta = (name: string, rank: number) => {
+  let icon = Globe;
+  let iconColor = 'text-blue-600';
+  let iconBg = 'bg-blue-50';
+  let borderHover = 'hover:border-blue-300';
+  let barColor = 'from-blue-500 to-sky-400';
+  let badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200/60';
+
+  if (name.includes('온라인') || name.includes('OTA')) {
+    icon = Globe;
+    iconColor = 'text-blue-600';
+    iconBg = 'bg-blue-50';
+    borderHover = 'hover:border-blue-300';
+    barColor = 'from-blue-500 to-sky-400';
+    badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200/60';
+  } else if (name.includes('홈페이지') || name.includes('APP') || name.includes('자사')) {
+    icon = Smartphone;
+    iconColor = 'text-emerald-600';
+    iconBg = 'bg-emerald-50';
+    borderHover = 'hover:border-emerald-300';
+    barColor = 'from-emerald-500 to-teal-400';
+    badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+  } else if (name.includes('기업') || name.includes('휴양소')) {
+    icon = Landmark;
+    iconColor = 'text-indigo-600';
+    iconBg = 'bg-indigo-50';
+    borderHover = 'hover:border-indigo-300';
+    barColor = 'from-indigo-500 to-violet-400';
+    badgeStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200/60';
+  } else if (name.includes('전화') || name.includes('메신저') || name.includes('예약실')) {
+    icon = PhoneCall;
+    iconColor = 'text-purple-600';
+    iconBg = 'bg-purple-50';
+    borderHover = 'hover:border-purple-300';
+    barColor = 'from-purple-500 to-fuchsia-400';
+    badgeStyle = 'bg-purple-50 text-purple-700 border-purple-200/60';
+  } else if (name.includes('단체') || name.includes('세미나') || name.includes('연회')) {
+    icon = Users;
+    iconColor = 'text-amber-600';
+    iconBg = 'bg-amber-50';
+    borderHover = 'hover:border-amber-300';
+    barColor = 'from-amber-500 to-orange-400';
+    badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200/60';
+  } else {
+    icon = Layers;
+    iconColor = 'text-slate-600';
+    iconBg = 'bg-slate-100';
+    borderHover = 'hover:border-slate-300';
+    barColor = 'from-slate-500 to-slate-400';
+    badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200/60';
+  }
+
+  const rankBadge = rank === 1 
+    ? 'bg-amber-500 text-white shadow-xs font-black' 
+    : rank === 2 
+    ? 'bg-slate-700 text-white font-bold' 
+    : rank === 3 
+    ? 'bg-amber-800 text-white font-bold' 
+    : 'bg-slate-100 text-slate-600 font-semibold';
+
+  return { icon, iconColor, iconBg, borderHover, barColor, badgeStyle, rankBadge };
 };
 
 interface RoomChannelSalesItem {
@@ -435,85 +499,131 @@ export default function Synergy() {
 
       {/* Top Overview KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Hotel className="w-5 h-5 text-teal-600" /> {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
+        {/* KPI 1: Rooms Sold */}
+        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shadow-xs">
+                <Hotel size={20} />
+              </div>
+              <span className="text-xs font-bold text-teal-700 bg-teal-50/90 px-3 py-1 rounded-full border border-teal-200/60">
+                총 {grandTotal.rooms.toLocaleString()}실
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-slate-400 block mb-1">
+              {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
             </span>
-            <span className="text-xs font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full">
-              총 {grandTotal.rooms.toLocaleString()}실
-            </span>
+            <div className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight tabular-nums">
+              {grandTotal.rooms.toLocaleString()} <span className="text-lg text-slate-500 font-medium">실</span>
+            </div>
           </div>
-          <div className="text-3xl font-medium text-slate-900 mb-1">
-            {grandTotal.rooms.toLocaleString()} <span className="text-lg text-slate-500 font-normal">실</span>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>객실 평균 단가 (ADR)</span>
+            <strong className="text-slate-800 font-bold tabular-nums">{formatCurrency(grandTotal.adr)}원</strong>
           </div>
-          <p className="text-xs text-slate-400 font-medium">객실 평균 단가 (ADR): {formatCurrency(grandTotal.adr)}원</p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" /> {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
+        {/* KPI 2: Room Revenue */}
+        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
+                <Building2 size={20} />
+              </div>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50/90 px-3 py-1 rounded-full border border-emerald-200/60">
+                ROOM
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-slate-400 block mb-1">
+              {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
             </span>
-            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              ROOM
-            </span>
+            <div className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight tabular-nums">
+              {formatCurrency(grandTotal.revenue)} <span className="text-lg text-slate-500 font-medium">원</span>
+            </div>
           </div>
-          <div className="text-3xl font-medium text-slate-900 mb-1">
-            {formatCurrency(grandTotal.revenue)} <span className="text-lg text-slate-500 font-normal">원</span>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>순매출 기준</span>
+            <span className="text-slate-600 font-medium">VAT 10% 제외</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">순수 객실 판매 실적합계 (VAT 별도)</p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-500" /> {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
+        {/* KPI 3: Spillover Synergy */}
+        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
+                <Zap size={20} />
+              </div>
+              <span className="text-xs font-bold text-amber-700 bg-amber-50/90 px-3 py-1 rounded-full border border-amber-200/60">
+                SPILLOVER
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-slate-400 block mb-1">
+              {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
             </span>
-            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-              SPILLOVER
-            </span>
+            <div className="text-3xl lg:text-4xl font-extrabold text-amber-600 tracking-tight tabular-nums">
+              {formatCurrency(totalSynergySum)} <span className="text-lg text-slate-500 font-medium">원</span>
+            </div>
           </div>
-          <div className="text-3xl font-medium text-amber-600 mb-1">
-            {formatCurrency(totalSynergySum)} <span className="text-lg text-slate-500 font-normal">원</span>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>연계 창출 부대시설</span>
+            <span className="text-amber-700 font-semibold">골프 · F&B · 레저</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">숙박객이 부대시설(골프/F&B/레저)에서 창출한 매출</p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-600" /> 통합 객실당 가치 (RevPAS)
+        {/* KPI 4: RevPAS */}
+        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
+                <TrendingUp size={20} />
+              </div>
+              <span className="text-xs font-bold text-indigo-700 bg-indigo-50/90 px-3 py-1 rounded-full border border-indigo-200/60">
+                TOTAL SYNERGY
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-slate-400 block mb-1">
+              통합 객실당 가치 (RevPAS)
             </span>
-            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-              TOTAL SYNERGY
-            </span>
+            <div className="text-3xl lg:text-4xl font-extrabold text-indigo-600 tracking-tight tabular-nums">
+              {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-lg text-slate-500 font-medium">원/실</span>
+            </div>
           </div>
-          <div className="text-3xl font-medium text-indigo-600 mb-1">
-            {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>(객실매출 + 시너지) ÷ 객실수</span>
+            <span className="text-indigo-600 font-semibold">복합 가치 지표</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">(객실 순매출 + 부대시설 시너지) ÷ 판매 객실수</p>
         </div>
       </div>
 
-      {/* Main Section 1: Segment Breakdown Grid */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
+      {/* Main Section 1: Segment Breakdown Grid (Fintech / Bank Style) */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-200/80 mb-8">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-5 border-b border-slate-100 pb-6">
           <div>
-            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <Building2 className="text-emerald-600" size={24} /> 콘도 순수 판매채널별 기여도 (Pure Sales Channel Synergy)
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
-              V6 SSOT 순수 판매채널(자사채널, OTA, 휴양소, 단체영업, 예약실) 기준 객실 실적 및 부대시설 연계 파급효과입니다.
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                <Building2 size={18} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                콘도 순수 판매채널별 기여도
+              </h2>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Pure Sales Channel Synergy
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 font-medium ml-10">
+              V6 SSOT 마켓타입(자사채널, OTA, 휴양소, 단체영업, 예약실) 기준 객실 실적 및 부대시설 연계 기여도입니다.
             </p>
           </div>
 
-          {/* Segment Filter Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Segment Filter Pills (Bank Segmented Control Style) */}
+          <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 p-1.5 rounded-2xl border border-slate-200/80 self-start xl:self-auto">
             <button
               onClick={() => setSelectedChannel('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedChannel === 'ALL' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedChannel === 'ALL' 
+                  ? 'bg-slate-900 text-white shadow-xs' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
               }`}
             >
               전체 채널
@@ -522,8 +632,10 @@ export default function Synergy() {
               <button
                 key={idx}
                 onClick={() => setSelectedChannel(name)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedChannel === name ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  selectedChannel === name 
+                    ? 'bg-emerald-600 text-white shadow-xs' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                 }`}
               >
                 {name}
@@ -532,53 +644,101 @@ export default function Synergy() {
           </div>
         </div>
 
-        {/* Cards Grid (3 Columns) */}
+        {/* Bento Channel Cards Grid (3 Columns, Perfect '오와열' Alignment) */}
         {segmentSummaries.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {segmentSummaries.map((item: any, idx: number) => (
-              <div key={idx} className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">
-                      {idx + 1}
-                    </span>
-                    <h3 className="font-semibold text-base text-slate-800">{item.name}</h3>
-                  </div>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    비중 {item.sharePct}%
-                  </span>
-                </div>
+            {segmentSummaries.map((item: any, idx: number) => {
+              const rank = idx + 1;
+              const meta = getChannelMeta(item.name, rank);
+              const ChannelIcon = meta.icon;
 
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-4 pb-3 border-b border-slate-200/60">
-                  <span>판매 객실수: <strong className="text-slate-800">{item.rooms.toLocaleString()}실</strong></span>
-                  <span>ADR: <strong className="text-slate-800">{formatCurrency(item.adr)}원</strong></span>
-                </div>
+              return (
+                <div 
+                  key={idx} 
+                  className={`bg-white rounded-3xl p-6 border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.06)] hover:-translate-y-1 ${meta.borderHover} transition-all duration-300 flex flex-col justify-between group`}
+                >
+                  {/* Card Header: Rank, Icon, Channel Name & Share Badge */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs ${meta.rankBadge}`}>
+                          {rank}
+                        </span>
+                        <div className={`w-7 h-7 rounded-xl ${meta.iconBg} ${meta.iconColor} flex items-center justify-center flex-shrink-0 border border-slate-100`}>
+                          <ChannelIcon size={15} />
+                        </div>
+                        <h3 className="font-bold text-base text-slate-900 truncate">
+                          {item.name}
+                        </h3>
+                      </div>
+                      <span className={`text-xs font-black px-2.5 py-1 rounded-full border ${meta.badgeStyle} flex-shrink-0`}>
+                        비중 {item.sharePct}%
+                      </span>
+                    </div>
 
-                <div className="flex flex-col gap-2 text-center text-xs mb-4">
-                  <div className="p-3 bg-white rounded-xl border border-slate-100 flex flex-col items-center justify-center">
-                    <span className="text-slate-400 text-xs block mb-1">객실 순매출</span>
-                    <span className="font-bold text-slate-800 text-base">{formatCurrency(item.revenue)}원</span>
+                    {/* Hero Metric: Revenue */}
+                    <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-100/90 mb-4">
+                      <div className="text-[11px] font-semibold text-slate-400 mb-1">
+                        객실 순매출 (VAT 별도)
+                      </div>
+                      <div className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight tabular-nums flex items-baseline">
+                        <span>{formatCurrency(item.revenue)}</span>
+                        <span className="text-sm font-bold text-slate-500 ml-1">원</span>
+                      </div>
+
+                      {/* Contribution Progress Bar */}
+                      <div className="w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden mt-3">
+                        <div 
+                          className={`h-full bg-gradient-to-r ${meta.barColor} rounded-full transition-all duration-500`}
+                          style={{ width: `${Math.min(100, Math.max(3, Number(item.sharePct)))}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial Stats Matrix (오와열 완벽 정렬 2-Column Box) */}
+                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 grid grid-cols-2 divide-x divide-slate-100 text-xs">
+                    <div className="pr-3 flex flex-col justify-center">
+                      <span className="text-[11px] font-medium text-slate-400 mb-0.5">판매 객실수</span>
+                      <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                        {item.rooms.toLocaleString()}<span className="text-xs font-medium text-slate-500 ml-0.5">실</span>
+                      </span>
+                    </div>
+                    <div className="pl-3.5 flex flex-col justify-center">
+                      <span className="text-[11px] font-medium text-slate-400 mb-0.5">객실 단가 (ADR)</span>
+                      <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                        {formatCurrency(item.adr)}<span className="text-xs font-medium text-slate-500 ml-0.5">원</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl">
+          <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
             조회된 세그먼트 데이터가 없습니다.
           </div>
         )}
       </div>
 
-      {/* Main Section 2: Table 2 - 상세 판매 채널별 통합 실적 리포트 */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      {/* Main Section 2: Table 2 - 상세 판매 채널별 통합 실적 리포트 (Pro Bank Table) */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-200/80">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <Activity className="text-indigo-600" size={24} /> 상세 판매 채널별 통합 실적 리포트 (V6 API 7 SSOT 연동)
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
-              온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 판매 채널 기준 객실 판매 실적합계입니다.
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-600">
+                <Activity size={18} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                상세 판매 채널별 통합 실적 리포트
+              </h2>
+              <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                V6 API 7 SSOT
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 font-medium ml-10">
+              온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 채널별 객실 판매 실적합계입니다.
             </p>
           </div>
         </div>
@@ -586,34 +746,36 @@ export default function Synergy() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl">판매 채널명</th>
+              <tr className="border-b border-slate-200/80 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/80">
+                <th className="py-3.5 px-6 rounded-l-2xl">판매 채널명</th>
                 <th className="py-3.5 px-6 text-right">조회기간 판매 객실수</th>
                 <th className="py-3.5 px-6 text-right">조회기간 객실 순매출</th>
                 <th className="py-3.5 px-6 text-right">객실 단가 (ADR)</th>
                 <th className="py-3.5 px-6 text-right">월누계(MTD) 객실수</th>
-                <th className="py-3.5 px-6 text-right rounded-r-xl">월누계(MTD) 객실매출</th>
+                <th className="py-3.5 px-6 text-right rounded-r-2xl">월누계(MTD) 객실매출</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {filteredTableRows.length > 0 ? (
                 filteredTableRows.map((item: any, idx: number) => {
                   const isGrand = item.isGrandTotal || item.channelName === '전체 합계';
                   const isSub = item.isChannelSubtotal;
                   
                   const rowClass = isGrand 
-                    ? 'bg-slate-900 text-white font-bold'
+                    ? 'bg-slate-900 text-white font-extrabold shadow-sm'
                     : isSub 
-                    ? 'bg-emerald-50/80 font-bold text-emerald-900' 
-                    : 'hover:bg-slate-50/60 transition-colors';
+                    ? 'bg-emerald-50/90 font-bold text-emerald-950 border-y border-emerald-100' 
+                    : 'hover:bg-slate-50/80 transition-colors text-slate-700';
 
-                  const rooms = isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0);
-                  const rev = isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0);
+                  const rooms = parseNum(isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0));
+                  const rev = parseNum(isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0));
                   const adr = rooms > 0 ? Math.round(rev / rooms) : 0;
+                  const mtdRooms = parseNum(item.mtdRooms || 0);
+                  const mtdRev = parseNum(item.mtdRevenue || 0);
 
                   return (
                     <tr key={idx} className={rowClass}>
-                      <td className="py-3.5 px-6 font-semibold">
+                      <td className="py-4 px-6 font-bold">
                         {isGrand 
                           ? '전체 합계' 
                           : isSub 
@@ -624,17 +786,17 @@ export default function Synergy() {
                           ? `${item.segmentName || item.channelName || '세그먼트'} (${item.roomType})`
                           : `${item.segmentName || item.channelName || '세그먼트'}`}
                       </td>
-                      <td className="py-3.5 px-6 text-right font-medium">{rooms.toLocaleString()}실</td>
-                      <td className="py-3.5 px-6 text-right font-bold">{formatCurrency(rev)}원</td>
-                      <td className="py-3.5 px-6 text-right font-medium">{formatCurrency(adr)}원</td>
-                      <td className="py-3.5 px-6 text-right text-slate-500">{(item.mtdRooms || 0).toLocaleString()}실</td>
-                      <td className="py-3.5 px-6 text-right text-slate-500">{formatCurrency(item.mtdRevenue || 0)}원</td>
+                      <td className="py-4 px-6 text-right font-semibold tabular-nums">{rooms.toLocaleString()}실</td>
+                      <td className="py-4 px-6 text-right font-extrabold tabular-nums">{formatCurrency(rev)}원</td>
+                      <td className="py-4 px-6 text-right font-semibold tabular-nums">{formatCurrency(adr)}원</td>
+                      <td className={`py-4 px-6 text-right font-medium tabular-nums ${isGrand ? 'text-slate-200' : 'text-slate-500'}`}>{mtdRooms.toLocaleString()}실</td>
+                      <td className={`py-4 px-6 text-right font-bold tabular-nums ${isGrand ? 'text-emerald-400' : 'text-slate-600'}`}>{formatCurrency(mtdRev)}원</td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
                     조회된 채널 실적 데이터가 없습니다.
                   </td>
                 </tr>

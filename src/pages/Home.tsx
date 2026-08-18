@@ -902,8 +902,8 @@ export default function Home() {
                     <ul className="space-y-4 text-slate-600">
                       <li className="flex flex-col">
                         <span className="font-medium text-slate-800">객실 점유율 (Occ) 및 객단가 (RevPAR)</span>
-                        <div className="text-[11px] text-teal-700 bg-teal-50 p-2 rounded mt-1 border border-teal-100">
-                          <strong>V6 API 팩트 기반:</strong> 모든 지표(Occ, RevPAR 등)는 프론트엔드 연산 없이 데이터랩 통합 통제 센터(백엔드 DB)에서 완성된 값으로 제공됩니다.
+                        <div className="text-xs text-teal-800 bg-teal-50 p-2.5 rounded-xl mt-1.5 border border-teal-100 font-medium">
+                          <strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(객실 점유율, 판매 객단가 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.
                         </div>
                       </li>
                     </ul>

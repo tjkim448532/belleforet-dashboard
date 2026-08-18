@@ -371,20 +371,20 @@ export default function SynergyCorrelation() {
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-indigo-400/20 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide uppercase">
-                BELLE FORET CORRELATION ENGINE
+              <span className="bg-indigo-400/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide">
+                벨포레 연계 시너지 분석
               </span>
-              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
-                <ShieldCheck size={12} className="text-indigo-400" /> V6 SSOT Engine
+              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
+                <ShieldCheck size={14} className="text-emerald-400" /> 실시간 통합 정산 기준
               </span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-medium tracking-tight mt-1 flex items-center gap-3">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
               <Grid className="text-indigo-400" size={32} />
-              영업장별 연계 상관관계 분석 대시보드
+              영업장별 객실 연계 시너지 분석
             </h1>
-            <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-2xl">
-              숙박 채널별(전화/메신저, OTA, 기업영업 등) 이용 고객이 레저본부 및 식음팀 내 세부 영업장으로 연결되는 교차 파급 상관관계를 분석합니다. (100% API SSOT 렌더링)
+            <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed">
+              숙박 채널별(자사몰, 여행사, 기업영업 등) 이용 고객이 레저본부 및 식음팀 내 세부 영업장으로 연결되는 교차 소비 효과를 분석합니다.
             </p>
 
             {/* Navigation Sub-Tabs Bar */}
@@ -396,14 +396,14 @@ export default function SynergyCorrelation() {
                   isActive ? 'bg-teal-500 text-white shadow-md' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
-                <Sparkles size={14} /> 1. 콘도 세그먼트/채널 시너지 대시보드
+                <Sparkles size={14} /> 1. 객실 세그먼트/채널 시너지 분석
               </NavLink>
 
               <NavLink 
                 to="/synergy/correlation" 
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30"
               >
-                <Activity size={14} /> 2. 영업장별 연계 상관관계 분석
+                <Activity size={14} /> 2. 영업장별 객실 연계 시너지 분석
               </NavLink>
 
               <NavLink 
@@ -412,7 +412,7 @@ export default function SynergyCorrelation() {
                   isActive ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
-                <CreditCard size={14} /> 3. 💳 카드결제 추적 고객 묶음(Bundle) 분석 [NEW]
+                <CreditCard size={14} /> 3. 고객 결제 묶음(Bundle) 분석
               </NavLink>
             </div>
           </div>
@@ -420,13 +420,13 @@ export default function SynergyCorrelation() {
           {/* Period Range Selection Bar */}
           <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 min-w-[420px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <span className="text-xs font-medium text-indigo-300 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
                 <Calendar size={14} /> 분석 기간 설정
               </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setIsRangeMode(false)}
-                  className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                     !isRangeMode ? 'bg-indigo-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                   }`}
                 >
@@ -434,7 +434,7 @@ export default function SynergyCorrelation() {
                 </button>
                 <button
                   onClick={() => setIsRangeMode(true)}
-                  className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                     isRangeMode ? 'bg-indigo-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                   }`}
                 >
@@ -445,44 +445,45 @@ export default function SynergyCorrelation() {
 
             {/* Quick Presets */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <button onClick={() => applyPreset('TODAY')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-indigo-200">오늘</button>
-              <button onClick={() => applyPreset('WEEK')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-indigo-200">최근 7일</button>
-              <button onClick={() => applyPreset('MTD')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-indigo-200">금월 (1일~오늘)</button>
-              <button onClick={() => applyPreset('H1')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-indigo-200">상반기 (1~6월)</button>
+              <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">오늘</button>
+              <button onClick={() => applyPreset('WEEK')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">최근 7일</button>
+              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">금월 (1일~오늘)</button>
+              <button onClick={() => applyPreset('H1')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">상반기</button>
+              <button onClick={() => applyPreset('YTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">연누계 (YTD)</button>
             </div>
 
-            {/* Inputs & Apply Button */}
+            {/* Date Inputs */}
             <div className="flex items-center gap-2">
-              <input 
-                type="date" 
-                value={startDate} 
+              <input
+                type="date"
+                value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-black/40 border border-white/20 text-white text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-indigo-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 outline-none focus:border-indigo-400 transition-colors"
               />
               {isRangeMode && (
                 <>
-                  <span className="text-white/40 text-xs">~</span>
-                  <input 
-                    type="date" 
-                    value={endDate} 
+                  <span className="text-slate-400 text-xs">~</span>
+                  <input
+                    type="date"
+                    value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-black/40 border border-white/20 text-white text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-indigo-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                    className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 outline-none focus:border-indigo-400 transition-colors"
                   />
                 </>
               )}
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white text-xs font-semibold px-4 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1 ml-auto"
+                className="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white text-xs font-bold px-4 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1 ml-auto"
               >
-                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 조회
               </button>
             </div>
 
-            <div className="text-[11px] text-slate-300 bg-white/5 px-2.5 py-1 rounded-lg flex items-center justify-between">
-              <span>조회 기간: <strong>{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
-              <span className="text-indigo-300 font-semibold">{isRangeMode ? `총 ${totalDays}일간 상관관계` : '단일 1일 상관관계'}</span>
+            <div className="text-xs text-slate-300 bg-white/5 px-3 py-1.5 rounded-xl flex items-center justify-between">
+              <span>조회 기간: <strong className="text-white">{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
+              <span className="text-indigo-300 font-bold">{isRangeMode ? `총 ${totalDays}일간 분석` : '단일 1일 분석'}</span>
             </div>
           </div>
         </div>
@@ -491,9 +492,9 @@ export default function SynergyCorrelation() {
         {/* Global Data Controls (Sorting & MotoArena Toggle Switch) */}
         <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
           {/* MotoArena Inclusion Switch */}
-          <div className="flex items-center gap-3 bg-white/10 px-3.5 py-1.5 rounded-2xl border border-white/15 backdrop-blur-md">
-            <span className="text-xs font-semibold text-slate-200">모토아레나(서킷) 분석:</span>
-            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl">
+          <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/15 backdrop-blur-md">
+            <span className="text-xs font-bold text-slate-200">모토아레나(서킷) 분석:</span>
+            <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl">
               <button
                 type="button"
                 onClick={() => setIncludeMoto(true)}
@@ -521,15 +522,15 @@ export default function SynergyCorrelation() {
 
           {/* Sort Order */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-300">데이터 정렬 기준:</span>
+            <span className="text-xs font-bold text-slate-300">데이터 정렬 기준:</span>
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as any)}
-              className="bg-black/30 border border-white/20 text-white text-sm rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors cursor-pointer"
+              className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors cursor-pointer font-medium"
             >
               <option value="default" className="text-slate-800">기본 정렬 (매출순)</option>
-              <option value="spilloverRate" className="text-slate-800">숙박객 비율(%) 높은 순</option>
-              <option value="revPasContribution" className="text-slate-800">1실당 기여액(RevPAS) 높은 순</option>
+              <option value="spilloverRate" className="text-slate-800">투숙객 연계 비율 높은 순</option>
+              <option value="revPasContribution" className="text-slate-800">1실당 기여액 높은 순</option>
             </select>
           </div>
         </div>
@@ -537,127 +538,127 @@ export default function SynergyCorrelation() {
 
       {/* Overview KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-purple-600" /> {
                   includeMoto 
-                    ? (isActualRange ? '구간 레저·모토 전체 매출' : '레저본부 & 모토아레나 전체 매출')
-                    : (isActualRange ? '구간 순수 레저 전체 매출 (모토 제외)' : '순수 레저본부 전체 매출 (모토 제외)')
+                    ? (isActualRange ? '구간 레저·모토 총매출' : '레저본부 & 모토아레나 총매출')
+                    : (isActualRange ? '구간 순수 레저 총매출' : '순수 레저본부 총매출')
                 }
               </span>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
-                includeMoto ? 'text-purple-600 bg-purple-50' : 'text-amber-700 bg-amber-50'
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap ${
+                includeMoto ? 'text-purple-700 bg-purple-100' : 'text-amber-800 bg-amber-100'
               }`}>
-                {includeMoto ? 'LEISURE & MOTO' : 'PURE LEISURE'}
+                {includeMoto ? '레저·모토' : '순수 레저'}
               </span>
             </div>
-            <div className="text-3xl font-medium text-slate-900 mb-1">
-              {formatCurrency(totalLeisureSales)} <span className="text-lg text-slate-500 font-normal">원</span>
+            <div className="text-3xl font-black text-slate-900 mb-1 tabular-nums">
+              {formatCurrency(totalLeisureSales)} <span className="text-base text-slate-500 font-normal">원</span>
             </div>
             <p className="text-xs text-slate-500 font-medium mb-3">
-              {includeMoto ? '레저본부 및 모토아레나 관할 영업장 100% 원천 매출 합계' : '모토아레나 제외 · 순수 레저본부 관할 영업장 100% 원천 매출 합계'}
+              {includeMoto ? '레저본부 및 모토아레나 관할 영업장 실제 매출 합계' : '순수 레저본부 관할 영업장 실제 매출 합계 (모토 제외)'}
             </p>
           </div>
           
           {/* Calculated Store List Badge */}
-          <div className="mt-2 pt-2.5 border-t border-slate-100">
-            <span className="text-[11px] font-semibold text-purple-700 block mb-1">
-              📊 계산 포함 영업장 (총 {leisureStoreAnalysis.length}개):
+          <div className="mt-2 pt-3 border-t border-slate-100">
+            <span className="text-xs font-bold text-purple-800 block mb-1">
+              📊 집계 영업장 (총 {leisureStoreAnalysis.length}개):
             </span>
-            <p className="text-[11px] text-purple-900/80 bg-purple-50/80 border border-purple-100/80 p-2 rounded-xl leading-relaxed max-h-20 overflow-y-auto">
+            <p className="text-xs text-purple-950 bg-purple-50/80 border border-purple-100 p-2.5 rounded-xl leading-relaxed max-h-20 overflow-y-auto font-medium">
               {leisureStoreAnalysis.map(s => s.shopName).join(', ') || '영업장 데이터 로딩 중...'}
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-amber-600" /> {isActualRange ? '구간 식음팀 전체 매출' : '식음팀 전체 매출'}
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-amber-600" /> {isActualRange ? '구간 식음팀 총매출' : '식음팀 총매출'}
               </span>
-              <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                F&B REVENUE
+              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                식음팀
               </span>
             </div>
-            <div className="text-3xl font-medium text-slate-900 mb-1">
-              {formatCurrency(totalFnbSales)} <span className="text-lg text-slate-500 font-normal">원</span>
+            <div className="text-3xl font-black text-slate-900 mb-1 tabular-nums">
+              {formatCurrency(totalFnbSales)} <span className="text-base text-slate-500 font-normal">원</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mb-3">F&B 식음 영업장 100% 원천 매출 합계</p>
+            <p className="text-xs text-slate-500 font-medium mb-3">식음(F&B) 영업장 실제 총매출 합계</p>
           </div>
 
           {/* Calculated Store List Badge */}
-          <div className="mt-2 pt-2.5 border-t border-slate-100">
-            <span className="text-[11px] font-semibold text-amber-700 block mb-1">
-              📊 계산 포함 영업장 (총 {fnbStoreAnalysis.length}개):
+          <div className="mt-2 pt-3 border-t border-slate-100">
+            <span className="text-xs font-bold text-amber-800 block mb-1">
+              📊 집계 영업장 (총 {fnbStoreAnalysis.length}개):
             </span>
-            <p className="text-[11px] text-amber-900/80 bg-amber-50/80 border border-amber-100/80 p-2 rounded-xl leading-relaxed max-h-20 overflow-y-auto">
+            <p className="text-xs text-amber-950 bg-amber-50/80 border border-amber-100 p-2.5 rounded-xl leading-relaxed max-h-20 overflow-y-auto font-medium">
               {fnbStoreAnalysis.map(s => s.shopName).join(', ') || '영업장 데이터 로딩 중...'}
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-indigo-600" /> {
                   includeMoto 
-                    ? (isActualRange ? '구간 1실당 레저·모토 파급가치' : '1실당 레저 & 모토 파급가치')
-                    : (isActualRange ? '구간 1실당 순수 레저 파급가치' : '1실당 순수 레저 파급가치')
+                    ? (isActualRange ? '구간 1실당 레저·모토 가치' : '1실당 레저·모토 가치')
+                    : (isActualRange ? '구간 1실당 순수 레저 가치' : '1실당 순수 레저 가치')
                 }
               </span>
-              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                {includeMoto ? 'LEISURE RevPAS (골프 불포함)' : 'LEISURE RevPAS (모토·골프 불포함)'}
+              <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                {includeMoto ? '레저 1실 가치 (골프 불포함)' : '순수레저 1실 가치'}
               </span>
             </div>
-            <div className="text-3xl font-medium text-indigo-600 mb-1">
-              {formatCurrency(totalLeisureRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            <div className="text-3xl font-black text-indigo-600 mb-1 tabular-nums">
+              {formatCurrency(totalLeisureRevPas)} <span className="text-base text-slate-500 font-normal">원/실</span>
             </div>
             <p className="text-xs text-slate-500 font-medium">
               {includeMoto 
-                ? '객실 1실 추가 판매 시 레저+모토아레나 예상 증가 매출 (골프 불포함 · 통계적 회귀 합산)'
-                : '객실 1실 추가 판매 시 순수 레저본부 예상 증가 매출 (모토·골프 불포함 · 통계적 회귀 합산)'
+                ? '객실 1실 판매 시 레저+모토아레나 결제 연계 매출 (골프 불포함)'
+                : '객실 1실 판매 시 순수 레저본부 결제 연계 매출 (모토·골프 불포함)'
               }
             </p>
           </div>
-          <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: ∑(각 영업장별 revPasContribution) · {includeMoto ? '골프 불포함' : '모토아레나 및 골프 불포함'}
+          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+            산출: 각 영업장별 1실당 기여액 합계
           </div>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-emerald-600" /> 1실당 식음 파급가치
               </span>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                F&B RevPAS (골프 불포함)
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                식음 1실 가치 (골프 불포함)
               </span>
             </div>
-            <div className="text-3xl font-medium text-emerald-600 mb-1">
-              {formatCurrency(totalFnbRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
+            <div className="text-3xl font-black text-emerald-600 mb-1 tabular-nums">
+              {formatCurrency(totalFnbRevPas)} <span className="text-base text-slate-500 font-normal">원/실</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 리조트 식음팀 예상 증가 매출 (골프 불포함 · 통계적 회귀 합산)</p>
+            <p className="text-xs text-slate-500 font-medium">객실 1실 판매 시 리조트 식음팀 결제 연계 매출 (골프장 식음 제외)</p>
           </div>
-          <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: ∑(각 영업장별 revPasContribution) · 골프장 식음 제외
+          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+            산출: 각 식음 영업장별 1실당 기여액 합계
           </div>
         </div>
       </div>
 
 
       {/* 💡 상관관계 지표 정의 및 분석 가이드 (Info Guide Banner) */}
-      <div className="bg-slate-900 text-white rounded-[28px] p-6 lg:p-7 shadow-xl mb-8 relative overflow-hidden">
+      <div className="bg-slate-900 text-white rounded-3xl p-6 lg:p-7 shadow-xl mb-8 relative overflow-hidden">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-          <h3 className="font-semibold text-lg flex items-center gap-2 text-indigo-300">
-            <HelpCircle size={20} /> 💡 객실-영업장 상관관계 및 시너지 분석 지표 가이드
+          <h3 className="font-bold text-base lg:text-lg flex items-center gap-2 text-indigo-300">
+            <HelpCircle size={20} /> 💡 객실-영업장 연계 분석 및 시너지 지표 안내
           </h3>
-          <span className="text-xs font-semibold px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
-            통계 분석 표준 명세 (V6 SSOT)
+          <span className="text-xs font-bold px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
+            지표 분석 기준 안내
           </span>
         </div>
 
@@ -665,64 +666,64 @@ export default function SynergyCorrelation() {
           <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
             <div className="font-bold text-white text-sm flex items-center gap-1.5 text-purple-300">
               <span className="w-2 h-2 rounded-full bg-purple-400"></span>
-              1. 시계열 피어슨 상관계수 (r)
+              1. 동반 매출 상관도 (변동성)
             </div>
             <p className="leading-relaxed text-slate-300">
-              객실 투숙객 변화($X$)와 영업장 매출 변화($Y$)가 **얼마나 동반 상승/하강하는지** 변동성을 측정하는 지표입니다. ($-1.00 \sim +1.00$)
+              객실 투숙객 변화와 영업장 매출 변화가 **얼마나 동반 상승/하강하는지** 변동성을 측정하는 지표입니다. (-1.00 ~ +1.00)
             </p>
-            <div className="pt-2 text-[11px] space-y-1 text-slate-400 border-t border-white/10">
-              <div className="flex justify-between"><span className="text-purple-300 font-semibold">r ≥ +0.70</span> <span>강력한 시너지 (동반 급증)</span></div>
-              <div className="flex justify-between"><span className="text-indigo-300 font-semibold">+0.30 ≤ r &lt; +0.70</span> <span>중립적 시너지</span></div>
-              <div className="flex justify-between"><span className="text-slate-400 font-semibold">r &lt; +0.30</span> <span>독립 영업장 (투숙 무관)</span></div>
+            <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
+              <div className="flex justify-between"><span className="text-purple-300 font-semibold">+0.70 이상</span> <span>강력한 시너지 (동반 급증)</span></div>
+              <div className="flex justify-between"><span className="text-indigo-300 font-semibold">+0.30 ~ +0.70</span> <span>일반적 연계</span></div>
+              <div className="flex justify-between"><span className="text-slate-400 font-semibold">+0.30 미만</span> <span>독립 운영 (투숙 무관)</span></div>
             </div>
           </div>
 
           <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
             <div className="font-bold text-white text-sm flex items-center gap-1.5 text-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              2. 향상도 지수 (Lift Value, 배수)
+              2. 투숙객 추가 이용 확률 (배수)
             </div>
             <p className="leading-relaxed text-slate-300">
-              일반 방문객 대비 **객실 투숙객이 해당 영업장을 추가 선택할 확률적 시너지 배수**입니다.
+              일반 방문객 대비 **객실 투숙객이 해당 영업장을 추가 선택할 확률적 배수**입니다.
             </p>
-            <div className="pt-2 text-[11px] space-y-1 text-slate-400 border-t border-white/10">
-              <div><strong className="text-emerald-300">Lift &gt; 1.0배</strong>: 투숙객 이용 확률이 비투숙객보다 높음</div>
-              <div><strong className="text-emerald-300">예: Lift 2.35x</strong>: 투숙객이 해당 영업장을 이용할 확률이 <span className="text-white font-semibold">2.35배 높음</span></div>
+            <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
+              <div><strong className="text-emerald-300">1.0배 초과</strong>: 투숙객 이용 확률이 비투숙객보다 높음</div>
+              <div><strong className="text-emerald-300">예: 2.35배</strong>: 투숙객이 비투숙객보다 <span className="text-white font-semibold">2.35배 더 많이 이용</span></div>
             </div>
           </div>
 
           <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
             <div className="font-bold text-white text-sm flex items-center gap-1.5 text-amber-300">
               <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-              3. 양방향 파급률 (Spillover Rate, %)
+              3. 투숙객 교차 이용률 (%)
             </div>
             <p className="leading-relaxed text-slate-300">
-              객실과 영업장 간의 **상호 유입 비율**을 양방향으로 정밀 측정합니다.
+              객실과 영업장 간의 **상호 유입 비율**을 양방향으로 측정합니다.
             </p>
-            <div className="pt-2 text-[11px] space-y-1 text-slate-400 border-t border-white/10">
-              <div><strong className="text-amber-300">순방향 (Forward)</strong>: 전체 객실 투숙객 중 영업장으로 유입된 비중(%)</div>
-              <div><strong className="text-amber-300">역방향 (Reverse)</strong>: 영업장 이용객 중 객실 투숙으로 이어진 비율(%)</div>
+            <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
+              <div><strong className="text-amber-300">순방향</strong>: 전체 객실 투숙객 중 영업장으로 유입된 비중(%)</div>
+              <div><strong className="text-amber-300">역방향</strong>: 영업장 이용객 중 객실 투숙으로 이어진 비율(%)</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Section 1: 🎟️ 레저본부 영업장별 연계 상관관계 분석 */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <Ticket className="text-purple-600" size={24} /> 🎟️ 레저본부 영업장별 객실 연계 상관관계 분석 (SSOT 동적 렌더링)
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Ticket className="text-purple-600" size={24} /> 🎟️ 레저본부 영업장별 객실 연계 시너지 분석
             </h2>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
-              V6 API 원천 데이터 기준 실시간 매출 발생 레저 영업장별 투숙객 연계 지출액 및 파급률입니다.
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              실제 매출 발생 레저 영업장별 투숙객 연계 지출액 및 파급 효과입니다.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSelectedLeisureShop('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 selectedLeisureShop === 'ALL' ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -732,7 +733,7 @@ export default function SynergyCorrelation() {
               <button
                 key={idx}
                 onClick={() => setSelectedLeisureShop(store.shopName)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   selectedLeisureShop === store.shopName ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -764,21 +765,21 @@ export default function SynergyCorrelation() {
       </div>
 
       {/* Section 2: 🍽️ 식음팀 영업장별 연계 상관관계 분석 */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
-              <Utensils className="text-amber-600" size={24} /> 🍽️ 식음팀 영업장별 객실 연계 상관관계 분석 (SSOT 동적 렌더링)
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Utensils className="text-amber-600" size={24} /> 🍽️ 식음팀 영업장별 객실 연계 시너지 분석
             </h2>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
-              V6 API 원천 데이터 기준 실시간 매출 발생 식음 영업장별 투숙객 연계 지출액 및 파급률입니다.
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              실제 매출 발생 식음 영업장별 투숙객 연계 지출액 및 파급 효과입니다.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSelectedFnbShop('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 selectedFnbShop === 'ALL' ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -788,7 +789,7 @@ export default function SynergyCorrelation() {
               <button
                 key={idx}
                 onClick={() => setSelectedFnbShop(store.shopName)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   selectedFnbShop === store.shopName ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >

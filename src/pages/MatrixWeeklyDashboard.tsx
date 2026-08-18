@@ -392,12 +392,12 @@ export default function MatrixWeeklyDashboard() {
       {/* Main Matrix Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Notice */}
-        <div className="bg-teal-50/70 px-6 py-3 border-b border-teal-100 flex items-center justify-between text-sm text-teal-800 font-medium">
+        <div className="bg-teal-50/80 px-6 py-3.5 border-b border-teal-100 flex items-center justify-between text-xs lg:text-sm text-teal-900 font-medium">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-            백엔드 통합 데이터 통제 시스템(V6 API) 원천 렌더링 (순매출/부가세 별도)
+            리조트 전사 부문별 실시간 통합 정산 현황 (순매출 · 부가세 별도)
           </div>
-          <div className="text-xs text-teal-700 font-semibold">
+          <div className="text-xs text-teal-800 font-bold">
             비교 대상: {compareFormatter.format(parsedCompareDate)}
           </div>
         </div>

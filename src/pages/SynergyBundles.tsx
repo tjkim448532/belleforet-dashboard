@@ -5,7 +5,7 @@ import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import { 
   CreditCard, Sparkles, Activity, Calendar, RefreshCw, ShieldCheck,
-  Layers, Users, ShoppingBag, HelpCircle
+  Layers, Users, HelpCircle
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -226,20 +226,20 @@ export default function SynergyBundles() {
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-cyan-400/20 text-cyan-300 text-xs font-semibold px-3 py-1 rounded-full border border-cyan-400/30 tracking-wide uppercase">
-                CREDIT CARD JOURNEY CLUSTER
+              <span className="bg-cyan-400/20 text-cyan-300 text-xs font-bold px-3 py-1 rounded-full border border-cyan-400/30 tracking-wide">
+                고객 결제 동선 분석
               </span>
-              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
-                <ShieldCheck size={12} className="text-cyan-400" /> 동일 결제수단 추적 엔진
+              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
+                <ShieldCheck size={14} className="text-cyan-400" /> 실시간 통합 정산 기준
               </span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-medium tracking-tight mt-1 flex items-center gap-3">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
               <CreditCard className="text-cyan-400" size={32} />
-              신용카드 결제 추적 기반 고객 이용 묶음(Bundle) 동선 분석
+              고객 결제 동선 기반 이용 묶음(Bundle) 분석
             </h1>
-            <p className="text-cyan-100 mt-2 text-sm lg:text-base font-normal max-w-3xl">
-              동일 카드 결제 식별자(<code className="bg-black/30 px-1.5 py-0.5 rounded text-cyan-200">card_hash</code>) 및 회원 번호를 추적하여 고객별 동시 방문 영업장 묶음 패턴([숙박+골프+남도예담], [숙박+미디어아트] 등)을 클러스터링 분석합니다.
+            <p className="text-cyan-100 mt-2 text-sm lg:text-base font-normal max-w-3xl leading-relaxed">
+              동일 고객 결제 동선을 추적하여 고객별 동시 이용 영업장 묶음 패턴([숙박+골프+식음], [숙박+레저] 등)을 클러스터링 분석합니다.
             </p>
 
             <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10 flex-wrap">
@@ -249,25 +249,12 @@ export default function SynergyBundles() {
                 className={({ isActive }) => 
                   `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                     isActive 
-                      ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
+                      ? 'bg-emerald-500 text-white shadow-lg' 
                       : 'bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white'
                   }`
                 }
               >
-                <Activity size={14} /> 1. 체류-매출 상관관계 (LOS)
-              </NavLink>
-              
-              <NavLink 
-                to="/synergy/bundles" 
-                className={({ isActive }) => 
-                  `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                    isActive 
-                      ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
-                      : 'bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white'
-                  }`
-                }
-              >
-                <ShoppingBag size={14} /> 2. 카드결제 동선 묶음 (Bundle)
+                <Sparkles size={14} /> 1. 객실 세그먼트/채널 시너지 분석
               </NavLink>
 
               <NavLink 
@@ -275,12 +262,19 @@ export default function SynergyBundles() {
                 className={({ isActive }) => 
                   `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                     isActive 
-                      ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
+                      ? 'bg-indigo-500 text-white shadow-lg' 
                       : 'bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white'
                   }`
                 }
               >
-                <Layers size={14} /> 3. 시설간 상호 견인 매트릭스
+                <Activity size={14} /> 2. 영업장별 객실 연계 시너지 분석
+              </NavLink>
+              
+              <NavLink 
+                to="/synergy/bundles" 
+                className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 bg-cyan-500 text-white shadow-lg ring-2 ring-cyan-400/30"
+              >
+                <CreditCard size={14} /> 3. 고객 결제 묶음(Bundle) 분석
               </NavLink>
             </div>
           </div>

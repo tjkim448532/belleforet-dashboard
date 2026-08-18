@@ -438,20 +438,20 @@ export default function Synergy() {
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase">
-                BELLE FORET SYNERGY MATRIX
+              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide">
+                벨포레 채널별 시너지 분석
               </span>
-              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
-                <ShieldCheck size={12} className="text-emerald-400" /> V6 SSOT Engine
+              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
+                <ShieldCheck size={14} className="text-emerald-400" /> 실시간 통합 정산 기준
               </span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-medium tracking-tight mt-1 flex items-center gap-3">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
               <Sparkles className="text-emerald-400" size={32} />
-              콘도 마켓타입 세그먼트 연계 시너지 대시보드
+              객실 판매 채널별 연계 시너지 대시보드
             </h1>
-            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-2xl">
-              숙박객 마켓타입(휴양소, 단체영업(세미나), 예약실, 자사채널, OTA)별 객실 판매와 타 부대시설(골프, 식음, 레저) 간의 복합 시너지 파급효과를 분석합니다. (마켓타입 6종 100% 정규화 연동)
+            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed">
+              숙박객 유입 채널(자사몰, 온라인여행사, 휴양소, 단체영업 등)별 객실 판매와 타 부대시설(골프, 식음, 레저) 간의 복합 시너지 효과를 분석합니다.
             </p>
 
             {/* Navigation Sub-Tabs Bar */}
@@ -463,7 +463,7 @@ export default function Synergy() {
                   isActive ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
-                <Sparkles size={14} /> 1. 콘도 세그먼트/채널 시너지 대시보드
+                <Sparkles size={14} /> 1. 객실 세그먼트/채널 시너지 분석
               </NavLink>
 
               <NavLink 
@@ -472,7 +472,7 @@ export default function Synergy() {
                   isActive ? 'bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
-                <Activity size={14} /> 2. 영업장별 연계 상관관계 분석
+                <Activity size={14} /> 2. 영업장별 객실 연계 시너지 분석
               </NavLink>
 
               <NavLink 
@@ -481,7 +481,7 @@ export default function Synergy() {
                   isActive ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
-                <CreditCard size={14} /> 3. 💳 카드결제 추적 고객 묶음(Bundle) 분석 [NEW]
+                <CreditCard size={14} /> 3. 고객 결제 묶음(Bundle) 분석
               </NavLink>
             </div>
           </div>
@@ -489,13 +489,13 @@ export default function Synergy() {
           {/* Period Range Selection Bar */}
           <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 min-w-[420px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <span className="text-xs font-medium text-emerald-300 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                 <Calendar size={14} /> 조회 기간 설정
               </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setIsRangeMode(false)}
-                  className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                     !isRangeMode ? 'bg-emerald-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                   }`}
                 >
@@ -503,7 +503,7 @@ export default function Synergy() {
                 </button>
                 <button
                   onClick={() => setIsRangeMode(true)}
-                  className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                     isRangeMode ? 'bg-emerald-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                   }`}
                 >
@@ -514,10 +514,11 @@ export default function Synergy() {
 
             {/* Quick Presets */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <button onClick={() => applyPreset('TODAY')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-emerald-200">오늘</button>
-              <button onClick={() => applyPreset('WEEK')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-emerald-200">최근 7일</button>
-              <button onClick={() => applyPreset('MTD')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-emerald-200">금월 (1일~오늘)</button>
-              <button onClick={() => applyPreset('H1')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-emerald-200">상반기 (1~6월)</button>
+              <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium">오늘</button>
+              <button onClick={() => applyPreset('WEEK')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium">최근 7일</button>
+              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium">금월 (1일~오늘)</button>
+              <button onClick={() => applyPreset('H1')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium">상반기</button>
+              <button onClick={() => applyPreset('YTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium">연누계 (YTD)</button>
             </div>
 
             {/* Inputs & Apply Button */}
@@ -526,16 +527,17 @@ export default function Synergy() {
                 type="date" 
                 value={startDate} 
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-black/40 border border-white/20 text-white text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-emerald-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 outline-none focus:border-emerald-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
               />
+              
               {isRangeMode && (
                 <>
-                  <span className="text-slate-300 text-xs">~</span>
+                  <span className="text-slate-400 text-xs">~</span>
                   <input 
                     type="date" 
                     value={endDate} 
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-black/40 border border-white/20 text-white text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-emerald-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                    className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 outline-none focus:border-emerald-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </>
               )}
@@ -543,16 +545,16 @@ export default function Synergy() {
               <button 
                 onClick={handleSearch}
                 disabled={loading}
-                className="ml-auto bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-semibold px-4 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1.5"
+                className="ml-auto bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold px-4 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1.5"
               >
-                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 조회
               </button>
             </div>
 
-            <div className="text-[11px] text-slate-300 bg-white/5 px-2.5 py-1 rounded-lg flex items-center justify-between">
-              <span>조회 기간: <strong>{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
-              <span className="text-emerald-300 font-semibold">{isActualRange ? `총 ${totalDays}일간 합계` : '단일 1일 실적'}</span>
+            <div className="text-xs text-slate-300 bg-white/5 px-3 py-1.5 rounded-xl flex items-center justify-between">
+              <span>조회 기간: <strong className="text-white">{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
+              <span className="text-emerald-300 font-bold">{isActualRange ? `총 ${totalDays}일간 합계` : '단일 1일 실적'}</span>
             </div>
           </div>
         </div>
@@ -561,130 +563,127 @@ export default function Synergy() {
       {/* Top Overview KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* KPI 1: Rooms Sold */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shadow-xs">
                 <Hotel size={20} />
               </div>
-              <span className="text-xs font-bold text-teal-700 bg-teal-50/90 px-3 py-1 rounded-full border border-teal-200/60">
+              <span className="text-xs font-bold text-teal-800 bg-teal-100 px-3 py-0.5 rounded-full">
                 총 {grandTotal.rooms.toLocaleString()}실
               </span>
             </div>
-            <span className="text-xs font-semibold text-slate-400 block mb-1">
+            <span className="text-xs font-bold text-slate-500 block mb-1">
               {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
             </span>
-            <div className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight tabular-nums">
-              {grandTotal.rooms.toLocaleString()} <span className="text-lg text-slate-500 font-medium">실</span>
+            <div className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {grandTotal.rooms.toLocaleString()} <span className="text-base text-slate-500 font-normal">실</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>객실 평균 단가 (ADR)</span>
-            <strong className="text-slate-800 font-bold tabular-nums">{formatCurrency(grandTotal.adr)}원</strong>
+            <strong className="text-slate-900 font-bold tabular-nums">{formatCurrency(grandTotal.adr)}원</strong>
           </div>
         </div>
 
         {/* KPI 2: Room Revenue */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
                 <Building2 size={20} />
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50/90 px-3 py-1 rounded-full border border-emerald-200/60">
-                ROOM
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-0.5 rounded-full">
+                객실 순매출
               </span>
             </div>
-            <span className="text-xs font-semibold text-slate-400 block mb-1">
+            <span className="text-xs font-bold text-slate-500 block mb-1">
               {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
             </span>
-            <div className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight tabular-nums">
-              {formatCurrency(grandTotal.revenue)} <span className="text-lg text-slate-500 font-medium">원</span>
+            <div className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {formatCurrency(grandTotal.revenue)} <span className="text-base text-slate-500 font-normal">원</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>순매출 기준</span>
-            <span className="text-slate-600 font-medium">VAT 10% 제외</span>
+            <span className="text-slate-600 font-medium">부가세(VAT) 별도</span>
           </div>
         </div>
 
         {/* KPI 3: Spillover Synergy */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
                 <Zap size={20} />
               </div>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50/90 px-3 py-1 rounded-full border border-amber-200/60">
-                SPILLOVER
+              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-0.5 rounded-full">
+                부대시설 연계매출
               </span>
             </div>
-            <span className="text-xs font-semibold text-slate-400 block mb-1">
+            <span className="text-xs font-bold text-slate-500 block mb-1">
               {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
             </span>
-            <div className="text-3xl lg:text-4xl font-extrabold text-amber-600 tracking-tight tabular-nums">
-              {formatCurrency(totalSynergySum)} <span className="text-lg text-slate-500 font-medium">원</span>
+            <div className="text-3xl lg:text-4xl font-black text-amber-600 tracking-tight tabular-nums">
+              {formatCurrency(totalSynergySum)} <span className="text-base text-slate-500 font-normal">원</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>연계 창출 부대시설</span>
-            <span className="text-amber-700 font-semibold">골프 · F&B · 레저</span>
+            <span className="text-amber-800 font-bold">골프 · 식음 · 레저</span>
           </div>
         </div>
 
         {/* KPI 4: RevPAS */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-200/80 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
                 <TrendingUp size={20} />
               </div>
-              <span className="text-xs font-bold text-indigo-700 bg-indigo-50/90 px-3 py-1 rounded-full border border-indigo-200/60">
-                골프 포함 전사 통합
+              <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-3 py-0.5 rounded-full">
+                전사 통합 1실 가치
               </span>
             </div>
-            <span className="text-xs font-semibold text-slate-400 block mb-1">
+            <span className="text-xs font-bold text-slate-500 block mb-1">
               통합 객실당 가치 (RevPAS · 골프 포함)
             </span>
-            <div className="text-3xl lg:text-4xl font-extrabold text-indigo-600 tracking-tight tabular-nums">
-              {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-lg text-slate-500 font-medium">원/실</span>
+            <div className="text-3xl lg:text-4xl font-black text-indigo-600 tracking-tight tabular-nums">
+              {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-base text-slate-500 font-normal">원/실</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>(객실 + 골프 + 식음 + 레저) ÷ 객실수</span>
-            <span className="text-indigo-600 font-bold">전사 총합 기준</span>
+            <span className="text-indigo-700 font-bold">전사 총합 기준</span>
           </div>
         </div>
       </div>
 
-      {/* Main Section 1: Segment Breakdown Grid (Fintech / Bank Style) */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-200/80 mb-8">
+      {/* Main Section 1: Segment Breakdown Grid */}
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-5 border-b border-slate-100 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
                 <Building2 size={18} />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                콘도 순수 판매채널별 기여도
+                객실 판매 채널별 연계 기여도
               </h2>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Pure Sales Channel Synergy
-              </span>
             </div>
-            <p className="text-xs text-slate-400 font-medium ml-10">
-              V6 SSOT 마켓타입(자사채널, OTA, 휴양소, 단체영업, 예약실) 기준 객실 실적 및 부대시설 연계 기여도입니다.
+            <p className="text-xs text-slate-500 font-medium ml-10">
+              자사채널, 여행사, 휴양소, 기업단체, 예약실 기준 객실 실적 및 부대시설 연계 기여도입니다.
             </p>
           </div>
 
-          {/* Segment Filter Pills (Bank Segmented Control Style) */}
-          <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 p-1.5 rounded-2xl border border-slate-200/80 self-start xl:self-auto">
+          {/* Segment Filter Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 p-1.5 rounded-2xl border border-slate-200 self-start xl:self-auto">
             <button
               onClick={() => setSelectedChannel('ALL')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedChannel === 'ALL' 
-                  ? 'bg-slate-900 text-white shadow-xs' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               전체 채널
@@ -783,23 +782,23 @@ export default function Synergy() {
         )}
       </div>
 
-      {/* Main Section 2: Table 2 - 상세 판매 채널별 통합 실적 리포트 (Pro Bank Table) */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-200/80">
+      {/* Main Section 2: Table 2 - 상세 판매 채널별 통합 실적 리포트 */}
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-600">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
                 <Activity size={18} />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                상세 판매 채널별 통합 실적 리포트
+                상세 판매 채널별 실적 현황
               </h2>
-              <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                V6 API 7 SSOT
+              <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                실시간 집계
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-medium ml-10">
-              온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 채널별 객실 판매 실적합계입니다.
+            <p className="text-xs text-slate-500 font-medium ml-10">
+              온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 채널별 객실 판매 실적 합계입니다.
             </p>
           </div>
         </div>

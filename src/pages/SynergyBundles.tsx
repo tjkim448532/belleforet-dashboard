@@ -360,70 +360,81 @@ export default function SynergyBundles() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <Users size={16} className="text-cyan-500" /> 결제 추적 고객수
-            </span>
-            <span className="text-[11px] font-extrabold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100">
-              {totalDays}일간 집계
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Users size={16} className="text-cyan-600" /> 결제 추적 고객수
+              </span>
+              <span className="text-xs font-bold text-cyan-800 bg-cyan-100 px-2.5 py-0.5 rounded-full">
+                {totalDays}일간 집계
+              </span>
+            </div>
+            <div className="text-3xl font-black text-slate-900 my-1 tabular-nums">
+              {kpiStats.totalCustomers.toLocaleString()} <span className="text-sm font-normal text-slate-500">명</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-slate-900 my-1">
-            {kpiStats.totalCustomers.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100">
             동일 카드 번호로 1회 이상 결제한 순(Unique) 고객수
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <Layers size={16} className="text-indigo-500" /> 다중 시설 교차 이용률
-            </span>
-            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-              시너지 핵심
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Layers size={16} className="text-indigo-600" /> 다중 시설 교차 이용률
+              </span>
+              <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                시너지 핵심
+              </span>
+            </div>
+            <div className="text-3xl font-black text-indigo-600 my-1 tabular-nums">
+              {kpiStats.multiFacilityRatio}% <span className="text-sm font-normal text-slate-500">({kpiStats.multiFacilityCustomers.toLocaleString()}명)</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-indigo-600 my-1">
-            {kpiStats.multiFacilityRatio}% <span className="text-sm font-medium text-slate-400">({kpiStats.multiFacilityCustomers.toLocaleString()}명)</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100">
             2개 이상의 서로 다른 영업장에서 결제한 복합 소비 고객 비중
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <Sparkles size={16} className="text-amber-500" /> 최고 매출 묶음 (Top 1)
-            </span>
-            <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-              매출 1위
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Sparkles size={16} className="text-amber-600" /> 최고 매출 묶음 (Top 1)
+              </span>
+              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                매출 1위
+              </span>
+            </div>
+            <div className="text-lg font-black text-slate-900 my-1 line-clamp-1" title={kpiStats.topRevenueBundle?.bundleName || 'N/A'}>
+              {kpiStats.topRevenueBundle ? formatBundleTitle(kpiStats.topRevenueBundle) : '집계 중'}
+            </div>
+            <div className="text-xs font-bold text-amber-600 mt-1 tabular-nums">
+              총 {formatCurrency(kpiStats.topRevenueBundle?.totalSales || 0)}원 ({kpiStats.topRevenueBundle?.customerCount || 0}명)
+            </div>
           </div>
-          <div className="text-lg font-black text-slate-900 my-1 line-clamp-1" title={kpiStats.topRevenueBundle?.bundleName || 'N/A'}>
-            {kpiStats.topRevenueBundle ? formatBundleTitle(kpiStats.topRevenueBundle) : '집계 중'}
-          </div>
-          <div className="text-xs font-bold text-amber-600 mt-1">
-            총 {formatCurrency(kpiStats.topRevenueBundle?.totalSales || 0)}원 ({kpiStats.topRevenueBundle?.customerCount || 0}명)
-          </div>
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100">
+            가장 높은 총매출을 발생시킨 최우수 고객 이용 동선 패턴
+          </p>
         </div>
 
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <CreditCard size={16} className="text-emerald-500" /> 교차 소비 객단가 승수
-            </span>
-            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-              ARPU Lift
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <CreditCard size={16} className="text-emerald-600" /> 교차 소비 객단가 승수
+              </span>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                객단가 상승폭
+              </span>
+            </div>
+            <div className="text-3xl font-black text-emerald-600 my-1 tabular-nums">
+              {kpiStats.arpuLiftMultiplier ? `+${kpiStats.arpuLiftMultiplier}x` : '-'} <span className="text-sm font-normal text-slate-500">지출 증대</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-emerald-600 my-1">
-            +{kpiStats.arpuLiftMultiplier || 2.8}x <span className="text-sm font-medium text-slate-400">지출 증대</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100 tabular-nums">
             단일 이용객(₩{formatCurrency(kpiStats.singleFacilityArpu)}) 대비 교차 고객(₩{formatCurrency(kpiStats.multiFacilityArpu)})
           </p>
         </div>
@@ -521,12 +532,12 @@ export default function SynergyBundles() {
                   <div className="space-y-2 text-xs pt-2 border-t border-slate-200/60">
                     <div className="flex justify-between items-center bg-white/70 p-2.5 rounded-xl">
                       <span className="text-slate-500 font-medium">묶음 총 발생 매출</span>
-                      <span className="font-extrabold text-slate-900 text-sm">{formatCurrency(bundle.totalSales)}원</span>
+                      <span className="font-bold text-slate-900 text-sm tabular-nums">{formatCurrency(bundle.totalSales)}원</span>
                     </div>
 
                     <div className="flex justify-between items-center bg-cyan-50/80 p-2.5 rounded-xl text-cyan-950 border border-cyan-100">
-                      <span className="font-semibold text-cyan-900">1인당 평균 객단가 (Spend)</span>
-                      <span className="font-extrabold text-cyan-700 text-sm">{formatCurrency(bundle.avgSpendPerCustomer)}원/인</span>
+                      <span className="font-semibold text-cyan-900">1인당 평균 결제액 (객단가)</span>
+                      <span className="font-bold text-cyan-700 text-sm tabular-nums">{formatCurrency(bundle.avgSpendPerCustomer)}원/인</span>
                     </div>
                   </div>
                 </div>
@@ -544,33 +555,33 @@ export default function SynergyBundles() {
             <thead>
               <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
                 <th className="py-3.5 px-6 rounded-l-xl">순위</th>
-                <th className="py-3.5 px-6">이용 묶음 패턴명 (Bundle Name)</th>
+                <th className="py-3.5 px-6">고객 이용 묶음명</th>
                 <th className="py-3.5 px-6">포함 영업장 리스트</th>
                 <th className="py-3.5 px-6 text-right">이용 고객수 (명)</th>
                 <th className="py-3.5 px-6 text-right">전체 비중 (%)</th>
                 <th className="py-3.5 px-6 text-right">묶음 총 매출액 (원)</th>
-                <th className="py-3.5 px-6 text-right rounded-r-xl">1인당 평균 객단가</th>
+                <th className="py-3.5 px-6 text-right rounded-r-xl">1인당 평균 결제액</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredBundles.length > 0 ? (
                 filteredBundles.map((item, idx) => (
                   <tr key={idx} className="hover:bg-cyan-50/30 transition-colors">
-                    <td className="py-4 px-6 font-bold text-slate-500">#{idx + 1}</td>
+                    <td className="py-4 px-6 font-bold text-slate-500 tabular-nums">#{idx + 1}</td>
                     <td className="py-4 px-6 font-semibold text-slate-800">{formatBundleTitle(item)}</td>
                     <td className="py-4 px-6 text-xs text-slate-600">
                       <div className="flex items-center gap-1 flex-wrap">
                         {item.storeList?.map((s, sIdx) => (
-                          <span key={sIdx} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">
+                          <span key={sIdx} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-medium">
                             {cleanStoreName(s)}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-slate-800">{item.customerCount.toLocaleString()}명</td>
-                    <td className="py-4 px-6 text-right font-semibold text-cyan-700">{item.ratioPct}%</td>
-                    <td className="py-4 px-6 text-right font-bold text-slate-900">{formatCurrency(item.totalSales)}원</td>
-                    <td className="py-4 px-6 text-right font-bold text-indigo-700">{formatCurrency(item.avgSpendPerCustomer)}원/인</td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-800 tabular-nums">{item.customerCount.toLocaleString()}명</td>
+                    <td className="py-4 px-6 text-right font-semibold text-cyan-700 tabular-nums">{item.ratioPct}%</td>
+                    <td className="py-4 px-6 text-right font-bold text-slate-900 tabular-nums">{formatCurrency(item.totalSales)}원</td>
+                    <td className="py-4 px-6 text-right font-bold text-indigo-700 tabular-nums">{formatCurrency(item.avgSpendPerCustomer)}원/인</td>
                   </tr>
                 ))
               ) : (

@@ -344,80 +344,87 @@ export default function GroupSales() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
         {/* Card 1: Total Groups & Corporate Count */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <Building2 size={16} className="text-indigo-600" /> 유치 단체수 & 기업수
-            </span>
-            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-              B2B 모수
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Building2 size={16} className="text-indigo-600" /> 유치 단체수 & 기업수
+              </span>
+              <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                B2B 모수
+              </span>
+            </div>
+            <div className="text-3xl font-black text-slate-900 my-1 tabular-nums">
+              {enrichedGroups.length} <span className="text-sm font-normal text-slate-500">건</span>
+              <span className="text-sm font-bold text-indigo-600 ml-2">({loyaltyMetrics.totalUniqueCompanies}개사)</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-slate-900 my-1">
-            {enrichedGroups.length} <span className="text-sm font-medium text-slate-400">건</span>
-            <span className="text-sm font-bold text-indigo-600 ml-2">({loyaltyMetrics.totalUniqueCompanies}개사)</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            총 참가 인원: <strong>{(summaryData?.totalPax || enrichedGroups.reduce((s, g) => s + g.paxCount, 0)).toLocaleString()}명</strong>
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100 tabular-nums">
+            총 참가 인원: <strong className="text-slate-800">{(summaryData?.totalPax || enrichedGroups.reduce((s, g) => s + g.paxCount, 0)).toLocaleString()}명</strong>
           </p>
         </div>
 
         {/* Card 2: Total B2B Revenue */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <DollarSign size={16} className="text-emerald-600" /> 단체 총 결제 매출
-            </span>
-            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-              순매출 기준
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <DollarSign size={16} className="text-emerald-600" /> 단체 총 결제 매출
+              </span>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                순매출 기준
+              </span>
+            </div>
+            <div className="text-3xl font-black text-emerald-600 my-1 tabular-nums">
+              ₩{formatCurrency(summaryData?.totalRevenue || enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0))} <span className="text-sm font-normal text-slate-500">원</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-emerald-600 my-1">
-            ₩{formatCurrency(summaryData?.totalRevenue || enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0))} <span className="text-sm font-medium text-slate-400">원</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            행사당 평균: ₩{formatCurrency(summaryData?.avgSpendPerGroup || (enrichedGroups.length > 0 ? Math.round(enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0) / enrichedGroups.length) : 0))}원
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100 tabular-nums">
+            행사당 평균: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerGroup || (enrichedGroups.length > 0 ? Math.round(enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0) / enrichedGroups.length) : 0))}원</strong>
           </p>
         </div>
 
         {/* Card 3: 🏆 고객사 로열티 & 재방문율 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-purple-600 flex items-center gap-1.5">
-              <Award size={16} className="text-purple-600" /> 단체 로열티 (재방문율)
-            </span>
-            <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-              충성도 지수
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Award size={16} className="text-purple-600" /> 단체 로열티 (재방문율)
+              </span>
+              <span className="text-xs font-bold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-full">
+                충성도 지수
+              </span>
+            </div>
+            <div className="text-3xl font-black text-purple-700 my-1 tabular-nums">
+              {loyaltyMetrics.repeatRate}% <span className="text-sm font-normal text-slate-500">재방문</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-purple-700 my-1">
-            {loyaltyMetrics.repeatRate}% <span className="text-sm font-medium text-slate-400">재방문</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100 tabular-nums">
             재방문 기업: <strong className="text-purple-700">{loyaltyMetrics.repeatCompaniesCount}개사</strong> · 매출 기여: <strong className="text-slate-800">{loyaltyMetrics.repeatSpendRate}%</strong>
           </p>
         </div>
 
         {/* Card 4: 부대시설 교차 매출 비중 (TRevPAG) */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <Layers size={16} className="text-cyan-600" /> 부대시설 교차 기여
-            </span>
-            <span className="text-[11px] font-extrabold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100">
-              식음·골프·레저
-            </span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Layers size={16} className="text-cyan-600" /> 부대시설 교차 기여
+              </span>
+              <span className="text-xs font-bold text-cyan-800 bg-cyan-100 px-2.5 py-0.5 rounded-full">
+                식음·골프·레저
+              </span>
+            </div>
+            <div className="text-3xl font-black text-cyan-600 my-1 tabular-nums">
+              {summaryData && summaryData.totalRevenue > 0
+                ? Math.round(((summaryData.fnbRevenue + summaryData.golfRevenue + summaryData.leisureRevenue) / summaryData.totalRevenue) * 100)
+                : 0}%
+            </div>
           </div>
-          <div className="text-3xl font-black text-cyan-600 my-1">
-            {summaryData && summaryData.totalRevenue > 0
-              ? Math.round(((summaryData.fnbRevenue + summaryData.golfRevenue + summaryData.leisureRevenue) / summaryData.totalRevenue) * 100)
-              : 0}%
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            1인당 평균 객단가: <strong>₩{formatCurrency(summaryData?.avgSpendPerPax || 0)}원/인</strong>
+          <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-100 tabular-nums">
+            1인당 평균 객단가: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerPax || 0)}원/인</strong>
           </p>
         </div>
-
       </div>
 
       {/* Main Section: Search, Filters & Group Ledger Table */}

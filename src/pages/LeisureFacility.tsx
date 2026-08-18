@@ -163,30 +163,29 @@ export default function LeisureFacility() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* 요약 카드 */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 relative overflow-hidden group hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
             <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-50 transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12 rounded-full" />
-            <h2 className="text-base font-medium text-slate-500 mb-6 flex items-center gap-2 relative z-10">
-              <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal">(조회일)</span>
+            <h2 className="text-base font-bold text-slate-600 mb-6 flex items-center gap-2 relative z-10">
+              <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal text-slate-400">(조회일)</span>
             </h2>
-            <div className="text-3xl font-medium text-slate-800 mb-2 tracking-tight relative z-10">
-              {formatCurrency(totalSales)}
+            <div className="text-3xl font-black text-slate-900 mb-2 tracking-tight relative z-10 tabular-nums">
+              {formatCurrency(totalSales)} <span className="text-base font-normal text-slate-500">원</span>
             </div>
-            <p className="text-slate-400 text-sm relative z-10 font-medium">총매출 기준 합산</p>
+            <p className="text-slate-500 text-xs relative z-10 font-medium">순매출 기준 합산 (부가세 별도)</p>
           </div>
 
-          {/* TOP 5 가장 많이 팔린 티켓 상품(트랜잭션) 요약 카드 */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          {/* TOP 5 가장 많이 팔린 티켓 상품 요약 카드 */}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Award className="w-5 h-5 text-amber-500" /> 가장 많이 팔린 티켓 TOP 5
-                <span className="text-xs font-normal text-slate-400">(모토아레나 제외)</span>
               </h2>
-              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 flex items-center gap-1">
-                <Ticket size={11} /> 티켓 품목
+              <span className="text-xs font-bold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <Ticket size={12} /> 티켓 품목
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-medium mb-4">
-              영업장이 아닌 레저본부 단일 티켓/패스 상품(트랜잭션) 기준 순위
+            <p className="text-xs text-slate-500 font-medium mb-4">
+              레저본부 단일 티켓/패스 상품(트랜잭션) 기준 순위
             </p>
 
             <div className="space-y-3">
@@ -197,11 +196,11 @@ export default function LeisureFacility() {
                 const qty = t.quantity || t.qty;
 
                 return (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-purple-50/40 transition-colors">
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-purple-50/40 transition-colors">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                         idx === 0 ? 'bg-amber-400 text-white shadow-xs' :
-                        idx === 1 ? 'bg-slate-300 text-white' :
+                        idx === 1 ? 'bg-slate-400 text-white' :
                         idx === 2 ? 'bg-amber-700 text-white' :
                         'bg-slate-200 text-slate-600'
                       }`}>
@@ -210,15 +209,15 @@ export default function LeisureFacility() {
                       <div className="min-w-0">
                         <span className="font-bold text-slate-800 text-sm block truncate">{itemName}</span>
                         {venueName && (
-                          <span className="text-[10px] text-slate-400 font-medium block">
+                          <span className="text-xs text-slate-500 font-medium block">
                             {venueName}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
+                    <div className="text-right flex-shrink-0 tabular-nums">
                       <span className="font-bold text-sm text-slate-900 block">{formatCurrency(sales)}원</span>
-                      <span className="text-xs text-slate-400 font-medium">{qty.toLocaleString()}개</span>
+                      <span className="text-xs text-slate-500 font-medium">{qty.toLocaleString()}개</span>
                     </div>
                   </div>
                 );
@@ -229,35 +228,35 @@ export default function LeisureFacility() {
 
         {/* 레저본부 영업장별 전체 실적 랭킹 */}
         <div className="lg:col-span-8">
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full">
-            <h2 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 h-full">
+            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
               <Trophy className="w-6 h-6 text-amber-400" /> 전체 영업장 실적 (레저본부)
-              <span className="text-xs font-normal text-slate-400 ml-2 bg-slate-100 px-2 py-1 rounded-md">매출액 기준 내림차순</span>
+              <span className="text-xs font-semibold text-slate-500 ml-2 bg-slate-100 px-2.5 py-1 rounded-lg">매출액 기준 내림차순</span>
             </h2>
 
             {topTickets.length > 0 ? (
               <div className="space-y-4">
                 {topTickets.map((ticket, idx) => (
-                  <div key={idx} className="flex items-center p-4 rounded-2xl bg-[#f8fafc] border border-slate-100 hover:bg-white hover:shadow-md transition-all duration-300">
-                    <div className="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm flex items-center justify-center font-medium text-xl mr-4 border border-slate-100">
-                      {idx === 0 ? <span className="text-amber-400 font-medium">1</span> :
-                       idx === 1 ? <span className="text-slate-400 font-medium">2</span> :
-                       idx === 2 ? <span className="text-amber-700 font-medium">3</span> :
-                       <span className="text-slate-300 font-medium">{idx + 1}</span>}
+                  <div key={idx} className="flex items-center p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:shadow-md transition-all duration-300">
+                    <div className="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-xs flex items-center justify-center font-bold text-xl mr-4 border border-slate-200 tabular-nums">
+                      {idx === 0 ? <span className="text-amber-500 font-bold">1</span> :
+                       idx === 1 ? <span className="text-slate-500 font-bold">2</span> :
+                       idx === 2 ? <span className="text-amber-700 font-bold">3</span> :
+                       <span className="text-slate-400 font-bold">{idx + 1}</span>}
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-brand-mint bg-brand-mint/10 px-2.5 py-0.5 rounded-full">
+                        <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 px-3 py-0.5 rounded-full">
                           {ticket.name}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 font-medium">{ticket.qty.toLocaleString()}개 판매(입장)됨</p>
+                      <p className="text-xs text-slate-600 font-medium tabular-nums">{ticket.qty.toLocaleString()}개 판매(입장)</p>
                     </div>
                     
-                    <div className="text-right ml-4">
-                      <div className="font-medium text-lg text-slate-800">{formatCurrency(ticket.sales)}원</div>
-                      <div className="text-xs font-medium text-slate-400">
+                    <div className="text-right ml-4 tabular-nums">
+                      <div className="font-bold text-lg text-slate-900">{formatCurrency(ticket.sales)}원</div>
+                      <div className="text-xs font-semibold text-slate-500">
                         ({totalSales > 0 ? ((ticket.sales / totalSales) * 100).toFixed(1) : 0}%)
                       </div>
                     </div>
@@ -265,9 +264,9 @@ export default function LeisureFacility() {
                 ))}
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+              <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
                 <AlertCircle size={32} className="mb-3 text-slate-300" />
-                <p>선택하신 기간 내 그룹 영업장의 판매 데이터가 없습니다.</p>
+                <p className="text-sm font-medium">선택하신 기간 내 그룹 영업장의 판매 데이터가 없습니다.</p>
               </div>
             )}
           </div>

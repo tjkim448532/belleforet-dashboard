@@ -487,7 +487,7 @@ export default function Synergy() {
           </div>
 
           {/* Period Range Selection Bar */}
-          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 min-w-[420px]">
+          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 w-full xl:w-auto xl:min-w-[380px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                 <Calendar size={14} /> 조회 기간 설정

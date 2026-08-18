@@ -457,53 +457,54 @@ export default function GolfBusiness() {
             </div>
 
             {/* 카드 3: 시간대별(1부/2부/야간) 예약 이행 현황 */}
+            {/* 카드 3: 시간대별(1부/2부/야간) 예약 이행 현황 */}
             <div className="bg-gradient-to-br from-indigo-50/80 to-purple-50/40 p-6 rounded-2xl border border-indigo-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-indigo-800 flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-indigo-600" /> 최고 이행 시간대
                   </span>
-                  <span className="text-[10px] font-extrabold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold bg-indigo-200 text-indigo-900 px-2.5 py-0.5 rounded-full">
                     시간대별 분석
                   </span>
                 </div>
-                <div className="text-2xl font-black text-indigo-900 my-1">
-                  {analysisByTimeSlot[2]?.slotGroup || '3부 (야간)'} <span className="text-xs font-normal text-slate-500">이행률 83.7%</span>
+                <div className="text-2xl font-black text-indigo-900 my-1 tabular-nums">
+                  {analysisByTimeSlot[2]?.slotGroup || analysisByTimeSlot[0]?.slotGroup || '시간대별 실적'} <span className="text-xs font-normal text-slate-500">취소율 {analysisByTimeSlot[2]?.cancellationRate ?? analysisByTimeSlot[0]?.cancellationRate ?? 0}%</span>
                 </div>
-                <div className="space-y-1 text-xs text-slate-700 mt-3 pt-2 border-t border-indigo-200/60">
+                <div className="space-y-1 text-xs text-slate-700 mt-3 pt-2 border-t border-indigo-200/60 tabular-nums">
                   <div className="flex justify-between">
                     <span>• 1부 (새벽) 취소율:</span>
-                    <strong className="text-rose-600">{analysisByTimeSlot[0]?.cancellationRate || 30.2}% (최고 취소)</strong>
+                    <strong className="text-rose-600">{analysisByTimeSlot[0]?.cancellationRate ?? 0}%</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>• 2부 (오후) 취소율:</span>
-                    <strong>{analysisByTimeSlot[1]?.cancellationRate || 22.6}%</strong>
+                    <strong>{analysisByTimeSlot[1]?.cancellationRate ?? 0}%</strong>
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-indigo-950 mt-4 pt-2 border-t border-indigo-200/40 leading-relaxed">
-                ⏰ 새벽/오전(1부)은 날씨 변화에 가장 취약하여 <strong>취소율이 30%를 초과</strong>한 반면, 야간(3부)은 83.7%로 안정적인 입장을 보여 시간대별 요금 차등화가 유리합니다.
+              <p className="text-xs text-indigo-950 mt-4 pt-2 border-t border-indigo-200/40 leading-relaxed">
+                ⏰ 시간대별(1부/2부/3부) 기상 및 예약 이행률을 정밀 분석하여 시간대별 요금 최적화 및 취소율 방어 전략을 수립합니다.
               </p>
             </div>
 
-            {/* 카드 4: 1박 2일 골프텔(숙박 연계) 실질 체류율 (크로스 매칭 완결) */}
+            {/* 카드 4: 1박 2일 골프텔(숙박 연계) 실질 체류율 */}
             <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-amber-100/30 p-6 rounded-2xl border border-amber-300 flex flex-col justify-between shadow-xs">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                     <Hotel className="w-4 h-4 text-amber-700" /> 실질 골프+숙박(골프텔) 체류율
                   </span>
-                  <span className="text-[10px] font-extrabold bg-amber-200 text-amber-950 px-2 py-0.5 rounded-full border border-amber-300">
+                  <span className="text-xs font-bold bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-full border border-amber-300">
                     크로스 매칭 팩트
                   </span>
                 </div>
-                <div className="text-2xl font-black text-amber-950 my-1 flex items-baseline gap-2">
+                <div className="text-2xl font-black text-amber-950 my-1 flex items-baseline gap-2 tabular-nums">
                   <span>{staySynergy?.realCrossStayRatio ?? packageRatio}%</span>
                   <span className="text-xs font-normal text-slate-600">
                     (총 {staySynergy?.totalStayTeams ?? packageTeams}팀 / {visitedTeams}팀)
                   </span>
                 </div>
-                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-amber-200/80">
+                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-amber-200/80 tabular-nums">
                   <div className="flex justify-between">
                     <span>• 🔗 개별예약 동시투숙(크로스 식별):</span>
                     <strong className="text-emerald-700 font-bold">{staySynergy?.individualCrossStayTeams ?? 0}팀</strong>
@@ -514,18 +515,18 @@ export default function GolfBusiness() {
                   </div>
                   <div className="flex justify-between">
                     <span>• 🚗 순수 당일치기 골퍼:</span>
-                    <strong>{staySynergy?.pureDayTripTeams ?? (visitedTeams - packageTeams)}팀 ({staySynergy?.pureDayTripRatio ?? 99.2}%)</strong>
+                    <strong>{staySynergy?.pureDayTripTeams ?? (visitedTeams - packageTeams)}팀 ({staySynergy?.pureDayTripRatio ?? (visitedTeams > 0 ? (100 - Number(packageRatio)).toFixed(1) : '100.0')}%)</strong>
                   </div>
                   {staySynergy?.estimatedAdditionalRoomRevenue && staySynergy.estimatedAdditionalRoomRevenue > 0 && (
-                    <div className="flex justify-between pt-1 border-t border-amber-200/50 text-[11px]">
+                    <div className="flex justify-between pt-1 border-t border-amber-200/50 text-xs">
                       <span className="text-amber-900">• 체류 골퍼 유치 추가 객실매출:</span>
                       <strong className="text-indigo-700">+₩{formatCurrency(staySynergy.estimatedAdditionalRoomRevenue)}원</strong>
                     </div>
                   )}
                 </div>
               </div>
-              <p className="text-[11px] text-amber-950 mt-4 pt-2 border-t border-amber-200/60 leading-relaxed">
-                🏨 <strong>크로스 매칭 실측 규명</strong>: 골프 내장객과 콘도 투숙객의 <strong>휴대폰번호·성명 100% 교차 매칭</strong> 결과, 공식 패키지({staySynergy?.packageProductTeams ?? 1}팀) 외에 <strong>{staySynergy?.individualCrossStayTeams ?? 16}팀이 콘도에 동시 투숙하여 실질 체류율은 {staySynergy?.realCrossStayRatio ?? 14.0}%</strong>에 달합니다.
+              <p className="text-xs text-amber-950 mt-4 pt-2 border-t border-amber-200/60 leading-relaxed">
+                🏨 <strong>크로스 매칭 실측 규명</strong>: 골프 내장객과 콘도 투숙객의 <strong>원천 식별정보 교차 매칭</strong> 결과, 공식 패키지 외 개별 예약 동시 투숙객을 통합 분석하여 리조트 복합 체류 효과를 도출합니다.
               </p>
             </div>
 
@@ -680,46 +681,68 @@ export default function GolfBusiness() {
               {showOtaDrilldown && (
                 <div className="space-y-4">
                   {/* 💡 핵심 공급망 인사이트 카드 */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-4 rounded-2xl border border-emerald-200 shadow-xs">
-                      <div className="flex items-center justify-between text-xs font-bold text-emerald-800 mb-1">
-                        <span>👑 1위 핵심 충성 공급처</span>
-                        <span className="bg-emerald-200/80 px-2 py-0.5 rounded-full text-[10px]">OTA 내 53.2%</span>
-                      </div>
-                      <div className="text-xl font-black text-slate-900 my-1">
-                        골프락 (Golf Rak) <span className="text-xs font-semibold text-emerald-700">41팀 내장</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        당일 취소 <strong>0팀 (취소율 0.0%)</strong>으로 전체 내장의 33.9%를 책임지는 압도적 충성 공급망입니다.
-                      </p>
-                    </div>
+                  {data.otaAgenciesDetail && data.otaAgenciesDetail.length > 0 && (() => {
+                    const sortedByVisited = [...data.otaAgenciesDetail].sort((a, b) => b.visitedTeams - a.visitedTeams);
+                    const topOta = sortedByVisited[0];
+                    const secondOta = sortedByVisited[1];
+                    const sortedByCancel = [...data.otaAgenciesDetail].filter(a => a.reservedTeams >= 2).sort((a, b) => b.cancellationRate - a.cancellationRate);
+                    const highCancelOta = sortedByCancel[0];
 
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 p-4 rounded-2xl border border-blue-200 shadow-xs">
-                      <div className="flex items-center justify-between text-xs font-bold text-blue-800 mb-1">
-                        <span>🥈 2위 안정적 공급처</span>
-                        <span className="bg-blue-200/80 px-2 py-0.5 rounded-full text-[10px]">OTA 내 14.3%</span>
-                      </div>
-                      <div className="text-xl font-black text-slate-900 my-1">
-                        미골프 (Mi Golf) <span className="text-xs font-semibold text-blue-700">11팀 내장</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        골프락과 마찬가지로 당일 취소율 <strong>0.0%</strong>를 유지하며 안정적인 공급처 역할을 하고 있습니다.
-                      </p>
-                    </div>
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {topOta && (
+                          <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-4 rounded-2xl border border-emerald-200 shadow-xs flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between text-xs font-bold text-emerald-800 mb-1">
+                                <span>👑 1위 핵심 충성 공급처</span>
+                                <span className="bg-emerald-200/80 px-2 py-0.5 rounded-full text-xs font-bold">{topOta.shareRatioInOta.toFixed(1)}% 점유</span>
+                              </div>
+                              <div className="text-xl font-black text-slate-900 my-1 tabular-nums">
+                                {topOta.agencyName} <span className="text-xs font-semibold text-emerald-700">{topOta.visitedTeams}팀 내장</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-2 leading-relaxed pt-2 border-t border-emerald-100 tabular-nums">
+                              취소 {topOta.canceledTeams}팀 (취소율 {topOta.cancellationRate.toFixed(1)}%)으로 전체 골프 내장의 {topOta.shareRatioOverall.toFixed(1)}%를 차지하는 최우수 제휴사입니다.
+                            </p>
+                          </div>
+                        )}
 
-                    <div className="bg-gradient-to-br from-rose-50 to-orange-50/50 p-4 rounded-2xl border border-rose-200 shadow-xs">
-                      <div className="flex items-center justify-between text-xs font-bold text-rose-800 mb-1">
-                        <span>⚠️ 고취소율 집중 관리 대상</span>
-                        <span className="bg-rose-200/80 px-2 py-0.5 rounded-full text-[10px]">취소율 47~50%</span>
+                        {secondOta && (
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 p-4 rounded-2xl border border-blue-200 shadow-xs flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between text-xs font-bold text-blue-800 mb-1">
+                                <span>🥈 2위 안정적 공급처</span>
+                                <span className="bg-blue-200/80 px-2 py-0.5 rounded-full text-xs font-bold">{secondOta.shareRatioInOta.toFixed(1)}% 점유</span>
+                              </div>
+                              <div className="text-xl font-black text-slate-900 my-1 tabular-nums">
+                                {secondOta.agencyName} <span className="text-xs font-semibold text-blue-700">{secondOta.visitedTeams}팀 내장</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-2 leading-relaxed pt-2 border-t border-blue-100 tabular-nums">
+                              취소 {secondOta.canceledTeams}팀 (취소율 {secondOta.cancellationRate.toFixed(1)}%)으로 안정적인 내장객 공급 역할을 수행 중입니다.
+                            </p>
+                          </div>
+                        )}
+
+                        {highCancelOta && (
+                          <div className="bg-gradient-to-br from-rose-50 to-orange-50/50 p-4 rounded-2xl border border-rose-200 shadow-xs flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between text-xs font-bold text-rose-800 mb-1">
+                                <span>⚠️ 취소율 관리 대상</span>
+                                <span className="bg-rose-200/80 px-2 py-0.5 rounded-full text-xs font-bold text-rose-900">취소율 {highCancelOta.cancellationRate.toFixed(1)}%</span>
+                              </div>
+                              <div className="text-xl font-black text-rose-700 my-1 tabular-nums">
+                                {highCancelOta.agencyName}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-2 leading-relaxed pt-2 border-t border-rose-100 tabular-nums">
+                              예약 {highCancelOta.reservedTeams}팀 중 {highCancelOta.canceledTeams}팀이 취소되어 예약 보증금 또는 타임 배정 최적화가 필요합니다.
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xl font-black text-rose-700 my-1">
-                        골프코리아 (47.1%) · 골프존 (50.0%)
-                      </div>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        예약 대비 취소율이 40%를 초과하여 예약 보증금 또는 타임 배정 축소 등 운영 관리가 필요합니다.
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* 세부 OTA 대행사 실적 테이블 */}
                   <div className="overflow-x-auto">

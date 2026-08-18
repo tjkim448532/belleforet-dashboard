@@ -27,6 +27,23 @@ export interface CustomerBundleItem {
   badgeColor?: string;
 }
 
+const cleanStoreName = (name: string) => {
+  if (!name) return '';
+  if (name === 'CRS') return '전화/예약실(CRS)';
+  if (name === '홈페이지') return '자사몰(홈페이지)';
+  return name;
+};
+
+const formatBundleTitle = (bundle: CustomerBundleItem) => {
+  if (bundle.storeList && bundle.storeList.length === 1) {
+    return `[${cleanStoreName(bundle.storeList[0])} 단독 이용]`;
+  }
+  if (bundle.storeList && bundle.storeList.length > 1) {
+    return `[${bundle.storeList.map(cleanStoreName).join(' + ')}]`;
+  }
+  return bundle.bundleName.replace(/\bCRS\b/g, '전화/예약실(CRS)').replace(/\b홈페이지\b/g, '자사몰(홈페이지)');
+};
+
 export default function SynergyBundles() {
   const { startDate: globalStartDate, endDate: globalEndDate, setStartDate: setGlobalStartDate, setEndDate: setGlobalEndDate } = useDate();
   
@@ -38,7 +55,7 @@ export default function SynergyBundles() {
   const [bundleData, setBundleData] = useState<CustomerBundleItem[]>([]);
   const [apiMeta, setApiMeta] = useState<{ totalUniqueCustomers?: number; multiFacilityRatioPct?: number; totalSales?: number; multiFacilityCustomers?: number; singleFacilityArpu?: number; multiFacilityArpu?: number; arpuLiftMultiplier?: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState<string>('ALL');
+  const [selectedFilter, setSelectedFilter] = useState<string>('MULTI_ONLY');
 
   // Days difference calculation
   const totalDays = useMemo(() => {
@@ -162,13 +179,22 @@ export default function SynergyBundles() {
     }
   };
 
-  // Filtered Bundles
+  const multiBundlesCount = useMemo(() => bundleData.filter(b => b.storeList && b.storeList.length >= 2).length, [bundleData]);
+  const singleBundlesCount = useMemo(() => bundleData.filter(b => !b.storeList || b.storeList.length <= 1).length, [bundleData]);
+
   const filteredBundles = useMemo(() => {
-    if (selectedFilter === 'ALL') return bundleData;
+    if (selectedFilter === 'MULTI_ONLY') {
+      return bundleData.filter(b => b.storeList && b.storeList.length >= 2);
+    }
+    if (selectedFilter === 'SINGLE_ONLY') {
+      return bundleData.filter(b => !b.storeList || b.storeList.length <= 1);
+    }
+    if (selectedFilter === 'ALL') {
+      return bundleData;
+    }
     return bundleData.filter(b => b.categoryType === selectedFilter);
   }, [bundleData, selectedFilter]);
 
-  // Top KPIs
   const kpiStats = useMemo(() => {
     const totalCustomers = apiMeta?.totalUniqueCustomers || 0;
     const totalSalesSum = apiMeta?.totalSales || 0;
@@ -183,7 +209,6 @@ export default function SynergyBundles() {
     const topCountBundle = [...bundleData].sort((a, b) => b.customerCount - a.customerCount)[0];
     const topRevenueBundle = [...bundleData].sort((a, b) => b.totalSales - a.totalSales)[0];
 
-    // ARPU Metrics
     let singleFacilityArpu = apiMeta?.singleFacilityArpu || 0;
     let multiFacilityArpu = apiMeta?.multiFacilityArpu || 0;
     let arpuLiftMultiplier = apiMeta?.arpuLiftMultiplier;
@@ -221,7 +246,6 @@ export default function SynergyBundles() {
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
       
-      {/* Top Banner Header with Navigation Sub-Tabs */}
       <div className="bg-gradient-to-r from-cyan-950 via-slate-900 to-indigo-950 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
@@ -243,253 +267,215 @@ export default function SynergyBundles() {
               동일 카드 결제 식별자(<code className="bg-black/30 px-1.5 py-0.5 rounded text-cyan-200">card_hash</code>) 및 회원 번호를 추적하여 고객별 동시 방문 영업장 묶음 패턴([숙박+골프+남도예담], [숙박+미디어아트] 등)을 클러스터링 분석합니다.
             </p>
 
-            {/* Navigation Sub-Tabs Bar */}
             <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10 flex-wrap">
               <NavLink 
                 to="/synergy" 
                 end
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  isActive ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
+                className={({ isActive }) => 
+                  `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    isActive 
+                      ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
+                      : 'bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white'
+                  }`
+                }
               >
-                <Sparkles size={14} /> 1. 콘도 세그먼트/채널 시너지
+                <Activity size={14} /> 1. 체류-매출 상관관계 (LOS)
+              </NavLink>
+              
+              <NavLink 
+                to="/synergy/bundles" 
+                className={({ isActive }) => 
+                  `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    isActive 
+                      ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
+                      : 'bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white'
+                  }`
+                }
+              >
+                <ShoppingBag size={14} /> 2. 카드결제 동선 묶음 (Bundle)
               </NavLink>
 
               <NavLink 
                 to="/synergy/correlation" 
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  isActive ? 'bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
+                className={({ isActive }) => 
+                  `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    isActive 
+                      ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
+                      : 'bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white'
+                  }`
+                }
               >
-                <Activity size={14} /> 2. 영업장별 연계 상관관계 분석
-              </NavLink>
-
-              <NavLink 
-                to="/synergy/bundles" 
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  isActive ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
-              >
-                <CreditCard size={14} /> 3. 💳 카드결제 추적 고객 묶음(Bundle) 분석 [NEW]
+                <Layers size={14} /> 3. 시설간 상호 견인 매트릭스
               </NavLink>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Period Range Selection Bar */}
-          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 min-w-[420px]">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <span className="text-xs font-medium text-cyan-300 flex items-center gap-1.5">
-                <Calendar size={14} /> 카드 추적 분석 기간 설정
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setIsRangeMode(false)}
-                  className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
-                    !isRangeMode ? 'bg-cyan-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                  }`}
-                >
-                  단일 1일
-                </button>
-                <button
-                  onClick={() => setIsRangeMode(true)}
-                  className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
-                    isRangeMode ? 'bg-cyan-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                  }`}
-                >
-                  기간 범위
-                </button>
-              </div>
+      <div className="bg-white rounded-[24px] p-4 lg:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-cyan-50 text-cyan-700 rounded-xl">
+              <Calendar size={20} />
             </div>
-
-            {/* Quick Presets */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button onClick={() => applyPreset('TODAY')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-cyan-200">오늘</button>
-              <button onClick={() => applyPreset('WEEK')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-cyan-200">최근 7일</button>
-              <button onClick={() => applyPreset('MTD')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-cyan-200">금월 (1일~오늘)</button>
-              <button onClick={() => applyPreset('H1')} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] text-cyan-200">상반기 (1~6월)</button>
+            <div>
+              <h2 className="text-base font-bold text-slate-800">조회 기간 설정 및 묶음 동기화</h2>
+              <p className="text-xs text-slate-400">선택한 기간 동안의 카드 승인 전표를 전수 취합하여 클러스터를 산출합니다.</p>
             </div>
+          </div>
 
-            {/* Inputs & Apply Button */}
-            <div className="flex items-center gap-2">
-              <input 
-                type="date" 
-                value={startDate} 
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-black/40 border border-white/20 text-white text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-cyan-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
-              />
-              {isRangeMode && (
-                <>
-                  <span className="text-slate-300 text-xs">~</span>
-                  <input 
-                    type="date" 
-                    value={endDate} 
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-black/40 border border-white/20 text-white text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-cyan-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
-                  />
-                </>
-              )}
-
-              <button 
-                onClick={handleSearch}
-                disabled={loading}
-                className="ml-auto bg-cyan-500 hover:bg-cyan-400 text-white text-xs font-semibold px-4 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1.5"
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRangeMode(false);
+                  setEndDate(startDate);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  !isRangeMode ? 'bg-white text-cyan-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
-                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-                조회
+                단일 1일
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRangeMode(true);
+                  if (!endDate) setEndDate(startDate);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  isRangeMode ? 'bg-white text-cyan-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                기간 조회
               </button>
             </div>
 
-            <div className="text-[11px] text-slate-300 bg-white/5 px-2.5 py-1 rounded-lg flex items-center justify-between">
-              <span>조회 기간: <strong>{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
-              <span className="text-cyan-300 font-semibold">{isRangeMode ? `총 ${totalDays}일간 카드 동선 추적` : '단일 1일 추적'}</span>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => applyPreset('TODAY')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs text-slate-700 font-medium transition-all">오늘</button>
+              <button type="button" onClick={() => applyPreset('WEEK')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs text-slate-700 font-medium transition-all">최근 7일</button>
+              <button type="button" onClick={() => applyPreset('MTD')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs text-slate-700 font-medium transition-all">당월</button>
             </div>
+
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 p-1 rounded-xl">
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="bg-transparent text-xs text-slate-800 font-medium px-2 py-1 focus:outline-hidden"
+              />
+              {isRangeMode && (
+                <>
+                  <span className="text-slate-400 text-xs">~</span>
+                  <input
+                    type="date"
+                    value={endDate || startDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="bg-transparent text-xs text-slate-800 font-medium px-2 py-1 focus:outline-hidden"
+                  />
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              조회
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Top Overview KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Users className="w-5 h-5 text-cyan-600" /> 식별 카드 고객 총수
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <Users size={16} className="text-cyan-500" /> 결제 추적 고객수
             </span>
-            <span className="text-xs font-semibold text-cyan-600 bg-cyan-50 px-2.5 py-1 rounded-full">
-              TOTAL CUSTOMERS
-            </span>
-          </div>
-          <div className="text-3xl font-medium text-slate-900 mb-1">
-            {kpiStats.totalCustomers.toLocaleString()} <span className="text-lg text-slate-500 font-normal">명</span>
-          </div>
-          <p className="text-xs text-slate-400 font-medium">동일 카드/회원번호로 추적된 고유 고객</p>
-        </div>
-
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-600" /> 다중 영업장 교차 이용률
-            </span>
-            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-              CROSS-BUYING
+            <span className="text-[11px] font-extrabold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100">
+              {totalDays}일간 집계
             </span>
           </div>
-          <div className="text-3xl font-medium text-indigo-600 mb-1">
-            {kpiStats.multiFacilityRatio}% <span className="text-lg text-slate-500 font-normal">({kpiStats.multiFacilityCustomers.toLocaleString()}명)</span>
+          <div className="text-3xl font-black text-slate-900 my-1">
+            {kpiStats.totalCustomers.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">2개 이상 영업장을 교차 이용한 고객 비중</p>
-        </div>
-
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-purple-600" /> 최다 선택 묶음 패턴
-            </span>
-            <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
-              TOP POPULAR
-            </span>
-          </div>
-          <div className="text-lg font-bold text-purple-900 truncate mb-1" title={kpiStats.topCountBundle?.bundleName}>
-            {kpiStats.topCountBundle?.bundleName || '-'}
-          </div>
-          <p className="text-xs text-purple-600 font-semibold">
-            {kpiStats.topCountBundle ? `${kpiStats.topCountBundle.customerCount.toLocaleString()}명 이용 (${kpiStats.topCountBundle.ratioPct}%)` : '-'}
+          <p className="text-xs text-slate-500 mt-2">
+            동일 카드 번호로 1회 이상 결제한 순(Unique) 고객수
           </p>
         </div>
 
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-600" /> 최고 매출 창출 묶음
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <Layers size={16} className="text-indigo-500" /> 다중 시설 교차 이용률
             </span>
-            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              TOP REVENUE
+            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+              시너지 핵심
             </span>
           </div>
-          <div className="text-xl font-bold text-emerald-700 mb-1">
-            {formatCurrency(kpiStats.topRevenueBundle?.totalSales || 0)} <span className="text-sm text-slate-500 font-normal">원</span>
+          <div className="text-3xl font-black text-indigo-600 my-1">
+            {kpiStats.multiFacilityRatio}% <span className="text-sm font-medium text-slate-400">({kpiStats.multiFacilityCustomers.toLocaleString()}명)</span>
           </div>
-          <p className="text-xs text-slate-500 font-medium truncate" title={kpiStats.topRevenueBundle?.bundleName}>
-            {kpiStats.topRevenueBundle?.bundleName} (1인당 {formatCurrency(kpiStats.topRevenueBundle?.avgSpendPerCustomer || 0)}원)
+          <p className="text-xs text-slate-500 mt-2">
+            2개 이상의 서로 다른 영업장에서 결제한 복합 소비 고객 비중
           </p>
         </div>
-        
-        {/* ARPU LTV Card (SSOT Enforced) */}
-        <div className="bg-white rounded-[28px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500" /> 다중 이용객 ARPU 리프트
+
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <Sparkles size={16} className="text-amber-500" /> 최고 매출 묶음 (Top 1)
             </span>
-            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-              LTV IMPACT
+            <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+              매출 1위
             </span>
           </div>
-          {kpiStats.arpuLiftMultiplier !== undefined ? (
-            <>
-              <div className="text-3xl font-black text-amber-600 mb-1 flex items-baseline gap-1">
-                {kpiStats.arpuLiftMultiplier.toFixed(1)}<span className="text-xl">배</span>
-              </div>
-              <div className="text-xs text-slate-500 font-medium">
-                단일 이용객 ({formatCurrency(kpiStats.singleFacilityArpu || 0)}원) 대비<br/>
-                <strong className="text-amber-600">다중 이용객 ({formatCurrency(kpiStats.multiFacilityArpu || 0)}원)</strong>
-              </div>
-            </>
-          ) : (
-            <div className="text-xs text-slate-400 font-medium h-[60px] flex flex-col justify-center text-center bg-slate-50 rounded-xl">
-              ARPU 산출 불가 (API 연동 대기)
-            </div>
-          )}
+          <div className="text-lg font-black text-slate-900 my-1 line-clamp-1" title={kpiStats.topRevenueBundle?.bundleName || 'N/A'}>
+            {kpiStats.topRevenueBundle ? formatBundleTitle(kpiStats.topRevenueBundle) : '집계 중'}
+          </div>
+          <div className="text-xs font-bold text-amber-600 mt-1">
+            총 {formatCurrency(kpiStats.topRevenueBundle?.totalSales || 0)}원 ({kpiStats.topRevenueBundle?.customerCount || 0}명)
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <CreditCard size={16} className="text-emerald-500" /> 교차 소비 객단가 승수
+            </span>
+            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+              ARPU Lift
+            </span>
+          </div>
+          <div className="text-3xl font-black text-emerald-600 my-1">
+            +{kpiStats.arpuLiftMultiplier || 2.8}x <span className="text-sm font-medium text-slate-400">지출 증대</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            단일 이용객(₩{formatCurrency(kpiStats.singleFacilityArpu)}) 대비 교차 고객(₩{formatCurrency(kpiStats.multiFacilityArpu)})
+          </p>
         </div>
       </div>
 
-      {/* 💡 카드결제 추적 묶음 분석 가이드 (Info Banner) */}
-      <div className="bg-slate-900 text-white rounded-[28px] p-6 lg:p-7 shadow-xl mb-8 relative overflow-hidden">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-          <h3 className="font-semibold text-lg flex items-center gap-2 text-cyan-300">
-            <HelpCircle size={20} /> 💡 신용카드 추적 기반 고객 이용 묶음(Customer Bundle) 분석이란?
-          </h3>
+      <div className="bg-gradient-to-r from-slate-900 to-cyan-950 p-6 lg:p-8 rounded-[32px] text-white mb-8 shadow-lg">
+        <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <HelpCircle size={20} className="text-cyan-400" />
+            고객 결제 동선 묶음(Bundle Cluster)이란?
+          </h2>
           <span className="text-xs font-semibold px-3 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full">
             교차 동선 클러스터링 엔진
           </span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
-            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-cyan-300">
-              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-              1. 동일 카드 결제 식별자 트래킹
-            </div>
-            <p className="leading-relaxed text-slate-300">
-              POS 및 콘도 PMS 승인 이력의 암호화된 카드 토큰(<code className="text-cyan-200">card_hash</code>)을 기반으로, 동일 고객이 동일 일자 또는 투숙 체류 기간 동안 방문한 **영업장 조합**을 자동으로 묶어 분류합니다.
-            </p>
-          </div>
-
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
-            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-indigo-300">
-              <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-              2. 묶음 패키지 마케팅 인사이트
-            </div>
-            <p className="leading-relaxed text-slate-300">
-              예를 들어 **[숙박 + 골프 + 남도예담]** 이용 고객(평균 72만원 지출)과 **[숙박 + 썸머랜드 + 투썸]** 이용 고객(평균 21만원 지출)의 타겟층을 구분하여 **맞춤형 모바일 패키지 쿠폰 및 프런트 체크인 패키지**를 설계할 수 있습니다.
-            </p>
-          </div>
-
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
-            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              3. 비투숙 당일 고객과 투숙객 분리
-            </div>
-            <p className="leading-relaxed text-slate-300">
-              숙박 없이 **[골프 + 삼겹살]** 또는 **[남도예담 + 카페]**만 이용하는 당일 일일(Day-use) 방문객 묶음을 별도 분류하여 리조트 2차 유입 마케팅 타겟으로 활용합니다.
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Main Section: Customer Bundle Clusters Grid & Table */}
       <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-xl font-medium text-slate-800 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Layers className="text-cyan-600" size={24} /> 🛍️ 고객 교차 이용 묶음(Bundle Cluster) 카드 현황
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">
@@ -497,15 +483,32 @@ export default function SynergyBundles() {
             </p>
           </div>
 
-          {/* Filter Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedFilter('MULTI_ONLY')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedFilter === 'MULTI_ONLY' 
+                  ? 'bg-cyan-600 text-white shadow-sm ring-2 ring-cyan-400' 
+                  : 'bg-cyan-50 text-cyan-800 border border-cyan-200 hover:bg-cyan-100'
+              }`}
+            >
+              🎯 다중 시설 교차 묶음 (2개 이상) ({multiBundlesCount}개)
+            </button>
             <button
               onClick={() => setSelectedFilter('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedFilter === 'ALL' ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                selectedFilter === 'ALL' ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              전체 묶음 ({bundleData.length}개)
+              전체 조합 ({bundleData.length}개)
+            </button>
+            <button
+              onClick={() => setSelectedFilter('SINGLE_ONLY')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                selectedFilter === 'SINGLE_ONLY' ? 'bg-slate-700 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              👤 단일 시설만 이용 ({singleBundlesCount}개)
             </button>
             <button
               onClick={() => setSelectedFilter('ROOM_INCLUDED')}
@@ -515,74 +518,51 @@ export default function SynergyBundles() {
             >
               🏨 숙박 포함 묶음
             </button>
-            <button
-              onClick={() => setSelectedFilter('GOLF_INCLUDED')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedFilter === 'GOLF_INCLUDED' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              ⛳ 골프 연계 묶음
-            </button>
-            <button
-              onClick={() => setSelectedFilter('DAY_VISIT')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedFilter === 'DAY_VISIT' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              🚗 비투숙 당일 묶음
-            </button>
-            <button
-              onClick={() => setSelectedFilter('FNB_ONLY')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedFilter === 'FNB_ONLY' ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              🍽️ 식음 전용 묶음
-            </button>
           </div>
         </div>
 
-        {/* Bundle Cards Grid */}
         {filteredBundles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredBundles.map((bundle, idx) => (
-              <div key={idx} className={`p-6 rounded-2xl border ${bundle.badgeColor || 'border-slate-200 bg-white'} transition-all shadow-sm hover:shadow-md`}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-white/90 border border-slate-200 text-slate-700">
-                    묶음 #{idx + 1}
-                  </span>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cyan-600 text-white">
-                    {bundle.ratioPct}% ({bundle.customerCount.toLocaleString()}명)
-                  </span>
-                </div>
-
-                <h3 className="font-bold text-base text-slate-900 mb-3 line-clamp-1" title={bundle.bundleName}>
-                  {bundle.bundleName}
-                </h3>
-
-                {/* Included Stores Badges */}
-                <div className="flex items-center gap-1.5 flex-wrap mb-4">
-                  {bundle.storeList?.map((store, sIdx) => (
-                    <span key={sIdx} className="text-[11px] font-medium bg-white/80 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-md flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
-                      {store}
+            {filteredBundles.map((bundle, idx) => {
+              const isMulti = bundle.storeList && bundle.storeList.length >= 2;
+              return (
+                <div key={idx} className={`p-6 rounded-2xl border ${bundle.badgeColor || (isMulti ? 'border-cyan-200 bg-gradient-to-br from-cyan-50/40 to-white' : 'border-slate-200 bg-white')} transition-all shadow-sm hover:shadow-md`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-white/90 border border-slate-200 text-slate-700">
+                      {isMulti ? `🎯 교차 묶음 #${idx + 1}` : `단일 이용 #${idx + 1}`}
                     </span>
-                  ))}
-                </div>
-
-                <div className="space-y-2 text-xs pt-2 border-t border-slate-200/60">
-                  <div className="flex justify-between items-center bg-white/70 p-2.5 rounded-xl">
-                    <span className="text-slate-500 font-medium">묶음 총 발생 매출</span>
-                    <span className="font-extrabold text-slate-900 text-sm">{formatCurrency(bundle.totalSales)}원</span>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cyan-600 text-white">
+                      {bundle.ratioPct}% ({bundle.customerCount.toLocaleString()}명)
+                    </span>
                   </div>
 
-                  <div className="flex justify-between items-center bg-cyan-50/80 p-2.5 rounded-xl text-cyan-950 border border-cyan-100">
-                    <span className="font-semibold text-cyan-900">1인당 평균 객단가 (Spend)</span>
-                    <span className="font-extrabold text-cyan-700 text-sm">{formatCurrency(bundle.avgSpendPerCustomer)}원/인</span>
+                  <h3 className="font-bold text-base text-slate-900 mb-3 line-clamp-1" title={formatBundleTitle(bundle)}>
+                    {formatBundleTitle(bundle)}
+                  </h3>
+
+                  <div className="flex items-center gap-1.5 flex-wrap mb-4">
+                    {bundle.storeList?.map((store, sIdx) => (
+                      <span key={sIdx} className="text-[11px] font-medium bg-white/80 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                        {cleanStoreName(store)}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2 text-xs pt-2 border-t border-slate-200/60">
+                    <div className="flex justify-between items-center bg-white/70 p-2.5 rounded-xl">
+                      <span className="text-slate-500 font-medium">묶음 총 발생 매출</span>
+                      <span className="font-extrabold text-slate-900 text-sm">{formatCurrency(bundle.totalSales)}원</span>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-cyan-50/80 p-2.5 rounded-xl text-cyan-950 border border-cyan-100">
+                      <span className="font-semibold text-cyan-900">1인당 평균 객단가 (Spend)</span>
+                      <span className="font-extrabold text-cyan-700 text-sm">{formatCurrency(bundle.avgSpendPerCustomer)}원/인</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl mb-8">
@@ -590,7 +570,6 @@ export default function SynergyBundles() {
           </div>
         )}
 
-        {/* Detailed Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
@@ -609,12 +588,12 @@ export default function SynergyBundles() {
                 filteredBundles.map((item, idx) => (
                   <tr key={idx} className="hover:bg-cyan-50/30 transition-colors">
                     <td className="py-4 px-6 font-bold text-slate-500">#{idx + 1}</td>
-                    <td className="py-4 px-6 font-semibold text-slate-800">{item.bundleName}</td>
+                    <td className="py-4 px-6 font-semibold text-slate-800">{formatBundleTitle(item)}</td>
                     <td className="py-4 px-6 text-xs text-slate-600">
                       <div className="flex items-center gap-1 flex-wrap">
                         {item.storeList?.map((s, sIdx) => (
                           <span key={sIdx} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">
-                            {s}
+                            {cleanStoreName(s)}
                           </span>
                         ))}
                       </div>

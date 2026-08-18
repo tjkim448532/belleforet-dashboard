@@ -1,7 +1,11 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCoreData } from '../contexts/CoreDataContext';
+import { useDate } from '../contexts/DateContext';
+import { secureFetcher } from '../lib/secureFetcher';
 import { Ticket, Trophy, AlertCircle, Wallet, Award } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 const parseNumber = (val: any): number => {
   if (val === null || val === undefined) return 0;
@@ -17,8 +21,48 @@ const formatCurrency = (val: any) => {
   return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
+export interface TopTicketItem {
+  rank?: number;
+  itemName: string;
+  facilityName?: string;
+  sales: number;
+  quantity: number;
+  unitPrice?: number;
+}
+
 export default function LeisureFacility() {
   const { core, isLoading } = useCoreData();
+  const { startDate, endDate } = useDate();
+
+  const [apiTopItems, setApiTopItems] = useState<TopTicketItem[]>([]);
+
+  // Fetch item-level top tickets from backend API
+  useEffect(() => {
+    const fetchTopItems = async () => {
+      try {
+        const queryParams = endDate
+          ? `startDate=${startDate}&endDate=${endDate}&limit=5`
+          : `date=${startDate}&limit=5`;
+        const res = await secureFetcher(`${API_BASE}/api/v5/report/top-ticket-items?${queryParams}`).catch(() => null);
+        const payload = res?.data ?? res;
+        if (payload?.topItems && Array.isArray(payload.topItems) && payload.topItems.length > 0) {
+          setApiTopItems(payload.topItems.map((item: any, idx: number) => ({
+            rank: item.rank || idx + 1,
+            itemName: item.itemName || item.name || '티켓 상품',
+            facilityName: item.facilityName || item.shopName,
+            sales: parseNumber(item.sales || item.totalSales || 0),
+            quantity: parseNumber(item.quantity || item.qty || 0),
+            unitPrice: parseNumber(item.unitPrice || 0)
+          })));
+        } else {
+          setApiTopItems([]);
+        }
+      } catch {
+        setApiTopItems([]);
+      }
+    };
+    fetchTopItems();
+  }, [startDate, endDate]);
 
   const { totalSales, topTickets, totalQuantity, top5Quantity, top5Tickets } = useMemo(() => {
     if (!core?.salesByFacility) {
@@ -136,31 +180,54 @@ export default function LeisureFacility() {
             </p>
           </div>
 
-          {/* TOP 5 최고 매출 트랜잭션 영업장 요약 카드 */}
+          {/* TOP 5 가장 많이 팔린 티켓 상품(트랜잭션) 요약 카드 */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <h2 className="text-base font-medium text-slate-800 mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-500" /> 최고 매출 TOP 5 트랜잭션
-            </h2>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Award className="w-5 h-5 text-amber-500" /> 가장 많이 팔린 티켓 TOP 5
+              </h2>
+              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 flex items-center gap-1">
+                <Ticket size={11} /> 티켓 품목
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 font-medium mb-4">
+              영업장이 아닌 단일 티켓/패스 상품(트랜잭션) 기준 순위
+            </p>
+
             <div className="space-y-3">
-              {top5Tickets.map((t, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                      idx === 0 ? 'bg-amber-400 text-white' :
-                      idx === 1 ? 'bg-slate-300 text-white' :
-                      idx === 2 ? 'bg-amber-700 text-white' :
-                      'bg-slate-200 text-slate-600'
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <span className="font-medium text-slate-700 text-sm truncate">{t.name}</span>
+              {(apiTopItems.length > 0 ? apiTopItems : top5Tickets).map((t: any, idx: number) => {
+                const itemName = t.itemName || t.name;
+                const venueName = t.facilityName;
+                const sales = t.sales;
+                const qty = t.quantity || t.qty;
+
+                return (
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-purple-50/40 transition-colors">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        idx === 0 ? 'bg-amber-400 text-white shadow-xs' :
+                        idx === 1 ? 'bg-slate-300 text-white' :
+                        idx === 2 ? 'bg-amber-700 text-white' :
+                        'bg-slate-200 text-slate-600'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-800 text-sm block truncate">{itemName}</span>
+                        {venueName && (
+                          <span className="text-[10px] text-slate-400 font-medium block">
+                            {venueName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="font-bold text-sm text-slate-900 block">{formatCurrency(sales)}원</span>
+                      <span className="text-xs text-slate-400 font-medium">{qty.toLocaleString()}개</span>
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="font-medium text-sm text-slate-900 block">{formatCurrency(t.sales)}원</span>
-                    <span className="text-xs text-slate-400">{t.qty.toLocaleString()}개</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

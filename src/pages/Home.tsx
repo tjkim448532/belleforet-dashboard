@@ -155,6 +155,11 @@ export default function Home() {
   })();
 
 
+  const roomCapActual = parseNum(coreData.core?.summary?.totalRoomCap || (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.visitors || 0));
+  const roomCapLy = coreData.core?.summary?.totalRoomCapLy;
+  const roomCapGrowth = coreData.core?.summary?.roomCapGrowth;
+  const roomCapDiff = coreData.core?.summary?.roomCapDiff;
+
   const golfReservedTeams = displayData?.golfSummary?.reservedTeams || 0;
 
   return (
@@ -376,10 +381,27 @@ export default function Home() {
                     <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 숙박객 수 <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
                   </h2>
                 </div>
-                <div className="text-3xl font-semibold text-slate-800 mb-3 tracking-tight relative z-10 flex items-baseline gap-2">
-                  <span>{new Intl.NumberFormat('ko-KR').format(coreData.core?.summary?.totalRoomCap || (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.visitors || 0))}</span>
+                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight relative z-10 flex items-baseline gap-2">
+                  <span>{new Intl.NumberFormat('ko-KR').format(roomCapActual)}</span>
                   <span className="text-lg font-medium text-slate-500">명</span>
                 </div>
+
+                {/* 과거 비교 숙박객 수 및 증감률 배지 */}
+                {roomCapLy !== undefined && roomCapLy > 0 ? (
+                  <div className={`mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 ${roomCapGrowth !== undefined && roomCapGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                    <span>{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                    {roomCapGrowth !== undefined && (
+                      <span>{roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%</span>
+                    )}
+                    <span className="font-medium opacity-80">
+                      (전년 {new Intl.NumberFormat('ko-KR').format(roomCapLy)}명{roomCapDiff !== undefined ? `, ${roomCapDiff > 0 ? '+' : ''}${new Intl.NumberFormat('ko-KR').format(roomCapDiff)}명` : ''})
+                    </span>
+                  </div>
+                ) : (
+                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 bg-slate-100 text-slate-400">
+                    <span>전년 비교 데이터 산출 불가</span>
+                  </div>
+                )}
                 
                 {multiNight && (
                   <div className="mb-3 relative z-10 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100/90 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-xs">

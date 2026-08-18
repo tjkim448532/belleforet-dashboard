@@ -55,15 +55,31 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         ? `startDate=${validStart}&endDate=${validEnd}&_t=${Date.now()}`
         : `date=${validStart || '2026-07-24'}&_t=${Date.now()}`;
 
+      // 전년 비교일자 파라미터 (단일일: 52주전 동요일, 기간: 1년전 동일구간)
+      let lyQueryParams = '';
+      if (validEnd && validStart !== validEnd) {
+        const sLy = new Date(validStart);
+        sLy.setFullYear(sLy.getFullYear() - 1);
+        const eLy = new Date(validEnd);
+        eLy.setFullYear(eLy.getFullYear() - 1);
+        lyQueryParams = `startDate=${sLy.toISOString().split('T')[0]}&endDate=${eLy.toISOString().split('T')[0]}&_t=${Date.now()}`;
+      } else {
+        const d = new Date(validStart || '2026-07-24');
+        const lyD = new Date(d.getTime() - 364 * 24 * 60 * 60 * 1000);
+        lyQueryParams = `date=${lyD.toISOString().split('T')[0]}&_t=${Date.now()}`;
+      }
+
       try {
-        // [SSOT 이중 검증] revenue-summary와 matrix-weekly를 병렬 호출하여 무결성 보장
-        const [res, matrixRes] = await Promise.all([
+        // [SSOT 이중 검증] revenue-summary, matrix-weekly, 그리고 전년 동기 revenue-summary를 병렬 호출
+        const [res, matrixRes, lyRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null)
+          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null)
         ]);
 
         let corePayload = res?.data || res || {};
         const matrixPayload = matrixRes?.data || matrixRes;
+        const lyPayload = lyRes?.data || lyRes;
 
         if (Array.isArray(corePayload)) {
           corePayload = corePayload[0] || { summary: {} };
@@ -71,13 +87,26 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           corePayload.weather = res.weather;
         }
 
+        if (!corePayload.summary) corePayload.summary = {};
+
+        // 전년 동기/동요일 숙박객 수 및 증감률 주입
+        const lyRoomCap = Number(String(lyPayload?.summary?.totalRoomCap || 0).replace(/,/g, '')) || 0;
+        const lyRooms = Number(String(lyPayload?.summary?.totalRooms || 0).replace(/,/g, '')) || 0;
+        if (lyRoomCap > 0) {
+          corePayload.summary.totalRoomCapLy = lyRoomCap;
+          corePayload.summary.totalRoomsLy = lyRooms;
+          const currCap = Number(String(corePayload.summary.totalRoomCap || 0).replace(/,/g, '')) || 0;
+          if (currCap > 0) {
+            corePayload.summary.roomCapGrowth = Number((((currCap - lyRoomCap) / lyRoomCap) * 100).toFixed(1));
+            corePayload.summary.roomCapDiff = currCap - lyRoomCap;
+          }
+        }
+
         // matrix-weekly SSOT 데이터로 결측치 및 0원 결측 자동 보정
         if (Array.isArray(matrixPayload) && matrixPayload.length > 0) {
           const grandTotal = matrixPayload.find((r: any) => r.isGrandTotal);
           const subtotals = matrixPayload.filter((r: any) => r.isSubtotal && !r.isGrandTotal);
           const facilities = matrixPayload.filter((r: any) => !r.isSubtotal && !r.isGrandTotal);
-
-          if (!corePayload.summary) corePayload.summary = {};
 
           const hasRevSummarySales = Number(corePayload.summary.totalRevenue || 0) > 0;
           if (!hasRevSummarySales && grandTotal) {

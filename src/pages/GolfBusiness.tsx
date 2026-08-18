@@ -264,16 +264,15 @@ export default function GolfBusiness() {
   const kakaoChannel = salesByChannel.find(c => c.channelCode === 'KAKAO_GOLF');
   const agencyRevenue = (otaChannel?.greenFeeRevenue || 0) + (kakaoChannel?.greenFeeRevenue || 0);
   const agencyTeams = (otaChannel?.visitedTeams || 0) + (kakaoChannel?.visitedTeams || 0);
-  const estimatedAgencyCommission = Math.round(agencyRevenue * 0.10); // 통상 대행 수수료 10%
 
   // 2. 우천 및 기상 취소로 인한 기회손실액 계산 (100% 실제 데이터 기반)
   // 1팀당 손실 = 1팀 평균 그린피 + 1팀 실제 평균 카트비
-  const avgTeamGreenFee = visitedTeams > 0 ? (avgGreenFee * 4) : 166258;
+  const avgTeamGreenFee = visitedTeams > 0 ? (avgGreenFee * 4) : 0;
   const cartFacility = golfDetails.find((f: any) => f.shopName?.includes('카트') || (f as any).facility_name?.includes('카트'));
   const actualCartRevenue = cartFacility?.totalSales || 0;
   const actualCartFeePerTeam = visitedTeams > 0 && actualCartRevenue > 0 
     ? Math.round(actualCartRevenue / visitedTeams) 
-    : 90608; // Net 카트비 (Gross 10만 원 / 1.1)
+    : 0;
   const lossPerTeam = avgTeamGreenFee + actualCartFeePerTeam;
   const totalRevenueAtRisk = Math.round(canceledTeams * lossPerTeam);
 
@@ -397,7 +396,7 @@ export default function GolfBusiness() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            {/* 카드 1: 자사몰 직접 예약 vs 대행사 수수료 분석 */}
+            {/* 카드 1: 자사몰 직접 예약 성과 */}
             <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/40 p-6 rounded-2xl border border-emerald-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -405,7 +404,7 @@ export default function GolfBusiness() {
                     <DollarSign className="w-4 h-4 text-emerald-600" /> 자사몰 직접 예약 성과
                   </span>
                   <span className="text-[10px] font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">
-                    수수료 0원
+                    직접 채널 100%
                   </span>
                 </div>
                 <div className="text-2xl font-black text-emerald-900 my-1">
@@ -417,13 +416,13 @@ export default function GolfBusiness() {
                     <strong>{directWebChannel?.shareRatio || 0}%</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 대행사 유출 수수료 (10% 가상 대입 시):</span>
-                    <strong className="text-rose-600">약 ₩{formatCurrency(estimatedAgencyCommission)}원</strong>
+                    <span>• 외부 대행사(OTA) 매출:</span>
+                    <strong className="text-slate-900">₩{formatCurrency(agencyRevenue)}원 ({agencyTeams}팀)</strong>
                   </div>
                 </div>
               </div>
               <p className="text-[11px] text-emerald-950 mt-4 pt-2 border-t border-emerald-200/40 leading-relaxed">
-                💡 자사몰 직접 예약은 <strong>대행 수수료가 전혀 없어 100% 순이익</strong>으로 남습니다. (※ 위 유출 수수료는 외부 대행사 {agencyTeams}팀 매출 ₩{formatCurrency(agencyRevenue)}원에 <strong>업계 통상 수수료율 10% 가상 수치를 대입하여 산출한 시뮬레이션 추정액</strong>입니다.)
+                💡 자사몰 직접 예약은 <strong>대행 수수료가 전혀 없어 100% 순이익</strong>으로 직결되며, 공식 PMS/POS 원천 집계 기준으로 실시간 연동됩니다.
               </p>
             </div>
 

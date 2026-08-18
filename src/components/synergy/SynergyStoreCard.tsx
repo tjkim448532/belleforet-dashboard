@@ -122,8 +122,8 @@ export default function SynergyStoreCard({ store, type }: SynergyStoreCardProps)
         </div>
 
         <div className="flex justify-between items-center pt-1 text-slate-600">
-          <span>추정 연계 {isLeisure ? '이용객수' : '고객수'}: <strong>{store.calculationMethod !== 'UNTRACKABLE' ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '불명'}</strong></span>
-          <span className={`font-semibold ${theme.revPasText}`}>1실당 기여액: {store.calculationMethod !== 'UNTRACKABLE' ? `+${formatCurrency(store.revPasContribution || 0)}원` : '산출 불가'}</span>
+          <span>연계 {isLeisure ? '이용객수' : '고객수'}: <strong>{store.calculationMethod !== 'UNTRACKABLE' && (store.correlatedVisitors || 0) > 0 ? `${(store.correlatedVisitors || 0).toLocaleString()}명` : '-'}</strong></span>
+          <span className={`font-semibold ${theme.revPasText}`}>1실당 기여액: {store.calculationMethod !== 'UNTRACKABLE' && (store.revPasContribution || 0) > 0 ? `+${formatCurrency(store.revPasContribution || 0)}원` : '-'}</span>
         </div>
       </div>
       

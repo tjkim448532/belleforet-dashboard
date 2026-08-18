@@ -3,12 +3,19 @@ import { useCoreData } from '../contexts/CoreDataContext';
 import { Ticket, Trophy, AlertCircle, Wallet, Award } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
-const formatCurrency = (val: any) => {
-  if (!val) return '0';
-  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
-  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+const parseNumber = (val: any): number => {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const cleaned = String(val).replace(/,/g, '').trim();
+  const num = Number(cleaned);
+  return isNaN(num) ? 0 : num;
 };
 
+const formatCurrency = (val: any) => {
+  if (!val) return '0';
+  const num = parseNumber(val);
+  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+};
 
 export default function LeisureFacility() {
   const { core, isLoading } = useCoreData();
@@ -22,35 +29,35 @@ export default function LeisureFacility() {
 
     // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory
     let ssotTotalSales = 0;
+    let ssotTotalVisitors = 0;
     
     if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
       const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
       if (ticketCat) {
-        ssotTotalSales = Number(ticketCat.totalSales || 0);
+        ssotTotalSales = parseNumber(ticketCat.todayActual || ticketCat.totalSales || 0);
+        ssotTotalVisitors = parseNumber(ticketCat.visitors || ticketCat.totalVisitors || 0);
       }
     }
 
     // 2. Map facility rows directly (V6 schema subGroupName & totalVisitors)
-    const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities.map((item: any) => {
-      const name = item.shopName || '기타';
-      const sales = Number(item.totalSales || 0);
-      const qty = Number(item.totalVisitors || 0);
-      const depth2 = item.partName || '티켓/레저';
-      return { name, sales, qty, depth2 };
-    });
+    const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities
+      .filter((item: any) => !item.isSubtotal)
+      .map((item: any) => {
+        const name = item.shopName || item.facilityName || '기타';
+        const sales = parseNumber(item.todayActual || item.totalSales || 0);
+        const qty = parseNumber(item.totalVisitors || item.visitors || 0);
+        const depth2 = item.partName || '티켓/레저';
+        return { name, sales, qty, depth2 };
+      });
 
-    const sortedTickets = mappedTickets.sort((a: any, b: any) => b.sales - a.sales);
-    
-    // [SSOT 무관용 원칙 적용] 프론트엔드 자체 reduce 합산 금지 -> 백엔드 연동 또는 산출 불가 0 처리
-    const sumQty = 0; // TODO: API (core.salesByCategory의 해당 카테고리 totalVisitors 등) 연동 필요
-    
+    const sortedTickets = mappedTickets.sort((a, b) => b.sales - a.sales);
     const top5 = sortedTickets.slice(0, 5);
-    const top5Qty = 0; // TODO: 백엔드 지원 시 연동 (상위 5개 합산 또한 쿼리에서 가져와야 함)
+    const top5Qty = top5.reduce((sum, t) => sum + t.qty, 0);
 
     return { 
       totalSales: ssotTotalSales, 
       topTickets: sortedTickets, 
-      totalQuantity: sumQty,
+      totalQuantity: ssotTotalVisitors,
       top5Quantity: top5Qty,
       top5Tickets: top5
     };

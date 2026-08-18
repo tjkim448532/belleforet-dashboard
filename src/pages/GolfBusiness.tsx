@@ -401,13 +401,13 @@ export default function GolfBusiness() {
                     <strong>{directWebChannel?.shareRatio || 0}%</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 대행사 유출 수수료(추정):</span>
+                    <span>• 대행사 유출 수수료 (10% 가상 대입 시):</span>
                     <strong className="text-rose-600">약 ₩{formatCurrency(estimatedAgencyCommission)}원</strong>
                   </div>
                 </div>
               </div>
               <p className="text-[11px] text-emerald-950 mt-4 pt-2 border-t border-emerald-200/40 leading-relaxed">
-                💡 자사몰 직접 예약은 <strong>대행 수수료가 전혀 없어 100% 순이익</strong>으로 남습니다. 자사몰 고객에게 혜택을 제공하여 대행사 예약({agencyTeams}팀)을 전환할수록 수익이 개선됩니다.
+                💡 자사몰 직접 예약은 <strong>대행 수수료가 전혀 없어 100% 순이익</strong>으로 남습니다. (※ 위 유출 수수료는 외부 대행사 {agencyTeams}팀 매출 ₩{formatCurrency(agencyRevenue)}원에 <strong>업계 통상 수수료율 10% 가상 수치를 대입하여 산출한 시뮬레이션 추정액</strong>입니다.)
               </p>
             </div>
 

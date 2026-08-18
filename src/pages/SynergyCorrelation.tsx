@@ -30,11 +30,12 @@ export default function SynergyCorrelation() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
   const [correlationData, setCorrelationData] = useState<StoreCorrelationItem[]>([]);
+  const [includeMoto, setIncludeMoto] = useState<boolean>(true);
   const [summaryKpis, setSummaryKpis] = useState({
-    totalLeisureSales: 0,
+    ticketSales: 0,
+    motoSales: 0,
     totalFnbSales: 0,
-    totalLeisureRevPas: 0,
-    totalFnbRevPas: 0
+    totalRooms: 1
   });
   const [loading, setLoading] = useState(true);
 
@@ -100,8 +101,9 @@ export default function SynergyCorrelation() {
       if (totalRooms <= 0) totalRooms = 1;
 
       // 1. Calculate Official Division Subtotals (SSOT from matrix-weekly)
-      let calcLeisureSales = 0;
-      let calcFnbSales = 0;
+      let ticketSales = 0;
+      let motoSales = 0;
+      let fnbSales = 0;
 
       if (Array.isArray(matrixRows)) {
         const ticketSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'TICKET' && (r.subtotalType === 'category' || r.partName === '소계'));
@@ -115,16 +117,16 @@ export default function SynergyCorrelation() {
             : cleanNum(sub.todayActual);
         };
 
-        if (ticketSub) calcLeisureSales += getSubSales(ticketSub);
-        if (motoSub) calcLeisureSales += getSubSales(motoSub);
-        if (fnbSub) calcFnbSales += getSubSales(fnbSub);
+        if (ticketSub) ticketSales = getSubSales(ticketSub);
+        if (motoSub) motoSales = getSubSales(motoSub);
+        if (fnbSub) fnbSales = getSubSales(fnbSub);
       }
 
       setSummaryKpis({
-        totalLeisureSales: calcLeisureSales,
-        totalFnbSales: calcFnbSales,
-        totalLeisureRevPas: totalRooms > 0 ? Math.round(calcLeisureSales / totalRooms) : 0,
-        totalFnbRevPas: totalRooms > 0 ? Math.round(calcFnbSales / totalRooms) : 0
+        ticketSales,
+        motoSales,
+        totalFnbSales: fnbSales,
+        totalRooms
       });
 
       const processCorrItem = (item: any, defaultDivision: string): StoreCorrelationItem => {
@@ -262,16 +264,20 @@ export default function SynergyCorrelation() {
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 
-  // Pure Dynamic SSOT Extraction for Leisure, Moto, and Golf Stores directly from V6 Correlation API
+  // Pure Dynamic SSOT Extraction for Leisure and Moto Stores directly from V6 Correlation API
   const leisureStoreAnalysis = useMemo(() => {
     return correlationData
-      .filter(c => c.divisionName === '레저본부' || c.divisionName === '모토아레나' || c.divisionName === '골프본부')
+      .filter(c => {
+        if (c.divisionName === '골프본부' || c.divisionName === '식음팀') return false;
+        if (!includeMoto && (c.divisionName === '모토아레나' || c.shopName.includes('모토아레나'))) return false;
+        return c.divisionName === '레저본부' || c.divisionName === '모토아레나';
+      })
       .map(c => ({
         ...c,
         color: 'border-purple-200 bg-purple-50/40 text-purple-900'
       }))
       .sort((a, b) => b.totalSales - a.totalSales);
-  }, [correlationData]);
+  }, [correlationData, includeMoto]);
 
   // Pure Dynamic SSOT Extraction for F&B Stores directly from V6 Correlation API
   const fnbStoreAnalysis = useMemo(() => {
@@ -285,19 +291,31 @@ export default function SynergyCorrelation() {
   }, [correlationData]);
 
   // Overall Division Summary KPIs (100% Total Revenue from SSOT)
-  const totalLeisureSales = summaryKpis.totalLeisureSales;
-  const totalLeisureRevPas = summaryKpis.totalLeisureRevPas;
+  const totalLeisureSales = includeMoto 
+    ? summaryKpis.ticketSales + summaryKpis.motoSales 
+    : summaryKpis.ticketSales;
+
+  const totalLeisureRevPas = summaryKpis.totalRooms > 0 
+    ? Math.round(totalLeisureSales / summaryKpis.totalRooms) 
+    : 0;
+
   const totalFnbSales = summaryKpis.totalFnbSales;
-  const totalFnbRevPas = summaryKpis.totalFnbRevPas;
+  const totalFnbRevPas = summaryKpis.totalRooms > 0 
+    ? Math.round(totalFnbSales / summaryKpis.totalRooms) 
+    : 0;
 
   const leisureCorrelationRows = useMemo(() => {
     if (correlationData.length > 0) {
-      const rows = correlationData.filter(r => r.divisionName === '레저본부' || r.divisionName === '모토아레나');
+      let rows = correlationData.filter(r => {
+        if (r.divisionName === '골프본부' || r.divisionName === '식음팀') return false;
+        if (!includeMoto && (r.divisionName === '모토아레나' || r.shopName.includes('모토아레나'))) return false;
+        return r.divisionName === '레저본부' || r.divisionName === '모토아레나';
+      });
       if (selectedLeisureShop === 'ALL') return rows;
       return rows.filter(r => r.shopName === selectedLeisureShop);
     }
     return [];
-  }, [correlationData, selectedLeisureShop]);
+  }, [correlationData, selectedLeisureShop, includeMoto]);
 
   const fnbCorrelationRows = useMemo(() => {
     if (correlationData.length > 0) {
@@ -464,14 +482,44 @@ export default function SynergyCorrelation() {
         </div>
 
 
-        {/* Global Data Controls (Sorting) */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end">
+        {/* Global Data Controls (Sorting & MotoArena Toggle Switch) */}
+        <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
+          {/* MotoArena Inclusion Switch */}
+          <div className="flex items-center gap-3 bg-white/10 px-3.5 py-1.5 rounded-2xl border border-white/15 backdrop-blur-md">
+            <span className="text-xs font-semibold text-slate-200">모토아레나(서킷) 분석:</span>
+            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setIncludeMoto(true)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                  includeMoto 
+                    ? 'bg-purple-600 text-white shadow-sm' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                포함 (레저+모토)
+              </button>
+              <button
+                type="button"
+                onClick={() => setIncludeMoto(false)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                  !includeMoto 
+                    ? 'bg-amber-600 text-white shadow-sm' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                불포함 (순수 레저만)
+              </button>
+            </div>
+          </div>
+
+          {/* Sort Order */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-slate-300">데이터 정렬 기준:</span>
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as any)}
-              className="bg-black/30 border border-white/20 text-white text-sm rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors"
+              className="bg-black/30 border border-white/20 text-white text-sm rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors cursor-pointer"
             >
               <option value="default" className="text-slate-800">기본 정렬 (매출순)</option>
               <option value="spilloverRate" className="text-slate-800">숙박객 비율(%) 높은 순</option>
@@ -487,16 +535,24 @@ export default function SynergyCorrelation() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-purple-600" /> {isActualRange ? '구간 레저·모토 전체 매출' : '레저본부 & 모토아레나 전체 매출'}
+                <Ticket className="w-5 h-5 text-purple-600" /> {
+                  includeMoto 
+                    ? (isActualRange ? '구간 레저·모토 전체 매출' : '레저본부 & 모토아레나 전체 매출')
+                    : (isActualRange ? '구간 순수 레저 전체 매출 (모토 제외)' : '순수 레저본부 전체 매출 (모토 제외)')
+                }
               </span>
-              <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                LEISURE & MOTO
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
+                includeMoto ? 'text-purple-600 bg-purple-50' : 'text-amber-700 bg-amber-50'
+              }`}>
+                {includeMoto ? 'LEISURE & MOTO' : 'PURE LEISURE'}
               </span>
             </div>
             <div className="text-3xl font-medium text-slate-900 mb-1">
               {formatCurrency(totalLeisureSales)} <span className="text-lg text-slate-500 font-normal">원</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mb-3">레저본부 및 모토아레나 관할 영업장 100% 원천 매출 합계</p>
+            <p className="text-xs text-slate-500 font-medium mb-3">
+              {includeMoto ? '레저본부 및 모토아레나 관할 영업장 100% 원천 매출 합계' : '모토아레나 제외 · 순수 레저본부 관할 영업장 100% 원천 매출 합계'}
+            </p>
           </div>
           
           {/* Calculated Store List Badge */}
@@ -541,19 +597,28 @@ export default function SynergyCorrelation() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-600" /> {isActualRange ? '구간 1실당 레저·모토 파급가치' : '1실당 레저 & 모토 파급가치'}
+                <TrendingUp className="w-5 h-5 text-indigo-600" /> {
+                  includeMoto 
+                    ? (isActualRange ? '구간 1실당 레저·모토 파급가치' : '1실당 레저 & 모토 파급가치')
+                    : (isActualRange ? '구간 1실당 순수 레저 파급가치' : '1실당 순수 레저 파급가치')
+                }
               </span>
               <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                LEISURE RevPAS (골프 불포함)
+                {includeMoto ? 'LEISURE RevPAS (골프 불포함)' : 'LEISURE RevPAS (모토·골프 불포함)'}
               </span>
             </div>
             <div className="text-3xl font-medium text-indigo-600 mb-1">
               {formatCurrency(totalLeisureRevPas)} <span className="text-lg text-slate-500 font-normal">원/실</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">객실 1실 추가 판매 시 레저+모토아레나 예상 증가 매출 (골프 불포함 · 통계적 회귀 합산)</p>
+            <p className="text-xs text-slate-500 font-medium">
+              {includeMoto 
+                ? '객실 1실 추가 판매 시 레저+모토아레나 예상 증가 매출 (골프 불포함 · 통계적 회귀 합산)'
+                : '객실 1실 추가 판매 시 순수 레저본부 예상 증가 매출 (모토·골프 불포함 · 통계적 회귀 합산)'
+              }
+            </p>
           </div>
           <div className="mt-2 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
-            수식: ∑(각 영업장별 revPasContribution) · 골프 매출 불포함
+            수식: ∑(각 영업장별 revPasContribution) · {includeMoto ? '골프 불포함' : '모토아레나 및 골프 불포함'}
           </div>
         </div>
 

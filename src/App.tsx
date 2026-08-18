@@ -27,6 +27,7 @@ import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
 import SynergyBundles from './pages/SynergyBundles';
+import GroupSales from './pages/GroupSales';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -66,6 +67,7 @@ export function App() {
                       <Route index element={<Home />} />
                       <Route path="resort-business" element={<ResortBusiness />} />
                       <Route path="golf-business" element={<GolfBusiness />} />
+                      <Route path="group-sales" element={<GroupSales />} />
                       <Route path="leisure" element={<LeisureFacility />} />
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />

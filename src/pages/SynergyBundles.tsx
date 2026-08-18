@@ -46,12 +46,12 @@ const formatBundleTitle = (bundle: CustomerBundleItem) => {
 };
 
 export default function SynergyBundles() {
-  const { startDate: globalStartDate, endDate: globalEndDate, setStartDate: setGlobalStartDate, setEndDate: setGlobalEndDate } = useDate();
+  const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
   
   // Date Range State
-  const [isRangeMode, setIsRangeMode] = useState<boolean>(true);
-  const [startDate, setStartDate] = useState<string>(globalStartDate || '2026-07-01');
-  const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
+  const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
+  const [startDate, setStartDate] = useState<string>(globalStartDate);
+  const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
   const [bundleData, setBundleData] = useState<CustomerBundleItem[]>([]);
   const [apiMeta, setApiMeta] = useState<{ totalUniqueCustomers?: number; multiFacilityRatioPct?: number; totalSales?: number; multiFacilityCustomers?: number; singleFacilityArpu?: number; multiFacilityArpu?: number; arpuLiftMultiplier?: number } | null>(null);
@@ -76,7 +76,7 @@ export default function SynergyBundles() {
     setLoading(true);
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
-    const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate);
+    const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
 
     if (rangeActive && sDate && eDate && sDate > eDate) {
       const temp = sDate;
@@ -122,9 +122,13 @@ export default function SynergyBundles() {
     }
   };
 
+  // Sync with global DateContext on mount and updates
   useEffect(() => {
-    fetchData();
-  }, []);
+    setIsRangeMode(globalIsRange);
+    setStartDate(globalStartDate);
+    setEndDate(globalEndDate || globalStartDate);
+    fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange);
+  }, [globalStartDate, globalEndDate, globalIsRange]);
 
   const handleSearch = () => {
     let s = startDate;
@@ -136,8 +140,7 @@ export default function SynergyBundles() {
       setStartDate(s);
       setEndDate(e);
     }
-    setGlobalStartDate(s);
-    setGlobalEndDate(isRangeMode ? e : null);
+    setDateRange(s, isRangeMode ? e : null, isRangeMode);
     fetchData(s, e, isRangeMode);
   };
 
@@ -147,8 +150,7 @@ export default function SynergyBundles() {
     setIsRangeMode(res.isRange);
     setStartDate(res.startDate);
     setEndDate(res.endDate || res.startDate);
-    setGlobalStartDate(res.startDate);
-    setGlobalEndDate(res.endDate);
+    setDateRange(res.startDate, res.endDate, res.isRange);
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 

@@ -4,22 +4,17 @@ import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { Calendar, RefreshCw } from 'lucide-react';
 
 export default function GlobalDatePicker({ showPresets = true }: { showPresets?: boolean }) {
-  const { startDate, endDate, setStartDate, setEndDate } = useDate();
+  const { startDate, endDate, isRange, setDateRange } = useDate();
 
-  const [isRangeMode, setIsRangeMode] = useState<boolean>(() => {
-    return !!endDate || localStorage.getItem('isRange') === 'true';
-  });
-
+  const [isRangeMode, setIsRangeMode] = useState<boolean>(isRange);
   const [draftStart, setDraftStart] = useState<string>(startDate);
   const [draftEnd, setDraftEnd] = useState<string>(endDate || startDate);
 
   useEffect(() => {
     setDraftStart(startDate);
     setDraftEnd(endDate || startDate);
-    if (endDate) {
-      setIsRangeMode(true);
-    }
-  }, [startDate, endDate]);
+    setIsRangeMode(isRange);
+  }, [startDate, endDate, isRange]);
 
   const handleApply = () => {
     if (isRangeMode && draftEnd) {
@@ -33,11 +28,9 @@ export default function GlobalDatePicker({ showPresets = true }: { showPresets?:
         setDraftStart(start);
         setDraftEnd(end);
       }
-      setStartDate(start);
-      setEndDate(end);
+      setDateRange(start, end, true);
     } else {
-      setStartDate(draftStart);
-      setEndDate(null);
+      setDateRange(draftStart, null, false);
     }
   };
 
@@ -46,8 +39,7 @@ export default function GlobalDatePicker({ showPresets = true }: { showPresets?:
     setIsRangeMode(res.isRange);
     setDraftStart(res.startDate);
     setDraftEnd(res.endDate || res.startDate);
-    setStartDate(res.startDate);
-    setEndDate(res.endDate);
+    setDateRange(res.startDate, res.endDate, res.isRange);
   };
 
   // Helper to determine if a preset matches current startDate & endDate

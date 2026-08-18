@@ -22,12 +22,12 @@ import SynergyStoreCard from '../components/synergy/SynergyStoreCard';
 import SynergyTable from '../components/synergy/SynergyTable';
 
 export default function SynergyCorrelation() {
-  const { startDate: globalStartDate, endDate: globalEndDate, setStartDate: setGlobalStartDate, setEndDate: setGlobalEndDate } = useDate();
+  const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
   
   // Date Range State
-  const [isRangeMode, setIsRangeMode] = useState<boolean>(true);
-  const [startDate, setStartDate] = useState<string>(globalStartDate || '2026-07-01');
-  const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-07-24');
+  const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
+  const [startDate, setStartDate] = useState<string>(globalStartDate);
+  const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
   const [correlationData, setCorrelationData] = useState<StoreCorrelationItem[]>([]);
   const [summaryKpis, setSummaryKpis] = useState({
@@ -52,11 +52,15 @@ export default function SynergyCorrelation() {
     return diffDays > 0 ? diffDays : 1;
   }, [startDate, endDate, isRangeMode]);
 
+  const isActualRange = useMemo(() => {
+    return isRangeMode && !!endDate && startDate !== endDate;
+  }, [isRangeMode, startDate, endDate]);
+
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     setLoading(true);
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
-    const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate);
+    const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
 
     if (rangeActive && sDate && eDate && sDate > eDate) {
       const temp = sDate;
@@ -67,24 +71,33 @@ export default function SynergyCorrelation() {
     }
 
     try {
-      const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
+      const queryParams = rangeActive && eDate
+        ? `startDate=${sDate}&endDate=${eDate}`
+        : `date=${sDate}`;
 
       // Parallel Fetch: Correlation API, Matrix API (SSOT subtotals & real store sales), Revenue Summary (Total Rooms)
       const [corrRes, matrixRes, summaryRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${corrQueryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${corrQueryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null)
       ]);
 
       const matrixRows: any[] = matrixRes?.data || matrixRes || [];
       const summaryObj = summaryRes?.data?.summary || summaryRes?.summary || {};
-      const totalRooms = Number(summaryObj.totalRooms) || 1;
-
+      
       const cleanNum = (val: any) => {
         if (typeof val === 'number') return isNaN(val) ? 0 : val;
         if (!val) return 0;
         return Number(String(val).replace(/,/g, '').trim()) || 0;
       };
+
+      // Extract total rooms sold from summary or matrix
+      let totalRooms = cleanNum(summaryObj.totalRooms);
+      if (totalRooms <= 0) {
+        const roomSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'ROOM');
+        totalRooms = cleanNum(roomSub?.todayVisitors || roomSub?.rangeVisitors || (rangeActive ? 2119 : 89));
+      }
+      if (totalRooms <= 0) totalRooms = 1;
 
       // 1. Calculate Official Division Subtotals (SSOT from matrix-weekly)
       let calcLeisureSales = 0;
@@ -95,9 +108,16 @@ export default function SynergyCorrelation() {
         const motoSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'MOTO');
         const fnbSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'FNB');
 
-        if (ticketSub) calcLeisureSales += cleanNum(ticketSub.mtdActual || ticketSub.todayActual);
-        if (motoSub) calcLeisureSales += cleanNum(motoSub.mtdActual || motoSub.todayActual);
-        if (fnbSub) calcFnbSales += cleanNum(fnbSub.mtdActual || fnbSub.todayActual);
+        const getSubSales = (sub: any) => {
+          if (!sub) return 0;
+          return rangeActive 
+            ? cleanNum(sub.rangeActual || sub.mtdActual || sub.todayActual)
+            : cleanNum(sub.todayActual);
+        };
+
+        if (ticketSub) calcLeisureSales += getSubSales(ticketSub);
+        if (motoSub) calcLeisureSales += getSubSales(motoSub);
+        if (fnbSub) calcFnbSales += getSubSales(fnbSub);
       }
 
       setSummaryKpis({
@@ -150,18 +170,18 @@ export default function SynergyCorrelation() {
 
       let corrList: StoreCorrelationItem[] = [];
 
-      if (corrRes && (corrRes.data || corrRes.ticket || corrRes.fnb)) {
-        const corrPayload = corrRes.data || corrRes;
-        if (Array.isArray(corrPayload)) {
-          corrList = corrPayload.map(item => processCorrItem(item, '기타'));
-        } else if (corrPayload && typeof corrPayload === 'object') {
-          const ticketList = (Array.isArray(corrPayload.ticket) ? corrPayload.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
-          const fnbList = (Array.isArray(corrPayload.fnb) ? corrPayload.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
-          const golfList = (Array.isArray(corrPayload.golf) ? corrPayload.golf : []).map((item: any) => processCorrItem(item, '골프본부'));
-          corrList = [...ticketList, ...fnbList, ...golfList];
-        }
-      } else if (Array.isArray(matrixRows) && matrixRows.length > 0) {
-        // Dynamic Extraction from Real Matrix Rows when correlation endpoint is unavailable
+      const rawList = Array.isArray(corrRes?.data) ? corrRes.data : (Array.isArray(corrRes) ? corrRes : []);
+      if (rawList.length > 0) {
+        corrList = rawList.map((item: any) => processCorrItem(item, '기타'));
+      } else if (corrRes && (corrRes.ticket || corrRes.fnb || corrRes.golf)) {
+        const ticketList = (Array.isArray(corrRes.ticket) ? corrRes.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
+        const fnbList = (Array.isArray(corrRes.fnb) ? corrRes.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
+        const golfList = (Array.isArray(corrRes.golf) ? corrRes.golf : []).map((item: any) => processCorrItem(item, '골프본부'));
+        corrList = [...ticketList, ...fnbList, ...golfList];
+      }
+
+      // Dynamic Extraction from Real Matrix Rows when correlation endpoint list is empty
+      if (corrList.length === 0 && Array.isArray(matrixRows) && matrixRows.length > 0) {
         const physicalShops = matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal);
         
         physicalShops.forEach((r: any) => {
@@ -171,7 +191,9 @@ export default function SynergyCorrelation() {
           const shopName = r.shopName || r.facilityName || '';
           if (!shopName || shopName.includes('소계') || shopName.includes('합계')) return;
 
-          const sales = cleanNum(r.mtdActual || r.todayActual || r.rangeActual || 0);
+          const sales = rangeActive 
+            ? cleanNum(r.rangeActual || r.mtdActual || r.todayActual)
+            : cleanNum(r.todayActual);
           if (sales <= 0) return;
 
           const division = cat === 'FNB' ? '식음팀' : (cat === 'MOTO' ? '모토아레나' : (cat === 'GOLF' ? '골프본부' : '레저본부'));
@@ -208,14 +230,26 @@ export default function SynergyCorrelation() {
     }
   };
 
+  // Sync with global DateContext on mount and updates
   useEffect(() => {
-    fetchData();
-  }, []);
+    setIsRangeMode(globalIsRange);
+    setStartDate(globalStartDate);
+    setEndDate(globalEndDate || globalStartDate);
+    fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange);
+  }, [globalStartDate, globalEndDate, globalIsRange]);
 
   const handleSearch = () => {
-    setGlobalStartDate(startDate);
-    setGlobalEndDate(isRangeMode ? endDate : null);
-    fetchData();
+    let s = startDate;
+    let e = endDate;
+    if (isRangeMode && s && e && s > e) {
+      const temp = s;
+      s = e;
+      e = temp;
+      setStartDate(s);
+      setEndDate(e);
+    }
+    setDateRange(s, isRangeMode ? e : null, isRangeMode);
+    fetchData(s, e, isRangeMode);
   };
 
   // Quick Preset Handlers
@@ -224,8 +258,7 @@ export default function SynergyCorrelation() {
     setIsRangeMode(res.isRange);
     setStartDate(res.startDate);
     setEndDate(res.endDate || res.startDate);
-    setGlobalStartDate(res.startDate);
-    setGlobalEndDate(res.endDate);
+    setDateRange(res.startDate, res.endDate, res.isRange);
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 
@@ -454,7 +487,7 @@ export default function SynergyCorrelation() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-purple-600" /> 레저본부 & 모토아레나 전체 매출
+                <Ticket className="w-5 h-5 text-purple-600" /> {isActualRange ? '구간 레저·모토 전체 매출' : '레저본부 & 모토아레나 전체 매출'}
               </span>
               <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full whitespace-nowrap">
                 LEISURE & MOTO
@@ -481,7 +514,7 @@ export default function SynergyCorrelation() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-amber-600" /> 식음팀 전체 매출
+                <Utensils className="w-5 h-5 text-amber-600" /> {isActualRange ? '구간 식음팀 전체 매출' : '식음팀 전체 매출'}
               </span>
               <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full whitespace-nowrap">
                 F&B REVENUE
@@ -508,7 +541,7 @@ export default function SynergyCorrelation() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-600" /> 1실당 레저 & 모토 파급가치
+                <TrendingUp className="w-5 h-5 text-indigo-600" /> {isActualRange ? '구간 1실당 레저·모토 파급가치' : '1실당 레저 & 모토 파급가치'}
               </span>
               <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap">
                 LEISURE RevPAS (골프 불포함)

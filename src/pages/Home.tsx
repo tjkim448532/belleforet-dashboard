@@ -127,6 +127,11 @@ export default function Home() {
   const ytdGrowth = coreData.core?.summary?.ytdGrowth;
   const ytdDiff = coreData.core?.summary?.ytdDiff;
 
+  const mtdGross = displayData.mtd?.gross || parseNum(coreData.core?.summary?.mtdRevenue || coreData.core?.summary?.mtdActual || 0);
+  const mtdGrowth = coreData.core?.summary?.mtdGrowth;
+  const mtdDiff = (coreData.core?.summary?.mtdRevenue && coreData.core?.summary?.mtdLy)
+    ? parseNum(coreData.core?.summary?.mtdRevenue) - parseNum(coreData.core?.summary?.mtdLy)
+    : undefined;
   
   const multiNight = (() => {
     const s = coreData.core?.summary || {};
@@ -255,32 +260,64 @@ export default function Home() {
               )}
             </div>
 
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
-              <div className="min-h-[96px] mb-2 relative z-10 flex flex-col justify-start">
-                <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap">
-                  <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) 
-                  <span className="text-xs text-slate-400 font-normal">
-                    ({startDate.slice(0, 4)}-01-01 ~ {isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate})
-                  </span>
-                </h2>
-              </div>
-              <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight relative z-10">
-                {formatCurrency(ytdGross)}
-              </div>
-              {ytdGrowth !== undefined ? (
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold relative z-10 ${ytdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                  <span>전년 동기 대비</span>
-                  <span>{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
-                  {ytdDiff !== undefined && (
-                    <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
-                  )}
+              
+              {/* 1. 올해 누적 매출 (YTD) */}
+              <div className="relative z-10">
+                <div className="mb-1 flex flex-col justify-start">
+                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap">
+                    <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 올해 누적 매출 (YTD) 
+                    <span className="text-xs text-slate-400 font-normal">
+                      ({startDate.slice(0, 4)}-01-01 ~ {isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate})
+                    </span>
+                  </h2>
                 </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-400 relative z-10">
-                  <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight">
+                  {formatCurrency(ytdGross)}
                 </div>
-              )}
+                {ytdGrowth !== undefined ? (
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${ytdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                    <span>전년 동기 대비</span>
+                    <span>{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
+                    {ytdDiff !== undefined && (
+                      <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
+                    <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. 💡 [NEW] 월별 누적 매출 (MTD) - 매달 1일부터 오늘(조회일)까지의 누적 매출 및 전년 동기간 대비 등락율 */}
+              <div className="mt-4 pt-3.5 border-t border-slate-100 relative z-10">
+                <div className="mb-1 flex flex-col justify-start">
+                  <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5 flex-wrap">
+                    <CalendarDays className="w-4 h-4 text-emerald-600" /> 월별 누적 매출 (MTD)
+                    <span className="text-xs text-slate-400 font-normal">
+                      ({startDate.slice(0, 7)}-01 ~ {isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate})
+                    </span>
+                  </h3>
+                </div>
+                <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight">
+                  {formatCurrency(mtdGross)}
+                </div>
+                {mtdGrowth !== undefined ? (
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${mtdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                    <span>전년 동기간 대비</span>
+                    <span>{mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdGrowth).toFixed(1)}%</span>
+                    {mtdDiff !== undefined && (
+                      <span className="font-medium opacity-80">({mtdDiff > 0 ? '+' : ''}{formatCurrency(mtdDiff)})</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
+                    <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">

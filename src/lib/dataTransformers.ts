@@ -36,6 +36,13 @@ export interface TransformedHomeData {
     ly_gross: number;
     ly_day: number;
   };
+  mtd: {
+    actual: number;
+    ly_actual: number;
+    gross: number;
+    ly_gross: number;
+    ly_day: number;
+  };
   today: {
     actual: number;
     ly_actual: number;
@@ -127,6 +134,8 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   const lyRev = parseNum(c.summary?.todayLyRevenue || 0);
   const ytdRev = parseNum(c.summary?.ytdActual || c.summary?.ytdRevenue || 0);
   const ytdLyRev = parseNum(c.summary?.ytdLy || 0);
+  const mtdRev = parseNum(c.summary?.mtdRevenue || c.summary?.mtdActual || 0);
+  const mtdLyRev = parseNum(c.summary?.mtdLy || 0);
 
   return {
     success: true,
@@ -138,6 +147,13 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
       gross: ytdRev,
       ly_gross: ytdLyRev,
       ly_day: ytdLyRev
+    },
+    mtd: {
+      actual: mtdRev,
+      ly_actual: mtdLyRev,
+      gross: mtdRev,
+      ly_gross: mtdLyRev,
+      ly_day: mtdLyRev
     },
     today: { 
       actual: actualRev, 

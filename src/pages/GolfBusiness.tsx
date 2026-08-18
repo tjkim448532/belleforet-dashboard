@@ -479,25 +479,29 @@ export default function GolfBusiness() {
                     <Hotel className="w-4 h-4 text-amber-600" /> 골프+숙박(골프텔) 결합률
                   </span>
                   <span className="text-[10px] font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
-                    체류형 고객
+                    패키지 전표 기준
                   </span>
                 </div>
                 <div className="text-2xl font-black text-amber-900 my-1">
-                  {packageRatio}% <span className="text-xs font-normal text-slate-500">({packageTeams}팀 / 121팀)</span>
+                  {packageRatio}% <span className="text-xs font-normal text-slate-500">({packageTeams}팀 / {visitedTeams}팀)</span>
                 </div>
                 <div className="space-y-1 text-xs text-slate-700 mt-3 pt-2 border-t border-amber-200/60">
                   <div className="flex justify-between">
-                    <span>• 일반 당일치기 골퍼:</span>
-                    <strong>{visitedTeams - packageTeams}팀 (99.2%)</strong>
+                    <span>• 산출 근거 (분자/분모):</span>
+                    <strong>공식 패키지 {packageTeams}팀 ÷ 총 {visitedTeams}팀</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 패키지 1팀 그린피:</span>
+                    <span>• 일반 단독 라운딩 골퍼:</span>
+                    <strong>{visitedTeams - packageTeams}팀 ({visitedTeams > 0 ? (((visitedTeams - packageTeams) / visitedTeams) * 100).toFixed(1) : 0}%)</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>• 패키지 1팀 그린피 실매출:</span>
                     <strong>₩{formatCurrency(packageChannel?.greenFeeRevenue || 0)}원</strong>
                   </div>
                 </div>
               </div>
               <p className="text-[11px] text-amber-950 mt-4 pt-2 border-t border-amber-200/40 leading-relaxed">
-                🏨 골퍼의 99% 이상이 당일치기 라운딩만 하고 있습니다. <strong>수도권 골퍼를 위한 1박 2일 36홀+콘도 패키지 비중을 5% 이상으로 확대</strong>하면 객실과 식음 매출이 함께 급증합니다.
+                🏨 <strong>산출 방식</strong>: 골프 원천 예약 DB에서 거래처/요금명이 <strong>'패키지'로 등록된 공식 묶음 상품 {packageTeams}건</strong>을 전체 {visitedTeams}팀으로 나눈 100% 팩트 연산입니다. (※ 골프와 콘도 객실을 각각 별도로 결제하여 이용한 고객까지 자동 식별하는 <strong>전화번호/성명 교차 매칭(Cross-Ledger) 고도화 API</strong>가 백엔드에 요청되었습니다.)
               </p>
             </div>
 

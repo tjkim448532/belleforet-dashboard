@@ -237,11 +237,19 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   const channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
   if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
-    payload.salesByChannel.forEach((item: any) => {
-      const sold = parseNum(item.roomsSold || 0);
-      const rev = parseNum(item.totalSales || item.revenue || 0);
+    // 백엔드가 제공하는 공식 채널 소계(isChannelSubtotal) 행만 1-depth로 추출
+    const channelSubtotals = payload.salesByChannel.filter((item: any) => item.isChannelSubtotal);
+    const sourceRows = channelSubtotals.length > 0 
+      ? channelSubtotals 
+      : payload.salesByChannel.filter((item: any) => !item.isGrandTotal && !item.isSegmentSubtotal);
+
+    sourceRows.forEach((item: any) => {
+      const sold = parseNum(item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0);
+      const rev = parseNum(item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0);
+      const channelName = item.channelName || item.channel || '기타';
+      
       channelAdrData.push({
-        channel: item.channelName || '기타',
+        channel: channelName,
         roomsSold: sold,
         totalRevenue: rev,
         adr: sold > 0 ? Math.round(rev / sold) : 0
@@ -252,11 +260,19 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   const marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
   if (payload.salesBySegment && Array.isArray(payload.salesBySegment)) {
-    payload.salesBySegment.forEach((item: any) => {
-      const sold = parseNum(item.roomsSold || 0);
-      const rev = parseNum(item.totalSales || 0);
+    // 백엔드가 제공하는 공식 세그먼트 소계(isSegmentSubtotal) 행만 1-depth로 추출
+    const segmentSubtotals = payload.salesBySegment.filter((item: any) => item.isSegmentSubtotal);
+    const sourceRows = segmentSubtotals.length > 0
+      ? segmentSubtotals
+      : payload.salesBySegment.filter((item: any) => !item.isGrandTotal && !item.isChannelSubtotal);
+
+    sourceRows.forEach((item: any) => {
+      const sold = parseNum(item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0);
+      const rev = parseNum(item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0);
+      const marketName = item.segmentName || item.marketType || '기타';
+
       marketTypeAdrData.push({
-        marketType: item.segmentName || '기타',
+        marketType: marketName,
         roomsSold: sold,
         totalRevenue: rev,
         adr: sold > 0 ? Math.round(rev / sold) : 0

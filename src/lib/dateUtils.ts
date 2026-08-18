@@ -32,7 +32,7 @@ export const getLatestClosedDateStr = (): string => {
   return formatDate(getClosedBusinessDate(1));
 };
 
-export type DatePresetType = 'TODAY' | 'WEEK' | 'MTD' | 'H1';
+export type DatePresetType = 'TODAY' | 'WEEK' | 'MTD' | 'H1' | 'PAST_6M' | 'YTD' | 'PAST_1Y';
 
 export interface PresetDateResult {
   startDate: string;
@@ -90,6 +90,38 @@ export const getPresetDateRange = (preset: DatePresetType): PresetDateResult => 
         endDate: `${yyyy}-06-30`,
         isRange: true,
         label: '상반기 (1~6월)'
+      };
+    }
+
+    case 'PAST_6M': {
+      // '최근 6개월' = 어제 기준 직전 180일간
+      const halfYearStart = new Date(yesterday.getTime() - 180 * 24 * 60 * 60 * 1000);
+      return {
+        startDate: formatDate(halfYearStart),
+        endDate: yesterdayStr,
+        isRange: true,
+        label: '최근 6개월'
+      };
+    }
+
+    case 'YTD': {
+      // '연간 누적' = 당해 1월 1일 ~ 어제(D-1)
+      return {
+        startDate: `${yyyy}-01-01`,
+        endDate: yesterdayStr,
+        isRange: true,
+        label: `연간 누적 (${yyyy}년)`
+      };
+    }
+
+    case 'PAST_1Y': {
+      // '최근 1년' = 어제 기준 직전 365일간
+      const oneYearStart = new Date(yesterday.getTime() - 365 * 24 * 60 * 60 * 1000);
+      return {
+        startDate: formatDate(oneYearStart),
+        endDate: yesterdayStr,
+        isRange: true,
+        label: '최근 1년 (365일)'
       };
     }
 

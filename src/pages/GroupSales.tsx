@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDate } from '../contexts/DateContext';
+import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Building2, Phone, DollarSign, Search, 
-  ChevronRight, RefreshCw, Layers, Award
+  ChevronRight, RefreshCw, Layers, Award, Calendar
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -50,7 +52,7 @@ export interface CorporateGroupItem {
 }
 
 export default function GroupSales() {
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, setStartDate, setEndDate } = useDate();
   
   const [groupList, setGroupList] = useState<CorporateGroupItem[]>([]);
   const [summaryData, setSummaryData] = useState<{
@@ -69,6 +71,12 @@ export default function GroupSales() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedGroupModal, setSelectedGroupModal] = useState<CorporateGroupItem | null>(null);
+
+  const applyPreset = (preset: DatePresetType) => {
+    const range = getPresetDateRange(preset);
+    setStartDate(range.startDate);
+    setEndDate(range.endDate);
+  };
 
   const fetchGroupSales = async () => {
     setLoading(true);
@@ -132,12 +140,16 @@ export default function GroupSales() {
         <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="bg-indigo-400/20 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide uppercase">
                 B2B CORPORATE & GROUP SALES INTELLIGENCE
               </span>
               <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
                 <Building2 size={12} className="text-indigo-400" /> 단체 고객 정밀 분석
+              </span>
+              <span className="bg-indigo-500/30 text-indigo-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-indigo-400/30 font-medium">
+                <Calendar size={12} className="text-indigo-300" />
+                조회 기간: <strong>{startDate} {endDate ? `~ ${endDate}` : '(1일)'}</strong>
               </span>
             </div>
             
@@ -146,20 +158,70 @@ export default function GroupSales() {
               영업 / 단체(B2B) 실적 및 이용 동선 분석
             </h1>
             <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-3xl">
-              기업 휴양소, 세미나/워크샵, 골프 단체, 만찬 연회 등 B2B 단체별 담당자 연락처, 총 매출 지출액, 객실·식음·골프·레저 교차 이용 동선을 전수 분석합니다.
+              기업 휴양소, 세미나/워크샵, 골프 단체, 만찬 연회 등 B2B 단체별 담당자 연락처, 총 매출 지출액, 객실·식음·골프·레저 교차 이용 동선을 6개월/1년 단위로 전수 분석합니다.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <GlobalDatePicker />
             <button
               onClick={fetchGroupSales}
               disabled={loading}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2"
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               새로고침
             </button>
           </div>
+        </div>
+
+        {/* 6개월 / 1년 빠른 기간 선택 퀵 바 */}
+        <div className="mt-6 pt-5 border-t border-white/10 flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-indigo-300 font-bold mr-1 flex items-center gap-1">
+            <Calendar size={14} /> 빠른 기간 선택:
+          </span>
+          <button
+            onClick={() => applyPreset('TODAY')}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
+          >
+            오늘(어제)
+          </button>
+          <button
+            onClick={() => applyPreset('WEEK')}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
+          >
+            최근 7일
+          </button>
+          <button
+            onClick={() => applyPreset('MTD')}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
+          >
+            금월(당월)
+          </button>
+          <button
+            onClick={() => applyPreset('H1')}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
+          >
+            상반기 (1~6월)
+          </button>
+          <button
+            onClick={() => applyPreset('PAST_6M')}
+            className="px-3 py-1.5 bg-indigo-500/40 hover:bg-indigo-500/60 text-indigo-100 rounded-xl font-bold transition-colors border border-indigo-400/40"
+          >
+            📅 최근 6개월 (180일 누적)
+          </button>
+          <button
+            onClick={() => applyPreset('YTD')}
+            className="px-3 py-1.5 bg-indigo-500/40 hover:bg-indigo-500/60 text-indigo-100 rounded-xl font-bold transition-colors border border-indigo-400/40"
+          >
+            📊 연간 누적 (1월~현재)
+          </button>
+          <button
+            onClick={() => applyPreset('PAST_1Y')}
+            className="px-3 py-1.5 bg-emerald-500/30 hover:bg-emerald-500/50 text-emerald-200 rounded-xl font-bold transition-colors border border-emerald-400/40"
+          >
+            🏆 최근 1년 (365일 전수)
+          </button>
         </div>
       </div>
 

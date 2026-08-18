@@ -109,8 +109,25 @@ export default function GlobalDatePicker() {
           type="button"
           onClick={() => applyPreset('H1')} 
           className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] font-medium text-slate-200 transition-colors"
+          title="상반기 (1~6월)"
         >
           상반기
+        </button>
+        <button 
+          type="button"
+          onClick={() => applyPreset('PAST_6M')} 
+          className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] font-medium text-slate-200 transition-colors"
+          title="어제 기준 최근 6개월 (180일)"
+        >
+          6개월
+        </button>
+        <button 
+          type="button"
+          onClick={() => applyPreset('YTD')} 
+          className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[11px] font-medium text-slate-200 transition-colors"
+          title="당해 연간 누적 (1월 1일~어제)"
+        >
+          연간(1년)
         </button>
       </div>
 

@@ -113,6 +113,7 @@ export default function Synergy() {
   
   const [channelData, setChannelData] = useState<RoomChannelSalesItem[]>([]);
   const [summaryData, setSummaryData] = useState<any>(null);
+  const [matrixData, setMatrixData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
 
@@ -150,16 +151,20 @@ export default function Synergy() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
       
-      // 1. Fetch V6 Room Sales by Channel (API 7: Ground-Up SSOT Dataset)
-      const channelRes = await secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null);
-      const channelPayload = channelRes?.data ?? channelRes;
-
-      // 2. Fetch V6 Main Revenue Summary
       const summaryQueryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${eDate || sDate}`;
-      const summaryRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null);
+
+      // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. API 2 Matrix Weekly (Category SSOT)
+      const [channelRes, summaryRes, matrixRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null)
+      ]);
+
+      const channelPayload = channelRes?.data ?? channelRes;
       const summaryPayload = summaryRes?.data ?? summaryRes;
+      const matrixPayload = matrixRes?.data ?? matrixRes;
 
       if (Array.isArray(channelPayload)) {
         setChannelData(channelPayload);
@@ -169,6 +174,12 @@ export default function Synergy() {
 
       if (summaryPayload) {
         setSummaryData(summaryPayload);
+      }
+
+      if (Array.isArray(matrixPayload)) {
+        setMatrixData(matrixPayload);
+      } else if (Array.isArray(matrixPayload?.data)) {
+        setMatrixData(matrixPayload.data);
       }
     } catch (err) {
       console.error('Synergy Dashboard API Error:', err);
@@ -205,17 +216,35 @@ export default function Synergy() {
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 
-  // Grand Total Rooms & Revenue (API 7 SSOT with revenue-summary fallback)
+  // Grand Total Rooms & Revenue (API 7 SSOT with matrix-weekly & revenue-summary fallbacks)
   const grandTotal = useMemo(() => {
     const gtRow = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
     if (gtRow) {
       const rooms = parseNum(isActualRange ? (gtRow.mtdRooms || gtRow.todayRooms || 0) : (gtRow.todayRooms || 0));
       const revenue = parseNum(isActualRange ? (gtRow.mtdRevenue || gtRow.todayRevenue || 0) : (gtRow.todayRevenue || 0));
-      return {
-        rooms,
-        revenue,
-        adr: rooms > 0 ? Math.round(revenue / rooms) : 0
-      };
+      if (rooms > 0 || revenue > 0) {
+        return {
+          rooms,
+          revenue,
+          adr: rooms > 0 ? Math.round(revenue / rooms) : 0
+        };
+      }
+    }
+
+    // Fallback: Bind directly from matrix-weekly SSOT
+    if (matrixData && matrixData.length > 0) {
+      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'ROOM');
+      if (roomRow) {
+        const roomsSold = parseNum(summaryData?.summary?.totalRooms || roomRow.todayVisitors || roomRow.rangeVisitors || 0);
+        const roomRev = parseNum(roomRow.todayActual || roomRow.rangeActual || roomRow.mtdActual || 0);
+        if (roomRev > 0 || roomsSold > 0) {
+          return {
+            rooms: roomsSold,
+            revenue: roomRev,
+            adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : 0
+          };
+        }
+      }
     }
 
     // Fallback: Bind directly from revenue-summary SSOT
@@ -228,10 +257,38 @@ export default function Synergy() {
       revenue: roomRev,
       adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : parseNum(summaryData?.summary?.totalADR || 0)
     };
-  }, [channelData, summaryData, isActualRange]);
+  }, [channelData, matrixData, summaryData, isActualRange]);
 
   // SSOT: 부대시설 연계 시너지 매출 (총매출 - 객실매출 또는 부대시설 카테고리 합)
   const ancillarySales = useMemo(() => {
+    // 1. Primary SSOT: From matrix-weekly (Accurate for both Single Date and Multi-Day Range)
+    if (matrixData && matrixData.length > 0) {
+      const totalRow = matrixData.find(r => r.isGrandTotal || r.categoryCode === 'TOTAL');
+      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'ROOM');
+      const golfRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'GOLF');
+      const fnbRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'FNB');
+      const ticketRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'TICKET');
+      const motoRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'MOTO');
+
+      const totalRev = parseNum(totalRow?.todayActual || totalRow?.rangeActual || totalRow?.mtdActual || 0);
+      const roomRev = parseNum(roomRow?.todayActual || roomRow?.rangeActual || roomRow?.mtdActual || grandTotal.revenue || 0);
+      const golfRev = parseNum(golfRow?.todayActual || golfRow?.rangeActual || golfRow?.mtdActual || 0);
+      const fnbRev = parseNum(fnbRow?.todayActual || fnbRow?.rangeActual || fnbRow?.mtdActual || 0);
+      const leisureRev = parseNum(ticketRow?.todayActual || ticketRow?.rangeActual || ticketRow?.mtdActual || 0) + 
+                         parseNum(motoRow?.todayActual || motoRow?.rangeActual || motoRow?.mtdActual || 0);
+
+      const totalAncillary = Math.max(0, totalRev > 0 ? (totalRev - roomRev) : (golfRev + fnbRev + leisureRev));
+      if (totalAncillary > 0) {
+        return {
+          golf: golfRev,
+          fnb: fnbRev,
+          ticket: leisureRev,
+          total: totalAncillary
+        };
+      }
+    }
+
+    // 2. Fallback: synergySales in revenue-summary
     const synergy = summaryData?.summary?.synergySales || summaryData?.synergySales;
     if (synergy && parseNum(synergy.total) > 0) {
       return { 
@@ -242,7 +299,7 @@ export default function Synergy() {
       };
     }
 
-    // Calculate directly from salesByCategory (GOLF, FNB, TICKET, MOTO, etc.)
+    // 3. Fallback: Calculate directly from salesByCategory (GOLF, FNB, TICKET, MOTO, etc.)
     const cats = summaryData?.salesByCategory || [];
     const golfRev = parseNum(cats.find((c: any) => c.categoryCode === 'GOLF')?.totalSales || cats.find((c: any) => c.categoryCode === 'GOLF')?.todayActual || 0);
     const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB')?.todayActual || 0);
@@ -258,7 +315,7 @@ export default function Synergy() {
       ticket: leisureRev,
       total: totalAncillary
     };
-  }, [summaryData, grandTotal.revenue]);
+  }, [matrixData, summaryData, grandTotal.revenue]);
 
   // Ground-Up Breakdown Grouping
   const segmentSummaries = useMemo(() => {

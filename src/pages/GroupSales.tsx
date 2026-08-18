@@ -5,7 +5,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Building2, Phone, DollarSign, Search, 
-  ChevronRight, RefreshCw, Layers, Award, Calendar
+  ChevronRight, RefreshCw, Layers, Award, Calendar, Check
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -76,6 +76,14 @@ export default function GroupSales() {
     const range = getPresetDateRange(preset);
     setStartDate(range.startDate);
     setEndDate(range.endDate);
+  };
+
+  const isPresetActive = (preset: DatePresetType) => {
+    const p = getPresetDateRange(preset);
+    if (p.isRange) {
+      return startDate === p.startDate && endDate === p.endDate;
+    }
+    return startDate === p.startDate && !endDate;
   };
 
   const fetchGroupSales = async () => {
@@ -163,11 +171,11 @@ export default function GroupSales() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <GlobalDatePicker />
+            <GlobalDatePicker showPresets={false} />
             <button
               onClick={fetchGroupSales}
               disabled={loading}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 active:scale-90 text-white rounded-xl text-xs font-bold transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer select-none"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               새로고침
@@ -180,48 +188,33 @@ export default function GroupSales() {
           <span className="text-indigo-300 font-bold mr-1 flex items-center gap-1">
             <Calendar size={14} /> 빠른 기간 선택:
           </span>
-          <button
-            onClick={() => applyPreset('TODAY')}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
-          >
-            오늘(어제)
-          </button>
-          <button
-            onClick={() => applyPreset('WEEK')}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
-          >
-            최근 7일
-          </button>
-          <button
-            onClick={() => applyPreset('MTD')}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
-          >
-            금월(당월)
-          </button>
-          <button
-            onClick={() => applyPreset('H1')}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
-          >
-            상반기 (1~6월)
-          </button>
-          <button
-            onClick={() => applyPreset('PAST_6M')}
-            className="px-3 py-1.5 bg-indigo-500/40 hover:bg-indigo-500/60 text-indigo-100 rounded-xl font-bold transition-colors border border-indigo-400/40"
-          >
-            📅 최근 6개월 (180일 누적)
-          </button>
-          <button
-            onClick={() => applyPreset('YTD')}
-            className="px-3 py-1.5 bg-indigo-500/40 hover:bg-indigo-500/60 text-indigo-100 rounded-xl font-bold transition-colors border border-indigo-400/40"
-          >
-            📊 연간 누적 (1월~현재)
-          </button>
-          <button
-            onClick={() => applyPreset('PAST_1Y')}
-            className="px-3 py-1.5 bg-emerald-500/30 hover:bg-emerald-500/50 text-emerald-200 rounded-xl font-bold transition-colors border border-emerald-400/40"
-          >
-            🏆 최근 1년 (365일 전수)
-          </button>
+
+          {[
+            { key: 'TODAY', label: '오늘(어제)' },
+            { key: 'WEEK', label: '최근 7일' },
+            { key: 'MTD', label: '금월(당월)' },
+            { key: 'H1', label: '상반기 (1~6월)' },
+            { key: 'PAST_6M', label: '📅 최근 6개월 (180일 누적)' },
+            { key: 'YTD', label: '📊 연간 누적 (1월~현재)' },
+            { key: 'PAST_1Y', label: '🏆 최근 1년 (365일 전수)' },
+          ].map(p => {
+            const active = isPresetActive(p.key as DatePresetType);
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => applyPreset(p.key as DatePresetType)}
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none flex items-center gap-1.5 ${
+                  active
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40 ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 scale-105'
+                    : 'bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/10 hover:border-white/25'
+                }`}
+              >
+                {active && <Check size={13} className="text-white" />}
+                {p.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -314,9 +307,9 @@ export default function GroupSales() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSelectedCategory('ALL')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
                 selectedCategory === 'ALL'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400 ring-offset-1 scale-105'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -324,9 +317,9 @@ export default function GroupSales() {
             </button>
             <button
               onClick={() => setSelectedCategory('RESORT_CORP')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
                 selectedCategory === 'RESORT_CORP'
-                  ? 'bg-purple-600 text-white shadow-sm'
+                  ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400 ring-offset-1 scale-105'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -334,9 +327,9 @@ export default function GroupSales() {
             </button>
             <button
               onClick={() => setSelectedCategory('SEMINAR')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
                 selectedCategory === 'SEMINAR'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400 ring-offset-1 scale-105'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -344,9 +337,9 @@ export default function GroupSales() {
             </button>
             <button
               onClick={() => setSelectedCategory('GOLF_GROUP')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
                 selectedCategory === 'GOLF_GROUP'
-                  ? 'bg-emerald-600 text-white shadow-sm'
+                  ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 ring-offset-1 scale-105'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -354,9 +347,9 @@ export default function GroupSales() {
             </button>
             <button
               onClick={() => setSelectedCategory('BANQUET')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
                 selectedCategory === 'BANQUET'
-                  ? 'bg-amber-600 text-white shadow-sm'
+                  ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-400 ring-offset-1 scale-105'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >

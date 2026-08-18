@@ -211,15 +211,15 @@ export default function MatrixWeeklyDashboard() {
     
     if (rate > 0) {
       return (
-        <span className="text-red-500 font-semibold flex items-center gap-1 justify-end">
-          <ArrowUpRight size={14} />
+        <span className="text-slate-900 font-bold flex items-center gap-1 justify-end">
+          <ArrowUpRight size={14} className="text-slate-900 stroke-[2.5]" />
           {rate.toFixed(1)}%
         </span>
       );
     }
     return (
-      <span className="text-blue-500 font-semibold flex items-center gap-1 justify-end">
-        <ArrowDownRight size={14} />
+      <span className="text-red-600 font-semibold flex items-center gap-1 justify-end">
+        <ArrowDownRight size={14} className="text-red-600 stroke-[2.5]" />
         {Math.abs(rate).toFixed(1)}%
       </span>
     );

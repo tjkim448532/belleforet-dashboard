@@ -171,15 +171,15 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             }));
           }
 
-          const hasFacilitySales = Array.isArray(corePayload.salesByFacility) && corePayload.salesByFacility.length > 0;
-          if (!hasFacilitySales && facilities.length > 0) {
+          // [Zero-Loss Conservation] matrix-weekly의 31개 전체 영업장을 100% 보존 적재 (단 1개 영업장도 유실 불가)
+          if (facilities.length > 0) {
             corePayload.salesByFacility = facilities.map((f: any) => ({
-              categoryCode: f.categoryCode,
-              categoryName: f.categoryName,
-              teamName: f.teamName,
-              partName: f.partName,
-              shopName: f.shopName,
-              facilityName: f.shopName,
+              categoryCode: f.categoryCode || 'ETC',
+              categoryName: f.categoryName || '기타업장',
+              teamName: f.teamName || '기타',
+              partName: f.partName || '기타',
+              shopName: f.shopName || f.facilityName || '미분류업장',
+              facilityName: f.shopName || f.facilityName || '미분류업장',
               todayActual: Number(String(f.todayActual || 0).replace(/,/g, '')) || 0,
               totalSales: Number(String(f.todayActual || 0).replace(/,/g, '')) || 0,
               visitors: Number(f.visitors || 0),

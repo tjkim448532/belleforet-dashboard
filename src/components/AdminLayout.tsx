@@ -17,12 +17,15 @@ export default function AdminLayout() {
           if (res.ok) {
             const data = await res.json();
             if (data.status === 'SUCCESS' && data.data) {
-              const gap = parseNum(data.data.ticket_gap) || 0;
-              if (Math.abs(gap) >= 1000) {
+              const gap = parseNum(data.data.ticket_gap || data.data.variance_gap || 0);
+              const unmappedCount = parseNum(data.data.unmapped_count || 0);
+              if (Math.abs(gap) >= 1 || unmappedCount > 0) {
                 setEtlAlert({
                   gap,
-                  msg: `[데이터 불일치 경고] 티켓 원천 데이터와 분배 결과 사이에 ${gap.toLocaleString()}원의 차이가 발생했습니다. 매핑 룰의 중복/누락을 확인하세요!`
+                  msg: `[Zero-Variance 무결성 경고] 원천 POS와 DB 마트 간 ${Math.abs(gap).toLocaleString()}원의 불일치 또는 미매핑 ${unmappedCount}건이 감지되었습니다. 매핑 통제 센터에서 룰셋을 즉시 확인하십시오.`
                 });
+              } else {
+                setEtlAlert(null);
               }
             }
           }

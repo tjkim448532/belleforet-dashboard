@@ -5,7 +5,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Building2, Phone, DollarSign, Search, 
-  ChevronRight, RefreshCw, Layers, Award, Calendar, Check
+  ChevronRight, RefreshCw, Layers, Award, Calendar, Check, Utensils
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -89,6 +89,7 @@ export default function GroupSales() {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedLoyaltyFilter, setSelectedLoyaltyFilter] = useState<string>('ALL');
+  const [selectedFacilityFilter, setSelectedFacilityFilter] = useState<'ALL' | 'NAMDO' | 'RANCH' | 'BANQUET' | 'GOLF' | 'MOTO'>('ALL');
   const [sortBy, setSortBy] = useState<'REVENUE' | 'VISITS' | 'SPEND_PER_PAX' | 'RECENT'>('REVENUE');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedGroupModal, setSelectedGroupModal] = useState<CorporateGroupItem | null>(null);
@@ -212,11 +213,25 @@ export default function GroupSales() {
         matchLoyalty = (g.visitCount || 1) === 1;
       }
 
+      let matchFacility = true;
+      if (selectedFacilityFilter === 'NAMDO') {
+        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('남도예담'));
+      } else if (selectedFacilityFilter === 'RANCH') {
+        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('목장'));
+      } else if (selectedFacilityFilter === 'BANQUET') {
+        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('연회장') || f.facilityName.includes('세미나'));
+      } else if (selectedFacilityFilter === 'GOLF') {
+        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('CC') || f.facilityName.includes('골프')) || (g.spendingBreakdown?.golfRevenue || 0) > 0;
+      } else if (selectedFacilityFilter === 'MOTO') {
+        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('모토아레나'));
+      }
+
       const matchSearch = !searchKeyword.trim() || 
         g.groupName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
         g.contactName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        g.contactPhone.includes(searchKeyword);
-      return matchCategory && matchLoyalty && matchSearch;
+        g.contactPhone.includes(searchKeyword) ||
+        (g.facilitiesUsed || []).some(f => f.facilityName.toLowerCase().includes(searchKeyword.toLowerCase()));
+      return matchCategory && matchLoyalty && matchFacility && matchSearch;
     });
 
     return filtered.sort((a, b) => {
@@ -226,7 +241,7 @@ export default function GroupSales() {
       if (sortBy === 'RECENT') return new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime();
       return 0;
     });
-  }, [enrichedGroups, selectedCategory, selectedLoyaltyFilter, searchKeyword, sortBy]);
+  }, [enrichedGroups, selectedCategory, selectedLoyaltyFilter, selectedFacilityFilter, searchKeyword, sortBy]);
 
   // Repeat metrics for KPI
   const loyaltyMetrics = useMemo(() => {
@@ -261,6 +276,63 @@ export default function GroupSales() {
       BANQUET: enrichedGroups.filter(g => g.category === 'BANQUET').length,
     };
   }, [enrichedGroups]);
+
+  // Facility-specific counts for direct filtering
+  const facilityCounts = useMemo(() => {
+    return {
+      ALL: enrichedGroups.length,
+      NAMDO: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('남도예담'))).length,
+      RANCH: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('목장'))).length,
+      BANQUET: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('연회장') || f.facilityName.includes('세미나'))).length,
+      GOLF: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('CC') || f.facilityName.includes('골프')) || (g.spendingBreakdown?.golfRevenue || 0) > 0).length,
+      MOTO: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('모토아레나'))).length,
+    };
+  }, [enrichedGroups]);
+
+  // Visual helper to color-code venue badges
+  const renderFacilityBadge = (f: GroupFacilityItem, fIdx: number) => {
+    const name = f.facilityName;
+    if (name.includes('남도예담')) {
+      return (
+        <span key={fIdx} className="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold inline-flex items-center gap-1 shadow-xs">
+          🍱 {name}
+        </span>
+      );
+    }
+    if (name.includes('목장')) {
+      return (
+        <span key={fIdx} className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold inline-flex items-center gap-1 shadow-xs">
+          🐑 {name}
+        </span>
+      );
+    }
+    if (name.includes('연회장') || name.includes('세미나')) {
+      return (
+        <span key={fIdx} className="bg-blue-100 text-blue-900 border border-blue-200 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+          🏛️ {name}
+        </span>
+      );
+    }
+    if (name.includes('골프') || name.includes('CC')) {
+      return (
+        <span key={fIdx} className="bg-teal-100 text-teal-900 border border-teal-200 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+          ⛳ {name}
+        </span>
+      );
+    }
+    if (name.includes('모토아레나')) {
+      return (
+        <span key={fIdx} className="bg-rose-100 text-rose-900 border border-rose-200 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+          🏎️ {name}
+        </span>
+      );
+    }
+    return (
+      <span key={fIdx} className="bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5 rounded-md font-medium">
+        {name}
+      </span>
+    );
+  };
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -565,6 +637,80 @@ export default function GroupSales() {
             </div>
           </div>
 
+          {/* Controls Bar 3: Venue & Facility Specific Filter (남도예담 / 목장 / 연회장 / 골프 / 모토아레나) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/70">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <Utensils size={14} className="text-amber-600" /> 이용 시설 필터:
+              </span>
+              <button
+                onClick={() => setSelectedFacilityFilter('ALL')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedFacilityFilter === 'ALL'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                전체 시설 ({facilityCounts.ALL}개)
+              </button>
+              <button
+                onClick={() => setSelectedFacilityFilter('NAMDO')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedFacilityFilter === 'NAMDO'
+                    ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-400 ring-offset-1 font-bold'
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200'
+                }`}
+              >
+                🍱 남도예담 이용 단체 ({facilityCounts.NAMDO}개)
+              </button>
+              <button
+                onClick={() => setSelectedFacilityFilter('RANCH')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedFacilityFilter === 'RANCH'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400 ring-offset-1 font-bold'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
+                }`}
+              >
+                🐑 벨포레 목장 이용 단체 ({facilityCounts.RANCH}개)
+              </button>
+              <button
+                onClick={() => setSelectedFacilityFilter('BANQUET')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedFacilityFilter === 'BANQUET'
+                    ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-400 ring-offset-1 font-bold'
+                    : 'bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200'
+                }`}
+              >
+                🏛️ 대연회장/세미나 ({facilityCounts.BANQUET}개)
+              </button>
+              <button
+                onClick={() => setSelectedFacilityFilter('GOLF')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedFacilityFilter === 'GOLF'
+                    ? 'bg-teal-600 text-white shadow-xs ring-2 ring-teal-400 ring-offset-1 font-bold'
+                    : 'bg-teal-50 text-teal-900 hover:bg-teal-100 border border-teal-200'
+                }`}
+              >
+                ⛳ 벨포레CC 골프 ({facilityCounts.GOLF}개)
+              </button>
+              <button
+                onClick={() => setSelectedFacilityFilter('MOTO')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedFacilityFilter === 'MOTO'
+                    ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-400 ring-offset-1 font-bold'
+                    : 'bg-rose-50 text-rose-900 hover:bg-rose-100 border border-rose-200'
+                }`}
+              >
+                🏎️ 모토아레나 ({facilityCounts.MOTO}개)
+              </button>
+            </div>
+            {selectedFacilityFilter !== 'ALL' && (
+              <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
+                선택된 시설 단체만 필터링 중
+              </span>
+            )}
+          </div>
+
         </div>
 
         {/* Group Ledger Table */}
@@ -663,14 +809,10 @@ export default function GroupSales() {
                     </td>
 
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {group.facilitiesUsed?.slice(0, 3).map((f, fIdx) => (
-                          <span key={fIdx} className="bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5 rounded-md font-medium">
-                            {f.facilityName}
-                          </span>
-                        ))}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {group.facilitiesUsed?.slice(0, 3).map((f, fIdx) => renderFacilityBadge(f, fIdx))}
                         {(group.facilitiesUsed?.length || 0) > 3 && (
-                          <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                          <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
                             +{(group.facilitiesUsed?.length || 0) - 3}
                           </span>
                         )}
@@ -796,7 +938,9 @@ export default function GroupSales() {
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {selectedGroupModal.facilitiesUsed?.map((fac, fIdx) => (
                   <div key={fIdx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 text-xs">
-                    <span className="font-semibold text-slate-800">{fac.facilityName}</span>
+                    <div className="flex items-center gap-2">
+                      {renderFacilityBadge(fac, fIdx)}
+                    </div>
                     <strong className="text-slate-900">₩{formatCurrency(fac.revenue)}원</strong>
                   </div>
                 ))}

@@ -513,47 +513,107 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
-                  <div className="text-slate-500 font-semibold mb-2">골프 1인당 평균 그린피</div>
-                  <div className="flex items-center gap-8 mb-4">
-                    <div>
-                      <div className="text-xs text-brand-mint font-medium mb-1">{isRangeMode ? '선택 기간' : '금일 실적'}</div>
-                      <div className="text-3xl font-semibold text-brand-mint">{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}</div>
-                    </div>
-                    {displayData.golfSummary?.ly_avgGreenFee > 0 && (
-                      <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">{isRangeMode ? '전년 동기간' : '전년 동요일'}</div>
-                        <div className="text-3xl font-semibold text-slate-400">{formatCurrency(displayData.golfSummary.ly_avgGreenFee)}</div>
+                {/* 1인당 평균 그린피 (전체 / 자사 / OTA / 회원 4분할 분석) */}
+                <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-slate-800 font-bold text-base flex items-center gap-2">
+                        <Coins size={18} className="text-emerald-600" />
+                        골프 1인당 그린피 분석
                       </div>
-                    )}
+                      <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                        순매출 기준
+                      </span>
+                    </div>
+
+                    {/* 전체 평균 그린피 (메인) */}
+                    <div className="mb-3.5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                      <div className="text-xs text-slate-500 font-medium mb-1 flex items-center justify-between">
+                        <span className="font-semibold text-slate-700">🏆 전체 1인 평균 그린피</span>
+                        <span className="text-slate-400 font-normal">{isRangeMode ? '선택 기간 합산' : '금일 실적'}</span>
+                      </div>
+                      <div className="text-3xl font-black text-emerald-600 tracking-tight tabular-nums">
+                        ₩{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)} <span className="text-sm font-normal text-slate-500">/인</span>
+                      </div>
+                    </div>
+
+                    {/* 자사 평균 / OTA 평균 / 회원 평균 3분할 서브 그리드 */}
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {/* 자사 평균 */}
+                      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
+                        <div className="text-xs font-bold text-indigo-700 bg-indigo-50 py-0.5 px-1.5 rounded-lg mb-1 truncate">
+                          자사 평균
+                        </div>
+                        <div className="text-base font-black text-slate-900 tabular-nums my-1">
+                          ₩{formatCurrency(displayData.golfSummary?.directAvgGreenFee || displayData.golfSummary?.avgGreenFee || 0)}
+                        </div>
+                        <div className="text-xs text-slate-400 font-medium truncate">
+                          홈페이지 예약
+                        </div>
+                      </div>
+
+                      {/* OTA 평균 */}
+                      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
+                        <div className="text-xs font-bold text-amber-700 bg-amber-50 py-0.5 px-1.5 rounded-lg mb-1 truncate">
+                          OTA 평균
+                        </div>
+                        <div className="text-base font-black text-slate-900 tabular-nums my-1">
+                          ₩{formatCurrency(displayData.golfSummary?.otaAvgGreenFee || displayData.golfSummary?.avgGreenFee || 0)}
+                        </div>
+                        <div className="text-xs text-slate-400 font-medium truncate">
+                          대행사 제휴처
+                        </div>
+                      </div>
+
+                      {/* 회원 평균 */}
+                      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
+                        <div className="text-xs font-bold text-purple-700 bg-purple-50 py-0.5 px-1.5 rounded-lg mb-1 truncate">
+                          회원 평균
+                        </div>
+                        <div className="text-base font-black text-slate-900 tabular-nums my-1">
+                          {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
+                            ? `₩${formatCurrency(displayData.golfSummary.memberAvgGreenFee)}`
+                            : `₩${formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}`}
+                        </div>
+                        <div className="text-xs text-slate-400 font-medium truncate">
+                          회원 우대 단가
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">
-                    {isRangeMode ? '선택 기간 그린피 매출 ÷ 선택 기간 총 입장객 수' : '선택 기간 그린피 매출 ÷ 입장객 수'}
+
+                  <div className="text-xs text-slate-400 mt-3.5 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                    <span>그린피 순매출 ÷ 실제 내장객 수 (자사 / OTA / 회원별 실시간 집계)</span>
                   </div>
                 </div>
-                <div className="bg-[#f8fafc] p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default">
+
+                {/* 골프 예약 및 입장 현황 */}
+                <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
                   <div>
-                    <div className="text-slate-500 font-semibold mb-4">골프 예약 및 입장 현황</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">총 예약 팀수</div>
-                        <div className="text-3xl font-semibold text-brand-mint">
-                          {`${golfReservedTeams}팀`}
+                    <div className="text-slate-800 font-bold text-base mb-4 flex items-center gap-2">
+                      <Users size={18} className="text-brand-mint" />
+                      골프 예약 및 입장 현황
+                    </div>
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                        <div className="text-xs text-slate-500 font-semibold mb-1">총 예약 팀수</div>
+                        <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums">
+                          {`${golfReservedTeams}`} <span className="text-sm font-normal text-slate-500">팀</span>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">실제 입장 (라운딩)</div>
-                        <div className="text-3xl font-semibold text-brand-mint">
-                          {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}팀` : '0팀'}
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                        <div className="text-xs text-slate-500 font-semibold mb-1">실제 입장 (내장)</div>
+                        <div className="text-2xl lg:text-3xl font-black text-brand-mint tabular-nums">
+                          {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}` : '0'} <span className="text-sm font-normal text-slate-500">팀</span>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-400 font-medium mb-1">취소 / 미내장</div>
-                        <div className="text-3xl font-semibold text-rose-500">
-                          {`${(displayData.golfSummary?.canceledTeams || 0) + (displayData.golfSummary?.pendingTeams || 0)}팀`}
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                        <div className="text-xs text-rose-500 font-semibold mb-1">취소 / 미내장</div>
+                        <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums">
+                          {`${(displayData.golfSummary?.canceledTeams || 0) + (displayData.golfSummary?.pendingTeams || 0)}`} <span className="text-sm font-normal text-slate-500">팀</span>
                         </div>
                         {((displayData.golfSummary?.canceledTeams || 0) > 0 || (displayData.golfSummary?.pendingTeams || 0) > 0) && (
-                          <div className="text-[11px] text-slate-400 font-medium mt-1">
+                          <div className="text-xs text-slate-500 font-medium mt-1">
                             {displayData.golfSummary?.pendingTeams > 0 
                               ? `(취소 ${displayData.golfSummary.canceledTeams}팀 / 미내장 ${displayData.golfSummary.pendingTeams}팀)`
                               : `(취소 ${displayData.golfSummary.canceledTeams}팀)`}
@@ -562,7 +622,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-slate-400 mt-auto pt-3 border-t border-slate-100">
+                  <div className="text-xs text-slate-400 mt-3.5 pt-3 border-t border-slate-200/80">
                     {isRangeMode ? '선택 기간 골프 총 예약/취소 및 실제 라운딩 실적 데이터' : '골프장 마감 예약/취소 및 실제 라운딩 실적 데이터'}
                   </div>
                 </div>
@@ -576,20 +636,20 @@ export default function Home() {
             )}
 
             {/* QA & KPI 상세 가이드 Accordion */}
-            <div className="lg:col-span-12 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
+            <div className="lg:col-span-12 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <Calculator className="w-5 h-5 text-brand-mint" />
                 지표 산출 공식 및 경영 의미 가이드
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* RevPAR & Occ */}
-                <div className="bg-slate-50 p-4 rounded-xl flex flex-col justify-between">
+                <div className="bg-slate-50 p-5 rounded-2xl flex flex-col justify-between border border-slate-200/80">
                   <div>
-                    <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">지표 산출 방식 안내</h4>
+                    <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">객실 지표 산출 방식 안내</h4>
                     <ul className="space-y-4 text-slate-600">
                       <li className="flex flex-col">
-                        <span className="font-medium text-slate-800">객실 점유율 (Occ) 및 객단가 (RevPAR)</span>
-                        <div className="text-xs text-teal-800 bg-teal-50 p-2.5 rounded-xl mt-1.5 border border-teal-100 font-medium">
+                        <span className="font-semibold text-slate-800">객실 점유율 (Occ) 및 객단가 (RevPAR)</span>
+                        <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-1.5 border border-teal-100 font-medium">
                           <strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(객실 점유율, 판매 객단가 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.
                         </div>
                       </li>
@@ -598,14 +658,25 @@ export default function Home() {
                 </div>
 
                 {/* Golf Green Fee */}
-                <div className="bg-slate-50 p-4 rounded-xl lg:col-span-2">
-                  <h4 className="font-semibold text-slate-700 mb-3 border-b pb-2">골프 평균 그린피</h4>
-                  <ul className="space-y-3 text-slate-600">
+                <div className="bg-slate-50 p-5 rounded-2xl lg:col-span-2 border border-slate-200/80">
+                  <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">골프 평균 그린피 (전체 / 자사 / OTA / 회원)</h4>
+                  <ul className="space-y-2 text-slate-600 text-xs">
                     <li className="flex flex-col">
-                      <span className="font-medium">1인당 평균 그린피: {formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}원</span>
-                      <span className="text-xs text-slate-400 font-mono mt-1">
+                      <span className="font-bold text-slate-800 text-sm">
+                        • 1인당 전체 평균 그린피: ₩{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}원
+                      </span>
+                      <span className="text-slate-500 mt-0.5 tabular-nums">
                         = {formatCurrency((displayData.golfSummary?.avgGreenFee || 0) * (displayData.golfSummary?.visitedPlayers || 0))}원 (그린피 총매출) ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)
                       </span>
+                    </li>
+                    <li className="text-slate-500 pt-1">
+                      • <strong>자사 평균:</strong> 홈페이지/모바일 직접 예약 고객의 1인당 실질 결제 그린피
+                    </li>
+                    <li className="text-slate-500">
+                      • <strong>OTA 평균:</strong> 골프락, 골프존, 골프몬 등 외부 대행 제휴처를 통한 내장객 1인당 실질 결제 그린피
+                    </li>
+                    <li className="text-slate-500">
+                      • <strong>회원 평균:</strong> 창립회원, 정회원, 무기명 우대 혜택 적용 고객의 1인당 실질 결제 그린피
                     </li>
                   </ul>
               </div>

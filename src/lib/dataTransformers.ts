@@ -62,6 +62,12 @@ export interface TransformedHomeData {
     visitedPlayers: number;
     avgGreenFee: number;
     ly_avgGreenFee: number;
+    directAvgGreenFee?: number;
+    otaAvgGreenFee?: number;
+    memberAvgGreenFee?: number;
+    nonMemberAvgGreenFee?: number;
+    memberPlayers?: number;
+    nonMemberPlayers?: number;
   };
   golfFacilityBreakdown: any[];
   qa_metrics: any;
@@ -185,6 +191,12 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
           (visitedPlayers > 0 ? Math.round(totalGolfRev / visitedPlayers) : 0)
         ),
         ly_avgGreenFee: 0,
+        directAvgGreenFee: parseNum(c.summary?.golfDirectAvgGreenFee || 0),
+        otaAvgGreenFee: parseNum(c.summary?.golfOtaAvgGreenFee || 0),
+        memberAvgGreenFee: parseNum(c.summary?.golfMemberAvgGreenFee || 0),
+        nonMemberAvgGreenFee: parseNum(c.summary?.golfNonMemberAvgGreenFee || 0),
+        memberPlayers: parseNum(c.summary?.golfMemberPlayers || 0),
+        nonMemberPlayers: parseNum(c.summary?.golfNonMemberPlayers || 0),
       };
     })(),
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],

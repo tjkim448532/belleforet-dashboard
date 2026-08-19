@@ -70,16 +70,18 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       try {
-        // [SSOT 이중 검증] revenue-summary, matrix-weekly, 그리고 전년 동기 revenue-summary를 병렬 호출
-        const [res, matrixRes, lyRes] = await Promise.all([
+        // [SSOT 다중 검증] revenue-summary, matrix-weekly, 전년 동기 revenue-summary, 그리고 golf-channel-teetime-analysis를 병렬 호출
+        const [res, matrixRes, lyRes, golfChannelRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null)
+          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v5/report/golf-channel-teetime-analysis?${queryParams}`).catch(() => null)
         ]);
 
         let corePayload = res?.data || res || {};
         const matrixPayload = matrixRes?.data || matrixRes;
         const lyPayload = lyRes?.data || lyRes;
+        const golfChannelPayload = golfChannelRes?.data || golfChannelRes || {};
 
         if (Array.isArray(corePayload)) {
           corePayload = corePayload[0] || { summary: {} };
@@ -88,6 +90,27 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
 
         if (!corePayload.summary) corePayload.summary = {};
+
+        // 골프 채널별 분석 데이터 주입 (자사 평균, OTA 평균, 회원 평균)
+        if (golfChannelPayload) {
+          const channels = golfChannelPayload.salesByChannel || [];
+          const directCh = channels.find((c: any) => c.channelCode === 'DIRECT_WEB' || c.channelName?.includes('자사'));
+          const otaCh = channels.find((c: any) => c.channelCode === 'OTA_AGENCY' || c.channelName?.includes('OTA'));
+          
+          if (directCh) {
+            corePayload.summary.golfDirectAvgGreenFee = Number(directCh.avgGreenFeePerPlayer || (directCh.visitedPlayers > 0 ? Math.round(directCh.greenFeeRevenue / directCh.visitedPlayers) : 0));
+            corePayload.summary.golfDirectPlayers = directCh.visitedPlayers || 0;
+            corePayload.summary.golfDirectRevenue = directCh.greenFeeRevenue || 0;
+          }
+          if (otaCh) {
+            corePayload.summary.golfOtaAvgGreenFee = Number(otaCh.avgGreenFeePerPlayer || (otaCh.visitedPlayers > 0 ? Math.round(otaCh.greenFeeRevenue / otaCh.visitedPlayers) : 0));
+            corePayload.summary.golfOtaPlayers = otaCh.visitedPlayers || 0;
+            corePayload.summary.golfOtaRevenue = otaCh.greenFeeRevenue || 0;
+          }
+          if (golfChannelPayload.golfSummary?.avgGreenFeePerPlayer && !corePayload.summary.golfAvgGreenFee) {
+            corePayload.summary.golfAvgGreenFee = golfChannelPayload.golfSummary.avgGreenFeePerPlayer;
+          }
+        }
 
         // 전년 동기/동요일 숙박객 수 및 증감률 주입
         const lyRoomCap = Number(String(lyPayload?.summary?.totalRoomCap || 0).replace(/,/g, '')) || 0;

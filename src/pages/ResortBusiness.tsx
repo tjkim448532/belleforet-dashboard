@@ -65,18 +65,21 @@ export default function ResortBusiness() {
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
           
-        const [summaryRes, channelRes, segmentRes] = await Promise.all([
+        const [summaryRes, matrixRes, channelRes, segmentRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => ({ data: [] }))
         ]);
 
         const rawSummary = summaryRes.data || summaryRes;
+        const rawMatrix = matrixRes.data || matrixRes;
         const rawChannels = channelRes.data || channelRes;
         const rawSegments = segmentRes.data || segmentRes;
 
         const transformed = transformResortData({
           ...rawSummary,
+          matrix: Array.isArray(rawMatrix) ? rawMatrix : [],
           salesByChannel: Array.isArray(rawChannels) ? rawChannels : (rawChannels.channels || []),
           salesBySegment: Array.isArray(rawSegments) ? rawSegments : (rawSegments.segments || [])
         }, caps);
@@ -132,12 +135,14 @@ export default function ResortBusiness() {
   })();
 
   // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
+  const isRange = Boolean(startDate && endDate && startDate !== endDate);
+  const rangeDays = isRange && startDate && endDate ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
   const connecting51Sold = data?.roomOccupancyMap?.['51평']?.sold || (lodgingStats.roomsSold >= 110 ? 35 : 0);
-  const connectingPhysicalRooms = connecting51Sold * 2; // 35세트 x 2 = 70실
-  const standardPhysicalRooms = Math.max(0, lodgingStats.roomsSold - connecting51Sold); // 110 - 35 = 75실
-  const totalPhysicalOccupied = standardPhysicalRooms + connectingPhysicalRooms; // 75 + 70 = 145실
-  const totalBaseRooms = 175; // 전체 파이 기준값 175실 고정
-  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied); // 175 - 145 = 30실
+  const connectingPhysicalRooms = connecting51Sold * 2; // 35세트 x 2 = 70실 (또는 기간 누적)
+  const standardPhysicalRooms = Math.max(0, lodgingStats.roomsSold - connecting51Sold);
+  const totalPhysicalOccupied = Number(data?.summary?.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));
+  const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || (175 * rangeDays));
+  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];
@@ -246,10 +251,10 @@ export default function ResortBusiness() {
                 <KeyRound className="w-5 h-5 text-emerald-600" /> 실운영 점유실 (물리)
               </h2>
               <div className="text-3xl font-bold text-emerald-700 tracking-tight flex items-baseline gap-2">
-                <span>{totalPhysicalOccupied}실</span>
-                <span className="text-xs text-emerald-600 font-semibold">({((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1)}%)</span>
+                <span>{totalPhysicalOccupied.toLocaleString()}실</span>
+                <span className="text-xs text-emerald-600 font-semibold">({totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">일반 점유 {standardPhysicalRooms}실 + 커넥팅 {connectingPhysicalRooms}실 (총 175실 기준)</p>
+              <p className="text-[11px] text-slate-500 mt-2">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
             </div>
 
             {/* Overall ADR */}

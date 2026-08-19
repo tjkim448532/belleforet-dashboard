@@ -213,6 +213,7 @@ export interface TransformedResortData {
   channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }>;
   marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
   rateAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
+  summary?: any;
   lodgingStats: {
     revenue: number;
     roomsSold: number;
@@ -245,7 +246,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     '기타': { sold: 0, cap: 0, rev: 0 }
   };
 
-  if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType)) {
+  if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType) && payload.roomSummaryByType.length > 0) {
     payload.roomSummaryByType.forEach((item: any) => {
       const typeName = item.roomType || '기타';
       const sold = parseNum(item.roomsSold || 0);
@@ -261,58 +262,89 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
         roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].rev += rev;
       }
     });
+  } else if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
+    // Fallback for multi-month range: aggregate roomType breakdown from salesByChannel
+    payload.salesByChannel.forEach((r: any) => {
+      if (r.isGrandTotal || r.isChannelSubtotal) return;
+      const typeName = String(r.roomType || '');
+      const sold = parseNum(isRange ? (r.ytdRooms || r.mtdRooms || r.todayRooms || 0) : (r.todayRooms || r.roomsSold || 0));
+      const rev = parseNum(isRange ? (r.ytdRevenue || r.mtdRevenue || r.todayRevenue || 0) : (r.todayRevenue || r.totalSales || 0));
+
+      if (typeName.includes('16평')) {
+        roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].rev += rev;
+      } else if (typeName.includes('35평')) {
+        roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].rev += rev;
+      } else if (typeName.includes('51평')) {
+        roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].rev += rev;
+      } else if (sold > 0 || rev > 0) {
+        roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].rev += rev;
+      }
+    });
   }
 
   const channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
   if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
-    // 백엔드가 제공하는 공식 채널 소계(isChannelSubtotal) 행만 1-depth로 추출
     const channelSubtotals = payload.salesByChannel.filter((item: any) => item.isChannelSubtotal);
     const sourceRows = channelSubtotals.length > 0 
       ? channelSubtotals 
       : payload.salesByChannel.filter((item: any) => !item.isGrandTotal && !item.isSegmentSubtotal);
 
     sourceRows.forEach((item: any) => {
-      const sold = parseNum(item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0);
-      const rev = parseNum(item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0);
+      const sold = parseNum(isRange ? (item.ytdRooms || item.mtdRooms || item.todayRooms || item.roomsSold || 0) : (item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0));
+      const rev = parseNum(isRange ? (item.ytdRevenue || item.mtdRevenue || item.todayRevenue || item.totalSales || 0) : (item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0));
       const channelName = item.channelName || item.channel || '기타';
       
-      channelAdrData.push({
-        channel: channelName,
-        roomsSold: sold,
-        totalRevenue: rev,
-        adr: sold > 0 ? Math.round(rev / sold) : 0
-      });
+      if (sold > 0 || rev > 0) {
+        channelAdrData.push({
+          channel: channelName,
+          roomsSold: sold,
+          totalRevenue: rev,
+          adr: sold > 0 ? Math.round(rev / sold) : 0
+        });
+      }
     });
   }
   channelAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
   const marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
   if (payload.salesBySegment && Array.isArray(payload.salesBySegment)) {
-    // 백엔드가 제공하는 공식 세그먼트 소계(isSegmentSubtotal) 행만 1-depth로 추출
     const segmentSubtotals = payload.salesBySegment.filter((item: any) => item.isSegmentSubtotal);
     const sourceRows = segmentSubtotals.length > 0
       ? segmentSubtotals
       : payload.salesBySegment.filter((item: any) => !item.isGrandTotal && !item.isChannelSubtotal);
 
     sourceRows.forEach((item: any) => {
-      const sold = parseNum(item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0);
-      const rev = parseNum(item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0);
+      const sold = parseNum(isRange ? (item.ytdRooms || item.mtdRooms || item.todayRooms || item.roomsSold || 0) : (item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0));
+      const rev = parseNum(isRange ? (item.ytdRevenue || item.mtdRevenue || item.todayRevenue || item.totalSales || 0) : (item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0));
       const marketName = item.segmentName || item.marketType || '기타';
 
-      marketTypeAdrData.push({
-        marketType: marketName,
-        roomsSold: sold,
-        totalRevenue: rev,
-        adr: sold > 0 ? Math.round(rev / sold) : 0
-      });
+      if (sold > 0 || rev > 0) {
+        marketTypeAdrData.push({
+          marketType: marketName,
+          roomsSold: sold,
+          totalRevenue: rev,
+          adr: sold > 0 ? Math.round(rev / sold) : 0
+        });
+      }
     });
   }
   marketTypeAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
   let summaryRevenue = 0;
-  if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
+  // 1. matrix-weekly 객실 소계 우선 참조 (SSOT)
+  if (payload.matrix && Array.isArray(payload.matrix)) {
+    const roomSub = payload.matrix.find((r: any) => r.isSubtotal && r.categoryCode === 'ROOM');
+    if (roomSub) summaryRevenue = parseNum(roomSub.todayActual || roomSub.rangeActual || roomSub.ytdActual || 0);
+  }
+  // 2. salesByCategory fallback
+  if (!summaryRevenue && payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
     const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
-    if (roomCat) summaryRevenue = parseNum(roomCat.totalSales || 0);
+    if (roomCat) summaryRevenue = parseNum(roomCat.totalSales || roomCat.todayActual || 0);
+  }
+  // 3. channel grand total fallback
+  if (!summaryRevenue && payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
+    const chGrand = payload.salesByChannel.find((x: any) => x.isGrandTotal);
+    if (chGrand) summaryRevenue = parseNum(chGrand.ytdRevenue || chGrand.todayRevenue || chGrand.mtdRevenue || 0);
   }
   
   const summaryRoomsSold = parseNum(payload.summary?.totalRooms || 0);
@@ -330,6 +362,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     date: payload.date,
     ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
     today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
+    summary: payload.summary,
     roomOccupancyMap,
     channelAdrData,
     marketTypeAdrData,

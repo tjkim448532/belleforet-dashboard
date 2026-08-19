@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
-  ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay, Maximize, Minimize,
+  ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
   Briefcase
 } from 'lucide-react';
 
@@ -14,30 +14,8 @@ export default function Layout() {
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const autoHideSidebar = true;
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-      if (!!document.fullscreenElement) {
-        setSidebarOpen(false);
-      }
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error enabling fullscreen: ${err.message}`);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
 
   const [pwdModalOpen, setPwdModalOpen] = useState(false);
   const [newPwd, setNewPwd] = useState('');
@@ -70,9 +48,9 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
-    { name: '요일비교', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
+    { name: '영업장별 매출', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
-    { name: '영업/단체', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
+    { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
   ];
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
@@ -88,7 +66,7 @@ export default function Layout() {
         />
       )}
 
-      {/* Synergy Fullscreen Hover Trigger */}
+      {/* Sidebar Hover Trigger */}
       {autoHideSidebar && !sidebarOpen && (
         <div 
           className="fixed inset-y-0 left-0 w-6 z-40 bg-transparent cursor-pointer"
@@ -134,7 +112,50 @@ export default function Layout() {
             </NavLink>
           ))}
 
-          {/* 시너지 분석 Accordion */}
+          {/* 1. 리조트사업본부 Accordion (위치 상향) */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'resort') && (
+            <div className="mt-2">
+            <button
+              onClick={() => setResortOpen(!resortOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <Hotel size={20} />
+                리조트사업본부
+              </div>
+              {resortOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            
+            {resortOpen && (
+              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                <NavLink
+                  to="/resort-business"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={() => { 
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                  }}
+                >
+                  경영 현황 대시보드
+                </NavLink>
+                <NavLink
+                  to="/members"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={() => { 
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                  }}
+                >
+                  회원관리
+                </NavLink>
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* 2. 시너지 분석 Accordion (리조트사업본부 아래로 스위치) */}
           <div className="mt-2">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
@@ -189,49 +210,7 @@ export default function Layout() {
             )}
           </div>
 
-          {/* 리조트사업본부 Accordion */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'resort') && (
-            <div className="mt-2">
-            <button
-              onClick={() => setResortOpen(!resortOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <Hotel size={20} />
-                리조트사업본부
-              </div>
-              {resortOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
-            
-            {resortOpen && (
-              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
-                <NavLink
-                  to="/resort-business"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
-                >
-                  경영 현황 대시보드
-                </NavLink>
-                <NavLink
-                  to="/members"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
-                >
-                  회원관리
-                </NavLink>
-              </div>
-            )}
-          </div>
-          )}
-          {/* 레져본부 Accordion */}
+          {/* 3. 레저본부 Accordion */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
           <div className="mt-2">
             <button
@@ -240,7 +219,7 @@ export default function Layout() {
             >
               <div className="flex items-center gap-3">
                 <Ticket size={20} />
-                레져본부
+                레저본부
               </div>
               {leisureOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
@@ -265,27 +244,8 @@ export default function Layout() {
 
         </div>
           
+        {/* 하단 유틸리티 및 관리자 메뉴 */}
         <div className="p-4 space-y-2 border-t border-slate-100">
-            {isAdmin && (
-              <NavLink
-                to="/admin/roles"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-lg hover:bg-slate-800"
-              >
-                <ShieldCheck size={20} className="text-brand-mint" />
-                최고경영진 어드민
-              </NavLink>
-            )}
-            <button
-              onClick={toggleFullscreen}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
-                isFullscreen 
-                  ? 'bg-brand-mint/10 text-brand-mint font-bold'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-              }`}
-            >
-              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-              {isFullscreen ? '일반 화면 복귀' : '전체화면 모드'}
-            </button>
             <button
               onClick={() => setPwdModalOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
@@ -293,13 +253,25 @@ export default function Layout() {
               <Key size={20} />
               비밀번호 변경
             </button>
+            
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
             >
-            <LogOut size={20} />
-            로그아웃
-          </button>
+              <LogOut size={20} />
+              로그아웃
+            </button>
+
+            {/* 최고경영진 어드민 (맨 아래로 이동) */}
+            {isAdmin && (
+              <NavLink
+                to="/admin/roles"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-md hover:bg-slate-800 mt-2"
+              >
+                <ShieldCheck size={20} className="text-brand-mint" />
+                최고경영진 어드민
+              </NavLink>
+            )}
         </div>
       </aside>
 

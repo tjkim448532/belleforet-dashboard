@@ -1,8 +1,9 @@
 # 📖 벨포레 프론트엔드 전담 AI 핵심 협업 원칙 (Belleforet Global Agent Rules)
 
-## 1. 백엔드 경계 준수 원칙 (Strict Boundary & Read-Only)
-- **NO BACKEND MUTATION**: 프론트엔드 작업 시 백엔드 코드(API 라우트, DB 설정 등)를 절대로 임의 수정하거나 변경하지 마십시오. 백엔드는 strict read-only 경계로 취급합니다.
-- **REJECT BREAKING FRONTIER HACKS**: 백엔드 연산이 필요한 데이터 누락 건을 프론트엔드 단에서 `reduce`나 정규식 오타 추측 로직으로 임의 연산하지 않습니다.
+## 1. 🚨 [절대 무관용 원칙] 백엔드 코드 수정 절대 금지 (NEVER TOUCH BACKEND CODE)
+- **STRICT READ-ONLY BOUNDARY**: 어떠한 경우에도 백엔드 소스코드, API 라우트 핸들러, DB 스키마, 저장 프로시저, ETL 파이프라인 스크립트를 직접 수정, 패치, 변형하지 마십시오. 백엔드는 **100% 읽기 전용(Strict Read-Only)** 경계입니다.
+- **NO BACKEND MUTATION**: 데이터 누락이나 오차 발생 시 백엔드 코드를 건드리지 않고, 오직 기존의 공식 V5/V6 API 엔드포인트와 정규 규격만을 소비하여 프론트엔드/관리자 단에서 대응합니다.
+- **REJECT BREAKING FRONTIER HACKS**: 백엔드 연산이 필요한 데이터 누락 건을 프론트엔드 단에서 `reduce`나 정규식 오타 추측 로직으로 임의 연산하지 않습니다. 백엔드 조치가 필요한 경우 `backend_api_request.md` 공식 명세서로 소통합니다.
 
 ## 2. 백엔드 소통 및 명세서 공식 작성 (Backend API Request Document)
 - API 수치 누락, 파라미터 누락, 신규 필드 필요 시 억지로 코드를 수정하지 않고, **`backend_api_request.md`** 아티팩트에 요청 번호(`REQ-V5-...`)와 함께 명확한 JSON 구조로 백엔드 조치 요청서를 정리합니다.

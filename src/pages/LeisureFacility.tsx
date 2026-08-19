@@ -55,14 +55,18 @@ export default function LeisureFacility() {
             })
             .slice(0, 5);
 
-          setApiTopItems(filtered.map((item: any, idx: number) => ({
-            rank: idx + 1,
-            itemName: item.itemName || item.name || '티켓 상품',
-            facilityName: item.facilityName || item.shopName,
-            sales: parseNumber(item.sales || item.totalSales || 0),
-            quantity: parseNumber(item.quantity || item.qty || 0),
-            unitPrice: parseNumber(item.unitPrice || 0)
-          })));
+          setApiTopItems(filtered.map((item: any, idx: number) => {
+            const rawFac = String(item.facilityName || item.shopName || '');
+            const normalizedFac = (rawFac.includes('익스트림 루지') || rawFac.includes('루지')) ? '마운틴카트' : (rawFac || '레저본부');
+            return {
+              rank: idx + 1,
+              itemName: item.itemName || item.name || '티켓 상품',
+              facilityName: normalizedFac,
+              sales: parseNumber(item.sales || item.totalSales || 0),
+              quantity: parseNumber(item.quantity || item.qty || 0),
+              unitPrice: parseNumber(item.unitPrice || 0)
+            };
+          }));
         } else {
           setApiTopItems([]);
         }

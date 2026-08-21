@@ -112,6 +112,41 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             corePayload.summary.golfAvgGreenFee = Number(golfChannelPayload.golfSummary.avgGreenFeePerPlayer);
           }
           corePayload.summary.golfChannels = channels;
+
+          // 채널 및 OTA 에이전시 통합 단가 순위표 (Ranked Green Fee List)
+          const rankedList: Array<{ name: string; players: number; teams: number; revenue: number; avgGreenFee: number; type: string }> = [];
+          const otaAgencies = golfChannelPayload.otaAgenciesDetail || otaCh?.agencies || [];
+          
+          if (Array.isArray(otaAgencies) && otaAgencies.length > 0) {
+            otaAgencies.forEach((a: any) => {
+              if (Number(a.visitedPlayers || 0) > 0) {
+                rankedList.push({
+                  name: `${a.agencyName} (OTA)`,
+                  players: Number(a.visitedPlayers),
+                  teams: Number(a.visitedTeams || 0),
+                  revenue: Number(a.greenFeeRevenue || 0),
+                  avgGreenFee: Number(a.avgGreenFeePerPlayer || (a.visitedPlayers > 0 ? Math.round(a.greenFeeRevenue / a.visitedPlayers) : 0)),
+                  type: 'OTA'
+                });
+              }
+            });
+          }
+
+          channels.forEach((c: any) => {
+            if (c.channelCode !== 'OTA_AGENCY' && Number(c.visitedPlayers || 0) > 0) {
+              rankedList.push({
+                name: c.channelName,
+                players: Number(c.visitedPlayers),
+                teams: Number(c.visitedTeams || 0),
+                revenue: Number(c.greenFeeRevenue || 0),
+                avgGreenFee: Number(c.avgGreenFeePerPlayer || (c.visitedPlayers > 0 ? Math.round(c.greenFeeRevenue / c.visitedPlayers) : 0)),
+                type: c.channelCode
+              });
+            }
+          });
+
+          rankedList.sort((a, b) => b.avgGreenFee - a.avgGreenFee);
+          corePayload.summary.golfRankedChannels = rankedList;
         }
 
         // 전년 동기/동요일 숙박객 수 및 증감률 주입

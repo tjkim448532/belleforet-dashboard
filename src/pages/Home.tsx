@@ -608,9 +608,53 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
+
+                    {/* 채널별 1인당 실측 그린피 순위 미니 차트 & 테이블 */}
+                    {coreData.core?.summary?.golfRankedChannels && coreData.core.summary.golfRankedChannels.length > 0 && (
+                      <div className="mt-3.5 pt-3 border-t border-slate-200/80">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                          <span className="flex items-center gap-1.5">
+                            <span>📊</span> 채널별 1인당 실측 그린피 순위
+                          </span>
+                          <span className="text-[11px] font-normal text-slate-400">내장객 순매출 기준</span>
+                        </div>
+                        <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                          {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
+                            const maxPrice = coreData.core.summary.golfRankedChannels[0]?.avgGreenFee || 1;
+                            const pct = Math.min(100, Math.max(10, Math.round((item.avgGreenFee / maxPrice) * 100)));
+                            return (
+                              <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-emerald-200 transition-all">
+                                <div className="flex items-center gap-1.5 min-w-[120px] truncate">
+                                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                    idx === 0 ? 'bg-amber-100 text-amber-800' :
+                                    idx === 1 ? 'bg-slate-200 text-slate-700' :
+                                    idx === 2 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
+                                  }`}>
+                                    {idx + 1}
+                                  </span>
+                                  <span className="font-semibold text-slate-800 truncate" title={item.name}>{item.name}</span>
+                                </div>
+                                <div className="flex-1 mx-2 hidden sm:block">
+                                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="text-right whitespace-nowrap shrink-0">
+                                  <span className="font-black text-slate-900">₩{formatCurrency(item.avgGreenFee)}</span>
+                                  <span className="text-[10px] text-slate-400 ml-1.5">({item.players}명)</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="text-xs text-slate-400 mt-3.5 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                  <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between">
                     <span>그린피 순매출 ÷ 실제 내장객 수 (자사 / OTA / 회원별 실시간 집계)</span>
                   </div>
                 </div>

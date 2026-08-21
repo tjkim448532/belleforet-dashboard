@@ -457,74 +457,86 @@ export default function Home() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실 점유율 (Occ)</div>
-                  {coreData.core?.summary?.occRate !== undefined ? (
-                    <>
-                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                        {coreData.core.summary.occRate.toFixed(1)}%
+                  {(() => {
+                    const occ = displayData?.kpiMetrics?.totalOcc ?? coreData.core?.summary?.occRate ?? coreData.core?.summary?.totalOcc;
+                    return occ !== undefined && occ !== null ? (
+                      <>
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                          {Number(occ).toFixed(1)}%
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                          {isRangeMode ? '선택 기간 평균 점유율' : '(Inventory 기준 자동 산출)'}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                        전체 객실 재고 데이터 산출 불가<br/>(API 연동 대기)
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                        (Inventory 기준 자동 산출)
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                      전체 객실 재고 데이터 산출 불가<br/>(API 연동 대기)
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객단가 (ADR)</div>
-                  {(coreData.core?.summary?.totalADR !== undefined || coreData.core?.summary?.adr !== undefined) ? (
-                    <>
-                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                        {formatCurrency(coreData.core.summary.totalADR ?? coreData.core.summary.adr)}
+                  {(() => {
+                    const adr = displayData?.kpiMetrics?.totalADR ?? coreData.core?.summary?.totalADR ?? coreData.core?.summary?.adr;
+                    return adr !== undefined && adr !== null ? (
+                      <>
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                          {formatCurrency(adr)} <span className="text-sm font-medium text-slate-500">원</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                          객실 총매출 ÷ 판매 객실 수
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                        ADR 산출 불가<br/>(API 연동 대기)
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                        객실 총매출 ÷ 판매 객실 수
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                      ADR 산출 불가<br/>(API 연동 대기)
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실당 매출 (RevPAR)</div>
-                  {coreData.core?.summary?.revPAR !== undefined ? (
-                    <>
-                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                        {formatCurrency(coreData.core.summary.revPAR)}
+                  {(() => {
+                    const revPar = displayData?.kpiMetrics?.revPAR ?? coreData.core?.summary?.revPAR;
+                    return revPar !== undefined && revPar !== null ? (
+                      <>
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                          {formatCurrency(revPar)} <span className="text-sm font-medium text-slate-500">원</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                          객실 총매출 ÷ 전체 객실 수
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                        RevPAR 산출 불가<br/>(API 연동 대기)
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                        객실 총매출 ÷ 전체 객실 수
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                      RevPAR 산출 불가<br/>(API 연동 대기)
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
-                  {coreData.core?.summary?.trevPAR !== undefined ? (
-                    <>
-                      <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
-                        {formatCurrency(coreData.core.summary.trevPAR)}
+                  {(() => {
+                    const trevPar = displayData?.kpiMetrics?.trevPAR ?? coreData.core?.summary?.trevPAR;
+                    return trevPar !== undefined && trevPar !== null ? (
+                      <>
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                          {formatCurrency(trevPar)} <span className="text-sm font-medium text-slate-500">원</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                          리조트 총매출 ÷ 전체 객실 수
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
+                        TrevPAR 산출 불가<br/>(API 연동 대기)
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                        리조트 총매출 ÷ 전체 객실 수
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                      TrevPAR 산출 불가<br/>(API 연동 대기)
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
 

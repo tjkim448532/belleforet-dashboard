@@ -187,6 +187,34 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
               totalVisitors: Number(f.visitors || 0)
             }));
           }
+
+          // [KPI 무결성 보정] 객단가(ADR), 점유율(Occ), RevPAR, TrevPAR 결측 자동 보정
+          const roomSub = subtotals.find((s: any) => s.categoryCode === 'ROOM');
+          const roomRev = Number(String(roomSub?.todayActual || 0).replace(/,/g, '')) || 0;
+          const roomsSold = Number(corePayload.summary.totalRooms || 0);
+          
+          const isRange = Boolean(validEnd && validStart && validStart !== validEnd);
+          const rangeDays = isRange && validStart && validEnd ? Math.max(1, Math.ceil(Math.abs(new Date(validEnd).getTime() - new Date(validStart).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
+          const roomInventory = Number(corePayload.summary.totalRoomInventory || (175 * rangeDays));
+          const totalResortRev = Number(corePayload.summary.totalRevenue || 0);
+
+          if (!corePayload.summary.totalADR || Number(corePayload.summary.totalADR) === 0) {
+            corePayload.summary.totalADR = roomsSold > 0 ? Math.round(roomRev / roomsSold) : 0;
+          }
+          if (!corePayload.summary.adr || Number(corePayload.summary.adr) === 0) {
+            corePayload.summary.adr = corePayload.summary.totalADR;
+          }
+          if (!corePayload.summary.revPAR || Number(corePayload.summary.revPAR) === 0) {
+            corePayload.summary.revPAR = roomInventory > 0 ? Math.round(roomRev / roomInventory) : 0;
+          }
+          if (!corePayload.summary.trevPAR || Number(corePayload.summary.trevPAR) === 0) {
+            corePayload.summary.trevPAR = roomInventory > 0 ? Math.round(totalResortRev / roomInventory) : 0;
+          }
+          if (corePayload.summary.occRate === undefined || Number(corePayload.summary.occRate) === 0) {
+            corePayload.summary.occRate = corePayload.summary.totalOcc !== undefined && Number(corePayload.summary.totalOcc) > 0
+              ? Number(corePayload.summary.totalOcc)
+              : (roomInventory > 0 ? (roomsSold / roomInventory) * 100 : 0);
+          }
         }
 
         setState({

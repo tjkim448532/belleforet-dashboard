@@ -88,7 +88,7 @@ export interface MonthlyEfficiencyResponse {
 export default function MonthlyTrevporChart() {
   const [chartViewTab, setChartViewTab] = useState<'YOY_TREND' | 'STACKED_100'>('YOY_TREND');
   const [metricMode, setMetricMode] = useState<'TOTAL' | 'EX_GOLF'>('TOTAL');
-  const [periodMode, setPeriodMode] = useState<'CLOSED_ONLY' | 'ALL_MTD' | 'H1' | 'Q1' | 'Q2'>('CLOSED_ONLY');
+  const [periodMode, setPeriodMode] = useState<'CLOSED_ONLY' | 'ALL_MTD' | 'H1' | 'H2' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('CLOSED_ONLY');
   const [stackedYearMode, setStackedYearMode] = useState<'COMPARE' | 'TY_ONLY' | 'LY_ONLY'>('COMPARE');
   const [data, setData] = useState<MonthlyEfficiencyResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -135,6 +135,43 @@ export default function MonthlyTrevporChart() {
   };
 
   const monthLabels = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+
+  // 1. [동적 월 감지 엔진] 시간 경과(8월➔9월➔10월➔12월)에 따라 마감월/진행월을 100% 자동 연산
+  const monthMeta = useMemo(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const systemMonth = today.getMonth() + 1; // 1 ~ 12
+    const systemDay = today.getDate();
+
+    if (!data?.monthlyComparison) {
+      return {
+        activeMonth: 8,
+        lastClosedMonth: 7,
+        isCurrentMonthOngoing: true,
+        daysAccumulated: 21,
+        availableMonths: []
+      };
+    }
+
+    // TY 실적이 존재하는 가장 최신 월 탐색
+    const tyMonths = data.monthlyComparison
+      .filter(d => d.ty !== null)
+      .map(d => d.month);
+
+    const activeMonth = tyMonths.length > 0 ? Math.max(...tyMonths) : systemMonth;
+    
+    // 현재 월이 진행 중(MTD)인지 확인: 당해 연도이고 현재 달이거나, 마지막 날 이전인 경우
+    const isCurrentMonthOngoing = (data.baseYear === currentYear && activeMonth === systemMonth) || (activeMonth < 12 && systemDay < getDaysInMonth(data.baseYear, activeMonth));
+    const lastClosedMonth = isCurrentMonthOngoing ? Math.max(1, activeMonth - 1) : activeMonth;
+
+    return {
+      activeMonth,
+      lastClosedMonth,
+      isCurrentMonthOngoing,
+      daysAccumulated: systemDay,
+      availableMonths: tyMonths
+    };
+  }, [data]);
 
   // Helper to extract exact TrevPAR (Total Revenue per Available 175 Rooms)
   const getTrevparValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF', year: number, month: number) => {
@@ -186,26 +223,31 @@ export default function MonthlyTrevporChart() {
     }
   };
 
-  // Filtered dataset according to user-selected Period Mode
+  // Filtered dataset according to dynamic month status
   const targetPeriodMonths = useMemo(() => {
     if (!data?.monthlyComparison) return [];
     
-    // 8월은 21일치 진행 중이므로 마감월 필터링 처리
     return data.monthlyComparison.filter(d => {
       if (periodMode === 'CLOSED_ONLY') {
-        return d.month <= 7 && d.ty !== null; // 1~7월 완전 마감월만
+        return d.month <= monthMeta.lastClosedMonth && d.ty !== null;
       } else if (periodMode === 'ALL_MTD') {
-        return d.month <= 8 && d.ty !== null; // 8월 진행중 포함
+        return d.month <= monthMeta.activeMonth && d.ty !== null;
       } else if (periodMode === 'H1') {
-        return d.month <= 6 && d.ty !== null; // 상반기 (1~6월)
+        return d.month <= 6 && d.ty !== null;
+      } else if (periodMode === 'H2') {
+        return d.month >= 7 && d.month <= 12 && d.ty !== null;
       } else if (periodMode === 'Q1') {
-        return d.month >= 1 && d.month <= 3 && d.ty !== null; // 1분기 (1~3월)
+        return d.month >= 1 && d.month <= 3 && d.ty !== null;
       } else if (periodMode === 'Q2') {
-        return d.month >= 4 && d.month <= 6 && d.ty !== null; // 2분기 (4~6월)
+        return d.month >= 4 && d.month <= 6 && d.ty !== null;
+      } else if (periodMode === 'Q3') {
+        return d.month >= 7 && d.month <= 9 && d.ty !== null;
+      } else if (periodMode === 'Q4') {
+        return d.month >= 10 && d.month <= 12 && d.ty !== null;
       }
       return d.ty !== null;
     });
-  }, [data, periodMode]);
+  }, [data, periodMode, monthMeta]);
 
   // Executive KPI Highlights Calculation (선택된 기간 기준 정확한 연산)
   const kpiHighlights = useMemo(() => {
@@ -231,10 +273,24 @@ export default function MonthlyTrevporChart() {
     const avgLyTrevpar = Math.round(totalLyTrevparSum / targetPeriodMonths.length);
     const yoyGrowth = avgLyTrevpar > 0 ? Number((((avgTyTrevpar - avgLyTrevpar) / avgLyTrevpar) * 100).toFixed(1)) : 0;
 
-    const periodLabel = periodMode === 'CLOSED_ONLY' ? '공식 마감월 (1~7월)' :
-      periodMode === 'ALL_MTD' ? '당월 포함 (1~8월 진행중)' :
-      periodMode === 'H1' ? '상반기 (1~6월)' :
-      periodMode === 'Q1' ? '1분기 (1~3월)' : '2분기 (4~6월)';
+    let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
+    if (periodMode === 'CLOSED_ONLY') {
+      periodLabel = monthMeta.lastClosedMonth === 12 ? '연간 전체 마감 (1~12월)' : `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
+    } else if (periodMode === 'ALL_MTD') {
+      periodLabel = `당월 포함 (1~${monthMeta.activeMonth}월 진행중)`;
+    } else if (periodMode === 'H1') {
+      periodLabel = '상반기 (1~6월)';
+    } else if (periodMode === 'H2') {
+      periodLabel = '하반기 (7~12월)';
+    } else if (periodMode === 'Q1') {
+      periodLabel = '1분기 (1~3월)';
+    } else if (periodMode === 'Q2') {
+      periodLabel = '2분기 (4~6월)';
+    } else if (periodMode === 'Q3') {
+      periodLabel = '3분기 (7~9월)';
+    } else if (periodMode === 'Q4') {
+      periodLabel = '4분기 (10~12월)';
+    }
 
     return {
       periodLabel,
@@ -245,7 +301,7 @@ export default function MonthlyTrevporChart() {
       maxMonthName: maxMonth.monthLabel,
       maxTrevpar
     };
-  }, [targetPeriodMonths, metricMode, periodMode]);
+  }, [targetPeriodMonths, metricMode, periodMode, monthMeta]);
 
   // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPAR 성장 트렌드 차트
   const yoyTrendChartOptions = useMemo(() => {
@@ -290,10 +346,11 @@ export default function MonthlyTrevporChart() {
         formatter: (params: any[]) => {
           if (!params || params.length === 0) return '';
           const mIdx = params[0].dataIndex;
-          const isMonth8 = mIdx === 7;
+          const isOngoingMonth = (mIdx + 1) === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+
           let result = `
             <div style="font-weight:800; font-size:14px; color:#0f172a; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
-              <span>📅 ${params[0].name} TrevPAR ${isMonth8 ? '<span style="color:#e11d48; font-size:11px; font-weight:700;">(21일 누적 진행중)</span>' : ''}</span>
+              <span>📅 ${params[0].name} TrevPAR ${isOngoingMonth ? `<span style="color:#e11d48; font-size:11px; font-weight:700;">(${monthMeta.daysAccumulated}일 누적 진행중)</span>` : ''}</span>
               <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">175실 기준</span>
             </div>
           `;
@@ -315,9 +372,9 @@ export default function MonthlyTrevporChart() {
               `;
             }
           });
-          if (isMonth8) {
+          if (isOngoingMonth) {
             result += `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed #e2e8f0; font-size:11px; color:#e11d48; font-weight:600;">
-              ⚠️ 8월은 8/21까지 21일 집계 데이터로, 31일 마감 전 진행 수치입니다.
+              ⚠️ ${mIdx + 1}월은 ${monthMeta.daysAccumulated}일 집계 데이터로, 월 마감 전 진행 수치입니다.
             </div>`;
           }
           return result;
@@ -342,7 +399,10 @@ export default function MonthlyTrevporChart() {
       xAxis: [
         {
           type: 'category',
-          data: monthLabels.map((m, idx) => idx === 7 ? '8월(진행중)' : m),
+          data: monthLabels.map((m, idx) => {
+            const isOngoing = (idx + 1) === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+            return isOngoing ? `${m}(진행중)` : m;
+          }),
           axisLine: { lineStyle: { color: '#e2e8f0' } },
           axisTick: { show: false },
           axisLabel: { 
@@ -409,8 +469,8 @@ export default function MonthlyTrevporChart() {
           barWidth: 22,
           itemStyle: {
             color: (params: any) => {
-              // 8월(진행중)은 빗금 또는 약간 밝은 톤으로 시각적 구분
-              if (params.dataIndex === 7) return '#14b8a6';
+              const isOngoing = (params.dataIndex + 1) === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+              if (isOngoing) return '#14b8a6';
               return metricMode === 'TOTAL' ? '#0d9488' : '#0284c7';
             },
             borderRadius: [5, 5, 0, 0]
@@ -457,7 +517,7 @@ export default function MonthlyTrevporChart() {
         }
       ]
     };
-  }, [data, metricMode]);
+  }, [data, metricMode, monthMeta]);
 
   // 2. [부문별 비중 분석] 100% 누적 막대 차트
   const stackedChartOptions = useMemo(() => {
@@ -467,8 +527,8 @@ export default function MonthlyTrevporChart() {
     if (validMonths.length === 0) return null;
 
     const xLabels = validMonths.map(d => {
-      const isM8 = d.month === 8;
-      const mName = isM8 ? '8월(진행)' : d.monthLabel;
+      const isOngoing = d.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+      const mName = isOngoing ? `${d.month}월(진행)` : d.monthLabel;
       return stackedYearMode === 'COMPARE' ? `${mName}\n(25 vs 26)` : mName;
     });
 
@@ -519,8 +579,8 @@ export default function MonthlyTrevporChart() {
           lyRoom.push(Number(ly.resortRoomRatio ?? ly.roomRatio ?? 0));
           lyFnb.push(Number(ly.resortFnbRatio ?? ly.fnbRatio ?? 0));
           lyLeisure.push(Number(ly.resortLeisureRatio ?? ly.leisureRatio ?? 0));
-          lyMoto.push(Number(ly.resortMotoRatio ?? ly.motoRatio ?? 0));
-          lyBanquet.push(Number(ly.resortBanquetRatio ?? ly.banquetRatio ?? 0));
+          lyMoto.push(Number(ly.resortMotoRatio ?? ty.motoRatio ?? 0));
+          lyBanquet.push(Number(ly.resortBanquetRatio ?? ty.banquetRatio ?? 0));
         } else {
           lyRoom.push(0); lyFnb.push(0); lyLeisure.push(0); lyMoto.push(0); lyBanquet.push(0);
         }
@@ -760,7 +820,7 @@ export default function MonthlyTrevporChart() {
           const ly = monthItem.ly;
           if (!ty) return '';
 
-          const isM8 = monthItem.month === 8;
+          const isOngoing = monthItem.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
           const tyTrevpar = getTrevparValue(ty, metricMode, 2026, monthItem.month);
           const lyTrevpar = ly ? getTrevparValue(ly, metricMode, 2025, monthItem.month) : null;
           const growth = (tyTrevpar && lyTrevpar && lyTrevpar > 0) ? Number((((tyTrevpar - lyTrevpar) / lyTrevpar) * 100).toFixed(1)) : null;
@@ -807,9 +867,9 @@ export default function MonthlyTrevporChart() {
               ` : ''}
             </div>
           `;
-          if (isM8) {
+          if (isOngoing) {
             html += `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed #e2e8f0; font-size:11px; color:#e11d48; font-weight:600;">
-              ⚠️ 8월은 8/21까지 21일 집계 데이터(진행중)입니다.
+              ⚠️ ${monthItem.month}월은 ${monthMeta.daysAccumulated}일 집계 데이터(진행중)입니다.
             </div>`;
           }
           return html;
@@ -859,7 +919,7 @@ export default function MonthlyTrevporChart() {
       },
       series: seriesConfig
     };
-  }, [data, metricMode, stackedYearMode]);
+  }, [data, metricMode, stackedYearMode, monthMeta]);
 
   return (
     <div className="lg:col-span-12 bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80">
@@ -939,13 +999,14 @@ export default function MonthlyTrevporChart() {
         </div>
       </div>
 
-      {/* 🧭 분석 대상 기간 선택 필터 바 (사용자가 직접 선택 가능) */}
+      {/* 🧭 [동적 분석 기간 선택 필터 바] 날짜가 지나감에 따라 버튼 텍스트와 분기/반기 옵션이 100% 자동 생성 */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 mb-6 text-xs">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-slate-500" />
           <span className="font-bold text-slate-800">분석 대상 기간 선택:</span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* 1. 공식 마감월 버튼 (동적 텍스트 생성) */}
           <button
             onClick={() => setPeriodMode('CLOSED_ONLY')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
@@ -954,18 +1015,24 @@ export default function MonthlyTrevporChart() {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
             }`}
           >
-            ✅ 공식 마감월 (1~7월) <span className="text-[10px] opacity-90">(권장·왜곡 없음)</span>
+            ✅ {monthMeta.lastClosedMonth === 12 ? '연간 전체 마감 (1~12월)' : `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`} <span className="text-[10px] opacity-90">(권장·왜곡 없음)</span>
           </button>
-          <button
-            onClick={() => setPeriodMode('ALL_MTD')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
-              periodMode === 'ALL_MTD'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            ⚠️ 당월 포함 (1~8월 진행중)
-          </button>
+
+          {/* 2. 당월 진행중 포함 버튼 (진행 중일 때만 표출) */}
+          {monthMeta.isCurrentMonthOngoing && monthMeta.activeMonth <= 12 && (
+            <button
+              onClick={() => setPeriodMode('ALL_MTD')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                periodMode === 'ALL_MTD'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              ⚠️ 당월 포함 (1~${monthMeta.activeMonth}월 진행중)
+            </button>
+          )}
+
+          {/* 3. 상반기 (1~6월) */}
           <button
             onClick={() => setPeriodMode('H1')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
@@ -976,6 +1043,22 @@ export default function MonthlyTrevporChart() {
           >
             상반기 (1~6월)
           </button>
+
+          {/* 4. 하반기 (7~12월) - 7월 이후 활성화 */}
+          {monthMeta.activeMonth >= 7 && (
+            <button
+              onClick={() => setPeriodMode('H2')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                periodMode === 'H2'
+                  ? 'bg-indigo-700 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              하반기 (7~12월)
+            </button>
+          )}
+
+          {/* 5. 1분기 (1~3월) */}
           <button
             onClick={() => setPeriodMode('Q1')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
@@ -986,6 +1069,8 @@ export default function MonthlyTrevporChart() {
           >
             1분기 (1~3월)
           </button>
+
+          {/* 6. 2분기 (4~6월) */}
           <button
             onClick={() => setPeriodMode('Q2')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
@@ -996,6 +1081,34 @@ export default function MonthlyTrevporChart() {
           >
             2분기 (4~6월)
           </button>
+
+          {/* 7. 3분기 (7~9월) - 7월 이후 활성화 */}
+          {monthMeta.activeMonth >= 7 && (
+            <button
+              onClick={() => setPeriodMode('Q3')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                periodMode === 'Q3'
+                  ? 'bg-indigo-700 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              3분기 (7~9월)
+            </button>
+          )}
+
+          {/* 8. 4분기 (10~12월) - 10월 이후 활성화 */}
+          {monthMeta.activeMonth >= 10 && (
+            <button
+              onClick={() => setPeriodMode('Q4')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                periodMode === 'Q4'
+                  ? 'bg-indigo-700 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              4분기 (10~12월)
+            </button>
+          )}
         </div>
       </div>
 
@@ -1046,12 +1159,12 @@ export default function MonthlyTrevporChart() {
         </div>
       )}
 
-      {/* 8월 당월 진행 중 안내 배너 (ALL_MTD 선택 시 경고 팁 표출) */}
-      {periodMode === 'ALL_MTD' && (
+      {/* 당월 진행 중 안내 배너 (ALL_MTD 선택 시 경고 팁 표출) */}
+      {periodMode === 'ALL_MTD' && monthMeta.isCurrentMonthOngoing && (
         <div className="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2.5">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <span>
-            <strong>주의 안내:</strong> 현재 8월은 8/21까지 21일 누적 데이터(진행중)이므로, 전년 8월 전체 31일 실적과 단순 합산 시 평균치가 일시적으로 낮게 보일 수 있습니다. 공식 정산 분석은 <strong>[공식 마감월 (1~7월)]</strong>을 선택하시기 바랍니다.
+            <strong>주의 안내:</strong> 현재 {monthMeta.activeMonth}월은 {monthMeta.daysAccumulated}일 누적 데이터(진행중)이므로, 전년 {monthMeta.activeMonth}월 전체 마감 실적과 단순 합산 시 평균치가 일시적으로 낮게 보일 수 있습니다. 공식 정산 분석은 <strong>[공식 마감월 (1~{monthMeta.lastClosedMonth}월)]</strong>을 선택하시기 바랍니다.
           </span>
         </div>
       )}
@@ -1237,7 +1350,7 @@ export default function MonthlyTrevporChart() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {data.monthlyComparison.map((item) => {
-                  const isMonth8 = item.month === 8;
+                  const isOngoing = item.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
                   const lyTrevpar = getTrevparValue(item.ly, metricMode, 2025, item.month);
                   const lyShares = getShareRatios(item.ly, metricMode);
@@ -1250,11 +1363,11 @@ export default function MonthlyTrevporChart() {
                   const growthRate = (tyTrevpar !== null && lyTrevpar !== null && lyTrevpar > 0) ? Number((((tyTrevpar - lyTrevpar) / lyTrevpar) * 100).toFixed(1)) : null;
 
                   return (
-                    <tr key={item.month} className={`hover:bg-slate-50/80 transition-colors ${isMonth8 ? 'bg-amber-50/30' : ''}`}>
+                    <tr key={item.month} className={`hover:bg-slate-50/80 transition-colors ${isOngoing ? 'bg-amber-50/30' : ''}`}>
                       <td className="py-3 px-3 font-bold text-center text-slate-900 bg-slate-50/30">
                         {item.monthLabel}
-                        {isMonth8 && (
-                          <span className="block text-[10px] text-amber-700 font-semibold">(21일 누적)</span>
+                        {isOngoing && (
+                          <span className="block text-[10px] text-amber-700 font-semibold">({monthMeta.daysAccumulated}일 누적)</span>
                         )}
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">

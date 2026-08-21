@@ -51,9 +51,10 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         validEnd = temp;
       }
 
+      const todayStr = new Date().toISOString().split('T')[0];
       const queryParams = validEnd && validStart !== validEnd
         ? `startDate=${validStart}&endDate=${validEnd}&_t=${Date.now()}`
-        : `date=${validStart || '2026-07-24'}&_t=${Date.now()}`;
+        : `date=${validStart || todayStr}&_t=${Date.now()}`;
 
       // 전년 비교일자 파라미터 (단일일: 52주전 동요일, 기간: 1년전 동일구간)
       let lyQueryParams = '';
@@ -64,7 +65,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         eLy.setFullYear(eLy.getFullYear() - 1);
         lyQueryParams = `startDate=${sLy.toISOString().split('T')[0]}&endDate=${eLy.toISOString().split('T')[0]}&_t=${Date.now()}`;
       } else {
-        const d = new Date(validStart || '2026-07-24');
+        const d = new Date(validStart || todayStr);
         const lyD = new Date(d.getTime() - 364 * 24 * 60 * 60 * 1000);
         lyQueryParams = `date=${lyD.toISOString().split('T')[0]}&_t=${Date.now()}`;
       }

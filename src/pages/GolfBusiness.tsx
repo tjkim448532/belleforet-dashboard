@@ -110,7 +110,7 @@ export default function GolfBusiness() {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = endDate && startDate !== endDate
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-          : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
+          : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
 
         // 1. Fetch main revenue summary, 2. matrix-weekly (for range sync SSOT), and 3. channel & teetime analysis in parallel
         const [summaryRes, matrixRes, channelTeetimeRes] = await Promise.all([

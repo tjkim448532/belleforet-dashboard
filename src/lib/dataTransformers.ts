@@ -235,9 +235,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const dailyCap16 = parseNum(masterCapacities?.['16평']) || 85;
-  const dailyCap35 = parseNum(masterCapacities?.['35평']) || 85;
-  const dailyCap51 = parseNum(masterCapacities?.['51평']) || 90;
+  const dailyCap16 = parseNum(masterCapacities?.['16평']) || 0;
+  const dailyCap35 = parseNum(masterCapacities?.['35평']) || 0;
+  const dailyCap51 = parseNum(masterCapacities?.['51평']) || 0;
 
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
     '16평': { sold: 0, cap: dailyCap16 * days, rev: 0 },

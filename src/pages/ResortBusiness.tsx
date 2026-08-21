@@ -63,7 +63,7 @@ export default function ResortBusiness() {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = endDate && startDate !== endDate
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-          : `date=${startDate || '2026-07-24'}&_t=${Date.now()}`;
+          : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
           
         const [summaryRes, matrixRes, channelRes, segmentRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`),
@@ -137,7 +137,7 @@ export default function ResortBusiness() {
   // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
   const isRange = Boolean(startDate && endDate && startDate !== endDate);
   const rangeDays = isRange && startDate && endDate ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
-  const connecting51Sold = data?.roomOccupancyMap?.['51평']?.sold || (lodgingStats.roomsSold >= 110 ? 35 : 0);
+  const connecting51Sold = data?.roomOccupancyMap?.['51평']?.sold || 0;
   const connectingPhysicalRooms = connecting51Sold * 2; // 35세트 x 2 = 70실 (또는 기간 누적)
   const standardPhysicalRooms = Math.max(0, lodgingStats.roomsSold - connecting51Sold);
   const totalPhysicalOccupied = Number(data?.summary?.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));

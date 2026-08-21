@@ -461,7 +461,7 @@ export default function MonthlyTrevporChart() {
     });
 
     const maxVal = Math.max(...lyValues, ...tyValues.filter((v): v is number => v !== null), 100000);
-    const yMax = Math.ceil((maxVal * 1.35) / 100000) * 100000;
+    const yMax = Math.ceil((maxVal * 1.5) / 100000) * 100000;
 
     return {
       tooltip: {
@@ -499,7 +499,7 @@ export default function MonthlyTrevporChart() {
         left: '2%',
         right: '3%',
         bottom: '3%',
-        top: '16%',
+        top: '14%',
         containLabel: true
       },
       xAxis: [
@@ -529,9 +529,9 @@ export default function MonthlyTrevporChart() {
           type: 'value',
           name: '전년 대비 증감률',
           nameTextStyle: { color: '#b45309', fontWeight: 700, fontSize: 12, padding: [0, 0, 8, 0] },
-          min: -60,
-          max: 60,
-          interval: 30,
+          min: -80,
+          max: 80,
+          interval: 40,
           axisLabel: {
             formatter: '{value}%',
             color: '#b45309',
@@ -545,18 +545,18 @@ export default function MonthlyTrevporChart() {
         {
           name: '2025년 (전년)',
           type: 'bar',
-          barWidth: 14,
-          barGap: '35%',
+          barWidth: 18,
+          barGap: '20%',
           itemStyle: {
             color: '#94a3b8',
             borderRadius: [4, 4, 0, 0]
           },
           label: {
             show: true,
-            position: 'top',
-            distance: 4,
-            formatter: (p: any) => p.value > 0 ? `₩${Math.round(p.value / 10000)}만` : '',
-            color: '#475569',
+            position: 'insideTop',
+            distance: 6,
+            formatter: (p: any) => p.value >= 150000 ? `₩${Math.round(p.value / 10000)}만` : '',
+            color: '#ffffff',
             fontWeight: 'bold',
             fontSize: 10
           },
@@ -565,7 +565,7 @@ export default function MonthlyTrevporChart() {
         {
           name: '2026년 (올해)',
           type: 'bar',
-          barWidth: 14,
+          barWidth: 18,
           itemStyle: {
             color: metricMode === 'TOTAL' ? '#0d9488' : '#0284c7',
             borderRadius: [4, 4, 0, 0]
@@ -573,11 +573,11 @@ export default function MonthlyTrevporChart() {
           label: {
             show: true,
             position: 'top',
-            distance: 4,
+            distance: 6,
             formatter: (p: any) => p.value > 0 ? `₩${Math.round(p.value / 10000)}만` : '',
             color: metricMode === 'TOTAL' ? '#0f766e' : '#0369a1',
             fontWeight: 'bold',
-            fontSize: 10
+            fontSize: 11
           },
           data: tyValues
         },
@@ -585,28 +585,31 @@ export default function MonthlyTrevporChart() {
           name: '전년 대비 증감률(%)',
           type: 'line',
           yAxisIndex: 1,
+          smooth: true,
           symbol: 'circle',
-          symbolSize: 8,
+          symbolSize: 9,
           itemStyle: {
-            color: '#d97706',
+            color: '#ea580c',
             borderColor: '#ffffff',
             borderWidth: 2
           },
           lineStyle: {
             width: 3,
-            color: '#d97706'
+            color: '#ea580c'
           },
           label: {
             show: true,
             position: 'top',
-            distance: 8,
-            formatter: (p: any) => p.value !== null ? `${p.value > 0 ? '+' : ''}${p.value}%` : '',
+            distance: 10,
+            formatter: (p: any) => p.value !== null ? `${p.value > 0 ? '▲ +' : '▼ '}${p.value}%` : '',
             color: '#ffffff',
-            backgroundColor: '#d97706',
-            padding: [2, 5],
-            borderRadius: 4,
+            backgroundColor: '#ea580c',
+            padding: [3, 6],
+            borderRadius: 6,
             fontWeight: 'bold',
-            fontSize: 10
+            fontSize: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.15)',
+            shadowBlur: 4
           },
           data: growthRates
         }
@@ -747,7 +750,7 @@ export default function MonthlyTrevporChart() {
                   <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">175실 인프라 고정 기준</span>
                 </div>
                 {yoyTrendChartOptions && (
-                  <ReactECharts option={yoyTrendChartOptions} style={{ height: '400px', width: '100%' }} />
+                  <ReactECharts option={yoyTrendChartOptions} style={{ height: '460px', width: '100%' }} />
                 )}
               </>
             ) : (
@@ -762,7 +765,7 @@ export default function MonthlyTrevporChart() {
                   <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">1월 ~ 8월 실적 집계 기준</span>
                 </div>
                 {stackedChartOptions && (
-                  <ReactECharts option={stackedChartOptions} style={{ height: '400px', width: '100%' }} />
+                  <ReactECharts option={stackedChartOptions} style={{ height: '460px', width: '100%' }} />
                 )}
               </>
             )}

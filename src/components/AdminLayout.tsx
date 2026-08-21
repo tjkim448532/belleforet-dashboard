@@ -1,6 +1,6 @@
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, Users, AlertTriangle, Gauge } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { parseNum } from '../lib/dataTransformers';
 
@@ -45,7 +45,7 @@ export default function AdminLayout() {
   }
 
   const menuItems = [
-
+    { name: '영업장별 캐파 마스터 관리', path: '/admin/capacity', icon: <Gauge size={20} /> },
     { name: '임직원 대시보드 권한 관리', path: '/admin/roles', icon: <Users size={20} /> },
     { name: '대시보드 접속 및 보안 로그', path: '/admin/logs', icon: <ShieldCheck size={20} /> },
   ];

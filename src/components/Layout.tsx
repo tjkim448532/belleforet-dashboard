@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase
+  Briefcase, Target
 } from 'lucide-react';
 
 export default function Layout() {
@@ -48,6 +48,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
+    { name: '🎯 목표 수립 시뮬레이터', path: '/target-simulator', icon: <Target size={20} className="text-teal-600" />, roles: ['admin', 'executive', 'management'] },
     { name: '영업장별 매출', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },

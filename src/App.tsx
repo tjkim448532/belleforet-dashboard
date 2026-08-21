@@ -28,6 +28,8 @@ import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
 import SynergyBundles from './pages/SynergyBundles';
 import GroupSales from './pages/GroupSales';
+import TargetSimulator from './pages/TargetSimulator';
+import AdminCapacity from './pages/AdminCapacity';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -69,6 +71,7 @@ export function App() {
                       <Route path="golf-business" element={<GolfBusiness />} />
                       <Route path="group-sales" element={<GroupSales />} />
                       <Route path="leisure" element={<LeisureFacility />} />
+                      <Route path="target-simulator" element={<TargetSimulator />} />
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="members" element={<Members />} />
@@ -81,12 +84,13 @@ export function App() {
                   </Route>
 
                   <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                    <Route path="capacity" element={<AdminCapacity />} />
                     <Route path="simulator" element={<Simulator />} />
                     <Route path="daol-rules" element={<AdminDaolRules />} />
                     <Route path="logs" element={<AdminLogs />} />
                     <Route path="mapping" element={<AdminMapping />} />
                     <Route path="roles" element={<AdminRoles />} />
-                    <Route index element={<Navigate to="simulator" replace />} />
+                    <Route index element={<Navigate to="capacity" replace />} />
                   </Route>
 
                   <Route path="*" element={<Navigate to="/" replace />} />

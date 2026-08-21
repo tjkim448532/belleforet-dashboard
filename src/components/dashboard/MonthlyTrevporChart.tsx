@@ -461,29 +461,40 @@ export default function MonthlyTrevporChart() {
     });
 
     const maxVal = Math.max(...lyValues, ...tyValues.filter((v): v is number => v !== null), 100000);
-    const yMax = Math.ceil((maxVal * 1.5) / 100000) * 100000;
+    const yMax = Math.ceil((maxVal * 1.3) / 100000) * 100000;
 
     return {
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' },
+        axisPointer: { 
+          type: 'cross',
+          crossStyle: { color: '#dadce0', width: 1, type: 'dashed' },
+          shadowStyle: { color: 'rgba(232, 240, 254, 0.4)' }
+        },
         backgroundColor: '#ffffff',
-        borderColor: '#cbd5e1',
+        borderColor: '#e8eaed',
         borderWidth: 1,
-        textStyle: { color: '#0f172a' },
+        padding: [12, 16],
+        extraCssText: 'box-shadow: 0 4px 16px rgba(60, 64, 67, 0.15); border-radius: 12px;',
+        textStyle: { color: '#202124', fontFamily: 'Pretendard, Roboto, -apple-system, sans-serif' },
         formatter: (params: any[]) => {
           if (!params || params.length === 0) return '';
-          let result = `<div class="font-bold text-slate-900 pb-1.5 border-b border-slate-200 mb-2">
-            📅 ${params[0].name} (175실 인프라 기준 ${metricMode === 'TOTAL' ? '골프 포함 전사' : '골프 제외 순수 리조트'})
+          let result = `<div style="font-weight:700; font-size:14px; color:#202124; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f3f4;">
+            📅 ${params[0].name} TrevPAR 분석 <span style="font-size:11px; font-weight:500; color:#5f6368;">(175실 인프라 기준)</span>
           </div>`;
           params.forEach(p => {
             if (p.value !== null && p.value !== undefined) {
-              const valStr = p.seriesName.includes('증감률') 
+              const isRate = p.seriesName.includes('증감률');
+              const valStr = isRate
                 ? `${p.value > 0 ? '+' : ''}${p.value}%` 
-                : `${new Intl.NumberFormat('ko-KR').format(p.value)} 원 /실`;
-              result += `<div class="flex items-center justify-between gap-4 text-xs py-0.5">
-                <span style="color:${p.color}">● ${p.seriesName}:</span>
-                <strong class="font-bold">${valStr}</strong>
+                : `${new Intl.NumberFormat('ko-KR').format(p.value)} 원`;
+              const dotColor = p.color;
+              result += `<div style="display:flex; justify-content:space-between; align-items:center; gap:16px; font-size:12px; margin-top:4px;">
+                <span style="color:#5f6368; display:flex; align-items:center; gap:6px;">
+                  <span style="width:8px; height:8px; border-radius:50%; background:${dotColor}; display:inline-block;"></span>
+                  ${p.seriesName}
+                </span>
+                <strong style="color:${isRate ? (p.value >= 0 ? '#137333' : '#d93025') : '#202124'}; font-weight:700;">${valStr}</strong>
               </div>`;
             }
           });
@@ -493,81 +504,90 @@ export default function MonthlyTrevporChart() {
       legend: {
         data: ['2025년 (전년)', '2026년 (올해)', '전년 대비 증감률(%)'],
         top: 0,
-        textStyle: { color: '#1e293b', fontWeight: 700, fontSize: 12 }
+        icon: 'circle',
+        itemWidth: 8,
+        itemHeight: 8,
+        itemGap: 20,
+        textStyle: { color: '#3c4043', fontWeight: 500, fontSize: 12, fontFamily: 'Pretendard, Roboto, sans-serif' }
       },
       grid: {
         left: '2%',
-        right: '3%',
+        right: '2%',
         bottom: '3%',
-        top: '14%',
+        top: '12%',
         containLabel: true
       },
       xAxis: [
         {
           type: 'category',
           data: monthLabels,
-          axisPointer: { type: 'shadow' },
-          axisLabel: { color: '#0f172a', fontWeight: 800, fontSize: 13 }
+          axisLine: { lineStyle: { color: '#dadce0' } },
+          axisTick: { show: false },
+          axisLabel: { 
+            color: '#202124', 
+            fontWeight: 600, 
+            fontSize: 13,
+            margin: 12
+          }
         }
       ],
       yAxis: [
         {
           type: 'value',
-          name: '객실당 총매출 (TrevPAR)',
-          nameTextStyle: { color: '#475569', fontWeight: 700, fontSize: 12, padding: [0, 0, 8, 0] },
+          name: '객실당 총매출',
+          nameTextStyle: { color: '#5f6368', fontWeight: 500, fontSize: 12, padding: [0, 0, 8, 0] },
           min: 0,
           max: yMax,
+          axisLine: { show: false },
+          axisTick: { show: false },
           axisLabel: {
             formatter: (value: number) => `₩${Math.round(value / 10000)}만`,
-            color: '#334155',
-            fontWeight: 700,
+            color: '#5f6368',
+            fontWeight: 500,
             fontSize: 12
           },
-          splitLine: { lineStyle: { color: '#e2e8f0', type: 'dashed' } }
+          splitLine: { lineStyle: { color: '#f1f3f4', type: 'dashed' } }
         },
         {
           type: 'value',
-          name: '전년 대비 증감률',
-          nameTextStyle: { color: '#b45309', fontWeight: 700, fontSize: 12, padding: [0, 0, 8, 0] },
-          min: -80,
-          max: 80,
-          interval: 40,
+          name: '증감률',
+          nameTextStyle: { color: '#5f6368', fontWeight: 500, fontSize: 12, padding: [0, 0, 8, 0] },
+          min: -60,
+          max: 60,
+          interval: 30,
+          axisLine: { show: false },
+          axisTick: { show: false },
           axisLabel: {
             formatter: '{value}%',
-            color: '#b45309',
-            fontWeight: 700,
+            color: '#5f6368',
+            fontWeight: 500,
             fontSize: 12
           },
-          splitLine: { show: false }
+          splitLine: { 
+            show: true,
+            lineStyle: { color: '#e8eaed', type: 'solid', width: 1 } 
+          }
         }
       ],
       series: [
         {
           name: '2025년 (전년)',
           type: 'bar',
-          barWidth: 18,
-          barGap: '20%',
+          barWidth: 20,
+          barGap: '25%',
           itemStyle: {
-            color: '#94a3b8',
+            color: '#dadce0',
             borderRadius: [4, 4, 0, 0]
           },
-          label: {
-            show: true,
-            position: 'insideTop',
-            distance: 6,
-            formatter: (p: any) => p.value >= 150000 ? `₩${Math.round(p.value / 10000)}만` : '',
-            color: '#ffffff',
-            fontWeight: 'bold',
-            fontSize: 10
-          },
+          // 전년 막대는 텍스트 없이 심플하고 모던하게 처리 (구글 애널리틱스 표준)
           data: lyValues
         },
         {
           name: '2026년 (올해)',
           type: 'bar',
-          barWidth: 18,
+          barWidth: 20,
           itemStyle: {
-            color: metricMode === 'TOTAL' ? '#0d9488' : '#0284c7',
+            color: metricMode === 'TOTAL' ? '#1a73e8' : '#00897b',
             borderRadius: [4, 4, 0, 0]
           },
           label: {
@@ -575,9 +595,10 @@ export default function MonthlyTrevporChart() {
             position: 'top',
             distance: 6,
             formatter: (p: any) => p.value > 0 ? `₩${Math.round(p.value / 10000)}만` : '',
-            color: metricMode === 'TOTAL' ? '#0f766e' : '#0369a1',
-            fontWeight: 'bold',
-            fontSize: 11
+            color: '#202124',
+            fontWeight: 600,
+            fontSize: 12,
+            fontFamily: 'Pretendard, Roboto, sans-serif'
           },
           data: tyValues
         },
@@ -585,31 +606,27 @@ export default function MonthlyTrevporChart() {
           name: '전년 대비 증감률(%)',
           type: 'line',
           yAxisIndex: 1,
-          smooth: true,
+          smooth: 0.3,
           symbol: 'circle',
-          symbolSize: 9,
+          symbolSize: 7,
           itemStyle: {
-            color: '#ea580c',
+            color: '#e37400',
             borderColor: '#ffffff',
             borderWidth: 2
           },
           lineStyle: {
-            width: 3,
-            color: '#ea580c'
+            width: 2.5,
+            color: '#e37400'
           },
           label: {
             show: true,
             position: 'top',
-            distance: 10,
-            formatter: (p: any) => p.value !== null ? `${p.value > 0 ? '▲ +' : '▼ '}${p.value}%` : '',
-            color: '#ffffff',
-            backgroundColor: '#ea580c',
-            padding: [3, 6],
-            borderRadius: 6,
-            fontWeight: 'bold',
-            fontSize: 10,
-            shadowColor: 'rgba(0, 0, 0, 0.15)',
-            shadowBlur: 4
+            distance: 8,
+            formatter: (p: any) => p.value !== null ? `${p.value > 0 ? '+' : ''}${p.value}%` : '',
+            color: '#b06000',
+            fontWeight: 600,
+            fontSize: 11,
+            fontFamily: 'Pretendard, Roboto, sans-serif'
           },
           data: growthRates
         }

@@ -128,7 +128,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         // matrix-weekly SSOT 데이터로 결측치 및 0원 결측 자동 보정
         if (Array.isArray(matrixPayload) && matrixPayload.length > 0) {
           const grandTotal = matrixPayload.find((r: any) => r.isGrandTotal);
-          const subtotals = matrixPayload.filter((r: any) => r.isSubtotal && !r.isGrandTotal);
+          const subtotals = matrixPayload.filter((r: any) => r.isSubtotal && !r.isGrandTotal && (r.subtotalType === 'category' || (!r.subtotalType && r.partName === '소계')));
           const facilities = matrixPayload.filter((r: any) => !r.isSubtotal && !r.isGrandTotal);
 
           const hasRevSummarySales = Number(corePayload.summary.totalRevenue || 0) > 0;

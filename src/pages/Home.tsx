@@ -43,19 +43,34 @@ export default function Home() {
 
   const pieChartData = React.useMemo(() => {
     if (!coreData.core?.salesByCategory) return [];
-    // [SSOT 바이블 준수] 백엔드 카테고리 소계를 바인딩하되, 영문 ETC는 '임대업장(ETC)', OTHER는 '기타부대'로 명확히 표시
-    return coreData.core.salesByCategory.map((cat: any) => {
+    // [SSOT 바이블 준수] 백엔드 카테고리 소계를 바인딩하되, 중복 소계 유입 방지 및 표준 명칭 적용
+    const categoryMap = new Map<string, { name: string; value: number }>();
+
+    coreData.core.salesByCategory.forEach((cat: any) => {
+      const code = String(cat.categoryCode || cat.categoryName || 'ETC').trim();
       let displayName = cat.categoryName || cat.categoryCode || '기타';
-      if (cat.categoryCode === 'ETC' || displayName === 'ETC') {
+      if (code === 'ETC' || displayName === 'ETC') {
         displayName = '임대업장(CU/투썸/BHC)';
-      } else if (cat.categoryCode === 'OTHER') {
+      } else if (code === 'OTHER') {
         displayName = '기타부대(잡수익)';
+      } else if (code === 'MOTO') {
+        displayName = '모토아레나';
+      } else if (code === 'GOODS') {
+        displayName = '벨포레굿즈';
+      } else if (code === 'PROMOTION') {
+        displayName = '기획전';
       }
-      return {
-        name: displayName,
-        value: parseNum(cat.totalSales || 0)
-      };
-    }).filter((item: any) => item.value > 0);
+
+      const val = parseNum(cat.totalSales || cat.todayActual || 0);
+      if (val > 0) {
+        // 동일 카테고리 코드는 최상위 대표 소계 1개만 매핑 (또는 합산이 아닌 단일 대표치)
+        if (!categoryMap.has(code) || categoryMap.get(code)!.value < val) {
+          categoryMap.set(code, { name: displayName, value: val });
+        }
+      }
+    });
+
+    return Array.from(categoryMap.values());
   }, [coreData.core?.salesByCategory]);
 
   const leisureVisitorsMap = React.useMemo(() => {

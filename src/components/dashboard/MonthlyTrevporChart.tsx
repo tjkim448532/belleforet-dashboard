@@ -10,21 +10,27 @@ export interface MonthlyEfficiencyItem {
   monthLabel: string;
   ly: {
     year: number;
+    availableRooms?: number;
     roomsSold: number;
     totalRevenue: number;
     golfRevenue: number;
     netRevenueWithoutGolf: number;
-    trevporTotal: number;
-    trevporWithoutGolf: number;
+    trevparTotal?: number;
+    trevparWithoutGolf?: number;
+    trevporTotal?: number;
+    trevporWithoutGolf?: number;
   };
   ty: {
     year: number;
+    availableRooms?: number;
     roomsSold: number;
     totalRevenue: number;
     golfRevenue: number;
     netRevenueWithoutGolf: number;
-    trevporTotal: number;
-    trevporWithoutGolf: number;
+    trevparTotal?: number;
+    trevparWithoutGolf?: number;
+    trevporTotal?: number;
+    trevporWithoutGolf?: number;
     isClosed?: boolean;
   } | null;
   growthTotalRate: number | null;
@@ -83,9 +89,28 @@ export default function MonthlyTrevporChart() {
     return isNaN(num) ? '-' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate();
+  };
+
   const monthLabels = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
-  // Prepare chart series from SSOT data
+  // Helper to extract exact TrevPAR (Total Revenue per Available 175 Rooms)
+  const getTrevparValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF', year: number, month: number) => {
+    if (!itemNode) return null;
+    const days = getDaysInMonth(year, month);
+    const availRooms = itemNode.availableRooms || (175 * days);
+    
+    if (mode === 'TOTAL') {
+      if (itemNode.trevparTotal !== undefined && itemNode.trevparTotal !== null) return itemNode.trevparTotal;
+      return availRooms > 0 ? Math.round(itemNode.totalRevenue / availRooms) : 0;
+    } else {
+      if (itemNode.trevparWithoutGolf !== undefined && itemNode.trevparWithoutGolf !== null) return itemNode.trevparWithoutGolf;
+      return availRooms > 0 ? Math.round(itemNode.netRevenueWithoutGolf / availRooms) : 0;
+    }
+  };
+
+  // Prepare chart series from SSOT data (Strict TrevPAR available rooms standard)
   const chartOptions = React.useMemo(() => {
     if (!data?.monthlyComparison) return null;
 
@@ -94,14 +119,17 @@ export default function MonthlyTrevporChart() {
     const growthRates: (number | null)[] = [];
 
     data.monthlyComparison.forEach(item => {
-      if (metricMode === 'TOTAL') {
-        lyValues.push(item.ly?.trevporTotal || 0);
-        tyValues.push(item.ty ? item.ty.trevporTotal : null);
-        growthRates.push(item.growthTotalRate);
+      const lyVal = getTrevparValue(item.ly, metricMode, 2025, item.month);
+      const tyVal = item.ty ? getTrevparValue(item.ty, metricMode, 2026, item.month) : null;
+      
+      lyValues.push(lyVal || 0);
+      tyValues.push(tyVal);
+
+      if (tyVal !== null && lyVal !== null && lyVal > 0) {
+        const rate = Number((((tyVal - lyVal) / lyVal) * 100).toFixed(1));
+        growthRates.push(rate);
       } else {
-        lyValues.push(item.ly?.trevporWithoutGolf || 0);
-        tyValues.push(item.ty ? item.ty.trevporWithoutGolf : null);
-        growthRates.push(item.growthWithoutGolfRate);
+        growthRates.push(null);
       }
     });
 
@@ -111,7 +139,7 @@ export default function MonthlyTrevporChart() {
         axisPointer: { type: 'cross', crossStyle: { color: '#999' } },
         formatter: (params: any[]) => {
           if (!params || params.length === 0) return '';
-          let result = `<div class="font-bold text-slate-800 pb-1 border-b border-slate-200 mb-1.5">${params[0].name} (${metricMode === 'TOTAL' ? '골프 포함' : '골프 제외'})</div>`;
+          let result = `<div class="font-bold text-slate-800 pb-1 border-b border-slate-200 mb-1.5">${params[0].name} (175실 기준 ${metricMode === 'TOTAL' ? '골프 포함' : '골프 제외'})</div>`;
           params.forEach(p => {
             if (p.value !== null && p.value !== undefined) {
               const valStr = p.seriesName.includes('증감률') 
@@ -218,13 +246,13 @@ export default function MonthlyTrevporChart() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                객실당 총매출 (TrevPOR) 월별 전년 vs 올해 비교 분석
+                객실당 총매출 (TrevPAR) 월별 전년 vs 올해 비교 분석
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                  SSOT 공식 연동
+                  175실 고정 인프라 기준
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                투숙 객실 1팀이 리조트 전사에서 창출한 총 결제액(월평균)의 12개월 전수 비교 (2025년 1~12월 vs 2026년 가용월)
+                상단 주요 지표와 100% 동일한 기준 (리조트 총매출 ÷ 전체 175실)으로 12개월 전수를 일관되게 비교합니다.
               </p>
             </div>
           </div>
@@ -240,7 +268,7 @@ export default function MonthlyTrevporChart() {
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <span>⛳</span> 골프 포함 객실당 총매출 (전사)
+            <span>⛳</span> 골프 포함 객실당 총매출 (TrevPAR)
           </button>
           <button
             onClick={() => setMetricMode('EX_GOLF')}
@@ -250,7 +278,7 @@ export default function MonthlyTrevporChart() {
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <span>🏨</span> 골프 제외 객실당 매출 (순수 리조트)
+            <span>🏨</span> 골프 제외 객실당 매출 (순수 리조트 TrevPAR)
           </button>
         </div>
       </div>
@@ -258,7 +286,7 @@ export default function MonthlyTrevporChart() {
       {loading ? (
         <div className="h-72 flex flex-col items-center justify-center text-slate-400 animate-pulse">
           <Calendar className="w-8 h-8 text-slate-300 mb-2" />
-          <p className="text-sm font-medium">12개월 월별 객실 효율 지표를 집계하고 있습니다...</p>
+          <p className="text-sm font-medium">12개월 월별 객실당 총매출(TrevPAR) 지표를 집계하고 있습니다...</p>
         </div>
       ) : !data || error ? (
         <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center space-y-3">
@@ -267,7 +295,7 @@ export default function MonthlyTrevporChart() {
           </div>
           <h3 className="text-base font-bold text-slate-800">백엔드 공식 전용 API 연동 대기 중</h3>
           <p className="text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
-            무관용 SSOT 원칙(가짜 숫자 배제)에 따라 백엔드 엔드포인트 <code>/api/v5/report/monthly-room-efficiency</code> 배포 후 100% 검증된 12개월 전수 데이터가 차트와 테이블에 자동 렌더링됩니다.
+            무관용 SSOT 원칙에 따라 백엔드 엔드포인트 <code>/api/v5/report/monthly-room-efficiency</code> 배포 후 100% 검증된 12개월 전수 데이터가 차트와 테이블에 자동 렌더링됩니다.
           </p>
         </div>
       ) : (
@@ -285,31 +313,40 @@ export default function MonthlyTrevporChart() {
               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3.5 px-4 text-center">월</th>
+                  <th className="py-3.5 px-4 text-right bg-slate-100/50">2025년 공급객실</th>
                   <th className="py-3.5 px-4 text-right bg-slate-100/50">2025년 판매객실</th>
                   <th className="py-3.5 px-4 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-4 text-right bg-slate-100/70 font-black text-slate-800">2025년 객실당 매출</th>
+                  <th className="py-3.5 px-4 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
+                  <th className="py-3.5 px-4 text-right bg-teal-50/40">2026년 공급객실</th>
                   <th className="py-3.5 px-4 text-right bg-teal-50/40">2026년 판매객실</th>
                   <th className="py-3.5 px-4 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-4 text-right bg-teal-50/70 font-black text-teal-900">2026년 객실당 매출</th>
+                  <th className="py-3.5 px-4 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPAR</th>
                   <th className="py-3.5 px-4 text-right">전년 대비 증감액</th>
                   <th className="py-3.5 px-4 text-center">증감률</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {data.monthlyComparison.map((item) => {
+                  const days = getDaysInMonth(2025, item.month);
+                  const lyAvail = item.ly?.availableRooms || (175 * days);
+                  const tyAvail = item.ty ? (item.ty.availableRooms || (175 * getDaysInMonth(2026, item.month))) : null;
+
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
-                  const lyTrevpor = metricMode === 'TOTAL' ? item.ly?.trevporTotal : item.ly?.trevporWithoutGolf;
+                  const lyTrevpar = getTrevparValue(item.ly, metricMode, 2025, item.month);
                   
                   const tyRev = item.ty ? (metricMode === 'TOTAL' ? item.ty.totalRevenue : item.ty.netRevenueWithoutGolf) : null;
-                  const tyTrevpor = item.ty ? (metricMode === 'TOTAL' ? item.ty.trevporTotal : item.ty.trevporWithoutGolf) : null;
+                  const tyTrevpar = item.ty ? getTrevparValue(item.ty, metricMode, 2026, item.month) : null;
                   
-                  const diffAmount = metricMode === 'TOTAL' ? item.diffTotalAmount : item.diffWithoutGolfAmount;
-                  const growthRate = metricMode === 'TOTAL' ? item.growthTotalRate : item.growthWithoutGolfRate;
+                  const diffAmount = (tyTrevpar !== null && lyTrevpar !== null) ? (tyTrevpar - lyTrevpar) : null;
+                  const growthRate = (tyTrevpar !== null && lyTrevpar !== null && lyTrevpar > 0) ? Number((((tyTrevpar - lyTrevpar) / lyTrevpar) * 100).toFixed(1)) : null;
 
                   return (
                     <tr key={item.month} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-4 font-bold text-center text-slate-900 bg-slate-50/30">
                         {item.monthLabel}
+                      </td>
+                      <td className="py-3 px-4 text-right tabular-nums text-slate-500">
+                        {formatCurrency(lyAvail)} 실
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
                         {item.ly?.roomsSold ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
@@ -318,7 +355,10 @@ export default function MonthlyTrevporChart() {
                         {lyRev ? `${formatCurrency(lyRev)} 원` : '-'}
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-slate-900 tabular-nums bg-slate-100/30">
-                        {lyTrevpor ? `${formatCurrency(lyTrevpor)} 원` : '-'}
+                        {lyTrevpar ? `${formatCurrency(lyTrevpar)} 원` : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-right tabular-nums text-slate-500">
+                        {tyAvail ? `${formatCurrency(tyAvail)} 실` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
                         {item.ty?.roomsSold ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
@@ -327,7 +367,7 @@ export default function MonthlyTrevporChart() {
                         {tyRev !== null && tyRev !== undefined ? `${formatCurrency(tyRev)} 원` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-4 text-right font-black text-teal-800 tabular-nums bg-teal-50/30">
-                        {tyTrevpor !== null && tyTrevpor !== undefined ? `${formatCurrency(tyTrevpor)} 원` : <span className="text-slate-300">-</span>}
+                        {tyTrevpar !== null && tyTrevpar !== undefined ? `${formatCurrency(tyTrevpar)} 원` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
                         {diffAmount !== null && diffAmount !== undefined ? (
@@ -361,7 +401,7 @@ export default function MonthlyTrevporChart() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600 flex-shrink-0" />
               <span>
-                <strong>경영 인사이트:</strong> 객실당 총매출(TrevPOR)은 단순 객실 단가(ADR)를 넘어, 투숙객이 식음·레저·골프 등 복합 리조트 인프라에 지출한 <strong>객실당 부가가치 창출력</strong>을 측정하는 핵심 척도입니다.
+                <strong>일관된 지표 기준 (TrevPAR):</strong> 상단 주요 지표와 동일하게 **전체 보유 175실(공급 인벤토리)**을 분모로 고정하여, 특정 월의 투숙률 편차에 왜곡되지 않는 **리조트 전사 인프라의 월별 실질 생산성**을 완벽한 동일 잣대로 비교 분석합니다.
               </span>
             </div>
           </div>

@@ -98,9 +98,9 @@ export default function SynergyCorrelation() {
       let totalRooms = cleanNum(summaryObj.totalRooms);
       if (totalRooms <= 0) {
         const roomSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'ROOM');
-        totalRooms = cleanNum(roomSub?.todayVisitors || roomSub?.rangeVisitors || (rangeActive ? 2119 : 89));
+        totalRooms = cleanNum(rangeActive ? (roomSub?.rangeVisitors || roomSub?.mtdVisitors || summaryObj.totalRooms) : (roomSub?.todayVisitors || summaryObj.totalRooms || 0));
       }
-      if (totalRooms <= 0) totalRooms = 1;
+      if (totalRooms <= 0) totalRooms = 0;
 
       // 1. Calculate Official Division Subtotals (SSOT from matrix-weekly)
       let ticketSales = 0;

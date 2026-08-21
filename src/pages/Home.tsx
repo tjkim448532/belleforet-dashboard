@@ -573,7 +573,9 @@ export default function Home() {
                           자사 평균
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1">
-                          ₩{formatCurrency(displayData.golfSummary?.directAvgGreenFee || displayData.golfSummary?.avgGreenFee || 0)}
+                          {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
+                            ? `₩${formatCurrency(displayData.golfSummary.directAvgGreenFee)}`
+                            : '-'}
                         </div>
                         <div className="text-xs text-slate-400 font-medium truncate">
                           홈페이지 예약
@@ -586,7 +588,9 @@ export default function Home() {
                           OTA 평균
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1">
-                          ₩{formatCurrency(displayData.golfSummary?.otaAvgGreenFee || displayData.golfSummary?.avgGreenFee || 0)}
+                          {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
+                            ? `₩${formatCurrency(displayData.golfSummary.otaAvgGreenFee)}`
+                            : '-'}
                         </div>
                         <div className="text-xs text-slate-400 font-medium truncate">
                           대행사 제휴처
@@ -601,7 +605,7 @@ export default function Home() {
                         <div className="text-base font-black text-slate-900 tabular-nums my-1">
                           {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.memberAvgGreenFee)}`
-                            : `₩${formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}`}
+                            : '-'}
                         </div>
                         <div className="text-xs text-slate-400 font-medium truncate">
                           회원 우대 단가

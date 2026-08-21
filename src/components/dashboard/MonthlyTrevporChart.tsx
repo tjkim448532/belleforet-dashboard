@@ -461,12 +461,12 @@ export default function MonthlyTrevporChart() {
     });
 
     const maxVal = Math.max(...lyValues, ...tyValues.filter((v): v is number => v !== null), 100000);
-    const yMax = Math.ceil((maxVal * 1.25) / 100000) * 100000;
+    const yMax = Math.ceil((maxVal * 1.35) / 100000) * 100000;
 
     return {
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'cross', crossStyle: { color: '#94a3b8' } },
+        axisPointer: { type: 'shadow' },
         backgroundColor: '#ffffff',
         borderColor: '#cbd5e1',
         borderWidth: 1,
@@ -474,7 +474,7 @@ export default function MonthlyTrevporChart() {
         formatter: (params: any[]) => {
           if (!params || params.length === 0) return '';
           let result = `<div class="font-bold text-slate-900 pb-1.5 border-b border-slate-200 mb-2">
-            📅 ${params[0].name} (175실 인프라 기준 ${metricMode === 'TOTAL' ? '골프 포함' : '골프 제외'})
+            📅 ${params[0].name} (175실 인프라 기준 ${metricMode === 'TOTAL' ? '골프 포함 전사' : '골프 제외 순수 리조트'})
           </div>`;
           params.forEach(p => {
             if (p.value !== null && p.value !== undefined) {
@@ -499,7 +499,7 @@ export default function MonthlyTrevporChart() {
         left: '2%',
         right: '3%',
         bottom: '3%',
-        top: '15%',
+        top: '16%',
         containLabel: true
       },
       xAxis: [
@@ -529,6 +529,9 @@ export default function MonthlyTrevporChart() {
           type: 'value',
           name: '전년 대비 증감률',
           nameTextStyle: { color: '#b45309', fontWeight: 700, fontSize: 12, padding: [0, 0, 8, 0] },
+          min: -60,
+          max: 60,
+          interval: 30,
           axisLabel: {
             formatter: '{value}%',
             color: '#b45309',
@@ -542,7 +545,8 @@ export default function MonthlyTrevporChart() {
         {
           name: '2025년 (전년)',
           type: 'bar',
-          barWidth: '24%',
+          barWidth: 14,
+          barGap: '35%',
           itemStyle: {
             color: '#94a3b8',
             borderRadius: [4, 4, 0, 0]
@@ -550,17 +554,18 @@ export default function MonthlyTrevporChart() {
           label: {
             show: true,
             position: 'top',
+            distance: 4,
             formatter: (p: any) => p.value > 0 ? `₩${Math.round(p.value / 10000)}만` : '',
             color: '#475569',
             fontWeight: 'bold',
-            fontSize: 11
+            fontSize: 10
           },
           data: lyValues
         },
         {
           name: '2026년 (올해)',
           type: 'bar',
-          barWidth: '24%',
+          barWidth: 14,
           itemStyle: {
             color: metricMode === 'TOTAL' ? '#0d9488' : '#0284c7',
             borderRadius: [4, 4, 0, 0]
@@ -568,10 +573,11 @@ export default function MonthlyTrevporChart() {
           label: {
             show: true,
             position: 'top',
+            distance: 4,
             formatter: (p: any) => p.value > 0 ? `₩${Math.round(p.value / 10000)}만` : '',
             color: metricMode === 'TOTAL' ? '#0f766e' : '#0369a1',
             fontWeight: 'bold',
-            fontSize: 11
+            fontSize: 10
           },
           data: tyValues
         },
@@ -593,10 +599,14 @@ export default function MonthlyTrevporChart() {
           label: {
             show: true,
             position: 'top',
+            distance: 8,
             formatter: (p: any) => p.value !== null ? `${p.value > 0 ? '+' : ''}${p.value}%` : '',
-            color: '#b45309',
+            color: '#ffffff',
+            backgroundColor: '#d97706',
+            padding: [2, 5],
+            borderRadius: 4,
             fontWeight: 'bold',
-            fontSize: 12
+            fontSize: 10
           },
           data: growthRates
         }

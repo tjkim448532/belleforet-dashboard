@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Building, Sparkles, Info, Calendar } from 'lucide-react';
+import { Building, Sparkles, Info, Calendar, BarChart3, TrendingUp } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -17,12 +17,19 @@ export interface MonthlyEfficiencyItem {
     fnbRevenue?: number;
     leisureRevenue?: number;
     golfRevenue: number;
+    otherRevenue?: number;
     netRevenueWithoutGolf: number;
+    roomRatio?: number;
+    fnbRatio?: number;
+    leisureRatio?: number;
+    golfRatio?: number;
+    otherRatio?: number;
     shareRatios?: {
       roomRatio: number;
       fnbRatio: number;
       leisureRatio: number;
       golfRatio: number;
+      otherRatio?: number;
     };
     trevparTotal?: number;
     trevparWithoutGolf?: number;
@@ -38,12 +45,19 @@ export interface MonthlyEfficiencyItem {
     fnbRevenue?: number;
     leisureRevenue?: number;
     golfRevenue: number;
+    otherRevenue?: number;
     netRevenueWithoutGolf: number;
+    roomRatio?: number;
+    fnbRatio?: number;
+    leisureRatio?: number;
+    golfRatio?: number;
+    otherRatio?: number;
     shareRatios?: {
       roomRatio: number;
       fnbRatio: number;
       leisureRatio: number;
       golfRatio: number;
+      otherRatio?: number;
     };
     trevparTotal?: number;
     trevparWithoutGolf?: number;
@@ -66,6 +80,7 @@ export interface MonthlyEfficiencyResponse {
 }
 
 export default function MonthlyTrevporChart() {
+  const [chartViewTab, setChartViewTab] = useState<'STACKED_100' | 'YOY_TREND'>('STACKED_100');
   const [metricMode, setMetricMode] = useState<'TOTAL' | 'EX_GOLF'>('TOTAL');
   const [data, setData] = useState<MonthlyEfficiencyResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -137,6 +152,18 @@ export default function MonthlyTrevporChart() {
     const golf = Number(itemNode.golfRevenue || 0);
 
     if (mode === 'TOTAL') {
+      if (itemNode.roomRatio !== undefined && itemNode.fnbRatio !== undefined) {
+        return {
+          roomRatio: Number(itemNode.roomRatio),
+          fnbRatio: Number(itemNode.fnbRatio),
+          leisureRatio: Number(itemNode.leisureRatio ?? 0),
+          golfRatio: Number(itemNode.golfRatio ?? 0),
+          otherRatio: itemNode.otherRatio !== undefined ? Number(itemNode.otherRatio) : undefined
+        };
+      }
+
+      if (itemNode.shareRatios) return itemNode.shareRatios;
+
       const total = Number(itemNode.totalRevenue || 0);
       if (total <= 0) return null;
 
@@ -148,8 +175,6 @@ export default function MonthlyTrevporChart() {
           golfRatio: Number(((golf / total) * 100).toFixed(1))
         };
       }
-
-      if (itemNode.shareRatios) return itemNode.shareRatios;
 
       const golfRatio = Number(((golf / total) * 100).toFixed(1));
       return {
@@ -172,16 +197,17 @@ export default function MonthlyTrevporChart() {
         };
       }
 
-      if (itemNode.shareRatios) {
-        const sum3 = (itemNode.shareRatios.roomRatio || 0) + (itemNode.shareRatios.fnbRatio || 0) + (itemNode.shareRatios.leisureRatio || 0);
-        if (sum3 > 0) {
-          return {
-            roomRatio: Number(((itemNode.shareRatios.roomRatio / sum3) * 100).toFixed(1)),
-            fnbRatio: Number(((itemNode.shareRatios.fnbRatio / sum3) * 100).toFixed(1)),
-            leisureRatio: Number(((itemNode.shareRatios.leisureRatio / sum3) * 100).toFixed(1)),
-            golfRatio: null
-          };
-        }
+      const rRatio = itemNode.roomRatio ?? itemNode.shareRatios?.roomRatio ?? 0;
+      const fRatio = itemNode.fnbRatio ?? itemNode.shareRatios?.fnbRatio ?? 0;
+      const lRatio = itemNode.leisureRatio ?? itemNode.shareRatios?.leisureRatio ?? 0;
+      const sum3 = rRatio + fRatio + lRatio;
+      if (sum3 > 0) {
+        return {
+          roomRatio: Number(((rRatio / sum3) * 100).toFixed(1)),
+          fnbRatio: Number(((fRatio / sum3) * 100).toFixed(1)),
+          leisureRatio: Number(((lRatio / sum3) * 100).toFixed(1)),
+          golfRatio: null
+        };
       }
 
       return {
@@ -193,8 +219,203 @@ export default function MonthlyTrevporChart() {
     }
   };
 
-  // Prepare chart series from SSOT data (Strict TrevPAR available rooms standard)
-  const chartOptions = React.useMemo(() => {
+  // 1. [공식 명세 DOC-V5-20260821-TREVPAR-CHART-SPEC] 100% 누적 막대 차트 옵션
+  const stackedChartOptions = React.useMemo(() => {
+    if (!data?.monthlyComparison) return null;
+
+    // 2026년 실적이 존재하는 월(1~8월)만 필터링
+    const validMonths = data.monthlyComparison.filter(d => d.ty !== null);
+    if (validMonths.length === 0) return null;
+
+    const xLabels = validMonths.map(d => d.monthLabel);
+
+    const roomSeriesData: number[] = [];
+    const fnbSeriesData: number[] = [];
+    const leisureSeriesData: number[] = [];
+    const golfSeriesData: number[] = [];
+    const otherSeriesData: number[] = [];
+
+    validMonths.forEach(d => {
+      const ty = d.ty!;
+      const rRatio = ty.roomRatio ?? ty.shareRatios?.roomRatio ?? (ty.totalRevenue > 0 ? Number(((Number(ty.roomRevenue || 0) / ty.totalRevenue) * 100).toFixed(1)) : 0);
+      const fRatio = ty.fnbRatio ?? ty.shareRatios?.fnbRatio ?? (ty.totalRevenue > 0 ? Number(((Number(ty.fnbRevenue || 0) / ty.totalRevenue) * 100).toFixed(1)) : 0);
+      const lRatio = ty.leisureRatio ?? ty.shareRatios?.leisureRatio ?? (ty.totalRevenue > 0 ? Number(((Number(ty.leisureRevenue || 0) / ty.totalRevenue) * 100).toFixed(1)) : 0);
+      const gRatio = ty.golfRatio ?? ty.shareRatios?.golfRatio ?? (ty.totalRevenue > 0 ? Number(((Number(ty.golfRevenue || 0) / ty.totalRevenue) * 100).toFixed(1)) : 0);
+      
+      const sum4 = rRatio + fRatio + lRatio + gRatio;
+      const oRatio = ty.otherRatio ?? (sum4 < 99.5 ? Number(Math.max(0, 100 - sum4).toFixed(1)) : 0);
+
+      roomSeriesData.push(rRatio);
+      fnbSeriesData.push(fRatio);
+      leisureSeriesData.push(lRatio);
+      golfSeriesData.push(gRatio);
+      otherSeriesData.push(oRatio);
+    });
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: (params: any[]) => {
+          if (!params || params.length === 0) return '';
+          const idx = params[0].dataIndex;
+          const monthItem = validMonths[idx];
+          const ty = monthItem.ty;
+          if (!ty) return '';
+
+          const trevpar = getTrevparValue(ty, 'TOTAL', 2026, monthItem.month);
+          
+          let html = `
+            <div class="font-bold text-slate-900 pb-1.5 border-b border-slate-200 mb-2">
+              📅 2026년 ${monthItem.monthLabel} 부문별 매출 기여도
+            </div>
+            <div class="text-xs space-y-1 mb-2.5 pb-2 border-b border-slate-100 text-slate-600">
+              <div class="flex justify-between"><span>판매 객실 수:</span> <strong class="text-slate-800">${formatCurrency(ty.roomsSold)} 실</strong></div>
+              <div class="flex justify-between"><span>객실당 총매출 (TrevPAR):</span> <strong class="text-teal-700">${formatCurrency(trevpar)} 원</strong></div>
+              <div class="flex justify-between"><span>리조트 전사 총매출:</span> <strong class="text-slate-900">${formatCurrency(ty.totalRevenue)} 원</strong></div>
+            </div>
+            <div class="text-xs space-y-1">
+              <div class="flex items-center justify-between text-blue-900">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-xs" style="background:#1E3A8A"></span>🏨 숙박 (${ty.roomRatio ?? roomSeriesData[idx]}%):</span>
+                <strong>${formatCurrency(ty.roomRevenue)} 원</strong>
+              </div>
+              <div class="flex items-center justify-between text-emerald-900">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-xs" style="background:#16A34A"></span>🍽️ 식음 (${ty.fnbRatio ?? fnbSeriesData[idx]}%):</span>
+                <strong>${formatCurrency(ty.fnbRevenue)} 원</strong>
+              </div>
+              <div class="flex items-center justify-between text-amber-900">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-xs" style="background:#EAB308"></span>🎢 레저 (${ty.leisureRatio ?? leisureSeriesData[idx]}%):</span>
+                <strong>${formatCurrency(ty.leisureRevenue)} 원</strong>
+              </div>
+              <div class="flex items-center justify-between text-purple-900">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-xs" style="background:#9333EA"></span>⛳ 골프 (${ty.golfRatio ?? golfSeriesData[idx]}%):</span>
+                <strong>${formatCurrency(ty.golfRevenue)} 원</strong>
+              </div>
+              ${otherSeriesData[idx] > 0 ? `
+              <div class="flex items-center justify-between text-slate-700">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-xs" style="background:#94A3B8"></span>📦 기타 (${otherSeriesData[idx]}%):</span>
+                <strong>${formatCurrency(ty.otherRevenue || (ty.totalRevenue - (Number(ty.roomRevenue || 0) + Number(ty.fnbRevenue || 0) + Number(ty.leisureRevenue || 0) + Number(ty.golfRevenue || 0))))} 원</strong>
+              </div>
+              ` : ''}
+            </div>
+          `;
+          return html;
+        }
+      },
+      legend: {
+        data: ['숙박 (Accommodation)', '식음 (F&B)', '레저 (Leisure)', '골프 (Golf)', '기타 (Others)'],
+        top: 0,
+        textStyle: { color: '#475569', fontWeight: 600, fontSize: 12 }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        top: '12%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: xLabels,
+        axisLabel: { color: '#334155', fontWeight: 700, fontSize: 12 }
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 100,
+        axisLabel: {
+          formatter: '{value}%',
+          color: '#64748b',
+          fontWeight: 600
+        },
+        splitLine: { lineStyle: { color: '#f1f5f9' } }
+      },
+      series: [
+        {
+          name: '숙박 (Accommodation)',
+          type: 'bar',
+          stack: 'total',
+          barWidth: '38%',
+          itemStyle: { color: '#1E3A8A' },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: (params: any) => params.value >= 5 ? `${params.value}%` : '',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: 11
+          },
+          data: roomSeriesData
+        },
+        {
+          name: '식음 (F&B)',
+          type: 'bar',
+          stack: 'total',
+          itemStyle: { color: '#16A34A' },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: (params: any) => params.value >= 5 ? `${params.value}%` : '',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: 11
+          },
+          data: fnbSeriesData
+        },
+        {
+          name: '레저 (Leisure)',
+          type: 'bar',
+          stack: 'total',
+          itemStyle: { color: '#EAB308' },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: (params: any) => params.value >= 5 ? `${params.value}%` : '',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: 11
+          },
+          data: leisureSeriesData
+        },
+        {
+          name: '골프 (Golf)',
+          type: 'bar',
+          stack: 'total',
+          itemStyle: { color: '#9333EA' },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: (params: any) => params.value >= 5 ? `${params.value}%` : '',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: 11
+          },
+          data: golfSeriesData
+        },
+        {
+          name: '기타 (Others)',
+          type: 'bar',
+          stack: 'total',
+          itemStyle: {
+            color: '#94A3B8',
+            borderRadius: [6, 6, 0, 0]
+          },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: (params: any) => params.value >= 5 ? `${params.value}%` : '',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: 11
+          },
+          data: otherSeriesData
+        }
+      ]
+    };
+  }, [data]);
+
+  // 2. 12개월 전년 vs 올해 TrevPAR 성장 트렌드 차트
+  const yoyTrendChartOptions = React.useMemo(() => {
     if (!data?.monthlyComparison) return null;
 
     const lyValues: number[] = [];
@@ -335,34 +556,63 @@ export default function MonthlyTrevporChart() {
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                상단 주요 지표와 100% 동일한 기준 (리조트 총매출 ÷ 전체 175실) 및 {metricMode === 'TOTAL' ? '4대 부문(숙박·식음·레저·골프)' : '3대 순수 리조트 부문(숙박·식음·레저)'} 매출 비중을 12개월 전수 비교합니다.
+                상단 주요 지표와 100% 동일한 기준 (리조트 총매출 ÷ 전체 175실) 및 4대 사업 부문(숙박·식음·레저·골프) 월별 기여도를 전수 분석합니다.
               </p>
             </div>
           </div>
         </div>
 
-        {/* 2-Track Toggle Pills */}
-        <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80 self-start lg:self-auto">
-          <button
-            onClick={() => setMetricMode('TOTAL')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              metricMode === 'TOTAL'
-                ? 'bg-white text-teal-800 shadow-sm border border-slate-200/60'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>⛳</span> 골프 포함 객실당 총매출 (TrevPAR)
-          </button>
-          <button
-            onClick={() => setMetricMode('EX_GOLF')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              metricMode === 'EX_GOLF'
-                ? 'bg-white text-sky-800 shadow-sm border border-slate-200/60'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>🏨</span> 골프 제외 객실당 매출 (순수 리조트 TrevPAR)
-          </button>
+        {/* View Mode & 2-Track Toggle Bar */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Chart View Switcher */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+            <button
+              onClick={() => setChartViewTab('STACKED_100')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                chartViewTab === 'STACKED_100'
+                  ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/60'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+              <span>2026년 부문 기여도 100% 차트</span>
+            </button>
+            <button
+              onClick={() => setChartViewTab('YOY_TREND')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                chartViewTab === 'YOY_TREND'
+                  ? 'bg-white text-teal-900 shadow-sm border border-slate-200/60'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-teal-600" />
+              <span>12개월 TrevPAR 성장 트렌드</span>
+            </button>
+          </div>
+
+          {/* 2-Track Toggle Pills */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+            <button
+              onClick={() => setMetricMode('TOTAL')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                metricMode === 'TOTAL'
+                  ? 'bg-white text-teal-800 shadow-sm border border-slate-200/60'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>⛳</span> 골프 포함
+            </button>
+            <button
+              onClick={() => setMetricMode('EX_GOLF')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                metricMode === 'EX_GOLF'
+                  ? 'bg-white text-sky-800 shadow-sm border border-slate-200/60'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>🏨</span> 골프 제외
+            </button>
+          </div>
         </div>
       </div>
 
@@ -383,10 +633,38 @@ export default function MonthlyTrevporChart() {
         </div>
       ) : (
         <>
-          {/* ECharts 12-Month Comparison Chart */}
+          {/* Main Chart Section (Tab Switched) */}
           <div className="mb-8 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-            {chartOptions && (
-              <ReactECharts option={chartOptions} style={{ height: '360px', width: '100%' }} />
+            {chartViewTab === 'STACKED_100' ? (
+              <>
+                <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-slate-200/60 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      2026년 월별 TrevPAR 부문 기여도 100% 누적 막대 차트 (SSOT Standard)
+                    </h3>
+                  </div>
+                  <span className="text-xs text-slate-400">1월 ~ 8월 실적 집계 기준</span>
+                </div>
+                {stackedChartOptions && (
+                  <ReactECharts option={stackedChartOptions} style={{ height: '380px', width: '100%' }} />
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-slate-200/60 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      12개월 TrevPAR 성장 트렌드 (전년 2025 vs 올해 2026)
+                    </h3>
+                  </div>
+                  <span className="text-xs text-slate-400">175실 인프라 고정 기준</span>
+                </div>
+                {yoyTrendChartOptions && (
+                  <ReactECharts option={yoyTrendChartOptions} style={{ height: '380px', width: '100%' }} />
+                )}
+              </>
             )}
           </div>
 
@@ -434,21 +712,21 @@ export default function MonthlyTrevporChart() {
                         {item.ly?.roomsSold ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
                       </td>
                       
-                      {/* 2025년 매출 비중 (모드별 동적 반응) */}
+                      {/* 2025년 매출 비중 */}
                       <td className="py-3 px-3 text-center bg-slate-100/20">
                         {lyShares ? (
                           <div className="flex items-center justify-center gap-1 text-[11px] font-medium flex-wrap">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100" title="숙박 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200" title="숙박 비중">
                               숙 {lyShares.roomRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100" title="식음 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200" title="식음 비중">
                               식 {lyShares.fnbRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100" title="레저 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200" title="레저 비중">
                               레 {lyShares.leisureRatio}%
                             </span>
                             {metricMode === 'TOTAL' && lyShares.golfRatio !== null && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100" title="골프 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200" title="골프 비중">
                                 골 {lyShares.golfRatio}%
                               </span>
                             )}
@@ -469,21 +747,21 @@ export default function MonthlyTrevporChart() {
                         {item.ty?.roomsSold ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
                       </td>
 
-                      {/* 2026년 매출 비중 (모드별 동적 반응) */}
+                      {/* 2026년 매출 비중 */}
                       <td className="py-3 px-3 text-center bg-teal-50/20">
                         {tyShares ? (
                           <div className="flex items-center justify-center gap-1 text-[11px] font-medium flex-wrap">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100" title="숙박 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200" title="숙박 비중">
                               숙 {tyShares.roomRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100" title="식음 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200" title="식음 비중">
                               식 {tyShares.fnbRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100" title="레저 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200" title="레저 비중">
                               레 {tyShares.leisureRatio}%
                             </span>
                             {metricMode === 'TOTAL' && tyShares.golfRatio !== null && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100" title="골프 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200" title="골프 비중">
                                 골 {tyShares.golfRatio}%
                               </span>
                             )}
@@ -531,7 +809,7 @@ export default function MonthlyTrevporChart() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600 flex-shrink-0" />
               <span>
-                <strong>경영 포트폴리오 분석:</strong> {metricMode === 'TOTAL' ? '골프를 포함한 전사 4대 부문(숙박·식음·레저·골프)' : '골프를 제외한 순수 리조트 3대 부문(숙박·식음·레저)'}의 월별 기여 비중(100% 환산)을 토글에 따라 실시간으로 비교 진단할 수 있습니다.
+                <strong>경영 포트폴리오 분석:</strong> {metricMode === 'TOTAL' ? '골프를 포함한 전사 4대 부문(숙박·식음·레저·골프)' : '골프를 제외한 순수 리조트 3대 부문(숙박·식음·레저)'}의 월별 기여 비중을 상단 100% 누적 막대 차트 및 12개월 전수 테이블에서 한눈에 직관적으로 비교할 수 있습니다.
               </span>
             </div>
           </div>

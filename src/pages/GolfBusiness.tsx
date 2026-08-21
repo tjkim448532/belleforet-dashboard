@@ -265,9 +265,10 @@ export default function GolfBusiness() {
   const agencyRevenue = (otaChannel?.greenFeeRevenue || 0) + (kakaoChannel?.greenFeeRevenue || 0);
   const agencyTeams = (otaChannel?.visitedTeams || 0) + (kakaoChannel?.visitedTeams || 0);
 
-  // 2. 우천 및 기상 취소로 인한 기회손실액 계산 (100% 실제 데이터 기반)
-  // 1팀당 손실 = 1팀 평균 그린피 + 1팀 실제 평균 카트비
-  const avgTeamGreenFee = visitedTeams > 0 ? (avgGreenFee * 4) : 0;
+  const totalGreenFeeRevenue = (salesByChannel || []).reduce((acc: number, c: any) => acc + (Number(c.greenFeeRevenue) || 0), 0);
+  const avgTeamGreenFee = visitedTeams > 0 
+    ? (totalGreenFeeRevenue > 0 ? Math.round(totalGreenFeeRevenue / visitedTeams) : (visitedPlayers > 0 ? Math.round((avgGreenFee * visitedPlayers) / visitedTeams) : avgGreenFee * 4))
+    : 0;
   const cartFacility = golfDetails.find((f: any) => f.shopName?.includes('카트') || (f as any).facility_name?.includes('카트'));
   const actualCartRevenue = cartFacility?.totalSales || 0;
   const actualCartFeePerTeam = visitedTeams > 0 && actualCartRevenue > 0 

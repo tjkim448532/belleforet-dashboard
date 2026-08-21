@@ -424,16 +424,25 @@ export default function TargetSimulator() {
           </div>
 
           {/* Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
-            {['ALL', '숙박', '골프', '레저', '모토아레나', '식음', '대관/연회'].map(cat => (
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
+            {[
+              { id: 'ALL', label: '전체 (43개)' },
+              { id: '객실', label: '🏨 객실' },
+              { id: '식음', label: '🍽️ 식음' },
+              { id: '골프', label: '⛳ 골프' },
+              { id: '모토아레나', label: '🏎️ 모토' },
+              { id: '대관', label: '🏛️ 대관' },
+              { id: '레저본부', label: '🎢 레저' },
+              { id: '독립/기타', label: '📦 기타' }
+            ].map(cat => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategoryFilter(cat)}
-                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  selectedCategoryFilter === cat ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                key={cat.id}
+                onClick={() => setSelectedCategoryFilter(cat.id)}
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  selectedCategoryFilter === cat.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                {cat === 'ALL' ? '전체' : cat}
+                {cat.label}
               </button>
             ))}
           </div>

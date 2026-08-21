@@ -6,14 +6,15 @@ import type {
 } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../pages/AdminCapacity';
 
-// 2025/2026 Historical Baseline Division Share Weights
+// 43개 공식 영업장 기반 6대 핵심 사업군 및 독립 기타 부문 가중치
 const DIVISION_SEASONAL_WEIGHTS: Record<string, { weight: number; color: string; icon: string; label: string }> = {
-  ROOM: { weight: 0.28, color: '#1E3A8A', icon: '🏨', label: '숙박' },
-  FNB: { weight: 0.32, color: '#16A34A', icon: '🍽️', label: '식음' },
-  LEISURE: { weight: 0.16, color: '#EAB308', icon: '🎢', label: '레저' },
-  MOTO: { weight: 0.08, color: '#E11D48', icon: '🏎️', label: '모토아레나' },
-  BANQUET: { weight: 0.04, color: '#0891B2', icon: '🏛️', label: '대관/연회' },
-  GOLF: { weight: 0.12, color: '#9333EA', icon: '⛳', label: '골프' }
+  ROOM: { weight: 0.22, color: '#1E3A8A', icon: '🏨', label: '객실' },
+  FNB: { weight: 0.26, color: '#16A34A', icon: '🍽️', label: '식음' },
+  GOLF: { weight: 0.32, color: '#9333EA', icon: '⛳', label: '골프' },
+  LEISURE: { weight: 0.12, color: '#EAB308', icon: '🎢', label: '레저본부' },
+  MOTO: { weight: 0.05, color: '#E11D48', icon: '🏎️', label: '모토아레나' },
+  BANQUET: { weight: 0.02, color: '#0891B2', icon: '🏛️', label: '대관' },
+  OTHER: { weight: 0.01, color: '#64748B', icon: '📦', label: '독립/기타' }
 };
 
 export function runTargetSimulation(
@@ -28,11 +29,11 @@ export function runTargetSimulation(
 } {
   const masterItems = capacityMaster.length > 0 ? capacityMaster : DEFAULT_CAPACITY_SEEDS;
 
-  // 1. Calculate Target Annual Total Revenue
-  let targetTotalRevenue = input.targetTotalRevenue;
-  
-  // 2025 Historical Baseline (Estimated ~280억 or actual from API)
+  // 1. Calculate Target Total Revenue (연간 365일 175실 기준)
+  // 2025 진본 기준 전사 연간 순매출 기준선: 약 ₩285억 원
   const baseLyTotalRevenue = 28500000000; 
+
+  let targetTotalRevenue = input.targetTotalRevenue;
 
   if (input.metricInputMode === 'TREVPAR') {
     // Target TrevPAR (월평균 / 175실) * 12개월 * 175실
@@ -43,8 +44,8 @@ export function runTargetSimulation(
 
   // 2. Division Level 1st Allocation
   const activeDivisions = input.includeGolf 
-    ? ['ROOM', 'FNB', 'LEISURE', 'MOTO', 'BANQUET', 'GOLF']
-    : ['ROOM', 'FNB', 'LEISURE', 'MOTO', 'BANQUET'];
+    ? ['ROOM', 'FNB', 'GOLF', 'LEISURE', 'MOTO', 'BANQUET', 'OTHER']
+    : ['ROOM', 'FNB', 'LEISURE', 'MOTO', 'BANQUET', 'OTHER'];
 
   let totalWeight = activeDivisions.reduce((sum, div) => sum + DIVISION_SEASONAL_WEIGHTS[div].weight, 0);
 
@@ -55,11 +56,9 @@ export function runTargetSimulation(
     const divLyRevenue = Math.round(baseLyTotalRevenue * normalizedWeight);
     const divGrowthRate = divLyRevenue > 0 ? Number((((divTargetRevenue - divLyRevenue) / divLyRevenue) * 100).toFixed(1)) : 0;
 
-    // Filter matching facilities
+    // Filter matching 43 SSOT facilities
     const matchingFacilities = masterItems.filter(f => f.category === divKey);
     const facilityCount = Math.max(1, matchingFacilities.length);
-
-    let spilloverPool = 0;
 
     // 3. Facility Level 2nd Allocation with Capacity Ceiling Checks
     const facilityResults: FacilityAllocationResult[] = matchingFacilities.map((fac) => {
@@ -73,7 +72,8 @@ export function runTargetSimulation(
 
       // Required units at base unit price
       const requiredUnits = Math.round(facTargetRevenue / baseUnitPrice);
-      let capacityUtilizationRate = maxAnnualUnits > 0 ? Number(((requiredUnits / maxAnnualUnits) * 100).toFixed(1)) : 0;
+      const requiredDailyUnits = Math.round(requiredUnits / 365);
+      let capacityUtilizationRate = fac.maxDailyUnits > 0 ? Number(((requiredDailyUnits / fac.maxDailyUnits) * 100).toFixed(1)) : 0;
 
       let targetUnitPrice = baseUnitPrice;
       let unitPriceHikeRate = 0;
@@ -82,7 +82,7 @@ export function runTargetSimulation(
       let spilloverAmount = 0;
 
       // Capacity Ceiling Optimization
-      if (capacityUtilizationRate > 100) {
+      if (capacityUtilizationRate >= 100) {
         if (fac.allowPriceLeverage) {
           // Q is capped at 100% capacity (maxAnnualUnits)
           // Compute required Unit Price P = Target Revenue / Max Units
@@ -93,7 +93,7 @@ export function runTargetSimulation(
             targetUnitPrice = requiredUnitPrice;
             capacityUtilizationRate = 100;
             status = 'PRICE_HIKE_REQUIRED';
-            statusMessage = `캐파 100% 도달 ➔ 단가 ${unitPriceHikeRate}% 인상 가이드 (₩${targetUnitPrice.toLocaleString()}원)`;
+            statusMessage = `캐파 100% 도달 ➔ 단가 +${unitPriceHikeRate}% 인상 가이드 (₩${targetUnitPrice.toLocaleString()}원)`;
           } else {
             // Price hike exceeds max allowed limit -> cap price hike and spillover excess
             targetUnitPrice = Math.round(baseUnitPrice * (1 + fac.maxPriceHikeRate / 100));
@@ -102,7 +102,6 @@ export function runTargetSimulation(
             spilloverAmount = Math.max(0, facTargetRevenue - maxAbsorbableRevenue);
             facTargetRevenue = maxAbsorbableRevenue;
             capacityUtilizationRate = 100;
-            spilloverPool += spilloverAmount;
 
             status = 'SPILLOVER_REALLOCATED';
             statusMessage = `단가 상한(+${fac.maxPriceHikeRate}%) 도달 ➔ 초과분 ₩${Math.round(spilloverAmount / 10000).toLocaleString()}만원 타 영업장 재배분`;
@@ -113,7 +112,6 @@ export function runTargetSimulation(
           spilloverAmount = Math.max(0, facTargetRevenue - maxAbsorbableRevenue);
           facTargetRevenue = maxAbsorbableRevenue;
           capacityUtilizationRate = 100;
-          spilloverPool += spilloverAmount;
 
           status = 'SPILLOVER_REALLOCATED';
           statusMessage = `정가 고정형 캐파 100% 매진 ➔ 초과분 ₩${Math.round(spilloverAmount / 10000).toLocaleString()}만원 재배분`;
@@ -131,7 +129,7 @@ export function runTargetSimulation(
         targetRevenue: facTargetRevenue,
         growthRate: facLyRevenue > 0 ? Number((((facTargetRevenue - facLyRevenue) / facLyRevenue) * 100).toFixed(1)) : 0,
         diffAmount: facTargetRevenue - facLyRevenue,
-        requiredDailyUnits: Math.round(requiredUnits / 365),
+        requiredDailyUnits,
         maxDailyUnits: fac.maxDailyUnits,
         unitName: fac.unitName,
         capacityUtilizationRate,

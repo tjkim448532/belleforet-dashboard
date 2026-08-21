@@ -267,83 +267,83 @@ export default function MonthlyTrevporChart() {
     // 2025년 시리즈 (전년 비교 모드일 때 좌측 막대로 표출)
     if (showLy) {
       const lyStack = isCompare ? '2025' : 'total';
-      const lyBarWidth = isCompare ? 15 : 28;
+      const lyBarWidth = isCompare ? 26 : 38;
 
       seriesConfig.push(
         {
-          name: isCompare ? '숙박 (25년)' : '숙박 (Accommodation)',
+          name: '숙박',
           type: 'bar',
           stack: lyStack,
           barWidth: lyBarWidth,
-          barGap: isCompare ? '20%' : '30%',
-          itemStyle: { color: isCompare ? '#60A5FA' : '#1E3A8A', opacity: isCompare ? 0.85 : 1 },
+          barGap: isCompare ? '12%' : '20%',
+          itemStyle: { color: isCompare ? '#60A5FA' : '#1E3A8A' },
           label: {
             show: true,
             position: 'inside',
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
-            fontWeight: 500,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 11
           },
           data: lyRoom
         },
         {
-          name: isCompare ? '식음 (25년)' : '식음 (F&B)',
+          name: '식음',
           type: 'bar',
           stack: lyStack,
-          itemStyle: { color: isCompare ? '#4ADE80' : '#16A34A', opacity: isCompare ? 0.85 : 1 },
+          itemStyle: { color: isCompare ? '#4ADE80' : '#16A34A' },
           label: {
             show: true,
             position: 'inside',
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
-            fontWeight: 500,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 11
           },
           data: lyFnb
         },
         {
-          name: isCompare ? '레저 (25년)' : '레저 (Leisure)',
+          name: '레저',
           type: 'bar',
           stack: lyStack,
-          itemStyle: { color: isCompare ? '#FDE047' : '#EAB308', opacity: isCompare ? 0.85 : 1 },
+          itemStyle: { color: isCompare ? '#FDE047' : '#EAB308' },
           label: {
             show: true,
             position: 'inside',
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#1E293B',
-            fontWeight: 600,
-            fontSize: 10
+            fontWeight: 700,
+            fontSize: 11
           },
           data: lyLeisure
         },
         {
-          name: isCompare ? '모토 (25년)' : '모토아레나 (Moto)',
+          name: '모토아레나',
           type: 'bar',
           stack: lyStack,
-          itemStyle: { color: isCompare ? '#FB7185' : '#E11D48', opacity: isCompare ? 0.85 : 1 },
+          itemStyle: { color: isCompare ? '#FB7185' : '#E11D48' },
           label: {
             show: true,
             position: 'inside',
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
-            fontWeight: 500,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 11
           },
           data: lyMoto
         },
         {
-          name: isCompare ? '대관 (25년)' : '대관/연회 (Banquet)',
+          name: '대관/연회',
           type: 'bar',
           stack: lyStack,
-          itemStyle: { color: isCompare ? '#22D3EE' : '#0891B2', opacity: isCompare ? 0.85 : 1 },
+          itemStyle: { color: isCompare ? '#22D3EE' : '#0891B2' },
           label: {
             show: true,
             position: 'inside',
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
-            fontWeight: 500,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 11
           },
           data: lyBanquet
         }
@@ -351,17 +351,17 @@ export default function MonthlyTrevporChart() {
 
       if (metricMode === 'TOTAL') {
         seriesConfig.push({
-          name: isCompare ? '골프 (25년)' : '골프 (Golf)',
+          name: '골프',
           type: 'bar',
           stack: lyStack,
-          itemStyle: { color: isCompare ? '#C084FC' : '#9333EA', opacity: isCompare ? 0.85 : 1 },
+          itemStyle: { color: isCompare ? '#C084FC' : '#9333EA' },
           label: {
             show: true,
             position: 'inside',
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
-            fontWeight: 500,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 11
           },
           data: lyGolf
         });
@@ -371,11 +371,11 @@ export default function MonthlyTrevporChart() {
     // 2026년 시리즈 (올해 실적 막대)
     if (showTy) {
       const tyStack = isCompare ? '2026' : 'total';
-      const tyBarWidth = isCompare ? 15 : 28;
+      const tyBarWidth = isCompare ? 26 : 38;
 
       seriesConfig.push(
         {
-          name: isCompare ? '숙박 (26년)' : '숙박 (Accommodation)',
+          name: '숙박',
           type: 'bar',
           stack: tyStack,
           barWidth: tyBarWidth,
@@ -386,12 +386,12 @@ export default function MonthlyTrevporChart() {
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
             fontWeight: 600,
-            fontSize: 10
+            fontSize: 11
           },
           data: tyRoom
         },
         {
-          name: isCompare ? '식음 (26년)' : '식음 (F&B)',
+          name: '식음',
           type: 'bar',
           stack: tyStack,
           itemStyle: { color: '#16A34A' },
@@ -401,12 +401,12 @@ export default function MonthlyTrevporChart() {
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
             fontWeight: 600,
-            fontSize: 10
+            fontSize: 11
           },
           data: tyFnb
         },
         {
-          name: isCompare ? '레저 (26년)' : '레저 (Leisure)',
+          name: '레저',
           type: 'bar',
           stack: tyStack,
           itemStyle: { color: '#EAB308' },
@@ -416,12 +416,12 @@ export default function MonthlyTrevporChart() {
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#1E293B',
             fontWeight: 700,
-            fontSize: 10
+            fontSize: 11
           },
           data: tyLeisure
         },
         {
-          name: isCompare ? '모토 (26년)' : '모토아레나 (Moto)',
+          name: '모토아레나',
           type: 'bar',
           stack: tyStack,
           itemStyle: { color: '#E11D48' },
@@ -431,12 +431,12 @@ export default function MonthlyTrevporChart() {
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
             fontWeight: 600,
-            fontSize: 10
+            fontSize: 11
           },
           data: tyMoto
         },
         {
-          name: isCompare ? '대관 (26년)' : '대관/연회 (Banquet)',
+          name: '대관/연회',
           type: 'bar',
           stack: tyStack,
           itemStyle: { color: '#0891B2' },
@@ -446,7 +446,7 @@ export default function MonthlyTrevporChart() {
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
             fontWeight: 600,
-            fontSize: 10
+            fontSize: 11
           },
           data: tyBanquet
         }
@@ -454,7 +454,7 @@ export default function MonthlyTrevporChart() {
 
       if (metricMode === 'TOTAL') {
         seriesConfig.push({
-          name: isCompare ? '골프 (26년)' : '골프 (Golf)',
+          name: '골프',
           type: 'bar',
           stack: tyStack,
           itemStyle: { color: '#9333EA' },
@@ -464,16 +464,14 @@ export default function MonthlyTrevporChart() {
             formatter: (params: any) => params.value >= 7 ? `${Math.round(params.value)}%` : '',
             color: '#ffffff',
             fontWeight: 600,
-            fontSize: 10
+            fontSize: 11
           },
           data: tyGolf
         });
       }
     }
 
-    const legendData = isCompare 
-      ? ['숙박', '식음', '레저', '모토', '대관', ...(metricMode === 'TOTAL' ? ['골프'] : [])]
-      : seriesConfig.map(s => s.name);
+    const legendData = ['숙박', '식음', '레저', '모토아레나', '대관/연회', ...(metricMode === 'TOTAL' ? ['골프'] : [])];
 
     return {
       tooltip: {
@@ -951,8 +949,54 @@ export default function MonthlyTrevporChart() {
                     </div>
                   </div>
                 </div>
+
+                {/* 🎨 부문별 색상 및 전년/올해 막대 직관 안내 바 */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/90 mb-3 text-xs shadow-2xs">
+                  <div className="flex flex-wrap items-center gap-3.5">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                      <span className="w-3.5 h-3.5 rounded-sm bg-[#1E3A8A] inline-block shadow-2xs"></span>
+                      <span>🏨 숙박</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                      <span className="w-3.5 h-3.5 rounded-sm bg-[#16A34A] inline-block shadow-2xs"></span>
+                      <span>🍽️ 식음</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                      <span className="w-3.5 h-3.5 rounded-sm bg-[#EAB308] inline-block shadow-2xs"></span>
+                      <span>🎢 레저</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                      <span className="w-3.5 h-3.5 rounded-sm bg-[#E11D48] inline-block shadow-2xs"></span>
+                      <span>🏎️ 모토아레나</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                      <span className="w-3.5 h-3.5 rounded-sm bg-[#0891B2] inline-block shadow-2xs"></span>
+                      <span>🏛️ 대관/연회</span>
+                    </div>
+                    {metricMode === 'TOTAL' && (
+                      <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                        <span className="w-3.5 h-3.5 rounded-sm bg-[#9333EA] inline-block shadow-2xs"></span>
+                        <span>⛳ 골프</span>
+                      </div>
+                    )}
+                  </div>
+                  {stackedYearMode === 'COMPARE' && (
+                    <div className="text-[11px] font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80 flex items-center gap-2">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#60A5FA]"></span>
+                        좌측 연한 색: <strong>2025년 (전년)</strong>
+                      </span>
+                      <span className="text-slate-300">|</span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#1E3A8A]"></span>
+                        우측 진한 색: <strong>2026년 (올해)</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 {stackedChartOptions && (
-                  <ReactECharts option={stackedChartOptions} style={{ height: '460px', width: '100%' }} />
+                  <ReactECharts option={stackedChartOptions} style={{ height: '480px', width: '100%' }} />
                 )}
               </>
             ) : (

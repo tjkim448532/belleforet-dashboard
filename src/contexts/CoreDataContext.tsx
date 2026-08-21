@@ -147,6 +147,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
           rankedList.sort((a, b) => b.avgGreenFee - a.avgGreenFee);
           corePayload.summary.golfRankedChannels = rankedList;
+          corePayload.summary.golfLowToHighChannels = [...rankedList].sort((a, b) => a.avgGreenFee - b.avgGreenFee);
+          corePayload.summary.golfTimeSlots = golfChannelPayload.analysisByTimeSlot || [];
         }
 
         // 전년 동기/동요일 숙박객 수 및 증감률 주입

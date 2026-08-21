@@ -697,8 +697,82 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+
+                    {/* 객단가 저렴한 순서별 이용 시간대 및 채널 티타임 현황 */}
+                    {coreData.core?.summary?.golfLowToHighChannels && coreData.core.summary.golfLowToHighChannels.length > 0 && (
+                      <div className="mt-3.5 pt-3 border-t border-slate-200/80">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                          <span className="flex items-center gap-1.5">
+                            <span>⏰</span> 객단가 저렴한 순 채널 및 이용 시간대
+                          </span>
+                          <span className="text-[11px] font-normal text-slate-400">오름차순 (실속 ➔ 프라임)</span>
+                        </div>
+                        
+                        {/* 1부/2부/3부 시간대 퀵 뱃지 (티타임 슬롯 실측 현황) */}
+                        {coreData.core.summary.golfTimeSlots && coreData.core.summary.golfTimeSlots.length > 0 && (
+                          <div className="grid grid-cols-3 gap-1.5 mb-2.5">
+                            {coreData.core.summary.golfTimeSlots.map((slot: any, sIdx: number) => (
+                              <div key={sIdx} className="bg-white p-1.5 rounded-xl border border-slate-200/80 text-center shadow-2xs">
+                                <div className="text-[10px] font-bold text-slate-500 truncate">{slot.slotGroup?.split(' ')[0]}</div>
+                                <div className="text-[11px] font-black text-teal-800 tabular-nums">{slot.timeRange}</div>
+                                <div className="text-[10px] text-slate-600 font-semibold">{slot.visitedTeams}팀 <span className="text-slate-400 font-normal">({slot.cancellationRate}% 취소)</span></div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 객단가 저렴한 순서별 채널 리스트 (오름차순 & 이용 시간대) */}
+                        <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                          {coreData.core.summary.golfLowToHighChannels.map((item: any, idx: number) => {
+                            const maxPrice = coreData.core.summary.golfRankedChannels?.[0]?.avgGreenFee || 1;
+                            const pct = Math.min(100, Math.max(10, Math.round((item.avgGreenFee / maxPrice) * 100)));
+                            
+                            // 실속 채널별 주요 이용 시간대 안내
+                            const timeHint = item.name.includes('스마트스코어') ? '1부 새벽 (06:00~08:30)' :
+                              item.name.includes('전화') ? '1부/2부 잔여 타임' :
+                              item.name.includes('미골프') || item.name.includes('오너골프') ? '1부 새벽 / 3부 야간' :
+                              item.name.includes('골프몬') ? '3부 야간 (16:30~18:30)' :
+                              item.name.includes('골프락') ? '1부 오전 / 2부' :
+                              item.name.includes('자사') ? '1부·2부·3부 전시간' :
+                              item.name.includes('골팡') ? '2부 낮 타임' :
+                              item.name.includes('카카오') ? '2부 프라임 타임' :
+                              item.name.includes('패키지') ? '1박2일 숙박 연계' : '프라임 타임';
+
+                            return (
+                              <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-teal-200 transition-all">
+                                <div className="flex items-center gap-1.5 min-w-[135px] truncate">
+                                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                    idx === 0 ? 'bg-emerald-100 text-emerald-800' :
+                                    idx === 1 ? 'bg-sky-100 text-sky-800' :
+                                    idx === 2 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'
+                                  }`}>
+                                    {idx + 1}
+                                  </span>
+                                  <div className="truncate">
+                                    <span className="font-semibold text-slate-800 truncate block" title={item.name}>{item.name}</span>
+                                    <span className="text-[10px] text-teal-700 font-medium block truncate">🕒 {timeHint}</span>
+                                  </div>
+                                </div>
+                                <div className="flex-1 mx-2 hidden sm:block">
+                                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-teal-500 rounded-full transition-all duration-500" 
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="text-right whitespace-nowrap shrink-0">
+                                  <span className="font-black text-slate-900">₩{formatCurrency(item.avgGreenFee)}</span>
+                                  <span className="text-[10px] text-slate-400 ml-1.5">({item.players}명)</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-400 mt-3.5 pt-3 border-t border-slate-200/80">
+                  <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80">
                     {isRangeMode ? '선택 기간 골프 총 예약/취소 및 실제 라운딩 실적 데이터' : '골프장 마감 예약/취소 및 실제 라운딩 실적 데이터'}
                   </div>
                 </div>

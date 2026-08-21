@@ -128,34 +128,69 @@ export default function MonthlyTrevporChart() {
     }
   };
 
-  // Helper to compute / extract divisional share ratios (숙박, 레저, 골프, 식음)
-  const getShareRatios = (itemNode: any) => {
-    if (!itemNode || !itemNode.totalRevenue || itemNode.totalRevenue <= 0) return null;
-    if (itemNode.shareRatios) return itemNode.shareRatios;
-
-    const total = Number(itemNode.totalRevenue);
+  // Helper to compute / extract divisional share ratios (숙박, 식음, 레저, 골프) according to active mode
+  const getShareRatios = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF') => {
+    if (!itemNode) return null;
     const room = Number(itemNode.roomRevenue || 0);
     const fnb = Number(itemNode.fnbRevenue || 0);
     const leisure = Number(itemNode.leisureRevenue || 0);
     const golf = Number(itemNode.golfRevenue || 0);
 
-    if (room > 0 || fnb > 0 || leisure > 0 || golf > 0) {
+    if (mode === 'TOTAL') {
+      const total = Number(itemNode.totalRevenue || 0);
+      if (total <= 0) return null;
+
+      if (room > 0 || fnb > 0 || leisure > 0 || golf > 0) {
+        return {
+          roomRatio: Number(((room / total) * 100).toFixed(1)),
+          fnbRatio: Number(((fnb / total) * 100).toFixed(1)),
+          leisureRatio: Number(((leisure / total) * 100).toFixed(1)),
+          golfRatio: Number(((golf / total) * 100).toFixed(1))
+        };
+      }
+
+      if (itemNode.shareRatios) return itemNode.shareRatios;
+
+      const golfRatio = Number(((golf / total) * 100).toFixed(1));
       return {
-        roomRatio: Number(((room / total) * 100).toFixed(1)),
-        fnbRatio: Number(((fnb / total) * 100).toFixed(1)),
-        leisureRatio: Number(((leisure / total) * 100).toFixed(1)),
-        golfRatio: Number(((golf / total) * 100).toFixed(1))
+        roomRatio: 0,
+        fnbRatio: 0,
+        leisureRatio: 0,
+        golfRatio: golfRatio
+      };
+    } else {
+      // 골프 제외 모드 (순수 리조트 = 숙박 + 식음 + 레저)
+      const pureTotal = Number(itemNode.netRevenueWithoutGolf || (itemNode.totalRevenue - golf));
+      if (pureTotal <= 0) return null;
+
+      if (room > 0 || fnb > 0 || leisure > 0) {
+        return {
+          roomRatio: Number(((room / pureTotal) * 100).toFixed(1)),
+          fnbRatio: Number(((fnb / pureTotal) * 100).toFixed(1)),
+          leisureRatio: Number(((leisure / pureTotal) * 100).toFixed(1)),
+          golfRatio: null
+        };
+      }
+
+      if (itemNode.shareRatios) {
+        const sum3 = (itemNode.shareRatios.roomRatio || 0) + (itemNode.shareRatios.fnbRatio || 0) + (itemNode.shareRatios.leisureRatio || 0);
+        if (sum3 > 0) {
+          return {
+            roomRatio: Number(((itemNode.shareRatios.roomRatio / sum3) * 100).toFixed(1)),
+            fnbRatio: Number(((itemNode.shareRatios.fnbRatio / sum3) * 100).toFixed(1)),
+            leisureRatio: Number(((itemNode.shareRatios.leisureRatio / sum3) * 100).toFixed(1)),
+            golfRatio: null
+          };
+        }
+      }
+
+      return {
+        roomRatio: 0,
+        fnbRatio: 0,
+        leisureRatio: 0,
+        golfRatio: null
       };
     }
-
-    // Default fallback if only golf is separate
-    const golfRatio = Number(((golf / total) * 100).toFixed(1));
-    return {
-      roomRatio: 0,
-      fnbRatio: 0,
-      leisureRatio: 0,
-      golfRatio: golfRatio
-    };
   };
 
   // Prepare chart series from SSOT data (Strict TrevPAR available rooms standard)
@@ -300,7 +335,7 @@ export default function MonthlyTrevporChart() {
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                상단 주요 지표와 100% 동일한 기준 (리조트 총매출 ÷ 전체 175실) 및 4대 부문(숙박·식음·레저·골프) 매출 비중을 12개월 전수 비교합니다.
+                상단 주요 지표와 100% 동일한 기준 (리조트 총매출 ÷ 전체 175실) 및 {metricMode === 'TOTAL' ? '4대 부문(숙박·식음·레저·골프)' : '3대 순수 리조트 부문(숙박·식음·레저)'} 매출 비중을 12개월 전수 비교합니다.
               </p>
             </div>
           </div>
@@ -362,11 +397,15 @@ export default function MonthlyTrevporChart() {
                 <tr>
                   <th className="py-3.5 px-3 text-center">월</th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 판매객실</th>
-                  <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[200px]">2025년 매출 비중 (숙박·식음·레저·골프)</th>
+                  <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[200px]">
+                    2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·골)' : '순수 리조트 비중 (숙·식·레)'}
+                  </th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 판매객실</th>
-                  <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[200px]">2026년 매출 비중 (숙박·식음·레저·골프)</th>
+                  <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[200px]">
+                    2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·골)' : '순수 리조트 비중 (숙·식·레)'}
+                  </th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPAR</th>
                   <th className="py-3.5 px-3 text-right">전년 대비 증감액</th>
@@ -377,11 +416,11 @@ export default function MonthlyTrevporChart() {
                 {data.monthlyComparison.map((item) => {
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
                   const lyTrevpar = getTrevparValue(item.ly, metricMode, 2025, item.month);
-                  const lyShares = getShareRatios(item.ly);
+                  const lyShares = getShareRatios(item.ly, metricMode);
                   
                   const tyRev = item.ty ? (metricMode === 'TOTAL' ? item.ty.totalRevenue : item.ty.netRevenueWithoutGolf) : null;
                   const tyTrevpar = item.ty ? getTrevparValue(item.ty, metricMode, 2026, item.month) : null;
-                  const tyShares = item.ty ? getShareRatios(item.ty) : null;
+                  const tyShares = item.ty ? getShareRatios(item.ty, metricMode) : null;
                   
                   const diffAmount = (tyTrevpar !== null && lyTrevpar !== null) ? (tyTrevpar - lyTrevpar) : null;
                   const growthRate = (tyTrevpar !== null && lyTrevpar !== null && lyTrevpar > 0) ? Number((((tyTrevpar - lyTrevpar) / lyTrevpar) * 100).toFixed(1)) : null;
@@ -395,7 +434,7 @@ export default function MonthlyTrevporChart() {
                         {item.ly?.roomsSold ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
                       </td>
                       
-                      {/* 2025년 매출 비중 (숙박, 식음, 레저, 골프) */}
+                      {/* 2025년 매출 비중 (모드별 동적 반응) */}
                       <td className="py-3 px-3 text-center bg-slate-100/20">
                         {lyShares ? (
                           <div className="flex items-center justify-center gap-1 text-[11px] font-medium flex-wrap">
@@ -408,9 +447,11 @@ export default function MonthlyTrevporChart() {
                             <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100" title="레저 비중">
                               레 {lyShares.leisureRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100" title="골프 비중">
-                              골 {lyShares.golfRatio}%
-                            </span>
+                            {metricMode === 'TOTAL' && lyShares.golfRatio !== null && (
+                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100" title="골프 비중">
+                                골 {lyShares.golfRatio}%
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-slate-300">-</span>
@@ -428,7 +469,7 @@ export default function MonthlyTrevporChart() {
                         {item.ty?.roomsSold ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
                       </td>
 
-                      {/* 2026년 매출 비중 (숙박, 식음, 레저, 골프) */}
+                      {/* 2026년 매출 비중 (모드별 동적 반응) */}
                       <td className="py-3 px-3 text-center bg-teal-50/20">
                         {tyShares ? (
                           <div className="flex items-center justify-center gap-1 text-[11px] font-medium flex-wrap">
@@ -441,9 +482,11 @@ export default function MonthlyTrevporChart() {
                             <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100" title="레저 비중">
                               레 {tyShares.leisureRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100" title="골프 비중">
-                              골 {tyShares.golfRatio}%
-                            </span>
+                            {metricMode === 'TOTAL' && tyShares.golfRatio !== null && (
+                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100" title="골프 비중">
+                                골 {tyShares.golfRatio}%
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-slate-300">-</span>
@@ -488,7 +531,7 @@ export default function MonthlyTrevporChart() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600 flex-shrink-0" />
               <span>
-                <strong>경영 포트폴리오 분석:</strong> 175실 기준 객실당 총매출(TrevPAR)과 함께 <strong>4대 핵심 부문(숙박·식음·레저·골프)의 월별 매출 비중(%)</strong>을 비교하여, 계절별/월별 수익 창출 구조의 변화를 입체적으로 진단할 수 있습니다.
+                <strong>경영 포트폴리오 분석:</strong> {metricMode === 'TOTAL' ? '골프를 포함한 전사 4대 부문(숙박·식음·레저·골프)' : '골프를 제외한 순수 리조트 3대 부문(숙박·식음·레저)'}의 월별 기여 비중(100% 환산)을 토글에 따라 실시간으로 비교 진단할 수 있습니다.
               </span>
             </div>
           </div>

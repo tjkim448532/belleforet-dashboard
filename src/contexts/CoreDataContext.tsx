@@ -108,9 +108,10 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             corePayload.summary.golfOtaPlayers = otaCh.visitedPlayers || 0;
             corePayload.summary.golfOtaRevenue = otaCh.greenFeeRevenue || 0;
           }
-          if (golfChannelPayload.golfSummary?.avgGreenFeePerPlayer && !corePayload.summary.golfAvgGreenFee) {
-            corePayload.summary.golfAvgGreenFee = golfChannelPayload.golfSummary.avgGreenFeePerPlayer;
+          if (golfChannelPayload.golfSummary?.avgGreenFeePerPlayer !== undefined && golfChannelPayload.golfSummary?.avgGreenFeePerPlayer !== null) {
+            corePayload.summary.golfAvgGreenFee = Number(golfChannelPayload.golfSummary.avgGreenFeePerPlayer);
           }
+          corePayload.summary.golfChannels = channels;
         }
 
         // 전년 동기/동요일 숙박객 수 및 증감률 주입

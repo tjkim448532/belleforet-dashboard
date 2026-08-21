@@ -5,6 +5,7 @@ import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
 import SalesPieChart from '../components/dashboard/SalesPieChart';
+import MonthlyTrevporChart from '../components/dashboard/MonthlyTrevporChart';
 import { parseNum } from '../lib/dataTransformers';
 import { getMtdHolidayComparison } from '../lib/holidayUtils';
 
@@ -630,10 +631,13 @@ export default function Home() {
             </div>
           </div>
           
+          {/* 📊 객실당 총매출(TrevPOR) 월별 전년(1~12월) vs 올해 비교 분석 섹션 */}
+          <MonthlyTrevporChart />
+
           {/* 본부별 매출 파이 차트 */}
-            {pieChartData.length > 0 && (
-              <SalesPieChart data={pieChartData} />
-            )}
+          {pieChartData.length > 0 && (
+            <SalesPieChart data={pieChartData} />
+          )}
 
             {/* QA & KPI 상세 가이드 Accordion */}
             <div className="lg:col-span-12 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">

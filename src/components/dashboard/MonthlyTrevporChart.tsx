@@ -116,7 +116,7 @@ export default function MonthlyTrevporChart() {
             if (p.value !== null && p.value !== undefined) {
               const valStr = p.seriesName.includes('증감률') 
                 ? `${p.value > 0 ? '+' : ''}${p.value}%` 
-                : `₩${new Intl.NumberFormat('ko-KR').format(p.value)}원`;
+                : `${new Intl.NumberFormat('ko-KR').format(p.value)} 원`;
               result += `<div class="flex items-center justify-between gap-4 text-xs py-0.5">
                 <span style="color:${p.color}">● ${p.seriesName}</span>
                 <strong>${valStr}</strong>
@@ -312,27 +312,27 @@ export default function MonthlyTrevporChart() {
                         {item.monthLabel}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
-                        {item.ly?.roomsSold ? `${formatCurrency(item.ly.roomsSold)}실` : '-'}
+                        {item.ly?.roomsSold ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
-                        {lyRev ? `₩${formatCurrency(lyRev)}` : '-'}
+                        {lyRev ? `${formatCurrency(lyRev)} 원` : '-'}
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-slate-900 tabular-nums bg-slate-100/30">
-                        {lyTrevpor ? `₩${formatCurrency(lyTrevpor)}` : '-'}
+                        {lyTrevpor ? `${formatCurrency(lyTrevpor)} 원` : '-'}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
-                        {item.ty?.roomsSold ? `${formatCurrency(item.ty.roomsSold)}실` : <span className="text-slate-300">-</span>}
+                        {item.ty?.roomsSold ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
-                        {tyRev !== null && tyRev !== undefined ? `₩${formatCurrency(tyRev)}` : <span className="text-slate-300">-</span>}
+                        {tyRev !== null && tyRev !== undefined ? `${formatCurrency(tyRev)} 원` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-4 text-right font-black text-teal-800 tabular-nums bg-teal-50/30">
-                        {tyTrevpor !== null && tyTrevpor !== undefined ? `₩${formatCurrency(tyTrevpor)}` : <span className="text-slate-300">-</span>}
+                        {tyTrevpor !== null && tyTrevpor !== undefined ? `${formatCurrency(tyTrevpor)} 원` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums">
                         {diffAmount !== null && diffAmount !== undefined ? (
                           <span className={`font-semibold ${diffAmount >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
-                            {diffAmount > 0 ? '+' : ''}₩{formatCurrency(diffAmount)}
+                            {diffAmount > 0 ? '+' : ''}{formatCurrency(diffAmount)} 원
                           </span>
                         ) : (
                           <span className="text-slate-300">-</span>

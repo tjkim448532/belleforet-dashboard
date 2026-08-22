@@ -1,12 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, ArrowUpRight, 
-  Calendar, Layers, DollarSign
+  Calendar, Layers, DollarSign, CalendarDays
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
+
+const YEAR_PAIRS = [
+  { baseYear: 2024, targetYear: 2025, label: '2024년 실적 ➔ 2025년 목표' },
+  { baseYear: 2025, targetYear: 2026, label: '2025년 실적 ➔ 2026년 목표' },
+  { baseYear: 2026, targetYear: 2027, label: '2026년 실적 ➔ 2027년 목표' }
+];
 
 const MONTH_NAMES = [
   { id: 'ANNUAL', label: '연간 종합 (1~12월)', shortLabel: '연간 종합', season: '전사' },
@@ -14,7 +20,7 @@ const MONTH_NAMES = [
   { id: 2, label: '2월', shortLabel: '2월', season: '겨울 비수기' },
   { id: 3, label: '3월', shortLabel: '3월', season: '봄 개장' },
   { id: 4, label: '4월', shortLabel: '4월', season: '봄 성수기' },
-  { id: 5, label: '5월', shortLabel: '5월', season: '가정의달 피크' },
+  { id: 5, label: '5월', season: '가정의달 피크', shortLabel: '5월' },
   { id: 6, label: '6월', shortLabel: '6월', season: '초여름' },
   { id: 7, label: '7월', shortLabel: '7월', season: '여름 방학/워터파크' },
   { id: 8, label: '8월', shortLabel: '8월', season: '바캉스 극성수기' },
@@ -27,9 +33,10 @@ const MONTH_NAMES = [
 export default function TargetSimulator() {
   const [capacityMaster, setCapacityMaster] = useState<FacilityCapacityItem[]>(DEFAULT_CAPACITY_SEEDS);
 
-  // Simulation Target Input State (연간 성장률 글로벌 앵커 + 선택 월)
+  // Simulation Target Input State (기준 연도 + 목표 연도 + 연간 성장률 앵커 + 선택 월)
   const [input, setInput] = useState<SimulationTargetInput>({
-    targetYear: 2027,
+    baseYear: 2025, // 기준 실적 연도 (기본값: 2025년)
+    targetYear: 2026, // 목표 수립 연도 (기본값: 2026년)
     selectedMonth: 7, // 기본값: 7월 성수기 (또는 'ANNUAL')
     period: 'M07',
     metricInputMode: 'GROWTH_RATE',
@@ -80,6 +87,14 @@ export default function TargetSimulator() {
       ...prev,
       metricInputMode: 'GROWTH_RATE',
       targetGrowthRate: rate
+    }));
+  };
+
+  const handleYearPairSelect = (baseYr: number, targetYr: number) => {
+    setInput(prev => ({
+      ...prev,
+      baseYear: baseYr,
+      targetYear: targetYr
     }));
   };
 
@@ -154,47 +169,78 @@ export default function TargetSimulator() {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              경영 목표 역추산 & 월별 세부 실행 목표 시뮬레이터
+              경영 목표 역추산 & 연도·월별 시뮬레이터
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                Target Simulator Engine v6.1
+                Target Simulator Engine v6.2
               </span>
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              전사 <strong>연간 목표 성장률(%)</strong>을 설정하고 <strong>특정 월(1~12월)</strong>을 선택하면, 해당 월의 실측 계절성과 백엔드 표준 영업장별 매출 비중을 자동 대입하여 세부 목표를 산출합니다.
+              <strong>기준 실적 연도(2024/2025/2026)</strong>와 <strong>목표 연도(2025/2026/2027)</strong>를 자유롭게 선택하고, 원하는 월의 계절성 비중에 맞춘 세부 목표를 역산합니다.
             </p>
           </div>
         </div>
       </div>
 
-      {/* 2. 🎛️ Master Target Console (대표님 목표 입력 패널 & 12개월 월 선택기) */}
+      {/* 2. 🎛️ Master Target Console (대표님 목표 입력 패널 & 연도·12개월 월 선택기) */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
           <Target className="w-72 h-72 text-white" />
         </div>
 
-        {/* Top Control Bar: Golf Toggle */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-teal-400" />
-            <h2 className="text-lg font-black tracking-tight">
-              2027년 전사 경영 목표 컨트롤 콘솔
-            </h2>
+        {/* Top Control Bar: Year Selection & Golf Toggle */}
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-700/80 pb-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-black tracking-tight">
+                {input.targetYear}년 전사 경영 목표 컨트롤 콘솔
+                <span className="text-xs font-normal text-slate-400 ml-2">
+                  ({input.baseYear}년 실적 기준선 대비)
+                </span>
+              </h2>
+            </div>
+            
+            {/* Year Selector Buttons */}
+            <div className="flex items-center gap-2 mt-2.5">
+              <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0">
+                <CalendarDays className="w-3.5 h-3.5 text-teal-400" /> 비교 연도:
+              </span>
+              <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+                {YEAR_PAIRS.map(yp => {
+                  const isSelected = input.baseYear === yp.baseYear && input.targetYear === yp.targetYear;
+                  return (
+                    <button
+                      key={`${yp.baseYear}-${yp.targetYear}`}
+                      onClick={() => handleYearPairSelect(yp.baseYear, yp.targetYear)}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'bg-indigo-600 text-white shadow-xs font-black' 
+                          : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                      }`}
+                    >
+                      {yp.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           
+          {/* Scope Toggle */}
           <div className="flex items-center gap-2">
             <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
               <button
                 onClick={() => setInput(prev => ({ ...prev, includeGolf: true }))}
-                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  input.includeGolf ? 'bg-teal-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  input.includeGolf ? 'bg-teal-500 text-slate-950 shadow-xs font-black' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 ⛳ 골프 포함 (전사)
               </button>
               <button
                 onClick={() => setInput(prev => ({ ...prev, includeGolf: false }))}
-                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  !input.includeGolf ? 'bg-sky-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  !input.includeGolf ? 'bg-sky-500 text-slate-950 shadow-xs font-black' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 🏨 골프 제외 (순수 리조트)
@@ -208,10 +254,10 @@ export default function TargetSimulator() {
           <div className="flex items-center justify-between text-xs font-bold text-slate-300">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-teal-400" />
-              시뮬레이션 대상 월 선택 (해당 월의 실측 매출 비중 자동 대입)
+              시뮬레이션 대상 월 선택 ({input.baseYear}년 해당 월의 실측 매출 비중 자동 대입)
             </span>
             <span className="text-teal-300 font-extrabold">
-              현재 선택: {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
+              현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
             </span>
           </div>
 
@@ -244,8 +290,12 @@ export default function TargetSimulator() {
           {/* Left: Growth Rate Slider & Presets */}
           <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-300">🚀 전사 연간 목표 성장률 설정</span>
-              <span className="text-[11px] text-slate-300 font-medium">2025년 실측 실적 기준선</span>
+              <span className="text-xs font-bold text-amber-300">
+                🚀 {input.targetYear}년 전사 연간 목표 성장률 설정
+              </span>
+              <span className="text-[11px] text-slate-300 font-medium">
+                {input.baseYear}년 실측 실적 기준선 대비
+              </span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -289,7 +339,7 @@ export default function TargetSimulator() {
           <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between space-y-3">
             <div>
               <div className="text-xs font-bold text-teal-300 flex items-center justify-between">
-                <span>🎯 선택한 {simulationResult.selectedMonthLabel} 목표 실적 지표</span>
+                <span>🎯 {input.targetYear}년 {simulationResult.selectedMonthLabel} 목표 실적 지표</span>
                 <span className="text-[11px] text-slate-300">175실 × {simulationResult.periodDays}일 기준</span>
               </div>
               
@@ -301,25 +351,27 @@ export default function TargetSimulator() {
                     <span className="text-xs font-normal text-slate-300 ml-1">/실·월</span>
                   </div>
                   <div className="text-[11px] text-teal-300 font-bold mt-1">
-                    전년 동월 ₩{formatCurrency(simulationResult.totalLyRevenue / (175 * simulationResult.periodDays))} 대비 +{input.targetGrowthRate}%
+                    {input.baseYear}년 동월 ₩{formatCurrency(simulationResult.totalLyRevenue / (175 * simulationResult.periodDays))} 대비 +{input.targetGrowthRate}%
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[11px] text-slate-400 font-semibold">목표 {input.selectedMonth === 'ANNUAL' ? '연간' : '월'} 총매출액</div>
+                  <div className="text-[11px] text-slate-400 font-semibold">
+                    {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '연간' : '월'} 총매출액
+                  </div>
                   <div className="text-2xl font-black text-amber-300 tabular-nums mt-0.5">
                     {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)}
                     <span className="text-xs font-normal text-slate-300 ml-1">억원</span>
                   </div>
                   <div className="text-[11px] text-amber-300 font-bold mt-1">
-                    전년 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(2)}억 대비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억
+                    {input.baseYear}년 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(2)}억 대비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="text-[11px] text-slate-300 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-white/5">
-              💡 <strong>동적 계절성 연동:</strong> 선택하신 월의 백엔드 표준 영업장별 실측 매출 비중에 따라 목표액이 1원 단위로 자동 분배됩니다.
+              💡 <strong>동적 계절성 연동:</strong> {input.baseYear}년 해당 월의 실측 매출 비중에 따라 {input.targetYear}년 목표액이 1원 단위로 자동 분배됩니다.
             </div>
           </div>
 
@@ -330,19 +382,19 @@ export default function TargetSimulator() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">
-            목표 {input.selectedMonth === 'ANNUAL' ? '연간' : `${input.selectedMonth}월`} 총매출
+            {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '연간' : `${input.selectedMonth}월`} 총매출
           </div>
           <div className="text-2xl font-black text-slate-900 tabular-nums">
             {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)} <span className="text-sm font-normal text-slate-500">억원</span>
           </div>
           <div className="text-xs text-teal-700 font-bold mt-1">
-            전년비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억원 순증
+            {input.baseYear}년 대비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억원 순증
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">
-            목표 {input.selectedMonth === 'ANNUAL' ? '월평균' : `${input.selectedMonth}월`} TrevPAR
+            {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '월평균' : `${input.selectedMonth}월`} TrevPAR
           </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
             ₩{formatCurrency(simulationResult.achievedTrevpar)} <span className="text-sm font-normal text-slate-500">/실·월</span>
@@ -351,12 +403,14 @@ export default function TargetSimulator() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">전년 동기 대비 성장률</div>
+          <div className="text-[11px] font-bold text-slate-500 mb-1">
+            {input.baseYear}년 대비 성장률
+          </div>
           <div className="text-2xl font-black text-indigo-900 tabular-nums flex items-center gap-1">
             <ArrowUpRight className="w-6 h-6 text-teal-600" />
             +{simulationResult.overallGrowthRate}%
           </div>
-          <div className="text-xs text-slate-500 mt-1">전년 실적 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(2)}억 대비</div>
+          <div className="text-xs text-slate-500 mt-1">{input.baseYear}년 실적 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(2)}억 대비</div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -377,9 +431,9 @@ export default function TargetSimulator() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-200">
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Layers className="w-5 h-5 text-indigo-600" />
-              6대 사업 본부별 {simulationResult.selectedMonthLabel} 목표 분배 현황
+              6대 사업 본부별 {input.targetYear}년 {simulationResult.selectedMonthLabel} 목표 분배 현황
             </h3>
-            <span className="text-xs text-slate-500 font-semibold">해당 월의 실측 비중 곡선 적용</span>
+            <span className="text-xs text-slate-500 font-semibold">{input.baseYear}년 해당 월의 실측 비중 곡선 적용</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -400,13 +454,13 @@ export default function TargetSimulator() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs text-slate-500">목표 매출:</span>
+                    <span className="text-xs text-slate-500">{input.targetYear}년 목표:</span>
                     <span className="text-lg font-black text-slate-900 tabular-nums">
                       ₩{formatCurrency(div.targetRevenue)} <span className="text-xs font-normal text-slate-400">원</span>
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400">전년 실적:</span>
+                    <span className="text-slate-400">{input.baseYear}년 실적:</span>
                     <span className="text-slate-600 font-semibold tabular-nums">₩{formatCurrency(div.lyRevenue)}원</span>
                   </div>
                 </div>
@@ -420,15 +474,15 @@ export default function TargetSimulator() {
           <div>
             <h3 className="text-sm font-black text-slate-900 mb-1 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600" />
-              {simulationResult.selectedMonthLabel} 부문별 기여 비중
+              {input.targetYear}년 {simulationResult.selectedMonthLabel} 부문별 기여 비중
             </h3>
             <p className="text-xs text-slate-400 mb-4">
-              전체 {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)}억원 구성 ({simulationResult.selectedMonthLabel})
+              전체 {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)}억원 구성
             </p>
             <ReactECharts option={divisionPieOptions} style={{ height: '320px', width: '100%' }} />
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500 text-center">
-            💡 해당 월의 실측 비중에 맞춘 최적 목표 분배입니다.
+            💡 {input.baseYear}년 해당 월의 실측 비중에 맞춘 최적 목표 분배입니다.
           </div>
         </div>
 
@@ -440,10 +494,10 @@ export default function TargetSimulator() {
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Target className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 ({simulationResult.selectedMonthLabel})
+              영업장별 세부 실행 목표 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              선택한 달의 실측 매출 비율에 맞춰 각 표준 영업장별 전년 실적 및 목표 매출액이 자동 산출됩니다.
+              {input.baseYear}년 해당 월의 실측 매출 비율에 맞춰 각 표준 영업장별 실적 및 {input.targetYear}년 목표 매출액이 자동 산출됩니다.
             </p>
           </div>
 
@@ -480,9 +534,9 @@ export default function TargetSimulator() {
                 <th className="py-3.5 px-4 w-12 text-center">No</th>
                 <th className="py-3.5 px-4">영업장명 (Facility)</th>
                 <th className="py-3.5 px-4 text-center">부문</th>
-                <th className="py-3.5 px-4 text-right">해당 월 비중</th>
-                <th className="py-3.5 px-4 text-right">전년 실적 ({simulationResult.selectedMonthLabel})</th>
-                <th className="py-3.5 px-4 text-right font-black text-indigo-950">목표 매출액</th>
+                <th className="py-3.5 px-4 text-right">{input.baseYear}년 실측 비중</th>
+                <th className="py-3.5 px-4 text-right">{input.baseYear}년 실적 ({simulationResult.selectedMonthLabel})</th>
+                <th className="py-3.5 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표 매출액</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">

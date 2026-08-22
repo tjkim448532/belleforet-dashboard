@@ -15,7 +15,8 @@ export interface FacilityCapacityItem {
 }
 
 export interface SimulationTargetInput {
-  targetYear: number;
+  baseYear: number; // 기준 실적 연도 (2024, 2025, 2026)
+  targetYear: number; // 목표 대상 연도 (2025, 2026, 2027)
   selectedMonth: number | 'ANNUAL'; // 1~12 또는 'ANNUAL' (전사 연간 종합)
   period: 'ANNUAL' | 'H1' | 'Q1' | 'Q2' | 'M01' | 'M02' | 'M03' | 'M04' | 'M05' | 'M06' | 'M07' | 'M08' | 'M09' | 'M10' | 'M11' | 'M12';
   metricInputMode: 'TREVPAR' | 'GROWTH_RATE' | 'TOTAL_REVENUE';

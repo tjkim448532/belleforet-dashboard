@@ -6,8 +6,7 @@ import type {
 } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { 
-  MONTHLY_SEASONALITY_DATA, 
-  ANNUAL_BASELINE_META 
+  MULTI_YEAR_SEASONALITY_DATA 
 } from '../data/monthlySeasonalityData';
 
 // 6대 사업부 메타데이터 (아이콘, 색상, 라벨)
@@ -32,20 +31,26 @@ export function runTargetSimulation(
   achievedTrevpar: number;
   selectedMonthLabel: string;
   periodDays: number;
+  baseYear: number;
+  targetYear: number;
 } {
   const masterItems = (capacityMaster.length > 0 ? capacityMaster : DEFAULT_CAPACITY_SEEDS)
     .filter(f => f.id !== 'cap_leisure_luge' && f.shopName !== '익스트림 루지');
 
+  const baseYear = input.baseYear || 2025;
+  const targetYear = input.targetYear || (baseYear + 1);
+
+  const yearMeta = MULTI_YEAR_SEASONALITY_DATA[baseYear] || MULTI_YEAR_SEASONALITY_DATA[2025];
   const isAnnual = input.selectedMonth === 'ANNUAL';
   const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
-  const monthMeta = MONTHLY_SEASONALITY_DATA[monthNum] || MONTHLY_SEASONALITY_DATA[7];
+  const monthMeta = yearMeta.months[monthNum] || yearMeta.months[7];
 
   const periodDays = isAnnual ? 365 : monthMeta.days;
-  const selectedMonthLabel = isAnnual ? '2027년 연간 종합' : `${monthNum}월 실측 계절성`;
+  const selectedMonthLabel = isAnnual ? `${targetYear}년 연간 종합` : `${monthNum}월 실측 계절성`;
 
-  // 1. 기준 실적 (전년 동월/연간 순매출 및 TrevPAR)
-  const baseLyTotalRevenue = isAnnual ? ANNUAL_BASELINE_META.totalRevenue : monthMeta.totalRevenue;
-  const baseLyTrevpar = isAnnual ? ANNUAL_BASELINE_META.trevpar : monthMeta.trevpar;
+  // 1. 기준 실적 (선택한 기준 연도 동월/연간 순매출 및 TrevPAR)
+  const baseLyTotalRevenue = isAnnual ? yearMeta.annual.totalRevenue : monthMeta.totalRevenue;
+  const baseLyTrevpar = isAnnual ? yearMeta.annual.trevpar : monthMeta.trevpar;
 
   // 2. 연간 성장률 적용한 목표 전사 매출액 및 목표 TrevPAR
   let targetTotalRevenue = Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));
@@ -96,7 +101,7 @@ export function runTargetSimulation(
       } else if (isAnnual) {
         let annualSum = 0;
         for (let m = 1; m <= 12; m++) {
-          const mFac = MONTHLY_SEASONALITY_DATA[m]?.facilities?.find(mf => mf.venueName === fac.shopName);
+          const mFac = yearMeta.months[m]?.facilities?.find(mf => mf.venueName === fac.shopName);
           if (mFac) {
             annualSum += mFac.netRevenue;
           }
@@ -146,6 +151,8 @@ export function runTargetSimulation(
     overallGrowthRate,
     achievedTrevpar,
     selectedMonthLabel,
-    periodDays
+    periodDays,
+    baseYear,
+    targetYear
   };
 }

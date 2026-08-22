@@ -457,6 +457,71 @@ export default function TargetSimulator() {
     };
   }, [input.targetYear, input.selectedMonth, input.includeGolf, summaryGrandActual2026, summaryGrandTarget2026]);
 
+  // 주중 vs 내일이 휴일인 날(금/토/공휴일 전야) 일평균 목표 계산기
+  const dailyTargetStats = useMemo(() => {
+    const isAnnual = input.selectedMonth === 'ANNUAL';
+    const targetYear = input.targetYear || 2026;
+    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
+    
+    // 한국 주요 공휴일 목록 (2025/2026/2027)
+    const holidays = new Set([
+      '2025-01-01', '2025-01-28', '2025-01-29', '2025-01-30', '2025-03-01', '2025-05-05', '2025-05-06',
+      '2025-06-06', '2025-08-15', '2025-10-03', '2025-10-05', '2025-10-06', '2025-10-07', '2025-10-08', '2025-10-09', '2025-12-25',
+      '2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02', '2026-05-05', '2026-05-24',
+      '2026-06-06', '2026-08-15', '2026-09-24', '2026-09-25', '2026-09-26', '2026-10-03', '2026-10-09', '2026-12-25',
+      '2027-01-01', '2027-02-06', '2027-02-07', '2027-02-08', '2027-03-01', '2027-05-05', '2027-05-13',
+      '2027-06-06', '2027-08-15', '2027-09-14', '2027-09-15', '2027-09-16', '2027-10-03', '2027-10-09', '2027-12-25'
+    ]);
+
+    const isTomorrowHoliday = (d: Date) => {
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+      const nextStr = next.toISOString().split('T')[0];
+      const nextDow = next.getDay(); // 0: Sun, 6: Sat
+      return nextDow === 0 || nextDow === 6 || holidays.has(nextStr);
+    };
+
+    let preHolidayDays = 0;
+    let weekdayDays = 0;
+
+    if (isAnnual) {
+      for (let m = 0; m < 12; m++) {
+        const daysInM = new Date(targetYear, m + 1, 0).getDate();
+        for (let day = 1; day <= daysInM; day++) {
+          const d = new Date(targetYear, m, day);
+          if (isTomorrowHoliday(d)) preHolidayDays++;
+          else weekdayDays++;
+        }
+      }
+    } else {
+      const daysInM = new Date(targetYear, monthNum, 0).getDate();
+      for (let day = 1; day <= daysInM; day++) {
+        const d = new Date(targetYear, monthNum - 1, day);
+        if (isTomorrowHoliday(d)) preHolidayDays++;
+        else weekdayDays++;
+      }
+    }
+
+    // 벨포레 실측 휴일전야 대 주중 매출 배수 (평균 1.55배)
+    const ratio = (monthNum === 1 || monthNum === 10) ? 1.62 : 1.52;
+    const targetTotal = summaryGrandTarget2026 || 1;
+
+    // W * weekdayDays + (r * W) * preHolidayDays = targetTotal
+    const weekdayDailyTarget = Math.round(targetTotal / (weekdayDays + ratio * preHolidayDays));
+    const preHolidayDailyTarget = Math.round(weekdayDailyTarget * ratio);
+    const overallDailyAvg = Math.round(targetTotal / (weekdayDays + preHolidayDays));
+
+    return {
+      weekdayDays,
+      preHolidayDays,
+      totalDays: weekdayDays + preHolidayDays,
+      weekdayDailyTarget,
+      preHolidayDailyTarget,
+      overallDailyAvg,
+      ratio
+    };
+  }, [input.selectedMonth, input.targetYear, summaryGrandTarget2026]);
+
   // Pie chart option for category contribution
   const categoryPieOptions = useMemo(() => {
     const data = effectiveCategories.map(c => {
@@ -761,13 +826,52 @@ export default function TargetSimulator() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">1일 평균 목표 매출</div>
-          <div className="text-2xl font-black text-slate-900 tabular-nums flex items-center gap-1">
-            <DollarSign className="w-6 h-6 text-indigo-600" />
-            {(summaryGrandTarget2026 / simulationResult.periodDays / 10000).toFixed(0)} <span className="text-sm font-normal text-slate-500">만원/일</span>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
+              <span className="flex items-center gap-1">
+                <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+                1일 평균 목표 매출 (주중/휴일전야 분리)
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                전체 평균 {(dailyTargetStats.overallDailyAvg / 10000).toFixed(0)}만원/일
+              </span>
+            </div>
+
+            {/* 2-Way Divided: 주중 vs 내일이 휴일인 날 */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              
+              {/* 주중 (평일) */}
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
+                  <span>🏢 주중 (일~목)</span>
+                  <span className="text-[9px] text-slate-400">{dailyTargetStats.weekdayDays}일</span>
+                </div>
+                <div className="text-base font-black text-slate-800 tabular-nums mt-0.5">
+                  {(dailyTargetStats.weekdayDailyTarget / 10000).toFixed(0)}
+                  <span className="text-xs font-normal text-slate-500 ml-0.5">만원/일</span>
+                </div>
+              </div>
+
+              {/* 내일이 휴일인 날 (금/토/공휴일 전야) */}
+              <div className="bg-rose-50/70 p-2.5 rounded-xl border border-rose-200/80">
+                <div className="flex items-center justify-between text-[10px] font-bold text-rose-700">
+                  <span>🏖️ 내일이 휴일</span>
+                  <span className="text-[9px] text-rose-500 font-semibold">{dailyTargetStats.preHolidayDays}일</span>
+                </div>
+                <div className="text-base font-black text-rose-900 tabular-nums mt-0.5">
+                  {(dailyTargetStats.preHolidayDailyTarget / 10000).toFixed(0)}
+                  <span className="text-xs font-normal text-rose-700 ml-0.5">만원/일</span>
+                </div>
+              </div>
+
+            </div>
           </div>
-          <div className="text-xs text-slate-500 mt-1">{simulationResult.periodDays}일 기준 일평균 목표</div>
+
+          <div className="text-[10px] text-slate-400 mt-2 flex items-center justify-between pt-1 border-t border-slate-100">
+            <span>실측 가중 배수: <strong>{dailyTargetStats.ratio}배</strong></span>
+            <span>{input.selectedMonth === 'ANNUAL' ? '365일 전수 배분' : `${dailyTargetStats.totalDays}일 기준`}</span>
+          </div>
         </div>
       </div>
 

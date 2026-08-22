@@ -7,6 +7,7 @@ import {
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
+import { MULTI_YEAR_SEASONALITY_DATA } from '../data/monthlySeasonalityData';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 import { secureFetcher } from '../lib/secureFetcher';
 
@@ -250,8 +251,75 @@ export default function TargetSimulator() {
   // Grand totals from API or fallback
   const summaryGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
   const summaryGrandTarget2026 = apiData?.summary?.grandTarget2026 || simulationResult.totalTargetRevenue;
-  const summaryGrandActual2026 = apiData?.summary?.grandActual2026 || 0;
-  const summaryOverallAchievement = apiData?.summary?.overallAchievementRate || 0;
+
+  // Real-world Actual Performance & Achievement Rate Calculator
+  const actualPerformance = useMemo(() => {
+    const isFutureYear = input.targetYear > 2026;
+    if (isFutureYear) {
+      return {
+        revenue: 0,
+        rate: 0,
+        rateDisplay: '목표 수립',
+        badgeColor: 'text-indigo-600',
+        statusText: `${input.targetYear}년 차기년도 경영 목표 수립`
+      };
+    }
+
+    // 1. Annual (1~12월 연간 종합)
+    if (input.selectedMonth === 'ANNUAL') {
+      const ytdActual = 16811714918; // 2026년 8월 21일 기준 전사 누적 실적 SSOT (168.12억원)
+      const targetRev = summaryGrandTarget2026 || 1;
+      const rate = Number(((ytdActual / targetRev) * 100).toFixed(1));
+      return {
+        revenue: ytdActual,
+        rate,
+        rateDisplay: `${rate}%`,
+        badgeColor: 'text-teal-600',
+        statusText: `2026년 8월 누적: ₩${(ytdActual / 100000000).toFixed(2)}억원 (연간 목표 대비 ${rate}%)`
+      };
+    }
+
+    // 2. Specific Month
+    const monthNum = Number(input.selectedMonth);
+
+    // API returned actuals for this month
+    if (apiData?.summary?.grandActual2026 && apiData.summary.grandActual2026 > 0) {
+      const act = apiData.summary.grandActual2026;
+      const rate = apiData.summary.overallAchievementRate || Number(((act / summaryGrandTarget2026) * 100).toFixed(1));
+      return {
+        revenue: act,
+        rate,
+        rateDisplay: `${rate}%`,
+        badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
+        statusText: `${monthNum}월 실제 실적: ₩${(act / 100000000).toFixed(2)}억원`
+      };
+    }
+
+    // From MULTI_YEAR_SEASONALITY_DATA
+    const targetYearSeason = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
+    const monthMeta = targetYearSeason?.months?.[monthNum];
+    if (monthMeta && monthMeta.totalRevenue > 0 && monthNum <= 8) {
+      const act = monthMeta.totalRevenue;
+      const targetRev = summaryGrandTarget2026 || 1;
+      const rate = Number(((act / targetRev) * 100).toFixed(1));
+      return {
+        revenue: act,
+        rate,
+        rateDisplay: `${rate}%`,
+        badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
+        statusText: `${monthNum}월 실제 실적: ₩${(act / 100000000).toFixed(2)}억원`
+      };
+    }
+
+    // Future months (9~12월)
+    return {
+      revenue: 0,
+      rate: 0,
+      rateDisplay: '미도래',
+      badgeColor: 'text-slate-400',
+      statusText: `${monthNum}월 도래 전 (목표 실행 예정)`
+    };
+  }, [input.targetYear, input.selectedMonth, apiData, summaryGrandTarget2026]);
 
   // Pie chart option for category contribution
   const categoryPieOptions = useMemo(() => {
@@ -545,14 +613,16 @@ export default function TargetSimulator() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">
-            {input.targetYear}년 실제 달성률 (진행중)
+            {input.targetYear}년 실제 달성률 {input.selectedMonth === 'ANNUAL' ? '(연간 누적)' : (input.selectedMonth === 8 ? '(진행중)' : '')}
           </div>
           <div className="text-2xl font-black text-indigo-900 tabular-nums flex items-center gap-1">
-            <TrendingUp className="w-6 h-6 text-teal-600" />
-            {summaryOverallAchievement > 0 ? `${summaryOverallAchievement}%` : '집계중'}
+            <TrendingUp className={`w-6 h-6 ${actualPerformance.badgeColor}`} />
+            <span className={actualPerformance.badgeColor}>
+              {actualPerformance.rateDisplay}
+            </span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            실제 누적 매출: ₩{(summaryGrandActual2026 / 100000000).toFixed(2)}억원
+            {actualPerformance.statusText}
           </div>
         </div>
 

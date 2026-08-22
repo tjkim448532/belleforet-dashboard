@@ -473,7 +473,9 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실 점유율 (Occ)</div>
                   {(() => {
-                    const occ = displayData?.kpiMetrics?.totalOcc ?? coreData.core?.summary?.occRate ?? coreData.core?.summary?.totalOcc;
+                    const occ = (coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
+                              : (coreData.core?.summary?.occRate && Number(coreData.core.summary.occRate) > 0) ? Number(coreData.core.summary.occRate)
+                              : displayData?.kpiMetrics?.totalOcc;
                     return occ !== undefined && occ !== null ? (
                       <>
                         <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
@@ -494,8 +496,10 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객단가 (ADR)</div>
                   {(() => {
-                    const adr = displayData?.kpiMetrics?.totalADR ?? coreData.core?.summary?.totalADR ?? coreData.core?.summary?.adr;
-                    return adr !== undefined && adr !== null ? (
+                    const adr = (coreData.core?.summary?.totalADR && Number(coreData.core.summary.totalADR) > 0) ? Number(coreData.core.summary.totalADR)
+                              : (coreData.core?.summary?.adr && Number(coreData.core.summary.adr) > 0) ? Number(coreData.core.summary.adr)
+                              : displayData?.kpiMetrics?.totalADR;
+                    return adr !== undefined && adr !== null && Number(adr) > 0 ? (
                       <>
                         <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                           {formatCurrency(adr)} <span className="text-sm font-medium text-slate-500">원</span>
@@ -515,8 +519,9 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실당 매출 (RevPAR)</div>
                   {(() => {
-                    const revPar = displayData?.kpiMetrics?.revPAR ?? coreData.core?.summary?.revPAR;
-                    return revPar !== undefined && revPar !== null ? (
+                    const revPar = (coreData.core?.summary?.revPAR && Number(coreData.core.summary.revPAR) > 0) ? Number(coreData.core.summary.revPAR)
+                                 : displayData?.kpiMetrics?.revPAR;
+                    return revPar !== undefined && revPar !== null && Number(revPar) > 0 ? (
                       <>
                         <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                           {formatCurrency(revPar)} <span className="text-sm font-medium text-slate-500">원</span>
@@ -536,8 +541,9 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
                   {(() => {
-                    const trevPar = displayData?.kpiMetrics?.trevPAR ?? coreData.core?.summary?.trevPAR;
-                    return trevPar !== undefined && trevPar !== null ? (
+                    const trevPar = (coreData.core?.summary?.trevPAR && Number(coreData.core.summary.trevPAR) > 0) ? Number(coreData.core.summary.trevPAR)
+                                  : displayData?.kpiMetrics?.trevPAR;
+                    return trevPar !== undefined && trevPar !== null && Number(trevPar) > 0 ? (
                       <>
                         <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
                           {formatCurrency(trevPar)} <span className="text-sm font-medium text-slate-500">원</span>

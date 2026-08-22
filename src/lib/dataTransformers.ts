@@ -105,11 +105,11 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   let totalRoomRev = 0;
   let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
-    if (roomCat) totalRoomRev = parseNum(roomCat.totalSales || 0);
+    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryCode === '콘도' || x.categoryName === '콘도');
+    if (roomCat) totalRoomRev = parseNum(roomCat.totalSales || roomCat.todayActual || 0);
 
-    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF');
-    if (golfCat) totalGolfRev = parseNum(golfCat.totalSales || 0);
+    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프');
+    if (golfCat) totalGolfRev = parseNum(golfCat.totalSales || golfCat.todayActual || 0);
   }
   
   const totalResortRevGross = parseNum(c.summary?.totalRevenue || 0);
@@ -120,11 +120,17 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   const days = isRange ? Math.max(1, c.resortSummary?.days || c.days || (Array.isArray(c.dailyTrends) ? c.dailyTrends.length : 1)) : 1;
   const physicalRoomInventory = 175 * days;
 
+  // [SSOT 무관용 원칙] 백엔드가 사전 산출한 ADR, RevPAR, TrevPAR 우선 바인딩
+  const backendADR = parseNum(c.summary?.totalADR || c.summary?.adr || 0);
+  const backendRevPAR = parseNum(c.summary?.revPAR || 0);
+  const backendTrevPAR = parseNum(c.summary?.trevPAR || 0);
+  const backendOcc = parseNum(c.summary?.totalOcc || c.summary?.occRate || 0);
+
   const kpiMetrics = {
-    totalOcc: physicalRoomInventory > 0 ? (totalRoomsSold / physicalRoomInventory) * 100 : 0,
-    totalADR: totalRoomsSold > 0 ? (totalRoomRev / totalRoomsSold) : 0,
-    revPAR: physicalRoomInventory > 0 ? (totalRoomRev / physicalRoomInventory) : 0,
-    trevPAR: physicalRoomInventory > 0 ? (totalResortRevGross / physicalRoomInventory) : 0,
+    totalOcc: backendOcc > 0 ? backendOcc : (physicalRoomInventory > 0 ? (totalRoomsSold / physicalRoomInventory) * 100 : 0),
+    totalADR: backendADR > 0 ? backendADR : (totalRoomsSold > 0 ? (totalRoomRev / totalRoomsSold) : 0),
+    revPAR: backendRevPAR > 0 ? backendRevPAR : (physicalRoomInventory > 0 ? (totalRoomRev / physicalRoomInventory) : 0),
+    trevPAR: backendTrevPAR > 0 ? backendTrevPAR : (physicalRoomInventory > 0 ? (totalResortRevGross / physicalRoomInventory) : 0),
     days: days,
     raw: {
       totalRoomRev,

@@ -68,7 +68,7 @@ export function runTargetSimulation(
 
   const totalRawWeight = activeDivisions.reduce((sum, div) => sum + (divShares[div as keyof typeof divShares] || 0.01), 0);
 
-  // 4. 사업부 및 42개 영업장 2단계 정밀 안분
+  // 4. 사업부 및 표준 영업장 2단계 정밀 목표 안분 (순수 수학적 모델)
   const divisionResults: DivisionAllocationResult[] = activeDivisions.map(divKey => {
     const meta = DIVISION_META[divKey];
     const rawShare = divShares[divKey as keyof typeof divShares] || 0.01;
@@ -78,19 +78,20 @@ export function runTargetSimulation(
     const divLyRevenue = Math.round(baseLyTotalRevenue * normalizedWeight);
     const divGrowthRate = divLyRevenue > 0 ? Number((((divTargetRevenue - divLyRevenue) / divLyRevenue) * 100).toFixed(1)) : 0;
 
-    // 해당 부문의 42개 공식 영업장 필터
+    // 해당 부문의 백엔드 표준 영업장 필터
     const matchingFacilities = masterItems.filter(f => f.category === divKey);
     const facilityCount = Math.max(1, matchingFacilities.length);
 
-    // 해당 월의 원천 영업장별 실측 매출 매핑
+    // 해당 월의 원천 영업장별 실측 매출 및 목표 매출 연산
     const facilityResults: FacilityAllocationResult[] = matchingFacilities.map((fac) => {
-      // 1. 해당 월(또는 연간) 실측 매출액 정확 매핑 (백엔드 표준 영업장 SSOT)
       let facLyRevenue = Math.round(divLyRevenue / facilityCount);
+      let shareRatio = totalRawWeight > 0 ? (normalizedWeight / facilityCount) : 0;
 
       if (!isAnnual && Array.isArray(monthMeta.facilities)) {
         const match = monthMeta.facilities.find(mf => mf.venueName === fac.shopName);
         if (match) {
           facLyRevenue = match.netRevenue;
+          shareRatio = match.shareRatio;
         }
       } else if (isAnnual) {
         let annualSum = 0;
@@ -102,64 +103,14 @@ export function runTargetSimulation(
         }
         if (annualSum > 0) {
           facLyRevenue = annualSum;
+          shareRatio = baseLyTotalRevenue > 0 ? Number((annualSum / baseLyTotalRevenue).toFixed(4)) : 0;
         }
       }
 
-      // 2. 그 달의 실측 비중에 맞춘 목표 매출액 역산
+      // 목표 매출액 = 실측 기준선 × (1 + 목표성장률)
       let facTargetRevenue = Math.round(facLyRevenue * (1 + input.targetGrowthRate / 100));
       if (facLyRevenue === 0) {
         facTargetRevenue = Math.round(divTargetRevenue / facilityCount);
-      }
-
-      // 3. 물리적 캐파(일수 * 1일 최대 한계) 검증
-      const maxPeriodUnits = fac.maxDailyUnits * periodDays;
-      const baseUnitPrice = fac.baseUnitPrice || 10000;
-
-      // 필요 판매량 Q = 목표매출 / 단가
-      const requiredUnits = Math.round(facTargetRevenue / baseUnitPrice);
-      const requiredDailyUnits = Math.round(requiredUnits / periodDays);
-      let capacityUtilizationRate = fac.maxDailyUnits > 0 ? Number(((requiredDailyUnits / fac.maxDailyUnits) * 100).toFixed(1)) : 0;
-
-      let targetUnitPrice = baseUnitPrice;
-      let unitPriceHikeRate = 0;
-      let status: 'NORMAL' | 'CAPACITY_WARNING' | 'PRICE_HIKE_REQUIRED' | 'SPILLOVER_REALLOCATED' = 'NORMAL';
-      let statusMessage = '정상 수용 가능 (가동률 여유)';
-      let spilloverAmount = 0;
-
-      // 4. 캐파 상한 도달 시 단가 인상 및 초과 재배분 가이드
-      if (capacityUtilizationRate >= 100) {
-        if (fac.allowPriceLeverage) {
-          const requiredUnitPrice = Math.round(facTargetRevenue / maxPeriodUnits);
-          unitPriceHikeRate = Number((((requiredUnitPrice - baseUnitPrice) / baseUnitPrice) * 100).toFixed(1));
-
-          if (unitPriceHikeRate <= fac.maxPriceHikeRate) {
-            targetUnitPrice = requiredUnitPrice;
-            capacityUtilizationRate = 100;
-            status = 'PRICE_HIKE_REQUIRED';
-            statusMessage = `성수기 캐파 100% 도달 ➔ 단가 +${unitPriceHikeRate}% 인상 가이드 (₩${targetUnitPrice.toLocaleString()}원)`;
-          } else {
-            targetUnitPrice = Math.round(baseUnitPrice * (1 + fac.maxPriceHikeRate / 100));
-            unitPriceHikeRate = fac.maxPriceHikeRate;
-            const maxAbsorbableRevenue = maxPeriodUnits * targetUnitPrice;
-            spilloverAmount = Math.max(0, facTargetRevenue - maxAbsorbableRevenue);
-            facTargetRevenue = maxAbsorbableRevenue;
-            capacityUtilizationRate = 100;
-
-            status = 'SPILLOVER_REALLOCATED';
-            statusMessage = `단가 상한(+${fac.maxPriceHikeRate}%) 도달 ➔ 초과분 ₩${Math.round(spilloverAmount / 10000).toLocaleString()}만원 타 부문 재배분`;
-          }
-        } else {
-          const maxAbsorbableRevenue = maxPeriodUnits * baseUnitPrice;
-          spilloverAmount = Math.max(0, facTargetRevenue - maxAbsorbableRevenue);
-          facTargetRevenue = maxAbsorbableRevenue;
-          capacityUtilizationRate = 100;
-
-          status = 'SPILLOVER_REALLOCATED';
-          statusMessage = `정가 고정형 캐파 100% 매진 ➔ 초과분 ₩${Math.round(spilloverAmount / 10000).toLocaleString()}만원 재배분`;
-        }
-      } else if (capacityUtilizationRate >= 85) {
-        status = 'CAPACITY_WARNING';
-        statusMessage = `캐파 임박 (가동률 ${capacityUtilizationRate}%)`;
       }
 
       return {
@@ -168,18 +119,7 @@ export function runTargetSimulation(
         category: fac.categoryLabel,
         lyRevenue: facLyRevenue,
         targetRevenue: facTargetRevenue,
-        growthRate: facLyRevenue > 0 ? Number((((facTargetRevenue - facLyRevenue) / facLyRevenue) * 100).toFixed(1)) : 0,
-        diffAmount: facTargetRevenue - facLyRevenue,
-        requiredDailyUnits,
-        maxDailyUnits: fac.maxDailyUnits,
-        unitName: fac.unitName,
-        capacityUtilizationRate,
-        baseUnitPrice,
-        targetUnitPrice,
-        unitPriceHikeRate,
-        status,
-        statusMessage,
-        spilloverAmount
+        shareRatio
       };
     });
 

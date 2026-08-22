@@ -184,11 +184,76 @@ export default function TargetSimulator() {
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear]);
 
-  // Effective categories: API 1순위, Simulation Engine 2순위 Fallback (100% 무중단 보장)
+  // Effective categories: Normalize API categories into SSOT 8 divisions or fallback to simulation engine
   const effectiveCategories: ApiCategory[] = useMemo(() => {
     if (apiData?.categories && apiData.categories.length > 0) {
-      return apiData.categories;
+      const standardMap: Record<string, ApiCategory> = {
+        ROOM: { categoryCode: 'ROOM', categoryName: '객실', teamName: '객실영업팀', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        GOLF: { categoryCode: 'GOLF', categoryName: '골프', teamName: '골프영업팀', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        FNB: { categoryCode: 'FNB', categoryName: '식음', teamName: '식음영업팀', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        TICKET: { categoryCode: 'TICKET', categoryName: '레저', teamName: '레저본부', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        MOTO: { categoryCode: 'MOTO', categoryName: '모토아레나', teamName: '모토아레나', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        BANQUET: { categoryCode: 'BANQUET', categoryName: '대관', teamName: '대관/연회', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        PARKING: { categoryCode: 'PARKING', categoryName: '주차관제', teamName: '주차관제', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
+        ETC: { categoryCode: 'ETC', categoryName: '임대업장', teamName: '임대/기타', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] }
+      };
+
+      const getTargetStdCode = (code: string, name: string): string => {
+        const text = `${code} ${name}`.toUpperCase();
+        if (text.includes('ROOM') || text.includes('콘도') || text.includes('객실')) return 'ROOM';
+        if (text.includes('GOLF') || text.includes('골프')) return 'GOLF';
+        if (text.includes('FNB') || text.includes('식음')) return 'FNB';
+        if (text.includes('TICKET') || text.includes('LEISURE') || text.includes('레저') || text.includes('레져') || text.includes('목장')) return 'TICKET';
+        if (text.includes('MOTO') || text.includes('모토')) return 'MOTO';
+        if (text.includes('BANQUET') || text.includes('대관') || text.includes('연회')) return 'BANQUET';
+        if (text.includes('PARKING') || text.includes('주차')) return 'PARKING';
+        if (text.includes('ETC') || text.includes('임대') || text.includes('기타')) return 'ETC';
+        return 'ETC';
+      };
+
+      apiData.categories.forEach(raw => {
+        const rawCode = raw.categoryCode || '';
+        const rawName = raw.categoryName || '';
+        const stdKey = getTargetStdCode(rawCode, rawName);
+        const target = standardMap[stdKey];
+
+        (raw.facilities || []).forEach((f: any) => {
+          let partName = (f.partName || '').trim();
+          if (!partName || partName === '-') {
+            if (rawCode.includes('목장')) partName = '목장';
+            else if (rawCode.includes('외주')) partName = '레저본부 직속';
+            else partName = target.categoryName;
+          }
+          target.facilities.push({
+            ...f,
+            categoryCode: target.categoryCode,
+            categoryName: target.categoryName,
+            teamName: target.teamName,
+            partName
+          });
+          target.facilityCount += 1;
+          target.totalActual2025 += (f.actual2025 || 0);
+          target.totalTarget2026 += (f.target2026 || 0);
+          target.totalActual2026 = (target.totalActual2026 || 0) + (f.actual2026 || 0);
+          target.totalWeight = Number((target.totalWeight + (f.weight || 0)).toFixed(2));
+        });
+      });
+
+      const result: ApiCategory[] = [];
+      const orderedKeys = ['ROOM', 'GOLF', 'FNB', 'TICKET', 'MOTO', 'BANQUET', 'PARKING', 'ETC'];
+      orderedKeys.forEach(k => {
+        const c = standardMap[k];
+        if (c.facilities.length > 0) {
+          if (c.totalTarget2026 > 0 && (c.totalActual2026 || 0) > 0) {
+            c.achievementRate = Number((((c.totalActual2026 || 0) / c.totalTarget2026) * 100).toFixed(1));
+          }
+          result.push(c);
+        }
+      });
+
+      if (result.length > 0) return result;
     }
+
     return simulationResult.divisionResults.map((div) => ({
       categoryCode: div.category,
       categoryName: div.categoryLabel,

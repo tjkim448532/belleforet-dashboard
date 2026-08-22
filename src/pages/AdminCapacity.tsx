@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import type { FacilityCapacityItem } from '../types/simulation';
 
-// 43개 공식 영업장_항목명 SSOT 캐파 마스터 시드 데이터
+// 42개 공식 영업장_항목명 SSOT 캐파 마스터 시드 데이터
 export const DEFAULT_CAPACITY_SEEDS: FacilityCapacityItem[] = [
   // 1. 🏨 객실 (ROOM) - 2개
   {
@@ -377,22 +377,7 @@ export const DEFAULT_CAPACITY_SEEDS: FacilityCapacityItem[] = [
     notes: '기업 세미나 및 부대시설 대관'
   },
 
-  // 6. 🎢 레저본부 (LEISURE) - 16개
-  {
-    id: 'cap_leisure_luge',
-    shopCode: 'SHOP_LEISURE_LUGE',
-    shopName: '익스트림 루지',
-    category: 'LEISURE',
-    categoryLabel: '레저본부',
-    maxDailyUnits: 1500,
-    unitName: '명',
-    baseUnitPrice: 18000,
-    allowPriceLeverage: false,
-    maxPriceHikeRate: 15,
-    allowSpillover: true,
-    spilloverPriority: 1,
-    notes: '트랙 탑승 정원 1,500명/일'
-  },
+  // 6. 🎢 레저본부 (LEISURE) - 15개 (익스트림 루지 휴장 제외)
   {
     id: 'cap_leisure_mt_kart',
     shopCode: 'SHOP_LEISURE_MT_KART',
@@ -686,8 +671,9 @@ export default function AdminCapacity() {
         const { db } = await import('../lib/firebase');
         const { doc, getDoc } = await import('firebase/firestore');
         const docSnap = await getDoc(doc(db, 'simulationMaster', 'facilityCapacities'));
-        if (docSnap.exists() && Array.isArray(docSnap.data()?.items) && docSnap.data().items.length >= 40) {
-          setItems(docSnap.data().items);
+        if (docSnap.exists() && Array.isArray(docSnap.data()?.items)) {
+          const cleaned = docSnap.data().items.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지');
+          setItems(cleaned);
           setLoading(false);
           return;
         }
@@ -698,9 +684,12 @@ export default function AdminCapacity() {
       // 2. Fallback to LocalStorage Cache
       const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER_V2');
       if (cached) {
-        setItems(JSON.parse(cached));
+        const parsed = JSON.parse(cached);
+        const cleaned = Array.isArray(parsed) ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') : DEFAULT_CAPACITY_SEEDS;
+        setItems(cleaned);
+        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V2', JSON.stringify(cleaned));
       } else {
-        // 3. Fallback to Initial Default Seeds (43개 공식 항목)
+        // 3. Fallback to Initial Default Seeds (42개 공식 실운영 항목)
         setItems(DEFAULT_CAPACITY_SEEDS);
         localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V2', JSON.stringify(DEFAULT_CAPACITY_SEEDS));
       }

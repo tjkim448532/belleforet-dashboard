@@ -32,7 +32,10 @@ export default function TargetSimulator() {
       try {
         const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER');
         if (cached) {
-          setCapacityMaster(JSON.parse(cached));
+          const parsed = JSON.parse(cached);
+          const cleaned = Array.isArray(parsed) ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') : DEFAULT_CAPACITY_SEEDS;
+          setCapacityMaster(cleaned);
+          localStorage.setItem('BELLEFORET_CAPACITY_MASTER', JSON.stringify(cleaned));
         } else {
           setCapacityMaster(DEFAULT_CAPACITY_SEEDS);
         }
@@ -439,7 +442,7 @@ export default function TargetSimulator() {
           {/* Filter */}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
             {[
-              { id: 'ALL', label: '전체 (43개)' },
+              { id: 'ALL', label: `전체 (${capacityMaster.length}개)` },
               { id: '객실', label: '🏨 객실' },
               { id: '식음', label: '🍽️ 식음' },
               { id: '골프', label: '⛳ 골프' },

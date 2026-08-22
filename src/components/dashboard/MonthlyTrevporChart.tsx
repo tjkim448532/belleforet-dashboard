@@ -1543,9 +1543,9 @@ export default function MonthlyTrevporChart() {
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800">[레]</span>
                 </div>
                 <div className="text-slate-600 text-xs leading-relaxed space-y-1">
-                  <div>• <strong>익스트림 루지, 마운틴카트, 사계절썰매장</strong></div>
-                  <div>• <strong>마리나 클럽, 놀이동산, 벨포레 목장(체험)</strong></div>
-                  <div>• <strong>얼룩말카페</strong> <span className="text-[10px] text-amber-700 font-semibold">(목장 카페)</span>, <strong>디노 시네마</strong></div>
+                  <div>• <strong>마운틴카트, 사계절썰매장, 마리나 클럽</strong></div>
+                  <div>• <strong>놀이동산, 벨포레 목장(체험), 디노 시네마</strong></div>
+                  <div>• <strong>얼룩말카페</strong> <span className="text-[10px] text-amber-700 font-semibold">(목장 카페)</span></div>
                   <div>• <strong>미디어아트센터, 미디어-뮤지엄카페/기프트샵</strong></div>
                   <div>• <strong>썸머랜드(워터파크), 원더풀, 미니골프, 회전그네</strong></div>
                 </div>

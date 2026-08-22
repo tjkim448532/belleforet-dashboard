@@ -56,3 +56,10 @@
 ## 9. 100% 무결점 검증 & 원스톱 운영 배포
 - 코드 수정 후에는 항상 사전 `npm run build`를 실행하여 0 에러/0 경고를 확인합니다.
 - 작업 완료 후 **Firebase Hosting 배포 (`firebase deploy --only hosting`)** 및 **Git 커밋/푸시 (`git commit & git push`)**까지 한 호흡으로 깔끔하게 마칩니다.
+
+## 10. 🚫 [최상위 데이터 규율] 프론트엔드 수치 연산 절대 금지 및 100% As-Is 바인딩 (ZERO FRONTEND CALCULATION)
+- **ZERO FRONTEND ARITHMETIC (0% 프론트엔드 연산)**: 프론트엔드 코드는 합산(`reduce`), 나눗셈(`/`), 가중치 곱셈(`*`), 보정 계수 산출 등 **그 어떠한 수치 연산도 직접 수행해서는 안 됩니다.**
+- **AS-IS NUMERICAL BINDING (백엔드 수치 100% 직결)**: 1인당 평균 그린피, 객단가(ADR), 객실당 매출(RevPAR), 점유율(Occ), 달성률, 증감률 등 모든 파생/평균 지표는 **오직 백엔드가 사전 정산하여 내려준 완성된 JSON 필드만을 100% 그대로 바인딩(Display-Only)**합니다.
+- **NO CLIENT-SIDE DATA HACKS (프론트엔드 임의 보정 금지)**: 백엔드 API 간에 숫자가 불일치하거나, 내장객 수가 중복 집계되거나, 단가가 왜곡되어 내려오더라도, **프론트엔드에서 임의로 나누거나 곱해서 끼워 맞추는 '클라이언트 단 땜질 보정'을 영구히 금지**합니다.
+- **ONLY BACKEND REQUEST FOR NUMERICAL DEFECTS (백엔드 요청서 단일 창구)**: 수치 왜곡이나 모수 불일치 발견 시, 프론트엔드는 임의 가공 없이 현상을 정확히 파악하여 **오직 `backend_api_request.md` 공식 조치 요청서에 등록하고 백엔드 DB 쿼리/ETL 단에서 근본적으로 수정**하도록 통제합니다.
+

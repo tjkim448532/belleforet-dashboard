@@ -48,7 +48,6 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
-    { name: '🎯 목표 수립 시뮬레이터', path: '/target-simulator', icon: <Target size={20} className="text-teal-600" />, roles: ['admin', 'executive', 'management'] },
     { name: '영업장별 매출', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
@@ -241,6 +240,26 @@ export default function Layout() {
               </div>
             )}
           </div>
+          )}
+
+          {/* 4. 🎯 목표 수립 시뮬레이터 (레저본부 바로 밑으로 배치) */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
+            <div className="mt-3 pt-2 border-t border-slate-100/80">
+              <NavLink
+                to="/target-simulator"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl ${
+                  isActive
+                    ? 'bg-teal-50 text-teal-700 font-bold border border-teal-200/60 shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+                onClick={() => {
+                  if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
+                }}
+              >
+                <Target size={20} className="text-teal-600" />
+                <span>🎯 목표 수립 시뮬레이터</span>
+              </NavLink>
+            </div>
           )}
 
         </div>

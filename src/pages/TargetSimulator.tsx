@@ -470,11 +470,9 @@ export default function TargetSimulator() {
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
                 <th className="py-3.5 px-4">영업장명 (Facility)</th>
-                <th className="py-3.5 px-4 text-center">부문</th>
                 <th className="py-3.5 px-4 text-right">전년 실적</th>
                 <th className="py-3.5 px-4 text-right font-black text-slate-900">목표 매출액</th>
-                <th className="py-3.5 px-4 text-center">필요 판매량 (Q) vs 최대 캐파</th>
-                <th className="py-3.5 px-4 text-right">권장 객단가 (P)</th>
+                <th className="py-3.5 px-4 text-right">전년비 증감</th>
                 <th className="py-3.5 px-4 text-center">캐파 상태</th>
                 <th className="py-3.5 px-4">시스템 가이드라인 및 조치 사항</th>
               </tr>
@@ -482,86 +480,68 @@ export default function TargetSimulator() {
             <tbody className="divide-y divide-slate-100 text-slate-800">
               {simulationResult.divisionResults.flatMap(d => d.facilities)
                 .filter(f => selectedCategoryFilter === 'ALL' || f.category === selectedCategoryFilter)
-                .map((fac) => (
-                  <tr key={fac.shopCode} className="hover:bg-slate-50/80 transition-colors">
-                    
-                    {/* Facility Name */}
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      {fac.shopName}
-                    </td>
+                .map((fac) => {
+                  const diff = fac.targetRevenue - fac.lyRevenue;
+                  const growth = fac.lyRevenue > 0 ? Number(((diff / fac.lyRevenue) * 100).toFixed(1)) : 0;
+                  return (
+                    <tr key={fac.shopCode} className="hover:bg-slate-50/80 transition-colors">
+                      
+                      {/* Facility Name */}
+                      <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                        {fac.shopName}
+                      </td>
 
-                    {/* Category */}
-                    <td className="py-3.5 px-4 text-center">
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px]">
-                        {fac.category}
-                      </span>
-                    </td>
+                      {/* LY Revenue */}
+                      <td className="py-3.5 px-4 text-right tabular-nums text-slate-500">
+                        ₩{formatCurrency(fac.lyRevenue)}원
+                      </td>
 
-                    {/* LY Revenue */}
-                    <td className="py-3.5 px-4 text-right tabular-nums text-slate-500">
-                      ₩{formatCurrency(fac.lyRevenue)}원
-                    </td>
+                      {/* Target Revenue */}
+                      <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/20 text-sm">
+                        ₩{formatCurrency(fac.targetRevenue)}원
+                      </td>
 
-                    {/* Target Revenue */}
-                    <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/20">
-                      ₩{formatCurrency(fac.targetRevenue)}원
-                    </td>
-
-                    {/* Q vs Capacity */}
-                    <td className="py-3.5 px-4 text-center tabular-nums">
-                      <span className="font-bold text-slate-800">{fac.requiredDailyUnits}{fac.unitName}</span>
-                      <span className="text-slate-400 text-[11px]"> / {fac.maxDailyUnits}{fac.unitName}일 </span>
-                      <span className={`text-[10px] font-bold ml-1 px-1.5 py-0.5 rounded ${
-                        fac.capacityUtilizationRate >= 100 
-                          ? 'bg-rose-100 text-rose-700' 
-                          : fac.capacityUtilizationRate >= 85 
-                          ? 'bg-amber-100 text-amber-800' 
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        ({fac.capacityUtilizationRate}%)
-                      </span>
-                    </td>
-
-                    {/* P (Target Unit Price) */}
-                    <td className="py-3.5 px-4 text-right tabular-nums">
-                      <span className="font-bold text-slate-900">₩{formatCurrency(fac.targetUnitPrice)}원</span>
-                      {fac.unitPriceHikeRate > 0 && (
-                        <span className="text-[10px] text-amber-700 font-black ml-1 block">
-                          (+{fac.unitPriceHikeRate}% 인상)
+                      {/* Growth / Diff */}
+                      <td className="py-3.5 px-4 text-right tabular-nums">
+                        <span className={`font-bold text-xs ${growth >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                          {growth > 0 ? '+' : ''}{growth}%
                         </span>
-                      )}
-                    </td>
+                        <span className="text-[10px] text-slate-400 block">
+                          ({diff >= 0 ? '+' : ''}₩{formatCurrency(diff)}원)
+                        </span>
+                      </td>
 
-                    {/* Status Badge */}
-                    <td className="py-3.5 px-4 text-center">
-                      {fac.status === 'NORMAL' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 text-[11px]">
-                          🟢 정상 수용
-                        </span>
-                      )}
-                      {fac.status === 'CAPACITY_WARNING' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200 text-[11px]">
-                          🟡 캐파 임박
-                        </span>
-                      )}
-                      {fac.status === 'PRICE_HIKE_REQUIRED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 text-[11px]">
-                          🔴 단가 인상
-                        </span>
-                      )}
-                      {fac.status === 'SPILLOVER_REALLOCATED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-bold border border-purple-200 text-[11px]">
-                          🟣 초과 재배분
-                        </span>
-                      )}
-                    </td>
+                      {/* Status Badge */}
+                      <td className="py-3.5 px-4 text-center">
+                        {fac.status === 'NORMAL' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 text-[11px]">
+                            🟢 정상 수용
+                          </span>
+                        )}
+                        {fac.status === 'CAPACITY_WARNING' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200 text-[11px]">
+                            🟡 캐파 임박
+                          </span>
+                        )}
+                        {fac.status === 'PRICE_HIKE_REQUIRED' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 text-[11px]">
+                            🔴 단가 인상
+                          </span>
+                        )}
+                        {fac.status === 'SPILLOVER_REALLOCATED' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-bold border border-purple-200 text-[11px]">
+                            🟣 초과 재배분
+                          </span>
+                        )}
+                      </td>
 
-                    {/* System Guideline Message */}
-                    <td className="py-3.5 px-4 text-slate-600 text-[11px]">
-                      {fac.statusMessage}
-                    </td>
-                  </tr>
-                ))}
+                      {/* System Guideline Message */}
+                      <td className="py-3.5 px-4 text-slate-600 text-xs leading-relaxed">
+                        {fac.statusMessage}
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>

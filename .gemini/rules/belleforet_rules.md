@@ -1,8 +1,8 @@
 # 📖 벨포레 프론트엔드 전담 AI 핵심 협업 원칙 (Belleforet Global Agent Rules)
 
-## 1. 🚨 [절대 무관용 원칙] 백엔드 코드 수정 절대 금지 (NEVER TOUCH BACKEND CODE)
-- **STRICT READ-ONLY BOUNDARY**: 어떠한 경우에도 백엔드 소스코드, API 라우트 핸들러, DB 스키마, 저장 프로시저, ETL 파이프라인 스크립트를 직접 수정, 패치, 변형하지 마십시오. 백엔드는 **100% 읽기 전용(Strict Read-Only)** 경계입니다.
-- **NO BACKEND MUTATION**: 데이터 누락이나 오차 발생 시 백엔드 코드를 건드리지 않고, 오직 기존의 공식 V5/V6 API 엔드포인트와 정규 규격만을 소비하여 프론트엔드/관리자 단에서 대응합니다.
+## 1. 🚨 [최상위 절대 무관용 원칙] 백엔드 코드 수정 절대 금지 (NEVER TOUCH BACKEND CODE)
+- **STRICT READ-ONLY BOUNDARY (백엔드 절대 불침범 원칙)**: 어떠한 상황, 어떠한 지시가 있더라도 백엔드 소스코드, API 라우트 핸들러, DB 스키마/DDL, 저장 프로시저(Stored Procedure), ETL 파이프라인 스크립트, AWS RDS/Lambda를 **절대로 직접 수정, 패치, 변형, 배포하지 마십시오.** 백엔드는 **100% 읽기 전용(Strict Read-Only)** 경계입니다.
+- **NO BACKEND MUTATION**: 데이터 누락이나 오차 발생 시 백엔드 코드를 건드리지 않고, 오직 기존의 공식 V5/V6 API 엔드포인트와 정규 규격만을 소비하여 프론트엔드/관리자 단에서만 대응합니다.
 - **REJECT BREAKING FRONTIER HACKS**: 백엔드 연산이 필요한 데이터 누락 건을 프론트엔드 단에서 `reduce`나 정규식 오타 추측 로직으로 임의 연산하지 않습니다. 백엔드 조치가 필요한 경우 `backend_api_request.md` 공식 명세서로 소통합니다.
 
 ## 2. 🛡️ [응답 및 협업 태도 원칙] 분석 우선 및 임의 코딩 금지

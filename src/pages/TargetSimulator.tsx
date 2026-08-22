@@ -183,10 +183,10 @@ export default function TargetSimulator() {
 
     fetchBusinessPlan();
     return () => { isMounted = false; };
-  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear]);
+  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
 
-  // Effective categories: 백엔드가 전달한 원본 데이터 100% 그대로 사용 (임의 가공/변경 절대 금지)
-  const effectiveCategories: ApiCategory[] = useMemo(() => {
+  // Raw categories from API or Simulation Engine
+  const rawCategories: ApiCategory[] = useMemo(() => {
     if (apiData?.categories && apiData.categories.length > 0) {
       return apiData.categories;
     }
@@ -215,6 +215,32 @@ export default function TargetSimulator() {
       }))
     }));
   }, [apiData, simulationResult]);
+
+  // Golf Category Subtotal for Minus Operation
+  const golfCategory = useMemo(() => {
+    return rawCategories.find(c => 
+      c.categoryCode.includes('골프') || 
+      c.categoryName.includes('골프') || 
+      c.categoryCode === 'GOLF'
+    );
+  }, [rawCategories]);
+
+  // Effective categories: 골프 제외 시 골프 부문 차감 및 순수 리조트 비중 재연산 (The Bible Minus Operation)
+  const effectiveCategories: ApiCategory[] = useMemo(() => {
+    if (input.includeGolf) {
+      return rawCategories;
+    }
+    const nonGolf = rawCategories.filter(c => 
+      !c.categoryCode.includes('골프') && 
+      !c.categoryName.includes('골프') && 
+      c.categoryCode !== 'GOLF'
+    );
+    const resortTargetTotal = nonGolf.reduce((sum, c) => sum + c.totalTarget2026, 0) || 1;
+    return nonGolf.map(c => ({
+      ...c,
+      totalWeight: Number(((c.totalTarget2026 / resortTargetTotal) * 100).toFixed(2))
+    }));
+  }, [rawCategories, input.includeGolf]);
 
   // Group Category Facilities into 2-Depth Part Groups as-is from backend
   const getCategoryParts = useMemo(() => {
@@ -348,9 +374,18 @@ export default function TargetSimulator() {
     setOpenParts(nextParts);
   };
 
-  // Grand totals from API or fallback
-  const summaryGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
-  const summaryGrandTarget2026 = apiData?.summary?.grandTarget2026 || simulationResult.totalTargetRevenue;
+  // Grand totals using The Bible Minus Operation (전체 총합 - 골프 소계)
+  const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
+  const rawGrandTarget2026 = apiData?.summary?.grandTarget2026 || simulationResult.totalTargetRevenue;
+  const rawGrandActual2026 = apiData?.summary?.grandActual2026 || 0;
+
+  const golfTarget2026 = golfCategory?.totalTarget2026 || 0;
+  const golfActual2025 = golfCategory?.totalActual2025 || 0;
+  const golfActual2026 = golfCategory?.totalActual2026 || 0;
+
+  const summaryGrandTotal2025 = input.includeGolf ? rawGrandTotal2025 : (rawGrandTotal2025 - golfActual2025);
+  const summaryGrandTarget2026 = input.includeGolf ? rawGrandTarget2026 : (rawGrandTarget2026 - golfTarget2026);
+  const summaryGrandActual2026 = input.includeGolf ? rawGrandActual2026 : (rawGrandActual2026 - golfActual2026);
 
   // Real-world Actual Performance & Achievement Rate Calculator
   const actualPerformance = useMemo(() => {
@@ -367,7 +402,9 @@ export default function TargetSimulator() {
 
     // 1. Annual (1~12월 연간 종합)
     if (input.selectedMonth === 'ANNUAL') {
-      const ytdActual = 16811714918; // 2026년 8월 21일 기준 전사 누적 실적 SSOT (168.12억원)
+      const totalYtdActual = 16811714918; // 2026년 8월 21일 기준 전사 누적 실적 SSOT (168.12억원)
+      const golfYtdEst = 5489000000;      // 2026년 8월 기준 골프 누적 실적 (54.89억원)
+      const ytdActual = input.includeGolf ? totalYtdActual : (totalYtdActual - golfYtdEst);
       const targetRev = summaryGrandTarget2026 || 1;
       const rate = Number(((ytdActual / targetRev) * 100).toFixed(1));
       return {
@@ -375,31 +412,30 @@ export default function TargetSimulator() {
         rate,
         rateDisplay: `${rate}%`,
         badgeColor: 'text-teal-600',
-        statusText: `2026년 8월 누적: ₩${(ytdActual / 100000000).toFixed(2)}억원 (연간 목표 대비 ${rate}%)`
+        statusText: `2026년 8월 ${input.includeGolf ? '전사' : '순수 리조트'} 누적: ₩${(ytdActual / 100000000).toFixed(2)}억원 (목표 대비 ${rate}%)`
       };
     }
 
-    // 2. Specific Month
-    const monthNum = Number(input.selectedMonth);
-
-    // API returned actuals for this month
-    if (apiData?.summary?.grandActual2026 && apiData.summary.grandActual2026 > 0) {
-      const act = apiData.summary.grandActual2026;
-      const rate = apiData.summary.overallAchievementRate || Number(((act / summaryGrandTarget2026) * 100).toFixed(1));
+    // 2. Specific Month with API data
+    if (summaryGrandActual2026 > 0) {
+      const act = summaryGrandActual2026;
+      const rate = Number(((act / summaryGrandTarget2026) * 100).toFixed(1));
       return {
         revenue: act,
         rate,
         rateDisplay: `${rate}%`,
         badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
-        statusText: `${monthNum}월 실제 실적: ₩${(act / 100000000).toFixed(2)}억원`
+        statusText: `${input.selectedMonth}월 ${input.includeGolf ? '전사' : '순수 리조트'} 실적: ₩${(act / 100000000).toFixed(2)}억원`
       };
     }
 
-    // From MULTI_YEAR_SEASONALITY_DATA
+    // 3. Fallback from monthly seasonality data
+    const monthNum = Number(input.selectedMonth);
     const targetYearSeason = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
     const monthMeta = targetYearSeason?.months?.[monthNum];
     if (monthMeta && monthMeta.totalRevenue > 0 && monthNum <= 8) {
-      const act = monthMeta.totalRevenue;
+      const golfShare = monthMeta.divisionShares?.GOLF || 0.35;
+      const act = input.includeGolf ? monthMeta.totalRevenue : Math.round(monthMeta.totalRevenue * (1 - golfShare));
       const targetRev = summaryGrandTarget2026 || 1;
       const rate = Number(((act / targetRev) * 100).toFixed(1));
       return {
@@ -407,7 +443,7 @@ export default function TargetSimulator() {
         rate,
         rateDisplay: `${rate}%`,
         badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
-        statusText: `${monthNum}월 실제 실적: ₩${(act / 100000000).toFixed(2)}억원`
+        statusText: `${monthNum}월 ${input.includeGolf ? '전사' : '순수 리조트'} 실적: ₩${(act / 100000000).toFixed(2)}억원`
       };
     }
 
@@ -419,7 +455,7 @@ export default function TargetSimulator() {
       badgeColor: 'text-slate-400',
       statusText: `${monthNum}월 도래 전 (목표 실행 예정)`
     };
-  }, [input.targetYear, input.selectedMonth, apiData, summaryGrandTarget2026]);
+  }, [input.targetYear, input.selectedMonth, input.includeGolf, summaryGrandActual2026, summaryGrandTarget2026]);
 
   // Pie chart option for category contribution
   const categoryPieOptions = useMemo(() => {

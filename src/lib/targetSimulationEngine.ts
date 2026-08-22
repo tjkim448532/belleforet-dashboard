@@ -46,7 +46,7 @@ export function runTargetSimulation(
   const monthMeta = yearMeta.months[monthNum] || yearMeta.months[7];
 
   const periodDays = isAnnual ? 365 : monthMeta.days;
-  const selectedMonthLabel = isAnnual ? `${targetYear}년 연간 종합` : `${monthNum}월 실측 계절성`;
+  const selectedMonthLabel = isAnnual ? '연간 종합 (1~12월)' : `${monthNum}월 실측 계절성`;
 
   // 1. 기준 실적 (선택한 기준 연도 동월/연간 순매출 및 TrevPAR)
   const baseLyTotalRevenue = isAnnual ? yearMeta.annual.totalRevenue : monthMeta.totalRevenue;

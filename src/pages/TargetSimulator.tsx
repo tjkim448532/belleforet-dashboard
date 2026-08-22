@@ -780,6 +780,12 @@ export default function TargetSimulator() {
                       <span className="text-slate-400">{input.baseYear}년 실적:</span>
                       <span className="text-slate-600 font-semibold tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
                     </div>
+                    {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-emerald-700 font-bold">{input.targetYear}년 실적:</span>
+                        <span className="text-emerald-700 font-black tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
+                      </div>
+                    )}
                     {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
                       <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-100 font-semibold">
                         <span className="text-slate-500">실제 달성률:</span>
@@ -905,7 +911,7 @@ export default function TargetSimulator() {
                     </div>
 
                     {/* Depth 1 Header Metrics */}
-                    <div className="flex flex-wrap items-center gap-5 text-xs font-bold">
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
                       <div className="text-slate-600">
                         비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
                       </div>
@@ -915,6 +921,11 @@ export default function TargetSimulator() {
                       <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
                         {input.targetYear} 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
                       </div>
+                      {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
+                        <div className="text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+                          {input.targetYear} 실적: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
+                        </div>
+                      )}
                       {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
                         <div className="text-slate-700">
                           달성률: <span className={`font-black ${cat.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
@@ -965,7 +976,7 @@ export default function TargetSimulator() {
                               </div>
 
                               {/* Depth 2 Part Metrics */}
-                              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
+                              <div className="flex flex-wrap items-center gap-3.5 text-xs font-semibold">
                                 <div className="text-slate-500">
                                   파트 비중: <span className="font-bold text-slate-800">{part.totalWeight}%</span>
                                 </div>
@@ -975,6 +986,11 @@ export default function TargetSimulator() {
                                 <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
                                   {input.targetYear} 목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
                                 </div>
+                                {part.totalActual2026 > 0 && (
+                                  <div className="text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                                    {input.targetYear} 실적: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(part.totalActual2026)}원</span>
+                                  </div>
+                                )}
                                 {part.achievementRate > 0 && (
                                   <div className="text-slate-600">
                                     달성률: <span className={`font-black ${part.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
@@ -996,7 +1012,7 @@ export default function TargetSimulator() {
                                       <th className="py-2.5 px-4 text-right">비중 (%)</th>
                                       <th className="py-2.5 px-4 text-right">{input.baseYear}년 실적</th>
                                       <th className="py-2.5 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표</th>
-                                      <th className="py-2.5 px-4 text-right min-w-[110px]">{input.targetYear}년 누적 실적</th>
+                                      <th className="py-2.5 px-4 text-right min-w-[120px] font-bold text-emerald-900">{input.targetYear}년 실적</th>
                                       <th className="py-2.5 px-4 text-center min-w-[90px]">달성률</th>
                                     </tr>
                                   </thead>
@@ -1018,7 +1034,7 @@ export default function TargetSimulator() {
                                         <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
                                           ₩{formatCurrency(fac.target2026)}원
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-700 font-semibold">
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-emerald-800 font-bold">
                                           {fac.actual2026 && fac.actual2026 > 0 ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
                                         </td>
                                         <td className="py-2.5 px-4 text-center">

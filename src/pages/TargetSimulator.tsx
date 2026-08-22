@@ -95,22 +95,35 @@ export default function TargetSimulator() {
       legend: {
         bottom: 0,
         icon: 'circle',
-        itemGap: 12,
+        itemGap: 10,
+        itemWidth: 10,
+        itemHeight: 10,
         textStyle: { color: '#475569', fontSize: 11, fontWeight: 600 }
       },
       series: [
         {
           name: '부문별 목표 비중',
           type: 'pie',
-          radius: ['45%', '72%'],
-          center: ['50%', '42%'],
-          avoidLabelOverlap: false,
+          radius: ['40%', '62%'],
+          center: ['50%', '46%'],
+          avoidLabelOverlap: true,
+          labelLayout: {
+            hideOverlap: true,
+            moveOverlap: 'shiftY'
+          },
           label: {
             show: true,
             formatter: '{b}\n{d}%',
             fontSize: 11,
             fontWeight: 'bold',
-            color: '#1e293b'
+            color: '#1e293b',
+            overflow: 'break'
+          },
+          labelLine: {
+            show: true,
+            length: 8,
+            length2: 10,
+            smooth: 0.2
           },
           data
         }
@@ -401,7 +414,7 @@ export default function TargetSimulator() {
               부문별 목표 기여 비중
             </h3>
             <p className="text-xs text-slate-400 mb-4">전체 {(simulationResult.totalTargetRevenue / 100000000).toFixed(1)}억원 구성</p>
-            <ReactECharts option={divisionPieOptions} style={{ height: '280px', width: '100%' }} />
+            <ReactECharts option={divisionPieOptions} style={{ height: '320px', width: '100%' }} />
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500 text-center">
             💡 물리적 수용 한계에 도달한 영업장은 단가 인상으로 자동 조정됩니다.

@@ -35,20 +35,21 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const CATEGORY_META: Record<string, { icon: string; color: string; bg: string; border: string; text: string }> = {
-  ROOM: { icon: '🏨', color: '#1E3A8A', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900' },
-  GOLF: { icon: '⛳', color: '#9333EA', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-900' },
-  FNB: { icon: '🍽️', color: '#16A34A', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900' },
-  TICKET: { icon: '🎢', color: '#EAB308', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900' },
-  LEISURE: { icon: '🎢', color: '#EAB308', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900' },
-  MOTO: { icon: '🏎️', color: '#E11D48', bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-900' },
-  BANQUET: { icon: '🏛️', color: '#0891B2', bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-900' },
-  PARKING: { icon: '🅿️', color: '#64748B', bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-900' },
-  ETC: { icon: '📦', color: '#6366F1', bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-900' },
-  OTHER: { icon: '📦', color: '#64748B', bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-900' }
+const getCategoryIcon = (name: string) => {
+  if (!name) return '📂';
+  if (name.includes('골프')) return '⛳';
+  if (name.includes('콘도') || name.includes('객실')) return '🏨';
+  if (name.includes('식음')) return '🍽️';
+  if (name.includes('레저') || name.includes('레져')) return '🎢';
+  if (name.includes('모토')) return '🏎️';
+  if (name.includes('대관') || name.includes('연회') || name.includes('세일즈')) return '🏛️';
+  if (name.includes('목장')) return '🐎';
+  if (name.includes('주차')) return '🅿️';
+  return '📂';
 };
 
 const getPartIcon = (partName: string) => {
+  if (!partName) return '📂';
   if (partName.includes('목장')) return '🐎';
   if (partName.includes('미디어')) return '🎨';
   if (partName.includes('액티비티') || partName.includes('썰매') || partName.includes('마운틴')) return '🛷';
@@ -56,9 +57,9 @@ const getPartIcon = (partName: string) => {
   if (partName.includes('골프') || partName.includes('클럽')) return '⛳';
   if (partName.includes('객실') || partName.includes('콘도')) return '🏨';
   if (partName.includes('모토') || partName.includes('서킷')) return '🏎️';
-  if (partName.includes('대관') || partName.includes('연회')) return '🏛️';
+  if (partName.includes('대관') || partName.includes('연회') || partName.includes('세일즈')) return '🏛️';
+  if (partName.includes('놀이동산')) return '🎪';
   if (partName.includes('주차')) return '🅿️';
-  if (partName.includes('임대') || partName.includes('편의점') || partName.includes('투썸')) return '🏪';
   return '📂';
 };
 
@@ -184,76 +185,11 @@ export default function TargetSimulator() {
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear]);
 
-  // Effective categories: Normalize API categories into SSOT 8 divisions or fallback to simulation engine
+  // Effective categories: 백엔드가 전달한 원본 데이터 100% 그대로 사용 (임의 가공/변경 절대 금지)
   const effectiveCategories: ApiCategory[] = useMemo(() => {
     if (apiData?.categories && apiData.categories.length > 0) {
-      const standardMap: Record<string, ApiCategory> = {
-        ROOM: { categoryCode: 'ROOM', categoryName: '객실', teamName: '객실영업팀', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        GOLF: { categoryCode: 'GOLF', categoryName: '골프', teamName: '골프영업팀', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        FNB: { categoryCode: 'FNB', categoryName: '식음', teamName: '식음영업팀', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        TICKET: { categoryCode: 'TICKET', categoryName: '레저', teamName: '레저본부', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        MOTO: { categoryCode: 'MOTO', categoryName: '모토아레나', teamName: '모토아레나', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        BANQUET: { categoryCode: 'BANQUET', categoryName: '대관', teamName: '대관/연회', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        PARKING: { categoryCode: 'PARKING', categoryName: '주차관제', teamName: '주차관제', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] },
-        ETC: { categoryCode: 'ETC', categoryName: '임대업장', teamName: '임대/기타', facilityCount: 0, totalActual2025: 0, totalWeight: 0, totalTarget2026: 0, totalActual2026: 0, achievementRate: 0, facilities: [] }
-      };
-
-      const getTargetStdCode = (code: string, name: string): string => {
-        const text = `${code} ${name}`.toUpperCase();
-        if (text.includes('ROOM') || text.includes('콘도') || text.includes('객실')) return 'ROOM';
-        if (text.includes('GOLF') || text.includes('골프')) return 'GOLF';
-        if (text.includes('FNB') || text.includes('식음')) return 'FNB';
-        if (text.includes('TICKET') || text.includes('LEISURE') || text.includes('레저') || text.includes('레져') || text.includes('목장')) return 'TICKET';
-        if (text.includes('MOTO') || text.includes('모토')) return 'MOTO';
-        if (text.includes('BANQUET') || text.includes('대관') || text.includes('연회')) return 'BANQUET';
-        if (text.includes('PARKING') || text.includes('주차')) return 'PARKING';
-        if (text.includes('ETC') || text.includes('임대') || text.includes('기타')) return 'ETC';
-        return 'ETC';
-      };
-
-      apiData.categories.forEach(raw => {
-        const rawCode = raw.categoryCode || '';
-        const rawName = raw.categoryName || '';
-        const stdKey = getTargetStdCode(rawCode, rawName);
-        const target = standardMap[stdKey];
-
-        (raw.facilities || []).forEach((f: any) => {
-          let partName = (f.partName || '').trim();
-          if (!partName || partName === '-') {
-            if (rawCode.includes('목장')) partName = '목장';
-            else if (rawCode.includes('외주')) partName = '레저본부 직속';
-            else partName = target.categoryName;
-          }
-          target.facilities.push({
-            ...f,
-            categoryCode: target.categoryCode,
-            categoryName: target.categoryName,
-            teamName: target.teamName,
-            partName
-          });
-          target.facilityCount += 1;
-          target.totalActual2025 += (f.actual2025 || 0);
-          target.totalTarget2026 += (f.target2026 || 0);
-          target.totalActual2026 = (target.totalActual2026 || 0) + (f.actual2026 || 0);
-          target.totalWeight = Number((target.totalWeight + (f.weight || 0)).toFixed(2));
-        });
-      });
-
-      const result: ApiCategory[] = [];
-      const orderedKeys = ['ROOM', 'GOLF', 'FNB', 'TICKET', 'MOTO', 'BANQUET', 'PARKING', 'ETC'];
-      orderedKeys.forEach(k => {
-        const c = standardMap[k];
-        if (c.facilities.length > 0) {
-          if (c.totalTarget2026 > 0 && (c.totalActual2026 || 0) > 0) {
-            c.achievementRate = Number((((c.totalActual2026 || 0) / c.totalTarget2026) * 100).toFixed(1));
-          }
-          result.push(c);
-        }
-      });
-
-      if (result.length > 0) return result;
+      return apiData.categories;
     }
-
     return simulationResult.divisionResults.map((div) => ({
       categoryCode: div.category,
       categoryName: div.categoryLabel,
@@ -280,22 +216,15 @@ export default function TargetSimulator() {
     }));
   }, [apiData, simulationResult]);
 
-  // Group Category Facilities into 2-Depth Part Groups
+  // Group Category Facilities into 2-Depth Part Groups as-is from backend
   const getCategoryParts = useMemo(() => {
     return (cat: ApiCategory): ApiPartGroup[] => {
       const map: Record<string, ApiPartGroup> = {};
 
       (cat.facilities || []).forEach((fac) => {
-        let rawPart = (fac.partName || '').trim();
-        if (!rawPart || rawPart === '-') {
-          if (cat.categoryCode === 'ROOM') rawPart = '객실';
-          else if (cat.categoryCode === 'GOLF') rawPart = '골프영업';
-          else if (cat.categoryCode === 'BANQUET') rawPart = '대관연회';
-          else if (cat.categoryCode === 'PARKING') rawPart = '주차관제';
-          else rawPart = `${cat.categoryName}`;
-        }
-
+        const rawPart = (fac.partName || fac.teamName || '일반').trim();
         const partKey = `${cat.categoryCode}_${rawPart}`;
+
         if (!map[partKey]) {
           map[partKey] = {
             partKey,
@@ -332,25 +261,25 @@ export default function TargetSimulator() {
     };
   }, []);
 
+  // Filter Buttons generated dynamically from received categories
+  const availableCategoryFilters = useMemo(() => {
+    const list = [{ id: 'ALL', label: '전체' }];
+    effectiveCategories.forEach(c => {
+      list.push({ 
+        id: c.categoryCode, 
+        label: `${getCategoryIcon(c.categoryName)} ${c.categoryName}` 
+      });
+    });
+    return list;
+  }, [effectiveCategories]);
+
   // Filtered categories
   const filteredCategories = useMemo(() => {
     if (selectedCategoryFilter === 'ALL') return effectiveCategories;
-    return effectiveCategories.filter(c => {
-      const code = c.categoryCode?.toUpperCase() || '';
-      const name = c.categoryName || '';
-      const filter = selectedCategoryFilter.toUpperCase();
-
-      if (code === filter || name.includes(filter)) return true;
-      if (filter === 'ROOM' && (code === 'ROOM' || name.includes('객실') || name.includes('콘도'))) return true;
-      if (filter === 'GOLF' && (code === 'GOLF' || name.includes('골프'))) return true;
-      if (filter === 'FNB' && (code === 'FNB' || name.includes('식음'))) return true;
-      if (filter === 'TICKET' && (code === 'TICKET' || code === 'LEISURE' || name.includes('레저'))) return true;
-      if (filter === 'MOTO' && (code === 'MOTO' || name.includes('모토'))) return true;
-      if (filter === 'BANQUET' && (code === 'BANQUET' || name.includes('대관') || name.includes('연회'))) return true;
-      if (filter === 'PARKING' && (code === 'PARKING' || name.includes('주차'))) return true;
-      if (filter === 'ETC' && (code === 'ETC' || code === 'OTHER' || name.includes('임대') || name.includes('기타'))) return true;
-      return false;
-    });
+    return effectiveCategories.filter(c => 
+      c.categoryCode === selectedCategoryFilter || 
+      c.categoryName === selectedCategoryFilter
+    );
   }, [effectiveCategories, selectedCategoryFilter]);
 
   const formatCurrency = (val: any) => {
@@ -495,11 +424,10 @@ export default function TargetSimulator() {
   // Pie chart option for category contribution
   const categoryPieOptions = useMemo(() => {
     const data = effectiveCategories.map(c => {
-      const meta = CATEGORY_META[c.categoryCode] || CATEGORY_META.OTHER;
       return {
         name: c.categoryName,
         value: c.totalTarget2026,
-        itemStyle: { color: meta.color, borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
       };
     });
 
@@ -822,7 +750,7 @@ export default function TargetSimulator() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {effectiveCategories.map(cat => {
-              const meta = CATEGORY_META[cat.categoryCode] || CATEGORY_META.OTHER;
+              const icon = getCategoryIcon(cat.categoryName);
               return (
                 <div 
                   key={cat.categoryCode}
@@ -830,7 +758,7 @@ export default function TargetSimulator() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">{meta.icon}</span>
+                      <span className="text-xl">{icon}</span>
                       <span className="font-bold text-slate-900">{cat.categoryName}</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                         {cat.teamName}
@@ -912,19 +840,9 @@ export default function TargetSimulator() {
               전체 접기
             </button>
 
-            {/* Filter Buttons */}
+            {/* Dynamic Filter Buttons as received from backend */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
-              {[
-                { id: 'ALL', label: '전체' },
-                { id: 'ROOM', label: '🏨 객실' },
-                { id: 'GOLF', label: '⛳ 골프' },
-                { id: 'FNB', label: '🍽️ 식음' },
-                { id: 'TICKET', label: '🎢 레저' },
-                { id: 'MOTO', label: '🏎️ 모토' },
-                { id: 'BANQUET', label: '🏛️ 대관' },
-                { id: 'PARKING', label: '🅿️ 주차' },
-                { id: 'ETC', label: '📦 임대' }
-              ].map(cat => (
+              {availableCategoryFilters.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategoryFilter(cat.id)}
@@ -948,7 +866,7 @@ export default function TargetSimulator() {
           <div className="space-y-4">
             {filteredCategories.map((cat) => {
               const isCatOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
-              const meta = CATEGORY_META[cat.categoryCode] || CATEGORY_META.OTHER;
+              const catIcon = getCategoryIcon(cat.categoryName);
               const partGroups = getCategoryParts(cat);
 
               return (
@@ -956,7 +874,7 @@ export default function TargetSimulator() {
                   key={cat.categoryCode}
                   className="rounded-2xl border border-slate-200/90 overflow-hidden bg-white shadow-2xs transition-all"
                 >
-                  {/* Depth 1: Category Header (본부/부문 총괄) */}
+                  {/* Depth 1: Category Header (본부/부문 총괄 - 백엔드 명칭 100% 사용) */}
                   <div 
                     onClick={() => toggleCategory(cat.categoryCode)}
                     className={`p-4.5 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
@@ -973,7 +891,7 @@ export default function TargetSimulator() {
                       </button>
                       
                       <div className="flex items-center gap-2.5">
-                        <span className="text-2xl">{meta.icon}</span>
+                        <span className="text-2xl">{catIcon}</span>
                         <span className="text-lg font-black text-slate-900">
                           {cat.categoryName}
                         </span>
@@ -1019,7 +937,7 @@ export default function TargetSimulator() {
                             key={part.partKey}
                             className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs transition-all"
                           >
-                            {/* Depth 2: Part Header */}
+                            {/* Depth 2: Part Header (백엔드 파트명 100% 사용) */}
                             <div
                               onClick={() => togglePart(part.partKey)}
                               className={`p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
@@ -1067,7 +985,7 @@ export default function TargetSimulator() {
                               </div>
                             </div>
 
-                            {/* Depth 3: Facilities Table */}
+                            {/* Depth 3: Facilities Table (백엔드 영업장명 100% 사용) */}
                             {isPartOpen && (
                               <div className="overflow-x-auto bg-white">
                                 <table className="w-full text-left border-collapse text-xs">

@@ -124,15 +124,15 @@ export default function Home() {
   const todayGrowth = coreData.core?.summary?.todayGrowth;
   const todayDiff = coreData.core?.summary?.todayDiff;
   
-  const ytdGross = displayData.ytd.gross;
+  const ytdGross = displayData.ytd.gross || parseNum(coreData.core?.summary?.ytdActual || coreData.core?.summary?.ytdRevenue || 0);
   const ytdGrowth = coreData.core?.summary?.ytdGrowth;
   const ytdDiff = coreData.core?.summary?.ytdDiff;
 
   const mtdGross = displayData.mtd?.gross || parseNum(coreData.core?.summary?.mtdRevenue || coreData.core?.summary?.mtdActual || 0);
   const mtdGrowth = coreData.core?.summary?.mtdGrowth;
-  const mtdDiff = (coreData.core?.summary?.mtdRevenue && coreData.core?.summary?.mtdLy)
+  const mtdDiff = coreData.core?.summary?.mtdDiff ?? ((coreData.core?.summary?.mtdRevenue && coreData.core?.summary?.mtdLy)
     ? parseNum(coreData.core?.summary?.mtdRevenue) - parseNum(coreData.core?.summary?.mtdLy)
-    : undefined;
+    : undefined);
   
   const multiNight = (() => {
     const s = coreData.core?.summary || {};

@@ -6,7 +6,7 @@ import {
 import { Link } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
-import { DEFAULT_CAPACITY_SEEDS } from './AdminCapacity';
+import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 
 const MONTH_NAMES = [
@@ -47,14 +47,14 @@ export default function TargetSimulator() {
     // Load Capacity Master from LocalStorage or Firebase
     const loadMaster = async () => {
       try {
-        const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER_V2');
+        const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER_V3');
         if (cached) {
           const parsed = JSON.parse(cached);
           const cleaned = Array.isArray(parsed) 
             ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') 
             : DEFAULT_CAPACITY_SEEDS;
           setCapacityMaster(cleaned);
-          localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V2', JSON.stringify(cleaned));
+          localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(cleaned));
         } else {
           setCapacityMaster(DEFAULT_CAPACITY_SEEDS);
         }

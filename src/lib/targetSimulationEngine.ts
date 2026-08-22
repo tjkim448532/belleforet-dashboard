@@ -4,7 +4,7 @@ import type {
   DivisionAllocationResult, 
   FacilityAllocationResult 
 } from '../types/simulation';
-import { DEFAULT_CAPACITY_SEEDS } from '../pages/AdminCapacity';
+import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { 
   MONTHLY_SEASONALITY_DATA, 
   ANNUAL_BASELINE_META 
@@ -84,17 +84,24 @@ export function runTargetSimulation(
 
     // 해당 월의 원천 영업장별 실측 매출 매핑
     const facilityResults: FacilityAllocationResult[] = matchingFacilities.map((fac) => {
-      // 1. 해당 월 실측 매출액 및 비중 탐색
+      // 1. 해당 월(또는 연간) 실측 매출액 정확 매핑 (백엔드 표준 영업장 SSOT)
       let facLyRevenue = Math.round(divLyRevenue / facilityCount);
 
       if (!isAnnual && Array.isArray(monthMeta.facilities)) {
-        const match = monthMeta.facilities.find(mf => 
-          mf.venueName === fac.shopName || 
-          (fac.shopName.includes(mf.venueName)) || 
-          (mf.venueName.includes(fac.shopName.split(' ')[0]))
-        );
-        if (match && match.netRevenue > 0) {
+        const match = monthMeta.facilities.find(mf => mf.venueName === fac.shopName);
+        if (match) {
           facLyRevenue = match.netRevenue;
+        }
+      } else if (isAnnual) {
+        let annualSum = 0;
+        for (let m = 1; m <= 12; m++) {
+          const mFac = MONTHLY_SEASONALITY_DATA[m]?.facilities?.find(mf => mf.venueName === fac.shopName);
+          if (mFac) {
+            annualSum += mFac.netRevenue;
+          }
+        }
+        if (annualSum > 0) {
+          facLyRevenue = annualSum;
         }
       }
 

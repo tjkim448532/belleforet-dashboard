@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, ArrowUpRight, 
-  Gauge, ShieldAlert, Settings, Layers, Calendar
+  Calendar, Layers, DollarSign
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
@@ -147,36 +146,23 @@ export default function TargetSimulator() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       
-      {/* 1. Header & Quick Links */}
+      {/* 1. Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-7 rounded-[32px] border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-teal-50 text-teal-700 rounded-2xl border border-teal-100">
-              <Target className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                경영 목표 역추산 & 월별 캐파 시뮬레이터
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                  Target Simulator Engine v6.0
-                </span>
-              </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                전사 <strong>연간 목표 성장률(%)</strong>을 설정하고 <strong>특정 월(1~12월)</strong>을 선택하면, 해당 월의 실측 계절성과 42개 영업장별 매출 비중을 자동 대입하여 세부 목표를 산출합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Link to Admin Capacity Master */}
         <div className="flex items-center gap-2.5">
-          <Link
-            to="/admin/capacity"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-all cursor-pointer shadow-2xs"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            영업장 캐파 마스터 설정
-          </Link>
+          <div className="p-2.5 bg-teal-50 text-teal-700 rounded-2xl border border-teal-100">
+            <Target className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              경영 목표 역추산 & 월별 세부 실행 목표 시뮬레이터
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                Target Simulator Engine v6.1
+              </span>
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              전사 <strong>연간 목표 성장률(%)</strong>을 설정하고 <strong>특정 월(1~12월)</strong>을 선택하면, 해당 월의 실측 계절성과 백엔드 표준 영업장별 매출 비중을 자동 대입하여 세부 목표를 산출합니다.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -333,7 +319,7 @@ export default function TargetSimulator() {
             </div>
 
             <div className="text-[11px] text-slate-300 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-white/5">
-              💡 <strong>동적 계절성 연동:</strong> 선택하신 월의 42개 영업장별 실측 매출 비중에 따라 목표액이 1원 단위로 자동 분배됩니다.
+              💡 <strong>동적 계절성 연동:</strong> 선택하신 월의 백엔드 표준 영업장별 실측 매출 비중에 따라 목표액이 1원 단위로 자동 분배됩니다.
             </div>
           </div>
 
@@ -350,7 +336,7 @@ export default function TargetSimulator() {
             {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)} <span className="text-sm font-normal text-slate-500">억원</span>
           </div>
           <div className="text-xs text-teal-700 font-bold mt-1">
-            전년비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억원 순증 (+{simulationResult.overallGrowthRate}%)
+            전년비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억원 순증
           </div>
         </div>
 
@@ -374,12 +360,12 @@ export default function TargetSimulator() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">캐파 제약(Ceiling) 상태</div>
-          <div className="text-lg font-black text-amber-700 flex items-center gap-1.5">
-            <ShieldAlert className="w-5 h-5 text-amber-600" />
-            실시간 캐파 가이드
+          <div className="text-[11px] font-bold text-slate-500 mb-1">1일 평균 목표 매출</div>
+          <div className="text-2xl font-black text-slate-900 tabular-nums flex items-center gap-1">
+            <DollarSign className="w-6 h-6 text-indigo-600" />
+            {(simulationResult.totalTargetRevenue / simulationResult.periodDays / 10000).toFixed(0)} <span className="text-sm font-normal text-slate-500">만원/일</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">{simulationResult.periodDays}일 기준 물리적 상한 검증</div>
+          <div className="text-xs text-slate-500 mt-1">{simulationResult.periodDays}일 기준 일평균 목표</div>
         </div>
       </div>
 
@@ -423,12 +409,6 @@ export default function TargetSimulator() {
                     <span className="text-slate-400">전년 실적:</span>
                     <span className="text-slate-600 font-semibold tabular-nums">₩{formatCurrency(div.lyRevenue)}원</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100 font-bold">
-                    <span className="text-slate-600">필요 성장률:</span>
-                    <span className={div.growthRate >= 0 ? 'text-teal-600' : 'text-rose-500'}>
-                      {div.growthRate > 0 ? '+' : ''}{div.growthRate}% (+₩{formatCurrency(div.diffAmount)}원)
-                    </span>
-                  </div>
                 </div>
               </div>
             ))}
@@ -454,16 +434,16 @@ export default function TargetSimulator() {
 
       </div>
 
-      {/* 5. 🚦 영업장별 2차 세부 실행 계획 & 캐파 신호등 테이블 (42개 실운영 영업장) */}
+      {/* 5. 🎯 영업장별 세부 실행 목표 테이블 */}
       <div className="bg-white rounded-[32px] p-7 border border-slate-200 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <Gauge className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 및 물리적 캐파 신호등 ({simulationResult.selectedMonthLabel})
+              <Target className="w-5 h-5 text-indigo-600" />
+              영업장별 세부 실행 목표 ({simulationResult.selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              선택한 달의 실측 매출 비율에 맞춰 각 영업장별 전년 실적 및 목표 매출액이 산출됩니다.
+              선택한 달의 실측 매출 비율에 맞춰 각 표준 영업장별 전년 실적 및 목표 매출액이 자동 산출됩니다.
             </p>
           </div>
 
@@ -497,30 +477,49 @@ export default function TargetSimulator() {
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
+                <th className="py-3.5 px-4 w-12 text-center">No</th>
                 <th className="py-3.5 px-4">영업장명 (Facility)</th>
+                <th className="py-3.5 px-4 text-center">부문</th>
+                <th className="py-3.5 px-4 text-right">해당 월 비중</th>
                 <th className="py-3.5 px-4 text-right">전년 실적 ({simulationResult.selectedMonthLabel})</th>
-                <th className="py-3.5 px-4 text-right font-black text-slate-900">목표 매출액</th>
-                <th className="py-3.5 px-4 text-right">전년비 증감</th>
-                <th className="py-3.5 px-4 text-center">캐파 상태</th>
-                <th className="py-3.5 px-4">시스템 가이드라인 및 조치 사항</th>
+                <th className="py-3.5 px-4 text-right font-black text-indigo-950">목표 매출액</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
               {simulationResult.divisionResults.flatMap(d => d.facilities)
                 .filter(f => selectedCategoryFilter === 'ALL' || f.category === selectedCategoryFilter)
-                .map((fac) => {
-                  const diff = fac.targetRevenue - fac.lyRevenue;
-                  const growth = fac.lyRevenue > 0 ? Number(((diff / fac.lyRevenue) * 100).toFixed(1)) : 0;
+                .map((fac, idx) => {
+                  const sharePct = simulationResult.totalLyRevenue > 0 
+                    ? ((fac.lyRevenue / simulationResult.totalLyRevenue) * 100).toFixed(2)
+                    : '0.00';
+
                   return (
                     <tr key={fac.shopCode} className="hover:bg-slate-50/80 transition-colors">
                       
+                      {/* Index */}
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {idx + 1}
+                      </td>
+
                       {/* Facility Name */}
                       <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
                         {fac.shopName}
                       </td>
 
+                      {/* Category Badge */}
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                          {fac.category}
+                        </span>
+                      </td>
+
+                      {/* Share % */}
+                      <td className="py-3.5 px-4 text-right tabular-nums text-slate-500 font-semibold">
+                        {sharePct}%
+                      </td>
+
                       {/* LY Revenue */}
-                      <td className="py-3.5 px-4 text-right tabular-nums text-slate-500">
+                      <td className="py-3.5 px-4 text-right tabular-nums text-slate-600 font-medium">
                         ₩{formatCurrency(fac.lyRevenue)}원
                       </td>
 
@@ -529,44 +528,6 @@ export default function TargetSimulator() {
                         ₩{formatCurrency(fac.targetRevenue)}원
                       </td>
 
-                      {/* Growth / Diff */}
-                      <td className="py-3.5 px-4 text-right tabular-nums">
-                        <span className={`font-bold text-xs ${growth >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
-                          {growth > 0 ? '+' : ''}{growth}%
-                        </span>
-                        <span className="text-[10px] text-slate-400 block">
-                          ({diff >= 0 ? '+' : ''}₩{formatCurrency(diff)}원)
-                        </span>
-                      </td>
-
-                      {/* Status Badge */}
-                      <td className="py-3.5 px-4 text-center">
-                        {fac.status === 'NORMAL' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 text-[11px]">
-                            🟢 정상 수용
-                          </span>
-                        )}
-                        {fac.status === 'CAPACITY_WARNING' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200 text-[11px]">
-                            🟡 캐파 임박
-                          </span>
-                        )}
-                        {fac.status === 'PRICE_HIKE_REQUIRED' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 text-[11px]">
-                            🔴 단가 인상
-                          </span>
-                        )}
-                        {fac.status === 'SPILLOVER_REALLOCATED' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-bold border border-purple-200 text-[11px]">
-                            🟣 초과 재배분
-                          </span>
-                        )}
-                      </td>
-
-                      {/* System Guideline Message */}
-                      <td className="py-3.5 px-4 text-slate-600 text-xs leading-relaxed">
-                        {fac.statusMessage}
-                      </td>
                     </tr>
                   );
                 })}

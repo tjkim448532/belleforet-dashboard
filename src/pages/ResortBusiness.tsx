@@ -101,6 +101,10 @@ export default function ResortBusiness() {
     return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
+  // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
+  const isRange = Boolean(startDate && endDate && startDate !== endDate);
+  const rangeDays = isRange && startDate && endDate ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
+
   const lodgingStats = data?.lodgingStats || { revenue: 0, roomsSold: 0, adr: 0, totalCapacity: 0 };
   
   const roomOccupancyData = (() => {
@@ -109,19 +113,21 @@ export default function ResortBusiness() {
     const groups = data.roomOccupancyMap;
     const result = [];
     const keys = ['16평', '35평', '51평', '기타'];
+    const DEFAULT_CAPS: Record<string, number> = { '16평': 85, '35평': 85, '51평': 40, '기타': 5 };
     
     for (const key of keys) {
       const g = groups[key];
       if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
       
-      const rate = g.cap > 0 ? Math.round((g.sold / g.cap) * 100) : 0;
+      const effectiveCap = g.cap > 0 ? g.cap : ((DEFAULT_CAPS[key] || 10) * rangeDays);
+      const rate = effectiveCap > 0 ? Math.round((g.sold / effectiveCap) * 100) : 0;
       const cappedRate = Math.min(rate, 100);
-      const displayRate = g.cap > 0 ? `${rate}%` : 'N/A';
+      const displayRate = `${rate}%`;
 
       result.push({
         roomSize: key,
         sold: g.sold,
-        capacity: g.cap,
+        capacity: effectiveCap,
         rate: cappedRate,
         rawRate: rate,
         displayRate,
@@ -134,9 +140,6 @@ export default function ResortBusiness() {
     return result;
   })();
 
-  // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
-  const isRange = Boolean(startDate && endDate && startDate !== endDate);
-  const rangeDays = isRange && startDate && endDate ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
   const connecting51Sold = data?.roomOccupancyMap?.['51평']?.sold || 0;
   const connectingPhysicalRooms = connecting51Sold * 2; // 35세트 x 2 = 70실 (또는 기간 누적)
   const standardPhysicalRooms = Math.max(0, lodgingStats.roomsSold - connecting51Sold);

@@ -48,6 +48,20 @@ const CATEGORY_META: Record<string, { icon: string; color: string; bg: string; b
   OTHER: { icon: '📦', color: '#64748B', bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-900' }
 };
 
+const getPartIcon = (partName: string) => {
+  if (partName.includes('목장')) return '🐎';
+  if (partName.includes('미디어')) return '🎨';
+  if (partName.includes('액티비티') || partName.includes('썰매') || partName.includes('마운틴')) return '🛷';
+  if (partName.includes('식음') || partName.includes('FNB') || partName.includes('레스토랑')) return '🍽️';
+  if (partName.includes('골프') || partName.includes('클럽')) return '⛳';
+  if (partName.includes('객실') || partName.includes('콘도')) return '🏨';
+  if (partName.includes('모토') || partName.includes('서킷')) return '🏎️';
+  if (partName.includes('대관') || partName.includes('연회')) return '🏛️';
+  if (partName.includes('주차')) return '🅿️';
+  if (partName.includes('임대') || partName.includes('편의점') || partName.includes('투썸')) return '🏪';
+  return '📂';
+};
+
 interface ApiFacility {
   no: number;
   categoryCode: string;
@@ -60,6 +74,18 @@ interface ApiFacility {
   target2026: number;
   actual2026?: number;
   achievementRate?: number;
+}
+
+interface ApiPartGroup {
+  partKey: string;
+  partName: string;
+  facilityCount: number;
+  totalWeight: number;
+  totalActual2025: number;
+  totalTarget2026: number;
+  totalActual2026: number;
+  achievementRate: number;
+  facilities: ApiFacility[];
 }
 
 interface ApiCategory {
@@ -108,7 +134,10 @@ export default function TargetSimulator() {
   // Business Plan API State
   const [apiData, setApiData] = useState<{ summary: ApiSummary; categories: ApiCategory[] } | null>(null);
   const [apiLoading, setApiLoading] = useState<boolean>(false);
+  
+  // 3-Depth Accordion State: Depth 1 (Categories) & Depth 2 (Parts)
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const [openParts, setOpenParts] = useState<Record<string, boolean>>({});
 
   // Fallback Simulation Engine
   const simulationResult = useMemo(() => {
@@ -131,11 +160,18 @@ export default function TargetSimulator() {
 
         if (isMounted && res?.data?.categories && res.data.categories.length > 0) {
           setApiData(res.data);
-          const initialOpen: Record<string, boolean> = {};
+          const initialOpenCats: Record<string, boolean> = {};
+          const initialOpenParts: Record<string, boolean> = {};
+          
           res.data.categories.forEach((c: ApiCategory) => {
-            initialOpen[c.categoryCode] = true;
+            initialOpenCats[c.categoryCode] = true;
+            (c.facilities || []).forEach(f => {
+              const partKey = `${c.categoryCode}_${(f.partName || f.teamName || '일반').trim()}`;
+              initialOpenParts[partKey] = true;
+            });
           });
-          setOpenCategories(initialOpen);
+          setOpenCategories(initialOpenCats);
+          setOpenParts(initialOpenParts);
         }
       } catch (err) {
         console.warn('Business Plan API fetch warning, fallback to engine:', err);
@@ -178,6 +214,58 @@ export default function TargetSimulator() {
       }))
     }));
   }, [apiData, simulationResult]);
+
+  // Group Category Facilities into 2-Depth Part Groups
+  const getCategoryParts = useMemo(() => {
+    return (cat: ApiCategory): ApiPartGroup[] => {
+      const map: Record<string, ApiPartGroup> = {};
+
+      (cat.facilities || []).forEach((fac) => {
+        let rawPart = (fac.partName || '').trim();
+        if (!rawPart || rawPart === '-') {
+          if (cat.categoryCode === 'ROOM') rawPart = '객실';
+          else if (cat.categoryCode === 'GOLF') rawPart = '골프영업';
+          else if (cat.categoryCode === 'BANQUET') rawPart = '대관연회';
+          else if (cat.categoryCode === 'PARKING') rawPart = '주차관제';
+          else rawPart = `${cat.categoryName}`;
+        }
+
+        const partKey = `${cat.categoryCode}_${rawPart}`;
+        if (!map[partKey]) {
+          map[partKey] = {
+            partKey,
+            partName: rawPart,
+            facilityCount: 0,
+            totalWeight: 0,
+            totalActual2025: 0,
+            totalTarget2026: 0,
+            totalActual2026: 0,
+            achievementRate: 0,
+            facilities: []
+          };
+        }
+
+        map[partKey].facilities.push({
+          ...fac,
+          no: map[partKey].facilities.length + 1
+        });
+        map[partKey].facilityCount += 1;
+        map[partKey].totalWeight = Number((map[partKey].totalWeight + (fac.weight || 0)).toFixed(2));
+        map[partKey].totalActual2025 += (fac.actual2025 || 0);
+        map[partKey].totalTarget2026 += (fac.target2026 || 0);
+        map[partKey].totalActual2026 += (fac.actual2026 || 0);
+      });
+
+      const partGroups = Object.values(map);
+      partGroups.forEach(pg => {
+        if (pg.totalTarget2026 > 0 && pg.totalActual2026 > 0) {
+          pg.achievementRate = Number(((pg.totalActual2026 / pg.totalTarget2026) * 100).toFixed(1));
+        }
+      });
+
+      return partGroups.sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
+    };
+  }, []);
 
   // Filtered categories
   const filteredCategories = useMemo(() => {
@@ -240,12 +328,30 @@ export default function TargetSimulator() {
     });
   };
 
-  const toggleAllCategories = (open: boolean) => {
-    const next: Record<string, boolean> = {};
-    effectiveCategories.forEach(c => {
-      next[c.categoryCode] = open;
+  const togglePart = (partKey: string) => {
+    setOpenParts(prev => {
+      const current = prev[partKey] !== undefined ? prev[partKey] : true;
+      return {
+        ...prev,
+        [partKey]: !current
+      };
     });
-    setOpenCategories(next);
+  };
+
+  const toggleAllCategories = (open: boolean) => {
+    const nextCats: Record<string, boolean> = {};
+    const nextParts: Record<string, boolean> = {};
+
+    effectiveCategories.forEach(c => {
+      nextCats[c.categoryCode] = open;
+      const parts = getCategoryParts(c);
+      parts.forEach(p => {
+        nextParts[p.partKey] = open;
+      });
+    });
+
+    setOpenCategories(nextCats);
+    setOpenParts(nextParts);
   };
 
   // Grand totals from API or fallback
@@ -378,13 +484,13 @@ export default function TargetSimulator() {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              영업장별 세부 실행 목표 아코디언 시뮬레이터
+              영업장별 세부 실행 목표 3-Depth 아코디언 시뮬레이터
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
                 Official API v5.0 Connected
               </span>
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              백엔드 공식 아코디언 API(<code>/api/v5/report/business-plan</code>)와 실시간 연동되어, <strong>부문별 2-Depth 계층 구조 및 영업장별 실측 비중</strong>을 1원 단위로 표출합니다.
+              백엔드 공식 아코디언 API(<code>/api/v5/report/business-plan</code>)와 실시간 연동되어, <strong>[부문(본부) ➔ 파트 ➔ 소속 영업장] 3-Depth 계층 구조</strong>로 완벽하게 펼쳐집니다.
             </p>
           </div>
         </div>
@@ -713,16 +819,16 @@ export default function TargetSimulator() {
 
       </div>
 
-      {/* 5. 📂 영업장별 세부 실행 목표 2-Depth 아코디언 테이블 */}
+      {/* 5. 📂 영업장별 세부 실행 목표 3-Depth 아코디언 테이블 (부문 ➔ 파트 ➔ 소속 영업장) */}
       <div className="bg-white rounded-[32px] p-7 border border-slate-200 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Target className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 아코디언 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
+              영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              부문별 헤더를 클릭하여 소속 영업장들의 세부 실적, 목표액, 달성률을 펼쳐볼 수 있습니다.
+              <strong>[부문(본부) ➔ 파트 ➔ 소속 영업장]</strong> 계층별 헤더를 클릭하여 각 파트별 소계와 소속 영업장 리스트를 펼쳐볼 수 있습니다.
             </p>
           </div>
 
@@ -768,53 +874,54 @@ export default function TargetSimulator() {
           </div>
         </div>
 
-        {/* Accordion List */}
+        {/* 3-Depth Accordion List */}
         {apiLoading && effectiveCategories.length === 0 ? (
           <div className="p-12 text-center text-slate-400 font-bold text-xs animate-pulse">
             백엔드 비즈니스 플랜 API 데이터를 불러오는 중입니다...
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {filteredCategories.map((cat) => {
-              const isOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
+              const isCatOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
               const meta = CATEGORY_META[cat.categoryCode] || CATEGORY_META.OTHER;
+              const partGroups = getCategoryParts(cat);
 
               return (
                 <div 
                   key={cat.categoryCode}
                   className="rounded-2xl border border-slate-200/90 overflow-hidden bg-white shadow-2xs transition-all"
                 >
-                  {/* Category Header (소계) */}
+                  {/* Depth 1: Category Header (본부/부문 총괄) */}
                   <div 
                     onClick={() => toggleCategory(cat.categoryCode)}
-                    className={`p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
-                      isOpen ? 'bg-slate-50/90 border-b border-slate-200/70' : 'bg-white hover:bg-slate-50/50'
+                    className={`p-4.5 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+                      isCatOpen ? 'bg-slate-50/90 border-b border-slate-200/80' : 'bg-white hover:bg-slate-50/50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <button className="text-slate-400 hover:text-slate-600 transition-transform">
-                        {isOpen ? (
+                        {isCatOpen ? (
                           <ChevronDown className="w-5 h-5 text-indigo-600" />
                         ) : (
                           <ChevronRight className="w-5 h-5 text-slate-400" />
                         )}
                       </button>
                       
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{meta.icon}</span>
-                        <span className="text-base font-black text-slate-900">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{meta.icon}</span>
+                        <span className="text-lg font-black text-slate-900">
                           {cat.categoryName}
                         </span>
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                           {cat.teamName}
                         </span>
-                        <span className="text-xs text-slate-400 font-medium">
-                          ({cat.facilityCount}개 영업장)
+                        <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                          {partGroups.length}개 파트 · {cat.facilityCount}개 영업장
                         </span>
                       </div>
                     </div>
 
-                    {/* Header Metrics */}
+                    {/* Depth 1 Header Metrics */}
                     <div className="flex flex-wrap items-center gap-5 text-xs font-bold">
                       <div className="text-slate-600">
                         비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
@@ -822,7 +929,7 @@ export default function TargetSimulator() {
                       <div className="text-slate-500">
                         {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
                       </div>
-                      <div className="text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                      <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
                         {input.targetYear} 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
                       </div>
                       {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
@@ -835,67 +942,126 @@ export default function TargetSimulator() {
                     </div>
                   </div>
 
-                  {/* Accordion Body: Facilities Table */}
-                  {isOpen && (
-                    <div className="overflow-x-auto bg-white">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead className="bg-slate-50/60 text-slate-600 font-bold border-b border-slate-100">
-                          <tr>
-                            <th className="py-3 px-4 w-12 text-center">No</th>
-                            <th className="py-3 px-4 min-w-[180px]">영업장명</th>
-                            <th className="py-3 px-4 min-w-[120px]">파트</th>
-                            <th className="py-3 px-4 text-right">비중 (%)</th>
-                            <th className="py-3 px-4 text-right">{input.baseYear}년 실적</th>
-                            <th className="py-3 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표</th>
-                            <th className="py-3 px-4 text-right min-w-[110px]">{input.targetYear}년 누적 실적</th>
-                            <th className="py-3 px-4 text-center min-w-[90px]">달성률</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-800">
-                          {cat.facilities.map((fac) => (
-                            <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-3 px-4 text-center font-bold text-slate-400">
-                                {fac.no}
-                              </td>
-                              <td className="py-3 px-4 font-bold text-slate-900 text-sm">
-                                {fac.facilityName}
-                              </td>
-                              <td className="py-3 px-4 text-slate-500 font-medium">
-                                <span className="px-2 py-0.5 rounded bg-slate-100 text-[11px] text-slate-600">
-                                  {fac.partName || '-'}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4 text-right tabular-nums text-slate-500 font-semibold">
-                                {fac.weight}%
-                              </td>
-                              <td className="py-3 px-4 text-right tabular-nums text-slate-600">
-                                ₩{formatCurrency(fac.actual2025)}원
-                              </td>
-                              <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
-                                ₩{formatCurrency(fac.target2026)}원
-                              </td>
-                              <td className="py-3 px-4 text-right tabular-nums text-slate-700 font-semibold">
-                                {fac.actual2026 && fac.actual2026 > 0 ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
-                              </td>
-                              <td className="py-3 px-4 text-center">
-                                {fac.achievementRate && fac.achievementRate > 0 ? (
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-extrabold text-[11px] ${
-                                    fac.achievementRate >= 80
-                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                      : fac.achievementRate >= 50
-                                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  }`}>
-                                    {fac.achievementRate}%
+                  {/* Depth 2: Parts Container */}
+                  {isCatOpen && (
+                    <div className="p-4 md:p-5 bg-slate-50/40 space-y-3.5">
+                      {partGroups.map((part) => {
+                        const isPartOpen = openParts[part.partKey] !== undefined ? openParts[part.partKey] : true;
+                        const partIcon = getPartIcon(part.partName);
+
+                        return (
+                          <div 
+                            key={part.partKey}
+                            className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs transition-all"
+                          >
+                            {/* Depth 2: Part Header */}
+                            <div
+                              onClick={() => togglePart(part.partKey)}
+                              className={`p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+                                isPartOpen ? 'bg-slate-100/70 border-b border-slate-200' : 'bg-white hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <button className="text-slate-400 hover:text-slate-600 transition-transform">
+                                  {isPartOpen ? (
+                                    <ChevronDown className="w-4 h-4 text-teal-600" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                                  )}
+                                </button>
+                                
+                                <div className="flex items-center gap-2">
+                                  <span className="text-base">{partIcon}</span>
+                                  <span className="text-sm font-black text-slate-800">
+                                    {part.partName} 파트
                                   </span>
-                                ) : (
-                                  <span className="text-slate-400 text-xs">-</span>
+                                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                                    {part.facilityCount}개 영업장
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Depth 2 Part Metrics */}
+                              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
+                                <div className="text-slate-500">
+                                  파트 비중: <span className="font-bold text-slate-800">{part.totalWeight}%</span>
+                                </div>
+                                <div className="text-slate-500">
+                                  {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">₩{formatCurrency(part.totalActual2025)}원</span>
+                                </div>
+                                <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                                  {input.targetYear} 목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
+                                </div>
+                                {part.achievementRate > 0 && (
+                                  <div className="text-slate-600">
+                                    달성률: <span className={`font-black ${part.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
+                                      {part.achievementRate}%
+                                    </span>
+                                  </div>
                                 )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </div>
+                            </div>
+
+                            {/* Depth 3: Facilities Table */}
+                            {isPartOpen && (
+                              <div className="overflow-x-auto bg-white">
+                                <table className="w-full text-left border-collapse text-xs">
+                                  <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                    <tr>
+                                      <th className="py-2.5 px-4 w-12 text-center">No</th>
+                                      <th className="py-2.5 px-4 min-w-[180px]">영업장명</th>
+                                      <th className="py-2.5 px-4 text-right">비중 (%)</th>
+                                      <th className="py-2.5 px-4 text-right">{input.baseYear}년 실적</th>
+                                      <th className="py-2.5 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표</th>
+                                      <th className="py-2.5 px-4 text-right min-w-[110px]">{input.targetYear}년 누적 실적</th>
+                                      <th className="py-2.5 px-4 text-center min-w-[90px]">달성률</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 text-slate-800">
+                                    {part.facilities.map((fac) => (
+                                      <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="py-2.5 px-4 text-center font-bold text-slate-400">
+                                          {fac.no}
+                                        </td>
+                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-sm">
+                                          {fac.facilityName}
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold">
+                                          {fac.weight}%
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-600">
+                                          ₩{formatCurrency(fac.actual2025)}원
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
+                                          ₩{formatCurrency(fac.target2026)}원
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-700 font-semibold">
+                                          {fac.actual2026 && fac.actual2026 > 0 ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
+                                        </td>
+                                        <td className="py-2.5 px-4 text-center">
+                                          {fac.achievementRate && fac.achievementRate > 0 ? (
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-extrabold text-[11px] ${
+                                              fac.achievementRate >= 80
+                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                : fac.achievementRate >= 50
+                                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}>
+                                              {fac.achievementRate}%
+                                            </span>
+                                          ) : (
+                                            <span className="text-slate-400 text-xs">-</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

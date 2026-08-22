@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useDate } from './DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import { fetchLiveWeatherFallback } from '../lib/weatherService';
 
 export interface V6Payload {
   date: string;
@@ -88,6 +89,23 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           corePayload = corePayload[0] || { summary: {} };
         } else if (res?.weather && !corePayload.weather) {
           corePayload.weather = res.weather;
+        }
+
+        // 실시간 날씨 결측 자동 보정 (Open-Meteo 벨포레 기상 API 연동)
+        const targetDate = validStart || todayStr;
+        const currWeather = corePayload.weather?.current || corePayload.weather;
+        if (!currWeather || currWeather.description === '데이터없음' || currWeather.weatherDesc === '데이터없음' || (!currWeather.tempMax && !currWeather.tempMin)) {
+          const liveW = await fetchLiveWeatherFallback(targetDate);
+          if (liveW) {
+            if (!corePayload.weather) corePayload.weather = {};
+            corePayload.weather.current = {
+              description: liveW.description,
+              weatherDesc: liveW.description,
+              tempMax: liveW.tempMax,
+              tempMin: liveW.tempMin,
+              weatherCode: liveW.weatherCode
+            };
+          }
         }
 
         if (!corePayload.summary) corePayload.summary = {};

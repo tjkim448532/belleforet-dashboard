@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import { fetchLiveWeatherFallback } from '../lib/weatherService';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { ArrowUpRight, ArrowDownRight, Minus, Calendar, CloudSun, Sparkles, RefreshCw } from 'lucide-react';
 
@@ -112,7 +113,15 @@ export default function MatrixWeeklyDashboard() {
         // 1. 기준일 날씨 조회
         const baseRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${startDate}`);
         const basePayload = baseRes.data || baseRes;
-        const bWeather = basePayload?.weather?.current || basePayload?.weather || null;
+        let bWeather = basePayload?.weather?.current || basePayload?.weather || null;
+        
+        if (!bWeather || bWeather.description === '데이터없음' || bWeather.weatherDesc === '데이터없음' || (!bWeather.tempMax && !bWeather.tempMin)) {
+          const liveW = await fetchLiveWeatherFallback(startDate);
+          if (liveW) {
+            bWeather = liveW;
+          }
+        }
+
         setBaseWeather(bWeather ? {
           description: bWeather.description || bWeather.weatherDesc,
           tempMax: bWeather.tempMax ?? bWeather.temp_max,

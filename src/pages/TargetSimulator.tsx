@@ -10,6 +10,8 @@ import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 import { secureFetcher } from '../lib/secureFetcher';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+
 const YEAR_PAIRS = [
   { baseYear: 2024, targetYear: 2025, label: '2024년 실적 ➔ 2025년 목표' },
   { baseYear: 2025, targetYear: 2026, label: '2025년 실적 ➔ 2026년 목표' },
@@ -90,11 +92,11 @@ export default function TargetSimulator() {
   const [input, setInput] = useState<SimulationTargetInput>({
     baseYear: 2025,
     targetYear: 2026,
-    selectedMonth: 8, // 기본값: 8월
-    period: 'M08',
+    selectedMonth: 7, // 기본값: 7월
+    period: 'M07',
     metricInputMode: 'GROWTH_RATE',
     targetTrevpar: 0,
-    targetGrowthRate: 5.0, // 기본값: 5.0%
+    targetGrowthRate: 15.0, // 기본값: +15.0%
     targetTotalRevenue: 0,
     strategyMode: 'BALANCED',
     includeGolf: true
@@ -107,22 +109,27 @@ export default function TargetSimulator() {
   const [apiLoading, setApiLoading] = useState<boolean>(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
+  // Fallback Simulation Engine
+  const simulationResult = useMemo(() => {
+    return runTargetSimulation(input, capacityMaster);
+  }, [input, capacityMaster]);
+
   // Fetch Business Plan from Backend API
   useEffect(() => {
+    let isMounted = true;
     const fetchBusinessPlan = async () => {
       setApiLoading(true);
       try {
         const monthStr = typeof input.selectedMonth === 'number' 
           ? String(input.selectedMonth).padStart(2, '0') 
-          : '08';
+          : '07';
         const dateParam = `${input.targetYear}-${monthStr}-15`;
         const res = await secureFetcher(
-          `/api/v5/report/business-plan?date=${dateParam}&growthRate=${input.targetGrowthRate}`
+          `${API_BASE}/api/v5/report/business-plan?date=${dateParam}&growthRate=${input.targetGrowthRate}`
         ) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
 
-        if (res?.data?.categories) {
+        if (isMounted && res?.data?.categories && res.data.categories.length > 0) {
           setApiData(res.data);
-          // Initialize all categories as open by default
           const initialOpen: Record<string, boolean> = {};
           res.data.categories.forEach((c: ApiCategory) => {
             initialOpen[c.categoryCode] = true;
@@ -132,17 +139,65 @@ export default function TargetSimulator() {
       } catch (err) {
         console.warn('Business Plan API fetch warning, fallback to engine:', err);
       } finally {
-        setApiLoading(false);
+        if (isMounted) setApiLoading(false);
       }
     };
 
     fetchBusinessPlan();
+    return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear]);
 
-  // Fallback Simulation Engine
-  const simulationResult = useMemo(() => {
-    return runTargetSimulation(input, capacityMaster);
-  }, [input, capacityMaster]);
+  // Effective categories: API 1순위, Simulation Engine 2순위 Fallback (100% 무중단 보장)
+  const effectiveCategories: ApiCategory[] = useMemo(() => {
+    if (apiData?.categories && apiData.categories.length > 0) {
+      return apiData.categories;
+    }
+    return simulationResult.divisionResults.map((div) => ({
+      categoryCode: div.category,
+      categoryName: div.categoryLabel,
+      teamName: div.categoryLabel,
+      facilityCount: div.facilities.length,
+      totalActual2025: div.lyRevenue,
+      totalWeight: div.targetShare,
+      totalTarget2026: div.targetRevenue,
+      totalActual2026: 0,
+      achievementRate: 0,
+      facilities: div.facilities.map((f, fIdx) => ({
+        no: fIdx + 1,
+        categoryCode: div.category,
+        categoryName: div.categoryLabel,
+        teamName: div.categoryLabel,
+        partName: f.category,
+        facilityName: f.shopName,
+        weight: Number((f.shareRatio * 100).toFixed(2)),
+        actual2025: f.lyRevenue,
+        target2026: f.targetRevenue,
+        actual2026: 0,
+        achievementRate: 0
+      }))
+    }));
+  }, [apiData, simulationResult]);
+
+  // Filtered categories
+  const filteredCategories = useMemo(() => {
+    if (selectedCategoryFilter === 'ALL') return effectiveCategories;
+    return effectiveCategories.filter(c => {
+      const code = c.categoryCode?.toUpperCase() || '';
+      const name = c.categoryName || '';
+      const filter = selectedCategoryFilter.toUpperCase();
+
+      if (code === filter || name.includes(filter)) return true;
+      if (filter === 'ROOM' && (code === 'ROOM' || name.includes('객실') || name.includes('콘도'))) return true;
+      if (filter === 'GOLF' && (code === 'GOLF' || name.includes('골프'))) return true;
+      if (filter === 'FNB' && (code === 'FNB' || name.includes('식음'))) return true;
+      if (filter === 'TICKET' && (code === 'TICKET' || code === 'LEISURE' || name.includes('레저'))) return true;
+      if (filter === 'MOTO' && (code === 'MOTO' || name.includes('모토'))) return true;
+      if (filter === 'BANQUET' && (code === 'BANQUET' || name.includes('대관') || name.includes('연회'))) return true;
+      if (filter === 'PARKING' && (code === 'PARKING' || name.includes('주차'))) return true;
+      if (filter === 'ETC' && (code === 'ETC' || code === 'OTHER' || name.includes('임대') || name.includes('기타'))) return true;
+      return false;
+    });
+  }, [effectiveCategories, selectedCategoryFilter]);
 
   const formatCurrency = (val: any) => {
     if (!val && val !== 0) return '0';
@@ -175,19 +230,20 @@ export default function TargetSimulator() {
   };
 
   const toggleCategory = (catCode: string) => {
-    setOpenCategories(prev => ({
-      ...prev,
-      [catCode]: !prev[catCode]
-    }));
+    setOpenCategories(prev => {
+      const current = prev[catCode] !== undefined ? prev[catCode] : true;
+      return {
+        ...prev,
+        [catCode]: !current
+      };
+    });
   };
 
   const toggleAllCategories = (open: boolean) => {
     const next: Record<string, boolean> = {};
-    if (apiData?.categories) {
-      apiData.categories.forEach(c => {
-        next[c.categoryCode] = open;
-      });
-    }
+    effectiveCategories.forEach(c => {
+      next[c.categoryCode] = open;
+    });
     setOpenCategories(next);
   };
 
@@ -199,60 +255,28 @@ export default function TargetSimulator() {
 
   // Pie chart option for category contribution
   const categoryPieOptions = useMemo(() => {
-    if (apiData?.categories && apiData.categories.length > 0) {
-      const data = apiData.categories.map(c => {
-        const meta = CATEGORY_META[c.categoryCode] || CATEGORY_META.OTHER;
-        return {
-          name: c.categoryName,
-          value: c.totalTarget2026,
-          itemStyle: { color: meta.color, borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
-        };
-      });
-
+    const data = effectiveCategories.map(c => {
+      const meta = CATEGORY_META[c.categoryCode] || CATEGORY_META.OTHER;
       return {
-        tooltip: {
-          trigger: 'item',
-          formatter: '{b}: ₩{c}원 ({d}%)'
-        },
-        legend: {
-          bottom: 0,
-          icon: 'circle',
-          itemGap: 10,
-          itemWidth: 10,
-          itemHeight: 10,
-          textStyle: { color: '#475569', fontSize: 11, fontWeight: 600 }
-        },
-        series: [
-          {
-            name: '부문별 목표 비중',
-            type: 'pie',
-            radius: ['40%', '62%'],
-            center: ['50%', '46%'],
-            avoidLabelOverlap: true,
-            labelLayout: { hideOverlap: true, moveOverlap: 'shiftY' },
-            label: {
-              show: true,
-              formatter: '{b}\n{d}%',
-              fontSize: 11,
-              fontWeight: 'bold',
-              color: '#1e293b'
-            },
-            labelLine: { show: true, length: 8, length2: 10, smooth: 0.2 },
-            data
-          }
-        ]
+        name: c.categoryName,
+        value: c.totalTarget2026,
+        itemStyle: { color: meta.color, borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
       };
-    }
-
-    const data = simulationResult.divisionResults.map(d => ({
-      name: d.categoryLabel,
-      value: d.targetRevenue,
-      itemStyle: { color: d.color, borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
-    }));
+    });
 
     return {
-      tooltip: { trigger: 'item', formatter: '{b}: ₩{c}원 ({d}%)' },
-      legend: { bottom: 0, icon: 'circle', textStyle: { color: '#475569', fontSize: 11, fontWeight: 600 } },
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: ₩{c}원 ({d}%)'
+      },
+      legend: {
+        bottom: 0,
+        icon: 'circle',
+        itemGap: 10,
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: { color: '#475569', fontSize: 11, fontWeight: 600 }
+      },
       series: [
         {
           name: '부문별 목표 비중',
@@ -261,23 +285,19 @@ export default function TargetSimulator() {
           center: ['50%', '46%'],
           avoidLabelOverlap: true,
           labelLayout: { hideOverlap: true, moveOverlap: 'shiftY' },
-          label: { show: true, formatter: '{b}\n{d}%', fontSize: 11, fontWeight: 'bold', color: '#1e293b' },
+          label: {
+            show: true,
+            formatter: '{b}\n{d}%',
+            fontSize: 11,
+            fontWeight: 'bold',
+            color: '#1e293b'
+          },
+          labelLine: { show: true, length: 8, length2: 10, smooth: 0.2 },
           data
         }
       ]
     };
-  }, [apiData, simulationResult]);
-
-  // Filtered categories
-  const filteredCategories = useMemo(() => {
-    if (!apiData?.categories) return [];
-    if (selectedCategoryFilter === 'ALL') return apiData.categories;
-    return apiData.categories.filter(c => 
-      c.categoryCode === selectedCategoryFilter || 
-      c.categoryName === selectedCategoryFilter ||
-      (selectedCategoryFilter === 'LEISURE' && c.categoryCode === 'TICKET')
-    );
-  }, [apiData, selectedCategoryFilter]);
+  }, [effectiveCategories]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -560,7 +580,7 @@ export default function TargetSimulator() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {(apiData?.categories || []).map(cat => {
+            {effectiveCategories.map(cat => {
               const meta = CATEGORY_META[cat.categoryCode] || CATEGORY_META.OTHER;
               return (
                 <div 
@@ -591,7 +611,7 @@ export default function TargetSimulator() {
                       <span className="text-slate-400">{input.baseYear}년 실적:</span>
                       <span className="text-slate-600 font-semibold tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
                     </div>
-                    {cat.achievementRate !== undefined && (
+                    {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
                       <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-100 font-semibold">
                         <span className="text-slate-500">실제 달성률:</span>
                         <span className="text-indigo-700 font-bold">{cat.achievementRate}%</span>
@@ -651,7 +671,7 @@ export default function TargetSimulator() {
               전체 접기
             </button>
 
-            {/* Filter */}
+            {/* Filter Buttons */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
               {[
                 { id: 'ALL', label: '전체' },
@@ -679,14 +699,14 @@ export default function TargetSimulator() {
         </div>
 
         {/* Accordion List */}
-        {apiLoading ? (
+        {apiLoading && effectiveCategories.length === 0 ? (
           <div className="p-12 text-center text-slate-400 font-bold text-xs animate-pulse">
-            백엔드 비즈니스 플랜 API(/api/v5/report/business-plan) 데이터를 불러오는 중입니다...
+            백엔드 비즈니스 플랜 API 데이터를 불러오는 중입니다...
           </div>
         ) : (
           <div className="space-y-3">
             {filteredCategories.map((cat) => {
-              const isOpen = openCategories[cat.categoryCode] ?? true;
+              const isOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
               const meta = CATEGORY_META[cat.categoryCode] || CATEGORY_META.OTHER;
 
               return (
@@ -735,7 +755,7 @@ export default function TargetSimulator() {
                       <div className="text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
                         {input.targetYear} 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
                       </div>
-                      {cat.achievementRate !== undefined && (
+                      {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
                         <div className="text-slate-700">
                           달성률: <span className={`font-black ${cat.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
                             {cat.achievementRate}%
@@ -785,10 +805,10 @@ export default function TargetSimulator() {
                                 ₩{formatCurrency(fac.target2026)}원
                               </td>
                               <td className="py-3 px-4 text-right tabular-nums text-slate-700 font-semibold">
-                                {fac.actual2026 !== undefined ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
+                                {fac.actual2026 && fac.actual2026 > 0 ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
                               </td>
                               <td className="py-3 px-4 text-center">
-                                {fac.achievementRate !== undefined ? (
+                                {fac.achievementRate && fac.achievementRate > 0 ? (
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-extrabold text-[11px] ${
                                     fac.achievementRate >= 80
                                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'

@@ -17,6 +17,7 @@ export interface FacilityCapacityItem {
 
 export interface SimulationTargetInput {
   targetYear: number;
+  selectedMonth: number | 'ANNUAL'; // 1~12 또는 'ANNUAL' (전사 연간 종합)
   period: 'ANNUAL' | 'H1' | 'Q1' | 'Q2' | 'M01' | 'M02' | 'M03' | 'M04' | 'M05' | 'M06' | 'M07' | 'M08' | 'M09' | 'M10' | 'M11' | 'M12';
   metricInputMode: 'TREVPAR' | 'GROWTH_RATE' | 'TOTAL_REVENUE';
   targetTrevpar: number; // 원 / 175실·월

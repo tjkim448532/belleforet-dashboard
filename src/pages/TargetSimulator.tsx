@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, ArrowUpRight, 
-  Gauge, ShieldAlert, Settings, Layers
+  Gauge, ShieldAlert, Settings, Layers, Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
@@ -9,17 +9,34 @@ import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simul
 import { DEFAULT_CAPACITY_SEEDS } from './AdminCapacity';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 
+const MONTH_NAMES = [
+  { id: 'ANNUAL', label: '연간 종합 (1~12월)', shortLabel: '연간 종합', season: '전사' },
+  { id: 1, label: '1월', shortLabel: '1월', season: '겨울 비수기' },
+  { id: 2, label: '2월', shortLabel: '2월', season: '겨울 비수기' },
+  { id: 3, label: '3월', shortLabel: '3월', season: '봄 개장' },
+  { id: 4, label: '4월', shortLabel: '4월', season: '봄 성수기' },
+  { id: 5, label: '5월', shortLabel: '5월', season: '가정의달 피크' },
+  { id: 6, label: '6월', shortLabel: '6월', season: '초여름' },
+  { id: 7, label: '7월', shortLabel: '7월', season: '여름 방학/워터파크' },
+  { id: 8, label: '8월', shortLabel: '8월', season: '바캉스 극성수기' },
+  { id: 9, label: '9월', shortLabel: '9월', season: '가을 성수기' },
+  { id: 10, label: '10월', shortLabel: '10월', season: '단풍/골프 피크' },
+  { id: 11, label: '11월', shortLabel: '11월', season: '늦가을' },
+  { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
+];
+
 export default function TargetSimulator() {
   const [capacityMaster, setCapacityMaster] = useState<FacilityCapacityItem[]>(DEFAULT_CAPACITY_SEEDS);
 
-  // Simulation Target Input State
+  // Simulation Target Input State (연간 성장률 글로벌 앵커 + 선택 월)
   const [input, setInput] = useState<SimulationTargetInput>({
     targetYear: 2027,
-    period: 'ANNUAL',
-    metricInputMode: 'TREVPAR',
-    targetTrevpar: 450000,
-    targetGrowthRate: 15.0,
-    targetTotalRevenue: 32775000000,
+    selectedMonth: 7, // 기본값: 7월 성수기 (또는 'ANNUAL')
+    period: 'M07',
+    metricInputMode: 'GROWTH_RATE',
+    targetTrevpar: 0,
+    targetGrowthRate: 15.0, // 연간 목표 성장률 기본값 +15%
+    targetTotalRevenue: 0,
     strategyMode: 'BALANCED',
     includeGolf: true
   });
@@ -30,12 +47,14 @@ export default function TargetSimulator() {
     // Load Capacity Master from LocalStorage or Firebase
     const loadMaster = async () => {
       try {
-        const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER');
+        const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER_V2');
         if (cached) {
           const parsed = JSON.parse(cached);
-          const cleaned = Array.isArray(parsed) ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') : DEFAULT_CAPACITY_SEEDS;
+          const cleaned = Array.isArray(parsed) 
+            ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') 
+            : DEFAULT_CAPACITY_SEEDS;
           setCapacityMaster(cleaned);
-          localStorage.setItem('BELLEFORET_CAPACITY_MASTER', JSON.stringify(cleaned));
+          localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V2', JSON.stringify(cleaned));
         } else {
           setCapacityMaster(DEFAULT_CAPACITY_SEEDS);
         }
@@ -57,28 +76,19 @@ export default function TargetSimulator() {
     return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
-  const handleTrevparChange = (val: number) => {
-    const growth = Number((((val - 391400) / 391400) * 100).toFixed(1));
-    const total = Math.round(val * 12 * 175);
-    setInput(prev => ({
-      ...prev,
-      metricInputMode: 'TREVPAR',
-      targetTrevpar: val,
-      targetGrowthRate: growth,
-      targetTotalRevenue: total
-    }));
-  };
-
   const handleGrowthRateChange = (rate: number) => {
-    const baseLy = 28500000000;
-    const total = Math.round(baseLy * (1 + rate / 100));
-    const trevpar = Math.round(total / (12 * 175));
     setInput(prev => ({
       ...prev,
       metricInputMode: 'GROWTH_RATE',
-      targetGrowthRate: rate,
-      targetTrevpar: trevpar,
-      targetTotalRevenue: total
+      targetGrowthRate: rate
+    }));
+  };
+
+  const handleMonthSelect = (monthVal: number | 'ANNUAL') => {
+    setInput(prev => ({
+      ...prev,
+      selectedMonth: monthVal,
+      period: monthVal === 'ANNUAL' ? 'ANNUAL' : (`M${String(monthVal).padStart(2, '0')}` as any)
     }));
   };
 
@@ -146,13 +156,13 @@ export default function TargetSimulator() {
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                경영 목표 역추산 & 캐파 제약 시뮬레이터
+                경영 목표 역추산 & 월별 캐파 시뮬레이터
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                  Target Simulator Engine v5.2
+                  Target Simulator Engine v6.0
                 </span>
               </h1>
               <p className="text-xs text-slate-500 mt-1">
-                목표 TrevPAR 또는 성장률을 입력하면, 전년도 패턴을 역산하여 <strong>6대 본부 및 30여 개 세부 영업장별 필요 매출과 캐파 제약(단가 인상 가이드)</strong>을 산출합니다.
+                전사 <strong>연간 목표 성장률(%)</strong>을 설정하고 <strong>특정 월(1~12월)</strong>을 선택하면, 해당 월의 실측 계절성과 42개 영업장별 매출 비중을 자동 대입하여 세부 목표를 산출합니다.
               </p>
             </div>
           </div>
@@ -170,168 +180,184 @@ export default function TargetSimulator() {
         </div>
       </div>
 
-      {/* 2. 🎛️ Master Target Console (대표님 목표 입력 패널) */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden">
+      {/* 2. 🎛️ Master Target Console (대표님 목표 입력 패널 & 12개월 월 선택기) */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
           <Target className="w-72 h-72 text-white" />
         </div>
 
-        <div className="relative z-10 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-teal-400" />
-              <h2 className="text-lg font-black tracking-tight">
-                2027년 전사 경영 목표 컨트롤 콘솔
-              </h2>
+        {/* Top Control Bar: Golf Toggle */}
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-teal-400" />
+            <h2 className="text-lg font-black tracking-tight">
+              2027년 전사 경영 목표 컨트롤 콘솔
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+              <button
+                onClick={() => setInput(prev => ({ ...prev, includeGolf: true }))}
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  input.includeGolf ? 'bg-teal-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ⛳ 골프 포함 (전사)
+              </button>
+              <button
+                onClick={() => setInput(prev => ({ ...prev, includeGolf: false }))}
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  !input.includeGolf ? 'bg-sky-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🏨 골프 제외 (순수 리조트)
+              </button>
             </div>
-            
-            {/* Scope & Mode Toggles */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+          </div>
+        </div>
+
+        {/* Month Selector Bar (1월 ~ 12월 및 연간 종합 탭) */}
+        <div className="relative z-10 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-teal-400" />
+              시뮬레이션 대상 월 선택 (해당 월의 실측 매출 비중 자동 대입)
+            </span>
+            <span className="text-teal-300 font-extrabold">
+              현재 선택: {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
+            </span>
+          </div>
+
+          <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-13 gap-1.5">
+            {MONTH_NAMES.map(m => {
+              const isSelected = input.selectedMonth === m.id;
+              return (
                 <button
-                  onClick={() => setInput(prev => ({ ...prev, includeGolf: true }))}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                    input.includeGolf ? 'bg-teal-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                  key={String(m.id)}
+                  onClick={() => handleMonthSelect(m.id as any)}
+                  className={`px-2.5 py-2.5 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 border ${
+                    isSelected
+                      ? 'bg-teal-400 text-slate-950 font-black border-teal-300 shadow-md scale-[1.02]'
+                      : 'bg-white/10 text-slate-200 hover:bg-white/20 border-white/10 font-bold'
                   }`}
                 >
-                  ⛳ 골프 포함 (전사)
+                  <span className="text-xs leading-tight">{m.shortLabel}</span>
+                  <span className={`text-[9px] truncate max-w-full ${isSelected ? 'text-slate-900 font-extrabold' : 'text-slate-400'}`}>
+                    {m.season}
+                  </span>
                 </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Target Growth Rate Controller */}
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+          
+          {/* Left: Growth Rate Slider & Presets */}
+          <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-300">🚀 전사 연간 목표 성장률 설정</span>
+              <span className="text-[11px] text-slate-300 font-medium">2025년 실측 실적 기준선</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className={`text-3xl font-black tabular-nums ${
+                input.targetGrowthRate >= 0 ? 'text-teal-300' : 'text-rose-400'
+              }`}>
+                {input.targetGrowthRate > 0 ? '+' : ''}{input.targetGrowthRate}%
+              </span>
+              <span className="text-xs text-slate-300 font-semibold">전사 연간 성장 목표 대입</span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="40"
+              step="0.5"
+              value={input.targetGrowthRate}
+              onChange={(e) => handleGrowthRateChange(Number(e.target.value))}
+              className="w-full h-2.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-400"
+            />
+
+            {/* Quick Growth Presets */}
+            <div className="flex items-center justify-between gap-1 pt-1">
+              {[5, 10, 15, 20, 25, 30].map(r => (
                 <button
-                  onClick={() => setInput(prev => ({ ...prev, includeGolf: false }))}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                    !input.includeGolf ? 'bg-sky-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                  key={r}
+                  onClick={() => handleGrowthRateChange(r)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    input.targetGrowthRate === r 
+                      ? 'bg-teal-400 text-slate-950 font-black' 
+                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
                   }`}
                 >
-                  🏨 골프 제외 (순수 리조트)
+                  +{r}%
                 </button>
-              </div>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* 1. Target TrevPAR Input & Slider */}
-            <div className="bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-teal-300">🎯 목표 월평균 TrevPAR (175실 기준)</span>
-                <span className="text-[11px] text-slate-300 font-medium">전년 ₩39.1만 원</span>
+          {/* Right: Dynamic Month TrevPAR & Revenue Preview */}
+          <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between space-y-3">
+            <div>
+              <div className="text-xs font-bold text-teal-300 flex items-center justify-between">
+                <span>🎯 선택한 {simulationResult.selectedMonthLabel} 목표 실적 지표</span>
+                <span className="text-[11px] text-slate-300">175실 × {simulationResult.periodDays}일 기준</span>
               </div>
               
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black text-white tabular-nums">
-                  ₩{formatCurrency(input.targetTrevpar)}
-                </span>
-                <span className="text-xs text-slate-300">/실·월</span>
-              </div>
-
-              <input
-                type="range"
-                min="300000"
-                max="600000"
-                step="10000"
-                value={input.targetTrevpar}
-                onChange={(e) => handleTrevparChange(Number(e.target.value))}
-                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-400"
-              />
-
-              {/* Preset Buttons */}
-              <div className="flex items-center justify-between gap-1 pt-1">
-                {[380000, 420000, 450000, 500000, 550000].map(p => (
-                  <button
-                    key={p}
-                    onClick={() => handleTrevparChange(p)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      input.targetTrevpar === p 
-                        ? 'bg-teal-400 text-slate-950 font-black' 
-                        : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                    }`}
-                  >
-                    ₩{Math.round(p / 10000)}만
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. Target Growth Rate Slider */}
-            <div className="bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-300">🚀 전년 대비 목표 성장률</span>
-                <span className="text-[11px] text-slate-300 font-medium">기준 2025/2026 실적</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className={`text-2xl font-black tabular-nums ${
-                  input.targetGrowthRate >= 0 ? 'text-teal-300' : 'text-rose-400'
-                }`}>
-                  {input.targetGrowthRate > 0 ? '+' : ''}{input.targetGrowthRate}%
-                </span>
-                <span className="text-xs text-slate-300">성장 목표</span>
-              </div>
-
-              <input
-                type="range"
-                min="-10"
-                max="40"
-                step="0.5"
-                value={input.targetGrowthRate}
-                onChange={(e) => handleGrowthRateChange(Number(e.target.value))}
-                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400"
-              />
-
-              {/* Growth Preset Buttons */}
-              <div className="flex items-center justify-between gap-1 pt-1">
-                {[5, 10, 15, 20, 25].map(g => (
-                  <button
-                    key={g}
-                    onClick={() => handleGrowthRateChange(g)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      input.targetGrowthRate === g 
-                        ? 'bg-amber-400 text-slate-950 font-black' 
-                        : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                    }`}
-                  >
-                    +{g}%
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Resulting Annual Total Revenue Target */}
-            <div className="bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-bold text-indigo-300">💰 전사 필요 연간 총매출 목표</span>
-                <div className="text-2xl lg:text-3xl font-black text-white tabular-nums mt-2">
-                  ₩{formatCurrency(simulationResult.totalTargetRevenue)} <span className="text-xs font-normal text-slate-300">원</span>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div>
+                  <div className="text-[11px] text-slate-400 font-semibold">목표 월 TrevPAR</div>
+                  <div className="text-2xl font-black text-white tabular-nums mt-0.5">
+                    ₩{formatCurrency(simulationResult.achievedTrevpar)}
+                    <span className="text-xs font-normal text-slate-300 ml-1">/실·월</span>
+                  </div>
+                  <div className="text-[11px] text-teal-300 font-bold mt-1">
+                    전년 동월 ₩{formatCurrency(simulationResult.totalLyRevenue / (175 * simulationResult.periodDays))} 대비 +{input.targetGrowthRate}%
+                  </div>
                 </div>
-                <div className="text-xs text-slate-300 mt-1">
-                  (약 {(simulationResult.totalTargetRevenue / 100000000).toFixed(1)}억 원 / 전년비 +{formatCurrency(simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue)}원 증대)
+
+                <div>
+                  <div className="text-[11px] text-slate-400 font-semibold">목표 {input.selectedMonth === 'ANNUAL' ? '연간' : '월'} 총매출액</div>
+                  <div className="text-2xl font-black text-amber-300 tabular-nums mt-0.5">
+                    {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)}
+                    <span className="text-xs font-normal text-slate-300 ml-1">억원</span>
+                  </div>
+                  <div className="text-[11px] text-amber-300 font-bold mt-1">
+                    전년 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(2)}억 대비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억
+                  </div>
                 </div>
               </div>
-
-              <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-teal-300 font-semibold">
-                <span>⚡ 100% Zero-Variance 수학적 정합성 보장</span>
-                <span>30개 영업장 완전 분배 완료</span>
-              </div>
             </div>
 
+            <div className="text-[11px] text-slate-300 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-white/5">
+              💡 <strong>동적 계절성 연동:</strong> 선택하신 월의 42개 영업장별 실측 매출 비중에 따라 목표액이 1원 단위로 자동 분배됩니다.
+            </div>
           </div>
+
         </div>
       </div>
 
       {/* 3. 🏆 4 Executive KPI Highlight Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">목표 연간 총매출</div>
+          <div className="text-[11px] font-bold text-slate-500 mb-1">
+            목표 {input.selectedMonth === 'ANNUAL' ? '연간' : `${input.selectedMonth}월`} 총매출
+          </div>
           <div className="text-2xl font-black text-slate-900 tabular-nums">
-            {(simulationResult.totalTargetRevenue / 100000000).toFixed(1)} <span className="text-sm font-normal text-slate-500">억원</span>
+            {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)} <span className="text-sm font-normal text-slate-500">억원</span>
           </div>
           <div className="text-xs text-teal-700 font-bold mt-1">
-            전년비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(1)}억원 순증
+            전년비 +{((simulationResult.totalTargetRevenue - simulationResult.totalLyRevenue) / 100000000).toFixed(2)}억원 순증 (+{simulationResult.overallGrowthRate}%)
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">목표 월평균 TrevPAR</div>
+          <div className="text-[11px] font-bold text-slate-500 mb-1">
+            목표 {input.selectedMonth === 'ANNUAL' ? '월평균' : `${input.selectedMonth}월`} TrevPAR
+          </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
             ₩{formatCurrency(simulationResult.achievedTrevpar)} <span className="text-sm font-normal text-slate-500">/실·월</span>
           </div>
@@ -339,21 +365,21 @@ export default function TargetSimulator() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">전년 대비 필요 성장률</div>
+          <div className="text-[11px] font-bold text-slate-500 mb-1">전년 동기 대비 성장률</div>
           <div className="text-2xl font-black text-indigo-900 tabular-nums flex items-center gap-1">
             <ArrowUpRight className="w-6 h-6 text-teal-600" />
             +{simulationResult.overallGrowthRate}%
           </div>
-          <div className="text-xs text-slate-500 mt-1">2025년 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(1)}억 대비</div>
+          <div className="text-xs text-slate-500 mt-1">전년 실적 ₩{(simulationResult.totalLyRevenue / 100000000).toFixed(2)}억 대비</div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">캐파 제약(Ceiling) 상태</div>
           <div className="text-lg font-black text-amber-700 flex items-center gap-1.5">
             <ShieldAlert className="w-5 h-5 text-amber-600" />
-            단가 인상 가이드 발동
+            실시간 캐파 가이드
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">객실/골프 풀가동 ➔ ADR 인상 전환</div>
+          <div className="text-[11px] text-slate-500 mt-1">{simulationResult.periodDays}일 기준 물리적 상한 검증</div>
         </div>
       </div>
 
@@ -365,9 +391,9 @@ export default function TargetSimulator() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-200">
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Layers className="w-5 h-5 text-indigo-600" />
-              6대 사업 본부별 1차 목표 분배 현황
+              6대 사업 본부별 {simulationResult.selectedMonthLabel} 목표 분배 현황
             </h3>
-            <span className="text-xs text-slate-500 font-semibold">전년도 계절성(Seasonality) 기반 역산</span>
+            <span className="text-xs text-slate-500 font-semibold">해당 월의 실측 비중 곡선 적용</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -382,7 +408,7 @@ export default function TargetSimulator() {
                     <span className="font-bold text-slate-900">{div.categoryLabel}</span>
                   </div>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 tabular-nums">
-                    비중 {div.targetShare}%
+                    그 달의 비중 {div.targetShare}%
                   </span>
                 </div>
 
@@ -414,28 +440,30 @@ export default function TargetSimulator() {
           <div>
             <h3 className="text-sm font-black text-slate-900 mb-1 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600" />
-              부문별 목표 기여 비중
+              {simulationResult.selectedMonthLabel} 부문별 기여 비중
             </h3>
-            <p className="text-xs text-slate-400 mb-4">전체 {(simulationResult.totalTargetRevenue / 100000000).toFixed(1)}억원 구성</p>
+            <p className="text-xs text-slate-400 mb-4">
+              전체 {(simulationResult.totalTargetRevenue / 100000000).toFixed(2)}억원 구성 ({simulationResult.selectedMonthLabel})
+            </p>
             <ReactECharts option={divisionPieOptions} style={{ height: '320px', width: '100%' }} />
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500 text-center">
-            💡 물리적 수용 한계에 도달한 영업장은 단가 인상으로 자동 조정됩니다.
+            💡 해당 월의 실측 비중에 맞춘 최적 목표 분배입니다.
           </div>
         </div>
 
       </div>
 
-      {/* 5. 🚦 영업장별 2차 세부 실행 계획 & 캐파 신호등 테이블 */}
+      {/* 5. 🚦 영업장별 2차 세부 실행 계획 & 캐파 신호등 테이블 (42개 실운영 영업장) */}
       <div className="bg-white rounded-[32px] p-7 border border-slate-200 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Gauge className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 및 물리적 캐파 신호등 (Action Plan)
+              영업장별 세부 실행 목표 및 물리적 캐파 신호등 ({simulationResult.selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              각 영업장마다 필요한 일평균 판매량(Q)과 권장 객단가(P)를 산출하고, 수용 한계 초과 시 단가 인상 지침을 제공합니다.
+              선택한 달의 실측 매출 비율에 맞춰 각 영업장별 전년 실적 및 목표 매출액이 산출됩니다.
             </p>
           </div>
 
@@ -470,7 +498,7 @@ export default function TargetSimulator() {
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
                 <th className="py-3.5 px-4">영업장명 (Facility)</th>
-                <th className="py-3.5 px-4 text-right">전년 실적</th>
+                <th className="py-3.5 px-4 text-right">전년 실적 ({simulationResult.selectedMonthLabel})</th>
                 <th className="py-3.5 px-4 text-right font-black text-slate-900">목표 매출액</th>
                 <th className="py-3.5 px-4 text-right">전년비 증감</th>
                 <th className="py-3.5 px-4 text-center">캐파 상태</th>

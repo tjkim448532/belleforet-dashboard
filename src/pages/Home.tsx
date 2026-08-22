@@ -412,7 +412,7 @@ export default function Home() {
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🏊 썸머랜드</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['[썸머랜드 전체 소계]'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['썸머랜드'] || leisureVisitorsMap['[썸머랜드 전체 소계]'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🐑 벨포레 목장</span>

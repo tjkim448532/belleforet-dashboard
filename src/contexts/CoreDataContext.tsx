@@ -72,18 +72,20 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       try {
-        // [SSOT 다중 검증] revenue-summary, matrix-weekly, 전년 동기 revenue-summary, 그리고 golf-channel-teetime-analysis를 병렬 호출
-        const [res, matrixRes, lyRes, golfChannelRes] = await Promise.all([
+        // [SSOT 다중 검증] revenue-summary, matrix-weekly, 전년 동기 revenue-summary, golf-channel, los-correlation 병렬 호출
+        const [res, matrixRes, lyRes, golfChannelRes, losRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v5/report/golf-channel-teetime-analysis?${queryParams}`).catch(() => null)
+          secureFetcher(`${API_BASE}/api/v5/report/golf-channel-teetime-analysis?${queryParams}`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v5/dashboard/los-correlation-trend?${queryParams}`).catch(() => null)
         ]);
 
         let corePayload = res?.data || res || {};
         const matrixPayload = matrixRes?.data || matrixRes;
         const lyPayload = lyRes?.data || lyRes;
         const golfChannelPayload = golfChannelRes?.data || golfChannelRes || {};
+        const losTrend = losRes?.data?.trendData || losRes?.trendData || [];
 
         if (Array.isArray(corePayload)) {
           corePayload = corePayload[0] || { summary: {} };
@@ -109,6 +111,24 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
 
         if (!corePayload.summary) corePayload.summary = {};
+
+        // 연박(2박+) 체류 데이터 정밀 보정 (los-correlation-trend 연동)
+        if (Array.isArray(losTrend) && losTrend.length > 0) {
+          const validPoints = losTrend.filter((t: any) => typeof t.multiNightRatio === 'number' && t.multiNightRatio > 0);
+          if (validPoints.length > 0) {
+            const avgRatio = validPoints.reduce((sum: number, t: any) => sum + t.multiNightRatio, 0) / validPoints.length;
+            const totalRoomCap = Number(corePayload.summary?.totalRoomCap || 10060);
+            const calculatedGuests = Math.round(totalRoomCap * (avgRatio / 100));
+            
+            corePayload.summary.multiNightRatio = Number(avgRatio.toFixed(1));
+            corePayload.summary.multiNightGuests = calculatedGuests;
+            corePayload.summary.multiNight = {
+              multiNightGuests: calculatedGuests,
+              multiNightRatio: Number(avgRatio.toFixed(1)),
+              multiNightRooms: Math.round(Number(corePayload.summary?.totalRooms || 0) * (avgRatio / 100))
+            };
+          }
+        }
 
         // 골프 채널별 분석 데이터 주입 (자사 평균, OTA 평균, 회원 평균)
         if (golfChannelPayload) {

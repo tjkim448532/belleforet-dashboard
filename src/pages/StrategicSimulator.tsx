@@ -181,6 +181,7 @@ export default function StrategicSimulator() {
 
   // Feature 3: Capture Rate & Day-Trip Simulation Parameters
   const [dayTripTargetCount, setDayTripTargetCount] = useState<number>(300); // 일일 외래객 유치 목표
+  const [dayTripAvgSpend, setDayTripAvgSpend] = useState<number>(25000); // 당일객 1인당 소비액
   const [spendPerCapIncrease, setSpendPerCapIncrease] = useState<number>(5000); // 투숙객 인당 객단가 증가 목표
 
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
@@ -1053,7 +1054,7 @@ export default function StrategicSimulator() {
 
             <div className="space-y-4 mt-4">
               {/* Day-trip visitors slider */}
-              <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-2">
+              <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-2.5">
                 <div className="flex items-center justify-between text-xs font-bold text-amber-900">
                   <span>🚗 외래 당일객 (Day-trip +Q) 유치 목표</span>
                   <span className="text-amber-700 text-sm font-black tabular-nums">일 +{dayTripTargetCount}명</span>
@@ -1067,9 +1068,24 @@ export default function StrategicSimulator() {
                   onChange={(e) => setDayTripTargetCount(Number(e.target.value))}
                   className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                 />
-                <div className="text-[11px] text-amber-800 flex items-center justify-between font-medium">
+
+                <div className="flex items-center justify-between text-xs font-bold text-amber-900 pt-1">
+                  <span>🎟️ 당일객 1인당 평균 소비액 (+P)</span>
+                  <span className="text-amber-700 text-xs font-black tabular-nums">₩{formatCurrency(dayTripAvgSpend)}원/인</span>
+                </div>
+                <input
+                  type="range"
+                  min="10000"
+                  max="50000"
+                  step="1000"
+                  value={dayTripAvgSpend}
+                  onChange={(e) => setDayTripAvgSpend(Number(e.target.value))}
+                  className="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                />
+
+                <div className="text-[11px] text-amber-800 flex items-center justify-between font-medium pt-1 border-t border-amber-200/50">
                   <span>{simulationResult.selectedMonthLabel} 예상 부대시설 매출 기여:</span>
-                  <b className="font-black tabular-nums">+₩{formatCurrency(dayTripTargetCount * 25000 * simulationResult.periodDays)}원</b>
+                  <b className="font-black tabular-nums">+₩{formatCurrency(dayTripTargetCount * dayTripAvgSpend * simulationResult.periodDays)}원</b>
                 </div>
               </div>
 

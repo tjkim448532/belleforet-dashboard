@@ -42,16 +42,18 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
     }
   })();
 
+  const displayName = store.shopName || store.storeName || '';
+
   return (
-    <div className={`p-6 rounded-3xl border ${store.color || 'border-slate-200 bg-white'} transition-all shadow-sm hover:shadow-md flex flex-col justify-between`}>
+    <div className={`p-6 rounded-3xl border ${store.color || 'border-slate-200 bg-white'} transition-all shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden`}>
       <div>
         {/* Card Header: Store Name + Grade Badge */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-            <Icon size={20} className={isLeisure ? 'text-purple-600' : isFnb ? 'text-amber-600' : 'text-emerald-600'} /> 
-            {store.shopName || store.storeName}
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <h3 className="font-bold text-base text-slate-900 flex items-center gap-2 min-w-0" title={displayName}>
+            <Icon size={20} className={`shrink-0 ${isLeisure ? 'text-purple-600' : isFnb ? 'text-amber-600' : 'text-emerald-600'}`} /> 
+            <span className="truncate">{displayName}</span>
           </h3>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-bold shadow-xs ${gradeBadge.bg}`}>
+          <span className={`text-[11px] sm:text-xs px-2.5 py-1 rounded-full font-bold shadow-xs whitespace-nowrap shrink-0 ${gradeBadge.bg}`}>
             {gradeBadge.text}
           </span>
         </div>
@@ -59,25 +61,26 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
         {/* Metric Rows */}
         <div className="space-y-2.5 text-xs">
           {/* 1. Correlation Metric Box */}
-          <div className="flex justify-between items-center p-3 rounded-2xl border bg-purple-50/90 border-purple-200 text-purple-950">
-            <span className="font-semibold text-xs text-slate-700 flex items-center gap-1.5">
-              <TrendingUp size={14} className="text-purple-600" /> 동반 매출 상관도 (r)
+          <div className="flex justify-between items-center p-3 rounded-2xl border bg-purple-50/90 border-purple-200 text-purple-950 gap-2">
+            <span className="font-semibold text-xs text-slate-700 flex items-center gap-1.5 min-w-0">
+              <TrendingUp size={14} className="text-purple-600 shrink-0" /> 
+              <span className="truncate">동반 매출 상관도 (r)</span>
             </span>
-            <span className="font-black text-sm tabular-nums text-purple-700">
+            <span className="font-black text-sm tabular-nums text-purple-700 whitespace-nowrap shrink-0">
               {coeff >= 0 ? `+${coeff.toFixed(3)}` : coeff.toFixed(3)}
             </span>
           </div>
 
           {/* 2. Elasticity Metric Box (NEW SSOT) */}
           {elasticity !== undefined && (
-            <div className="flex justify-between items-center p-3 rounded-2xl border bg-indigo-50/90 border-indigo-200 text-indigo-950">
-              <div>
-                <span className="font-bold text-xs text-indigo-900 flex items-center gap-1">
-                  <Zap size={14} className="text-indigo-600" /> {anchorName} 10% 증가 시
+            <div className="flex justify-between items-center p-3 rounded-2xl border bg-indigo-50/90 border-indigo-200 text-indigo-950 gap-2">
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-indigo-900 flex items-center gap-1 truncate">
+                  <Zap size={14} className="text-indigo-600 shrink-0" /> {anchorName} 10% 증가 시
                 </span>
-                <span className="text-[11px] text-indigo-700 font-medium">동반 매출 탄력성</span>
+                <span className="text-[11px] text-indigo-700 font-medium block truncate">동반 매출 탄력성</span>
               </div>
-              <span className="font-black text-sm tabular-nums text-indigo-700">
+              <span className="font-black text-sm tabular-nums text-indigo-700 whitespace-nowrap shrink-0">
                 {elasticity >= 0 ? `+${elasticity}%` : `${elasticity}%`}
               </span>
             </div>
@@ -85,30 +88,30 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
 
           {/* 3. Spillover per 1M KRW Box (NEW SSOT) */}
           {spillover !== undefined && (
-            <div className="flex justify-between items-center p-3 rounded-2xl border bg-emerald-50/90 border-emerald-200 text-emerald-950">
-              <div>
-                <span className="font-bold text-xs text-emerald-900 flex items-center gap-1">
-                  <ArrowUpRight size={14} className="text-emerald-600" /> {anchorName} 100만원 발생 시
+            <div className="flex justify-between items-center p-3 rounded-2xl border bg-emerald-50/90 border-emerald-200 text-emerald-950 gap-2">
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-emerald-900 flex items-center gap-1 truncate">
+                  <ArrowUpRight size={14} className="text-emerald-600 shrink-0" /> {anchorName} 100만원 발생 시
                 </span>
-                <span className="text-[11px] text-emerald-700 font-medium">추가 낙수 부대매출</span>
+                <span className="text-[11px] text-emerald-700 font-medium block truncate">추가 낙수 부대매출</span>
               </div>
-              <span className="font-black text-sm tabular-nums text-emerald-700">
+              <span className="font-black text-sm tabular-nums text-emerald-700 whitespace-nowrap shrink-0">
                 +₩ {formatCurrency(spillover)}원
               </span>
             </div>
           )}
 
           {/* 4. POS Store Total Sales */}
-          <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
-            <span className="text-slate-600 font-medium text-xs">영업장 실제 총매출</span>
-            <span className="font-bold text-sm text-slate-900 tabular-nums">{formatCurrency(store.totalSales)}원</span>
+          <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2">
+            <span className="text-slate-600 font-medium text-xs truncate">영업장 실제 총매출</span>
+            <span className="font-bold text-sm text-slate-900 tabular-nums whitespace-nowrap shrink-0">{formatCurrency(store.totalSales)}원</span>
           </div>
 
           {/* 5. Business Insight Pill */}
           {store.insight && (
-            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 flex items-start gap-2 text-slate-700 text-xs leading-relaxed font-medium">
+            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 flex items-start gap-2 text-slate-700 text-xs leading-relaxed font-medium break-keep">
               <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
-              <span>{store.insight}</span>
+              <span className="leading-snug">{store.insight}</span>
             </div>
           )}
         </div>
@@ -117,8 +120,8 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
       {/* Chart Visualization if available */}
       {store.dailyTrends && store.dailyTrends.length > 0 && (
         <div className="h-20 mt-4 w-full bg-slate-50/70 rounded-2xl overflow-hidden border border-slate-100 p-1.5 relative">
-          <div className="absolute top-1.5 left-2.5 text-[10px] font-bold text-slate-500 z-10">
-            {anchorName} & {store.shopName} 시계열 추이
+          <div className="absolute top-1.5 left-2.5 text-[10px] font-bold text-slate-500 z-10 truncate max-w-[80%]">
+            {anchorName} & {displayName} 시계열 추이
           </div>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={store.dailyTrends} margin={{ top: 14, right: 4, left: 4, bottom: 0 }}>
@@ -139,4 +142,5 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
     </div>
   );
 }
+
 

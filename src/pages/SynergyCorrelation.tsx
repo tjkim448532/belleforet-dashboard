@@ -462,23 +462,23 @@ export default function SynergyCorrelation() {
                   key={opt.code}
                   type="button"
                   onClick={() => handleAnchorChange(opt.code)}
-                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer active:scale-95 ${
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer active:scale-95 overflow-hidden ${
                     isSelected 
                       ? opt.activeBg 
                       : 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <IconComponent size={18} className={isSelected ? 'text-white' : opt.color} />
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                  <div className="flex items-center justify-between gap-1">
+                    <IconComponent size={18} className={`shrink-0 ${isSelected ? 'text-white' : opt.color}`} />
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0 ${
                       isSelected ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-300'
                     }`}>
                       {opt.category}
                     </span>
                   </div>
-                  <div>
-                    <div className="font-bold text-xs leading-snug">{opt.name}</div>
-                    <div className={`text-[10px] mt-0.5 line-clamp-1 ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
+                  <div className="min-w-0">
+                    <div className="font-bold text-xs leading-snug truncate">{opt.name}</div>
+                    <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
                       {opt.code === 'ROOM' ? '전사 32개 매장' : opt.code === 'MEDIA_ART' ? '목장/카페/식음' : '전사 동반 반응'}
                     </div>
                   </div>
@@ -539,102 +539,106 @@ export default function SynergyCorrelation() {
       {/* Overview KPI Cards (Anchor Overview & Total Sales) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Anchor Overview Card */}
-        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-700/40 flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-700/40 flex flex-col justify-between overflow-hidden">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-indigo-200 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-400" /> 기준 앵커 시설 실적
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <span className="text-sm font-bold text-indigo-200 flex items-center gap-2 min-w-0">
+                <Zap className="w-5 h-5 text-amber-400 shrink-0" /> <span className="truncate">기준 앵커 시설 실적</span>
               </span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 whitespace-nowrap shrink-0">
                 {currentAnchorObj.name}
               </span>
             </div>
-            <div className="text-3xl font-black text-white mb-1 tabular-nums">
+            <div className="text-3xl font-black text-white mb-1 tabular-nums whitespace-nowrap truncate">
               {formatCurrency(anchorData?.periodTotalRevenue || 0)} <span className="text-base text-slate-300 font-normal">원</span>
             </div>
-            <p className="text-xs text-indigo-200 font-medium mb-3">
+            <p className="text-xs text-indigo-200 font-medium mb-3 truncate">
               선택 기간 내 <strong>{currentAnchorObj.name}</strong> 총 결제 매출액
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-indigo-200">
             <span>1일 평균 매출:</span>
-            <strong className="text-white tabular-nums">₩ {formatCurrency(anchorData?.dailyAvgRevenue || 0)}원/일</strong>
+            <strong className="text-white tabular-nums whitespace-nowrap">₩ {formatCurrency(anchorData?.dailyAvgRevenue || 0)}원/일</strong>
           </div>
         </div>
 
         {/* Leisure Subtotal Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-purple-600" /> {
-                  includeMoto 
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
+                <Ticket className="w-5 h-5 text-purple-600 shrink-0" /> 
+                <span className="truncate">
+                  {includeMoto 
                     ? (isActualRange ? '구간 레저·모토 총매출' : '레저본부 & 모토아레나 총매출')
                     : (isActualRange ? '구간 순수 레저 총매출' : '순수 레저본부 총매출')
-                }
+                  }
+                </span>
               </span>
-              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap ${
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                 includeMoto ? 'text-purple-700 bg-purple-100' : 'text-amber-800 bg-amber-100'
               }`}>
                 {includeMoto ? '레저·모토' : '순수 레저'}
               </span>
             </div>
-            <div className="text-3xl font-black text-slate-900 mb-1 tabular-nums">
+            <div className="text-3xl font-black text-slate-900 mb-1 tabular-nums whitespace-nowrap truncate">
               {formatCurrency(totalLeisureSales)} <span className="text-base text-slate-500 font-normal">원</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mb-3">
+            <p className="text-xs text-slate-500 font-medium mb-3 truncate">
               {includeMoto ? '레저본부 및 모토아레나 관할 영업장 실제 매출 합계' : '순수 레저본부 관할 영업장 실제 매출 합계 (모토 제외)'}
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>연계 분석 매장:</span>
-            <strong className="text-purple-700">{leisureStoreAnalysis.length}개 매장</strong>
+            <strong className="text-purple-700 whitespace-nowrap">{leisureStoreAnalysis.length}개 매장</strong>
           </div>
         </div>
 
         {/* F&B Subtotal Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-amber-600" /> {isActualRange ? '구간 식음팀 총매출' : '식음팀 총매출'}
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
+                <Utensils className="w-5 h-5 text-amber-600 shrink-0" /> 
+                <span className="truncate">{isActualRange ? '구간 식음팀 총매출' : '식음팀 총매출'}</span>
               </span>
-              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 식음팀
               </span>
             </div>
-            <div className="text-3xl font-black text-slate-900 mb-1 tabular-nums">
+            <div className="text-3xl font-black text-slate-900 mb-1 tabular-nums whitespace-nowrap truncate">
               {formatCurrency(totalFnbSales)} <span className="text-base text-slate-500 font-normal">원</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mb-3">식음(F&B) 영업장 실제 총매출 합계</p>
+            <p className="text-xs text-slate-500 font-medium mb-3 truncate">식음(F&B) 영업장 실제 총매출 합계</p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>연계 분석 매장:</span>
-            <strong className="text-amber-700">{fnbStoreAnalysis.length}개 매장</strong>
+            <strong className="text-amber-700 whitespace-nowrap">{fnbStoreAnalysis.length}개 매장</strong>
           </div>
         </div>
 
         {/* Top Synergy Champion Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-600" /> 최고 연계 시너지 매장
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
+                <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0" /> 
+                <span className="truncate">최고 연계 시너지 매장</span>
               </span>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 Top 1
               </span>
             </div>
-            <div className="text-2xl font-black text-emerald-600 mb-1">
+            <div className="text-2xl font-black text-emerald-600 mb-1 truncate" title={correlationData[0]?.shopName}>
               {correlationData[0]?.shopName || '분석 중'}
             </div>
-            <p className="text-xs text-slate-500 font-medium">
-              상관계수: <strong className="text-slate-900">+{correlationData[0]?.correlationCoefficient?.toFixed(3) || '0'}</strong> · 탄력성: <strong className="text-emerald-700">+{correlationData[0]?.elasticityPercent || 0}%</strong>
+            <p className="text-xs text-slate-500 font-medium truncate">
+              상관도: <strong className="text-slate-900">+{correlationData[0]?.correlationCoefficient?.toFixed(3) || '0'}</strong> · 탄력성: <strong className="text-emerald-700">+{correlationData[0]?.elasticityPercent || 0}%</strong>
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
             <span>100만원당 낙수액:</span>
-            <strong className="text-emerald-700 tabular-nums">+₩ {formatCurrency(correlationData[0]?.spilloverPerMillion || 0)}원</strong>
+            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">+₩ {formatCurrency(correlationData[0]?.spilloverPerMillion || 0)}원</strong>
           </div>
         </div>
       </div>

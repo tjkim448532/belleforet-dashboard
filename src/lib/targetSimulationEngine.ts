@@ -68,10 +68,28 @@ export function runTargetSimulation(
     ? ['ROOM', 'FNB', 'GOLF', 'LEISURE', 'MOTO', 'BANQUET', 'OTHER']
     : ['ROOM', 'FNB', 'LEISURE', 'MOTO', 'BANQUET', 'OTHER'];
 
-  // 해당 월(또는 연간)의 사업부별 실측 매출 비중
-  const divShares = isAnnual ? {
-    ROOM: 0.22, FNB: 0.26, GOLF: 0.32, LEISURE: 0.12, MOTO: 0.05, BANQUET: 0.02, OTHER: 0.01
-  } : monthMeta.divisionShares;
+  // 해당 월(또는 연간)의 사업부별 실측 매출 비중 (100% 실측 동적 집계)
+  let divShares: Record<string, number> = {};
+  if (isAnnual) {
+    const divSums: Record<string, number> = {};
+    let grandAnnualSum = 0;
+    for (let m = 1; m <= 12; m++) {
+      const mMeta = yearMeta.months?.[m];
+      if (mMeta) {
+        grandAnnualSum += mMeta.totalRevenue;
+        Object.entries(mMeta.divisionShares || {}).forEach(([k, ratio]) => {
+          divSums[k] = (divSums[k] || 0) + (mMeta.totalRevenue * ratio);
+        });
+      }
+    }
+    if (grandAnnualSum > 0) {
+      Object.keys(divSums).forEach(k => {
+        divShares[k] = divSums[k] / grandAnnualSum;
+      });
+    }
+  } else {
+    divShares = monthMeta.divisionShares || {};
+  }
 
   const totalRawWeight = activeDivisions.reduce((sum, div) => sum + (divShares[div as keyof typeof divShares] || 0.01), 0);
 

@@ -1277,7 +1277,7 @@ export default function StrategicSimulator() {
                                         ₩{formatCurrency(fac.contributionMargin)}원
                                       </td>
                                       <td className="py-2.5 px-4 text-center font-bold text-slate-600">
-                                        {Math.round((fac.cmRate || 0.7) * 100)}%
+                                        {Math.round((fac.cmRate ?? varInfo.cmRate) * 100)}%
                                       </td>
                                     </tr>
                                   ))}

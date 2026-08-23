@@ -458,7 +458,7 @@ export default function TargetSimulator() {
     const targetYearSeason = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
     const monthMeta = targetYearSeason?.months?.[monthNum];
     if (monthMeta && monthMeta.totalRevenue > 0 && monthNum <= 8) {
-      const golfShare = monthMeta.divisionShares?.GOLF || 0.35;
+      const golfShare = monthMeta.divisionShares?.GOLF ?? 0;
       const act = input.includeGolf ? monthMeta.totalRevenue : Math.round(monthMeta.totalRevenue * (1 - golfShare));
       const targetRev = summaryGrandTarget2026 || 1;
       const rate = Number(((act / targetRev) * 100).toFixed(1));

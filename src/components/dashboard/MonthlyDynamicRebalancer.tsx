@@ -57,7 +57,7 @@ export default function MonthlyDynamicRebalancer({
 
     return MONTH_DEFINITIONS.map(def => {
       const rawMonthRev = yData?.months?.[def.month]?.totalRevenue || Math.round(annualBaseRevenue / 12);
-      const adjustedBaseRev = Math.round(rawMonthRev * (includeGolf ? 1.0 : (1 - (yData?.months?.[def.month]?.divisionShares?.GOLF || 0.35))));
+      const adjustedBaseRev = Math.round(rawMonthRev * (includeGolf ? 1.0 : (1 - (yData?.months?.[def.month]?.divisionShares?.GOLF ?? 0))));
       return {
         ...def,
         baseRevenue: adjustedBaseRev

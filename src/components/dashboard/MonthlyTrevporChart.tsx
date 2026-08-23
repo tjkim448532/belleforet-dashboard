@@ -145,10 +145,10 @@ export default function MonthlyTrevporChart() {
 
     if (!data?.monthlyComparison) {
       return {
-        activeMonth: 8,
-        lastClosedMonth: 7,
+        activeMonth: systemMonth,
+        lastClosedMonth: Math.max(1, systemMonth - 1),
         isCurrentMonthOngoing: true,
-        daysAccumulated: 21,
+        daysAccumulated: systemDay,
         availableMonths: []
       };
     }

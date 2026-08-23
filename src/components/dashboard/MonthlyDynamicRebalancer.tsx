@@ -26,20 +26,11 @@ interface MonthMeta {
   baseRevenue: number;
 }
 
-const MONTH_DEFINITIONS: Omit<MonthMeta, 'baseRevenue'>[] = [
-  { month: 1, label: '1월', seasonTag: '겨울 비수기', isPeak: false, estimatedOcc: 0.35, headroom: 0.65 },
-  { month: 2, label: '2월', seasonTag: '겨울 비수기', isPeak: false, estimatedOcc: 0.38, headroom: 0.62 },
-  { month: 3, label: '3월', seasonTag: '봄 개장 시즌', isPeak: false, estimatedOcc: 0.55, headroom: 0.45 },
-  { month: 4, label: '4월', seasonTag: '봄 성수기', isPeak: false, estimatedOcc: 0.75, headroom: 0.25 },
-  { month: 5, label: '5월', seasonTag: '가정의달 피크', isPeak: true, estimatedOcc: 0.95, headroom: 0.05 },
-  { month: 6, label: '6월', seasonTag: '초여름 시즌', isPeak: false, estimatedOcc: 0.70, headroom: 0.30 },
-  { month: 7, label: '7월', seasonTag: '여름 방학/워터파크', isPeak: true, estimatedOcc: 0.88, headroom: 0.12 },
-  { month: 8, label: '8월', seasonTag: '바캉스 극성수기', isPeak: true, estimatedOcc: 0.96, headroom: 0.04 },
-  { month: 9, label: '9월', seasonTag: '가을 성수기', isPeak: false, estimatedOcc: 0.78, headroom: 0.22 },
-  { month: 10, label: '10월', seasonTag: '단풍/골프 피크', isPeak: true, estimatedOcc: 0.97, headroom: 0.03 },
-  { month: 11, label: '11월', seasonTag: '늦가을 시즌', isPeak: false, estimatedOcc: 0.58, headroom: 0.42 },
-  { month: 12, label: '12월', seasonTag: '연말/겨울 시즌', isPeak: false, estimatedOcc: 0.48, headroom: 0.52 }
-];
+const SEASON_TAGS: Record<number, string> = {
+  1: '겨울 비수기', 2: '겨울 비수기', 3: '봄 개장 시즌', 4: '봄 성수기',
+  5: '가정의달 피크', 6: '초여름 시즌', 7: '여름 방학/워터파크', 8: '바캉스 극성수기',
+  9: '가을 성수기', 10: '단풍/골프 피크', 11: '늦가을 시즌', 12: '연말/겨울 시즌'
+};
 
 export default function MonthlyDynamicRebalancer({
   annualBaseRevenue,
@@ -51,26 +42,43 @@ export default function MonthlyDynamicRebalancer({
   onMonthlyTargetsChange
 }: MonthlyDynamicRebalancerProps) {
   
-  // 1. Build Base Monthly Revenue Profile from 2025 Seasonality Data
+  // 1. Build Base Monthly Revenue Profile from Seasonality Data (100% Dynamic Occupancy & Headroom)
   const monthlyMetaList: MonthMeta[] = useMemo(() => {
-    const yData = MULTI_YEAR_SEASONALITY_DATA[2025];
+    const yData = MULTI_YEAR_SEASONALITY_DATA[baseYear] || MULTI_YEAR_SEASONALITY_DATA[2025];
+    const monthRevs: Record<number, number> = {};
+    let maxMonthRev = 1;
 
-    return MONTH_DEFINITIONS.map(def => {
-      const rawMonthRev = yData?.months?.[def.month]?.totalRevenue || Math.round(annualBaseRevenue / 12);
-      const adjustedBaseRev = Math.round(rawMonthRev * (includeGolf ? 1.0 : (1 - (yData?.months?.[def.month]?.divisionShares?.GOLF ?? 0))));
-      return {
-        ...def,
-        baseRevenue: adjustedBaseRev
-      };
-    });
-  }, [annualBaseRevenue, includeGolf]);
+    for (let m = 1; m <= 12; m++) {
+      const rawMonthRev = yData?.months?.[m]?.totalRevenue || 0;
+      const golfShare = yData?.months?.[m]?.divisionShares?.GOLF ?? 0;
+      const adjRev = Math.round(rawMonthRev * (includeGolf ? 1.0 : (1.0 - golfShare)));
+      monthRevs[m] = adjRev;
+      if (adjRev > maxMonthRev) maxMonthRev = adjRev;
+    }
+
+    const list: MonthMeta[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const baseRev = monthRevs[m] > 0 ? monthRevs[m] : Math.round(annualBaseRevenue / 12);
+      const intensity = maxMonthRev > 0 ? Number((baseRev / maxMonthRev).toFixed(2)) : 0.5;
+      const headroom = Number(Math.max(0.02, 1.0 - intensity).toFixed(2));
+      const isPeak = intensity >= 0.85;
+
+      list.push({
+        month: m,
+        label: `${m}월`,
+        seasonTag: SEASON_TAGS[m] || '시즌',
+        isPeak,
+        estimatedOcc: intensity,
+        headroom,
+        baseRevenue: baseRev
+      });
+    }
+
+    return list;
+  }, [baseYear, annualBaseRevenue, includeGolf]);
 
   // 2. Lock State per month
-  const [lockedMonths, setLockedMonths] = useState<Record<number, boolean>>({
-    5: false,
-    8: false,
-    10: false
-  });
+  const [lockedMonths, setLockedMonths] = useState<Record<number, boolean>>({});
 
   // 3. Custom Growth Rates per month (-10% ~ +40%)
   const [growthRates, setGrowthRates] = useState<Record<number, number>>(() => {

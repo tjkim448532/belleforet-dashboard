@@ -268,10 +268,13 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
       if (typeName.includes('16평')) {
         roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].rev += rev;
+        if (item.capacity || item.totalRooms) roomOccupancyMap['16평'].cap = parseNum(item.capacity || item.totalRooms) * days;
       } else if (typeName.includes('35평')) {
         roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].rev += rev;
+        if (item.capacity || item.totalRooms) roomOccupancyMap['35평'].cap = parseNum(item.capacity || item.totalRooms) * days;
       } else if (typeName.includes('51평')) {
         roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].rev += rev;
+        if (item.capacity || item.totalRooms) roomOccupancyMap['51평'].cap = parseNum(item.capacity || item.totalRooms) * days;
       } else {
         roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].rev += rev;
       }

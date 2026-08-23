@@ -380,6 +380,10 @@ export default function StrategicSimulator() {
       sortedDivs[0].totalTarget2026 += divDiff;
       const varInfo = DIVISION_VARIABLE_COST_RATES[sortedDivs[0].categoryCode] || DIVISION_VARIABLE_COST_RATES.OTHER;
       sortedDivs[0].totalContributionMargin = Math.round(sortedDivs[0].totalTarget2026 * varInfo.cmRate);
+      if (sortedDivs[0].facilities && sortedDivs[0].facilities.length > 0) {
+        sortedDivs[0].facilities[0].target2026 += divDiff;
+        sortedDivs[0].facilities[0].contributionMargin = Math.round(sortedDivs[0].facilities[0].target2026 * varInfo.cmRate);
+      }
     }
 
     return rebalancedCats;

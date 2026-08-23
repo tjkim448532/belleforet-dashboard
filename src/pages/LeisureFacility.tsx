@@ -4,7 +4,6 @@ import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { Ticket, Trophy, AlertCircle, Wallet, Award } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import { resolveItemShopName } from '../lib/masterItemMapping';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -68,18 +67,14 @@ export default function LeisureFacility() {
             })
             .slice(0, 5);
 
-          setApiTopItems(filtered.map((item: any, idx: number) => {
-            const rawName = item.itemName || item.name || '티켓 상품';
-            const resolvedShop = resolveItemShopName(rawName) || item.facilityName || item.shopName;
-            return {
-              rank: idx + 1,
-              itemName: rawName,
-              facilityName: resolvedShop,
-              sales: parseNumber(item.sales || item.totalSales || 0),
-              quantity: parseNumber(item.quantity || item.qty || 0),
-              unitPrice: parseNumber(item.unitPrice || 0)
-            };
-          }));
+          setApiTopItems(filtered.map((item: any, idx: number) => ({
+            rank: idx + 1,
+            itemName: item.itemName || item.name || '티켓 상품',
+            facilityName: item.facilityName || item.shopName || '레저본부',
+            sales: parseNumber(item.sales || item.totalSales || 0),
+            quantity: parseNumber(item.quantity || item.qty || 0),
+            unitPrice: parseNumber(item.unitPrice || 0)
+          })));
         } else {
           setApiTopItems([]);
         }

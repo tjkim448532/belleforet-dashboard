@@ -7,7 +7,6 @@ import {
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
-import { MULTI_YEAR_SEASONALITY_DATA } from '../data/monthlySeasonalityData';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 import { secureFetcher } from '../lib/secureFetcher';
 
@@ -403,83 +402,27 @@ export default function TargetSimulator() {
 
   // Real-world Actual Performance & Achievement Rate Calculator
   const actualPerformance = useMemo(() => {
-    const isFutureYear = input.targetYear > 2026;
-    if (isFutureYear) {
-      return {
-        revenue: 0,
-        rate: 0,
-        rateDisplay: '목표 수립',
-        badgeColor: 'text-indigo-600',
-        statusText: `${input.targetYear}년 차기년도 경영 목표 수립`
-      };
-    }
-
-    // 1. Annual (1~12월 연간 종합)
-    if (input.selectedMonth === 'ANNUAL') {
-      const yData = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
-      let totalYtdActual = 0;
-      let golfYtdActual = 0;
-      if (yData) {
-        for (let m = 1; m <= 8; m++) {
-          const mMeta = yData.months?.[m];
-          if (mMeta) {
-            totalYtdActual += mMeta.totalRevenue;
-            golfYtdActual += Math.round(mMeta.totalRevenue * (mMeta.divisionShares?.GOLF || 0));
-          }
-        }
-      }
-      const ytdActual = input.includeGolf ? totalYtdActual : (totalYtdActual - golfYtdActual);
-      const targetRev = summaryGrandTarget2026 || 1;
-      const rate = targetRev > 0 ? Number(((ytdActual / targetRev) * 100).toFixed(1)) : 0;
-      return {
-        revenue: ytdActual,
-        rate,
-        rateDisplay: `${rate}%`,
-        badgeColor: 'text-teal-600',
-        statusText: `2026년 1~8월 ${input.includeGolf ? '전사' : '순수 리조트'} 누적: ₩${(ytdActual / 100000000).toFixed(2)}억원 (목표 대비 ${rate}%)`
-      };
-    }
-
-    // 2. Specific Month with API data
     if (summaryGrandActual2026 > 0) {
       const act = summaryGrandActual2026;
-      const rate = Number(((act / summaryGrandTarget2026) * 100).toFixed(1));
+      const rate = summaryGrandTarget2026 > 0 ? Number(((act / summaryGrandTarget2026) * 100).toFixed(1)) : 0;
       return {
         revenue: act,
         rate,
         rateDisplay: `${rate}%`,
         badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
-        statusText: `${input.selectedMonth}월 ${input.includeGolf ? '전사' : '순수 리조트'} 실적: ₩${(act / 100000000).toFixed(2)}억원`
+        statusText: `${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ₩${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`
       };
     }
 
-    // 3. Fallback from monthly seasonality data
-    const monthNum = Number(input.selectedMonth);
-    const targetYearSeason = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
-    const monthMeta = targetYearSeason?.months?.[monthNum];
-    if (monthMeta && monthMeta.totalRevenue > 0 && monthNum <= 8) {
-      const golfShare = monthMeta.divisionShares?.GOLF ?? 0;
-      const act = input.includeGolf ? monthMeta.totalRevenue : Math.round(monthMeta.totalRevenue * (1 - golfShare));
-      const targetRev = summaryGrandTarget2026 || 1;
-      const rate = Number(((act / targetRev) * 100).toFixed(1));
-      return {
-        revenue: act,
-        rate,
-        rateDisplay: `${rate}%`,
-        badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
-        statusText: `${monthNum}월 ${input.includeGolf ? '전사' : '순수 리조트'} 실적: ₩${(act / 100000000).toFixed(2)}억원`
-      };
-    }
-
-    // Future months (9~12월)
+    const monthLabel = input.selectedMonth === 'ANNUAL' ? '연간 종합' : `${input.selectedMonth}월`;
     return {
       revenue: 0,
       rate: 0,
-      rateDisplay: '미도래',
+      rateDisplay: '집계 예정',
       badgeColor: 'text-slate-400',
-      statusText: `${monthNum}월 도래 전 (목표 실행 예정)`
+      statusText: `${input.targetYear}년 ${monthLabel} 목표 실행 단계 (실적 집계 전)`
     };
-  }, [input.targetYear, input.selectedMonth, input.includeGolf, summaryGrandActual2026, summaryGrandTarget2026]);
+  }, [input.targetYear, input.selectedMonth, summaryGrandActual2026, summaryGrandTarget2026]);
 
   // 주중 vs 내일이 휴일인 날(금/토/공휴일 전야) 일평균 목표 계산기
   const dailyTargetStats = useMemo(() => {

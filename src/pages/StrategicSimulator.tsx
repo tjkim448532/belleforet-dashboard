@@ -422,69 +422,28 @@ export default function StrategicSimulator() {
 
   // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {
-    const isAnnual = input.selectedMonth === 'ANNUAL';
-    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
-    const y2026 = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
-
-    // If target year has no actuals yet (e.g. 2027)
-    if (!y2026) {
+    // If backend API provided actuals in summary
+    if (apiData?.summary?.grandActual2026 !== undefined && apiData?.summary?.grandActual2026 > 0) {
+      const act = apiData.summary.grandActual2026;
+      const rate = grandTargetTotal > 0 ? Number(((act / grandTargetTotal) * 100).toFixed(1)) : 0;
       return {
-        revenue: 0,
-        rate: 0,
-        displayRate: '집계 예정',
-        statusText: `${input.targetYear}년 목표 수립 단계 (실행 전)`,
-        isUpcoming: true
-      };
-    }
-
-    if (isAnnual) {
-      // Sum actuals up to month 8 for 2026
-      let totalYtdActual = 0;
-      let golfYtdActual = 0;
-      for (let m = 1; m <= 8; m++) {
-        const mMeta = y2026.months?.[m];
-        if (mMeta) {
-          totalYtdActual += mMeta.totalRevenue;
-          golfYtdActual += Math.round(mMeta.totalRevenue * (mMeta.divisionShares?.GOLF || 0));
-        }
-      }
-      const actualRev = input.includeGolf ? totalYtdActual : (totalYtdActual - golfYtdActual);
-      const rate = grandTargetTotal > 0 ? Number(((actualRev / grandTargetTotal) * 100).toFixed(1)) : 0;
-      return {
-        revenue: actualRev,
+        revenue: act,
         rate,
         displayRate: `${rate}%`,
-        statusText: `2026년 1~8월 누적 실적 (목표 대비)`,
+        statusText: `${input.targetYear}년 ${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ₩${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`,
         isUpcoming: false
       };
     }
 
-    // Specific Month
-    if (monthNum <= 8) {
-      const mMeta = y2026.months?.[monthNum];
-      if (mMeta) {
-        const golfShare = mMeta.divisionShares?.GOLF || 0;
-        const actualRev = input.includeGolf ? mMeta.totalRevenue : Math.round(mMeta.totalRevenue * (1 - golfShare));
-        const rate = grandTargetTotal > 0 ? Number(((actualRev / grandTargetTotal) * 100).toFixed(1)) : 0;
-        return {
-          revenue: actualRev,
-          rate,
-          displayRate: `${rate}%`,
-          statusText: `${monthNum}월 실측 완료`,
-          isUpcoming: false
-        };
-      }
-    }
-
-    // Month 9~12 (Future months)
+    const monthLabel = input.selectedMonth === 'ANNUAL' ? '연간 종합' : `${input.selectedMonth}월`;
     return {
       revenue: 0,
       rate: 0,
-      displayRate: '미도래',
-      statusText: `${monthNum}월 도래 전 (목표 실행 예정)`,
+      displayRate: '집계 예정',
+      statusText: `${input.targetYear}년 ${monthLabel} 목표 실행 단계 (실적 집계 전)`,
       isUpcoming: true
     };
-  }, [input.selectedMonth, input.targetYear, input.includeGolf, grandTargetTotal]);
+  }, [input.selectedMonth, input.targetYear, grandTargetTotal, apiData]);
 
   // Group Category Facilities into 2-Depth Part Groups
   const getCategoryParts = useMemo(() => {

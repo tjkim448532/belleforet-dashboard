@@ -237,7 +237,7 @@ export default function Synergy() {
 
     // Fallback: Bind directly from matrix-weekly SSOT
     if (matrixData && matrixData.length > 0) {
-      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'ROOM');
+      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도' || r.categoryName === '콘도'));
       if (roomRow) {
         const roomsSold = parseNum(summaryData?.summary?.totalRooms || roomRow.todayVisitors || roomRow.rangeVisitors || 0);
         const roomRev = parseNum(roomRow.todayActual || roomRow.rangeActual || roomRow.mtdActual || 0);
@@ -252,7 +252,7 @@ export default function Synergy() {
     }
 
     // Fallback: Bind directly from revenue-summary SSOT
-    const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM');
+    const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도');
     const roomRev = parseNum(roomCat?.totalSales || roomCat?.todayActual || 0);
     const roomsSold = parseNum(summaryData?.summary?.totalRooms || 0);
     
@@ -267,12 +267,12 @@ export default function Synergy() {
   const ancillarySales = useMemo(() => {
     // 1. Primary SSOT: From matrix-weekly (Accurate for both Single Date and Multi-Day Range)
     if (matrixData && matrixData.length > 0) {
-      const totalRow = matrixData.find(r => r.isGrandTotal || r.categoryCode === 'TOTAL');
-      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'ROOM');
-      const golfRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'GOLF');
-      const fnbRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'FNB');
-      const ticketRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'TICKET');
-      const motoRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'MOTO');
+      const totalRow = matrixData.find(r => r.isGrandTotal || r.categoryCode === 'TOTAL' || r.categoryName === '총계');
+      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도' || r.categoryName === '콘도'));
+      const golfRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'GOLF' || r.categoryCode === '골프' || r.categoryName === '골프'));
+      const fnbRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'FNB' || r.categoryCode === '식음' || r.categoryName === '식음'));
+      const ticketRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'TICKET' || r.categoryCode === '레져본부' || r.categoryCode === '레져본부(외주)' || r.categoryName === '레져본부'));
+      const motoRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'MOTO' || r.categoryCode === '모토아레나' || r.categoryName === '모토아레나'));
 
       const totalRev = parseNum(totalRow?.todayActual || totalRow?.rangeActual || totalRow?.mtdActual || 0);
       const roomRev = parseNum(roomRow?.todayActual || roomRow?.rangeActual || roomRow?.mtdActual || grandTotal.revenue || 0);
@@ -305,12 +305,12 @@ export default function Synergy() {
 
     // 3. Fallback: Calculate directly from salesByCategory (GOLF, FNB, TICKET, MOTO, etc.)
     const cats = summaryData?.salesByCategory || [];
-    const golfRev = parseNum(cats.find((c: any) => c.categoryCode === 'GOLF')?.totalSales || cats.find((c: any) => c.categoryCode === 'GOLF')?.todayActual || 0);
-    const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB')?.todayActual || 0);
-    const leisureRev = parseNum(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO')?.totalSales || cats.find((c: any) => c.categoryCode === 'TICKET')?.todayActual || 0);
+    const golfRev = parseNum(cats.find((c: any) => c.categoryCode === 'GOLF' || c.categoryCode === '골프' || c.categoryName === '골프')?.totalSales || cats.find((c: any) => c.categoryCode === 'GOLF' || c.categoryCode === '골프')?.todayActual || 0);
+    const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음' || c.categoryName === '식음')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음')?.todayActual || 0);
+    const leisureRev = parseNum(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO' || c.categoryCode === '레져본부' || c.categoryCode === '모토아레나')?.totalSales || cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === '레져본부')?.todayActual || 0);
     
     const totalRev = parseNum(summaryData?.summary?.totalRevenue || 0);
-    const roomRev = grandTotal.revenue || parseNum(cats.find((c: any) => c.categoryCode === 'ROOM')?.totalSales || cats.find((c: any) => c.categoryCode === 'ROOM')?.todayActual || 0);
+    const roomRev = grandTotal.revenue || parseNum(cats.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.totalSales || cats.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도')?.todayActual || 0);
     const totalAncillary = Math.max(0, totalRev > 0 ? (totalRev - roomRev) : (golfRev + fnbRev + leisureRev));
 
     return {

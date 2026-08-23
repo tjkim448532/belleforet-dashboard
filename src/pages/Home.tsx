@@ -150,7 +150,7 @@ export default function Home() {
   })();
 
 
-  const roomCapActual = parseNum(coreData.core?.summary?.totalRoomCap || (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.visitors || 0));
+  const roomCapActual = parseNum(coreData.core?.summary?.totalRoomCap || (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.visitors || 0));
   const roomCapLy = coreData.core?.summary?.totalRoomCapLy;
   const roomCapGrowth = coreData.core?.summary?.roomCapGrowth;
   const roomCapDiff = coreData.core?.summary?.roomCapDiff;

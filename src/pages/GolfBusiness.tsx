@@ -126,10 +126,10 @@ export default function GolfBusiness() {
 
         const matrixRows = matrixRes?.data || matrixRes;
         const golfSubtotalInMatrix = Array.isArray(matrixRows) 
-          ? parseNum(matrixRows.find((r: any) => r.isSubtotal && r.categoryCode === 'GOLF')?.todayActual || 0)
+          ? parseNum(matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'GOLF' || r.categoryCode === '골프' || r.categoryName === '골프'))?.todayActual || 0)
           : 0;
         const golfFacilitiesInMatrix = Array.isArray(matrixRows)
-          ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal && r.categoryCode === 'GOLF')
+          ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal && (r.categoryCode === 'GOLF' || r.categoryCode === '골프' || r.categoryName === '골프'))
           : [];
 
         const channelData = channelTeetimeRes?.data ?? channelTeetimeRes ?? {};
@@ -140,7 +140,7 @@ export default function GolfBusiness() {
 
         if (payload) {
           // V6 Schema direct map (SSOT)
-          const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF');
+          const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프');
           let golf_revenue = parseNum(golfCategory?.totalSales || golfCategory?.todayActual || 0);
           if (golf_revenue === 0 && golfSubtotalInMatrix > 0) {
             golf_revenue = golfSubtotalInMatrix;
@@ -149,7 +149,7 @@ export default function GolfBusiness() {
           const golf_visited_teams = parseNum(golfSummary.totalVisitedTeams || payload.summary?.totalGolfTeams || 0);
           const golf_visited_players = parseNum(payload.summary?.totalGolfVisitors || 0);
 
-          let golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF') || payload.golfFacilityBreakdown || [];
+          let golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프') || payload.golfFacilityBreakdown || [];
           if (golfFacilities.length === 0 && golfFacilitiesInMatrix.length > 0) {
             golfFacilities = golfFacilitiesInMatrix;
           }

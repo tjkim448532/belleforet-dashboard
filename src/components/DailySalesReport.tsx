@@ -90,7 +90,7 @@ export default function DailySalesReport() {
       // V6 SSOT: Pass the full payload to processSalesData
       if (payload) {
         setAccumulated({
-          mtd_room_revenue: payload.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM')?.mtdActual || 0,
+          mtd_room_revenue: payload.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.mtdActual || 0,
           ytd_total_gross: payload.summary?.ytdActual || 0
         });
         setData(processSalesData(payload));

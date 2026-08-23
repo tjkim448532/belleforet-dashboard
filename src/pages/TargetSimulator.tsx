@@ -103,13 +103,28 @@ interface ApiCategory {
 }
 
 interface ApiSummary {
+  isYearly?: boolean;
+  targetYear?: number;
+  targetPeriodLabel?: string;
+  basePeriodLabel?: string;
   targetMonth: string;
   baseMonth: string;
+  daysCount?: number;
   growthRateTarget: number;
+  includeGolf?: boolean;
   grandTotal2025: number;
   grandTarget2026: number;
   grandActual2026?: number;
   overallAchievementRate?: number;
+  dailyTargetRevenue?: number;
+  dailyTrevPAR?: number;
+  monthlyTrevPAR?: number;
+  weekdayDays?: number;
+  preHolidayDays?: number;
+  weekdayDailyTarget?: number;
+  preHolidayDailyTarget?: number;
+  overallDailyAvg?: number;
+  totalCategoryCount?: number;
   totalFacilityCount: number;
 }
 
@@ -151,13 +166,12 @@ export default function TargetSimulator() {
     const fetchBusinessPlan = async () => {
       setApiLoading(true);
       try {
-        const monthStr = typeof input.selectedMonth === 'number' 
-          ? String(input.selectedMonth).padStart(2, '0') 
-          : '07';
-        const dateParam = `${input.targetYear}-${monthStr}-15`;
-        const res = await secureFetcher(
-          `${API_BASE}/api/v5/report/business-plan?date=${dateParam}&growthRate=${input.targetGrowthRate}`
-        ) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
+        const isYearly = input.selectedMonth === 'ANNUAL';
+        const url = isYearly
+          ? `${API_BASE}/api/v5/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
+          : `${API_BASE}/api/v5/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`;
+
+        const res = await secureFetcher(url) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
 
         if (isMounted && res?.data?.categories && res.data.categories.length > 0) {
           setApiData(res.data);
@@ -459,6 +473,19 @@ export default function TargetSimulator() {
 
   // 주중 vs 내일이 휴일인 날(금/토/공휴일 전야) 일평균 목표 계산기
   const dailyTargetStats = useMemo(() => {
+    // If backend API provided daily target stats directly, prioritize backend SSOT
+    if (apiData?.summary?.weekdayDailyTarget && apiData?.summary?.preHolidayDailyTarget) {
+      return {
+        weekdayDays: apiData.summary.weekdayDays || 21,
+        preHolidayDays: apiData.summary.preHolidayDays || 10,
+        totalDays: (apiData.summary.weekdayDays || 21) + (apiData.summary.preHolidayDays || 10),
+        weekdayDailyTarget: apiData.summary.weekdayDailyTarget,
+        preHolidayDailyTarget: apiData.summary.preHolidayDailyTarget,
+        overallDailyAvg: apiData.summary.overallDailyAvg || apiData.summary.dailyTargetRevenue || 0,
+        ratio: 1.55
+      };
+    }
+
     const isAnnual = input.selectedMonth === 'ANNUAL';
     const targetYear = input.targetYear || 2026;
     const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
@@ -754,13 +781,15 @@ export default function TargetSimulator() {
               
               <div className="grid grid-cols-2 gap-4 mt-3">
                 <div>
-                  <div className="text-[11px] text-slate-400 font-semibold">목표 월 TrevPAR</div>
+                  <div className="text-[11px] text-slate-400 font-semibold">
+                    목표 {input.selectedMonth === 'ANNUAL' ? '일평균' : '일일'} TrevPAR
+                  </div>
                   <div className="text-2xl font-black text-white tabular-nums mt-0.5">
-                    ₩{formatCurrency(Math.round(summaryGrandTarget2026 / (175 * simulationResult.periodDays)))}
-                    <span className="text-xs font-normal text-slate-300 ml-1">/실·월</span>
+                    ₩{formatCurrency(apiData?.summary?.dailyTrevPAR || Math.round(summaryGrandTarget2026 / (175 * simulationResult.periodDays)))}
+                    <span className="text-xs font-normal text-slate-300 ml-1">/실·일</span>
                   </div>
                   <div className="text-[11px] text-teal-300 font-bold mt-1">
-                    {input.baseYear}년 동월 ₩{formatCurrency(Math.round(summaryGrandTotal2025 / (175 * simulationResult.periodDays)))} 대비 +{input.targetGrowthRate}%
+                    {input.baseYear}년 동기간 ₩{formatCurrency(Math.round(summaryGrandTotal2025 / (175 * simulationResult.periodDays)))} 대비 +{input.targetGrowthRate}%
                   </div>
                 </div>
 
@@ -803,12 +832,14 @@ export default function TargetSimulator() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">
-            {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '월평균' : `${input.selectedMonth}월`} TrevPAR
+            {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '일평균' : `${input.selectedMonth}월 일일`} TrevPAR
           </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
-            ₩{formatCurrency(Math.round(summaryGrandTarget2026 / (175 * simulationResult.periodDays)))} <span className="text-sm font-normal text-slate-500">/실·월</span>
+            ₩{formatCurrency(apiData?.summary?.dailyTrevPAR || Math.round(summaryGrandTarget2026 / (175 * simulationResult.periodDays)))} <span className="text-sm font-normal text-slate-500">/실·일</span>
           </div>
-          <div className="text-xs text-slate-500 mt-1">175실 보유 인프라 1실당 생산성</div>
+          <div className="text-xs text-slate-500 mt-1">
+            175실 × {simulationResult.periodDays}일 ({175 * simulationResult.periodDays} 가용객실박) 생산성
+          </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">

@@ -63,3 +63,16 @@
 - **NO CLIENT-SIDE DATA HACKS (프론트엔드 임의 보정 금지)**: 백엔드 API 간에 숫자가 불일치하거나, 내장객 수가 중복 집계되거나, 단가가 왜곡되어 내려오더라도, **프론트엔드에서 임의로 나누거나 곱해서 끼워 맞추는 '클라이언트 단 땜질 보정'을 영구히 금지**합니다.
 - **ONLY BACKEND REQUEST FOR NUMERICAL DEFECTS (백엔드 요청서 단일 창구)**: 수치 왜곡이나 모수 불일치 발견 시, 프론트엔드는 임의 가공 없이 현상을 정확히 파악하여 **오직 `backend_api_request.md` 공식 조치 요청서에 등록하고 백엔드 DB 쿼리/ETL 단에서 근본적으로 수정**하도록 통제합니다.
 
+## 11. 🏛️ 화면·지표별 3대 데이터 트랙 (Track 1/2/3) 표준 연동 기준 (v6.0-Track-Guide)
+- **트랙 3 [UNIFIED] (통합 마트 - 경영진 대시보드 SSOT)**: `mat_v6_data_mart_revenue (track_type='UNIFIED')`
+  - 현장 POS + 온라인 티켓 완전 통합 (엑셀 일일마감보고서와 99.7% 일치).
+  - 적용 대상: **대시보드 메인 전체** (`revenue-summary`, `matrix-weekly`, `sales-hierarchy`, `pie-chart`, `business-plan`, `customer-journey-bundles`).
+  - 백엔드 API 기본값이므로 프론트엔드 코드 수정 불필요.
+- **트랙 1 [LEDGER] (회계 원장 - 재무/세무 결산용)**: `mat_v6_data_mart_revenue (track_type='LEDGER')`
+  - POS & ERP 마감 원장 순수 원본 (온라인 티켓 미포함 순수 현장 결산).
+  - 적용 대상: 관리자 감사/대사 화면 (`/admin/reconciliation`, `/admin/audit-status`).
+  - 쿼리 파라미터: `?track=LEDGER`.
+- **트랙 2 [TICKET] (발권 분석 - 온라인/패키지용)**: `fact_ticket_sales_v6`
+  - 다올 / OTA 온라인 티켓 원천 분석 (`top-ticket-items`).
+
+

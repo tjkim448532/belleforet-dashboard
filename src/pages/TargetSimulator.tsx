@@ -541,8 +541,8 @@ export default function TargetSimulator() {
       };
     }
 
-    // 벨포레 실측 휴일전야 대 주중 매출 배수 (평균 1.55배)
-    const ratio = (monthNum === 1 || monthNum === 10) ? 1.62 : 1.52;
+    // 벨포레 실측 휴일전야 대 주중 매출 배수 (SSOT 기준치 1.55배)
+    const ratio = 1.55;
     const targetTotal = summaryGrandTarget2026 || 1;
 
     // W * weekdayDays + (r * W) * preHolidayDays = targetTotal

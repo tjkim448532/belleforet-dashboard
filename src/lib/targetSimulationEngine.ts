@@ -91,13 +91,13 @@ export function runTargetSimulation(
     divShares = monthMeta.divisionShares || {};
   }
 
-  const totalRawWeight = activeDivisions.reduce((sum, div) => sum + (divShares[div as keyof typeof divShares] || 0.01), 0);
+  const totalRawWeight = activeDivisions.reduce((sum, div) => sum + (divShares[div as keyof typeof divShares] ?? 0), 0);
 
   // 4. 사업부 및 표준 영업장 2단계 정밀 목표 안분 (순수 수학적 모델)
   const divisionResults: DivisionAllocationResult[] = activeDivisions.map(divKey => {
     const meta = DIVISION_META[divKey];
-    const rawShare = divShares[divKey as keyof typeof divShares] || 0.01;
-    const normalizedWeight = rawShare / totalRawWeight;
+    const rawShare = divShares[divKey as keyof typeof divShares] ?? 0;
+    const normalizedWeight = totalRawWeight > 0 ? (rawShare / totalRawWeight) : 0;
 
     const divTargetRevenue = Math.round(targetTotalRevenue * normalizedWeight);
     const divLyRevenue = Math.round(baseLyTotalRevenue * normalizedWeight);

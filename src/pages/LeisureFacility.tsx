@@ -263,7 +263,7 @@ export default function LeisureFacility() {
                           {ticket.name}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-600 font-medium tabular-nums">{ticket.qty.toLocaleString()}개 판매(입장)</p>
+                      <p className="text-xs text-slate-600 font-medium tabular-nums">이용객수 {ticket.qty.toLocaleString()}명</p>
                     </div>
                     
                     <div className="text-right ml-4 tabular-nums">

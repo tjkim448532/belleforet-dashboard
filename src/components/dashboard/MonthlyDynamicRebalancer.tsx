@@ -203,33 +203,32 @@ export default function MonthlyDynamicRebalancer({
     }));
   };
 
-  // Preset 1: AI Season Smart Optimization
+  // Preset 1: AI Season Smart Optimization (Dynamic Headroom-based)
   const applyAiSmartOptimization = () => {
     const updatedRates: Record<number, number> = {};
     const updatedLocks: Record<number, boolean> = { ...lockedMonths };
 
-    // 1. Lock peak months (5월, 8월, 10월) at +2.5% Cap
-    const peakMonths = [5, 8, 10];
+    // 1. Dynamically identify capacity-constrained peak months (headroom <= 15%)
     let sumPeakTarget = 0;
-
     monthlyMetaList.forEach(m => {
-      if (peakMonths.includes(m.month)) {
-        updatedRates[m.month] = 2.5; // Cap at +2.5%
+      if (m.headroom <= 0.15) {
+        const peakCapRate = Math.max(0, Number((m.headroom * 100).toFixed(1)));
+        updatedRates[m.month] = peakCapRate;
         updatedLocks[m.month] = true;
-        sumPeakTarget += Math.round(m.baseRevenue * 1.025);
+        sumPeakTarget += Math.round(m.baseRevenue * (1 + peakCapRate / 100));
       }
     });
 
-    // 2. Distribute spillover to non-peak months based on headroom
-    const nonPeakMonths = monthlyMetaList.filter(m => !peakMonths.includes(m.month));
-    const remainTarget = annualTargetRevenue - sumPeakTarget;
+    // 2. Distribute spillover to non-peak months based on headroom capacity
+    const nonPeakMonths = monthlyMetaList.filter(m => m.headroom > 0.15);
+    const remainTarget = Math.max(0, annualTargetRevenue - sumPeakTarget);
 
     const totalNonPeakWeight = nonPeakMonths.reduce((s, m) => s + (m.baseRevenue * m.headroom), 0) || 1;
 
     nonPeakMonths.forEach(m => {
       const weight = (m.baseRevenue * m.headroom) / totalNonPeakWeight;
       const allocatedTarget = remainTarget * weight;
-      const computedRate = Number((((allocatedTarget - m.baseRevenue) / m.baseRevenue) * 100).toFixed(1));
+      const computedRate = m.baseRevenue > 0 ? Number((((allocatedTarget - m.baseRevenue) / m.baseRevenue) * 100).toFixed(1)) : 0;
       updatedRates[m.month] = computedRate;
       updatedLocks[m.month] = false;
     });

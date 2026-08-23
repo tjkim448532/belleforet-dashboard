@@ -162,9 +162,38 @@ export default function SynergyCorrelation() {
         totalRooms
       });
 
+      // Calculate current selected anchor's exact revenue for the selected timeframe
+      let currentAnchorPeriodSales = 0;
+      if (Array.isArray(matrixRows)) {
+        if (targetAnchor === 'ROOM') {
+          const roomSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === 'CONDO'));
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (roomSub?.rangeActual || roomSub?.mtdActual) : roomSub?.todayActual);
+          if (currentAnchorPeriodSales <= 0) currentAnchorPeriodSales = cleanNum(summaryObj.totalRevenue);
+        } else if (targetAnchor === 'GOLF') {
+          const golfSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'GOLF' || r.categoryName === '골프'));
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (golfSub?.rangeActual || golfSub?.mtdActual) : golfSub?.todayActual);
+        } else if (targetAnchor === 'MEDIA_ART') {
+          const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트센터');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
+        } else if (targetAnchor === 'LUGE') {
+          const kartVenue = matrixRows.find((r: any) => r.shopName === '마운틴카트');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (kartVenue?.rangeActual || kartVenue?.mtdActual) : kartVenue?.todayActual);
+        } else if (targetAnchor === 'SUMMERLAND') {
+          const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.mtdActual) : summerVenue?.todayActual);
+        } else if (targetAnchor === 'FARM') {
+          const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.mtdActual) : farmVenue?.todayActual);
+        }
+      }
+
       // Set Anchor Info
       if (crossRes?.anchor) {
-        setAnchorData(crossRes.anchor);
+        setAnchorData({
+          ...crossRes.anchor,
+          periodTotalRevenue: currentAnchorPeriodSales > 0 ? currentAnchorPeriodSales : crossRes.anchor.periodTotalRevenue,
+          dailyAvgRevenue: crossRes.anchor.dailyAvgRevenue || currentAnchorPeriodSales
+        });
       }
 
       // Map correlations from cross-synergy-matrix API (V6 SSOT)
@@ -558,11 +587,12 @@ export default function SynergyCorrelation() {
               {formatCurrency(anchorData?.periodTotalRevenue || 0)} <span className="text-base text-slate-300 font-normal">원</span>
             </div>
             <p className="text-xs text-indigo-200 font-medium mb-3 truncate">
-              선택 기간 내 <strong>{currentAnchorObj.name}</strong> 총 결제 매출액
+              {isActualRange ? `선택 기간(총 ${totalDays}일간) ` : `${startDate} 당일 `}
+              <strong>{currentAnchorObj.name}</strong> 결제 실매출액
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-indigo-200">
-            <span>1일 평균 매출:</span>
+            <span>{isActualRange ? '1일 평균 매출:' : '금월(MTD) 1일 평균:'}</span>
             <strong className="text-white tabular-nums whitespace-nowrap">₩ {formatCurrency(anchorData?.dailyAvgRevenue || 0)}원/일</strong>
           </div>
         </div>

@@ -142,6 +142,28 @@ export function runTargetSimulation(
     };
   });
 
+  // 5. Largest Remainder Method (Zero-Variance 단올림 오차 흡수 엔진)
+  // 5-1. 사업부(Division) 레벨 0-Variance 보정
+  const currentDivSum = divisionResults.reduce((s, d) => s + d.targetRevenue, 0);
+  const divDiff = targetTotalRevenue - currentDivSum;
+  if (divDiff !== 0 && divisionResults.length > 0) {
+    const sortedDivs = [...divisionResults].sort((a, b) => b.targetRevenue - a.targetRevenue);
+    sortedDivs[0].targetRevenue += divDiff;
+    sortedDivs[0].diffAmount = sortedDivs[0].targetRevenue - sortedDivs[0].lyRevenue;
+  }
+
+  // 5-2. 개별 영업장(Facility) 레벨 0-Variance 보정
+  divisionResults.forEach(div => {
+    if (div.facilities.length > 0) {
+      const curFacSum = div.facilities.reduce((s, f) => s + f.targetRevenue, 0);
+      const facDiff = div.targetRevenue - curFacSum;
+      if (facDiff !== 0) {
+        const sortedFacs = [...div.facilities].sort((a, b) => b.targetRevenue - a.targetRevenue);
+        sortedFacs[0].targetRevenue += facDiff;
+      }
+    }
+  });
+
   const overallGrowthRate = Number(input.targetGrowthRate.toFixed(1));
 
   return {

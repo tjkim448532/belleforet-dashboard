@@ -267,7 +267,7 @@ export default function GolfBusiness() {
 
   const totalGreenFeeRevenue = (salesByChannel || []).reduce((acc: number, c: any) => acc + (Number(c.greenFeeRevenue) || 0), 0);
   const avgTeamGreenFee = visitedTeams > 0 
-    ? (totalGreenFeeRevenue > 0 ? Math.round(totalGreenFeeRevenue / visitedTeams) : (visitedPlayers > 0 ? Math.round((avgGreenFee * visitedPlayers) / visitedTeams) : avgGreenFee * 4))
+    ? (totalGreenFeeRevenue > 0 ? Math.round(totalGreenFeeRevenue / visitedTeams) : (visitedPlayers > 0 ? Math.round((avgGreenFee * visitedPlayers) / visitedTeams) : 0))
     : 0;
   const cartFacility = golfDetails.find((f: any) => f.shopName?.includes('카트') || (f as any).facility_name?.includes('카트'));
   const actualCartRevenue = cartFacility?.totalSales || 0;

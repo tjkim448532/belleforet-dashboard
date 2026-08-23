@@ -113,13 +113,11 @@ export default function ResortBusiness() {
     const groups = data.roomOccupancyMap;
     const result = [];
     const keys = ['16평', '35평', '51평', '기타'];
-    const DEFAULT_CAPS: Record<string, number> = { '16평': 85, '35평': 85, '51평': 40, '기타': 5 };
-    
     for (const key of keys) {
       const g = groups[key];
       if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
       
-      const effectiveCap = g.cap > 0 ? g.cap : ((DEFAULT_CAPS[key] || 10) * rangeDays);
+      const effectiveCap = g.cap > 0 ? g.cap : g.sold;
       const rate = effectiveCap > 0 ? Math.round((g.sold / effectiveCap) * 100) : 0;
       const cappedRate = Math.min(rate, 100);
       const displayRate = `${rate}%`;

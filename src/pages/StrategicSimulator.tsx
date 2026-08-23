@@ -526,7 +526,7 @@ export default function StrategicSimulator() {
     effectiveCategories.forEach(c => {
       list.push({ 
         id: c.categoryCode, 
-        label: `📁 ${c.categoryCode}` 
+        label: `${getCategoryIcon(c.categoryName)} ${c.teamName || c.categoryName}` 
       });
     });
     return list;
@@ -1164,9 +1164,11 @@ export default function StrategicSimulator() {
                     
                     <div className="flex items-center gap-2.5">
                       <span className="text-2xl">{catIcon}</span>
-                      <span className="text-xl font-black text-slate-900">{cat.categoryCode}</span>
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                      <span className="text-xl font-black text-slate-900">
                         {cat.teamName || DIVISION_VARIABLE_COST_RATES[cat.categoryCode]?.name || cat.categoryName}
+                      </span>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                        {cat.categoryCode}
                       </span>
                       <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
                         {partGroups.length}개 파트 · {cat.facilityCount}개 영업장

@@ -307,7 +307,7 @@ export default function TargetSimulator() {
     effectiveCategories.forEach(c => {
       list.push({ 
         id: c.categoryCode, 
-        label: `${getCategoryIcon(c.categoryName)} ${c.categoryName}` 
+        label: `${getCategoryIcon(c.categoryName)} ${c.teamName || c.categoryName}` 
       });
     });
     return list;
@@ -941,9 +941,9 @@ export default function TargetSimulator() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{icon}</span>
-                      <span className="font-bold text-slate-900">{cat.categoryName}</span>
+                      <span className="font-black text-slate-900">{cat.teamName || cat.categoryName}</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                        {cat.teamName}
+                        {cat.categoryCode}
                       </span>
                     </div>
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 tabular-nums">
@@ -1081,10 +1081,10 @@ export default function TargetSimulator() {
                       <div className="flex items-center gap-2.5">
                         <span className="text-2xl">{catIcon}</span>
                         <span className="text-lg font-black text-slate-900">
-                          {cat.categoryName}
+                          {cat.teamName || cat.categoryName}
                         </span>
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
-                          {cat.teamName}
+                          {cat.categoryCode}
                         </span>
                         <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
                           {partGroups.length}개 파트 · {cat.facilityCount}개 영업장

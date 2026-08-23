@@ -351,7 +351,7 @@ export default function AdminRoles() {
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="예: 홍길동"
+              placeholder="임직원 성명 입력"
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
               required
             />
@@ -362,7 +362,7 @@ export default function AdminRoles() {
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="예: tjkim@bsbelleforet.com"
+              placeholder="user@bsbelleforet.com"
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
               required
             />

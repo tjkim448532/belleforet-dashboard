@@ -343,7 +343,7 @@ export default function SynergyCorrelation() {
               영업장별 앵커 연계 교차 시너지 분석
             </h1>
             <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed">
-              객실뿐만 아니라 미디어아트, 루지, 골프 등 주요 앵커 시설 매출 증가 시 전사 30여 개 영업장으로 파급되는 동반 성장 상관도와 매출 탄력성을 분석합니다.
+              객실뿐만 아니라 미디어아트, 마운틴카트, 골프 등 주요 앵커 시설 매출 증가 시 전사 30여 개 영업장으로 파급되는 동반 성장 상관도와 매출 탄력성을 분석합니다.
             </p>
 
             {/* Navigation Sub-Tabs Bar */}

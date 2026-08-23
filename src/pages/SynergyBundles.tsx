@@ -4,7 +4,7 @@ import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import { 
-  CreditCard, Sparkles, Activity, Calendar, RefreshCw, ShieldCheck,
+  CreditCard, Sparkles, Zap, Calendar, RefreshCw, ShieldCheck,
   Layers, Users, HelpCircle
 } from 'lucide-react';
 
@@ -267,7 +267,7 @@ export default function SynergyBundles() {
                   }`
                 }
               >
-                <Activity size={14} /> 2. 영업장별 객실 연계 시너지 분석
+                <Zap size={14} /> 2. 앵커시설 교차 시너지 & 탄력성 분석
               </NavLink>
               
               <NavLink 

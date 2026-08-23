@@ -6,7 +6,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { 
   Building2, TrendingUp, Sparkles, 
   Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
-  Activity, Grid, HelpCircle, CreditCard
+  Grid, HelpCircle, CreditCard, Zap, Compass, Flag, Waves
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -17,9 +17,30 @@ const formatCurrency = (val: any) => {
   return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
-import type { StoreCorrelationItem } from '../components/synergy/types';
+import type { StoreCorrelationItem, AnchorInfo, CrossSynergyItem } from '../components/synergy/types';
 import SynergyStoreCard from '../components/synergy/SynergyStoreCard';
 import SynergyTable from '../components/synergy/SynergyTable';
+
+type AnchorType = 'ROOM' | 'MEDIA_ART' | 'LUGE' | 'GOLF' | 'SUMMERLAND' | 'FARM';
+
+interface AnchorOption {
+  code: AnchorType;
+  name: string;
+  category: string;
+  icon: any;
+  color: string;
+  activeBg: string;
+  desc: string;
+}
+
+const ANCHOR_OPTIONS: AnchorOption[] = [
+  { code: 'ROOM', name: '객실 숙박료', category: '콘도', icon: Building2, color: 'text-indigo-400', activeBg: 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400/40', desc: '객실 투숙객 증가 시 타 부대시설(식음/레저/골프) 동반 소비 파급 효과' },
+  { code: 'MEDIA_ART', name: '미디어아트센터', category: '레저', icon: Sparkles, color: 'text-purple-400', activeBg: 'bg-purple-600 text-white shadow-lg ring-2 ring-purple-400/40', desc: '미디어아트 관람객 증가 시 카페, 기프트샵, 인근 식음/레저 연동 반응' },
+  { code: 'LUGE', name: '익스트림 루지', category: '레저', icon: Compass, color: 'text-rose-400', activeBg: 'bg-rose-600 text-white shadow-lg ring-2 ring-rose-400/40', desc: '루지/썰매 이용객 증가 시 목장, 모토아레나, 식음 매장 연계 소비' },
+  { code: 'GOLF', name: '골프장', category: '골프', icon: Flag, color: 'text-emerald-400', activeBg: 'bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-400/40', desc: '골프 내장객 증가 시 스타트하우스, 레스토랑, 객실 서비스 연동' },
+  { code: 'SUMMERLAND', name: '썸머랜드(워터파크)', category: '레저', icon: Waves, color: 'text-cyan-400', activeBg: 'bg-cyan-600 text-white shadow-lg ring-2 ring-cyan-400/40', desc: '워터파크 피크 시 푸드트럭, 편의점, 주변 부대시설 동반 반응' },
+  { code: 'FARM', name: '벨포레 목장', category: '레저', icon: Ticket, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '목장/체험 가족 단위 방문객 증가 시 미디어아트, 카페 연계 반응' },
+];
 
 export default function SynergyCorrelation() {
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
@@ -29,6 +50,10 @@ export default function SynergyCorrelation() {
   const [startDate, setStartDate] = useState<string>(globalStartDate);
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
+  // Anchor Selection State (NEW SSOT)
+  const [selectedAnchor, setSelectedAnchor] = useState<AnchorType>('ROOM');
+  const [anchorData, setAnchorData] = useState<AnchorInfo | null>(null);
+
   const [correlationData, setCorrelationData] = useState<StoreCorrelationItem[]>([]);
   const [includeMoto, setIncludeMoto] = useState<boolean>(true);
   const [summaryKpis, setSummaryKpis] = useState({
@@ -41,7 +66,7 @@ export default function SynergyCorrelation() {
 
   const [selectedLeisureShop, setSelectedLeisureShop] = useState<string>('ALL');
   const [selectedFnbShop, setSelectedFnbShop] = useState<string>('ALL');
-  const [sortMode, setSortMode] = useState<'default' | 'spilloverRate' | 'revPasContribution'>('default');
+  const [sortMode, setSortMode] = useState<'default' | 'correlation' | 'elasticity' | 'spillover'>('correlation');
 
   // Days difference calculation
   const totalDays = useMemo(() => {
@@ -57,11 +82,12 @@ export default function SynergyCorrelation() {
     return isRangeMode && !!endDate && startDate !== endDate;
   }, [isRangeMode, startDate, endDate]);
 
-  const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
+  const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean, overrideAnchor?: AnchorType) => {
     setLoading(true);
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
+    const targetAnchor = overrideAnchor || selectedAnchor;
 
     if (rangeActive && sDate && eDate && sDate > eDate) {
       const temp = sDate;
@@ -76,11 +102,11 @@ export default function SynergyCorrelation() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
 
-      const corrQueryParams = `startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}`;
+      const crossParams = `anchor=${targetAnchor}&startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}&_t=${Date.now()}`;
 
-      // Parallel Fetch: Correlation API, Matrix API (SSOT subtotals & real store sales), Revenue Summary (Total Rooms)
-      const [corrRes, matrixRes, summaryRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation?${corrQueryParams}`).catch(() => null),
+      // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT), Matrix-Weekly (49 venues SSOT), Revenue Summary
+      const [crossRes, matrixRes, summaryRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null)
       ]);
@@ -94,23 +120,23 @@ export default function SynergyCorrelation() {
         return Number(String(val).replace(/,/g, '').trim()) || 0;
       };
 
-      // Extract total rooms sold from summary or matrix
+      // Extract total rooms sold
       let totalRooms = cleanNum(summaryObj.totalRooms);
       if (totalRooms <= 0) {
-        const roomSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'ROOM');
+        const roomSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도'));
         totalRooms = cleanNum(rangeActive ? (roomSub?.rangeVisitors || roomSub?.mtdVisitors || summaryObj.totalRooms) : (roomSub?.todayVisitors || summaryObj.totalRooms || 0));
       }
       if (totalRooms <= 0) totalRooms = 0;
 
-      // 1. Calculate Official Division Subtotals (SSOT from matrix-weekly)
+      // Extract Official Division Subtotals from matrix-weekly (Track 3 UNIFIED)
       let ticketSales = 0;
       let motoSales = 0;
       let fnbSales = 0;
 
       if (Array.isArray(matrixRows)) {
-        const ticketSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'TICKET' && (r.subtotalType === 'category' || r.partName === '소계'));
-        const motoSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'MOTO');
-        const fnbSub = matrixRows.find((r: any) => r.isSubtotal && String(r.categoryCode || '').toUpperCase() === 'FNB');
+        const ticketSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'TICKET' || r.categoryName === '레저본부'));
+        const motoSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'MOTO' || r.categoryName === '모토아레나'));
+        const fnbSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'FNB' || r.categoryName === '식음'));
 
         const getSubSales = (sub: any) => {
           if (!sub) return 0;
@@ -131,104 +157,50 @@ export default function SynergyCorrelation() {
         totalRooms
       });
 
-      const processCorrItem = (item: any, defaultDivision: string): StoreCorrelationItem => {
-        const shopName = item.shopName || item.storeName || item.shop_name || '';
-        
-        const spilloverRate = item.spilloverRate !== undefined && item.spilloverRate !== null
-          ? (item.spilloverRate <= 1 && item.spilloverRate > 0 ? Math.round(item.spilloverRate * 100) : Math.round(item.spilloverRate)) 
+      // Set Anchor Info
+      if (crossRes?.anchor) {
+        setAnchorData(crossRes.anchor);
+      }
+
+      // Map correlations from cross-synergy-matrix API (V6 SSOT)
+      const rawCorrelations: CrossSynergyItem[] = crossRes?.correlations || [];
+      const physicalShops = Array.isArray(matrixRows) ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal) : [];
+
+      const corrList: StoreCorrelationItem[] = rawCorrelations.map((item) => {
+        const shopName = item.targetShopName;
+        // Find corresponding venue in matrix-weekly for actual POS sales
+        const matchVenue = physicalShops.find((r: any) => r.shopName === shopName || r.facilityName === shopName);
+        const venueSales = matchVenue 
+          ? (rangeActive ? cleanNum(matchVenue.rangeActual || matchVenue.mtdActual || matchVenue.todayActual) : cleanNum(matchVenue.todayActual))
           : 0;
 
-        const forwardSpillover = item.forwardSpillover !== undefined && item.forwardSpillover !== null
-          ? (item.forwardSpillover <= 1 && item.forwardSpillover > 0 ? Number((item.forwardSpillover * 100).toFixed(1)) : Number(item.forwardSpillover.toFixed(1)))
-          : (spilloverRate > 0 ? spilloverRate : undefined);
-
-        const reverseSpillover = item.reverseSpillover !== undefined && item.reverseSpillover !== null
-          ? (item.reverseSpillover <= 1 && item.reverseSpillover > 0 ? Number((item.reverseSpillover * 100).toFixed(1)) : Number(item.reverseSpillover.toFixed(1)))
-          : undefined;
-          
-        const correlationCoefficient = item.correlationCoefficient !== undefined && item.correlationCoefficient !== null ? Number(Number(item.correlationCoefficient).toFixed(2)) : undefined;
-        const liftValue = item.liftValue !== undefined && item.liftValue !== null ? Number(Number(item.liftValue).toFixed(2)) : undefined;
-        const interactionGrade = item.interactionGrade || (spilloverRate > 30 ? 'HIGH_SYNERGY' : (spilloverRate > 10 ? 'MODERATE_SYNERGY' : 'WEAK'));
-        const revPasContribution = item.revPasContribution !== undefined && item.revPasContribution !== null ? Number(item.revPasContribution) : undefined;
-        const totalSales = item.totalSales !== undefined ? Number(item.totalSales) : 0;
-        const isTrackable = spilloverRate > 0;
+        let division = '레저본부';
+        if (item.categoryName === '식음' || item.categoryName === '식음팀') division = '식음팀';
+        else if (item.categoryName === '모토아레나' || shopName.includes('모토아레나')) division = '모토아레나';
+        else if (item.categoryName === '골프' || item.categoryName === '골프본부') division = '골프본부';
+        else if (item.categoryName === '콘도' || item.categoryName === '객실') division = '콘도';
 
         return {
-          ...item,
-          divisionName: item.divisionName || (shopName.includes('모토아레나') ? '모토아레나' : defaultDivision),
           shopName,
           storeName: shopName,
-          totalSales,
-          correlatedSales: item.correlatedSales || (isTrackable ? Math.round(totalSales * (spilloverRate / 100)) : 0),
-          correlatedVisitors: item.correlatedVisitors || item.correlatedGuests || 0,
-          spilloverRate,
-          forwardSpillover,
-          reverseSpillover,
-          correlationCoefficient,
-          liftValue,
-          interactionGrade,
-          revPasContribution: revPasContribution !== undefined ? revPasContribution : (totalRooms > 0 ? Math.round((item.correlatedSales || 0) / totalRooms) : 0),
-          isGuestRatioTrackable: isTrackable,
-          calculationMethod: item.calculationMethod || (isTrackable ? 'HARD_FACT_MATCHING' : 'UNTRACKABLE'),
+          divisionName: division,
+          totalSales: venueSales,
+          correlatedSales: item.spilloverPerMillion > 0 && crossRes?.anchor?.periodTotalRevenue 
+            ? Math.round((crossRes.anchor.periodTotalRevenue / 1000000) * item.spilloverPerMillion) 
+            : 0,
+          correlatedVisitors: matchVenue ? cleanNum(matchVenue.todayVisitors || matchVenue.rangeVisitors || 0) : 0,
+          spilloverRate: Math.round(item.elasticityPercent * 10) / 10,
+          correlationCoefficient: item.correlationCoefficient,
+          elasticityPercent: item.elasticityPercent,
+          spilloverPerMillion: item.spilloverPerMillion,
+          synergyGrade: item.synergyGrade,
+          insight: item.insight,
+          interactionGrade: item.synergyGrade === 'EXCELLENT' ? 'HIGH_SYNERGY' : item.synergyGrade === 'HIGH' ? 'MODERATE_SYNERGY' : 'WEAK',
+          revPasContribution: totalRooms > 0 ? Math.round(venueSales / totalRooms) : 0,
+          isGuestRatioTrackable: true,
+          calculationMethod: 'TIME_SERIES_REGRESSION'
         };
-      };
-
-      let corrList: StoreCorrelationItem[] = [];
-
-      const rawList = Array.isArray(corrRes?.data) ? corrRes.data : (Array.isArray(corrRes) ? corrRes : []);
-      if (rawList.length > 0) {
-        corrList = rawList
-          .filter((item: any) => {
-            const name = item.shopName || item.storeName || '';
-            return !name.includes('그린피') && !name.includes('카트대여');
-          })
-          .map((item: any) => processCorrItem(item, '기타'));
-      } else if (corrRes && (corrRes.ticket || corrRes.fnb)) {
-        const ticketList = (Array.isArray(corrRes.ticket) ? corrRes.ticket : []).map((item: any) => processCorrItem(item, '레저본부'));
-        const fnbList = (Array.isArray(corrRes.fnb) ? corrRes.fnb : []).map((item: any) => processCorrItem(item, '식음팀'));
-        corrList = [...ticketList, ...fnbList];
-      }
-
-      // Dynamic Extraction from Real Matrix Rows when correlation endpoint list is empty
-      if (corrList.length === 0 && Array.isArray(matrixRows) && matrixRows.length > 0) {
-        const physicalShops = matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal);
-        
-        physicalShops.forEach((r: any) => {
-          const cat = String(r.categoryCode || '').toUpperCase();
-          // STRICT EXCLUSION: Only TICKET, MOTO, FNB (Never GOLF)
-          if (cat !== 'TICKET' && cat !== 'MOTO' && cat !== 'FNB') return;
-
-          const shopName = r.shopName || r.facilityName || '';
-          if (!shopName || shopName.includes('소계') || shopName.includes('합계') || shopName.includes('그린피') || shopName.includes('카트')) return;
-
-          const sales = rangeActive 
-            ? cleanNum(r.rangeActual || r.mtdActual || r.todayActual)
-            : cleanNum(r.todayActual);
-          if (sales <= 0) return;
-
-          const division = cat === 'FNB' ? '식음팀' : (cat === 'MOTO' ? '모토아레나' : '레저본부');
-          const revPasContribution = totalRooms > 0 ? Math.round(sales / totalRooms) : 0;
-
-          // Pure SSOT: Zero artificial/fabricated ratio fallback
-          corrList.push({
-            storeName: shopName,
-            shopName: shopName,
-            divisionName: division,
-            totalSales: sales,
-            correlatedSales: 0,
-            correlatedVisitors: 0,
-            spilloverRate: 0,
-            forwardSpillover: undefined,
-            reverseSpillover: undefined,
-            liftValue: undefined,
-            correlationCoefficient: undefined,
-            revPasContribution: revPasContribution,
-            interactionGrade: 'WEAK',
-            isGuestRatioTrackable: false,
-            calculationMethod: 'UNTRACKABLE'
-          });
-        });
-      }
+      });
 
       setCorrelationData(corrList);
     } catch (err) {
@@ -243,8 +215,13 @@ export default function SynergyCorrelation() {
     setIsRangeMode(globalIsRange);
     setStartDate(globalStartDate);
     setEndDate(globalEndDate || globalStartDate);
-    fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange);
-  }, [globalStartDate, globalEndDate, globalIsRange]);
+    fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange, selectedAnchor);
+  }, [globalStartDate, globalEndDate, globalIsRange, selectedAnchor]);
+
+  const handleAnchorChange = (anchor: AnchorType) => {
+    setSelectedAnchor(anchor);
+    fetchData(startDate, endDate, isRangeMode, anchor);
+  };
 
   const handleSearch = () => {
     let s = startDate;
@@ -257,7 +234,7 @@ export default function SynergyCorrelation() {
       setEndDate(e);
     }
     setDateRange(s, isRangeMode ? e : null, isRangeMode);
-    fetchData(s, e, isRangeMode);
+    fetchData(s, e, isRangeMode, selectedAnchor);
   };
 
   // Quick Preset Handlers
@@ -267,100 +244,77 @@ export default function SynergyCorrelation() {
     setStartDate(res.startDate);
     setEndDate(res.endDate || res.startDate);
     setDateRange(res.startDate, res.endDate, res.isRange);
-    fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
+    fetchData(res.startDate, res.endDate || res.startDate, res.isRange, selectedAnchor);
   };
 
-  // Pure Dynamic SSOT Extraction for Leisure and Moto Stores directly from V6 Correlation API
+  // Sorting function
+  const sortCorrelations = (items: StoreCorrelationItem[]) => {
+    return [...items].sort((a, b) => {
+      if (sortMode === 'correlation') {
+        return (b.correlationCoefficient ?? -1) - (a.correlationCoefficient ?? -1);
+      } else if (sortMode === 'elasticity') {
+        return (b.elasticityPercent ?? 0) - (a.elasticityPercent ?? 0);
+      } else if (sortMode === 'spillover') {
+        return (b.spilloverPerMillion ?? 0) - (a.spilloverPerMillion ?? 0);
+      }
+      return b.totalSales - a.totalSales;
+    });
+  };
+
+  // Leisure and Moto Stores
   const leisureStoreAnalysis = useMemo(() => {
-    return correlationData
-      .filter(c => {
-        if (c.divisionName === '골프본부' || c.divisionName === '식음팀') return false;
-        if (!includeMoto && (c.divisionName === '모토아레나' || c.shopName.includes('모토아레나'))) return false;
-        return c.divisionName === '레저본부' || c.divisionName === '모토아레나';
-      })
-      .map(c => ({
-        ...c,
-        color: 'border-purple-200 bg-purple-50/40 text-purple-900'
-      }))
-      .sort((a, b) => b.totalSales - a.totalSales);
-  }, [correlationData, includeMoto]);
+    const items = correlationData.filter(c => {
+      if (c.divisionName === '골프본부' || c.divisionName === '식음팀') return false;
+      if (!includeMoto && (c.divisionName === '모토아레나' || c.shopName.includes('모토아레나'))) return false;
+      return c.divisionName === '레저본부' || c.divisionName === '모토아레나';
+    }).map(c => ({
+      ...c,
+      color: 'border-purple-200 bg-purple-50/40 text-purple-900'
+    }));
+    return sortCorrelations(items);
+  }, [correlationData, includeMoto, sortMode]);
 
-  // Pure Dynamic SSOT Extraction for F&B Stores directly from V6 Correlation API
+  // F&B Stores
   const fnbStoreAnalysis = useMemo(() => {
-    return correlationData
-      .filter(c => c.divisionName === '식음팀')
-      .map(c => ({
-        ...c,
-        color: 'border-amber-200 bg-amber-50/40 text-amber-900'
-      }))
-      .sort((a, b) => b.totalSales - a.totalSales);
-  }, [correlationData]);
+    const items = correlationData.filter(c => c.divisionName === '식음팀').map(c => ({
+      ...c,
+      color: 'border-amber-200 bg-amber-50/40 text-amber-900'
+    }));
+    return sortCorrelations(items);
+  }, [correlationData, sortMode]);
 
-  // Overall Division Summary KPIs (100% Total Revenue from SSOT)
+  // Golf / Other Stores
+  const golfStoreAnalysis = useMemo(() => {
+    const items = correlationData.filter(c => c.divisionName === '골프본부' || c.divisionName === '콘도').map(c => ({
+      ...c,
+      color: 'border-emerald-200 bg-emerald-50/40 text-emerald-900'
+    }));
+    return sortCorrelations(items);
+  }, [correlationData, sortMode]);
+
+  // Overall Division Summary KPIs
   const totalLeisureSales = includeMoto 
     ? summaryKpis.ticketSales + summaryKpis.motoSales 
     : summaryKpis.ticketSales;
 
-  const totalLeisureRevPas = summaryKpis.totalRooms > 0 
-    ? Math.round(totalLeisureSales / summaryKpis.totalRooms) 
-    : 0;
-
   const totalFnbSales = summaryKpis.totalFnbSales;
-  const totalFnbRevPas = summaryKpis.totalRooms > 0 
-    ? Math.round(totalFnbSales / summaryKpis.totalRooms) 
-    : 0;
 
-  const leisureCorrelationRows = useMemo(() => {
-    if (correlationData.length > 0) {
-      let rows = correlationData.filter(r => {
-        if (r.divisionName === '골프본부' || r.divisionName === '식음팀') return false;
-        if (!includeMoto && (r.divisionName === '모토아레나' || r.shopName.includes('모토아레나'))) return false;
-        return r.divisionName === '레저본부' || r.divisionName === '모토아레나';
-      });
-      if (selectedLeisureShop === 'ALL') return rows;
-      return rows.filter(r => r.shopName === selectedLeisureShop);
-    }
-    return [];
-  }, [correlationData, selectedLeisureShop, includeMoto]);
-
-  const fnbCorrelationRows = useMemo(() => {
-    if (correlationData.length > 0) {
-      const rows = correlationData.filter(r => r.divisionName === '식음팀');
-      if (selectedFnbShop === 'ALL') return rows;
-      return rows.filter(r => r.shopName === selectedFnbShop);
-    }
-    return [];
-  }, [correlationData, selectedFnbShop]);
-
-  // Filtered Leisure Items for Cards
+  // Filtered for Cards
   const filteredLeisureStores = useMemo(() => {
-    let base = leisureStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
     if (selectedLeisureShop !== 'ALL') {
-      base = base.filter(s => s.shopName === selectedLeisureShop);
+      return leisureStoreAnalysis.filter(s => s.shopName === selectedLeisureShop);
     }
-    
-    if (sortMode === 'spilloverRate') {
-      return [...base].sort((a, b) => b.spilloverRate - a.spilloverRate);
-    } else if (sortMode === 'revPasContribution') {
-      return [...base].sort((a, b) => (b.revPasContribution || 0) - (a.revPasContribution || 0));
-    }
-    return base;
-  }, [leisureStoreAnalysis, selectedLeisureShop, sortMode]);
+    return leisureStoreAnalysis;
+  }, [leisureStoreAnalysis, selectedLeisureShop]);
 
-  // Filtered FNB Items for Cards
   const filteredFnbStores = useMemo(() => {
-    let base = fnbStoreAnalysis.filter(s => s.spilloverRate > 0 || (s.revPasContribution || 0) > 0 || (s.correlatedVisitors || 0) > 0);
     if (selectedFnbShop !== 'ALL') {
-      base = base.filter(s => s.shopName === selectedFnbShop);
+      return fnbStoreAnalysis.filter(s => s.shopName === selectedFnbShop);
     }
-    
-    if (sortMode === 'spilloverRate') {
-      return [...base].sort((a, b) => b.spilloverRate - a.spilloverRate);
-    } else if (sortMode === 'revPasContribution') {
-      return [...base].sort((a, b) => (b.revPasContribution || 0) - (a.revPasContribution || 0));
-    }
-    return base;
-  }, [fnbStoreAnalysis, selectedFnbShop, sortMode]);
+    return fnbStoreAnalysis;
+  }, [fnbStoreAnalysis, selectedFnbShop]);
+
+  const currentAnchorObj = ANCHOR_OPTIONS.find(a => a.code === selectedAnchor) || ANCHOR_OPTIONS[0];
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -372,19 +326,19 @@ export default function SynergyCorrelation() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-indigo-400/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide">
-                벨포레 연계 시너지 분석
+                벨포레 교차 시너지 & 매출 탄력성 분석
               </span>
               <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
-                <ShieldCheck size={14} className="text-emerald-400" /> 실시간 통합 정산 기준
+                <ShieldCheck size={14} className="text-emerald-400" /> 트랙 3 실시간 통합 정산 기준
               </span>
             </div>
             
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
               <Grid className="text-indigo-400" size={32} />
-              영업장별 객실 연계 시너지 분석
+              영업장별 앵커 연계 교차 시너지 분석
             </h1>
             <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed">
-              숙박 채널별(자사몰, 여행사, 기업영업 등) 이용 고객이 레저본부 및 식음팀 내 세부 영업장으로 연결되는 교차 소비 효과를 분석합니다.
+              객실뿐만 아니라 미디어아트, 루지, 골프 등 주요 앵커 시설 매출 증가 시 전사 30여 개 영업장으로 파급되는 동반 성장 상관도와 매출 탄력성을 분석합니다.
             </p>
 
             {/* Navigation Sub-Tabs Bar */}
@@ -403,13 +357,13 @@ export default function SynergyCorrelation() {
                 to="/synergy/correlation" 
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30"
               >
-                <Activity size={14} /> 2. 영업장별 객실 연계 시너지 분석
+                <Zap size={14} /> 2. 앵커시설 교차 시너지 & 탄력성 분석
               </NavLink>
 
               <NavLink 
                 to="/synergy/bundles" 
                 className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  isActive ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  isActive ? 'bg-cyan-500 text-white shadow-md' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
                 <CreditCard size={14} /> 3. 고객 결제 묶음(Bundle) 분석
@@ -488,6 +442,51 @@ export default function SynergyCorrelation() {
           </div>
         </div>
 
+        {/* 🎯 [NEW SSOT] 6대 앵커 시설 선택 바 (Anchor Selector Bar) */}
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+              <Zap size={15} className="text-amber-400" /> 분석 기준 앵커 시설 선택 (Driving Anchor Facility):
+            </span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              선택한 시설의 매출 증가 시 전사 30여 개 영업장 반응을 즉시 분석합니다.
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {ANCHOR_OPTIONS.map((opt) => {
+              const IconComponent = opt.icon;
+              const isSelected = selectedAnchor === opt.code;
+              return (
+                <button
+                  key={opt.code}
+                  type="button"
+                  onClick={() => handleAnchorChange(opt.code)}
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer active:scale-95 ${
+                    isSelected 
+                      ? opt.activeBg 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <IconComponent size={18} className={isSelected ? 'text-white' : opt.color} />
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                      isSelected ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-300'
+                    }`}>
+                      {opt.category}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs leading-snug">{opt.name}</div>
+                    <div className={`text-[10px] mt-0.5 line-clamp-1 ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
+                      {opt.code === 'ROOM' ? '전사 32개 매장' : opt.code === 'MEDIA_ART' ? '목장/카페/식음' : '전사 동반 반응'}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Global Data Controls (Sorting & MotoArena Toggle Switch) */}
         <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
@@ -528,16 +527,42 @@ export default function SynergyCorrelation() {
               onChange={(e) => setSortMode(e.target.value as any)}
               className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors cursor-pointer font-medium"
             >
-              <option value="default" className="text-slate-800">기본 정렬 (매출순)</option>
-              <option value="spilloverRate" className="text-slate-800">투숙객 연계 비율 높은 순</option>
-              <option value="revPasContribution" className="text-slate-800">1실당 기여액 높은 순</option>
+              <option value="correlation" className="text-slate-800">동반 매출 상관도(r) 높은 순</option>
+              <option value="elasticity" className="text-slate-800">매출 탄력성(%) 높은 순</option>
+              <option value="spillover" className="text-slate-800">100만원당 낙수액 높은 순</option>
+              <option value="default" className="text-slate-800">영업장 실제 총매출 순</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Overview KPI Cards */}
+      {/* Overview KPI Cards (Anchor Overview & Total Sales) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Anchor Overview Card */}
+        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-700/40 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-indigo-200 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-400" /> 기준 앵커 시설 실적
+              </span>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+                {currentAnchorObj.name}
+              </span>
+            </div>
+            <div className="text-3xl font-black text-white mb-1 tabular-nums">
+              {formatCurrency(anchorData?.periodTotalRevenue || 0)} <span className="text-base text-slate-300 font-normal">원</span>
+            </div>
+            <p className="text-xs text-indigo-200 font-medium mb-3">
+              선택 기간 내 <strong>{currentAnchorObj.name}</strong> 총 결제 매출액
+            </p>
+          </div>
+          <div className="mt-2 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-indigo-200">
+            <span>1일 평균 매출:</span>
+            <strong className="text-white tabular-nums">₩ {formatCurrency(anchorData?.dailyAvgRevenue || 0)}원/일</strong>
+          </div>
+        </div>
+
+        {/* Leisure Subtotal Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -561,18 +586,13 @@ export default function SynergyCorrelation() {
               {includeMoto ? '레저본부 및 모토아레나 관할 영업장 실제 매출 합계' : '순수 레저본부 관할 영업장 실제 매출 합계 (모토 제외)'}
             </p>
           </div>
-          
-          {/* Calculated Store List Badge */}
-          <div className="mt-2 pt-3 border-t border-slate-100">
-            <span className="text-xs font-bold text-purple-800 block mb-1">
-              📊 집계 영업장 (총 {leisureStoreAnalysis.length}개):
-            </span>
-            <p className="text-xs text-purple-950 bg-purple-50/80 border border-purple-100 p-2.5 rounded-xl leading-relaxed max-h-20 overflow-y-auto font-medium">
-              {leisureStoreAnalysis.map(s => s.shopName).join(', ') || '영업장 데이터 로딩 중...'}
-            </p>
+          <div className="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>연계 분석 매장:</span>
+            <strong className="text-purple-700">{leisureStoreAnalysis.length}개 매장</strong>
           </div>
         </div>
 
+        {/* F&B Subtotal Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -588,77 +608,45 @@ export default function SynergyCorrelation() {
             </div>
             <p className="text-xs text-slate-500 font-medium mb-3">식음(F&B) 영업장 실제 총매출 합계</p>
           </div>
-
-          {/* Calculated Store List Badge */}
-          <div className="mt-2 pt-3 border-t border-slate-100">
-            <span className="text-xs font-bold text-amber-800 block mb-1">
-              📊 집계 영업장 (총 {fnbStoreAnalysis.length}개):
-            </span>
-            <p className="text-xs text-amber-950 bg-amber-50/80 border border-amber-100 p-2.5 rounded-xl leading-relaxed max-h-20 overflow-y-auto font-medium">
-              {fnbStoreAnalysis.map(s => s.shopName).join(', ') || '영업장 데이터 로딩 중...'}
-            </p>
+          <div className="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>연계 분석 매장:</span>
+            <strong className="text-amber-700">{fnbStoreAnalysis.length}개 매장</strong>
           </div>
         </div>
 
+        {/* Top Synergy Champion Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-600" /> {
-                  includeMoto 
-                    ? (isActualRange ? '구간 1실당 레저·모토 가치' : '1실당 레저·모토 가치')
-                    : (isActualRange ? '구간 1실당 순수 레저 가치' : '1실당 순수 레저 가치')
-                }
-              </span>
-              <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                {includeMoto ? '레저 1실 가치 (골프 불포함)' : '순수레저 1실 가치'}
-              </span>
-            </div>
-            <div className="text-3xl font-black text-indigo-600 mb-1 tabular-nums">
-              {formatCurrency(totalLeisureRevPas)} <span className="text-base text-slate-500 font-normal">원/실</span>
-            </div>
-            <p className="text-xs text-slate-500 font-medium">
-              {includeMoto 
-                ? '객실 1실 판매 시 레저+모토아레나 결제 연계 매출 (골프 불포함)'
-                : '객실 1실 판매 시 순수 레저본부 결제 연계 매출 (모토·골프 불포함)'
-              }
-            </p>
-          </div>
-          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
-            산출: 각 영업장별 1실당 기여액 합계
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-emerald-600" /> 1실당 식음 파급가치
+                <TrendingUp className="w-5 h-5 text-emerald-600" /> 최고 연계 시너지 매장
               </span>
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                식음 1실 가치 (골프 불포함)
+                Top 1
               </span>
             </div>
-            <div className="text-3xl font-black text-emerald-600 mb-1 tabular-nums">
-              {formatCurrency(totalFnbRevPas)} <span className="text-base text-slate-500 font-normal">원/실</span>
+            <div className="text-2xl font-black text-emerald-600 mb-1">
+              {correlationData[0]?.shopName || '분석 중'}
             </div>
-            <p className="text-xs text-slate-500 font-medium">객실 1실 판매 시 리조트 식음팀 결제 연계 매출 (골프장 식음 제외)</p>
+            <p className="text-xs text-slate-500 font-medium">
+              상관계수: <strong className="text-slate-900">+{correlationData[0]?.correlationCoefficient?.toFixed(3) || '0'}</strong> · 탄력성: <strong className="text-emerald-700">+{correlationData[0]?.elasticityPercent || 0}%</strong>
+            </p>
           </div>
-          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
-            산출: 각 식음 영업장별 1실당 기여액 합계
+          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
+            <span>100만원당 낙수액:</span>
+            <strong className="text-emerald-700 tabular-nums">+₩ {formatCurrency(correlationData[0]?.spilloverPerMillion || 0)}원</strong>
           </div>
         </div>
       </div>
-
 
       {/* 💡 상관관계 지표 정의 및 분석 가이드 (Info Guide Banner) */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 lg:p-7 shadow-xl mb-8 relative overflow-hidden">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
           <h3 className="font-bold text-base lg:text-lg flex items-center gap-2 text-indigo-300">
-            <HelpCircle size={20} /> 💡 객실-영업장 연계 분석 및 시너지 지표 안내
+            <HelpCircle size={20} /> 💡 {currentAnchorObj.name} 기준 교차 시너지 지표 안내
           </h3>
           <span className="text-xs font-bold px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
-            지표 분석 기준 안내
+            {currentAnchorObj.desc}
           </span>
         </div>
 
@@ -666,74 +654,74 @@ export default function SynergyCorrelation() {
           <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
             <div className="font-bold text-white text-sm flex items-center gap-1.5 text-purple-300">
               <span className="w-2 h-2 rounded-full bg-purple-400"></span>
-              1. 동반 매출 상관도 (변동성)
+              1. 동반 매출 상관도 (r)
             </div>
             <p className="leading-relaxed text-slate-300">
-              객실 투숙객 변화와 영업장 매출 변화가 **얼마나 동반 상승/하강하는지** 변동성을 측정하는 지표입니다. (-1.00 ~ +1.00)
+              <strong>{currentAnchorObj.name}</strong> 매출 변화와 타 영업장 매출 변화가 **얼마나 같은 방향으로 함께 뛰는지** 측정합니다. (-1.00 ~ +1.00)
             </p>
             <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
-              <div className="flex justify-between"><span className="text-purple-300 font-semibold">+0.70 이상</span> <span>강력한 시너지 (동반 급증)</span></div>
-              <div className="flex justify-between"><span className="text-indigo-300 font-semibold">+0.30 ~ +0.70</span> <span>일반적 연계</span></div>
-              <div className="flex justify-between"><span className="text-slate-400 font-semibold">+0.30 미만</span> <span>독립 운영 (투숙 무관)</span></div>
+              <div className="flex justify-between"><span className="text-purple-300 font-semibold">+0.70 이상</span> <span>🚀 초강력 앵커결합</span></div>
+              <div className="flex justify-between"><span className="text-indigo-300 font-semibold">+0.40 ~ +0.70</span> <span>🔥 핵심 시너지</span></div>
+              <div className="flex justify-between"><span className="text-slate-400 font-semibold">+0.40 미만</span> <span>🎯 일반/독립 연계</span></div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
+            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-indigo-300">
+              <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+              2. 동반 매출 탄력성 (β)
+            </div>
+            <p className="leading-relaxed text-slate-300">
+              <strong>{currentAnchorObj.name}</strong> 매출이 **10% 증가할 때**, 해당 영업장 매출은 **몇 % 동반 성장하는가?**
+            </p>
+            <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
+              <div><strong className="text-indigo-300">+7.0% 이상</strong>: 앵커 성장에 따른 즉각적 고탄력 동반 급증</div>
+              <div><strong className="text-indigo-300">+3.0% ~ +7.0%</strong>: 안정적인 패키지/동선 연계 반응</div>
             </div>
           </div>
 
           <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
             <div className="font-bold text-white text-sm flex items-center gap-1.5 text-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              2. 투숙객 추가 이용 확률 (배수)
+              3. 100만원당 낙수 파급 효과
             </div>
             <p className="leading-relaxed text-slate-300">
-              일반 방문객 대비 **객실 투숙객이 해당 영업장을 추가 선택할 확률적 배수**입니다.
+              <strong>{currentAnchorObj.name}</strong>에 **100만원의 매출이 발생할 때마다**, 해당 영업장으로 얼마의 추가 부대매출이 동반 창출되는가?
             </p>
             <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
-              <div><strong className="text-emerald-300">1.0배 초과</strong>: 투숙객 이용 확률이 비투숙객보다 높음</div>
-              <div><strong className="text-emerald-300">예: 2.35배</strong>: 투숙객이 비투숙객보다 <span className="text-white font-semibold">2.35배 더 많이 이용</span></div>
-            </div>
-          </div>
-
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-2">
-            <div className="font-bold text-white text-sm flex items-center gap-1.5 text-amber-300">
-              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-              3. 투숙객 교차 이용률 (%)
-            </div>
-            <p className="leading-relaxed text-slate-300">
-              객실과 영업장 간의 **상호 유입 비율**을 양방향으로 측정합니다.
-            </p>
-            <div className="pt-2 text-xs space-y-1 text-slate-400 border-t border-white/10">
-              <div><strong className="text-amber-300">순방향</strong>: 전체 객실 투숙객 중 영업장으로 유입된 비중(%)</div>
-              <div><strong className="text-amber-300">역방향</strong>: 영업장 이용객 중 객실 투숙으로 이어진 비율(%)</div>
+              <div><strong className="text-emerald-300">낙수 금액</strong>: 추가 부대매출 창출액 (원 단위 실측)</div>
+              <div><strong className="text-emerald-300">패키지 기획</strong>: 100만원당 낙수액이 높은 매장 우선 결합</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Section 1: 🎟️ 레저본부 영업장별 연계 상관관계 분석 */}
+      {/* Section 1: 🎟️ 레저본부 영업장별 앵커 연계 시너지 분석 */}
       <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Ticket className="text-purple-600" size={24} /> 🎟️ 레저본부 영업장별 객실 연계 시너지 분석
+              <Ticket className="text-purple-600" size={24} /> 🎟️ 레저/어트랙션 영업장별 {currentAnchorObj.name} 연계 시너지 분석
             </h2>
             <p className="text-xs text-slate-500 mt-1 font-medium">
-              실제 매출 발생 레저 영업장별 투숙객 연계 지출액 및 파급 효과입니다.
+              {currentAnchorObj.name} 매출 발생 시 레저 영업장별 동반 매출 상관도 및 100만원당 낙수 효과입니다.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSelectedLeisureShop('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedLeisureShop === 'ALL' ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              전체 레저 영업장
+              전체 레저 영업장 ({leisureStoreAnalysis.length})
             </button>
             {leisureStoreAnalysis.map((store, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedLeisureShop(store.shopName)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   selectedLeisureShop === store.shopName ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -747,49 +735,49 @@ export default function SynergyCorrelation() {
         {filteredLeisureStores.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {filteredLeisureStores.map((store, idx) => (
-              <SynergyStoreCard key={idx} store={store} type="leisure" />
+              <SynergyStoreCard key={idx} store={store} type="leisure" anchorName={currentAnchorObj.name} />
             ))}
           </div>
         ) : (
           <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl mb-8">
-            선택된 분석 기간 내 매출이 발생한 레저 영업장 데이터가 없습니다.
+            선택된 분석 기간 내 레저 영업장 데이터가 없습니다.
           </div>
         )}
 
         {/* Leisure Correlation Table */}
         <SynergyTable 
           type="leisure" 
-          correlationRows={leisureCorrelationRows} 
+          correlationRows={leisureStoreAnalysis} 
           stores={filteredLeisureStores} 
         />
       </div>
 
-      {/* Section 2: 🍽️ 식음팀 영업장별 연계 상관관계 분석 */}
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200">
+      {/* Section 2: 🍽️ 식음팀 영업장별 앵커 연계 시너지 분석 */}
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Utensils className="text-amber-600" size={24} /> 🍽️ 식음팀 영업장별 객실 연계 시너지 분석
+              <Utensils className="text-amber-600" size={24} /> 🍽️ 식음(F&B) 영업장별 {currentAnchorObj.name} 연계 시너지 분석
             </h2>
             <p className="text-xs text-slate-500 mt-1 font-medium">
-              실제 매출 발생 식음 영업장별 투숙객 연계 지출액 및 파급 효과입니다.
+              {currentAnchorObj.name} 매출 발생 시 식음 영업장별 동반 매출 상관도 및 100만원당 낙수 효과입니다.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSelectedFnbShop('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedFnbShop === 'ALL' ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              전체 식음 영업장
+              전체 식음 영업장 ({fnbStoreAnalysis.length})
             </button>
             {fnbStoreAnalysis.map((store, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedFnbShop(store.shopName)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   selectedFnbShop === store.shopName ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -803,23 +791,52 @@ export default function SynergyCorrelation() {
         {filteredFnbStores.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {filteredFnbStores.map((store, idx) => (
-              <SynergyStoreCard key={idx} store={store} type="fnb" />
+              <SynergyStoreCard key={idx} store={store} type="fnb" anchorName={currentAnchorObj.name} />
             ))}
           </div>
         ) : (
           <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl mb-8">
-            선택된 분석 기간 내 매출이 발생한 식음 영업장 데이터가 없습니다.
+            선택된 분석 기간 내 식음 영업장 데이터가 없습니다.
           </div>
         )}
 
         {/* F&B Correlation Table */}
         <SynergyTable 
           type="fnb" 
-          correlationRows={fnbCorrelationRows} 
+          correlationRows={fnbStoreAnalysis} 
           stores={filteredFnbStores} 
         />
       </div>
 
+      {/* Section 3: ⛳ 골프 & 부대시설 영업장별 앵커 연계 시너지 분석 */}
+      {golfStoreAnalysis.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Flag className="text-emerald-600" size={24} /> ⛳ 골프 및 콘도 부대시설 {currentAnchorObj.name} 연계 시너지 분석
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                {currentAnchorObj.name} 매출 발생 시 골프/콘도 부대영업장 동반 매출 상관도 및 낙수 효과입니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {golfStoreAnalysis.map((store, idx) => (
+              <SynergyStoreCard key={idx} store={store} type="golf" anchorName={currentAnchorObj.name} />
+            ))}
+          </div>
+
+          <SynergyTable 
+            type="leisure" 
+            correlationRows={golfStoreAnalysis} 
+            stores={golfStoreAnalysis} 
+          />
+        </div>
+      )}
+
     </div>
   );
 }
+

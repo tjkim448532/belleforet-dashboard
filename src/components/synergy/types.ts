@@ -25,6 +25,10 @@ export interface StoreCorrelationItem {
   revPasContribution?: number;
   isGuestRatioTrackable?: boolean;
   calculationMethod?: string;
+  elasticityPercent?: number;
+  spilloverPerMillion?: number;
+  synergyGrade?: 'EXCELLENT' | 'HIGH' | 'MODERATE' | 'LOW' | 'INSIGNIFICANT' | string;
+  insight?: string;
   apiMeta?: {
     singleFacilityArpu?: number;
     multiFacilityArpu?: number;
@@ -32,3 +36,33 @@ export interface StoreCorrelationItem {
   };
   dailyTrends?: DailyTrendItem[];
 }
+
+export interface AnchorInfo {
+  code: string;
+  name: string;
+  periodTotalRevenue: number;
+  dailyAvgRevenue: number;
+}
+
+export interface CrossSynergyItem {
+  targetShopName: string;
+  categoryName: string;
+  correlationCoefficient: number;
+  elasticityPercent: number;
+  spilloverPerMillion: number;
+  synergyGrade: 'EXCELLENT' | 'HIGH' | 'MODERATE' | 'LOW' | 'INSIGNIFICANT' | string;
+  insight: string;
+}
+
+export interface CrossSynergyMatrixResponse {
+  status: string;
+  meta: {
+    startDate: string;
+    endDate: string;
+    daysCount: number;
+    anchor: string;
+  };
+  anchor: AnchorInfo;
+  correlations: CrossSynergyItem[];
+}
+

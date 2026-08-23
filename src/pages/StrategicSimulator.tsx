@@ -10,6 +10,7 @@ import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { MULTI_YEAR_SEASONALITY_DATA } from '../data/monthlySeasonalityData';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 import { secureFetcher } from '../lib/secureFetcher';
+import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicRebalancer';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -184,6 +185,7 @@ export default function StrategicSimulator() {
 
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
   const [apiData, setApiData] = useState<{ summary: ApiSummary; categories: ApiCategory[] } | null>(null);
+  const [, setRebalancedMonthlyTargets] = useState<Record<number, number>>({});
   
   // 3-Depth Accordion State
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
@@ -851,7 +853,20 @@ export default function StrategicSimulator() {
 
       </div>
 
-      {/* 4. 🎛️ Feature 1 & 3: Strategic Multipliers & Capture Rate Controller Section */}
+      {/* 4. 🚀 12개월 동적 연동 리밸런싱 (Auto-Balancing Slider Engine) - 연간 목표 수립 시 활성화 */}
+      {input.selectedMonth === 'ANNUAL' && (
+        <MonthlyDynamicRebalancer
+          annualBaseRevenue={wmaBaselineData.activeBaselineRevenue}
+          annualTargetRevenue={rawGrandTarget2026}
+          annualGrowthRate={input.targetGrowthRate}
+          targetYear={input.targetYear}
+          baseYear={input.baseYear}
+          includeGolf={input.includeGolf}
+          onMonthlyTargetsChange={setRebalancedMonthlyTargets}
+        />
+      )}
+
+      {/* 5. 🎛️ Feature 1 & 3: Strategic Multipliers & Capture Rate Controller Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left: Strategic Multipliers Sliders per Division */}

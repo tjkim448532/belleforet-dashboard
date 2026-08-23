@@ -416,17 +416,27 @@ export default function TargetSimulator() {
 
     // 1. Annual (1~12월 연간 종합)
     if (input.selectedMonth === 'ANNUAL') {
-      const totalYtdActual = 16811714918; // 2026년 8월 21일 기준 전사 누적 실적 SSOT (168.12억원)
-      const golfYtdEst = 5489000000;      // 2026년 8월 기준 골프 누적 실적 (54.89억원)
-      const ytdActual = input.includeGolf ? totalYtdActual : (totalYtdActual - golfYtdEst);
+      const yData = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
+      let totalYtdActual = 0;
+      let golfYtdActual = 0;
+      if (yData) {
+        for (let m = 1; m <= 8; m++) {
+          const mMeta = yData.months?.[m];
+          if (mMeta) {
+            totalYtdActual += mMeta.totalRevenue;
+            golfYtdActual += Math.round(mMeta.totalRevenue * (mMeta.divisionShares?.GOLF || 0));
+          }
+        }
+      }
+      const ytdActual = input.includeGolf ? totalYtdActual : (totalYtdActual - golfYtdActual);
       const targetRev = summaryGrandTarget2026 || 1;
-      const rate = Number(((ytdActual / targetRev) * 100).toFixed(1));
+      const rate = targetRev > 0 ? Number(((ytdActual / targetRev) * 100).toFixed(1)) : 0;
       return {
         revenue: ytdActual,
         rate,
         rateDisplay: `${rate}%`,
         badgeColor: 'text-teal-600',
-        statusText: `2026년 8월 ${input.includeGolf ? '전사' : '순수 리조트'} 누적: ₩${(ytdActual / 100000000).toFixed(2)}억원 (목표 대비 ${rate}%)`
+        statusText: `2026년 1~8월 ${input.includeGolf ? '전사' : '순수 리조트'} 누적: ₩${(ytdActual / 100000000).toFixed(2)}억원 (목표 대비 ${rate}%)`
       };
     }
 

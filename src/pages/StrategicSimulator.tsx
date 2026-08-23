@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
-  Flame, RotateCcw, PieChart
+  Flame, RotateCcw, PieChart, CheckCircle2, Clock
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
@@ -165,7 +165,7 @@ export default function StrategicSimulator() {
     includeGolf: true
   });
 
-  // Feature 4: Baseline Selection Mode (직전년도 vs 3개년 가중이동평균 WMA)
+  // Feature 4: Baseline Selection Mode (직전년도 vs 다년도 가중이동평균 WMA)
   const [baselineMode, setBaselineMode] = useState<'SINGLE_YEAR' | 'WMA_3YEAR'>('SINGLE_YEAR');
 
   // Feature 1: Strategic Multipliers (전략 승수 β_f, 기본값 1.0)
@@ -232,7 +232,7 @@ export default function StrategicSimulator() {
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
 
-  // Feature 4: 3-Year Weighted Moving Average (WMA) Baseline Engine
+  // Feature 4: Real Multi-Year Weighted Moving Average (WMA) Baseline Engine (No fake 2023 numbers)
   const wmaBaselineData = useMemo(() => {
     const isAnnual = input.selectedMonth === 'ANNUAL';
     const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
@@ -240,12 +240,16 @@ export default function StrategicSimulator() {
     const y2025 = MULTI_YEAR_SEASONALITY_DATA[2025];
     const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024];
 
-    const rev2025 = isAnnual ? (y2025?.annual?.totalRevenue || 25122405407) : (y2025?.months?.[monthNum]?.totalRevenue || 2675928392);
-    const rev2024 = isAnnual ? (y2024?.annual?.totalRevenue || 24706936601) : (y2024?.months?.[monthNum]?.totalRevenue || 2450000000);
-    const rev2023 = rev2024 * 0.96; // 2023년 추정 실측치 (2024 대비 4% 완만한 성장)
+    const rev2025 = isAnnual 
+      ? (y2025?.annual?.totalRevenue || 25122405407) 
+      : (y2025?.months?.[monthNum]?.totalRevenue || 2675928392);
+    
+    const rev2024 = isAnnual 
+      ? (y2024?.annual?.totalRevenue || 24706936601) 
+      : (y2024?.months?.[monthNum]?.totalRevenue || 2450000000);
 
-    // WMA Formula: (R_2025 * 0.5) + (R_2024 * 0.3) + (R_2023 * 0.2)
-    const wmaTotalRevenue = Math.round((rev2025 * 0.5) + (rev2024 * 0.3) + (rev2023 * 0.2));
+    // 2-Year Real SSOT Weighted Average (2025: 60%, 2024: 40%) without fake 2023 proxy
+    const wmaTotalRevenue = Math.round((rev2025 * 0.60) + (rev2024 * 0.40));
     const singleYearRevenue = rev2025;
 
     return {
@@ -402,6 +406,72 @@ export default function StrategicSimulator() {
     if (grandTargetTotal === 0) return 0;
     return Number(((grandContributionMarginTotal / grandTargetTotal) * 100).toFixed(1));
   }, [grandContributionMarginTotal, grandTargetTotal]);
+
+  // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
+  const actualExecutionStats = useMemo(() => {
+    const isAnnual = input.selectedMonth === 'ANNUAL';
+    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
+    const y2026 = MULTI_YEAR_SEASONALITY_DATA[input.targetYear];
+
+    // If target year has no actuals yet (e.g. 2027)
+    if (!y2026) {
+      return {
+        revenue: 0,
+        rate: 0,
+        displayRate: '집계 예정',
+        statusText: `${input.targetYear}년 목표 수립 단계 (실행 전)`,
+        isUpcoming: true
+      };
+    }
+
+    if (isAnnual) {
+      // Sum actuals up to month 8 for 2026
+      let totalYtdActual = 0;
+      let golfYtdActual = 0;
+      for (let m = 1; m <= 8; m++) {
+        const mMeta = y2026.months?.[m];
+        if (mMeta) {
+          totalYtdActual += mMeta.totalRevenue;
+          golfYtdActual += Math.round(mMeta.totalRevenue * (mMeta.divisionShares?.GOLF || 0));
+        }
+      }
+      const actualRev = input.includeGolf ? totalYtdActual : (totalYtdActual - golfYtdActual);
+      const rate = grandTargetTotal > 0 ? Number(((actualRev / grandTargetTotal) * 100).toFixed(1)) : 0;
+      return {
+        revenue: actualRev,
+        rate,
+        displayRate: `${rate}%`,
+        statusText: `2026년 1~8월 누적 실적 (목표 대비)`,
+        isUpcoming: false
+      };
+    }
+
+    // Specific Month
+    if (monthNum <= 8) {
+      const mMeta = y2026.months?.[monthNum];
+      if (mMeta) {
+        const golfShare = mMeta.divisionShares?.GOLF || 0;
+        const actualRev = input.includeGolf ? mMeta.totalRevenue : Math.round(mMeta.totalRevenue * (1 - golfShare));
+        const rate = grandTargetTotal > 0 ? Number(((actualRev / grandTargetTotal) * 100).toFixed(1)) : 0;
+        return {
+          revenue: actualRev,
+          rate,
+          displayRate: `${rate}%`,
+          statusText: `${monthNum}월 실측 완료`,
+          isUpcoming: false
+        };
+      }
+    }
+
+    // Month 9~12 (Future months)
+    return {
+      revenue: 0,
+      rate: 0,
+      displayRate: '미도래',
+      statusText: `${monthNum}월 도래 전 (목표 실행 예정)`,
+      isUpcoming: true
+    };
+  }, [input.selectedMonth, input.targetYear, input.includeGolf, grandTargetTotal]);
 
   // Group Category Facilities into 2-Depth Part Groups
   const getCategoryParts = useMemo(() => {
@@ -585,7 +655,7 @@ export default function StrategicSimulator() {
               </span>
             </h1>
             <p className="text-slate-300 text-xs lg:text-sm mt-2 font-normal max-w-3xl">
-              경영진이 부서별 전략 승수(β_f)를 가동하여 <strong>Zero-Sum 실시간 리밸런싱</strong>을 수행하고, <strong>공헌이익(CM) 듀얼 타겟팅</strong> 및 <strong>3개년 WMA 기상 보정</strong>을 적용하는 차세대 전사 경영 계획 엔진입니다.
+              경영진이 부서별 전략 승수(β_f)를 가동하여 <strong>Zero-Sum 실시간 리밸런싱</strong>을 수행하고, <strong>공헌이익(CM) 듀얼 타겟팅</strong> 및 <strong>다년도 WMA 기상 보정</strong>을 적용하는 차세대 전사 경영 계획 엔진입니다.
             </p>
           </div>
 
@@ -599,7 +669,7 @@ export default function StrategicSimulator() {
               }`}
             >
               <CloudRain size={16} />
-              {baselineMode === 'WMA_3YEAR' ? '🌧️ 3개년 WMA 기상보정 가동중' : '📊 직전 1개년 실적 기준선'}
+              {baselineMode === 'WMA_3YEAR' ? '🌧️ 2개년 WMA 기상보정 가동중' : '📊 직전 1개년 실적 기준선'}
             </button>
           </div>
         </div>
@@ -656,7 +726,7 @@ export default function StrategicSimulator() {
           <div className="flex items-center justify-between text-xs font-bold text-slate-300">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-teal-400" />
-              시뮬레이션 대상 월 선택 ({baselineMode === 'WMA_3YEAR' ? '3개년 가중이동평균 기상정규화 비중 대입' : `${input.baseYear}년 실측 비중 대입`})
+              시뮬레이션 대상 월 선택 ({baselineMode === 'WMA_3YEAR' ? '2개년 가중이동평균(2025: 60%, 2024: 40%) 기상정규화 비중 대입' : `${input.baseYear}년 실측 비중 대입`})
             </span>
             <span className="text-teal-300 font-extrabold">
               현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
@@ -696,7 +766,7 @@ export default function StrategicSimulator() {
                 🚀 {input.targetYear}년 전사 연간 목표 성장률 설정
               </span>
               <span className="text-[11px] text-slate-300 font-medium">
-                {baselineMode === 'WMA_3YEAR' ? '3개년 WMA 베이스라인 대비' : `${input.baseYear}년 실측 실적 기준선 대비`}
+                {baselineMode === 'WMA_3YEAR' ? '2개년 WMA 베이스라인 대비' : `${input.baseYear}년 실측 실적 기준선 대비`}
               </span>
             </div>
 
@@ -787,7 +857,7 @@ export default function StrategicSimulator() {
         </div>
       </div>
 
-      {/* 3. 🏆 5 Executive KPI Highlight Summary Cards */}
+      {/* 3. 🏆 5 Executive KPI Highlight Summary Cards (Zero Fake Numbers) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         
         {/* Card 1: 목표 총매출 */}
@@ -836,23 +906,30 @@ export default function StrategicSimulator() {
             기준선 산출 방식
           </div>
           <div className="text-lg font-black text-slate-900 truncate">
-            {baselineMode === 'WMA_3YEAR' ? '🌧️ 3개년 가중평균' : '📊 2025 실측 단독'}
+            {baselineMode === 'WMA_3YEAR' ? '🌧️ 2개년 WMA 가중평균' : `📊 ${input.baseYear}년 실측 단독`}
           </div>
           <div className="text-xs text-slate-500 mt-1">
             {baselineMode === 'WMA_3YEAR' ? `스무딩: ${wmaBaselineData.smoothingRate > 0 ? '+' : ''}${wmaBaselineData.smoothingRate}%` : '작년 단일 실적 기준'}
           </div>
         </div>
 
-        {/* Card 5: 진도율 */}
+        {/* Card 5: 실제 진도율 (100% Real SSOT Data - No Hardcoded Numbers) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 mb-1">
-            {input.targetYear}년 실제 달성률
+          <div className="text-[11px] font-bold text-slate-500 mb-1 flex items-center justify-between">
+            <span>{input.targetYear}년 실제 달성률</span>
+            {actualExecutionStats.isUpcoming ? (
+              <Clock size={12} className="text-slate-400" />
+            ) : (
+              <CheckCircle2 size={12} className="text-emerald-500" />
+            )}
           </div>
           <div className="text-2xl font-black text-emerald-700 tabular-nums flex items-center gap-1">
             <TrendingUp className="w-6 h-6 text-emerald-600" />
-            <span>64.0%</span>
+            <span>{actualExecutionStats.displayRate}</span>
           </div>
-          <div className="text-xs text-slate-500 mt-1">진행중 누적 집계</div>
+          <div className="text-xs text-slate-500 mt-1 truncate" title={actualExecutionStats.statusText}>
+            {actualExecutionStats.revenue > 0 ? `실적: ₩${(actualExecutionStats.revenue / 100000000).toFixed(2)}억원` : actualExecutionStats.statusText}
+          </div>
         </div>
 
       </div>
@@ -946,7 +1023,7 @@ export default function StrategicSimulator() {
           </div>
         </div>
 
-        {/* Right: Customer Journey & Capture Rate Simulation Panel */}
+        {/* Right: Customer Journey & Capture Rate Simulation Panel (Dynamic Period Days) */}
         <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -976,8 +1053,8 @@ export default function StrategicSimulator() {
                   className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
                 />
                 <div className="text-[11px] text-amber-800 flex items-center justify-between font-medium">
-                  <span>월간 예상 부대시설 매출 기여:</span>
-                  <b className="font-black tabular-nums">+₩{formatCurrency(dayTripTargetCount * 25000 * 30)}원</b>
+                  <span>{simulationResult.selectedMonthLabel} 예상 부대시설 매출 기여:</span>
+                  <b className="font-black tabular-nums">+₩{formatCurrency(dayTripTargetCount * 25000 * simulationResult.periodDays)}원</b>
                 </div>
               </div>
 
@@ -997,8 +1074,8 @@ export default function StrategicSimulator() {
                   className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                 />
                 <div className="text-[11px] text-teal-800 flex items-center justify-between font-medium">
-                  <span>월간 추가 F&B/레저 매출 창출:</span>
-                  <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * 175 * 3.5 * 30)}원</b>
+                  <span>{simulationResult.selectedMonthLabel} 추가 F&B/레저 매출 창출:</span>
+                  <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * 175 * 3.5 * simulationResult.periodDays)}원</b>
                 </div>
               </div>
             </div>

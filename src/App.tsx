@@ -20,6 +20,7 @@ import AdminRoles from './pages/AdminRoles';
 import ResortBusiness from './pages/ResortBusiness';
 import GolfBusiness from './pages/GolfBusiness';
 import LeisureFacility from './pages/LeisureFacility';
+import LeisureOrganization from './pages/LeisureOrganization';
 import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 
@@ -71,6 +72,8 @@ export function App() {
                       <Route path="golf-business" element={<GolfBusiness />} />
                       <Route path="group-sales" element={<GroupSales />} />
                       <Route path="leisure" element={<LeisureFacility />} />
+                      <Route path="leisure/organization" element={<LeisureOrganization />} />
+                      <Route path="leisure-organization" element={<LeisureOrganization />} />
                       <Route path="target-simulator" element={<TargetSimulator />} />
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />

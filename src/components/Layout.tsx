@@ -227,15 +227,27 @@ export default function Layout() {
             {leisureOpen && (
               <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
                 <NavLink
-                  to={`/leisure`}
+                  to="/leisure"
+                  end
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
                     if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                   }}
                 >
                   레저 영업장 현황
+                </NavLink>
+                <NavLink
+                  to="/leisure/organization"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={() => { 
+                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                  }}
+                >
+                  조직도 및 인력 현황
                 </NavLink>
               </div>
             )}

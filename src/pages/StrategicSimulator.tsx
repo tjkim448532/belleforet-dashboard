@@ -240,13 +240,25 @@ export default function StrategicSimulator() {
     const y2025 = MULTI_YEAR_SEASONALITY_DATA[2025];
     const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024];
 
-    const rev2025 = isAnnual 
-      ? (y2025?.annual?.totalRevenue || 25122405407) 
-      : (y2025?.months?.[monthNum]?.totalRevenue || 2675928392);
-    
-    const rev2024 = isAnnual 
-      ? (y2024?.annual?.totalRevenue || 24706936601) 
-      : (y2024?.months?.[monthNum]?.totalRevenue || 2450000000);
+    let rev2025 = 0;
+    if (isAnnual) {
+      rev2025 = y2025?.annual?.totalRevenue || 0;
+      if (rev2025 === 0 && y2025?.months) {
+        rev2025 = Object.values(y2025.months).reduce((sum, m) => sum + (m.totalRevenue || 0), 0);
+      }
+    } else {
+      rev2025 = y2025?.months?.[monthNum]?.totalRevenue || 0;
+    }
+
+    let rev2024 = 0;
+    if (isAnnual) {
+      rev2024 = y2024?.annual?.totalRevenue || 0;
+      if (rev2024 === 0 && y2024?.months) {
+        rev2024 = Object.values(y2024.months).reduce((sum, m) => sum + (m.totalRevenue || 0), 0);
+      }
+    } else {
+      rev2024 = y2024?.months?.[monthNum]?.totalRevenue || 0;
+    }
 
     // 2-Year Real SSOT Weighted Average (2025: 60%, 2024: 40%) without fake 2023 proxy
     const wmaTotalRevenue = Math.round((rev2025 * 0.60) + (rev2024 * 0.40));

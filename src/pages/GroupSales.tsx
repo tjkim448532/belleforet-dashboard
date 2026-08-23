@@ -539,7 +539,7 @@ export default function GroupSales() {
                 : 36}%
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              1인당 객단가: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerPax || 177378)}원/인</strong>
+              1인당 객단가: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>
             </div>
           </div>
         </div>

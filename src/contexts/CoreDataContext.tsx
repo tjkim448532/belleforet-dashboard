@@ -117,7 +117,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           const validPoints = losTrend.filter((t: any) => typeof t.multiNightRatio === 'number' && t.multiNightRatio > 0);
           if (validPoints.length > 0) {
             const avgRatio = validPoints.reduce((sum: number, t: any) => sum + t.multiNightRatio, 0) / validPoints.length;
-            const totalRoomCap = Number(corePayload.summary?.totalRoomCap || 10060);
+            const totalRoomCap = Number(corePayload.summary?.totalRoomCap ?? 0);
             const calculatedGuests = Math.round(totalRoomCap * (avgRatio / 100));
             
             corePayload.summary.multiNightRatio = Number(avgRatio.toFixed(1));

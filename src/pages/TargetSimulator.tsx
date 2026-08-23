@@ -483,19 +483,6 @@ export default function TargetSimulator() {
 
   // 주중 vs 내일이 휴일인 날(금/토/공휴일 전야) 일평균 목표 계산기
   const dailyTargetStats = useMemo(() => {
-    // If backend API provided daily target stats directly, prioritize backend SSOT
-    if (apiData?.summary?.weekdayDailyTarget && apiData?.summary?.preHolidayDailyTarget) {
-      return {
-        weekdayDays: apiData.summary.weekdayDays || 21,
-        preHolidayDays: apiData.summary.preHolidayDays || 10,
-        totalDays: (apiData.summary.weekdayDays || 21) + (apiData.summary.preHolidayDays || 10),
-        weekdayDailyTarget: apiData.summary.weekdayDailyTarget,
-        preHolidayDailyTarget: apiData.summary.preHolidayDailyTarget,
-        overallDailyAvg: apiData.summary.overallDailyAvg || apiData.summary.dailyTargetRevenue || 0,
-        ratio: 1.55
-      };
-    }
-
     const isAnnual = input.selectedMonth === 'ANNUAL';
     const targetYear = input.targetYear || 2026;
     const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
@@ -539,6 +526,21 @@ export default function TargetSimulator() {
       }
     }
 
+    // If backend API provided daily target stats directly, prioritize backend SSOT
+    if (apiData?.summary?.weekdayDailyTarget && apiData?.summary?.preHolidayDailyTarget) {
+      const wDays = apiData.summary.weekdayDays ?? weekdayDays;
+      const pHolDays = apiData.summary.preHolidayDays ?? preHolidayDays;
+      return {
+        weekdayDays: wDays,
+        preHolidayDays: pHolDays,
+        totalDays: wDays + pHolDays,
+        weekdayDailyTarget: apiData.summary.weekdayDailyTarget,
+        preHolidayDailyTarget: apiData.summary.preHolidayDailyTarget,
+        overallDailyAvg: apiData.summary.overallDailyAvg || apiData.summary.dailyTargetRevenue || 0,
+        ratio: 1.55
+      };
+    }
+
     // 벨포레 실측 휴일전야 대 주중 매출 배수 (평균 1.55배)
     const ratio = (monthNum === 1 || monthNum === 10) ? 1.62 : 1.52;
     const targetTotal = summaryGrandTarget2026 || 1;
@@ -557,7 +559,7 @@ export default function TargetSimulator() {
       overallDailyAvg,
       ratio
     };
-  }, [input.selectedMonth, input.targetYear, summaryGrandTarget2026]);
+  }, [input.selectedMonth, input.targetYear, summaryGrandTarget2026, apiData]);
 
   // Pie chart option for category contribution
   const categoryPieOptions = useMemo(() => {

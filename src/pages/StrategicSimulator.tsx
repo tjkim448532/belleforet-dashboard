@@ -14,18 +14,18 @@ import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicReba
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-// 6대 사업부별 표준 변동비율 (v_f) 및 공헌이익률 마스터
-const DIVISION_VARIABLE_COST_RATES: Record<string, { varRate: number; cmRate: number; name: string; color: string; icon: string }> = {
-  ROOM: { varRate: 0.15, cmRate: 0.85, name: '객실', color: '#1E3A8A', icon: '🏨' },
-  GOLF: { varRate: 0.20, cmRate: 0.80, name: '골프', color: '#9333EA', icon: '⛳' },
-  FNB: { varRate: 0.45, cmRate: 0.55, name: '식음', color: '#16A34A', icon: '🍽️' },
-  TICKET: { varRate: 0.30, cmRate: 0.70, name: '레저본부', color: '#EAB308', icon: '🎢' },
-  LEISURE: { varRate: 0.30, cmRate: 0.70, name: '레저본부', color: '#EAB308', icon: '🎢' },
-  MOTO: { varRate: 0.35, cmRate: 0.65, name: '모토아레나', color: '#E11D48', icon: '🏎️' },
-  BANQUET: { varRate: 0.30, cmRate: 0.70, name: '대관', color: '#0891B2', icon: '🏛️' },
-  GOODS: { varRate: 0.50, cmRate: 0.50, name: '벨포레굿즈', color: '#64748B', icon: '🛍️' },
-  PARKING: { varRate: 0.10, cmRate: 0.90, name: '주차관제', color: '#0284C7', icon: '🅿️' },
-  OTHER: { varRate: 0.55, cmRate: 0.45, name: '기타(임대/부대)', color: '#475569', icon: '📦' }
+// 7대 공식 사업본부별 표준 변동비율 (v_f) 및 공헌이익률 마스터 (공식 명칭 SSOT)
+const DIVISION_VARIABLE_COST_RATES: Record<string, { varRate: number; cmRate: number; code: string; name: string; color: string; icon: string }> = {
+  GOLF: { varRate: 0.20, cmRate: 0.80, code: 'GOLF', name: '골프사업본부', color: '#9333EA', icon: '⛳' },
+  ROOM: { varRate: 0.15, cmRate: 0.85, code: 'ROOM', name: '리조트사업본부', color: '#1E3A8A', icon: '🏨' },
+  FNB: { varRate: 0.45, cmRate: 0.55, code: 'FNB', name: '콘텐츠기획본부', color: '#16A34A', icon: '🍽️' },
+  TICKET: { varRate: 0.30, cmRate: 0.70, code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
+  LEISURE: { varRate: 0.30, cmRate: 0.70, code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
+  MOTO: { varRate: 0.35, cmRate: 0.65, code: 'MOTO', name: '모토아레나', color: '#E11D48', icon: '🏎️' },
+  BANQUET: { varRate: 0.30, cmRate: 0.70, code: 'BANQUET', name: '세일즈본부', color: '#0891B2', icon: '🏛️' },
+  PARKING: { varRate: 0.10, cmRate: 0.90, code: 'PARKING', name: '주차관제', color: '#0284C7', icon: '🅿️' },
+  GOODS: { varRate: 0.50, cmRate: 0.50, code: 'GOODS', name: '벨포레굿즈', color: '#64748B', icon: '🛍️' },
+  OTHER: { varRate: 0.55, cmRate: 0.45, code: 'OTHER', name: '독립/기타', color: '#475569', icon: '📦' }
 };
 
 const YEAR_PAIRS = [
@@ -268,8 +268,8 @@ export default function StrategicSimulator() {
     }
     return simulationResult.divisionResults.map((div) => ({
       categoryCode: div.category,
-      categoryName: div.categoryLabel,
-      teamName: div.categoryLabel,
+      categoryName: div.category,
+      teamName: DIVISION_VARIABLE_COST_RATES[div.category]?.name || div.categoryLabel,
       facilityCount: div.facilities.length,
       totalActual2025: div.lyRevenue,
       totalWeight: div.targetShare,
@@ -279,8 +279,8 @@ export default function StrategicSimulator() {
       facilities: div.facilities.map((f, fIdx) => ({
         no: fIdx + 1,
         categoryCode: div.category,
-        categoryName: div.categoryLabel,
-        teamName: div.categoryLabel,
+        categoryName: div.category,
+        teamName: DIVISION_VARIABLE_COST_RATES[div.category]?.name || div.categoryLabel,
         partName: f.category,
         facilityName: f.shopName,
         weight: Number((f.shareRatio * 100).toFixed(2)),
@@ -526,7 +526,7 @@ export default function StrategicSimulator() {
     effectiveCategories.forEach(c => {
       list.push({ 
         id: c.categoryCode, 
-        label: `${getCategoryIcon(c.categoryName)} ${c.categoryName}` 
+        label: `📁 ${c.categoryCode}` 
       });
     });
     return list;
@@ -968,7 +968,7 @@ export default function StrategicSimulator() {
           </div>
 
           <div className="space-y-3.5">
-            {['ROOM', 'GOLF', 'FNB', 'TICKET', 'MOTO', 'BANQUET'].map(divKey => {
+            {['GOLF', 'ROOM', 'FNB', 'TICKET', 'MOTO', 'BANQUET', 'PARKING'].map(divKey => {
               const meta = DIVISION_VARIABLE_COST_RATES[divKey] || DIVISION_VARIABLE_COST_RATES.OTHER;
               const val = strategicMultipliers[divKey] ?? 1.0;
               const isNonGolf = !input.includeGolf && divKey === 'GOLF';
@@ -976,10 +976,13 @@ export default function StrategicSimulator() {
 
               return (
                 <div key={divKey} className="flex items-center justify-between gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2.5 w-36">
+                  <div className="flex items-center gap-2.5 w-44">
                     <span className="text-xl">{meta.icon}</span>
                     <div>
-                      <div className="text-xs font-bold text-slate-900">{meta.name}</div>
+                      <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        <span>{meta.code}</span>
+                        <span className="text-[10px] font-normal text-slate-500">({meta.name})</span>
+                      </div>
                       <div className="text-[10px] text-slate-400">공헌이익률: {Math.round(meta.cmRate * 100)}%</div>
                     </div>
                   </div>
@@ -1161,8 +1164,10 @@ export default function StrategicSimulator() {
                     
                     <div className="flex items-center gap-2.5">
                       <span className="text-2xl">{catIcon}</span>
-                      <span className="text-lg font-black text-slate-900">{cat.categoryName}</span>
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">{cat.teamName}</span>
+                      <span className="text-xl font-black text-slate-900">{cat.categoryCode}</span>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                        {cat.teamName || DIVISION_VARIABLE_COST_RATES[cat.categoryCode]?.name || cat.categoryName}
+                      </span>
                       <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
                         {partGroups.length}개 파트 · {cat.facilityCount}개 영업장
                       </span>

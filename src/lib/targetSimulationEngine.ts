@@ -9,15 +9,17 @@ import {
   MULTI_YEAR_SEASONALITY_DATA 
 } from '../data/monthlySeasonalityData';
 
-// 6대 사업부 메타데이터 (아이콘, 색상, 라벨)
-const DIVISION_META: Record<string, { color: string; icon: string; label: string }> = {
-  ROOM: { color: '#1E3A8A', icon: '🏨', label: '객실' },
-  FNB: { color: '#16A34A', icon: '🍽️', label: '식음' },
-  GOLF: { color: '#9333EA', icon: '⛳', label: '골프' },
-  LEISURE: { color: '#EAB308', icon: '🎢', label: '레저본부' },
-  MOTO: { color: '#E11D48', icon: '🏎️', label: '모토아레나' },
-  BANQUET: { color: '#0891B2', icon: '🏛️', label: '대관' },
-  OTHER: { color: '#64748B', icon: '📦', label: '독립/기타' }
+// 7대 공식 사업본부 메타데이터 (공식 명칭 SSOT)
+const DIVISION_META: Record<string, { color: string; icon: string; label: string; teamName: string }> = {
+  GOLF: { color: '#9333EA', icon: '⛳', label: 'GOLF', teamName: '골프사업본부' },
+  ROOM: { color: '#1E3A8A', icon: '🏨', label: 'ROOM', teamName: '리조트사업본부' },
+  FNB: { color: '#16A34A', icon: '🍽️', label: 'FNB', teamName: '콘텐츠기획본부' },
+  LEISURE: { color: '#EAB308', icon: '🎢', label: 'TICKET', teamName: '레저본부' },
+  TICKET: { color: '#EAB308', icon: '🎢', label: 'TICKET', teamName: '레저본부' },
+  MOTO: { color: '#E11D48', icon: '🏎️', label: 'MOTO', teamName: '모토아레나' },
+  BANQUET: { color: '#0891B2', icon: '🏛️', label: 'BANQUET', teamName: '세일즈본부' },
+  PARKING: { color: '#0284C7', icon: '🅿️', label: 'PARKING', teamName: '주차관제' },
+  OTHER: { color: '#64748B', icon: '📦', label: 'OTHER', teamName: '독립/기타' }
 };
 
 export function runTargetSimulation(

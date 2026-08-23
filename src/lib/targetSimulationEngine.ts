@@ -105,25 +105,24 @@ export function runTargetSimulation(
 
     // 해당 부문의 백엔드 표준 영업장 필터
     const matchingFacilities = masterItems.filter(f => f.category === divKey);
-    const facilityCount = Math.max(1, matchingFacilities.length);
 
     // 해당 월의 원천 영업장별 실측 매출 및 목표 매출 연산
     const facilityResults: FacilityAllocationResult[] = matchingFacilities.map((fac) => {
-      let facLyRevenue = Math.round(divLyRevenue / facilityCount);
-      let shareRatio = totalRawWeight > 0 ? (normalizedWeight / facilityCount) : 0;
+      let facLyRevenue = 0;
+      let shareRatio = 0;
 
       if (!isAnnual && Array.isArray(monthMeta.facilities)) {
         const match = monthMeta.facilities.find(mf => mf.venueName === fac.shopName);
         if (match) {
-          facLyRevenue = match.netRevenue;
-          shareRatio = match.shareRatio;
+          facLyRevenue = match.netRevenue || 0;
+          shareRatio = match.shareRatio || 0;
         }
       } else if (isAnnual) {
         let annualSum = 0;
         for (let m = 1; m <= 12; m++) {
           const mFac = yearMeta.months[m]?.facilities?.find(mf => mf.venueName === fac.shopName);
           if (mFac) {
-            annualSum += mFac.netRevenue;
+            annualSum += (mFac.netRevenue || 0);
           }
         }
         if (annualSum > 0) {
@@ -133,10 +132,7 @@ export function runTargetSimulation(
       }
 
       // 목표 매출액 = 실측 기준선 × (1 + 목표성장률)
-      let facTargetRevenue = Math.round(facLyRevenue * (1 + input.targetGrowthRate / 100));
-      if (facLyRevenue === 0) {
-        facTargetRevenue = Math.round(divTargetRevenue / facilityCount);
-      }
+      const facTargetRevenue = Math.round(facLyRevenue * (1 + input.targetGrowthRate / 100));
 
       return {
         shopCode: fac.shopCode,

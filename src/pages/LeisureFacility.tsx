@@ -51,7 +51,19 @@ export default function LeisureFacility() {
               const fac = String(item.facilityName || item.shopName || '');
               const cat = String(item.categoryCode || '');
               const name = String(item.itemName || item.name || '');
-              return !fac.includes('모토아레나') && !name.includes('모토아레나') && cat !== 'MOTO';
+              
+              // Rigorous exclusion of Moto Arena circuit/cart items
+              const isMoto = 
+                fac.includes('모토아레나') || 
+                name.includes('모토') || 
+                cat === 'MOTO' ||
+                name.includes('1인승') ||
+                name.includes('2인승') ||
+                name.includes('레저카트') ||
+                name.includes('레이싱카트') ||
+                name.includes('카트스쿨');
+
+              return !isMoto;
             })
             .slice(0, 5);
 

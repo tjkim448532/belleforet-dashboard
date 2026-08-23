@@ -30,6 +30,7 @@ import SynergyCorrelation from './pages/SynergyCorrelation';
 import SynergyBundles from './pages/SynergyBundles';
 import GroupSales from './pages/GroupSales';
 import TargetSimulator from './pages/TargetSimulator';
+import StrategicSimulator from './pages/StrategicSimulator';
 import AdminCapacity from './pages/AdminCapacity';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -75,6 +76,8 @@ export function App() {
                       <Route path="leisure/organization" element={<LeisureOrganization />} />
                       <Route path="leisure-organization" element={<LeisureOrganization />} />
                       <Route path="target-simulator" element={<TargetSimulator />} />
+                      <Route path="strategic-simulator" element={<StrategicSimulator />} />
+                      <Route path="target-simulator/strategic" element={<StrategicSimulator />} />
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="members" element={<Members />} />

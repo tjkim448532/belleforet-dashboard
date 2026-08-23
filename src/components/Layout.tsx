@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, 
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase, Target
+  Briefcase, Target, Sparkles
 } from 'lucide-react';
 
 export default function Layout() {
@@ -254,12 +254,12 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 4. 🎯 목표 수립 시뮬레이터 (레저본부 바로 밑으로 배치) */}
+          {/* 4. 🎯 목표 수립 시뮬레이터 & 🚀 AI 전략 리밸런싱 [PRO] */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
-            <div className="mt-3 pt-2 border-t border-slate-100/80">
+            <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
               <NavLink
                 to="/target-simulator"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl ${
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl ${
                   isActive
                     ? 'bg-teal-50 text-teal-700 font-bold border border-teal-200/60 shadow-xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -268,8 +268,23 @@ export default function Layout() {
                   if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
                 }}
               >
-                <Target size={20} className="text-teal-600" />
-                <span>🎯 목표 수립 시뮬레이터</span>
+                <Target size={18} className="text-teal-600" />
+                <span className="text-sm">🎯 목표 수립 시뮬레이터</span>
+              </NavLink>
+
+              <NavLink
+                to="/strategic-simulator"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl ${
+                  isActive
+                    ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-900 font-bold border border-indigo-200/60 shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+                onClick={() => {
+                  if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
+                }}
+              >
+                <Sparkles size={18} className="text-indigo-600" />
+                <span className="text-sm">🚀 AI 전략 & 수익성 시뮬레이터</span>
               </NavLink>
             </div>
           )}

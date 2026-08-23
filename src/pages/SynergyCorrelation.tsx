@@ -36,7 +36,7 @@ interface AnchorOption {
 const ANCHOR_OPTIONS: AnchorOption[] = [
   { code: 'ROOM', name: '객실 숙박료', category: '콘도', icon: Building2, color: 'text-indigo-400', activeBg: 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400/40', desc: '객실 투숙객 증가 시 타 부대시설(식음/레저/골프) 동반 소비 파급 효과' },
   { code: 'MEDIA_ART', name: '미디어아트센터', category: '레저', icon: Sparkles, color: 'text-purple-400', activeBg: 'bg-purple-600 text-white shadow-lg ring-2 ring-purple-400/40', desc: '미디어아트 관람객 증가 시 카페, 기프트샵, 인근 식음/레저 연동 반응' },
-  { code: 'LUGE', name: '익스트림 루지', category: '레저', icon: Compass, color: 'text-rose-400', activeBg: 'bg-rose-600 text-white shadow-lg ring-2 ring-rose-400/40', desc: '루지/썰매 이용객 증가 시 목장, 모토아레나, 식음 매장 연계 소비' },
+  { code: 'LUGE', name: '마운틴카트', category: '레저', icon: Compass, color: 'text-rose-400', activeBg: 'bg-rose-600 text-white shadow-lg ring-2 ring-rose-400/40', desc: '마운틴카트(액티비티) 이용객 증가 시 목장, 모토아레나, 식음 매장 연계 소비' },
   { code: 'GOLF', name: '골프장', category: '골프', icon: Flag, color: 'text-emerald-400', activeBg: 'bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-400/40', desc: '골프 내장객 증가 시 스타트하우스, 레스토랑, 객실 서비스 연동' },
   { code: 'SUMMERLAND', name: '썸머랜드(워터파크)', category: '레저', icon: Waves, color: 'text-cyan-400', activeBg: 'bg-cyan-600 text-white shadow-lg ring-2 ring-cyan-400/40', desc: '워터파크 피크 시 푸드트럭, 편의점, 주변 부대시설 동반 반응' },
   { code: 'FARM', name: '벨포레 목장', category: '레저', icon: Ticket, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '목장/체험 가족 단위 방문객 증가 시 미디어아트, 카페 연계 반응' },
@@ -102,7 +102,12 @@ export default function SynergyCorrelation() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
 
-      const crossParams = `anchor=${targetAnchor}&startDate=${sDate}&endDate=${rangeActive && eDate ? eDate : sDate}&_t=${Date.now()}`;
+      // Calculate statistical time-series range (if single date, use MTD range for valid correlation calculation)
+      const monthStart = sDate ? `${sDate.substring(0, 7)}-01` : sDate;
+      const crossStartDate = rangeActive && eDate ? sDate : monthStart;
+      const crossEndDate = rangeActive && eDate ? eDate : sDate;
+
+      const crossParams = `anchor=${targetAnchor}&startDate=${crossStartDate}&endDate=${crossEndDate}&_t=${Date.now()}`;
 
       // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT), Matrix-Weekly (49 venues SSOT), Revenue Summary
       const [crossRes, matrixRes, summaryRes] = await Promise.all([
@@ -479,7 +484,7 @@ export default function SynergyCorrelation() {
                   <div className="min-w-0">
                     <div className="font-bold text-xs leading-snug truncate">{opt.name}</div>
                     <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
-                      {opt.code === 'ROOM' ? '전사 32개 매장' : opt.code === 'MEDIA_ART' ? '목장/카페/식음' : '전사 동반 반응'}
+                      {opt.code === 'ROOM' ? '전사 32개 매장' : opt.code === 'MEDIA_ART' ? '목장/카페/식음' : opt.code === 'LUGE' ? '목장/서킷/식음' : opt.code === 'GOLF' ? '레스토랑/콘도' : '전사 동반 반응'}
                     </div>
                   </div>
                 </button>

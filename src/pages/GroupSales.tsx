@@ -761,10 +761,10 @@ export default function GroupSales() {
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200/90">
               <tr>
                 <th className="py-3.5 px-4 min-w-[200px]">단체명 / 기업명</th>
-                <th className="py-3.5 px-3 text-center min-w-[100px]">로열티</th>
-                <th className="py-3.5 px-3 text-center min-w-[90px]">구분</th>
+                <th className="py-3.5 px-3 text-center min-w-[110px]">로열티</th>
+                <th className="py-3.5 px-3 text-center min-w-[130px]">구분</th>
                 <th className="py-3.5 px-4 min-w-[160px]">담당자 / 연락처</th>
-                <th className="py-3.5 px-4 min-w-[140px]">행사 기간</th>
+                <th className="py-3.5 px-4 min-w-[160px]">행사 기간</th>
                 <th className="py-3.5 px-3 text-right min-w-[70px]">인원</th>
                 <th className="py-3.5 px-4 text-right min-w-[130px]">결제액 / 누적 LTV</th>
                 <th className="py-3.5 px-4 min-w-[240px]">이용 영업장 내역</th>
@@ -795,22 +795,22 @@ export default function GroupSales() {
                     {/* Loyalty Badge */}
                     <td className="py-3.5 px-3 text-center">
                       {group.loyaltyTier === 'DIAMOND' && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-purple-50 text-purple-800 border border-purple-200 whitespace-nowrap inline-block">
                           {group.tierLabel}
                         </span>
                       )}
                       {group.loyaltyTier === 'GOLD' && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap inline-block">
                           {group.tierLabel}
                         </span>
                       )}
                       {group.loyaltyTier === 'SILVER' && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap inline-block">
                           {group.tierLabel}
                         </span>
                       )}
                       {(!group.loyaltyTier || group.loyaltyTier === 'BRONZE') && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap inline-block">
                           {group.tierLabel || '신규 1회'}
                         </span>
                       )}
@@ -818,7 +818,7 @@ export default function GroupSales() {
 
                     {/* Category Type */}
                     <td className="py-3.5 px-3 text-center">
-                      <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-700">
+                      <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold bg-slate-100 text-slate-700 whitespace-nowrap inline-block">
                         {group.categoryName || group.category}
                       </span>
                     </td>
@@ -826,31 +826,31 @@ export default function GroupSales() {
                     {/* Contact */}
                     <td className="py-3.5 px-4 text-xs">
                       <div className="font-semibold text-slate-900">{group.contactName}</div>
-                      <div className="text-slate-400 flex items-center gap-1 mt-0.5">
+                      <div className="text-slate-400 flex items-center gap-1 mt-0.5 whitespace-nowrap">
                         <Phone size={11} /> {group.contactPhone}
                       </div>
                     </td>
 
                     {/* Date / Stay */}
                     <td className="py-3.5 px-4 text-xs text-slate-600">
-                      <div>{group.checkInDate} ~ {group.checkOutDate}</div>
-                      <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                      <div className="whitespace-nowrap">{group.checkInDate} ~ {group.checkOutDate}</div>
+                      <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
                         {group.stayDays}박
                       </span>
                     </td>
 
                     {/* Pax */}
-                    <td className="py-3.5 px-3 text-right font-medium text-slate-800">
+                    <td className="py-3.5 px-3 text-right font-medium text-slate-800 whitespace-nowrap">
                       {group.paxCount.toLocaleString()}명
                     </td>
 
                     {/* Settlement & LTV */}
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="font-black text-slate-900 text-sm tabular-nums">
                         ₩{formatCurrency(group.totalRevenue)}
                       </div>
                       {(group.visitCount || 1) > 1 && (
-                        <div className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                        <div className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
                           누적 LTV ₩{formatCurrency(group.totalLtvRevenue)}
                         </div>
                       )}

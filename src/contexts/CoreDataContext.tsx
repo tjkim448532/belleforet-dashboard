@@ -163,6 +163,24 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             if (Number(corePayload.summary.totalGolfCanceledTeams || 0) === 0 && Number(gs.totalGolfCanceledTeams || gs.totalCanceledTeams || 0) > 0) {
               corePayload.summary.totalGolfCanceledTeams = Number(gs.totalGolfCanceledTeams || gs.totalCanceledTeams);
             }
+            if (Number(corePayload.summary.golfMemberPlayers || 0) === 0 && Number(gs.golfMemberPlayers || gs.memberPlayers || 0) > 0) {
+              corePayload.summary.golfMemberPlayers = Number(gs.golfMemberPlayers || gs.memberPlayers);
+            }
+            if (Number(corePayload.summary.golfNonMemberPlayers || 0) === 0 && Number(gs.golfNonMemberPlayers || gs.nonMemberPlayers || 0) > 0) {
+              corePayload.summary.golfNonMemberPlayers = Number(gs.golfNonMemberPlayers || gs.nonMemberPlayers);
+            }
+            if (Number(corePayload.summary.golfMemberAvgGreenFee || 0) === 0 && Number(gs.golfMemberAvgGreenFee || gs.memberAvgGreenFee || 0) > 0) {
+              corePayload.summary.golfMemberAvgGreenFee = Number(gs.golfMemberAvgGreenFee || gs.memberAvgGreenFee);
+            }
+            if (Number(corePayload.summary.golfNonMemberAvgGreenFee || 0) === 0 && Number(gs.golfNonMemberAvgGreenFee || gs.nonMemberAvgGreenFee || 0) > 0) {
+              corePayload.summary.golfNonMemberAvgGreenFee = Number(gs.golfNonMemberAvgGreenFee || gs.nonMemberAvgGreenFee);
+            }
+            if (Number(corePayload.summary.golfMemberGreenFee || 0) === 0 && Number(gs.golfMemberGreenFee || gs.memberGreenFee || 0) > 0) {
+              corePayload.summary.golfMemberGreenFee = Number(gs.golfMemberGreenFee || gs.memberGreenFee);
+            }
+            if (Number(corePayload.summary.golfNonMemberGreenFee || 0) === 0 && Number(gs.golfNonMemberGreenFee || gs.nonMemberGreenFee || 0) > 0) {
+              corePayload.summary.golfNonMemberGreenFee = Number(gs.golfNonMemberGreenFee || gs.nonMemberGreenFee);
+            }
           }
           corePayload.summary.golfChannels = channels;
 

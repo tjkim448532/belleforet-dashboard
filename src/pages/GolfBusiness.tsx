@@ -906,77 +906,95 @@ export default function GolfBusiness() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {/* 회원 수 */}
-            <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
-              <div className="text-slate-500 font-semibold mb-1 text-sm flex items-center justify-between">
-                <span>👤 회원 내장객 수</span>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                  {memberRatio}%
-                </span>
-              </div>
-              <div className="text-3xl font-bold text-emerald-900 my-2">
-                {formatNumber(memberPlayers)} <span className="text-lg font-medium text-slate-600">명</span>
-              </div>
-              <p className="text-xs text-slate-400">벨포레CC 정회원/무기명 회원 라운딩 인원</p>
-            </div>
+          {/* 회원 vs 비회원 4-Grid */}
+          {(() => {
+            const hasMemberData = (memberPlayers > 0 || nonMemberPlayers > 0) && (memberAvgGreenFee > 0 || nonMemberAvgGreenFee > 0);
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                  {/* 회원 수 */}
+                  <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+                    <div className="text-slate-500 font-semibold mb-1 text-sm flex items-center justify-between">
+                      <span>👤 회원 내장객 수</span>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {hasMemberData ? `${memberRatio}%` : '-'}
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-emerald-900 my-2">
+                      {hasMemberData ? `${formatNumber(memberPlayers)} 명` : '-'}
+                    </div>
+                    <p className="text-xs text-slate-400">벨포레CC 정회원/무기명 회원 라운딩 인원</p>
+                  </div>
 
-            {/* 비회원 수 */}
-            <div className="bg-gradient-to-br from-slate-50/80 to-indigo-50/30 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
-              <div className="text-slate-500 font-semibold mb-1 text-sm flex items-center justify-between">
-                <span>👥 비회원 내장객 수</span>
-                <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
-                  {nonMemberRatio}%
-                </span>
-              </div>
-              <div className="text-3xl font-bold text-slate-900 my-2">
-                {formatNumber(nonMemberPlayers)} <span className="text-lg font-medium text-slate-600">명</span>
-              </div>
-              <p className="text-xs text-slate-400">비회원 일반 인터넷/전화 예약 라운딩 인원</p>
-            </div>
+                  {/* 비회원 수 */}
+                  <div className="bg-gradient-to-br from-slate-50/80 to-indigo-50/30 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                    <div className="text-slate-500 font-semibold mb-1 text-sm flex items-center justify-between">
+                      <span>👥 비회원 내장객 수</span>
+                      <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                        {hasMemberData ? `${nonMemberRatio}%` : '-'}
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900 my-2">
+                      {hasMemberData ? `${formatNumber(nonMemberPlayers)} 명` : '-'}
+                    </div>
+                    <p className="text-xs text-slate-400">비회원 일반 인터넷/전화 예약 라운딩 인원</p>
+                  </div>
 
-            {/* 회원 그린피 객단가 */}
-            <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
-              <div className="text-slate-500 font-semibold mb-1 text-sm">💳 회원 그린피 객단가</div>
-              <div className="text-3xl font-extrabold text-emerald-700 my-2">
-                ₩{formatCurrency(memberAvgGreenFee)} <span className="text-sm font-medium text-slate-500">/인</span>
-              </div>
-              <p className="text-xs text-slate-400">회원 1인당 평균 그린피 결제 금액</p>
-            </div>
+                  {/* 회원 그린피 객단가 */}
+                  <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+                    <div className="text-slate-500 font-semibold mb-1 text-sm">💳 회원 그린피 객단가</div>
+                    <div className="text-3xl font-extrabold text-emerald-700 my-2">
+                      {memberAvgGreenFee > 0 ? `₩${formatCurrency(memberAvgGreenFee)} ` : '-'}
+                      {memberAvgGreenFee > 0 && <span className="text-sm font-medium text-slate-500">/인</span>}
+                    </div>
+                    <p className="text-xs text-slate-400">회원 1인당 평균 그린피 결제 금액</p>
+                  </div>
 
-            {/* 비회원 그린피 객단가 */}
-            <div className="bg-gradient-to-br from-slate-50/80 to-indigo-50/30 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
-              <div className="text-slate-500 font-semibold mb-1 text-sm">💳 비회원 그린피 객단가</div>
-              <div className="text-3xl font-extrabold text-indigo-800 my-2">
-                ₩{formatCurrency(nonMemberAvgGreenFee)} <span className="text-sm font-medium text-slate-500">/인</span>
-              </div>
-              <p className="text-xs text-slate-400">비회원 1인당 평균 그린피 결제 금액</p>
-            </div>
-          </div>
+                  {/* 비회원 그린피 객단가 */}
+                  <div className="bg-gradient-to-br from-slate-50/80 to-indigo-50/30 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                    <div className="text-slate-500 font-semibold mb-1 text-sm">💳 비회원 그린피 객단가</div>
+                    <div className="text-3xl font-extrabold text-indigo-800 my-2">
+                      {nonMemberAvgGreenFee > 0 ? `₩${formatCurrency(nonMemberAvgGreenFee)} ` : '-'}
+                      {nonMemberAvgGreenFee > 0 && <span className="text-sm font-medium text-slate-500">/인</span>}
+                    </div>
+                    <p className="text-xs text-slate-400">비회원 1인당 평균 그린피 결제 금액</p>
+                  </div>
+                </div>
 
-          {/* 객단가 비교 및 우대 혜택 통계 바 */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold">
-                회원 우대 혜택
-              </div>
-              <div>
-                <span className="text-slate-600 font-medium">비회원 대비 회원 그린피 객단가 차이: </span>
-                {nonMemberAvgGreenFee >= memberAvgGreenFee ? (
-                  <strong className="text-emerald-700 font-bold text-sm ml-1">
-                    -{formatCurrency(nonMemberAvgGreenFee - memberAvgGreenFee)}원 / 1인 우대
-                  </strong>
-                ) : (
-                  <strong className="text-rose-600 font-bold text-sm ml-1">
-                    +{formatCurrency(memberAvgGreenFee - nonMemberAvgGreenFee)}원 (비회원 단가 역전 / 데이터 보정 필요)
-                  </strong>
-                )}
-              </div>
-            </div>
-            <div className="text-slate-500">
-              회원 그린피 매출: <strong className="text-slate-800">{formatCurrency(memberGreenFee)}원</strong> | 비회원 그린피 매출: <strong className="text-slate-800">{formatCurrency(nonMemberGreenFee)}원</strong>
-            </div>
-          </div>
+                {/* 객단가 비교 및 우대 혜택 통계 바 */}
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold">
+                      회원 우대 혜택
+                    </div>
+                    <div>
+                      {hasMemberData ? (
+                        <>
+                          <span className="text-slate-600 font-medium">비회원 대비 회원 그린피 객단가 차이: </span>
+                          {nonMemberAvgGreenFee >= memberAvgGreenFee ? (
+                            <strong className="text-emerald-700 font-bold text-sm ml-1">
+                              -{formatCurrency(nonMemberAvgGreenFee - memberAvgGreenFee)}원 / 1인 우대
+                            </strong>
+                          ) : (
+                            <strong className="text-rose-600 font-bold text-sm ml-1">
+                              +{formatCurrency(memberAvgGreenFee - nonMemberAvgGreenFee)}원 (비회원 단가 역전 / 데이터 보정 필요)
+                            </strong>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-slate-500 font-medium">
+                          원천 정산 DB의 회원/비회원 세부 분류 데이터 연동 대기 중입니다.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-slate-500">
+                    회원 그린피 매출: <strong className="text-slate-800">{memberGreenFee > 0 ? `${formatCurrency(memberGreenFee)}원` : '-'}</strong> | 비회원 그린피 매출: <strong className="text-slate-800">{nonMemberGreenFee > 0 ? `${formatCurrency(nonMemberGreenFee)}원` : '-'}</strong>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Detailed Sales Table */}

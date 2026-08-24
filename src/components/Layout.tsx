@@ -81,10 +81,9 @@ export default function Layout() {
           if (autoHideSidebar) setSidebarOpen(false);
         }}
       >
-        <div className="p-6 flex items-center justify-between border-b border-slate-100">
-          <h2 className="text-2xl font-emphatic text-brand-mint tracking-widest">BELLE FORET</h2>
-          <button onClick={() => setSidebarOpen(false)} className={`${autoHideSidebar ? '' : 'lg:hidden'} text-slate-400 hover:text-slate-600 transition-colors`}>
-            <X size={24} />
+        <div className={`p-4 flex items-center justify-end ${autoHideSidebar ? '' : 'lg:hidden'} border-b border-slate-100`}>
+          <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+            <X size={20} />
           </button>
         </div>
         

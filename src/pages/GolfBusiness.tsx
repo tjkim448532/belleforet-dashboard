@@ -146,22 +146,22 @@ export default function GolfBusiness() {
             golf_revenue = golfSubtotalInMatrix;
           }
 
-          const golf_visited_teams = parseNum(golfSummary.totalVisitedTeams || payload.summary?.totalGolfTeams || 0);
-          const golf_visited_players = parseNum(payload.summary?.totalGolfVisitors || 0);
+          const golf_visited_teams = parseNum(golfSummary.totalVisitedTeams || golfSummary.totalGolfTeams || payload.summary?.totalGolfTeams || 0);
+          const golf_visited_players = parseNum(golfSummary.totalGolfVisitors || golfSummary.totalPlayers || payload.summary?.totalGolfVisitors || 0);
 
           let golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프') || payload.golfFacilityBreakdown || [];
           if (golfFacilities.length === 0 && golfFacilitiesInMatrix.length > 0) {
             golfFacilities = golfFacilitiesInMatrix;
           }
 
-          const member_players = parseNum(payload.summary?.golfMemberPlayers || 0);
-          const non_member_players = parseNum(payload.summary?.golfNonMemberPlayers || 0);
+          const member_players = parseNum(golfSummary.golfMemberPlayers || golfSummary.memberPlayers || payload.summary?.golfMemberPlayers || 0);
+          const non_member_players = parseNum(golfSummary.golfNonMemberPlayers || golfSummary.nonMemberPlayers || payload.summary?.golfNonMemberPlayers || 0);
 
-          const member_green_fee = parseNum(payload.summary?.golfMemberGreenFee || 0);
-          const non_member_green_fee = parseNum(payload.summary?.golfNonMemberGreenFee || 0);
+          const member_green_fee = parseNum(golfSummary.golfMemberGreenFee || golfSummary.memberGreenFee || payload.summary?.golfMemberGreenFee || 0);
+          const non_member_green_fee = parseNum(golfSummary.golfNonMemberGreenFee || golfSummary.nonMemberGreenFee || payload.summary?.golfNonMemberGreenFee || 0);
 
-          const member_avg_green_fee = parseNum(payload.summary?.golfMemberAvgGreenFee || 0);
-          const non_member_avg_green_fee = parseNum(payload.summary?.golfNonMemberAvgGreenFee || 0);
+          const member_avg_green_fee = parseNum(golfSummary.golfMemberAvgGreenFee || golfSummary.memberAvgGreenFee || payload.summary?.golfMemberAvgGreenFee || 0);
+          const non_member_avg_green_fee = parseNum(golfSummary.golfNonMemberAvgGreenFee || golfSummary.nonMemberAvgGreenFee || payload.summary?.golfNonMemberAvgGreenFee || 0);
 
           const golf_avg_green_fee = parseNum(golfSummary.avgGreenFeePerPlayer || payload.summary?.golfAvgGreenFee || 0);
 

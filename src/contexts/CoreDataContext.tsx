@@ -146,8 +146,23 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             corePayload.summary.golfOtaPlayers = otaCh.visitedPlayers || 0;
             corePayload.summary.golfOtaRevenue = otaCh.greenFeeRevenue || 0;
           }
-          if (golfChannelPayload.golfSummary?.avgGreenFeePerPlayer !== undefined && golfChannelPayload.golfSummary?.avgGreenFeePerPlayer !== null) {
-            corePayload.summary.golfAvgGreenFee = Number(golfChannelPayload.golfSummary.avgGreenFeePerPlayer);
+          if (golfChannelPayload.golfSummary) {
+            const gs = golfChannelPayload.golfSummary;
+            if (gs.avgGreenFeePerPlayer !== undefined && gs.avgGreenFeePerPlayer !== null) {
+              corePayload.summary.golfAvgGreenFee = Number(gs.avgGreenFeePerPlayer);
+            }
+            if (Number(corePayload.summary.totalGolfVisitors || 0) === 0 && Number(gs.totalGolfVisitors || gs.totalPlayers || 0) > 0) {
+              corePayload.summary.totalGolfVisitors = Number(gs.totalGolfVisitors || gs.totalPlayers);
+            }
+            if (Number(corePayload.summary.totalGolfTeams || 0) === 0 && Number(gs.totalGolfTeams || gs.totalVisitedTeams || 0) > 0) {
+              corePayload.summary.totalGolfTeams = Number(gs.totalGolfTeams || gs.totalVisitedTeams);
+            }
+            if (Number(corePayload.summary.totalGolfReservedTeams || 0) === 0 && Number(gs.totalGolfReservedTeams || gs.totalReservedTeams || 0) > 0) {
+              corePayload.summary.totalGolfReservedTeams = Number(gs.totalGolfReservedTeams || gs.totalReservedTeams);
+            }
+            if (Number(corePayload.summary.totalGolfCanceledTeams || 0) === 0 && Number(gs.totalGolfCanceledTeams || gs.totalCanceledTeams || 0) > 0) {
+              corePayload.summary.totalGolfCanceledTeams = Number(gs.totalGolfCanceledTeams || gs.totalCanceledTeams);
+            }
           }
           corePayload.summary.golfChannels = channels;
 

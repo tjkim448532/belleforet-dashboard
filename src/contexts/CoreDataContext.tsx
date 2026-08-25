@@ -112,6 +112,40 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         if (!corePayload.summary) corePayload.summary = {};
 
+        // 🛡️ 골든 마트(revenue-summary) 지연 시 matrix-weekly Grand Total 자동 교차 복원 가드
+        if (Number(corePayload.summary?.totalRevenue || 0) === 0 && Array.isArray(matrixPayload)) {
+          const grandTotalRow = matrixPayload.find((r: any) => r.isGrandTotal || r.categoryCode === 'TOTAL');
+          if (grandTotalRow) {
+            const actualVal = grandTotalRow.todayActual ?? grandTotalRow.rangeActual ?? 0;
+            const lyVal = grandTotalRow.todayLy ?? grandTotalRow.rangeLy ?? 0;
+            corePayload.summary.totalRevenue = actualVal;
+            corePayload.summary.totalLyRevenue = lyVal;
+            corePayload.summary.todayActual = actualVal;
+            corePayload.summary.todayLy = lyVal;
+            corePayload.summary.growthRate = grandTotalRow.todayGrowth ?? grandTotalRow.rangeGrowth ?? 0;
+            corePayload.summary.totalVisitors = Number(grandTotalRow.todayVisitors || grandTotalRow.visitors || 0);
+          }
+
+          if (!corePayload.salesByCategory || corePayload.salesByCategory.length === 0) {
+            const categorySubtotals = matrixPayload.filter((r: any) => r.isSubtotal && (r.subtotalType === 'category' || r.shopName === '소계' || r.categoryCode !== 'TOTAL'));
+            if (categorySubtotals.length > 0) {
+              const uniqueCats = new Map<string, any>();
+              categorySubtotals.forEach((r: any) => {
+                if (!uniqueCats.has(r.categoryCode)) {
+                  uniqueCats.set(r.categoryCode, {
+                    categoryCode: r.categoryCode,
+                    categoryName: r.categoryName || r.teamName,
+                    totalSales: r.todayActual ?? r.rangeActual ?? 0,
+                    todayActual: r.todayActual ?? r.rangeActual ?? 0,
+                    todayLy: r.todayLy ?? r.rangeLy ?? 0
+                  });
+                }
+              });
+              corePayload.salesByCategory = Array.from(uniqueCats.values());
+            }
+          }
+        }
+
         // 연박(2박+) 체류 데이터 정밀 보정 (los-correlation-trend 연동)
         if (Array.isArray(losTrend) && losTrend.length > 0) {
           const validPoints = losTrend.filter((t: any) => typeof t.multiNightRatio === 'number' && t.multiNightRatio > 0);

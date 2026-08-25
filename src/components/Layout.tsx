@@ -191,7 +191,7 @@ export default function Layout() {
                     if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                   }}
                 >
-                  영업장별 연계 상관관계
+                  ⚡ 인과 시너지 & CAPA 분석
                 </NavLink>
 
                 <NavLink

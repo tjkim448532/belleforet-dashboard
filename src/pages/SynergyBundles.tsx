@@ -267,7 +267,7 @@ export default function SynergyBundles() {
                   }`
                 }
               >
-                <Zap size={14} /> 2. 앵커시설 교차 시너지 & 탄력성 분석
+                <Zap size={14} /> 2. 앵커시설 순수 인과 & CAPA 분석
               </NavLink>
               
               <NavLink 

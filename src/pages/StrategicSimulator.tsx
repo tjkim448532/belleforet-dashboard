@@ -14,18 +14,18 @@ import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicReba
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-// 7대 공식 사업본부별 표준 변동비율 (v_f) 및 공헌이익률 마스터 (공식 명칭 SSOT)
-const DIVISION_VARIABLE_COST_RATES: Record<string, { varRate: number; cmRate: number; code: string; name: string; color: string; icon: string }> = {
-  GOLF: { varRate: 0.20, cmRate: 0.80, code: 'GOLF', name: '골프사업본부', color: '#9333EA', icon: '⛳' },
-  ROOM: { varRate: 0.15, cmRate: 0.85, code: 'ROOM', name: '리조트사업본부', color: '#1E3A8A', icon: '🏨' },
-  FNB: { varRate: 0.45, cmRate: 0.55, code: 'FNB', name: '콘텐츠기획본부', color: '#16A34A', icon: '🍽️' },
-  TICKET: { varRate: 0.30, cmRate: 0.70, code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
-  LEISURE: { varRate: 0.30, cmRate: 0.70, code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
-  MOTO: { varRate: 0.35, cmRate: 0.65, code: 'MOTO', name: '모토아레나', color: '#E11D48', icon: '🏎️' },
-  BANQUET: { varRate: 0.30, cmRate: 0.70, code: 'BANQUET', name: '세일즈본부', color: '#0891B2', icon: '🏛️' },
-  PARKING: { varRate: 0.10, cmRate: 0.90, code: 'PARKING', name: '주차관제', color: '#0284C7', icon: '🅿️' },
-  GOODS: { varRate: 0.50, cmRate: 0.50, code: 'GOODS', name: '벨포레굿즈', color: '#64748B', icon: '🛍️' },
-  OTHER: { varRate: 0.55, cmRate: 0.45, code: 'OTHER', name: '독립/기타', color: '#475569', icon: '📦' }
+// 7대 공식 사업본부별 메타 마스터 (공식 명칭 SSOT)
+const DIVISION_META: Record<string, { code: string; name: string; color: string; icon: string }> = {
+  GOLF: { code: 'GOLF', name: '골프사업본부', color: '#9333EA', icon: '⛳' },
+  ROOM: { code: 'ROOM', name: '리조트사업본부', color: '#1E3A8A', icon: '🏨' },
+  FNB: { code: 'FNB', name: '콘텐츠기획본부', color: '#16A34A', icon: '🍽️' },
+  TICKET: { code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
+  LEISURE: { code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
+  MOTO: { code: 'MOTO', name: '모토아레나', color: '#E11D48', icon: '🏎️' },
+  BANQUET: { code: 'BANQUET', name: '세일즈본부', color: '#0891B2', icon: '🏛️' },
+  PARKING: { code: 'PARKING', name: '주차관제', color: '#0284C7', icon: '🅿️' },
+  GOODS: { code: 'GOODS', name: '벨포레굿즈', color: '#64748B', icon: '🛍️' },
+  OTHER: { code: 'OTHER', name: '독립/기타', color: '#475569', icon: '📦' }
 };
 
 const YEAR_PAIRS = [
@@ -90,9 +90,6 @@ interface ApiFacility {
   target2026: number;
   actual2026?: number;
   achievementRate?: number;
-  variableCostRate?: number;
-  contributionMargin?: number;
-  cmRate?: number;
 }
 
 interface ApiPartGroup {
@@ -104,7 +101,6 @@ interface ApiPartGroup {
   totalTarget2026: number;
   totalActual2026: number;
   achievementRate: number;
-  totalContributionMargin: number;
   facilities: ApiFacility[];
 }
 
@@ -118,7 +114,6 @@ interface ApiCategory {
   totalTarget2026: number;
   totalActual2026?: number;
   achievementRate?: number;
-  totalContributionMargin?: number;
   facilities: ApiFacility[];
 }
 
@@ -282,7 +277,7 @@ export default function StrategicSimulator() {
     return simulationResult.divisionResults.map((div) => ({
       categoryCode: div.category,
       categoryName: div.category,
-      teamName: DIVISION_VARIABLE_COST_RATES[div.category]?.name || div.categoryLabel,
+      teamName: DIVISION_META[div.category]?.name || div.categoryLabel,
       facilityCount: div.facilities.length,
       totalActual2025: div.lyRevenue,
       totalWeight: div.targetShare,
@@ -293,7 +288,7 @@ export default function StrategicSimulator() {
         no: fIdx + 1,
         categoryCode: div.category,
         categoryName: div.category,
-        teamName: DIVISION_VARIABLE_COST_RATES[div.category]?.name || div.categoryLabel,
+        teamName: DIVISION_META[div.category]?.name || div.categoryLabel,
         partName: f.category,
         facilityName: f.shopName,
         weight: Number((f.shareRatio * 100).toFixed(2)),
@@ -351,41 +346,31 @@ export default function StrategicSimulator() {
     const rebalancedCats = scoredCats.map(cat => {
       const normalizedWeight = cat.strategicWeightRaw / sumStrategicRawWeights;
       const targetRev = Math.round(targetGrandTotal * normalizedWeight);
-      const varInfo = DIVISION_VARIABLE_COST_RATES[cat.categoryCode] || DIVISION_VARIABLE_COST_RATES.OTHER;
 
-      // Feature 2: Contribution Margin (CM = Target * (1 - v_f))
-      const totalCM = Math.round(targetRev * varInfo.cmRate);
-
-      const facilitiesWithCM: ApiFacility[] = (cat.facilities || []).map((fac) => {
+      const facilitiesWithTarget: ApiFacility[] = (cat.facilities || []).map((fac) => {
         const facShare = (fac.actual2025 / (cat.totalActual2025 || 1)) || (1 / Math.max(1, cat.facilities.length));
         const facTarget = Math.round(targetRev * facShare);
-        const facCM = Math.round(facTarget * varInfo.cmRate);
 
         return {
           ...fac,
           weight: Number((normalizedWeight * facShare * 100).toFixed(2)),
-          target2026: facTarget,
-          variableCostRate: varInfo.varRate,
-          contributionMargin: facCM,
-          cmRate: varInfo.cmRate
+          target2026: facTarget
         };
       });
 
       // Facility Largest Remainder within category
-      const curFacSum = facilitiesWithCM.reduce((s, f) => s + f.target2026, 0);
+      const curFacSum = facilitiesWithTarget.reduce((s, f) => s + f.target2026, 0);
       const facDiff = targetRev - curFacSum;
-      if (facDiff !== 0 && facilitiesWithCM.length > 0) {
-        const sorted = [...facilitiesWithCM].sort((a, b) => b.target2026 - a.target2026);
+      if (facDiff !== 0 && facilitiesWithTarget.length > 0) {
+        const sorted = [...facilitiesWithTarget].sort((a, b) => b.target2026 - a.target2026);
         sorted[0].target2026 += facDiff;
-        sorted[0].contributionMargin = Math.round(sorted[0].target2026 * varInfo.cmRate);
       }
 
       return {
         ...cat,
         totalWeight: Number((normalizedWeight * 100).toFixed(2)),
         totalTarget2026: targetRev,
-        totalContributionMargin: totalCM,
-        facilities: facilitiesWithCM
+        facilities: facilitiesWithTarget
       };
     });
 
@@ -395,11 +380,8 @@ export default function StrategicSimulator() {
     if (divDiff !== 0 && rebalancedCats.length > 0) {
       const sortedDivs = [...rebalancedCats].sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
       sortedDivs[0].totalTarget2026 += divDiff;
-      const varInfo = DIVISION_VARIABLE_COST_RATES[sortedDivs[0].categoryCode] || DIVISION_VARIABLE_COST_RATES.OTHER;
-      sortedDivs[0].totalContributionMargin = Math.round(sortedDivs[0].totalTarget2026 * varInfo.cmRate);
       if (sortedDivs[0].facilities && sortedDivs[0].facilities.length > 0) {
         sortedDivs[0].facilities[0].target2026 += divDiff;
-        sortedDivs[0].facilities[0].contributionMargin = Math.round(sortedDivs[0].facilities[0].target2026 * varInfo.cmRate);
       }
     }
 
@@ -410,15 +392,6 @@ export default function StrategicSimulator() {
   const grandTargetTotal = useMemo(() => {
     return effectiveCategories.reduce((sum, c) => sum + c.totalTarget2026, 0);
   }, [effectiveCategories]);
-
-  const grandContributionMarginTotal = useMemo(() => {
-    return effectiveCategories.reduce((sum, c) => sum + (c.totalContributionMargin || 0), 0);
-  }, [effectiveCategories]);
-
-  const grandContributionMarginRate = useMemo(() => {
-    if (grandTargetTotal === 0) return 0;
-    return Number(((grandContributionMarginTotal / grandTargetTotal) * 100).toFixed(1));
-  }, [grandContributionMarginTotal, grandTargetTotal]);
 
   // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {
@@ -464,7 +437,6 @@ export default function StrategicSimulator() {
             totalTarget2026: 0,
             totalActual2026: 0,
             achievementRate: 0,
-            totalContributionMargin: 0,
             facilities: []
           };
         }
@@ -478,7 +450,6 @@ export default function StrategicSimulator() {
         map[partKey].totalActual2025 += (fac.actual2025 || 0);
         map[partKey].totalTarget2026 += (fac.target2026 || 0);
         map[partKey].totalActual2026 += (fac.actual2026 || 0);
-        map[partKey].totalContributionMargin += (fac.contributionMargin || 0);
       });
 
       const partGroups = Object.values(map);
@@ -627,7 +598,7 @@ export default function StrategicSimulator() {
               </span>
             </h1>
             <p className="text-slate-300 text-xs lg:text-sm mt-2 font-normal max-w-3xl">
-              경영진이 부서별 전략 승수(β_f)를 가동하여 <strong>Zero-Sum 실시간 리밸런싱</strong>을 수행하고, <strong>공헌이익(CM) 듀얼 타겟팅</strong> 및 <strong>다년도 WMA 기상 보정</strong>을 적용하는 차세대 전사 경영 계획 엔진입니다.
+              경영진이 부서별 전략 승수(β_f)를 가동하여 <strong>Zero-Sum 실시간 리밸런싱</strong>을 수행하고, <strong>1원 단위 Zero-Variance 정합성</strong> 및 <strong>다년도 WMA 기상 보정</strong>을 적용하는 차세대 전사 경영 계획 엔진입니다.
             </p>
           </div>
 
@@ -829,8 +800,8 @@ export default function StrategicSimulator() {
         </div>
       </div>
 
-      {/* 3. 🏆 5 Executive KPI Highlight Summary Cards (Zero Fake Numbers) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+      {/* 3. 🏆 4 Executive KPI Highlight Summary Cards (Zero Fake Numbers) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
         {/* Card 1: 목표 총매출 */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -845,21 +816,7 @@ export default function StrategicSimulator() {
           </div>
         </div>
 
-        {/* Card 2: 목표 공헌이익 (Contribution Margin) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="text-[11px] font-bold text-indigo-600 mb-1 flex items-center justify-between">
-            <span>목표 공헌이익 (CM)</span>
-            <span className="text-[10px] bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-bold">이익 중심</span>
-          </div>
-          <div className="text-2xl font-black text-indigo-700 tabular-nums">
-            {(grandContributionMarginTotal / 100000000).toFixed(2)} <span className="text-sm font-normal text-slate-500">억원</span>
-          </div>
-          <div className="text-xs text-indigo-600 font-bold mt-1">
-            전사 공헌이익률: <b>{grandContributionMarginRate}%</b>
-          </div>
-        </div>
-
-        {/* Card 3: Dual TrevPAR */}
+        {/* Card 2: Dual TrevPAR */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">
             목표 {input.includeGolf ? '전사 Total' : '순수 리조트'} TrevPAR
@@ -872,7 +829,7 @@ export default function StrategicSimulator() {
           </div>
         </div>
 
-        {/* Card 4: WMA 기상 보정 상태 */}
+        {/* Card 3: WMA 기상 보정 상태 */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1">
             기준선 산출 방식
@@ -885,7 +842,7 @@ export default function StrategicSimulator() {
           </div>
         </div>
 
-        {/* Card 5: 실제 진도율 (100% Real SSOT Data - No Hardcoded Numbers) */}
+        {/* Card 4: 실제 진도율 (100% Real SSOT Data - No Hardcoded Numbers) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 mb-1 flex items-center justify-between">
             <span>{input.targetYear}년 실제 달성률</span>
@@ -941,7 +898,7 @@ export default function StrategicSimulator() {
 
           <div className="space-y-3.5">
             {['GOLF', 'ROOM', 'FNB', 'TICKET', 'MOTO', 'BANQUET', 'PARKING'].map(divKey => {
-              const meta = DIVISION_VARIABLE_COST_RATES[divKey] || DIVISION_VARIABLE_COST_RATES.OTHER;
+              const meta = DIVISION_META[divKey] || DIVISION_META.OTHER;
               const val = strategicMultipliers[divKey] ?? 1.0;
               const isNonGolf = !input.includeGolf && divKey === 'GOLF';
               if (isNonGolf) return null;
@@ -955,7 +912,6 @@ export default function StrategicSimulator() {
                         <span>{meta.code}</span>
                         <span className="text-[10px] font-normal text-slate-500">({meta.name})</span>
                       </div>
-                      <div className="text-[10px] text-slate-400">공헌이익률: {Math.round(meta.cmRate * 100)}%</div>
                     </div>
                   </div>
 
@@ -1083,23 +1039,23 @@ export default function StrategicSimulator() {
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
             <PieChart className="w-5 h-5 text-indigo-600" />
-            전략 승수(β_f) 적용 후 부문별 목표 매출 및 공헌이익 구성비
+            전략 승수(β_f) 적용 후 부문별 목표 매출 구성비
           </h3>
-          <span className="text-xs font-bold text-slate-500">전사 {(grandTargetTotal / 100000000).toFixed(2)}억원 (공헌이익 {(grandContributionMarginTotal / 100000000).toFixed(2)}억원)</span>
+          <span className="text-xs font-bold text-slate-500">전사 목표 총액: {(grandTargetTotal / 100000000).toFixed(2)}억원</span>
         </div>
         <ReactECharts option={categoryPieOptions} style={{ height: '300px', width: '100%' }} />
       </div>
 
-      {/* 6. 📂 3-Depth 아코디언 테이블 with 공헌이익(CM) & 스마트 뱃지 */}
+      {/* 6. 📂 3-Depth 아코디언 테이블 & 스마트 뱃지 */}
       <div className="bg-white rounded-[32px] p-7 border border-slate-200 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Target className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 & 공헌이익 3-Depth 아코디언 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
+              영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              전략 승수(β_f)와 공헌이익률이 반영된 <strong>[부문 ➔ 파트 ➔ 소속 영업장]</strong> 1원 단위 정규화 결과입니다.
+              전략 승수(β_f)가 반영된 <strong>[부문 ➔ 파트 ➔ 소속 영업장]</strong> 1원 단위 정규화 결과입니다.
             </p>
           </div>
 
@@ -1126,7 +1082,8 @@ export default function StrategicSimulator() {
             const isCatOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
             const catIcon = getCategoryIcon(cat.categoryName);
             const partGroups = getCategoryParts(cat);
-            const varInfo = DIVISION_VARIABLE_COST_RATES[cat.categoryCode] || DIVISION_VARIABLE_COST_RATES.OTHER;
+            const meta = DIVISION_META[cat.categoryCode] || DIVISION_META.OTHER;
+            const catDiff = cat.totalTarget2026 - cat.totalActual2025;
 
             return (
               <div 
@@ -1152,7 +1109,7 @@ export default function StrategicSimulator() {
                     <div className="flex items-center gap-2.5">
                       <span className="text-2xl">{catIcon}</span>
                       <span className="text-xl font-black text-slate-900">
-                        {cat.teamName || DIVISION_VARIABLE_COST_RATES[cat.categoryCode]?.name || cat.categoryName}
+                        {cat.teamName || meta.name || cat.categoryName}
                       </span>
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                         {cat.categoryCode}
@@ -1165,13 +1122,18 @@ export default function StrategicSimulator() {
 
                   <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
                     <div className="text-slate-600">
-                      비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
+                      전략 비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
+                    </div>
+                    <div className="text-slate-600">
+                      {input.baseYear}년 실적: <span className="font-extrabold text-slate-700 tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
                     </div>
                     <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
-                      목표 매출: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
+                      {input.targetYear}년 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
                     </div>
-                    <div className="text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
-                      공헌이익 (CM): <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(cat.totalContributionMargin)}원 ({Math.round(varInfo.cmRate * 100)}%)</span>
+                    <div className={`px-3 py-1 rounded-lg border font-bold tabular-nums ${
+                      catDiff >= 0 ? 'text-teal-900 bg-teal-50 border-teal-200' : 'text-rose-900 bg-rose-50 border-rose-200'
+                    }`}>
+                      증감: {catDiff >= 0 ? '+' : ''}₩{formatCurrency(catDiff)}원
                     </div>
                   </div>
                 </div>
@@ -1182,6 +1144,7 @@ export default function StrategicSimulator() {
                     {partGroups.map((part) => {
                       const isPartOpen = openParts[part.partKey] !== undefined ? openParts[part.partKey] : true;
                       const partIcon = getPartIcon(part.partName);
+                      const partDiff = part.totalTarget2026 - part.totalActual2025;
 
                       return (
                         <div key={part.partKey} className="bg-slate-50/40">
@@ -1207,11 +1170,16 @@ export default function StrategicSimulator() {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3.5 text-xs font-semibold">
-                              <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
-                                목표 매출: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
+                              <div className="text-slate-600">
+                                {input.baseYear}년: <span className="font-bold text-slate-700 tabular-nums">₩{formatCurrency(part.totalActual2025)}원</span>
                               </div>
-                              <div className="text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-100">
-                                공헌이익: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(part.totalContributionMargin)}원</span>
+                              <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                                목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
+                              </div>
+                              <div className={`px-2.5 py-0.5 rounded-md border font-bold tabular-nums ${
+                                partDiff >= 0 ? 'text-teal-800 bg-teal-50 border-teal-100' : 'text-rose-800 bg-rose-50 border-rose-100'
+                              }`}>
+                                증감: {partDiff >= 0 ? '+' : ''}₩{formatCurrency(partDiff)}원
                               </div>
                             </div>
                           </div>
@@ -1227,47 +1195,48 @@ export default function StrategicSimulator() {
                                     <th className="py-2.5 px-4 text-right">전략 비중 (%)</th>
                                     <th className="py-2.5 px-4 text-right">{input.baseYear}년 실적</th>
                                     <th className="py-2.5 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표 매출</th>
-                                    <th className="py-2.5 px-4 text-right font-bold text-emerald-800">예상 공헌이익 (CM)</th>
-                                    <th className="py-2.5 px-4 text-center">공헌이익률</th>
+                                    <th className="py-2.5 px-4 text-right font-bold text-teal-800">목표 증감액 (Δ)</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-slate-800">
-                                  {part.facilities.map((fac) => (
-                                    <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                                      <td className="py-2.5 px-4 text-center font-bold text-slate-400">
-                                        {fac.no}
-                                      </td>
-                                      <td className="py-2.5 px-4 font-bold text-slate-900 text-sm">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span>{fac.facilityName}</span>
-                                          {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
-                                            <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
-                                              ADR 레버리지 권장
-                                            </span>
-                                          ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
-                                            <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
-                                              핵심 볼륨 견인
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                      </td>
-                                      <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold">
-                                        {fac.weight}%
-                                      </td>
-                                      <td className="py-2.5 px-4 text-right tabular-nums text-slate-600">
-                                        ₩{formatCurrency(fac.actual2025)}원
-                                      </td>
-                                      <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
-                                        ₩{formatCurrency(fac.target2026)}원
-                                      </td>
-                                      <td className="py-2.5 px-4 text-right tabular-nums font-bold text-emerald-700 bg-emerald-50/20">
-                                        ₩{formatCurrency(fac.contributionMargin)}원
-                                      </td>
-                                      <td className="py-2.5 px-4 text-center font-bold text-slate-600">
-                                        {Math.round((fac.cmRate ?? varInfo.cmRate) * 100)}%
-                                      </td>
-                                    </tr>
-                                  ))}
+                                  {part.facilities.map((fac) => {
+                                    const facDiff = fac.target2026 - fac.actual2025;
+                                    return (
+                                      <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="py-2.5 px-4 text-center font-bold text-slate-400">
+                                          {fac.no}
+                                        </td>
+                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-sm">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span>{fac.facilityName}</span>
+                                            {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
+                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
+                                                ADR 레버리지 권장
+                                              </span>
+                                            ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
+                                              <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
+                                                핵심 볼륨 견인
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold">
+                                          {fac.weight}%
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-600">
+                                          ₩{formatCurrency(fac.actual2025)}원
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
+                                          ₩{formatCurrency(fac.target2026)}원
+                                        </td>
+                                        <td className={`py-2.5 px-4 text-right tabular-nums font-bold ${
+                                          facDiff >= 0 ? 'text-teal-700 bg-teal-50/20' : 'text-rose-700 bg-rose-50/20'
+                                        }`}>
+                                          {facDiff >= 0 ? '+' : ''}₩{formatCurrency(facDiff)}원
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>

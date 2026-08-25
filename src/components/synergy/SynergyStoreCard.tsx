@@ -1,4 +1,4 @@
-import { Ticket, Utensils, TrendingUp, Sparkles, Zap, ArrowUpRight } from 'lucide-react';
+import { Ticket, Utensils, TrendingUp, Sparkles, Zap, ArrowUpRight, AlertTriangle, Clock, Gauge } from 'lucide-react';
 import type { StoreCorrelationItem } from './types';
 import { ComposedChart, Area, Line, ResponsiveContainer, Tooltip as RechartsTooltip, YAxis } from 'recharts';
 
@@ -19,21 +19,24 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
   const isFnb = type === 'fnb';
   const Icon = isLeisure ? Ticket : Utensils;
   
-  const coeff = store.correlationCoefficient ?? 0;
-  const elasticity = store.elasticityPercent;
-  const spillover = store.spilloverPerMillion;
+  const rawCoeff = store.rawCorrelation ?? store.correlationCoefficient ?? 0;
+  const pureCoeff = store.pureCorrelation ?? rawCoeff;
+  const elasticity = store.pureElasticity ?? store.elasticityPercent;
+  const spillover = store.pureSpilloverPerMillion ?? store.spilloverPerMillion;
+  const isSpurious = store.isSpurious ?? false;
+  
   const grade = store.synergyGrade || (
-    coeff >= 0.7 ? 'EXCELLENT' :
-    coeff >= 0.4 ? 'HIGH' :
-    coeff >= 0.2 ? 'MODERATE' : 'LOW'
+    pureCoeff >= 0.7 ? 'EXCELLENT' :
+    pureCoeff >= 0.4 ? 'HIGH' :
+    pureCoeff >= 0.2 ? 'MODERATE' : 'LOW'
   );
 
   const gradeBadge = (() => {
     switch (grade) {
       case 'EXCELLENT':
-        return { text: '🚀 초강력 앵커결합', bg: 'bg-emerald-600 text-white' };
+        return { text: '🚀 초강력 순수시너지', bg: 'bg-emerald-600 text-white' };
       case 'HIGH':
-        return { text: '🔥 핵심 시너지', bg: 'bg-indigo-600 text-white' };
+        return { text: '🔥 핵심 인과연동', bg: 'bg-indigo-600 text-white' };
       case 'MODERATE':
         return { text: '🎯 일반 연계', bg: 'bg-purple-600 text-white' };
       case 'LOW':
@@ -43,9 +46,19 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
   })();
 
   const displayName = store.shopName || store.storeName || '';
+  const bottleneckRisk = store.bottleneckRisk;
+  const capaUtil = store.currentCapacityUtilization;
+  const timeLag = store.timeLagDistribution;
 
   return (
-    <div className={`p-6 rounded-3xl border ${store.color || 'border-slate-200 bg-white'} transition-all shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden`}>
+    <div className={`p-6 rounded-3xl border ${store.color || 'border-slate-200 bg-white'} transition-all shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden relative`}>
+      {isSpurious && (
+        <div className="mb-3 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold flex items-center gap-1.5">
+          <AlertTriangle size={13} className="text-rose-600 shrink-0" />
+          <span>외생변수(주말/날씨) 착시 주의 — 순수인과 약함</span>
+        </div>
+      )}
+
       <div>
         {/* Card Header: Store Name + Grade Badge */}
         <div className="flex items-center justify-between gap-2 mb-4">
@@ -60,25 +73,32 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
 
         {/* Metric Rows */}
         <div className="space-y-2.5 text-xs">
-          {/* 1. Correlation Metric Box */}
+          {/* 1. True Net Correlation Metric Box */}
           <div className="flex justify-between items-center p-3 rounded-2xl border bg-purple-50/90 border-purple-200 text-purple-950 gap-2">
-            <span className="font-semibold text-xs text-slate-700 flex items-center gap-1.5 min-w-0">
-              <TrendingUp size={14} className="text-purple-600 shrink-0" /> 
-              <span className="truncate">동반 매출 상관도 (r)</span>
-            </span>
+            <div className="min-w-0">
+              <span className="font-semibold text-xs text-slate-700 flex items-center gap-1.5 min-w-0">
+                <TrendingUp size={14} className="text-purple-600 shrink-0" /> 
+                <span className="truncate font-bold">순수 인과 상관계수 (r)</span>
+              </span>
+              {store.rawCorrelation !== undefined && store.pureCorrelation !== undefined && (
+                <span className="text-[10px] text-slate-500 block truncate">
+                  원시 {rawCoeff.toFixed(2)} ➔ 외생통제 {pureCoeff.toFixed(2)}
+                </span>
+              )}
+            </div>
             <span className="font-black text-sm tabular-nums text-purple-700 whitespace-nowrap shrink-0">
-              {coeff >= 0 ? `+${coeff.toFixed(3)}` : coeff.toFixed(3)}
+              {pureCoeff >= 0 ? `+${pureCoeff.toFixed(3)}` : pureCoeff.toFixed(3)}
             </span>
           </div>
 
-          {/* 2. Elasticity Metric Box (NEW SSOT) */}
+          {/* 2. Pure Elasticity Metric Box */}
           {elasticity !== undefined && (
             <div className="flex justify-between items-center p-3 rounded-2xl border bg-indigo-50/90 border-indigo-200 text-indigo-950 gap-2">
               <div className="min-w-0">
                 <span className="font-bold text-xs text-indigo-900 flex items-center gap-1 truncate">
                   <Zap size={14} className="text-indigo-600 shrink-0" /> {anchorName} 10% 증가 시
                 </span>
-                <span className="text-[11px] text-indigo-700 font-medium block truncate">동반 매출 탄력성</span>
+                <span className="text-[11px] text-indigo-700 font-medium block truncate">순수 매출 탄력성</span>
               </div>
               <span className="font-black text-sm tabular-nums text-indigo-700 whitespace-nowrap shrink-0">
                 {elasticity >= 0 ? `+${elasticity}%` : `${elasticity}%`}
@@ -86,14 +106,14 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
             </div>
           )}
 
-          {/* 3. Spillover per 1M KRW Box (NEW SSOT) */}
+          {/* 3. Pure Spillover per 1M KRW Box */}
           {spillover !== undefined && (
             <div className="flex justify-between items-center p-3 rounded-2xl border bg-emerald-50/90 border-emerald-200 text-emerald-950 gap-2">
               <div className="min-w-0">
                 <span className="font-bold text-xs text-emerald-900 flex items-center gap-1 truncate">
-                  <ArrowUpRight size={14} className="text-emerald-600 shrink-0" /> {anchorName} 100만원 발생 시
+                  <ArrowUpRight size={14} className="text-emerald-600 shrink-0" /> {anchorName} 100만원 유치 시
                 </span>
-                <span className="text-[11px] text-emerald-700 font-medium block truncate">추가 낙수 부대매출</span>
+                <span className="text-[11px] text-emerald-700 font-medium block truncate">순수 낙수 부대매출</span>
               </div>
               <span className="font-black text-sm tabular-nums text-emerald-700 whitespace-nowrap shrink-0">
                 +₩ {formatCurrency(spillover)}원
@@ -101,17 +121,46 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
             </div>
           )}
 
-          {/* 4. POS Store Total Sales */}
-          <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2">
-            <span className="text-slate-600 font-medium text-xs truncate">영업장 실제 총매출</span>
-            <span className="font-bold text-sm text-slate-900 tabular-nums whitespace-nowrap shrink-0">{formatCurrency(store.totalSales)}원</span>
-          </div>
+          {/* 4. CAPA & Bottleneck Indicator (If available) */}
+          {bottleneckRisk && (
+            <div className={`p-2.5 rounded-2xl border flex items-center justify-between gap-2 ${
+              bottleneckRisk === 'CRITICAL' 
+                ? 'bg-rose-50 border-rose-200 text-rose-900' 
+                : bottleneckRisk === 'WARNING' 
+                ? 'bg-amber-50 border-amber-200 text-amber-900' 
+                : 'bg-teal-50 border-teal-200 text-teal-900'
+            }`}>
+              <div className="flex items-center gap-1.5 font-bold text-xs">
+                <Gauge size={14} />
+                <span>CAPA 점유율: {capaUtil || 0}%</span>
+              </div>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                bottleneckRisk === 'CRITICAL' ? 'bg-rose-600 text-white' : bottleneckRisk === 'WARNING' ? 'bg-amber-500 text-white' : 'bg-teal-600 text-white'
+              }`}>
+                {bottleneckRisk === 'CRITICAL' ? '🚨 병목 임계 도달' : bottleneckRisk === 'WARNING' ? '⚠️ 주의 단계' : '✅ 수용 여유'}
+              </span>
+            </div>
+          )}
 
-          {/* 5. Business Insight Pill */}
-          {store.insight && (
-            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 flex items-start gap-2 text-slate-700 text-xs leading-relaxed font-medium break-keep">
+          {/* 5. Time-Lag (t0 vs t1) if available */}
+          {timeLag && (
+            <div className="p-2.5 rounded-2xl border bg-slate-50 border-slate-200 flex items-center justify-between text-xs text-slate-700">
+              <span className="flex items-center gap-1 font-semibold">
+                <Clock size={13} className="text-slate-500" /> 소비 시점:
+              </span>
+              <div className="flex items-center gap-2 font-bold">
+                <span className="text-indigo-700">당일 {timeLag.sameDayRatio}%</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-teal-700">익일 {timeLag.nextDayRatio}%</span>
+              </div>
+            </div>
+          )}
+
+          {/* 6. AI Strategy Insight */}
+          {(store.aiStrategyInsight || store.insight) && (
+            <div className="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-100 flex items-start gap-2 text-indigo-950 text-xs leading-relaxed font-medium break-keep">
               <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
-              <span className="leading-snug">{store.insight}</span>
+              <span className="leading-snug">{store.aiStrategyInsight || store.insight}</span>
             </div>
           )}
         </div>

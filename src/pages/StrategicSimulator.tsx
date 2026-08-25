@@ -588,11 +588,11 @@ export default function StrategicSimulator() {
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-teal-400 animate-pulse" />
               <span className="font-bold tracking-wider text-xs lg:text-sm text-teal-300 uppercase">
-                BELLE FORET AI STRATEGIC REBALANCING & PROFIT ENGINE [PRO]
+                BELLE FORET AI STRATEGIC REBALANCING & TARGET ENGINE [PRO]
               </span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-              {input.targetYear}년 AI 전략 리밸런싱 & 수익성 시뮬레이터
+              {input.targetYear}년 AI 전략 리밸런싱 시뮬레이터
               <span className="text-xs bg-indigo-600/60 backdrop-blur-md px-3 py-1 rounded-full text-teal-200 border border-indigo-400/40 font-bold">
                 PRO Engine v6.0
               </span>

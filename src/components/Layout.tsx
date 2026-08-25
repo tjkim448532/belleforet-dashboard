@@ -283,7 +283,7 @@ export default function Layout() {
                 }}
               >
                 <Sparkles size={18} className="text-indigo-600" />
-                <span className="text-sm">🚀 AI 전략 & 수익성 시뮬레이터</span>
+                <span className="text-sm">🚀 AI 전략 리밸런싱 시뮬레이터</span>
               </NavLink>
             </div>
           )}

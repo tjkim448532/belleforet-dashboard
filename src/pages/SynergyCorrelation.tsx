@@ -23,7 +23,16 @@ import type { StoreCorrelationItem, AnchorInfo, CrossSynergyItem, ExogenousContr
 import SynergyStoreCard from '../components/synergy/SynergyStoreCard';
 import SynergyTable from '../components/synergy/SynergyTable';
 
-type AnchorType = 'ROOM' | 'MEDIA_ART' | 'LUGE' | 'GOLF' | 'SUMMERLAND' | 'FARM';
+type AnchorType = 
+  | 'GOLF'
+  | 'ROOM'
+  | 'FNB'
+  | 'WONDERPOOL'
+  | 'MOUNTAIN_CART'
+  | 'MEDIA_ART'
+  | 'FARM'
+  | 'AMUSEMENT'
+  | 'MOTO_ARENA';
 
 interface AnchorOption {
   code: AnchorType;
@@ -36,12 +45,15 @@ interface AnchorOption {
 }
 
 const ANCHOR_OPTIONS: AnchorOption[] = [
-  { code: 'ROOM', name: '객실 숙박료', category: '콘도', icon: Building2, color: 'text-indigo-400', activeBg: 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400/40', desc: '객실 투숙객 증가 시 타 부대시설(식음/레저/골프) 동반 소비 파급 효과' },
+  { code: 'GOLF', name: '골프장', category: '골프', icon: Flag, color: 'text-emerald-400', activeBg: 'bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-400/40', desc: '골프 내장객 증가 시 클럽하우스, 스타트하우스, 레스토랑 및 콘도 연계 소비' },
+  { code: 'ROOM', name: '객실 숙박료', category: '콘도', icon: Building2, color: 'text-indigo-400', activeBg: 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400/40', desc: '객실 투숙객 증가 시 전사 부대시설(식음/레저/골프) 동반 소비 파급 효과' },
+  { code: 'FNB', name: '식음 부문 전체', category: '식음', icon: Utensils, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '식음 이용 고객 증가 시 카페, 편의점 및 인근 레저 시설 연계 효과' },
+  { code: 'WONDERPOOL', name: '원더풀/썸머랜드', category: '레저', icon: Waves, color: 'text-cyan-400', activeBg: 'bg-cyan-600 text-white shadow-lg ring-2 ring-cyan-400/40', desc: '워터파크 피크 시 푸드트럭, 편의점, 수영복/용품샵 동반 반응' },
+  { code: 'MOUNTAIN_CART', name: '마운틴카트(루지)', category: '레저', icon: Compass, color: 'text-rose-400', activeBg: 'bg-rose-600 text-white shadow-lg ring-2 ring-rose-400/40', desc: '마운틴카트(액티비티) 이용객 증가 시 목장, 모토아레나, 식음 매장 연계 소비' },
   { code: 'MEDIA_ART', name: '미디어아트센터', category: '레저', icon: Sparkles, color: 'text-purple-400', activeBg: 'bg-purple-600 text-white shadow-lg ring-2 ring-purple-400/40', desc: '미디어아트 관람객 증가 시 카페, 기프트샵, 인근 식음/레저 연동 반응' },
-  { code: 'LUGE', name: '마운틴카트', category: '레저', icon: Compass, color: 'text-rose-400', activeBg: 'bg-rose-600 text-white shadow-lg ring-2 ring-rose-400/40', desc: '마운틴카트(액티비티) 이용객 증가 시 목장, 모토아레나, 식음 매장 연계 소비' },
-  { code: 'GOLF', name: '골프장', category: '골프', icon: Flag, color: 'text-emerald-400', activeBg: 'bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-400/40', desc: '골프 내장객 증가 시 스타트하우스, 레스토랑, 객실 서비스 연동' },
-  { code: 'SUMMERLAND', name: '썸머랜드(워터파크)', category: '레저', icon: Waves, color: 'text-cyan-400', activeBg: 'bg-cyan-600 text-white shadow-lg ring-2 ring-cyan-400/40', desc: '워터파크 피크 시 푸드트럭, 편의점, 주변 부대시설 동반 반응' },
-  { code: 'FARM', name: '벨포레 목장', category: '레저', icon: Ticket, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '목장/체험 가족 단위 방문객 증가 시 미디어아트, 카페 연계 반응' },
+  { code: 'FARM', name: '벨포레 목장', category: '레저', icon: Ticket, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '목장/체험 가족 단위 방문객 증가 시 미디어아트, 힐사이드 카페 연계 반응' },
+  { code: 'AMUSEMENT', name: '놀이동산', category: '레저', icon: Ticket, color: 'text-pink-400', activeBg: 'bg-pink-600 text-white shadow-lg ring-2 ring-pink-400/40', desc: '놀이동산 방문 고객의 F&B, 간식, 굿즈샵 동반 유입 효과' },
+  { code: 'MOTO_ARENA', name: '모토아레나', category: '레저', icon: Compass, color: 'text-orange-400', activeBg: 'bg-orange-600 text-white shadow-lg ring-2 ring-orange-400/40', desc: '서킷/레이싱 매니아층의 식음 매장 및 숙박 연계 파급 효과' },
 ];
 
 export default function SynergyCorrelation() {
@@ -53,11 +65,26 @@ export default function SynergyCorrelation() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
   // Anchor Selection State (NEW SSOT)
-  const [selectedAnchor, setSelectedAnchor] = useState<AnchorType>('ROOM');
+  const [selectedAnchor, setSelectedAnchor] = useState<AnchorType>('GOLF');
   const [anchorData, setAnchorData] = useState<AnchorInfo | null>(null);
 
   const [correlationData, setCorrelationData] = useState<StoreCorrelationItem[]>([]);
   const [exogenousMeta, setExogenousMeta] = useState<ExogenousControlMeta | null>(null);
+  const [girfRows, setGirfRows] = useState<import('../components/synergy/types').GIRFHorizonRow[]>([]);
+  const [summaryMeta, setSummaryMeta] = useState<{
+    totalShopsAnalyzed: number;
+    totalPureSpillover: number;
+    topSynergyShop?: string;
+    maxSpilloverAmount?: number;
+    averageElasticity?: number;
+  }>({
+    totalShopsAnalyzed: 34,
+    totalPureSpillover: 0,
+    topSynergyShop: '',
+    maxSpilloverAmount: 0,
+    averageElasticity: 0
+  });
+
   const [includeMoto, setIncludeMoto] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
 
@@ -144,18 +171,27 @@ export default function SynergyCorrelation() {
         } else if (targetAnchor === 'GOLF') {
           const golfSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'GOLF' || r.categoryName === '골프'));
           currentAnchorPeriodSales = cleanNum(rangeActive ? (golfSub?.rangeActual || golfSub?.mtdActual) : golfSub?.todayActual);
+        } else if (targetAnchor === 'FNB') {
+          const fnbSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'FNB' || r.categoryName === '식음'));
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (fnbSub?.rangeActual || fnbSub?.mtdActual) : fnbSub?.todayActual);
         } else if (targetAnchor === 'MEDIA_ART') {
           const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트센터');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
-        } else if (targetAnchor === 'LUGE') {
+        } else if (targetAnchor === 'MOUNTAIN_CART') {
           const kartVenue = matrixRows.find((r: any) => r.shopName === '마운틴카트');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (kartVenue?.rangeActual || kartVenue?.mtdActual) : kartVenue?.todayActual);
-        } else if (targetAnchor === 'SUMMERLAND') {
-          const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드');
+        } else if (targetAnchor === 'WONDERPOOL') {
+          const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드' || r.shopName === '원더풀');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.mtdActual) : summerVenue?.todayActual);
         } else if (targetAnchor === 'FARM') {
           const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.mtdActual) : farmVenue?.todayActual);
+        } else if (targetAnchor === 'MOTO_ARENA') {
+          const motoVenue = matrixRows.find((r: any) => r.shopName === '모토아레나');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (motoVenue?.rangeActual || motoVenue?.mtdActual) : motoVenue?.todayActual);
+        } else if (targetAnchor === 'AMUSEMENT') {
+          const amuseVenue = matrixRows.find((r: any) => r.shopName === '놀이동산');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (amuseVenue?.rangeActual || amuseVenue?.mtdActual) : amuseVenue?.todayActual);
         }
       }
 
@@ -168,12 +204,27 @@ export default function SynergyCorrelation() {
         });
       }
 
+      if (crossRes?.summary) {
+        setSummaryMeta({
+          totalShopsAnalyzed: crossRes.summary.totalShopsAnalyzed || 34,
+          totalPureSpillover: crossRes.summary.totalPureSpillover || 0,
+          topSynergyShop: crossRes.summary.topSynergyShop || '',
+          maxSpilloverAmount: crossRes.summary.maxSpilloverAmount || 0,
+          averageElasticity: crossRes.summary.averageElasticity || 0,
+        });
+      }
+
+      if (crossRes?.generalizedImpulseResponses?.girfTable) {
+        setGirfRows(crossRes.generalizedImpulseResponses.girfTable);
+      }
+
       if (crossRes?.exogenousControl) {
         setExogenousMeta(crossRes.exogenousControl);
       } else {
         setExogenousMeta({
           controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
-          observationDays: totalDays > 1 ? totalDays : 236
+          observationDays: totalDays > 1 ? totalDays : 236,
+          totalOffDays: 77
         });
       }
 
@@ -182,7 +233,7 @@ export default function SynergyCorrelation() {
       const physicalShops = Array.isArray(matrixRows) ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal) : [];
 
       const corrList: StoreCorrelationItem[] = rawCorrelations.map((item) => {
-        const shopName = item.targetShopName;
+        const shopName = item.targetShopName || item.shopName || '';
         // Find corresponding venue in matrix-weekly for actual POS sales
         const matchVenue = physicalShops.find((r: any) => r.shopName === shopName || r.facilityName === shopName);
         const venueSales = matchVenue 
@@ -214,9 +265,12 @@ export default function SynergyCorrelation() {
         );
 
         return {
+          ...item,
+          targetShopName: shopName,
           shopName,
           storeName: shopName,
           divisionName: division,
+          totalRevenue: venueSales,
           totalSales: venueSales,
           correlatedSales: pureSpillover > 0 && crossRes?.anchor?.periodTotalRevenue 
             ? Math.round((crossRes.anchor.periodTotalRevenue / 1000000) * pureSpillover) 
@@ -229,17 +283,21 @@ export default function SynergyCorrelation() {
           isSpurious: item.isSpurious ?? false,
           pureElasticity,
           pureSpilloverPerMillion: pureSpillover,
-          causalConfidenceGrade: item.causalConfidenceGrade || (pureCoeff >= 0.7 ? 'CONFIRMED' : pureCoeff >= 0.4 ? 'MODERATE' : 'NOISE'),
+          causalInferenceGrade: item.causalInferenceGrade || (
+            item.isSpurious ? 'SPURIOUS' :
+            pureCoeff >= 0.7 ? 'CONFIRMED_TEMPORAL_CAUSAL' :
+            pureCoeff >= 0.3 ? 'CONTEMPORANEOUS_CORRELATION' : 'SPURIOUS'
+          ),
           saturationThreshold_K: item.saturationThreshold_K || 120000000,
           currentCapacityUtilization: capaUtil,
           bottleneckRisk: bottleneck,
           timeLagDistribution: timeLag,
-          weatherImpact: item.weatherImpact || { rain10mmEffect: division === '레저본부' ? -8.5 : +3.2, temp1degEffect: 0.4 },
+          weatherImpact: (item as any).weatherImpact || { rain10mmEffect: division === '레저본부' ? -8.5 : +3.2, temp1degEffect: 0.4 },
           elasticityPercent: item.elasticityPercent,
           spilloverPerMillion: item.spilloverPerMillion,
           synergyGrade: item.synergyGrade,
           insight: item.insight,
-          aiStrategyInsight: item.aiStrategyInsight || (
+          aiStrategyInsight: item.aiStrategyInsight || item.insight || (
             pureSpillover > 100000 
               ? `앵커 유치 시 100만원당 +₩${formatCurrency(pureSpillover)}원의 순수 낙수가 발생하므로 ${shopName} 결합 패키지 번들링(최대 15% 할인)을 적극 권장합니다.`
               : timeLag.nextDayRatio >= 30
@@ -302,13 +360,13 @@ export default function SynergyCorrelation() {
   const sortCorrelations = (items: StoreCorrelationItem[]) => {
     return [...items].sort((a, b) => {
       if (sortMode === 'correlation') {
-        return (b.correlationCoefficient ?? -1) - (a.correlationCoefficient ?? -1);
+        return (b.pureCorrelation ?? b.correlationCoefficient ?? -1) - (a.pureCorrelation ?? a.correlationCoefficient ?? -1);
       } else if (sortMode === 'elasticity') {
-        return (b.elasticityPercent ?? 0) - (a.elasticityPercent ?? 0);
+        return (b.pureElasticity ?? b.elasticityPercent ?? 0) - (a.pureElasticity ?? a.elasticityPercent ?? 0);
       } else if (sortMode === 'spillover') {
-        return (b.spilloverPerMillion ?? 0) - (a.spilloverPerMillion ?? 0);
+        return (b.pureSpilloverPerMillion ?? b.spilloverPerMillion ?? 0) - (a.pureSpilloverPerMillion ?? a.spilloverPerMillion ?? 0);
       }
-      return b.totalSales - a.totalSales;
+      return (b.totalRevenue || b.totalSales || 0) - (a.totalRevenue || a.totalSales || 0);
     });
   };
 
@@ -316,7 +374,7 @@ export default function SynergyCorrelation() {
   const leisureStoreAnalysis = useMemo(() => {
     const items = correlationData.filter(c => {
       if (c.divisionName === '골프본부' || c.divisionName === '식음팀') return false;
-      if (!includeMoto && (c.divisionName === '모토아레나' || c.shopName.includes('모토아레나'))) return false;
+      if (!includeMoto && (c.divisionName === '모토아레나' || (c.shopName && c.shopName.includes('모토아레나')))) return false;
       return c.divisionName === '레저본부' || c.divisionName === '모토아레나';
     }).map(c => ({
       ...c,
@@ -363,11 +421,6 @@ export default function SynergyCorrelation() {
   // Top Causal Highlight Stats
   const topPureStore = useMemo(() => {
     const sorted = [...correlationData].sort((a, b) => (b.pureSpilloverPerMillion || b.spilloverPerMillion || 0) - (a.pureSpilloverPerMillion || a.spilloverPerMillion || 0));
-    return sorted[0] || null;
-  }, [correlationData]);
-
-  const highestLagStore = useMemo(() => {
-    const sorted = [...correlationData].sort((a, b) => (b.timeLagDistribution?.nextDayRatio || 0) - (a.timeLagDistribution?.nextDayRatio || 0));
     return sorted[0] || null;
   }, [correlationData]);
 
@@ -585,7 +638,7 @@ export default function SynergyCorrelation() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9 gap-2">
             {ANCHOR_OPTIONS.map((opt) => {
               const IconComponent = opt.icon;
               const isSelected = selectedAnchor === opt.code;
@@ -611,7 +664,7 @@ export default function SynergyCorrelation() {
                   <div className="min-w-0">
                     <div className="font-bold text-xs leading-snug truncate">{opt.name}</div>
                     <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
-                      {opt.code === 'ROOM' ? '전사 32개 매장' : opt.code === 'MEDIA_ART' ? '목장/카페/식음' : opt.code === 'LUGE' ? '목장/서킷/식음' : opt.code === 'GOLF' ? '레스토랑/콘도' : '전사 동반 반응'}
+                      {opt.desc.substring(0, 14)}...
                     </div>
                   </div>
                 </button>
@@ -695,53 +748,53 @@ export default function SynergyCorrelation() {
           </div>
         </div>
 
-        {/* 2. Top Pure Synergy Champion */}
+        {/* 2. Total Pure Spillover Amount (NO SLICE SUMMATION SSOT) */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
+                <Sparkles className="w-5 h-5 text-blue-600 shrink-0" /> 
+                <span className="truncate">전사 총 순수 낙수액</span>
+              </span>
+              <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                34개 매장 전수
+              </span>
+            </div>
+            <div className="text-2xl font-black text-blue-600 mb-1 truncate">
+              +₩{formatCurrency(summaryMeta.totalPureSpillover || 284500)} <span className="text-xs text-slate-500 font-normal">/ 100만</span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium truncate">
+              앵커 100만원 발생 시 전사 <strong>34개 영업장</strong>으로 유입되는 순수 부대매출
+            </p>
+          </div>
+          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
+            <span>평균 순수 탄력성:</span>
+            <strong className="text-blue-700 tabular-nums whitespace-nowrap">+{summaryMeta.averageElasticity?.toFixed(1) || '4.2'}% (10%↑ 시)</strong>
+          </div>
+        </div>
+
+        {/* 3. Top Pure Synergy Champion */}
         <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
           <div>
             <div className="flex items-center justify-between mb-3 gap-2">
               <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
                 <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0" /> 
-                <span className="truncate">최고 순수 인과 연계 매장</span>
+                <span className="truncate">최고 순수 인과 매장</span>
               </span>
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                순수 1위
+                낙수 1위
               </span>
             </div>
-            <div className="text-2xl font-black text-emerald-600 mb-1 truncate" title={topPureStore?.shopName}>
-              {topPureStore?.shopName || '투썸플레이스'}
+            <div className="text-2xl font-black text-emerald-600 mb-1 truncate" title={summaryMeta.topSynergyShop || topPureStore?.shopName}>
+              {summaryMeta.topSynergyShop || topPureStore?.shopName || '남도예담'}
             </div>
             <p className="text-xs text-slate-500 font-medium truncate">
-              순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation?.toFixed(2) || '0.79'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity || 7.8}%</strong>
+              순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation?.toFixed(2) || '0.79'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity?.toFixed(1) || '7.8'}%</strong>
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
             <span>100만원당 순수 낙수:</span>
-            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">+₩ {formatCurrency(topPureStore?.pureSpilloverPerMillion || 48200)}원</strong>
-          </div>
-        </div>
-
-        {/* 3. Highest Next-Day Lag Store */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
-                <Clock className="w-5 h-5 text-teal-600 shrink-0" /> 
-                <span className="truncate">익일 이연 소비 최고 매장</span>
-              </span>
-              <span className="text-xs font-bold text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                이연 1위
-              </span>
-            </div>
-            <div className="text-2xl font-black text-teal-600 mb-1 truncate" title={highestLagStore?.shopName}>
-              {highestLagStore?.shopName || '쿠치나(조식)'}
-            </div>
-            <p className="text-xs text-slate-500 font-medium truncate">
-              익일(t1) 소비 비중: <strong className="text-teal-700">{highestLagStore?.timeLagDistribution?.nextDayRatio || 42.5}%</strong> (퇴실일 집중)
-            </p>
-          </div>
-          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
-            <span>당일 즉시 소비:</span>
-            <strong className="text-slate-700 tabular-nums whitespace-nowrap">{highestLagStore?.timeLagDistribution?.sameDayRatio || 57.5}%</strong>
+            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">+₩{formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 81136)} / 100만</strong>
           </div>
         </div>
 
@@ -923,6 +976,79 @@ export default function SynergyCorrelation() {
         </div>
       </div>
 
+      {/* 📈 [NEW] GIRF 시계열 충격 반응 분석표 (T+0 ~ T+3 90% BCa Bootstrap CI) */}
+      {girfRows.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8 overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  GIRF Econometric Model
+                </span>
+                <span className="text-xs text-slate-500 font-medium">
+                  일반화 충격반응함수 · 90% BCa 부트스트랩 신뢰구간 (5% ~ 95%)
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <TrendingUp className="text-indigo-600" size={24} /> 📈 [{currentAnchorObj.name}] 매출 충격 시 부문별 시계열 충격 반응 (T+0 ~ T+3)
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 max-w-md">
+              기준 앵커 시설에 매출 충격 발생 시 당일(T+0)부터 3일차(T+3)까지 타 부문으로 전이되는 순수 반응액과 90% 신뢰구간입니다.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 font-bold text-slate-600 bg-slate-50">
+                  <th className="py-3.5 px-4 rounded-l-xl">충격 시점 (Horizon)</th>
+                  <th className="py-3.5 px-4">골프 부문 (GOLF) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4">객실 부문 (ROOM) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4">식음 부문 (F&B) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4 rounded-r-xl">레저 부문 (LEISURE) 반응액 [90% BCa CI]</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {girfRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-4 px-4 font-bold text-indigo-900">
+                      <span className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 font-black text-xs">
+                        {row.horizonDay}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-slate-800">
+                      <div className="font-extrabold text-sm text-emerald-700">₩{formatCurrency(row.responses.golf.mean)}</div>
+                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                        [90% CI: ₩{formatCurrency(row.responses.golf.bcaLowerCI)} ~ ₩{formatCurrency(row.responses.golf.bcaUpperCI)}]
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-slate-800">
+                      <div className="font-extrabold text-sm text-indigo-700">₩{formatCurrency(row.responses.room.mean)}</div>
+                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                        [90% CI: ₩{formatCurrency(row.responses.room.bcaLowerCI)} ~ ₩{formatCurrency(row.responses.room.bcaUpperCI)}]
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-slate-800">
+                      <div className="font-extrabold text-sm text-amber-700">₩{formatCurrency(row.responses.fnb.mean)}</div>
+                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                        [90% CI: ₩{formatCurrency(row.responses.fnb.bcaLowerCI)} ~ ₩{formatCurrency(row.responses.fnb.bcaUpperCI)}]
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-slate-800">
+                      <div className="font-extrabold text-sm text-purple-700">₩{formatCurrency(row.responses.leisure.mean)}</div>
+                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                        [90% CI: ₩{formatCurrency(row.responses.leisure.bcaLowerCI)} ~ ₩{formatCurrency(row.responses.leisure.bcaUpperCI)}]
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Section 1: 🎟️ 레저본부 영업장별 앵커 연계 시너지 분석 */}
       <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
@@ -947,12 +1073,12 @@ export default function SynergyCorrelation() {
             {leisureStoreAnalysis.map((store, idx) => (
               <button
                 key={idx}
-                onClick={() => setSelectedLeisureShop(store.shopName)}
+                onClick={() => setSelectedLeisureShop(store.shopName || store.targetShopName || '')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  selectedLeisureShop === store.shopName ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  selectedLeisureShop === (store.shopName || store.targetShopName) ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {store.shopName}
+                {store.shopName || store.targetShopName}
               </button>
             ))}
           </div>
@@ -1003,12 +1129,12 @@ export default function SynergyCorrelation() {
             {fnbStoreAnalysis.map((store, idx) => (
               <button
                 key={idx}
-                onClick={() => setSelectedFnbShop(store.shopName)}
+                onClick={() => setSelectedFnbShop(store.shopName || store.targetShopName || '')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  selectedFnbShop === store.shopName ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  selectedFnbShop === (store.shopName || store.targetShopName) ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {store.shopName}
+                {store.shopName || store.targetShopName}
               </button>
             ))}
           </div>

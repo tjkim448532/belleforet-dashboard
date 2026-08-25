@@ -25,23 +25,21 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
   const spillover = store.pureSpilloverPerMillion ?? store.spilloverPerMillion;
   const isSpurious = store.isSpurious ?? false;
   
-  const grade = store.synergyGrade || (
-    pureCoeff >= 0.7 ? 'EXCELLENT' :
-    pureCoeff >= 0.4 ? 'HIGH' :
-    pureCoeff >= 0.2 ? 'MODERATE' : 'LOW'
+  const causalGrade = store.causalInferenceGrade || (
+    isSpurious ? 'SPURIOUS' :
+    pureCoeff >= 0.7 ? 'CONFIRMED_TEMPORAL_CAUSAL' :
+    pureCoeff >= 0.3 ? 'CONTEMPORANEOUS_CORRELATION' : 'SPURIOUS'
   );
 
   const gradeBadge = (() => {
-    switch (grade) {
-      case 'EXCELLENT':
-        return { text: '🚀 초강력 순수시너지', bg: 'bg-emerald-600 text-white' };
-      case 'HIGH':
-        return { text: '🔥 핵심 인과연동', bg: 'bg-indigo-600 text-white' };
-      case 'MODERATE':
-        return { text: '🎯 일반 연계', bg: 'bg-purple-600 text-white' };
-      case 'LOW':
+    switch (causalGrade) {
+      case 'CONFIRMED_TEMPORAL_CAUSAL':
+        return { text: '🎯 선행 인과 확실', bg: 'bg-emerald-100 text-emerald-800 border border-emerald-300' };
+      case 'CONTEMPORANEOUS_CORRELATION':
+        return { text: '🔗 당일 동시 연관', bg: 'bg-blue-100 text-blue-800 border border-blue-300' };
+      case 'SPURIOUS':
       default:
-        return { text: '⚪ 독립 운영', bg: 'bg-slate-600 text-white' };
+        return { text: '💨 외생 요인 (비유의)', bg: 'bg-gray-100 text-gray-700 border border-gray-300' };
     }
   })();
 

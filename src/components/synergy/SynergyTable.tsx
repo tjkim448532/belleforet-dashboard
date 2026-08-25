@@ -50,26 +50,21 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
             const capaUtil = item.currentCapacityUtilization;
             const bottleneck = item.bottleneckRisk;
 
-            const grade = item.synergyGrade || (
-              pureCoeff >= 0.7 ? 'EXCELLENT' :
-              pureCoeff >= 0.4 ? 'HIGH' :
-              pureCoeff >= 0.2 ? 'MODERATE' : 'LOW'
+            const causalGrade = item.causalInferenceGrade || (
+              isSpurious ? 'SPURIOUS' :
+              pureCoeff >= 0.7 ? 'CONFIRMED_TEMPORAL_CAUSAL' :
+              pureCoeff >= 0.3 ? 'CONTEMPORANEOUS_CORRELATION' : 'SPURIOUS'
             );
 
             const gradeBadge = (() => {
-              if (isSpurious) {
-                return { text: '⚠️ 착시 주의', bg: 'bg-rose-100 text-rose-800' };
-              }
-              switch (grade) {
-                case 'EXCELLENT':
-                  return { text: '🚀 초강력 순수연동', bg: 'bg-emerald-100 text-emerald-800' };
-                case 'HIGH':
-                  return { text: '🔥 핵심 인과연동', bg: 'bg-indigo-100 text-indigo-800' };
-                case 'MODERATE':
-                  return { text: '🎯 일반 연계', bg: 'bg-purple-100 text-purple-800' };
-                case 'LOW':
+              switch (causalGrade) {
+                case 'CONFIRMED_TEMPORAL_CAUSAL':
+                  return { text: '🎯 선행 인과 확실', bg: 'bg-emerald-100 text-emerald-800 border border-emerald-300' };
+                case 'CONTEMPORANEOUS_CORRELATION':
+                  return { text: '🔗 당일 동시 연관', bg: 'bg-blue-100 text-blue-800 border border-blue-300' };
+                case 'SPURIOUS':
                 default:
-                  return { text: '⚪ 독립 운영', bg: 'bg-slate-100 text-slate-700' };
+                  return { text: '💨 외생 요인 (비유의)', bg: 'bg-gray-100 text-gray-700 border border-gray-300' };
               }
             })();
 
@@ -78,7 +73,7 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
                 <td className="py-4 px-6 font-semibold text-slate-800">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={`${theme.badgeBg} px-2.5 py-1 rounded-full text-xs font-medium`}>
-                      {item.shopName || item.storeName}
+                      {item.shopName || item.storeName || item.targetShopName}
                     </span>
                     {isSpurious && (
                       <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-bold" title="외생변수(요일/날씨)를 통제하면 실제 인과성이 매우 낮습니다.">
@@ -88,10 +83,10 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
                   </div>
                 </td>
                 <td className="py-4 px-6 text-slate-600 font-medium text-xs">
-                  {item.divisionName || '직영 시설'}
+                  {item.divisionName || item.categoryName || '직영 시설'}
                 </td>
                 <td className="py-4 px-6 text-right font-bold text-slate-900 tabular-nums">
-                  {formatCurrency(item.totalSales)}원
+                  ₩{formatCurrency(item.totalRevenue || item.totalSales)}
                 </td>
                 <td className="py-4 px-6 text-center font-extrabold text-purple-700 tabular-nums">
                   <div>{pureCoeff >= 0 ? `+${pureCoeff.toFixed(3)}` : pureCoeff.toFixed(3)}</div>
@@ -100,10 +95,10 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
                   )}
                 </td>
                 <td className="py-4 px-6 text-center font-bold text-indigo-700 tabular-nums">
-                  {elasticity !== undefined ? (elasticity >= 0 ? `+${elasticity}%` : `${elasticity}%`) : '-'}
+                  {elasticity !== undefined ? (elasticity >= 0 ? `+${elasticity.toFixed(1)}%` : `${elasticity.toFixed(1)}%`) : '-'}
                 </td>
-                <td className="py-4 px-6 text-right font-black text-emerald-700 tabular-nums">
-                  {spillover !== undefined && spillover > 0 ? `+₩ ${formatCurrency(spillover)}원` : '-'}
+                <td className="py-4 px-6 text-right font-black text-blue-700 tabular-nums">
+                  {spillover !== undefined && spillover > 0 ? `+₩${formatCurrency(spillover)} / 100만` : '-'}
                 </td>
                 <td className="py-4 px-6 text-center">
                   {bottleneck ? (

@@ -265,7 +265,7 @@ export default function GolfBusiness() {
   const agencyRevenue = (otaChannel?.greenFeeRevenue || 0) + (kakaoChannel?.greenFeeRevenue || 0);
   const agencyTeams = (otaChannel?.visitedTeams || 0) + (kakaoChannel?.visitedTeams || 0);
 
-  const totalGreenFeeRevenue = (salesByChannel || []).reduce((acc: number, c: any) => acc + (Number(c.greenFeeRevenue) || 0), 0);
+  const totalGreenFeeRevenue = (memberGreenFee + nonMemberGreenFee) > 0 ? (memberGreenFee + nonMemberGreenFee) : (avgGreenFee * visitedPlayers);
   const avgTeamGreenFee = visitedTeams > 0 
     ? (totalGreenFeeRevenue > 0 ? Math.round(totalGreenFeeRevenue / visitedTeams) : (visitedPlayers > 0 ? Math.round((avgGreenFee * visitedPlayers) / visitedTeams) : 0))
     : 0;

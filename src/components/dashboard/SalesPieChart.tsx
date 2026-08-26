@@ -3,6 +3,7 @@ import { PieChart as PieIcon, TrendingUp } from 'lucide-react';
 
 interface SalesPieChartProps {
   data: { name: string; value: number }[];
+  totalValue?: number;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -24,10 +25,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const DEFAULT_PALETTE = ['#1E3A8A', '#0D9488', '#D97706', '#E11D48', '#0891B2', '#7C3AED', '#64748B', '#0284C7', '#10B981'];
 
-export default function SalesPieChart({ data }: SalesPieChartProps) {
+export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) {
   if (!data || data.length === 0) return null;
 
-  const totalValue = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+  const resolvedTotal = totalValue !== undefined && totalValue > 0 
+    ? totalValue 
+    : data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   const formatCurrency = (val: any) => {
     if (!val) return '0';
@@ -37,7 +40,7 @@ export default function SalesPieChart({ data }: SalesPieChartProps) {
 
   const chartData = data.map((item, idx) => {
     const color = CATEGORY_COLORS[item.name] || DEFAULT_PALETTE[idx % DEFAULT_PALETTE.length];
-    const pct = totalValue > 0 ? Number(((item.value / totalValue) * 100).toFixed(1)) : 0;
+    const pct = resolvedTotal > 0 ? Number(((item.value / resolvedTotal) * 100).toFixed(1)) : 0;
     return {
       name: item.name,
       value: item.value,
@@ -56,7 +59,7 @@ export default function SalesPieChart({ data }: SalesPieChartProps) {
       extraCssText: 'box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-radius: 12px;',
       textStyle: { color: '#0f172a', fontFamily: 'Pretendard, sans-serif' },
       formatter: (params: any) => {
-        const pct = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(1) : '0';
+        const pct = resolvedTotal > 0 ? ((params.value / resolvedTotal) * 100).toFixed(1) : '0';
         return `
           <div style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span style="width:8px; height:8px; border-radius:50%; background:${params.color}; display:inline-block;"></span>

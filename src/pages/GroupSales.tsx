@@ -348,7 +348,7 @@ export default function GroupSales() {
     );
   };
 
-  const totalCalculatedRevenue = summaryData?.totalRevenue || enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0);
+  const totalCalculatedRevenue = Number(summaryData?.totalRevenue || 0);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -477,7 +477,7 @@ export default function GroupSales() {
               <span className="text-sm font-bold text-blue-600 ml-2">({loyaltyMetrics.totalUniqueCompanies}개사)</span>
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              총 참가 인원: <strong className="text-slate-800">{(summaryData?.totalPax || enrichedGroups.reduce((s, g) => s + g.paxCount, 0)).toLocaleString()}명</strong>
+              총 참가 인원: <strong className="text-slate-800">{(summaryData?.totalPax || 0).toLocaleString()}명</strong>
             </div>
           </div>
         </div>

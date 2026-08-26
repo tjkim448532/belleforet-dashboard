@@ -65,72 +65,170 @@ export default function MatrixWeeklyDashboard() {
   const [compareWeather, setCompareWeather] = useState<WeatherInfo | null>(null);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
 
-  // 데이터 조회 (matrix-weekly)
+  // 데이터 조회 (matrix-weekly + revenue-summary 교차 백업 SSOT)
   useEffect(() => {
-    const fetchV6Matrix = async () => {
+    let isMounted = true;
+    const fetchMatrixData = async () => {
       setIsLoading(true);
+      setIsWeatherLoading(true);
       setError(null);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        let queryParams = '';
         const isActualRange = Boolean(endDate && startDate !== endDate);
+        const queryParams = isActualRange
+          ? `startDate=${startDate}&endDate=${endDate}`
+          : `date=${startDate}${compareMode === 'custom' && customCompareDate ? `&compareDate=${customCompareDate}` : ''}`;
         
-        if (isActualRange) {
-          // 기간 조회 시 startDate & endDate 전달 (단일 compareDate 배제)
-          queryParams = `startDate=${startDate}&endDate=${endDate}`;
-        } else {
-          // 단일 일자 조회 시 date 단일 파라미터 전달 (동일 일자 중복 range 파라미터 전송 방지)
-          queryParams = `date=${startDate}`;
-          // 커스텀 비교일 모드일 때만 명시적으로 compareDate 전달
-          if (compareMode === 'custom' && customCompareDate) {
-            queryParams += `&compareDate=${customCompareDate}`;
+        const summaryQueryParams = isActualRange
+          ? `startDate=${startDate}&endDate=${endDate}`
+          : `date=${startDate}`;
+
+        // 1. matrix-weekly & revenue-summary 병렬 호출
+        const [matrixRes, summaryRes, customCompareRes] = await Promise.allSettled([
+          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}&_t=${Date.now()}`),
+          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}&_t=${Date.now()}`),
+          compareMode === 'custom' && customCompareDate
+            ? secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${customCompareDate}&_t=${Date.now()}`)
+            : Promise.resolve(null)
+        ]);
+
+        if (!isMounted) return;
+
+        let rows: V6MatrixRow[] = [];
+        let basePayload: any = null;
+        let comparePayload: any = null;
+
+        if (summaryRes.status === 'fulfilled' && summaryRes.value) {
+          basePayload = summaryRes.value.data || summaryRes.value;
+        }
+        if (customCompareRes.status === 'fulfilled' && customCompareRes.value) {
+          comparePayload = customCompareRes.value.data || customCompareRes.value;
+        }
+
+        // 2. matrix-weekly 응답 유효성 검증
+        let useMatrixApi = false;
+        if (matrixRes.status === 'fulfilled' && matrixRes.value) {
+          const res = matrixRes.value.data || matrixRes.value;
+          const payloadArray = Array.isArray(res) ? res : (res.data || []);
+          const nonZeroRows = payloadArray.filter((r: any) => {
+            const actual = Number(String(r.todayActual || r.rangeActual || 0).replace(/,/g, ''));
+            const ly = Number(String(r.todayLy || r.rangeLy || 0).replace(/,/g, ''));
+            return actual > 0 || ly > 0;
+          });
+          if (payloadArray.length > 1 && nonZeroRows.length > 0) {
+            rows = payloadArray;
+            useMatrixApi = true;
           }
         }
-        queryParams += `&_t=${Date.now()}`;
 
-        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`);
-        const result = res.data || res;
-        const payloadArray = Array.isArray(result) ? result : (result.data || []);
-        setData(payloadArray);
-      } catch (err: any) {
-        console.error('Failed to fetch V6 matrix weekly', err);
-        setError('데이터를 불러오는 중 문제가 발생했습니다.');
-        setData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchV6Matrix();
-  }, [startDate, endDate, compareMode, customCompareDate]);
+        // 3. matrix-weekly 결측 시 revenue-summary SSOT로 완벽 복원
+        if (!useMatrixApi && basePayload) {
+          const summary = basePayload.summary || {};
+          const categories: any[] = basePayload.salesByCategory || [];
+          const facilities: any[] = basePayload.salesByFacility || [];
+          const compareFacilities: any[] = comparePayload?.salesByFacility || [];
+          const compareCategories: any[] = comparePayload?.salesByCategory || [];
 
-  // 날씨 데이터 조회 (기준일 및 비교일 듀얼 패칭)
-  useEffect(() => {
-    const fetchWeather = async () => {
-      setIsWeatherLoading(true);
-      const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-      try {
-        // 1. 기준일 날씨 조회
-        const baseRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${startDate}`);
-        const basePayload = baseRes.data || baseRes;
+          const synthRows: V6MatrixRow[] = [];
+
+          categories.forEach((cat: any) => {
+            const catCode = cat.categoryCode;
+            const catName = cat.categoryName;
+            const catFacs = facilities.filter((f: any) => f.categoryCode === catCode || f.categoryName === catName);
+
+            catFacs.forEach((f: any) => {
+              const compFac = compareFacilities.find((cf: any) => (cf.facilityName && cf.facilityName === f.facilityName) || (cf.shopName && cf.shopName === f.shopName));
+              const todayActualVal = Number(String(f.todayActual ?? f.totalSales ?? 0).replace(/,/g, ''));
+              const todayLyVal = compFac
+                ? Number(String(compFac.todayActual ?? compFac.totalSales ?? 0).replace(/,/g, ''))
+                : Number(String(f.todayLy ?? f.lyActual ?? 0).replace(/,/g, ''));
+              const growthVal = todayLyVal > 0 ? ((todayActualVal - todayLyVal) / todayLyVal) * 100 : (todayActualVal > 0 ? 100 : 0);
+
+              synthRows.push({
+                categoryCode: catCode,
+                categoryName: catName,
+                teamName: catName,
+                partName: catName,
+                shopName: f.displayName || f.shopName || f.facilityName || '기타',
+                todayActual: todayActualVal,
+                todayLy: todayLyVal,
+                todayGrowth: Number(growthVal.toFixed(2)),
+                mtdActual: Number(String(f.mtdActual ?? 0).replace(/,/g, '')),
+                mtdLy: Number(String(f.mtdLy ?? 0).replace(/,/g, '')),
+                ytdActual: Number(String(f.ytdActual ?? 0).replace(/,/g, '')),
+                ytdLy: Number(String(f.ytdLy ?? 0).replace(/,/g, ''))
+              });
+            });
+
+            // 카테고리 소계
+            const compCat = compareCategories.find((cc: any) => cc.categoryCode === catCode || cc.categoryName === catName);
+            const catActualVal = Number(String(cat.todayActual ?? cat.totalSales ?? 0).replace(/,/g, ''));
+            const catLyVal = compCat
+              ? Number(String(compCat.todayActual ?? compCat.totalSales ?? 0).replace(/,/g, ''))
+              : Number(String(cat.lyActual ?? cat.todayLy ?? 0).replace(/,/g, ''));
+            const catGrowthVal = catLyVal > 0 ? ((catActualVal - catLyVal) / catLyVal) * 100 : (cat.growthRate ?? 0);
+
+            synthRows.push({
+              categoryCode: catCode,
+              categoryName: catName,
+              teamName: catName,
+              partName: catName,
+              shopName: `[${catName} 소계]`,
+              isSubtotal: true,
+              subtotalType: 'category',
+              todayActual: catActualVal,
+              todayLy: catLyVal,
+              todayGrowth: Number(catGrowthVal.toFixed(2)),
+              mtdActual: Number(String(cat.mtdActual ?? 0).replace(/,/g, '')),
+              mtdLy: Number(String(cat.mtdLy ?? 0).replace(/,/g, '')),
+              ytdActual: Number(String(cat.ytdActual ?? 0).replace(/,/g, '')),
+              ytdLy: Number(String(cat.ytdLy ?? 0).replace(/,/g, ''))
+            });
+          });
+
+          // 전사 총계 (Grand Total)
+          const grandActualVal = Number(String(summary.totalRevenue ?? summary.todayActual ?? 0).replace(/,/g, ''));
+          const grandLyVal = comparePayload
+            ? Number(String(comparePayload.summary?.totalRevenue ?? comparePayload.summary?.todayActual ?? 0).replace(/,/g, ''))
+            : Number(String(summary.todayLyRevenue ?? summary.lastYearRevenue ?? 0).replace(/,/g, ''));
+          const grandGrowthVal = grandLyVal > 0 ? ((grandActualVal - grandLyVal) / grandLyVal) * 100 : (summary.todayGrowth ?? summary.growth ?? 0);
+
+          synthRows.push({
+            categoryCode: 'TOTAL',
+            categoryName: '총계',
+            teamName: '총계',
+            partName: '총계',
+            shopName: '총계',
+            isGrandTotal: true,
+            isSubtotal: true,
+            subtotalType: 'grand_total',
+            todayActual: grandActualVal,
+            todayLy: grandLyVal,
+            todayGrowth: Number(grandGrowthVal.toFixed(2)),
+            mtdActual: Number(String(summary.mtdRevenue ?? 0).replace(/,/g, '')),
+            mtdLy: Number(String(summary.mtdLy ?? 0).replace(/,/g, '')),
+            ytdActual: Number(String(summary.ytdRevenue ?? 0).replace(/,/g, '')),
+            ytdLy: Number(String(summary.ytdLy ?? 0).replace(/,/g, ''))
+          });
+
+          rows = synthRows;
+        }
+
+        setData(rows);
+
+        // 4. 날씨 정보 바인딩
         let bWeather = basePayload?.weather?.current || basePayload?.weather || null;
-        
         if (!bWeather || bWeather.description === '데이터없음' || bWeather.weatherDesc === '데이터없음' || (!bWeather.tempMax && !bWeather.tempMin)) {
           const liveW = await fetchLiveWeatherFallback(startDate);
-          if (liveW) {
-            bWeather = liveW;
-          }
+          if (liveW) bWeather = liveW;
         }
-
         setBaseWeather(bWeather ? {
           description: bWeather.description || bWeather.weatherDesc,
           tempMax: bWeather.tempMax ?? bWeather.temp_max,
           tempMin: bWeather.tempMin ?? bWeather.temp_min
         } : null);
 
-        // 2. 비교일 날씨 조회
         if (compareMode === 'yoy_same_day') {
-          // 전년 동요일 기본인 경우 revenue-summary 내의 lastYear 날씨 활용
           const lyW = basePayload?.weather?.lastYear;
           if (lyW) {
             setCompareWeather({
@@ -138,37 +236,34 @@ export default function MatrixWeeklyDashboard() {
               tempMax: lyW.tempMax ?? lyW.temp_max,
               tempMin: lyW.tempMin ?? lyW.temp_min
             });
-          } else {
-            // 없을 경우 직접 조회
-            const lyRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${activeCompareDate}`);
-            const lyPayload = lyRes.data || lyRes;
-            const w = lyPayload?.weather?.current || lyPayload?.weather || null;
-            setCompareWeather(w ? {
-              description: w.description || w.weatherDesc,
-              tempMax: w.tempMax ?? w.temp_max,
-              tempMin: w.tempMin ?? w.temp_min
-            } : null);
           }
-        } else {
-          // 커스텀 비교일인 경우 해당 일자 단독 조회
-          const customRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${activeCompareDate}`);
-          const customPayload = customRes.data || customRes;
-          const w = customPayload?.weather?.current || customPayload?.weather || null;
+        } else if (comparePayload) {
+          const w = comparePayload?.weather?.current || comparePayload?.weather || null;
           setCompareWeather(w ? {
             description: w.description || w.weatherDesc,
             tempMax: w.tempMax ?? w.temp_max,
             tempMin: w.tempMin ?? w.temp_min
           } : null);
         }
-      } catch (e) {
-        console.error('Weather fetch error:', e);
+      } catch (err: any) {
+        console.error('Failed to fetch V6 matrix weekly', err);
+        if (isMounted) {
+          setError('데이터를 불러오는 중 문제가 발생했습니다.');
+          setData([]);
+        }
       } finally {
-        setIsWeatherLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsWeatherLoading(false);
+        }
       }
     };
-
-    fetchWeather();
-  }, [startDate, activeCompareDate, compareMode]);
+    
+    fetchMatrixData();
+    return () => {
+      isMounted = false;
+    };
+  }, [startDate, endDate, compareMode, customCompareDate]);
 
   // 빠른 비교일 프리셋 핸들러
   const handlePreset = (offsetDays: number) => {

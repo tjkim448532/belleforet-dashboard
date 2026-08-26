@@ -184,26 +184,9 @@ export default function SynergyBundles() {
     const topCountBundle = [...bundleData].sort((a, b) => b.customerCount - a.customerCount)[0];
     const topRevenueBundle = [...bundleData].sort((a, b) => b.totalSales - a.totalSales)[0];
 
-    let singleFacilityArpu = apiMeta?.singleFacilityArpu || 0;
-    let multiFacilityArpu = apiMeta?.multiFacilityArpu || 0;
-    let arpuLiftMultiplier = apiMeta?.arpuLiftMultiplier;
-
-    if (!arpuLiftMultiplier && bundleData.length > 0) {
-      const multi = bundleData.filter(c => (c as any).isMultiFacility || (c.storeList && c.storeList.length > 1));
-      const single = bundleData.filter(c => !(c as any).isMultiFacility && (!c.storeList || c.storeList.length <= 1));
-      
-      const singleCust = single.reduce((s, c) => s + c.customerCount, 0);
-      const singleSales = single.reduce((s, c) => s + c.totalSales, 0);
-      singleFacilityArpu = singleCust > 0 ? Math.round(singleSales / singleCust) : 0;
-      
-      const multiCust = multi.reduce((s, c) => s + c.customerCount, 0);
-      const multiSales = multi.reduce((s, c) => s + c.totalSales, 0);
-      multiFacilityArpu = multiCust > 0 ? Math.round(multiSales / multiCust) : 0;
-      
-      if (singleFacilityArpu > 0 && multiFacilityArpu > 0) {
-        arpuLiftMultiplier = Number((multiFacilityArpu / singleFacilityArpu).toFixed(1));
-      }
-    }
+    const singleFacilityArpu = apiMeta?.singleFacilityArpu || 0;
+    const multiFacilityArpu = apiMeta?.multiFacilityArpu || 0;
+    const arpuLiftMultiplier = apiMeta?.arpuLiftMultiplier || (singleFacilityArpu > 0 && multiFacilityArpu > 0 ? Number((multiFacilityArpu / singleFacilityArpu).toFixed(1)) : 1.0);
 
     return {
       totalCustomers,

@@ -146,21 +146,11 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           }
         }
 
-        // 연박(2박+) 체류 데이터 정밀 보정 (los-correlation-trend 연동)
-        if (Array.isArray(losTrend) && losTrend.length > 0) {
-          const validPoints = losTrend.filter((t: any) => typeof t.multiNightRatio === 'number' && t.multiNightRatio > 0);
-          if (validPoints.length > 0) {
-            const avgRatio = validPoints.reduce((sum: number, t: any) => sum + t.multiNightRatio, 0) / validPoints.length;
-            const totalRoomCap = Number(corePayload.summary?.totalRoomCap ?? 0);
-            const calculatedGuests = Math.round(totalRoomCap * (avgRatio / 100));
-            
-            corePayload.summary.multiNightRatio = Number(avgRatio.toFixed(1));
-            corePayload.summary.multiNightGuests = calculatedGuests;
-            corePayload.summary.multiNight = {
-              multiNightGuests: calculatedGuests,
-              multiNightRatio: Number(avgRatio.toFixed(1)),
-              multiNightRooms: Math.round(Number(corePayload.summary?.totalRooms || 0) * (avgRatio / 100))
-            };
+        // 연박(2박+) 체류 데이터 정밀 바인딩 (Zero-Proxy)
+        if (corePayload.summary?.multiNightRatio === undefined && Array.isArray(losTrend) && losTrend.length > 0) {
+          const validPoint = losTrend[losTrend.length - 1];
+          if (validPoint && typeof validPoint.multiNightRatio === 'number') {
+            corePayload.summary.multiNightRatio = validPoint.multiNightRatio;
           }
         }
 

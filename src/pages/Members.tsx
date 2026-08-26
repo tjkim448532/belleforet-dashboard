@@ -48,6 +48,7 @@ export default function Members() {
     totalVisitors: number;
     totalSpend: number;
     avgSpendPerMember: number;
+    totalYtdSpend?: number;
     topLoyalMember?: {
       memberName: string;
       memberNo: string;
@@ -155,20 +156,20 @@ export default function Members() {
     });
   }, [enrichedVisitors, selectedTypeFilter, selectedLoyaltyFilter, searchQuery, sortBy]);
 
-  // Computed summary metrics
+  // Computed summary metrics (SSOT Pure Consumer)
   const metrics = useMemo(() => {
-    const totalCount = enrichedVisitors.length;
-    const totalSpend = enrichedVisitors.reduce((s, m) => s + m.todaySpend, 0);
-    const avgSpend = totalCount > 0 ? Math.round(totalSpend / totalCount) : 0;
-    const totalYtdSpend = enrichedVisitors.reduce((s, m) => s + m.ytdTotalSpend, 0);
+    const totalCount = summaryData?.totalVisitors || enrichedVisitors.length;
+    const totalSpend = summaryData?.totalSpend || 0;
+    const avgSpend = summaryData?.avgSpendPerMember || (totalCount > 0 ? Math.round(totalSpend / totalCount) : 0);
+    const totalYtdSpend = summaryData?.totalYtdSpend || 0;
 
     const sortedByYtd = [...enrichedVisitors].sort((a, b) => b.ytdVisitCount - a.ytdVisitCount);
     const topMember = sortedByYtd[0] || null;
 
     return {
-      totalCount: summaryData?.totalVisitors || totalCount,
-      totalSpend: summaryData?.totalSpend || totalSpend,
-      avgSpend: summaryData?.avgSpendPerMember || avgSpend,
+      totalCount,
+      totalSpend,
+      avgSpend,
       totalYtdSpend,
       topMember: summaryData?.topLoyalMember || (topMember ? {
         memberName: topMember.memberName,

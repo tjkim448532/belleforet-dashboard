@@ -353,7 +353,8 @@ export default function Synergy() {
       if (mapped.length > 0) return mapped;
 
       // 2. Fallback: If today's channel data is 0 due to pipeline lag, fallback to MTD channel distribution
-      const mtdTotalRev = subtotalRows.reduce((sum, r) => sum + parseNum(r.mtdRevenue || 0), 0) || 1;
+      const mtdGrandTotalRow = channelData.find(r => r.isGrandTotal || r.channelName?.includes('총계'));
+      const mtdTotalRev = parseNum(mtdGrandTotalRow?.mtdRevenue || 0) || 1;
       const mtdMapped = subtotalRows
         .map(item => {
           let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();

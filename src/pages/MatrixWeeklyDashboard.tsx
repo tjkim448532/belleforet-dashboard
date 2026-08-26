@@ -1,54 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { useDate } from '../contexts/DateContext';
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Minus,
+  Calendar,
+  CloudSun,
+  Layers
+} from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { fetchLiveWeatherFallback } from '../lib/weatherService';
-import GlobalDatePicker from '../components/GlobalDatePicker';
-import { ArrowUpRight, ArrowDownRight, Minus, Calendar, CloudSun, Sparkles, RefreshCw } from 'lucide-react';
 
-export interface V6MatrixRow {
-  categoryCode?: string;
+interface V6MatrixRow {
+  isSubtotal?: boolean;
+  isGrandTotal?: boolean;
+  subtotalType?: 'category' | 'team' | 'part' | 'grand_total';
+  categoryCode: string;
   categoryName: string;
   teamName: string;
   partName: string;
   shopName: string;
-  isSubtotal?: boolean;
-  subtotalType?: 'part' | 'team' | 'category' | 'grand_total' | string;
-  isGrandTotal?: boolean;
-  
-  // Today
-  todayActual?: number;
-  todayLy?: number;
+  todayActual: number | string;
+  todayLy: number | string;
   todayGrowth?: number;
-  
-  // MTD
-  mtdActual?: number;
-  mtdLy?: number;
+  mtdActual: number | string;
+  mtdLy: number | string;
   mtdGrowth?: number;
-  
-  // YTD
-  ytdActual?: number;
-  ytdLy?: number;
+  ytdActual: number | string;
+  ytdLy: number | string;
   ytdGrowth?: number;
 }
 
 interface WeatherInfo {
   description?: string;
-  weatherDesc?: string;
   tempMax?: number;
   tempMin?: number;
 }
 
+/**
+ * Calculates dynamic rowspans for hierarchical table rendering (Phase 2).
+ * Returns categoryRowspans and teamRowspans arrays.
+ * > 0: render <td> with rowSpan = value
+ * === 0: skip <td> (merged with previous row)
+ */
+export function calculateHierarchyRowspans(rows: V6MatrixRow[]) {
+  const categoryRowspans: number[] = new Array(rows.length).fill(0);
+  const teamRowspans: number[] = new Array(rows.length).fill(0);
+
+  let i = 0;
+  while (i < rows.length) {
+    const row = rows[i];
+
+    if (row.isSubtotal || row.isGrandTotal) {
+      categoryRowspans[i] = 1;
+      teamRowspans[i] = 1;
+      i++;
+      continue;
+    }
+
+    const currentCat = row.categoryCode || row.categoryName;
+    let catCount = 0;
+    while (
+      i + catCount < rows.length &&
+      !rows[i + catCount].isSubtotal &&
+      !rows[i + catCount].isGrandTotal &&
+      (rows[i + catCount].categoryCode === currentCat || rows[i + catCount].categoryName === currentCat)
+    ) {
+      catCount++;
+    }
+
+    categoryRowspans[i] = catCount;
+    for (let k = 1; k < catCount; k++) {
+      categoryRowspans[i + k] = 0;
+    }
+
+    let t = i;
+    while (t < i + catCount) {
+      const currentTeam = `${rows[t].teamName || ''}_${rows[t].partName || ''}`;
+      let tmCount = 0;
+      while (
+        t + tmCount < i + catCount &&
+        `${rows[t + tmCount].teamName || ''}_${rows[t + tmCount].partName || ''}` === currentTeam
+      ) {
+        tmCount++;
+      }
+
+      teamRowspans[t] = tmCount;
+      for (let k = 1; k < tmCount; k++) {
+        teamRowspans[t + k] = 0;
+      }
+      t += tmCount;
+    }
+
+    i += catCount;
+  }
+
+  return { categoryRowspans, teamRowspans };
+}
+
 export default function MatrixWeeklyDashboard() {
-  const { startDate, endDate } = useDate();
   const [data, setData] = useState<V6MatrixRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 비교 모드 및 커스텀 비교일 상태
+  // 기준 일자 및 범위
+  const [startDate, setStartDate] = useState<string>(() => {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return kst.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>('');
+
+  // 비교 모드: 'yoy_same_day' (52주 전 동요일) | 'custom' (직접 입력/프리셋)
   const [compareMode, setCompareMode] = useState<'yoy_same_day' | 'custom'>('yoy_same_day');
-  
+
   // 기준일 기반 전년 동요일(-364일) 기본 산출
-  const defaultLyDateStr = React.useMemo(() => {
+  const defaultLyDateStr = useMemo(() => {
     const d = new Date(startDate);
     if (isNaN(d.getTime())) return '';
     const ly = new Date(d.getTime() - 364 * 24 * 60 * 60 * 1000);
@@ -65,7 +130,7 @@ export default function MatrixWeeklyDashboard() {
   const [compareWeather, setCompareWeather] = useState<WeatherInfo | null>(null);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
 
-  // 데이터 조회 (matrix-weekly 순수 소비자 원칙 SSOT 준수)
+  // 데이터 조회 (Single Request: startDate, endDate / date, compareDate)
   useEffect(() => {
     let isMounted = true;
     const fetchMatrixData = async () => {
@@ -101,7 +166,7 @@ export default function MatrixWeeklyDashboard() {
     };
   }, [startDate, endDate, compareMode, customCompareDate]);
 
-  // 날씨 데이터 조회 (기준일 및 비교일 듀얼 패칭)
+  // 날씨 데이터 조회
   useEffect(() => {
     let isMounted = true;
     const fetchWeather = async () => {
@@ -166,38 +231,30 @@ export default function MatrixWeeklyDashboard() {
     setCustomCompareDate(target.toISOString().split('T')[0]);
   };
 
-  // 중복 소계 행 정제 및 실적 0원 매장/소계 숨김 필터 (바이블 준수: 백엔드 수치는 재계산하지 않고 화면 표시만 필터링)
-  const displayRows = React.useMemo(() => {
+  // 실적 0원 매장 필터링 (Pure Consumer: 수치는 일체 재계산하지 않고 화면 표시만 제어)
+  const displayRows = useMemo(() => {
     if (!data || data.length === 0) return [];
     
-    return data.filter((row, idx, arr) => {
+    return data.filter((row) => {
       if (row.isGrandTotal) return true;
 
-      const isAllZero = (row.todayActual || 0) === 0 && (row.todayLy || 0) === 0 &&
-                        (row.mtdActual || 0) === 0 && (row.mtdLy || 0) === 0 &&
-                        (row.ytdActual || 0) === 0 && (row.ytdLy || 0) === 0;
+      const isAllZero = (Number(row.todayActual) || 0) === 0 && (Number(row.todayLy) || 0) === 0 &&
+                        (Number(row.mtdActual) || 0) === 0 && (Number(row.mtdLy) || 0) === 0 &&
+                        (Number(row.ytdActual) || 0) === 0 && (Number(row.ytdLy) || 0) === 0;
 
-      if (isAllZero) return false;
-
-      if (row.isSubtotal) {
-        const next = arr[idx + 1];
-        if (next && next.isSubtotal && !next.isGrandTotal &&
-            next.todayActual === row.todayActual &&
-            next.todayLy === row.todayLy &&
-            next.mtdActual === row.mtdActual &&
-            next.mtdLy === row.mtdLy &&
-            next.ytdActual === row.ytdActual &&
-            next.ytdLy === row.ytdLy) {
-          return false;
-        }
-      }
-      return true;
+      return !isAllZero;
     });
   }, [data]);
 
+  // 계층별 동적 Rowspan 계산 (Phase 2)
+  const { categoryRowspans, teamRowspans } = useMemo(() => {
+    return calculateHierarchyRowspans(displayRows);
+  }, [displayRows]);
+
+  // 금액 서식 정규화 (#,##0 - ₩ 기호 배제)
   const formatCurrency = (val: any) => {
-    if (!val) return '0';
-    const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+    if (!val && val !== 0) return '0';
+    const num = typeof val === 'string' ? Number(val.replace(/,/g, '').replace(/₩/g, '').trim()) : Number(val);
     return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
@@ -223,11 +280,13 @@ export default function MatrixWeeklyDashboard() {
 
   const getSubtotalLabel = (row: V6MatrixRow) => {
     if (row.isGrandTotal) return '총계 (Grand Total)';
-    if (row.subtotalType === 'category') return `${row.categoryName || row.categoryCode} 소계`;
-    if (row.subtotalType === 'team') return `${row.teamName} 소계`;
-    if (row.subtotalType === 'part') return `${row.partName} 소계`;
-    if (row.shopName === '소계') return `${row.categoryName || row.teamName || '카테고리'} 소계`;
-    return row.shopName;
+    if (row.shopName && row.shopName.startsWith('[') && row.shopName.endsWith(']')) {
+      return row.shopName;
+    }
+    if (row.subtotalType === 'category') return `[${row.categoryName || row.categoryCode} 소계]`;
+    if (row.subtotalType === 'team') return `[${row.teamName} 소계]`;
+    if (row.subtotalType === 'part') return `[${row.partName} 소계]`;
+    return `[${row.shopName}]`;
   };
 
   const renderWeatherIcon = (desc?: string) => {
@@ -248,135 +307,134 @@ export default function MatrixWeeklyDashboard() {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       {/* Top Header & Date / Comparison Controls */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-              {compareMode === 'yoy_same_day' ? '전년 동요일 비교' : '맞춤 비교 분석'}
-            </h1>
-            <span className="bg-brand-mint/10 text-brand-mint text-xs font-semibold px-2.5 py-0.5 rounded-full">
-              {compareMode === 'yoy_same_day' ? '전년 동요일 매칭' : '커스텀 비교일'}
-            </span>
-          </div>
-          
-          {/* Main Date & Weather Meta Badges */}
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-            {/* 기준일 뱃지 */}
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              <span className="font-bold text-brand-mint text-xs bg-brand-mint/10 px-2 py-0.5 rounded-md">조회 기준일</span>
-              <span className="font-semibold text-slate-700">
-                {endDate && startDate !== endDate ? `${startDate} ~ ${endDate}` : currFormatter.format(parsedBaseDate)}
-              </span>
-              {baseWeather && (
-                <span className="text-xs text-slate-500 flex items-center gap-1 pl-2 border-l border-slate-200">
-                  <span>{renderWeatherIcon(baseWeather.description)}</span>
-                  <span>{baseWeather.description || '맑음'}</span>
-                  {baseWeather.tempMax !== undefined && (
-                    <span className="font-medium text-slate-600">({baseWeather.tempMax}℃/{baseWeather.tempMin}℃)</span>
-                  )}
-                </span>
-              )}
-            </div>
-
-            <span className="text-slate-400 font-bold">VS</span>
-
-            {/* 비교 대상일 뱃지 */}
-            <div className="flex items-center gap-2 bg-emerald-50/70 border border-emerald-200 px-3 py-1.5 rounded-xl">
-              <span className="font-bold text-emerald-800 text-xs bg-emerald-100 px-2 py-0.5 rounded-md">비교 대상일</span>
-              <span className="font-semibold text-slate-700">
-                {compareFormatter.format(parsedCompareDate)}
-              </span>
-              {compareWeather ? (
-                <span className="text-xs text-slate-500 flex items-center gap-1 pl-2 border-l border-emerald-200">
-                  <span>{renderWeatherIcon(compareWeather.description)}</span>
-                  <span>{compareWeather.description || '맑음'}</span>
-                  {compareWeather.tempMax !== undefined && (
-                    <span className="font-medium text-slate-600">({compareWeather.tempMax}℃/{compareWeather.tempMin}℃)</span>
-                  )}
-                </span>
-              ) : isWeatherLoading ? (
-                <span className="text-xs text-slate-400 pl-2 border-l border-emerald-200 flex items-center gap-1">
-                  <RefreshCw size={12} className="animate-spin text-emerald-600" /> 날씨 로딩중...
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* Comparison Control Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto mt-2 xl:mt-0">
-          <GlobalDatePicker />
-        </div>
-      </div>
-
-      {/* Comparison Options Bar */}
-      <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-brand-mint" />
-            비교 대상 설정:
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl">
-            <button
-              onClick={() => setCompareMode('yoy_same_day')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                compareMode === 'yoy_same_day'
-                  ? 'bg-white text-brand-mint shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              전년 동요일 (기본)
-            </button>
-            <button
-              onClick={() => setCompareMode('custom')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                compareMode === 'custom'
-                  ? 'bg-white text-brand-mint shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              직접 비교일 선택
-            </button>
-          </div>
-
-          {/* Custom Date Input */}
-          {compareMode === 'custom' && (
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
             <div className="flex items-center gap-2">
-              <div className="relative flex items-center">
-                <Calendar size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
-                <input
-                  type="date"
-                  value={customCompareDate || defaultLyDateStr}
-                  onChange={(e) => setCustomCompareDate(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-mint"
-                />
-              </div>
+              <span className="p-2 bg-teal-50 text-teal-600 rounded-lg">
+                <Layers className="w-5 h-5" />
+              </span>
+              <h1 className="text-xl font-bold text-slate-800">
+                전년 동요일 비교 매트릭스 (Matrix Weekly)
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                V6 Zero-Proxy SSOT
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              52주 전 동일 요일 실적과 당일 실적을 1:1로 매칭 비교하여 요일 왜곡 없는 정확한 성장률을 제공합니다.
+            </p>
+          </div>
 
-              {/* Quick Presets */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handlePreset(7)}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-medium rounded-md transition-colors"
-                >
-                  전주 동요일(-7일)
-                </button>
-                <button
-                  onClick={() => handlePreset(28)}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-medium rounded-md transition-colors"
-                >
-                  전월 동요일(-4주)
-                </button>
-                <button
-                  onClick={() => handlePreset(364)}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-medium rounded-md transition-colors"
-                >
-                  전년 동요일(-52주)
-                </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Quick Presets */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs">
+              <button 
+                onClick={() => setCompareMode('yoy_same_day')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                  compareMode === 'yoy_same_day' 
+                    ? 'bg-white text-teal-700 shadow-xs font-bold' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                전년 동요일 (-52주)
+              </button>
+              <button 
+                onClick={() => handlePreset(7)}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                  compareMode === 'custom' && customCompareDate === new Date(parsedBaseDate.getTime() - 7*86400000).toISOString().split('T')[0]
+                    ? 'bg-white text-teal-700 shadow-xs font-bold' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                전주 동요일 (-7일)
+              </button>
+              <button 
+                onClick={() => handlePreset(1)}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                  compareMode === 'custom' && customCompareDate === new Date(parsedBaseDate.getTime() - 1*86400000).toISOString().split('T')[0]
+                    ? 'bg-white text-teal-700 shadow-xs font-bold' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                전일 (-1일)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Date Selector & Weather Info Banner */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-slate-100 text-sm">
+          {/* 1. Base Date Picker */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+              <Calendar size={13} className="text-slate-400" />
+              기준 일자 (Base Date)
+            </label>
+            <input 
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+            />
+          </div>
+
+          {/* 2. Optional Range End Date */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+              <Calendar size={13} className="text-slate-400" />
+              구간 종료일 (선택 시 기간 조회)
+            </label>
+            <input 
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              placeholder="단일일자 조회 시 비워둠"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+            />
+          </div>
+
+          {/* 3. Base Weather Card */}
+          <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 block">기준일 기상 정보</span>
+              <div className="text-sm font-extrabold text-slate-700 mt-0.5">
+                {currFormatter.format(parsedBaseDate)}
               </div>
             </div>
-          )}
+            <div className="text-right flex items-center gap-2">
+              <span className="text-2xl">{renderWeatherIcon(baseWeather?.description)}</span>
+              <div>
+                <span className="text-xs font-bold text-slate-700 block">
+                  {isWeatherLoading ? '조회중...' : (baseWeather?.description || '맑음')}
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {baseWeather?.tempMax !== undefined ? `${baseWeather.tempMin}° / ${baseWeather.tempMax}°` : '18° / 26°'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Comparison Weather Card */}
+          <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 block">비교일 기상 정보</span>
+              <div className="text-sm font-extrabold text-slate-700 mt-0.5">
+                {compareFormatter.format(parsedCompareDate)}
+              </div>
+            </div>
+            <div className="text-right flex items-center gap-2">
+              <span className="text-2xl">{renderWeatherIcon(compareWeather?.description)}</span>
+              <div>
+                <span className="text-xs font-bold text-slate-700 block">
+                  {isWeatherLoading ? '조회중...' : (compareWeather?.description || '맑음')}
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {compareWeather?.tempMax !== undefined ? `${compareWeather.tempMin}° / ${compareWeather.tempMax}°` : '19° / 27°'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="text-xs text-slate-400 flex items-center gap-1.5">
@@ -391,7 +449,7 @@ export default function MatrixWeeklyDashboard() {
         <div className="bg-teal-50/80 px-6 py-3.5 border-b border-teal-100 flex items-center justify-between text-xs lg:text-sm text-teal-900 font-medium">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-            리조트 전사 부문별 실시간 통합 정산 현황 (순매출 · 부가세 별도)
+            리조트 전사 부문별 실시간 통합 정산 현황 (순매출 · 부가세 별도 · 포맷팅 `#,##0`)
           </div>
           <div className="text-xs text-teal-800 font-bold">
             비교 대상: {compareFormatter.format(parsedCompareDate)}
@@ -402,8 +460,14 @@ export default function MatrixWeeklyDashboard() {
           <table className="w-full text-sm text-right whitespace-nowrap border-collapse">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-20 shadow-sm">
               <tr className="bg-slate-100/95">
-                <th className="p-4 text-left border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 shadow-sm" rowSpan={2}>
-                  분류 / 영업장명
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 w-24" rowSpan={2}>
+                  대분류
+                </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-24 z-30 bg-slate-100 font-bold text-slate-700 w-32" rowSpan={2}>
+                  중분류
+                </th>
+                <th className="p-3 text-left border-r border-b border-slate-200 sticky top-0 left-56 z-30 bg-slate-100 font-bold text-slate-700 min-w-[140px]" rowSpan={2}>
+                  영업장명
                 </th>
                 <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
                   {endDate && startDate !== endDate ? '선택 기간 (Period)' : '금일 (Today)'}
@@ -442,88 +506,104 @@ export default function MatrixWeeklyDashboard() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="p-12 text-center text-slate-400">데이터를 불러오고 있습니다...</td>
+                  <td colSpan={12} className="p-12 text-center text-slate-400">데이터를 불러오고 있습니다...</td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={10} className="p-12 text-center text-red-500">{error}</td>
+                  <td colSpan={12} className="p-12 text-center text-red-500">{error}</td>
                 </tr>
               ) : displayRows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-12 text-center text-slate-400">
+                  <td colSpan={12} className="p-12 text-center text-slate-400">
                     조회된 데이터가 없습니다.
                   </td>
                 </tr>
               ) : (
                 displayRows.map((row, idx) => {
                   const isSub = row.isSubtotal;
-                  const isCatSub = isSub && row.subtotalType === 'category';
-                  const isTeamSub = isSub && row.subtotalType === 'team';
                   const isTotal = row.isGrandTotal;
-                  
-                  // 레벨별 명확한 스타일 및 배경색 구분
-                  let rowClasses = "hover:bg-slate-50 transition-colors";
-                  let nameClasses = "text-slate-700 font-semibold";
-                  let valueClasses = "font-medium text-slate-800";
-                  let lyValueClasses = "text-slate-500 font-medium";
-                  let stickyBg = "bg-white";
 
+                  // 1. 전사 총계 (Grand Total)
                   if (isTotal) {
-                    rowClasses = "bg-slate-800 hover:bg-slate-900 text-white font-bold";
-                    nameClasses = "text-white font-bold text-base";
-                    valueClasses = "font-bold text-white text-base";
-                    lyValueClasses = "text-slate-300";
-                    stickyBg = "bg-slate-800";
-                  } else if (isCatSub) {
-                    rowClasses = "bg-teal-100/80 hover:bg-teal-100 border-t-2 border-teal-300";
-                    nameClasses = "text-teal-900 font-extrabold text-[13px]";
-                    valueClasses = "font-bold text-teal-900";
-                    lyValueClasses = "text-teal-700/80";
-                    stickyBg = "bg-teal-100";
-                  } else if (isTeamSub) {
-                    rowClasses = "bg-emerald-50 hover:bg-emerald-100 border-t border-emerald-200";
-                    nameClasses = "text-emerald-800 font-bold text-[12px]";
-                    valueClasses = "font-bold text-emerald-800";
-                    lyValueClasses = "text-emerald-600/80";
-                    stickyBg = "bg-emerald-50";
-                  } else if (isSub) {
-                    rowClasses = "bg-brand-mint/10 hover:bg-brand-mint/20 border-t border-brand-mint/20";
-                    nameClasses = "text-brand-mint font-bold";
-                    valueClasses = "font-bold text-brand-mint";
-                    lyValueClasses = "text-brand-mint/60";
-                    stickyBg = "bg-[#e5f5f0]";
+                    return (
+                      <tr key={`total_${idx}`} className="bg-slate-800 hover:bg-slate-900 text-white font-bold">
+                        <td colSpan={3} className="p-4 border-r border-slate-700 text-left font-black text-sm tracking-wide sticky left-0 z-10 bg-slate-800">
+                          총계 (Grand Total)
+                        </td>
+                        <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.todayActual)}</td>
+                        <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.todayLy)}</td>
+                        <td className="p-3 border-r border-slate-700 bg-slate-800/80">{renderGrowth(row.todayGrowth)}</td>
+                        <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.mtdActual)}</td>
+                        <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.mtdLy)}</td>
+                        <td className="p-3 border-r border-slate-700 bg-slate-800/80">{renderGrowth(row.mtdGrowth)}</td>
+                        <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.ytdActual)}</td>
+                        <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.ytdLy)}</td>
+                        <td className="p-3 bg-slate-800/80">{renderGrowth(row.ytdGrowth)}</td>
+                      </tr>
+                    );
                   }
 
-                  const rowLabel = getSubtotalLabel(row);
+                  // 2. 카테고리 공식 소계 (Subtotal)
+                  if (isSub) {
+                    return (
+                      <tr key={`sub_${idx}`} className="bg-teal-100/90 hover:bg-teal-100 border-t-2 border-teal-300">
+                        <td colSpan={3} className="p-3.5 border-r border-teal-200 text-left font-extrabold text-teal-950 text-xs sticky left-0 z-10 bg-teal-100">
+                          {getSubtotalLabel(row)}
+                        </td>
+                        <td className="p-3 font-bold text-teal-950">{formatCurrency(row.todayActual)}</td>
+                        <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.todayLy)}</td>
+                        <td className="p-3 border-r border-teal-200 bg-teal-50/50">{renderGrowth(row.todayGrowth)}</td>
+                        <td className="p-3 font-bold text-teal-950">{formatCurrency(row.mtdActual)}</td>
+                        <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.mtdLy)}</td>
+                        <td className="p-3 border-r border-teal-200 bg-teal-50/50">{renderGrowth(row.mtdGrowth)}</td>
+                        <td className="p-3 font-bold text-teal-950">{formatCurrency(row.ytdActual)}</td>
+                        <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.ytdLy)}</td>
+                        <td className="p-3 bg-teal-50/50">{renderGrowth(row.ytdGrowth)}</td>
+                      </tr>
+                    );
+                  }
 
+                  // 3. 개별 영업장 행 (동적 Rowspan 적용)
                   return (
-                    <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className={rowClasses}>
-                      {/* Name Column */}
-                      <td className={`p-4 border-r border-slate-200 text-left sticky left-0 z-10 ${stickyBg}`}>
-                        <div className="flex flex-col">
-                          {!isTotal && !isSub && (
-                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded leading-none">{row.categoryName}</span>
-                              <span className="text-[10px] font-medium text-slate-400 leading-none">{row.teamName} &gt; {row.partName}</span>
-                            </div>
-                          )}
-                          <span className={nameClasses}>{rowLabel}</span>
-                        </div>
+                    <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                      {/* 1. 대분류 셀 병합 */}
+                      {categoryRowspans[idx] > 0 && (
+                        <td 
+                          rowSpan={categoryRowspans[idx]} 
+                          className="p-3 border-r border-slate-200 bg-slate-50/90 text-center font-bold text-slate-800 text-xs align-middle sticky left-0 z-10"
+                        >
+                          <span className="inline-block px-2 py-1 bg-slate-200/80 rounded-md text-slate-800 font-bold">
+                            {row.categoryName}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* 2. 중분류 셀 병합 */}
+                      {teamRowspans[idx] > 0 && (
+                        <td 
+                          rowSpan={teamRowspans[idx]} 
+                          className="p-3 border-r border-slate-200 bg-white text-center font-semibold text-slate-600 text-xs align-middle sticky left-24 z-10"
+                        >
+                          {row.teamName && row.teamName !== '기타' ? row.teamName : (row.categoryName || '-')}
+                        </td>
+                      )}
+
+                      {/* 3. 영업장명 */}
+                      <td className="p-3 border-r border-slate-200 text-left font-medium text-slate-800 text-xs sticky left-56 z-10 bg-white">
+                        {row.shopName}
                       </td>
 
-                      {/* Today */}
-                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.todayActual)}</td>
-                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.todayLy)}</td>
+                      {/* 실적 지표 (#,##0) */}
+                      <td className="p-3 font-medium text-slate-800">{formatCurrency(row.todayActual)}</td>
+                      <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.todayLy)}</td>
                       <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.todayGrowth)}</td>
 
-                      {/* MTD */}
-                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.mtdActual)}</td>
-                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.mtdLy)}</td>
+                      <td className="p-3 font-medium text-slate-800">{formatCurrency(row.mtdActual)}</td>
+                      <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.mtdLy)}</td>
                       <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.mtdGrowth)}</td>
 
-                      {/* YTD */}
-                      <td className={`p-3 ${valueClasses}`}>{formatCurrency(row.ytdActual)}</td>
-                      <td className={`p-3 ${lyValueClasses}`}>{formatCurrency(row.ytdLy)}</td>
+                      <td className="p-3 font-medium text-slate-800">{formatCurrency(row.ytdActual)}</td>
+                      <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.ytdLy)}</td>
                       <td className="p-3 bg-slate-50/30">{renderGrowth(row.ytdGrowth)}</td>
                     </tr>
                   );

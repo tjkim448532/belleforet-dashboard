@@ -560,7 +560,7 @@ export default function TargetSimulator() {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              영업장별 세부 실행 목표 3-Depth 아코디언 시뮬레이터
+              목표수립 시뮬레이터 v1 (3-Depth 아코디언)
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
                 Official API v5.0 Connected
               </span>

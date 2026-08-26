@@ -253,7 +253,7 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 4. 🎯 목표 수립 시뮬레이터 & 🚀 AI 전략 리밸런싱 [PRO] */}
+          {/* 4. 🎯 목표수립 시뮬레이터 v1 & 🚀 목표수립 시뮬레이터 v2 [PRO] */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
             <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
               <NavLink
@@ -268,7 +268,7 @@ export default function Layout() {
                 }}
               >
                 <Target size={18} className="text-teal-600" />
-                <span className="text-sm">🎯 목표 수립 시뮬레이터</span>
+                <span className="text-sm">🎯 목표수립 시뮬레이터 v1</span>
               </NavLink>
 
               <NavLink
@@ -283,7 +283,7 @@ export default function Layout() {
                 }}
               >
                 <Sparkles size={18} className="text-indigo-600" />
-                <span className="text-sm">🚀 AI 전략 리밸런싱 시뮬레이터</span>
+                <span className="text-sm">🚀 목표수립 시뮬레이터 v2</span>
               </NavLink>
             </div>
           )}

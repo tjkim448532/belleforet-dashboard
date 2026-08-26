@@ -592,7 +592,7 @@ export default function StrategicSimulator() {
               </span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-              {input.targetYear}년 AI 전략 리밸런싱 시뮬레이터
+              {input.targetYear}년 목표수립 시뮬레이터 v2
               <span className="text-xs bg-indigo-600/60 backdrop-blur-md px-3 py-1 rounded-full text-teal-200 border border-indigo-400/40 font-bold">
                 PRO Engine v6.0
               </span>

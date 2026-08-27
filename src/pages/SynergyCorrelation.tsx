@@ -56,6 +56,15 @@ const ANCHOR_OPTIONS: AnchorOption[] = [
   { code: 'MOTO_ARENA', name: '모토아레나', category: '레저', icon: Compass, color: 'text-orange-400', activeBg: 'bg-orange-600 text-white shadow-lg ring-2 ring-orange-400/40', desc: '서킷/레이싱 매니아층의 식음 매장 및 숙박 연계 파급 효과' },
 ];
 
+// High-Performance In-Memory Cache for Instant 0ms Tab Switching
+const synergyMemoryCache = new Map<string, {
+  anchorData: AnchorInfo;
+  summaryMeta: any;
+  girfRows: any[];
+  exogenousMeta: any;
+  validCorrList: StoreCorrelationItem[];
+}>();
+
 export default function SynergyCorrelation() {
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
   
@@ -111,7 +120,6 @@ export default function SynergyCorrelation() {
   }, [isRangeMode, startDate, endDate]);
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean, overrideAnchor?: AnchorType) => {
-    setLoading(true);
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
@@ -125,6 +133,22 @@ export default function SynergyCorrelation() {
       setEndDate(eDate);
     }
 
+    const cacheKey = `${targetAnchor}_${sDate}_${eDate || sDate}_${rangeActive}`;
+
+    // ⚡ Instant Cache Hit (0ms Latency)
+    if (synergyMemoryCache.has(cacheKey)) {
+      const cached = synergyMemoryCache.get(cacheKey)!;
+      setAnchorData(cached.anchorData);
+      setSummaryMeta(cached.summaryMeta);
+      setGirfRows(cached.girfRows);
+      setExogenousMeta(cached.exogenousMeta);
+      setCorrelationData(cached.validCorrList);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const queryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
@@ -135,7 +159,7 @@ export default function SynergyCorrelation() {
       const crossStartDate = rangeActive && eDate ? sDate : monthStart;
       const crossEndDate = rangeActive && eDate ? eDate : sDate;
 
-      const crossParams = `anchor=${targetAnchor}&startDate=${crossStartDate}&endDate=${crossEndDate}&_t=${Date.now()}`;
+      const crossParams = `anchor=${targetAnchor}&startDate=${crossStartDate}&endDate=${crossEndDate}`;
 
       // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT) and Overview Master (V6 SSOT)
       const [crossRes, overviewRes] = await Promise.all([
@@ -307,29 +331,121 @@ export default function SynergyCorrelation() {
         : 0;
       const topStore = [...validCorrList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
 
-      setSummaryMeta({
+      const newAnchorData = crossRes?.anchor ? {
+        ...crossRes.anchor,
+        periodTotalRevenue: currentAnchorPeriodSales > 0 ? currentAnchorPeriodSales : (rangeActive ? crossRes.anchor.periodTotalRevenue : crossRes.anchor.dailyAvgRevenue),
+        dailyAvgRevenue: crossRes.anchor.dailyAvgRevenue || currentAnchorPeriodSales
+      } : null;
+
+      const newSummaryMeta = {
         totalShopsAnalyzed: validCorrList.length || 34,
         totalPureSpillover: totalSpillover,
         topSynergyShop: topStore?.shopName || crossRes?.summary?.topSynergyStore?.name || '',
         maxSpilloverAmount: topStore?.pureSpilloverPerMillion || crossRes?.summary?.topSynergyStore?.pureSpillover || 0,
         averageElasticity: avgElasticity,
-      });
+      };
 
-      if (crossRes?.generalizedImpulseResponses?.girfTable) {
-        setGirfRows(crossRes.generalizedImpulseResponses.girfTable);
-      }
+      const newGirfRows = crossRes?.generalizedImpulseResponses?.girfTable || [];
+      const newExogenousMeta = crossRes?.exogenousControl || {
+        controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
+        observationDays: totalDays > 1 ? totalDays : 236,
+        totalOffDays: 77
+      };
 
-      if (crossRes?.exogenousControl) {
-        setExogenousMeta(crossRes.exogenousControl);
-      } else {
-        setExogenousMeta({
-          controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
-          observationDays: totalDays > 1 ? totalDays : 236,
-          totalOffDays: 77
+      if (newAnchorData) setAnchorData(newAnchorData);
+      setSummaryMeta(newSummaryMeta);
+      setGirfRows(newGirfRows);
+      setExogenousMeta(newExogenousMeta);
+      setCorrelationData(validCorrList);
+
+      // Save to In-Memory Cache
+      if (newAnchorData) {
+        synergyMemoryCache.set(cacheKey, {
+          anchorData: newAnchorData,
+          summaryMeta: newSummaryMeta,
+          girfRows: newGirfRows,
+          exogenousMeta: newExogenousMeta,
+          validCorrList
         });
       }
 
-      setCorrelationData(validCorrList);
+      // Background Pre-fetch Top Adjacent Anchors (GOLF, ROOM, FNB) for instantaneous clicking
+      const candidateAnchors: AnchorType[] = ['GOLF', 'ROOM', 'FNB', 'WONDERPOOL'];
+      setTimeout(() => {
+        candidateAnchors.forEach(async (cand) => {
+          if (cand === targetAnchor) return;
+          const candKey = `${cand}_${sDate}_${eDate || sDate}_${rangeActive}`;
+          if (synergyMemoryCache.has(candKey)) return;
+          try {
+            const mStart = sDate ? `${sDate.substring(0, 7)}-01` : sDate;
+            const cStart = rangeActive && eDate ? sDate : mStart;
+            const cEnd = rangeActive && eDate ? eDate : sDate;
+            const cRes = await secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?anchor=${cand}&startDate=${cStart}&endDate=${cEnd}`);
+            if (cRes?.anchor) {
+              const rawC: CrossSynergyItem[] = cRes.synergyMatrix || cRes.correlations || [];
+              const vList = rawC.map(it => ({
+                ...it,
+                targetShopName: it.targetShopName || it.shopName || '',
+                shopName: it.targetShopName || it.shopName || '',
+                storeName: it.targetShopName || it.shopName || '',
+                divisionName: it.categoryName === '식음' ? '식음팀' : it.categoryName === '모토아레나' ? '모토아레나' : it.categoryName === '골프' ? '골프본부' : it.categoryName === '콘도' ? '콘도' : '레저본부',
+                totalRevenue: 0,
+                totalSales: 0,
+                correlatedSales: 0,
+                correlatedVisitors: 0,
+                spilloverRate: Math.round((it.pureElasticity ?? 0) * 10) / 10,
+                correlationCoefficient: it.correlationCoefficient,
+                rawCorrelation: it.rawCorrelation ?? 0,
+                pureCorrelation: it.pureCorrelation ?? 0,
+                isSpurious: it.isSpurious ?? false,
+                pureElasticity: it.pureElasticity ?? 0,
+                pureSpilloverPerMillion: it.pureSpilloverPerMillion ?? 0,
+                causalInferenceGrade: it.causalInferenceGrade || 'CONTEMPORANEOUS_CORRELATION',
+                saturationThreshold_K: 120000000,
+                currentCapacityUtilization: 55,
+                bottleneckRisk: 'SAFE',
+                timeLagDistribution: { sameDayRatio: 80, nextDayRatio: 20 },
+                weatherImpact: { rain10mmEffect: -5, temp1degEffect: 0.4 },
+                elasticityPercent: it.elasticityPercent,
+                spilloverPerMillion: it.spilloverPerMillion,
+                synergyGrade: it.synergyGrade,
+                insight: it.insight,
+                aiStrategyInsight: it.insight,
+                interactionGrade: 'HIGH_SYNERGY',
+                revPasContribution: 0,
+                isGuestRatioTrackable: true,
+                calculationMethod: 'TIME_SERIES_CAUSAL_OLS'
+              })).filter(c => {
+                const sName = c.shopName || '';
+                const isSelf = (cand === 'ROOM' && (sName.includes('객실') || sName.includes('콘도') || sName === 'ROOM')) ||
+                               (cand === 'GOLF' && (sName.includes('골프') || sName === 'GOLF')) ||
+                               (cand === 'FNB' && (sName.includes('식음') || sName === 'FNB'));
+                return !isSelf && sName !== 'UNMAPPED_TICKET';
+              });
+              const tSpill = vList.reduce((a, b) => a + (b.pureSpilloverPerMillion || 0), 0);
+              const pItems = vList.filter(b => (b.pureElasticity || 0) > 0);
+              const aElast = pItems.length > 0 ? pItems.reduce((a, b) => a + (b.pureElasticity || 0), 0) / pItems.length : 0;
+              const tStore = [...vList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
+
+              synergyMemoryCache.set(candKey, {
+                anchorData: cRes.anchor,
+                summaryMeta: {
+                  totalShopsAnalyzed: vList.length || 34,
+                  totalPureSpillover: tSpill,
+                  topSynergyShop: tStore?.shopName || cRes.summary?.topSynergyStore?.name || '',
+                  maxSpilloverAmount: tStore?.pureSpilloverPerMillion || cRes.summary?.topSynergyStore?.pureSpillover || 0,
+                  averageElasticity: aElast
+                },
+                girfRows: cRes.generalizedImpulseResponses?.girfTable || [],
+                exogenousMeta: cRes.exogenousControl || newExogenousMeta,
+                validCorrList: vList as any
+              });
+            }
+          } catch {
+            // Ignore prefetch errors silently
+          }
+        });
+      }, 200);
     } catch (err) {
       console.error('Synergy Correlation API Error:', err);
     } finally {

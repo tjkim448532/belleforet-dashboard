@@ -74,33 +74,23 @@ export default function Home() {
   }, [coreData.core?.salesByCategory]);
 
   const leisureVisitorsMap = React.useMemo(() => {
-    // [SSOT 바이블 준수] 백엔드가 매핑 완료한 salesByFacility 및 matrix facilities의 객수 데이터를 완벽 결합
+    if (coreData.core?.leisureVisitors && Object.keys(coreData.core.leisureVisitors).length > 0) {
+      return coreData.core.leisureVisitors;
+    }
     const map: Record<string, number> = {};
-    const list = coreData.core?.salesByFacility || coreData.matrix?.facilities || [];
+    const list = coreData.core?.salesByFacility || [];
     if (Array.isArray(list)) {
       list.forEach((fac: any) => {
         const name = fac.shopName || fac.facilityName;
-        const count = parseNum(fac.visitors || fac.totalVisitors || fac.visitorCount || fac.quantity || 0);
+        const count = parseNum(fac.visitors || fac.totalVisitors || 0);
         if (name) {
-          if (fac.isSubtotal) {
-            map[name] = count;
-          } else {
-            map[name] = (map[name] || 0) + count;
-            if (name.includes('썸머랜드')) {
-              map['[썸머랜드 전체 소계]'] = (map['[썸머랜드 전체 소계]'] || 0) + count;
-            }
-            if (name.includes('원더풀')) {
-              map['[원더풀 전체 소계]'] = (map['[원더풀 전체 소계]'] || 0) + count;
-            }
-            if (name.includes('목장')) {
-              map['[벨포레 목장 전체 소계]'] = (map['[벨포레 목장 전체 소계]'] || 0) + count;
-            }
-          }
+          map[name] = count;
         }
       });
     }
     return map;
-  }, [coreData.core?.salesByFacility, coreData.matrix?.facilities]);
+  }, [coreData.core?.leisureVisitors, coreData.core?.salesByFacility]);
+
 
 
   if (apiError && !loading) {

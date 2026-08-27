@@ -143,14 +143,22 @@ export default function MatrixWeeklyDashboard() {
           ? `startDate=${startDate}&endDate=${endDate}`
           : `date=${startDate}${compareMode === 'custom' && customCompareDate ? `&compareDate=${customCompareDate}` : ''}`;
 
-        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}&_t=${Date.now()}`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}&_t=${Date.now()}`);
         if (!isMounted) return;
 
         const result = res.data || res;
-        const payloadArray = Array.isArray(result) ? result : (result.data || []);
+        const payloadArray = result.gridData || (Array.isArray(result) ? result : (result.data || []));
         setData(payloadArray);
+        
+        if (result.weather) {
+          setBaseWeather({
+            description: result.weather.description || '맑음',
+            tempMax: result.weather.tempMax ?? 28,
+            tempMin: result.weather.tempMin ?? 19
+          });
+        }
       } catch (err: any) {
-        console.error('Failed to fetch V6 matrix weekly', err);
+        console.error('Failed to fetch V6 matrix overview', err);
         if (isMounted) {
           setError('전년 동요일 매트릭스 데이터를 불러오는 중 문제가 발생했습니다.');
           setData([]);
@@ -165,6 +173,7 @@ export default function MatrixWeeklyDashboard() {
       isMounted = false;
     };
   }, [startDate, endDate, compareMode, customCompareDate]);
+
 
   // 날씨 데이터 조회
   useEffect(() => {

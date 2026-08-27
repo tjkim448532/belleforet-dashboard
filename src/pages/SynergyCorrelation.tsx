@@ -208,30 +208,6 @@ export default function SynergyCorrelation() {
         });
       }
 
-      if (crossRes?.summary) {
-        setSummaryMeta({
-          totalShopsAnalyzed: crossRes.summary.totalShopsAnalyzed || 34,
-          totalPureSpillover: crossRes.summary.totalPureSpillover || 0,
-          topSynergyShop: crossRes.summary.topSynergyShop || '',
-          maxSpilloverAmount: crossRes.summary.maxSpilloverAmount || 0,
-          averageElasticity: crossRes.summary.averageElasticity || 0,
-        });
-      }
-
-      if (crossRes?.generalizedImpulseResponses?.girfTable) {
-        setGirfRows(crossRes.generalizedImpulseResponses.girfTable);
-      }
-
-      if (crossRes?.exogenousControl) {
-        setExogenousMeta(crossRes.exogenousControl);
-      } else {
-        setExogenousMeta({
-          controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
-          observationDays: totalDays > 1 ? totalDays : 236,
-          totalOffDays: 77
-        });
-      }
-
       // Map correlations from cross-synergy-matrix / causal API (V6 SSOT)
       const rawCorrelations: CrossSynergyItem[] = crossRes?.synergyMatrix || crossRes?.correlations || [];
       const physicalShops = Array.isArray(matrixRows) ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal) : [];
@@ -315,7 +291,45 @@ export default function SynergyCorrelation() {
         };
       });
 
-      setCorrelationData(corrList);
+      // Filter out self-anchor to prevent self-synergy recursion (e.g. ROOM -> ROOM)
+      const validCorrList = corrList.filter(c => {
+        const sName = c.shopName || '';
+        const isSelf = (targetAnchor === 'ROOM' && (sName.includes('객실') || sName.includes('콘도') || sName === 'ROOM')) ||
+                       (targetAnchor === 'GOLF' && (sName.includes('골프') || sName === 'GOLF')) ||
+                       (targetAnchor === 'FNB' && (sName.includes('식음') || sName === 'FNB'));
+        return !isSelf && sName !== 'UNMAPPED_TICKET';
+      });
+
+      const totalSpillover = validCorrList.reduce((acc, c) => acc + (c.pureSpilloverPerMillion || 0), 0);
+      const positiveItems = validCorrList.filter(c => (c.pureElasticity || 0) > 0);
+      const avgElasticity = positiveItems.length > 0 
+        ? positiveItems.reduce((acc, c) => acc + (c.pureElasticity || 0), 0) / positiveItems.length 
+        : 0;
+      const topStore = [...validCorrList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
+
+      setSummaryMeta({
+        totalShopsAnalyzed: validCorrList.length || 34,
+        totalPureSpillover: totalSpillover,
+        topSynergyShop: topStore?.shopName || crossRes?.summary?.topSynergyStore?.name || '',
+        maxSpilloverAmount: topStore?.pureSpilloverPerMillion || crossRes?.summary?.topSynergyStore?.pureSpillover || 0,
+        averageElasticity: avgElasticity,
+      });
+
+      if (crossRes?.generalizedImpulseResponses?.girfTable) {
+        setGirfRows(crossRes.generalizedImpulseResponses.girfTable);
+      }
+
+      if (crossRes?.exogenousControl) {
+        setExogenousMeta(crossRes.exogenousControl);
+      } else {
+        setExogenousMeta({
+          controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
+          observationDays: totalDays > 1 ? totalDays : 236,
+          totalOffDays: 77
+        });
+      }
+
+      setCorrelationData(validCorrList);
     } catch (err) {
       console.error('Synergy Correlation API Error:', err);
     } finally {
@@ -765,7 +779,7 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-2xl font-black text-blue-600 mb-1 truncate">
-              +₩{formatCurrency(summaryMeta.totalPureSpillover || 284500)} <span className="text-xs text-slate-500 font-normal">/ 100만</span>
+              +₩{formatCurrency(summaryMeta.totalPureSpillover || 0)} <span className="text-xs text-slate-500 font-normal">/ 100만</span>
             </div>
             <p className="text-xs text-slate-500 font-medium truncate">
               앵커 100만원 발생 시 전사 <strong>34개 영업장</strong>으로 유입되는 순수 부대매출
@@ -773,7 +787,7 @@ export default function SynergyCorrelation() {
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
             <span>평균 순수 탄력성:</span>
-            <strong className="text-blue-700 tabular-nums whitespace-nowrap">+{summaryMeta.averageElasticity?.toFixed(1) || '4.2'}% (10%↑ 시)</strong>
+            <strong className="text-blue-700 tabular-nums whitespace-nowrap">+{summaryMeta.averageElasticity ? summaryMeta.averageElasticity.toFixed(1) : '0.0'}% (10%↑ 시)</strong>
           </div>
         </div>
 
@@ -790,15 +804,15 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-2xl font-black text-emerald-600 mb-1 truncate" title={summaryMeta.topSynergyShop || topPureStore?.shopName}>
-              {summaryMeta.topSynergyShop || topPureStore?.shopName || '남도예담'}
+              {summaryMeta.topSynergyShop || topPureStore?.shopName || '-'}
             </div>
             <p className="text-xs text-slate-500 font-medium truncate">
-              순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation?.toFixed(2) || '0.79'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity?.toFixed(1) || '7.8'}%</strong>
+              순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation ? topPureStore.pureCorrelation.toFixed(2) : '0.00'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity ? topPureStore.pureElasticity.toFixed(1) : '0.0'}%</strong>
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
             <span>100만원당 순수 낙수:</span>
-            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">+₩{formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 81136)} / 100만</strong>
+            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">+₩{formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 0)} / 100만</strong>
           </div>
         </div>
 

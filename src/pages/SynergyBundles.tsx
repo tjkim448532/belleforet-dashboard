@@ -28,7 +28,7 @@ export interface CustomerBundleItem {
   badgeColor?: string;
 }
 
-const cleanStoreName = (name: string) => {
+const cleanStoreName = (name?: string) => {
   if (!name) return '';
   if (name === 'CRS') return '전화/예약실(CRS)';
   if (name === '홈페이지') return '자사몰(홈페이지)';
@@ -36,13 +36,15 @@ const cleanStoreName = (name: string) => {
 };
 
 const formatBundleTitle = (bundle: CustomerBundleItem) => {
+  if (!bundle) return '';
   if (bundle.storeList && bundle.storeList.length === 1) {
     return `[${cleanStoreName(bundle.storeList[0])} 단독 이용]`;
   }
   if (bundle.storeList && bundle.storeList.length > 1) {
     return `[${bundle.storeList.map(cleanStoreName).join(' + ')}]`;
   }
-  return bundle.bundleName.replace(/\bCRS\b/g, '전화/예약실(CRS)').replace(/\b홈페이지\b/g, '자사몰(홈페이지)');
+  const bName = bundle.bundleName || (bundle as any).name || (bundle as any).categoryCode || '';
+  return String(bName).replace(/\bCRS\b/g, '전화/예약실(CRS)').replace(/\b홈페이지\b/g, '자사몰(홈페이지)');
 };
 
 export default function SynergyBundles() {
@@ -68,8 +70,6 @@ export default function SynergyBundles() {
     return diffDays > 0 ? diffDays : 1;
   }, [startDate, endDate, isRangeMode]);
 
-  // SSOT 위반 수정: 백엔드 API 에러 시 임의의 하드코딩된 가짜 데이터를 
-  // 화면에 그리는 폴백 로직을 전면 제거하고 빈 배열로 초기화합니다.
   const defaultBundles: CustomerBundleItem[] = useMemo(() => [], []);
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
@@ -104,7 +104,23 @@ export default function SynergyBundles() {
         if (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0) {
           setBundleData(payload.bundleClusters);
         } else if (Array.isArray(payload.data) && payload.data.length > 0) {
-          setBundleData(payload.data);
+          const mapped: CustomerBundleItem[] = payload.data.map((d: any, idx: number) => {
+            const catName = d.categoryCode === 'ROOM' ? '숙박(객실)' : d.categoryCode === 'GOLF' ? '골프' : d.categoryCode === 'FNB' ? '식음' : d.categoryCode === 'TICKET' ? '레저' : d.categoryCode || '기타';
+            const qty = Number(d.quantity || 0);
+            const rev = Number(d.revenue || 0);
+            return {
+              bundleKey: `cluster_${idx}`,
+              bundleName: catName,
+              categoryType: d.categoryCode === 'ROOM' ? 'ROOM_INCLUDED' : d.categoryCode === 'GOLF' ? 'GOLF_INCLUDED' : 'DAY_VISIT',
+              storeList: [catName],
+              customerCount: qty,
+              ratioPct: 100,
+              totalSales: rev,
+              avgSpendPerCustomer: qty > 0 ? Math.round(rev / qty) : rev,
+              badgeColor: 'bg-indigo-500'
+            };
+          });
+          setBundleData(mapped);
         } else if (Array.isArray(payload) && payload.length > 0) {
           setBundleData(payload);
         }

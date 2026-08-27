@@ -321,7 +321,7 @@ export default function Synergy() {
     };
   }, [matrixData, summaryData, grandTotal.revenue]);
 
-  // Ground-Up Breakdown Grouping (with intelligent MTD fallback for pipeline lag dates)
+  // Ground-Up Breakdown Grouping (Pure Zero-Proxy, No MTD fallback in single date mode)
   const segmentSummaries = useMemo(() => {
     if (channelData && channelData.length > 0) {
       let subtotalRows = channelData.filter(item => item.isChannelSubtotal || (item.channelName && item.channelName.includes('[소계]')));
@@ -330,7 +330,6 @@ export default function Synergy() {
       }
       const totalRoomRev = grandTotal.revenue || 1;
 
-      // 1. Try today's / range channel rows
       const mapped = subtotalRows
         .map(item => {
           let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
@@ -347,37 +346,12 @@ export default function Synergy() {
             isMtdFallback: false
           };
         })
-        .filter(g => g.rooms > 0 || g.revenue > 0)
         .sort((a, b) => b.revenue - a.revenue);
 
       if (mapped.length > 0) return mapped;
-
-      // 2. Fallback: If today's channel data is 0 due to pipeline lag, fallback to MTD channel distribution
-      const mtdGrandTotalRow = channelData.find(r => r.isGrandTotal || r.channelName?.includes('총계'));
-      const mtdTotalRev = parseNum(mtdGrandTotalRow?.mtdRevenue || 0) || 1;
-      const mtdMapped = subtotalRows
-        .map(item => {
-          let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
-          const rooms = parseNum(item.mtdRooms || 0);
-          const revenue = parseNum(item.mtdRevenue || 0);
-          const shareRatio = mtdTotalRev > 0 ? revenue / mtdTotalRev : 0;
-
-          return {
-            name: `${cleanName} (당월 MTD)`,
-            rooms,
-            revenue,
-            adr: rooms > 0 ? Math.round(revenue / rooms) : 0,
-            sharePct: (shareRatio * 100).toFixed(1),
-            isMtdFallback: true
-          };
-        })
-        .filter(g => g.rooms > 0 || g.revenue > 0)
-        .sort((a, b) => b.revenue - a.revenue);
-
-      if (mtdMapped.length > 0) return mtdMapped;
     }
 
-    // 3. Fallback: Map from salesByCategory
+    // Fallback: Map from salesByCategory
     const cats = (summaryData?.salesByCategory || []).filter((c: any) => c.categoryCode !== 'ROOM');
     const totalAncillary = ancillarySales.total || 1;
 
@@ -396,6 +370,7 @@ export default function Synergy() {
       };
     }).filter((g: any) => g.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
   }, [channelData, summaryData, grandTotal, ancillarySales.total, isActualRange, selectedChannel]);
+
 
   // Total Synergy Sales across all segments
   const totalSynergySum = useMemo(() => {

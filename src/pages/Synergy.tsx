@@ -155,11 +155,11 @@ export default function Synergy() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${eDate || sDate}`;
 
-      // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. API 2 Matrix Weekly (Category SSOT)
+      // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. Matrix Report (Category SSOT)
       const [channelRes, summaryRes, matrixRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/dashboard/room-sales-by-channel?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/dashboard/matrix-report?${queryParams}`).catch(() => null)
       ]);
 
       const channelPayload = channelRes?.data ?? channelRes;

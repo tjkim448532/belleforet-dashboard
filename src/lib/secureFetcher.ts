@@ -20,8 +20,17 @@ const getAuthToken = async (): Promise<string> => {
   });
 };
 
-export const secureFetcher = async (url: string, options: RequestInit = {}) => {
-  const isV6Api = url.includes('/api/v5/');
+export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) => {
+  let url = rawUrl;
+  if (url.includes('/api/v5/')) {
+    url = url
+      .replace('/api/v5/report/room-sales-by-channel', '/api/v6/dashboard/room-sales-by-channel')
+      .replace('/api/v5/report/room-channel-sales', '/api/v6/dashboard/room-channel-sales')
+      .replace('/api/v5/dashboard/matrix-weekly', '/api/v6/dashboard/matrix-report')
+      .replace('/api/v5/', '/api/v6/');
+  }
+
+  const isV6Api = url.includes('/api/v6/') || url.includes('/api/v5/');
   const token = isV6Api ? 'belleforet-m2m-secret' : await getAuthToken();
 
   const headers = {

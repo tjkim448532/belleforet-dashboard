@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { fetchLiveWeatherFallback } from '../lib/weatherService';
+import { standardizeGridRows } from '../lib/standardVenueUtils';
 
 interface V6MatrixRow {
   isSubtotal?: boolean;
@@ -148,7 +149,7 @@ export default function MatrixWeeklyDashboard() {
 
         const result = res.data || res;
         const payloadArray = result.gridData || (Array.isArray(result) ? result : (result.data || []));
-        setData(payloadArray);
+        setData(standardizeGridRows(payloadArray));
         
         if (result.weather) {
           setBaseWeather({

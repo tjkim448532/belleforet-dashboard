@@ -3,6 +3,7 @@ import { RefreshCw, Download } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
+import { standardizeGridRows } from '../lib/standardVenueUtils';
 
 interface GridRow {
   categoryCode?: string;
@@ -38,14 +39,14 @@ export default function DailySalesReport() {
       const result = await secureFetcher(`${API_BASE}/api/v6/dashboard/overview?date=${date}&_t=${Date.now()}`);
       const payload = result.data || result;
       
-      // V6 SSOT Zero-Proxy: Bind directly from backend finished gridData
+      // V6 SSOT Zero-Proxy: Bind directly from backend finished gridData with standard facility rollup
       if (payload && payload.gridData) {
         const roomCat = (payload.salesByCategory || []).find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도');
         setAccumulated({
           mtd_room_revenue: Number(roomCat?.mtdActual || 0),
           ytd_total_gross: Number(payload.summary?.ytdRevenue || payload.summary?.ytdActual || 0)
         });
-        setData(payload.gridData);
+        setData(standardizeGridRows(payload.gridData));
       } else {
         setData([]);
         setAccumulated(null);

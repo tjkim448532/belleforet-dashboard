@@ -91,18 +91,20 @@ export default function SynergyBundles() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
       
-      const res = await secureFetcher(`${API_BASE}/api/v5/report/customer-journey-bundles?${queryParams}`).catch(() => null);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/customer-journey-bundles?${queryParams}`).catch(() => null);
       const payload = res?.data ?? res;
 
-      if (payload && (payload.totalUniqueCustomers !== undefined || (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0))) {
+      if (payload && (payload.totalUniqueCustomers !== undefined || (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0) || (Array.isArray(payload.data) && payload.data.length > 0))) {
         if (payload.totalUniqueCustomers !== undefined) {
           setApiMeta({
             totalUniqueCustomers: payload.totalUniqueCustomers,
-            multiFacilityRatioPct: payload.multiFacilityRatioPct
+            multiFacilityRatioPct: payload.multiFacilityRatioPct || 0
           });
         }
         if (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0) {
           setBundleData(payload.bundleClusters);
+        } else if (Array.isArray(payload.data) && payload.data.length > 0) {
+          setBundleData(payload.data);
         } else if (Array.isArray(payload) && payload.length > 0) {
           setBundleData(payload);
         }

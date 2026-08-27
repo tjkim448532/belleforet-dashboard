@@ -137,15 +137,16 @@ export default function SynergyCorrelation() {
 
       const crossParams = `anchor=${targetAnchor}&startDate=${crossStartDate}&endDate=${crossEndDate}&_t=${Date.now()}`;
 
-      // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT), Matrix-Weekly (49 venues SSOT), Revenue Summary
-      const [crossRes, matrixRes, summaryRes] = await Promise.all([
+      // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT) and Overview Master (V6 SSOT)
+      const [crossRes, overviewRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`).catch(() => null)
       ]);
 
-      const matrixRows: any[] = matrixRes?.data || matrixRes || [];
-      const summaryObj = summaryRes?.data?.summary || summaryRes?.summary || {};
+      const overviewPayload = overviewRes?.data || overviewRes || {};
+      const matrixRows: any[] = overviewPayload?.gridData || [];
+      const categories: any[] = overviewPayload?.salesByCategory || [];
+      const summaryObj = overviewPayload?.summary || {};
       
       const cleanNum = (val: any) => {
         if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -163,19 +164,22 @@ export default function SynergyCorrelation() {
 
       // Calculate current selected anchor's exact revenue for the selected timeframe
       let currentAnchorPeriodSales = 0;
-      if (Array.isArray(matrixRows)) {
+      if (Array.isArray(categories) && categories.length > 0) {
         if (targetAnchor === 'ROOM') {
-          const roomSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === 'CONDO'));
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (roomSub?.rangeActual || roomSub?.mtdActual) : roomSub?.todayActual);
-          if (currentAnchorPeriodSales <= 0) currentAnchorPeriodSales = cleanNum(summaryObj.totalRevenue);
+          const roomCat = categories.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (roomCat?.mtdActual || roomCat?.rangeActual) : roomCat?.todayActual);
         } else if (targetAnchor === 'GOLF') {
-          const golfSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'GOLF' || r.categoryName === '골프'));
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (golfSub?.rangeActual || golfSub?.mtdActual) : golfSub?.todayActual);
+          const golfCat = categories.find((c: any) => c.categoryCode === 'GOLF' || c.categoryCode === '골프');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (golfCat?.mtdActual || golfCat?.rangeActual) : golfCat?.todayActual);
         } else if (targetAnchor === 'FNB') {
-          const fnbSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'FNB' || r.categoryName === '식음'));
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (fnbSub?.rangeActual || fnbSub?.mtdActual) : fnbSub?.todayActual);
-        } else if (targetAnchor === 'MEDIA_ART') {
-          const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트센터');
+          const fnbCat = categories.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음');
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (fnbCat?.mtdActual || fnbCat?.rangeActual) : fnbCat?.todayActual);
+        }
+      }
+
+      if (currentAnchorPeriodSales <= 0 && Array.isArray(matrixRows) && matrixRows.length > 0) {
+        if (targetAnchor === 'MEDIA_ART') {
+          const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트' || r.shopName === '미디어아트센터');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
         } else if (targetAnchor === 'MOUNTAIN_CART') {
           const kartVenue = matrixRows.find((r: any) => r.shopName === '마운틴카트');
@@ -184,7 +188,7 @@ export default function SynergyCorrelation() {
           const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드' || r.shopName === '원더풀');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.mtdActual) : summerVenue?.todayActual);
         } else if (targetAnchor === 'FARM') {
-          const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장');
+          const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장' || r.shopName === '목장');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.mtdActual) : farmVenue?.todayActual);
         } else if (targetAnchor === 'MOTO_ARENA') {
           const motoVenue = matrixRows.find((r: any) => r.shopName === '모토아레나');
@@ -199,7 +203,7 @@ export default function SynergyCorrelation() {
       if (crossRes?.anchor) {
         setAnchorData({
           ...crossRes.anchor,
-          periodTotalRevenue: currentAnchorPeriodSales > 0 ? currentAnchorPeriodSales : crossRes.anchor.periodTotalRevenue,
+          periodTotalRevenue: currentAnchorPeriodSales > 0 ? currentAnchorPeriodSales : (rangeActive ? crossRes.anchor.periodTotalRevenue : crossRes.anchor.dailyAvgRevenue),
           dailyAvgRevenue: crossRes.anchor.dailyAvgRevenue || currentAnchorPeriodSales
         });
       }

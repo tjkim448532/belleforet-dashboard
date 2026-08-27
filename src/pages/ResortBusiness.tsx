@@ -65,23 +65,19 @@ export default function ResortBusiness() {
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
           
-        const [summaryRes, matrixRes, channelRes, segmentRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`),
-          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v5/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v5/report/room-channel-sales?${queryParams}`).catch(() => ({ data: [] }))
+        const [overviewRes, channelRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] }))
         ]);
 
-        const rawSummary = summaryRes.data || summaryRes;
-        const rawMatrix = matrixRes.data || matrixRes;
+        const rawOverview = overviewRes.data || overviewRes;
         const rawChannels = channelRes.data || channelRes;
-        const rawSegments = segmentRes.data || segmentRes;
 
         const transformed = transformResortData({
-          ...rawSummary,
-          matrix: Array.isArray(rawMatrix) ? rawMatrix : [],
-          salesByChannel: Array.isArray(rawChannels) ? rawChannels : (rawChannels.channels || []),
-          salesBySegment: Array.isArray(rawSegments) ? rawSegments : (rawSegments.segments || [])
+          ...rawOverview,
+          matrix: Array.isArray(rawOverview.gridData) ? rawOverview.gridData : [],
+          salesByChannel: Array.isArray(rawChannels) ? rawChannels : (rawChannels.channels || rawChannels.data || []),
+          salesBySegment: Array.isArray(rawChannels) ? rawChannels : []
         }, caps);
 
         setData(transformed);

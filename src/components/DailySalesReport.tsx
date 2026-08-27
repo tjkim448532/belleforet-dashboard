@@ -3,106 +3,58 @@ import { RefreshCw, Download } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from './GlobalDatePicker';
-import { parseNum } from '../lib/dataTransformers';
 
-interface SalesData {
-  category?: string;
+interface GridRow {
   categoryCode?: string;
+  categoryName?: string;
+  teamName?: string;
+  partName?: string;
   shopName: string;
+  facilityName?: string;
   todayActual: number;
   todayLy: number;
+  todayGrowth?: number;
   mtdActual: number;
   mtdLy: number;
+  mtdGrowth?: number;
   ytdActual: number;
   ytdLy: number;
-  isCategory?: boolean;
-  isChild?: boolean;
+  ytdGrowth?: number;
   isSubtotal?: boolean;
-  isFooter?: boolean;
+  isGrandTotal?: boolean;
+  isCategorySubtotal?: boolean;
 }
-
-// V6 Bible Strict adherence: No frontend calculation. Use backend SSOT.
-const processSalesData = (payload: any) => {
-  if (!payload) return [];
-  
-  const finalArray: SalesData[] = [];
-  
-  const categories = payload.salesByCategory || [];
-  const facilities = payload.salesByFacility || [];
-  
-  // Render Subtotals (isCategory) strictly using salesByCategory as provided by backend
-  categories.forEach((cat: any) => {
-    finalArray.push({
-      isCategory: true,
-      shopName: cat.categoryName,
-      todayActual: parseNum(cat.totalSales || 0), // SSOT strict map
-      todayLy: parseNum(cat.todayLy || 0),
-      mtdActual: parseNum(cat.mtdActual || 0),
-      mtdLy: parseNum(cat.mtdLy || 0),
-      ytdActual: parseNum(cat.ytdActual || 0),
-      ytdLy: parseNum(cat.ytdLy || 0),
-    });
-  });
-
-  // Render Facilities strictly using salesByFacility as provided by backend
-  facilities.forEach((child: any) => {
-    finalArray.push({
-      isChild: !child.isSubtotal,
-      isSubtotal: child.isSubtotal,
-      shopName: child.shopName || child.facilityName,
-      todayActual: parseNum(child.totalSales || child.todayActual || 0), // SSOT strict map
-      todayLy: parseNum(child.todayLy || 0),
-      mtdActual: parseNum(child.mtdActual || 0),
-      mtdLy: parseNum(child.mtdLy || 0),
-      ytdActual: parseNum(child.ytdActual || 0),
-      ytdLy: parseNum(child.ytdLy || 0),
-    });
-  });
-  
-  // Render Grand Total strictly using summary SSOT
-  const summary = payload.summary || {};
-  finalArray.push({
-    isFooter: true,
-    shopName: '총계 (Grand Total)',
-    todayActual: parseNum(summary.totalRevenue || 0),
-    todayLy: parseNum(summary.todayLyRevenue || 0),
-    mtdActual: parseNum(summary.mtdRevenue || 0),
-    mtdLy: parseNum(summary.mtdLyRevenue || 0),
-    ytdActual: parseNum(summary.ytdActual || 0),
-    ytdLy: parseNum(summary.ytdLy || 0),
-  });
-  
-  return finalArray;
-};
 
 export default function DailySalesReport() {
   const { startDate: date } = useDate();
   const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<SalesData[]>([]);
+  const [data, setData] = useState<GridRow[]>([]);
   const [accumulated, setAccumulated] = useState<{ mtd_room_revenue: number; ytd_total_gross: number } | null>(null);
 
   const fetchSalesData = async () => {
     setLoading(true);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-      const result = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${date}&_t=${Date.now()}`);
+      const result = await secureFetcher(`${API_BASE}/api/v6/dashboard/overview?date=${date}&_t=${Date.now()}`);
       const payload = result.data || result;
-      // V6 SSOT: Pass the full payload to processSalesData
-      if (payload) {
+      
+      // V6 SSOT Zero-Proxy: Bind directly from backend finished gridData
+      if (payload && payload.gridData) {
+        const roomCat = (payload.salesByCategory || []).find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도');
         setAccumulated({
-          mtd_room_revenue: payload.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.mtdActual || 0,
-          ytd_total_gross: payload.summary?.ytdActual || 0
+          mtd_room_revenue: Number(roomCat?.mtdActual || 0),
+          ytd_total_gross: Number(payload.summary?.ytdRevenue || payload.summary?.ytdActual || 0)
         });
-        setData(processSalesData(payload));
+        setData(payload.gridData);
       } else {
         setData([]);
         setAccumulated(null);
       }
-      setLoading(false);
     } catch (err) {
-      console.error('API Error:', err);
+      console.error('DailySalesReport V6 API Error:', err);
       setData([]);
       setAccumulated(null);
+    } finally {
       setLoading(false);
     }
   };
@@ -112,23 +64,15 @@ export default function DailySalesReport() {
   }, [date]);
 
   const formatCurrency = (val: any) => {
-  if (!val) return '0';
-  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
-  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
-};
-
-
-  const getGrowthRate = (actual: number | string, ly: number | string) => {
-    const act = parseNum(actual) || 0;
-    const lastYear = parseNum(ly) || 0;
-    if (lastYear === 0) return act > 0 ? '100.0' : '0.0';
-    return (((act - lastYear) / Math.abs(lastYear)) * 100).toFixed(1);
+    if (!val) return '0';
+    const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+    return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
-  const getGrowthColor = (rate: string) => {
-    const num = parseNum(rate);
-    if (num > 0) return 'text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10';
-    if (num < 0) return 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10';
+  const getGrowthColor = (growth: number | undefined) => {
+    if (growth === undefined || growth === null) return 'text-slate-500 dark:text-slate-400';
+    if (growth > 0) return 'text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10';
+    if (growth < 0) return 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10';
     return 'text-slate-500 dark:text-slate-400';
   };
 
@@ -136,7 +80,7 @@ export default function DailySalesReport() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-medium">일일 매출 보고서</h2>
+          <h2 className="text-2xl font-medium">일일 매출 보고서 (V6 SSOT)</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">부서별 일계, 월누계, 연누계 목표 및 실적 매트릭스</p>
         </div>
         
@@ -220,65 +164,61 @@ export default function DailySalesReport() {
                 </tr>
               ) : (
                 data.map((row, idx) => {
-                  const dailyGrowth = getGrowthRate(row.todayActual, row.todayLy);
-                  const mtdGrowth = getGrowthRate(row.mtdActual, row.mtdLy);
-                  const ytdGrowth = getGrowthRate(row.ytdActual, row.ytdLy);
-                  
-                  const isCategory = row.isCategory;
-                  const isChild = row.isChild;
-                  const isFooter = row.isFooter;
+                  const isGrandTotal = row.isGrandTotal || row.shopName === '총계 (Grand Total)';
                   const isSubtotal = row.isSubtotal;
+                  const isChild = !isSubtotal && !isGrandTotal;
+
+                  const displayName = row.shopName || row.facilityName || row.categoryName || '';
 
                   return (
                     <tr 
                       key={idx} 
                       className={`
                         transition-colors
-                        ${isFooter ? 'bg-indigo-50 dark:bg-indigo-900/30 font-bold border-t-2 border-indigo-200 dark:border-indigo-800' : ''}
-                        ${isCategory ? 'bg-slate-100 dark:bg-slate-800/80 font-semibold' : ''}
+                        ${isGrandTotal ? 'bg-indigo-50 dark:bg-indigo-900/30 font-bold border-t-2 border-indigo-200 dark:border-indigo-800' : ''}
                         ${isSubtotal ? 'bg-brand-mint/10 dark:bg-brand-mint/20 font-semibold border-t border-brand-mint/30' : ''}
                         ${isChild ? 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50' : ''}
                       `}
                     >
-                      <td className={`px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 ${isChild ? 'pl-10 text-slate-600 dark:text-slate-400' : 'pl-6'}`}>
-                        {isCategory && <span className="mr-2 inline-block w-2 h-2 rounded-full bg-blue-500"></span>}
+                      <td className={`px-4 py-3 whitespace-nowrap border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 ${isChild ? 'pl-10 text-slate-600 dark:text-slate-400' : 'pl-6 font-bold'}`}>
+                        {isSubtotal && <span className="mr-2 inline-block w-2 h-2 rounded-full bg-teal-500"></span>}
                         {isChild && <span className="mr-2 text-slate-400">ㄴ</span>}
-                        {row.shopName}
+                        {displayName}
                       </td>
 
-                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
                         {formatCurrency(row.todayActual)}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-500 dark:text-slate-400">
                         {formatCurrency(row.todayLy)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(dailyGrowth)}`}>
-                          {parseNum(dailyGrowth) > 0 ? '+' : ''}{dailyGrowth}%
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(row.todayGrowth)}`}>
+                          {row.todayGrowth !== undefined && row.todayGrowth > 0 ? '+' : ''}{row.todayGrowth !== undefined ? Number(row.todayGrowth).toFixed(1) : '0.0'}%
                         </span>
                       </td>
 
-                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
                         {formatCurrency(row.mtdActual)}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-500 dark:text-slate-400">
                         {formatCurrency(row.mtdLy)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(mtdGrowth)}`}>
-                          {parseNum(mtdGrowth) > 0 ? '+' : ''}{mtdGrowth}%
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(row.mtdGrowth)}`}>
+                          {row.mtdGrowth !== undefined && row.mtdGrowth > 0 ? '+' : ''}{row.mtdGrowth !== undefined ? Number(row.mtdGrowth).toFixed(1) : '0.0'}%
                         </span>
                       </td>
 
-                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
                         {formatCurrency(row.ytdActual)}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-right whitespace-nowrap text-slate-500 dark:text-slate-400">
                         {formatCurrency(row.ytdLy)}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(ytdGrowth)}`}>
-                          {parseNum(ytdGrowth) > 0 ? '+' : ''}{ytdGrowth}%
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getGrowthColor(row.ytdGrowth)}`}>
+                          {row.ytdGrowth !== undefined && row.ytdGrowth > 0 ? '+' : ''}{row.ytdGrowth !== undefined ? Number(row.ytdGrowth).toFixed(1) : '0.0'}%
                         </span>
                       </td>
                     </tr>

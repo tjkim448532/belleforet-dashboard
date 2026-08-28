@@ -85,6 +85,8 @@ interface SummaryData {
     non_member_green_fee: number;
     member_avg_green_fee: number;
     non_member_avg_green_fee: number;
+    direct_avg_green_fee?: number;
+    ota_avg_green_fee?: number;
     // Channel & Teetime SSOT data
     totalReservedTeams?: number;
     totalCanceledTeams?: number;
@@ -179,6 +181,8 @@ export default function GolfBusiness() {
               non_member_green_fee,
               member_avg_green_fee,
               non_member_avg_green_fee,
+              direct_avg_green_fee: parseNum(golfSummary.golfDirectAvgGreenFee || payload.summary?.golfDirectAvgGreenFee || 0),
+              ota_avg_green_fee: parseNum(golfSummary.golfOtaAvgGreenFee || payload.summary?.golfOtaAvgGreenFee || 0),
               totalReservedTeams: parseNum(golfSummary.totalReservedTeams || payload.summary?.totalGolfReservedTeams || 0),
               totalCanceledTeams: parseNum(golfSummary.totalCanceledTeams || payload.summary?.totalGolfCanceledTeams || 0),
               cancellationRate: golfSummary.cancellationRate !== undefined ? golfSummary.cancellationRate : 0

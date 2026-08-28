@@ -1,0 +1,14 @@
+#!/bin/sh
+# Git Pre-Push Hook: 자동 빌드 및 타입 검사
+echo "🔍 [Pre-Push Hook] Git Push 전 로컬 빌드 및 문법 검사를 수행합니다..."
+
+npm run build
+
+if [ $? -ne 0 ]; then
+  echo "❌ [Pre-Push Blocked] 빌드(Build) 실패! 문법 오류 또는 타입 에러가 있어 푸시를 차단합니다."
+  echo "👉 로컬에서 에러를 먼저 수정한 후 다시 푸시하십시오."
+  exit 1
+fi
+
+echo "✅ [Pre-Push Passed] 빌드 검증 성공! 원격 저장소로 푸시를 진행합니다."
+exit 0

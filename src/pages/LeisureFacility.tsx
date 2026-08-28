@@ -43,7 +43,7 @@ export default function LeisureFacility() {
         const queryParams = endDate
           ? `startDate=${startDate}&endDate=${endDate}&limit=15`
           : `date=${startDate}&limit=15`;
-        const res = await secureFetcher(`${API_BASE}/api/v5/report/top-ticket-items?${queryParams}`).catch(() => null);
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-organization?${queryParams}`).catch(() => null);
         const payload = res?.data ?? res;
         if (payload?.topItems && Array.isArray(payload.topItems) && payload.topItems.length > 0) {
           const filtered = payload.topItems

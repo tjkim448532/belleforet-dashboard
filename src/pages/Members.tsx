@@ -72,7 +72,7 @@ export default function Members() {
         ? `startDate=${startDate}&endDate=${endDate}`
         : `date=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v5/report/daily-member-visitors?${queryParams}`).catch(() => null);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors?${queryParams}`).catch(() => null);
       const payload = res?.data ?? res;
 
       if (payload && (payload.visitors || payload.summary)) {

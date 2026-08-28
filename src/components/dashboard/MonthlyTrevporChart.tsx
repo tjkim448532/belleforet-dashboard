@@ -100,7 +100,7 @@ export default function MonthlyTrevporChart() {
       setLoading(true);
       setError(null);
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v5/report/monthly-room-efficiency?baseYear=2026&compareYear=2025`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=2026&compareYear=2025`);
         const payload = res?.data ?? res;
         if (isMounted) {
           if (payload?.monthlyComparison && Array.isArray(payload.monthlyComparison)) {
@@ -111,8 +111,8 @@ export default function MonthlyTrevporChart() {
         }
       } catch (err: any) {
         if (isMounted) {
-          console.warn('[MonthlyTrevporChart] Waiting for backend API /api/v5/report/monthly-room-efficiency:', err);
-          setError('백엔드 전용 API(/api/v5/report/monthly-room-efficiency) 연동 대기 중입니다.');
+          console.warn('[MonthlyTrevporChart] Waiting for backend API /api/v6/report/monthly-room-efficiency:', err);
+          setError('백엔드 전용 API(/api/v6/report/monthly-room-efficiency) 연동 대기 중입니다.');
           setData(null);
         }
       } finally {

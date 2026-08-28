@@ -58,7 +58,7 @@ export default function Simulator() {
       try {
         // [12차 패치] 날짜 파라미터를 API에 전달하여 해당 날짜의 POS/예약 결제 내역을 필터링합니다.
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const res = await secureFetcher(`${API_BASE}/api/v3/reports/recent-transactions?date=${selectedDate}`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/overview?date=${selectedDate}`).catch(() => ({ transactions: [] }));
         const result = res.data || res;
         if (result && result.transactions) {
           setTransactions(result.transactions);

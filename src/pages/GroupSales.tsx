@@ -117,7 +117,7 @@ export default function GroupSales() {
         ? `startDate=${startDate}&endDate=${endDate}`
         : `date=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v5/report/corporate-group-sales?${queryParams}`).catch(() => null);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null);
       const payload = res?.data ?? res;
 
       if (payload && (payload.groups || payload.summary)) {

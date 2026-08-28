@@ -112,19 +112,18 @@ export default function GolfBusiness() {
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
 
-        // 1. Fetch main revenue summary, 2. matrix-weekly (for range sync SSOT), and 3. channel & teetime analysis in parallel
-        const [summaryRes, matrixRes, channelTeetimeRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?${queryParams}`).catch(e => ({ error: e })),
-          secureFetcher(`${API_BASE}/api/v5/dashboard/matrix-weekly?${queryParams}`).catch(e => ({ error: e })),
-          secureFetcher(`${API_BASE}/api/v5/report/golf-channel-teetime-analysis?${queryParams}`).catch(e => ({ error: e }))
+        // 1. Fetch main overview and 2. channel & teetime analysis in parallel
+        const [overviewRes, channelTeetimeRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`).catch(e => ({ error: e })),
+          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`).catch(e => ({ error: e }))
         ]);
 
-        let payload = summaryRes?.data ?? summaryRes;
+        let payload = overviewRes?.data ?? overviewRes;
         if (Array.isArray(payload)) {
           payload = payload[payload.length - 1] || payload[0] || {};
         }
 
-        const matrixRows = matrixRes?.data || matrixRes;
+        const matrixRows = payload?.gridData || [];
         const golfSubtotalInMatrix = Array.isArray(matrixRows) 
           ? parseNum(matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'GOLF' || r.categoryCode === '골프' || r.categoryName === '골프'))?.todayActual || 0)
           : 0;
@@ -166,7 +165,7 @@ export default function GolfBusiness() {
           const golf_avg_green_fee = parseNum(golfSummary.avgGreenFeePerPlayer || payload.summary?.golfAvgGreenFee || 0);
 
           setData({
-            success: summaryRes.success ?? true,
+            success: overviewRes.success ?? true,
             date: payload.date ?? startDate,
             todaySummary: {
               golf_revenue,

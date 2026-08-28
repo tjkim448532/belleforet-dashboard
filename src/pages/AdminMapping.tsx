@@ -56,7 +56,7 @@ export default function AdminMapping() {
     setRoomSegmentLoading(true);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-      const res = await secureFetcher(`${API_BASE}/api/v5/admin/mapping/facility-groups?mode=ROOM_SEGMENT`);
+      const res = await secureFetcher(`${API_BASE}/api/v6/admin/mapping/facility-groups?mode=ROOM_SEGMENT`);
       const payload = res.data || res;
 
       if (payload) {
@@ -83,7 +83,7 @@ export default function AdminMapping() {
 
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-      await secureFetcher(`${API_BASE}/api/v5/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
+      await secureFetcher(`${API_BASE}/api/v6/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -127,7 +127,7 @@ export default function AdminMapping() {
 
       setBulkProgress({ current: Math.floor(unmappedItems.length / 2), total: unmappedItems.length });
 
-      await secureFetcher(`${API_BASE}/api/v5/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
+      await secureFetcher(`${API_BASE}/api/v6/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

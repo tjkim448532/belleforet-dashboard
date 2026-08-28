@@ -32,7 +32,7 @@ export default function ResortBusiness() {
           const past14Str = past14.toISOString().split('T')[0];
           queryParams = `startDate=${past14Str}&endDate=${startDate}`;
         }
-        const res = await secureFetcher(`${API_BASE}/api/v5/dashboard/los-correlation-trend?${queryParams}`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/los-correlation-trend?${queryParams}`).catch(() => ({ data: [] }));
         const resultData = res.data ?? res;
         setLosTrendData(resultData?.trendData || []);
       } catch (e) {

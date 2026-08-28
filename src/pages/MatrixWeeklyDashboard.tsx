@@ -384,7 +384,11 @@ export default function MatrixWeeklyDashboard() {
             <input 
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setCompareMode('yoy_same_day');
+                setCustomCompareDate('');
+              }}
               className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
             />
           </div>

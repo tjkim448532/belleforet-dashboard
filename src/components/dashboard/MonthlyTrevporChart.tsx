@@ -523,7 +523,7 @@ export default function MonthlyTrevporChart() {
   const stackedChartOptions = useMemo(() => {
     if (!data?.monthlyComparison) return null;
 
-    const validMonths = data.monthlyComparison.filter(d => d.ty !== null);
+    const validMonths = (data.monthlyComparison || []).filter(d => Boolean(d && (d.ty || d.ly)));
     if (validMonths.length === 0) return null;
 
     const xLabels = validMonths.map(d => {
@@ -547,16 +547,20 @@ export default function MonthlyTrevporChart() {
     const lyGolf: number[] = [];
 
     validMonths.forEach(d => {
-      const ty = d.ty!;
+      const ty = d.ty;
       const ly = d.ly;
 
       if (metricMode === 'TOTAL') {
-        tyRoom.push(Number(ty.roomRatio ?? 0));
-        tyFnb.push(Number(ty.fnbRatio ?? 0));
-        tyLeisure.push(Number(ty.leisureRatio ?? 0));
-        tyMoto.push(Number(ty.motoRatio ?? 0));
-        tyBanquet.push(Number(ty.banquetRatio ?? 0));
-        tyGolf.push(Number(ty.golfRatio ?? 0));
+        if (ty) {
+          tyRoom.push(Number(ty.roomRatio ?? 0));
+          tyFnb.push(Number(ty.fnbRatio ?? 0));
+          tyLeisure.push(Number(ty.leisureRatio ?? 0));
+          tyMoto.push(Number(ty.motoRatio ?? 0));
+          tyBanquet.push(Number(ty.banquetRatio ?? 0));
+          tyGolf.push(Number(ty.golfRatio ?? 0));
+        } else {
+          tyRoom.push(0); tyFnb.push(0); tyLeisure.push(0); tyMoto.push(0); tyBanquet.push(0); tyGolf.push(0);
+        }
 
         if (ly) {
           lyRoom.push(Number(ly.roomRatio ?? 0));
@@ -569,18 +573,22 @@ export default function MonthlyTrevporChart() {
           lyRoom.push(0); lyFnb.push(0); lyLeisure.push(0); lyMoto.push(0); lyBanquet.push(0); lyGolf.push(0);
         }
       } else {
-        tyRoom.push(Number(ty.resortRoomRatio ?? ty.roomRatio ?? 0));
-        tyFnb.push(Number(ty.resortFnbRatio ?? ty.fnbRatio ?? 0));
-        tyLeisure.push(Number(ty.resortLeisureRatio ?? ty.leisureRatio ?? 0));
-        tyMoto.push(Number(ty.resortMotoRatio ?? ty.motoRatio ?? 0));
-        tyBanquet.push(Number(ty.resortBanquetRatio ?? ty.banquetRatio ?? 0));
+        if (ty) {
+          tyRoom.push(Number(ty.resortRoomRatio ?? ty.roomRatio ?? 0));
+          tyFnb.push(Number(ty.resortFnbRatio ?? ty.fnbRatio ?? 0));
+          tyLeisure.push(Number(ty.resortLeisureRatio ?? ty.leisureRatio ?? 0));
+          tyMoto.push(Number(ty.resortMotoRatio ?? ty.motoRatio ?? 0));
+          tyBanquet.push(Number(ty.resortBanquetRatio ?? ty.banquetRatio ?? 0));
+        } else {
+          tyRoom.push(0); tyFnb.push(0); tyLeisure.push(0); tyMoto.push(0); tyBanquet.push(0);
+        }
 
         if (ly) {
           lyRoom.push(Number(ly.resortRoomRatio ?? ly.roomRatio ?? 0));
           lyFnb.push(Number(ly.resortFnbRatio ?? ly.fnbRatio ?? 0));
           lyLeisure.push(Number(ly.resortLeisureRatio ?? ly.leisureRatio ?? 0));
-          lyMoto.push(Number(ly.resortMotoRatio ?? ty.motoRatio ?? 0));
-          lyBanquet.push(Number(ly.resortBanquetRatio ?? ty.banquetRatio ?? 0));
+          lyMoto.push(Number(ly.resortMotoRatio ?? ly.motoRatio ?? 0));
+          lyBanquet.push(Number(ly.resortBanquetRatio ?? ly.banquetRatio ?? 0));
         } else {
           lyRoom.push(0); lyFnb.push(0); lyLeisure.push(0); lyMoto.push(0); lyBanquet.push(0);
         }

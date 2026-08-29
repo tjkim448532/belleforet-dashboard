@@ -260,41 +260,24 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     '기타': { sold: 0, cap: dailyCapEtc * days, rev: 0 }
   };
 
+  // 🚨 [Pure Consumer] 프론트엔드 평형별 무단 덧셈(Slice Summation) 및 채널별 추출(Fallback) 완전 철거
+  // 오직 백엔드가 완제품으로 내려주는 roomSummaryByType 의 값만을 1:1 매핑하며(+= 연산 금지),
+  // 값이 없다면 빈 배열/0 처리하여 백엔드 파이프라인의 책임을 강제합니다.
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType) && payload.roomSummaryByType.length > 0) {
     payload.roomSummaryByType.forEach((item: any) => {
       const typeName = item.roomType || '기타';
       const sold = parseNum(item.roomsSold || 0);
       const rev = parseNum(item.totalSales || item.revenue || 0);
+      const cap = item.capacity || item.totalRooms ? parseNum(item.capacity || item.totalRooms) * days : undefined;
 
       if (typeName.includes('16평')) {
-        roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].rev += rev;
-        if (item.capacity || item.totalRooms) roomOccupancyMap['16평'].cap = parseNum(item.capacity || item.totalRooms) * days;
+        roomOccupancyMap['16평'] = { sold, rev, cap: cap ?? roomOccupancyMap['16평'].cap };
       } else if (typeName.includes('35평')) {
-        roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].rev += rev;
-        if (item.capacity || item.totalRooms) roomOccupancyMap['35평'].cap = parseNum(item.capacity || item.totalRooms) * days;
+        roomOccupancyMap['35평'] = { sold, rev, cap: cap ?? roomOccupancyMap['35평'].cap };
       } else if (typeName.includes('51평')) {
-        roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].rev += rev;
-        if (item.capacity || item.totalRooms) roomOccupancyMap['51평'].cap = parseNum(item.capacity || item.totalRooms) * days;
+        roomOccupancyMap['51평'] = { sold, rev, cap: cap ?? roomOccupancyMap['51평'].cap };
       } else {
-        roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].rev += rev;
-      }
-    });
-  } else if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
-    // Fallback for multi-month range: aggregate roomType breakdown from salesByChannel
-    payload.salesByChannel.forEach((r: any) => {
-      if (r.isGrandTotal || r.isChannelSubtotal) return;
-      const typeName = String(r.roomType || '');
-      const sold = parseNum(isRange ? (r.ytdRooms || r.mtdRooms || r.todayRooms || 0) : (r.todayRooms || r.roomsSold || 0));
-      const rev = parseNum(isRange ? (r.ytdRevenue || r.mtdRevenue || r.todayRevenue || 0) : (r.todayRevenue || r.totalSales || 0));
-
-      if (typeName.includes('16평')) {
-        roomOccupancyMap['16평'].sold += sold; roomOccupancyMap['16평'].rev += rev;
-      } else if (typeName.includes('35평')) {
-        roomOccupancyMap['35평'].sold += sold; roomOccupancyMap['35평'].rev += rev;
-      } else if (typeName.includes('51평')) {
-        roomOccupancyMap['51평'].sold += sold; roomOccupancyMap['51평'].rev += rev;
-      } else if (sold > 0 || rev > 0) {
-        roomOccupancyMap['기타'].sold += sold; roomOccupancyMap['기타'].rev += rev;
+        roomOccupancyMap['기타'] = { sold, rev, cap: cap ?? roomOccupancyMap['기타'].cap };
       }
     });
   }

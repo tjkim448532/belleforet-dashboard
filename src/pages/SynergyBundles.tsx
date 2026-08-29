@@ -106,148 +106,18 @@ export default function SynergyBundles() {
             arpuLiftMultiplier: payload.arpuLiftMultiplier || 2.4
           });
           setBundleData(payload.bundleClusters);
-        } else if (Array.isArray(payload.data) && payload.data.length > 0) {
-          // Extract category sums
-          let roomRev = 0, roomQty = 0;
-          let golfRev = 0, golfQty = 0;
-          let fnbRev = 0, fnbQty = 0;
-          let ticketRev = 0, ticketQty = 0;
-          let banquetRev = 0;
-
-          payload.data.forEach((d: any) => {
-            const rev = Number(d.revenue || 0);
-            const qty = Number(d.quantity || 0);
-            if (d.categoryCode === 'ROOM') { roomRev += rev; roomQty += (qty || 124); }
-            else if (d.categoryCode === 'GOLF') { golfRev += rev; golfQty += (qty || 297); }
-            else if (d.categoryCode === 'FNB') { fnbRev += rev; fnbQty += qty; }
-            else if (d.categoryCode === 'TICKET') { ticketRev += rev; ticketQty += (qty || 848); }
-            else if (d.categoryCode === 'BANQUET') { banquetRev += rev; }
-          });
-
-          // If quantity was 0 from mat table, apply realistic baseline
-          if (roomQty === 0 && roomRev > 0) roomQty = Math.round(roomRev / 135000) || 124;
-          if (golfQty === 0 && golfRev > 0) golfQty = Math.round(golfRev / 56000) || 297;
-          if (ticketQty === 0 && ticketRev > 0) ticketQty = Math.round(ticketRev / 10000) || 848;
-
-          const totalUnique = (roomQty * 2.5) + golfQty + ticketQty || 1269;
-          const totalRevSum = roomRev + golfRev + fnbRev + ticketRev + banquetRev || 64996170;
-
-          const crossRoomFnbCust = Math.round(roomQty * 0.72);
-          const crossRoomFnbSales = Math.round(roomRev * 0.72 + fnbRev * 0.45);
-
-          const crossGolfFnbCust = Math.round(golfQty * 0.65);
-          const crossGolfFnbSales = Math.round(golfRev * 0.65 + fnbRev * 0.35);
-
-          const crossTicketFnbCust = Math.round(ticketQty * 0.40);
-          const crossTicketFnbSales = Math.round(ticketRev * 0.40 + fnbRev * 0.15);
-
-          const crossGolfRoomCust = Math.round(roomQty * 0.25);
-          const crossGolfRoomSales = Math.round(golfRev * 0.25 + roomRev * 0.25);
-
-          const singleRoomCust = Math.max(0, roomQty - crossRoomFnbCust);
-          const singleGolfCust = Math.max(0, golfQty - crossGolfFnbCust);
-          const singleTicketCust = Math.max(0, ticketQty - crossTicketFnbCust);
-
-          const generatedClusters: CustomerBundleItem[] = [
-            {
-              bundleKey: 'bundle_cross_room_fnb',
-              bundleName: '숙박 + 식음 (콘도 투숙객 조/석식 패키지)',
-              categoryType: 'ROOM_INCLUDED',
-              storeList: ['콘도(객실)', '쿠치나/남도예담'],
-              customerCount: crossRoomFnbCust,
-              ratioPct: Number(((crossRoomFnbCust / totalUnique) * 100).toFixed(1)) || 7.0,
-              totalSales: crossRoomFnbSales,
-              avgSpendPerCustomer: crossRoomFnbCust > 0 ? Math.round(crossRoomFnbSales / crossRoomFnbCust) : 242000,
-              badgeColor: 'bg-emerald-500'
-            },
-            {
-              bundleKey: 'bundle_cross_golf_fnb',
-              bundleName: '골프 + 식음 (골프 라운드 및 그늘집/클럽하우스)',
-              categoryType: 'GOLF_INCLUDED',
-              storeList: ['골프장', '클럽하우스/스타트하우스'],
-              customerCount: crossGolfFnbCust,
-              ratioPct: Number(((crossGolfFnbCust / totalUnique) * 100).toFixed(1)) || 15.2,
-              totalSales: crossGolfFnbSales,
-              avgSpendPerCustomer: crossGolfFnbCust > 0 ? Math.round(crossGolfFnbSales / crossGolfFnbCust) : 94800,
-              badgeColor: 'bg-indigo-500'
-            },
-            {
-              bundleKey: 'bundle_cross_ticket_fnb',
-              bundleName: '레저 + 식음 (루지/목장 및 푸드코트/카페)',
-              categoryType: 'DAY_VISIT',
-              storeList: ['레저본부(루지/목장)', '푸드코트/카페'],
-              customerCount: crossTicketFnbCust,
-              ratioPct: Number(((crossTicketFnbCust / totalUnique) * 100).toFixed(1)) || 26.7,
-              totalSales: crossTicketFnbSales,
-              avgSpendPerCustomer: crossTicketFnbCust > 0 ? Math.round(crossTicketFnbSales / crossTicketFnbCust) : 19100,
-              badgeColor: 'bg-cyan-500'
-            },
-            {
-              bundleKey: 'bundle_cross_golf_room',
-              bundleName: '골프 + 숙박 (골프 1박 2일 투숙 패키지)',
-              categoryType: 'GOLF_INCLUDED',
-              storeList: ['골프장', '콘도(객실)'],
-              customerCount: crossGolfRoomCust,
-              ratioPct: Number(((crossGolfRoomCust / totalUnique) * 100).toFixed(1)) || 2.4,
-              totalSales: crossGolfRoomSales,
-              avgSpendPerCustomer: crossGolfRoomCust > 0 ? Math.round(crossGolfRoomSales / crossGolfRoomCust) : 269000,
-              badgeColor: 'bg-purple-500'
-            },
-            {
-              bundleKey: 'bundle_single_room',
-              bundleName: '숙박 단독 이용',
-              categoryType: 'ROOM_INCLUDED',
-              storeList: ['콘도(객실)'],
-              customerCount: singleRoomCust,
-              ratioPct: Number(((singleRoomCust / totalUnique) * 100).toFixed(1)) || 2.8,
-              totalSales: Math.round(roomRev * 0.28),
-              avgSpendPerCustomer: singleRoomCust > 0 ? Math.round((roomRev * 0.28) / singleRoomCust) : 133000,
-              badgeColor: 'bg-slate-500'
-            },
-            {
-              bundleKey: 'bundle_single_golf',
-              bundleName: '골프 단독 이용',
-              categoryType: 'GOLF_INCLUDED',
-              storeList: ['골프장'],
-              customerCount: singleGolfCust,
-              ratioPct: Number(((singleGolfCust / totalUnique) * 100).toFixed(1)) || 8.2,
-              totalSales: Math.round(golfRev * 0.35),
-              avgSpendPerCustomer: singleGolfCust > 0 ? Math.round((golfRev * 0.35) / singleGolfCust) : 56400,
-              badgeColor: 'bg-slate-500'
-            },
-            {
-              bundleKey: 'bundle_single_ticket',
-              bundleName: '레저 시설 단독 이용',
-              categoryType: 'DAY_VISIT',
-              storeList: ['레저본부'],
-              customerCount: singleTicketCust,
-              ratioPct: Number(((singleTicketCust / totalUnique) * 100).toFixed(1)) || 40.1,
-              totalSales: Math.round(ticketRev * 0.60),
-              avgSpendPerCustomer: singleTicketCust > 0 ? Math.round((ticketRev * 0.60) / singleTicketCust) : 9900,
-              badgeColor: 'bg-slate-500'
-            }
-          ];
-
-          const multiCustSum = crossRoomFnbCust + crossGolfFnbCust + crossTicketFnbCust + crossGolfRoomCust;
-          const multiRatio = totalUnique > 0 ? Number(((multiCustSum / totalUnique) * 100).toFixed(1)) : 38.4;
-          const singleCustSum = singleRoomCust + singleGolfCust + singleTicketCust;
-          const singleSalesSum = totalRevSum - (crossRoomFnbSales + crossGolfFnbSales + crossTicketFnbSales + crossGolfRoomSales);
-          const singleArpu = singleCustSum > 0 ? Math.round(singleSalesSum / singleCustSum) : 45000;
-          const multiSalesSum = crossRoomFnbSales + crossGolfFnbSales + crossTicketFnbSales + crossGolfRoomSales;
-          const multiArpu = multiCustSum > 0 ? Math.round(multiSalesSum / multiCustSum) : 108000;
-          const multiplier = singleArpu > 0 ? Number((multiArpu / singleArpu).toFixed(1)) : 2.4;
-
+        } else {
+          // 🚨 [Pure Consumer] 가짜 데이터 창조(Hallucination) 섀도우 로직 전면 철거
+          setBundleData([]);
           setApiMeta({
-            totalUniqueCustomers: totalUnique,
-            multiFacilityRatioPct: multiRatio,
-            totalSales: totalRevSum,
-            multiFacilityCustomers: multiCustSum,
-            singleFacilityArpu: singleArpu,
-            multiFacilityArpu: multiArpu,
-            arpuLiftMultiplier: multiplier
+            totalUniqueCustomers: 0,
+            multiFacilityRatioPct: 0,
+            totalSales: 0,
+            multiFacilityCustomers: 0,
+            singleFacilityArpu: 0,
+            multiFacilityArpu: 0,
+            arpuLiftMultiplier: 0
           });
-
-          setBundleData(generatedClusters);
         }
       } else if (Array.isArray(payload) && payload.length > 0) {
         setApiMeta(null);

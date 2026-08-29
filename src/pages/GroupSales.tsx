@@ -85,6 +85,11 @@ export default function GroupSales() {
     leisureRevenue: number;
     repeatGroupsCount?: number;
     loyaltyRate?: number;
+    repeatRate?: number;
+    repeatSpendRate?: number;
+    repeatSpend?: number;
+    repeatCompaniesCount?: number;
+    totalUniqueCompanies?: number;
   } | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -259,26 +264,15 @@ export default function GroupSales() {
 
   // Repeat metrics for KPI
   const loyaltyMetrics = useMemo(() => {
-    const uniqueCompanies = new Set(enrichedGroups.map(g => g.groupName.trim()));
-    const repeatCompanies = new Set(enrichedGroups.filter(g => (g.visitCount || 1) >= 2).map(g => g.groupName.trim()));
-    const repeatSpend = enrichedGroups.filter(g => (g.visitCount || 1) >= 2).reduce((s, g) => s + g.totalRevenue, 0);
-    const totalSpend = enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0);
-
-    const repeatRate = uniqueCompanies.size > 0 
-      ? Math.round((repeatCompanies.size / uniqueCompanies.size) * 100) 
-      : 0;
-    const repeatSpendRate = totalSpend > 0 
-      ? Math.round((repeatSpend / totalSpend) * 100) 
-      : 0;
-
+    // 🚨 [Pure Consumer] 프론트엔드 합산 철거: 백엔드가 내려주는 총합 및 재방문 소계만 사용
     return {
-      totalUniqueCompanies: uniqueCompanies.size,
-      repeatCompaniesCount: repeatCompanies.size,
-      repeatRate,
-      repeatSpendRate,
-      repeatSpend
+      totalUniqueCompanies: summaryData?.totalUniqueCompanies || 0,
+      repeatCompaniesCount: summaryData?.repeatCompaniesCount || 0,
+      repeatRate: summaryData?.repeatRate || 0,
+      repeatSpendRate: summaryData?.repeatSpendRate || 0,
+      repeatSpend: summaryData?.repeatSpend || 0
     };
-  }, [enrichedGroups]);
+  }, [summaryData]);
 
   // Category counts
   const categoryCounts = useMemo(() => {

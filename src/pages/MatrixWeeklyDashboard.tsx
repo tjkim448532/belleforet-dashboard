@@ -257,7 +257,7 @@ export default function MatrixWeeklyDashboard() {
   }, [data]);
 
   // 계층별 동적 Rowspan 계산 (Phase 2)
-  const { categoryRowspans, teamRowspans } = useMemo(() => {
+  const { teamRowspans } = useMemo(() => {
     return calculateHierarchyRowspans(displayRows);
   }, [displayRows]);
 
@@ -474,15 +474,12 @@ export default function MatrixWeeklyDashboard() {
           <table className="w-full text-sm text-right whitespace-nowrap border-collapse">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-20 shadow-sm">
               <tr className="bg-slate-100/95">
-                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 w-24" rowSpan={2}>
-                  대분류
-                </th>
-                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-24 z-30 bg-slate-100 font-bold text-slate-700 w-32" rowSpan={2}>
-                  중분류
-                </th>
-                <th className="p-3 text-left border-r border-b border-slate-200 sticky top-0 left-56 z-30 bg-slate-100 font-bold text-slate-700 min-w-[140px]" rowSpan={2}>
-                  영업장명
-                </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 w-40" rowSpan={2}>
+                    중분류
+                  </th>
+                  <th className="p-3 text-left border-r border-b border-slate-200 sticky top-0 left-40 z-30 bg-slate-100 font-bold text-slate-700 min-w-[180px]" rowSpan={2}>
+                    영업장명
+                  </th>
                 <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
                   {endDate && startDate !== endDate ? '선택 기간 (Period)' : '금일 (Today)'}
                 </th>
@@ -520,15 +517,15 @@ export default function MatrixWeeklyDashboard() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={12} className="p-12 text-center text-slate-400">데이터를 불러오고 있습니다...</td>
+                  <td colSpan={11} className="p-12 text-center text-slate-400">데이터를 불러오고 있습니다...</td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={12} className="p-12 text-center text-red-500">{error}</td>
+                  <td colSpan={11} className="p-12 text-center text-red-500">{error}</td>
                 </tr>
               ) : displayRows.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="p-12 text-center text-slate-400">
+                  <td colSpan={11} className="p-12 text-center text-slate-400">
                     조회된 데이터가 없습니다.
                   </td>
                 </tr>
@@ -541,8 +538,8 @@ export default function MatrixWeeklyDashboard() {
                   if (isTotal) {
                     return (
                       <tr key={`total_${idx}`} className="bg-slate-800 hover:bg-slate-900 text-white font-bold">
-                        <td colSpan={3} className="p-4 border-r border-slate-700 text-left font-black text-sm tracking-wide sticky left-0 z-10 bg-slate-800">
-                          총계 (Grand Total)
+                        <td colSpan={2} className="p-4 border-r border-slate-700 text-left font-black text-sm tracking-wide sticky left-0 z-10 bg-slate-800">
+                            총계 (Grand Total)
                         </td>
                         <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.todayActual)}</td>
                         <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.todayLy)}</td>
@@ -561,8 +558,8 @@ export default function MatrixWeeklyDashboard() {
                   if (isSub) {
                     return (
                       <tr key={`sub_${idx}`} className="bg-teal-100/90 hover:bg-teal-100 border-t-2 border-teal-300">
-                        <td colSpan={3} className="p-3.5 border-r border-teal-200 text-left font-extrabold text-teal-950 text-xs sticky left-0 z-10 bg-teal-100">
-                          {getSubtotalLabel(row)}
+                        <td colSpan={2} className="p-3.5 border-r border-teal-200 text-left font-extrabold text-teal-950 text-xs sticky left-0 z-10 bg-teal-100">
+                            {getSubtotalLabel(row)}
                         </td>
                         <td className="p-3 font-bold text-teal-950">{formatCurrency(row.todayActual)}</td>
                         <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.todayLy)}</td>
@@ -580,30 +577,18 @@ export default function MatrixWeeklyDashboard() {
                   // 3. 개별 영업장 행 (동적 Rowspan 적용)
                   return (
                     <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                      {/* 1. 대분류 셀 병합 */}
-                      {categoryRowspans[idx] > 0 && (
-                        <td 
-                          rowSpan={categoryRowspans[idx]} 
-                          className="p-3 border-r border-slate-200 bg-slate-50/90 text-center font-bold text-slate-800 text-xs align-middle sticky left-0 z-10"
-                        >
-                          <span className="inline-block px-2 py-1 bg-slate-200/80 rounded-md text-slate-800 font-bold">
-                            {row.categoryName}
-                          </span>
-                        </td>
-                      )}
-
                       {/* 2. 중분류 셀 병합 */}
                       {teamRowspans[idx] > 0 && (
                         <td 
                           rowSpan={teamRowspans[idx]} 
-                          className="p-3 border-r border-slate-200 bg-white text-center font-semibold text-slate-600 text-xs align-middle sticky left-24 z-10"
+                          className="p-3 border-r border-slate-200 bg-white text-center font-semibold text-slate-600 text-xs align-middle sticky left-0 z-10"
                         >
                           {row.teamName && row.teamName !== '기타' ? row.teamName : (row.categoryName || '-')}
                         </td>
                       )}
 
                       {/* 3. 영업장명 */}
-                      <td className="p-3 border-r border-slate-200 text-left font-medium text-slate-800 text-xs sticky left-56 z-10 bg-white">
+                      <td className="p-3 border-r border-slate-200 text-left font-medium text-slate-800 text-xs sticky left-40 z-10 bg-white">
                         {row.shopName}
                       </td>
 

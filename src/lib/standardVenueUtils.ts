@@ -46,7 +46,7 @@ export function standardizeGridRows(rawRows: any[]): any[] {
   }
   
   const mappedCategories = new Set([...categoryOrder, 'TOTAL']);
-  const unmappedItems = sanitizedRows.filter(r => !mappedCategories.has((r.categoryCode || '').toUpperCase()) && !r.isGrandTotal && !r.isSubtotal && r.shopName !== '총계' && r.shopName !== '합계');
+  const unmappedItems = sanitizedRows.filter(r => !mappedCategories.has((r.categoryCode || '').toUpperCase()) && !r.isGrandTotal && r.shopName !== '총계' && r.shopName !== '합계');
   
   if (unmappedItems.length > 0) {
     // 미분류 데이터도 teamName 기준으로 묶어줌
@@ -54,6 +54,8 @@ export function standardizeGridRows(rawRows: any[]): any[] {
       const catA = String(a.categoryCode || a.categoryName || '');
       const catB = String(b.categoryCode || b.categoryName || '');
       if (catA === catB) {
+        if (a.isSubtotal && !b.isSubtotal) return 1;
+        if (!a.isSubtotal && b.isSubtotal) return -1;
         const teamA = String(a.teamName || '');
         const teamB = String(b.teamName || '');
         return teamA.localeCompare(teamB);

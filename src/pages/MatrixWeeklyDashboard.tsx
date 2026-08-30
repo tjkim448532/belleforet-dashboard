@@ -43,56 +43,75 @@ interface WeatherInfo {
  * > 0: render <td> with rowSpan = value
  * === 0: skip <td> (merged with previous row)
  */
+const TEAM_ORDER = [
+  '리조트사업본부',
+  '골프본부',
+  '레저본부',
+  '콘텐츠기획본부',
+  '모토아레나',
+  '세일즈본부',
+  '경영지원본부',
+  '레저외주'
+];
+
+const teamBgColors: Record<string, string> = {
+  '리조트사업본부': 'bg-blue-50/70',
+  '골프본부': 'bg-emerald-50/70',
+  '레저본부': 'bg-amber-50/70',
+  '콘텐츠기획본부': 'bg-purple-50/70',
+  '모토아레나': 'bg-rose-50/70',
+  '세일즈본부': 'bg-cyan-50/70',
+  '경영지원본부': 'bg-indigo-50/70',
+  '레저외주': 'bg-lime-50/70',
+  '기타': 'bg-slate-100/70'
+};
+
 export function calculateHierarchyRowspans(rows: V6MatrixRow[]) {
-  const categoryRowspans: number[] = new Array(rows.length).fill(0);
-  const teamRowspans: number[] = new Array(rows.length).fill(0);
+  const catSpans = new Array(rows.length).fill(0);
+  const teamSpans = new Array(rows.length).fill(0);
+  const shopSpans = new Array(rows.length).fill(0);
+  const partSpans = new Array(rows.length).fill(0);
 
   let i = 0;
   while (i < rows.length) {
     const row = rows[i];
-
     if (row.isSubtotal || row.isGrandTotal) {
-      teamRowspans[i] = 1;
+      catSpans[i] = 1; teamSpans[i] = 1; shopSpans[i] = 1; partSpans[i] = 1;
       i++;
       continue;
     }
-
-    // Since '대분류' (category) is hidden, we group purely by 'teamName' across the entire table
-    const currentTeam = row.teamName || '';
-    let tmCount = 0;
-    while (
-      i + tmCount < rows.length &&
-      !rows[i + tmCount].isSubtotal &&
-      !rows[i + tmCount].isGrandTotal &&
-      (rows[i + tmCount].teamName || '') === currentTeam
-    ) {
-      tmCount++;
+    const cat = row.categoryName || '';
+    let cCount = 0;
+    while (i + cCount < rows.length && !rows[i + cCount].isSubtotal && !rows[i + cCount].isGrandTotal && (rows[i + cCount].categoryName || '') === cat) cCount++;
+    catSpans[i] = cCount;
+    let t = i;
+    while (t < i + cCount) {
+      const team = rows[t].teamName || '';
+      let tc = 0;
+      while (t + tc < i + cCount && (rows[t + tc].teamName || '') === team) tc++;
+      teamSpans[t] = tc;
+      let s = t;
+      while (s < t + tc) {
+        const shop = rows[s].shopName || '';
+        let sc = 0;
+        while (s + sc < t + tc && (rows[s + sc].shopName || '') === shop) sc++;
+        shopSpans[s] = sc;
+        let p = s;
+        while (p < s + sc) {
+          const part = rows[p].partName || '';
+          let pc = 0;
+          while (p + pc < s + sc && (rows[p + pc].partName || '') === part) pc++;
+          partSpans[p] = pc;
+          p += pc;
+        }
+        s += sc;
+      }
+      t += tc;
     }
-
-    teamRowspans[i] = tmCount;
-    for (let k = 1; k < tmCount; k++) {
-      teamRowspans[i + k] = 0;
-    }
-
-    i += tmCount;
+    i += cCount;
   }
-
-  return { categoryRowspans, teamRowspans };
+  return { catSpans, teamSpans, shopSpans, partSpans };
 }
-
-
-const TEAM_BG_COLORS = [
-  'bg-white',
-  'bg-blue-50/50',
-  'bg-emerald-50/50',
-  'bg-amber-50/50',
-  'bg-purple-50/50',
-  'bg-rose-50/50',
-  'bg-cyan-50/50',
-  'bg-orange-50/50',
-  'bg-lime-50/50',
-  'bg-sky-50/50',
-];
 
 export default function MatrixWeeklyDashboard() {
   const [data, setData] = useState<V6MatrixRow[]>([]);
@@ -238,38 +257,40 @@ export default function MatrixWeeklyDashboard() {
   };
 
   // 실적 0원 매장 필터링 (Pure Consumer: 수치는 일체 재계산하지 않고 화면 표시만 제어)
-  const displayRows = useMemo(() => {
+    const displayRows = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
-    return data.filter((row) => {
-      if (row.isGrandTotal) return true;
-
+    const filtered = data.filter((row) => {
+      if (row.isGrandTotal || row.isSubtotal) return true;
       const isAllZero = (Number(row.todayActual) || 0) === 0 && (Number(row.todayLy) || 0) === 0 &&
                         (Number(row.mtdActual) || 0) === 0 && (Number(row.mtdLy) || 0) === 0 &&
                         (Number(row.ytdActual) || 0) === 0 && (Number(row.ytdLy) || 0) === 0;
-
       return !isAllZero;
+    });
+    const getTeamRank = (teamName?: string) => {
+      if (!teamName || teamName === '기타') return 999;
+      const idx = TEAM_ORDER.indexOf(teamName);
+      return idx === -1 ? 998 : idx;
+    };
+    return filtered.sort((a, b) => {
+      if (a.isGrandTotal && !b.isGrandTotal) return 1;
+      if (!a.isGrandTotal && b.isGrandTotal) return -1;
+      if (a.isGrandTotal && b.isGrandTotal) return 0;
+      const rankA = getTeamRank(a.teamName);
+      const rankB = getTeamRank(b.teamName);
+      if (rankA !== rankB) return rankA - rankB;
+      if (a.isSubtotal && !b.isSubtotal) return 1;
+      if (!a.isSubtotal && b.isSubtotal) return -1;
+      const catA = a.categoryName || '';
+      const catB = b.categoryName || '';
+      if (catA !== catB) return catA.localeCompare(catB);
+      return 0;
     });
   }, [data]);
 
   
-  // 팀별 고유 배경색 매핑 (Subtotal/GrandTotal 제외)
-  const teamColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    let colorIdx = 0;
-    displayRows.forEach(row => {
-      if (row.isSubtotal || row.isGrandTotal) return;
-      const team = row.teamName || row.categoryName || '기타';
-      if (!map.has(team)) {
-        map.set(team, TEAM_BG_COLORS[colorIdx % TEAM_BG_COLORS.length]);
-        colorIdx++;
-      }
-    });
-    return map;
-  }, [displayRows]);
 
   // 계층별 동적 Rowspan 계산 (Phase 2)
-  const { teamRowspans } = useMemo(() => {
+  const { catSpans, teamSpans, shopSpans, partSpans } = useMemo(() => {
     return calculateHierarchyRowspans(displayRows);
   }, [displayRows]);
 
@@ -486,12 +507,18 @@ export default function MatrixWeeklyDashboard() {
           <table className="w-full text-sm text-right whitespace-nowrap border-collapse">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-20 shadow-sm">
               <tr className="bg-slate-100/95">
-                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 w-40" rowSpan={2}>
-                    중분류
-                  </th>
-                  <th className="p-3 text-left border-r border-b border-slate-200 sticky top-0 left-40 z-30 bg-slate-100 font-bold text-slate-700 min-w-[180px]" rowSpan={2}>
-                    영업장명
-                  </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-0 z-30 bg-slate-100 font-bold text-slate-700 w-28" rowSpan={2}>
+                  대분류
+                </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-28 z-30 bg-slate-100 font-bold text-slate-700 w-32" rowSpan={2}>
+                  중분류(본부/팀)
+                </th>
+                <th className="p-3 text-left border-r border-b border-slate-200 sticky top-0 left-[240px] z-30 bg-slate-100 font-bold text-slate-700 min-w-[140px]" rowSpan={2}>
+                  영업장명
+                </th>
+                <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 left-[380px] z-30 bg-slate-100 font-bold text-slate-700 min-w-[110px]" rowSpan={2}>
+                  티켓그룹
+                </th>
                 <th className="p-3 text-center border-r border-b border-slate-200 sticky top-0 z-20 bg-slate-100 font-bold" colSpan={3}>
                   {endDate && startDate !== endDate ? '선택 기간 (Period)' : '금일 (Today)'}
                 </th>
@@ -525,6 +552,7 @@ export default function MatrixWeeklyDashboard() {
                 <th className="p-3 font-medium sticky top-[45px] z-20 bg-slate-100">증감률</th>
               </tr>
             </thead>
+
             
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
@@ -543,86 +571,85 @@ export default function MatrixWeeklyDashboard() {
                 </tr>
               ) : (
                 displayRows.map((row, idx) => {
-                  const isSub = row.isSubtotal;
-                  const isTotal = row.isGrandTotal;
+                    const isSub = row.isSubtotal;
+                    const isTotal = row.isGrandTotal;
+                    const teamKey = row.teamName || '기타';
+                    const rowBg = teamBgColors[teamKey] || 'bg-white';
+                    
+                    if (isTotal) {
+                      return (
+                        <tr key={`total_${idx}`} className="bg-slate-800 hover:bg-slate-900 text-white font-bold">
+                          <td colSpan={4} className="p-4 border-r border-slate-700 text-left font-black text-sm tracking-wide sticky left-0 z-10 bg-slate-800 shadow-[1px_0_0_0_#334155]">
+                              총계 (Grand Total)
+                          </td>
+                          <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.todayActual)}</td>
+                          <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.todayLy)}</td>
+                          <td className="p-3 border-r border-slate-700 bg-slate-800/80">{renderGrowth(row.todayGrowth)}</td>
+                          <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.mtdActual)}</td>
+                          <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.mtdLy)}</td>
+                          <td className="p-3 border-r border-slate-700 bg-slate-800/80">{renderGrowth(row.mtdGrowth)}</td>
+                          <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.ytdActual)}</td>
+                          <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.ytdLy)}</td>
+                          <td className="p-3 bg-slate-800/80">{renderGrowth(row.ytdGrowth)}</td>
+                        </tr>
+                      );
+                    }
 
-                  // 1. 전사 총계 (Grand Total)
-                  if (isTotal) {
+                    if (isSub) {
+                      const subLabel = getSubtotalLabel(row);
+                      return (
+                        <tr key={`sub_${idx}`} className={`${rowBg} border-t-[2px] border-slate-400 brightness-95`}>
+                          <td colSpan={4} className={`p-3.5 border-r border-slate-300 text-left font-extrabold text-slate-900 text-xs sticky left-0 z-10 ${rowBg} brightness-95 shadow-[1px_0_0_0_#cbd5e1]`}>
+                              {subLabel}
+                          </td>
+                          <td className="p-3 font-bold text-slate-900">{formatCurrency(row.todayActual)}</td>
+                          <td className="p-3 text-slate-600 font-medium">{formatCurrency(row.todayLy)}</td>
+                          <td className="p-3 border-r border-slate-300 bg-black/5">{renderGrowth(row.todayGrowth)}</td>
+                          <td className="p-3 font-bold text-slate-900">{formatCurrency(row.mtdActual)}</td>
+                          <td className="p-3 text-slate-600 font-medium">{formatCurrency(row.mtdLy)}</td>
+                          <td className="p-3 border-r border-slate-300 bg-black/5">{renderGrowth(row.mtdGrowth)}</td>
+                          <td className="p-3 font-bold text-slate-900">{formatCurrency(row.ytdActual)}</td>
+                          <td className="p-3 text-slate-600 font-medium">{formatCurrency(row.ytdLy)}</td>
+                          <td className="p-3 bg-black/5">{renderGrowth(row.ytdGrowth)}</td>
+                        </tr>
+                      );
+                    }
+
                     return (
-                      <tr key={`total_${idx}`} className="bg-slate-800 hover:bg-slate-900 text-white font-bold">
-                        <td colSpan={2} className="p-4 border-r border-slate-700 text-left font-black text-sm tracking-wide sticky left-0 z-10 bg-slate-800">
-                            총계 (Grand Total)
-                        </td>
-                        <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.todayActual)}</td>
-                        <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.todayLy)}</td>
-                        <td className="p-3 border-r border-slate-700 bg-slate-800/80">{renderGrowth(row.todayGrowth)}</td>
-                        <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.mtdActual)}</td>
-                        <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.mtdLy)}</td>
-                        <td className="p-3 border-r border-slate-700 bg-slate-800/80">{renderGrowth(row.mtdGrowth)}</td>
-                        <td className="p-3 font-bold text-white text-sm">{formatCurrency(row.ytdActual)}</td>
-                        <td className="p-3 text-slate-300 font-medium">{formatCurrency(row.ytdLy)}</td>
-                        <td className="p-3 bg-slate-800/80">{renderGrowth(row.ytdGrowth)}</td>
+                      <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className={`hover:brightness-[0.95] transition-all ${rowBg}`}>
+                        {catSpans[idx] > 0 && (
+                          <td rowSpan={catSpans[idx]} className={`p-3 border-r border-b border-slate-200 text-center font-bold text-slate-700 text-xs align-middle sticky left-0 z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}>
+                            {row.categoryName || '-'}
+                          </td>
+                        )}
+                        {teamSpans[idx] > 0 && (
+                          <td rowSpan={teamSpans[idx]} className={`p-3 border-r border-b border-slate-200 text-center font-bold text-slate-700 text-xs align-middle sticky left-28 z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}>
+                            {row.teamName && row.teamName !== '기타' ? row.teamName : '-'}
+                          </td>
+                        )}
+                        {shopSpans[idx] > 0 && (
+                          <td rowSpan={shopSpans[idx]} className={`p-3 border-r border-b border-slate-200 text-left font-semibold text-slate-800 text-xs align-middle sticky left-[240px] z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}>
+                            {row.shopName || '-'}
+                          </td>
+                        )}
+                        {partSpans[idx] > 0 && (
+                          <td rowSpan={partSpans[idx]} className={`p-3 border-r border-b border-slate-200 text-center font-medium text-slate-600 text-[11px] align-middle sticky left-[380px] z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}>
+                            {row.partName || '-'}
+                          </td>
+                        )}
+                        <td className="p-3 font-medium text-slate-800">{formatCurrency(row.todayActual)}</td>
+                        <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.todayLy)}</td>
+                        <td className="p-3 border-r border-slate-200 bg-black/5">{renderGrowth(row.todayGrowth)}</td>
+                        <td className="p-3 font-medium text-slate-800">{formatCurrency(row.mtdActual)}</td>
+                        <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.mtdLy)}</td>
+                        <td className="p-3 border-r border-slate-200 bg-black/5">{renderGrowth(row.mtdGrowth)}</td>
+                        <td className="p-3 font-medium text-slate-800">{formatCurrency(row.ytdActual)}</td>
+                        <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.ytdLy)}</td>
+                        <td className="p-3 bg-black/5">{renderGrowth(row.ytdGrowth)}</td>
                       </tr>
                     );
-                  }
-
-                  // 2. 카테고리 공식 소계 (Subtotal)
-                  if (isSub) {
-                    return (
-                      <tr key={`sub_${idx}`} className="bg-teal-100/90 hover:bg-teal-100 border-t-2 border-teal-300">
-                        <td colSpan={2} className="p-3.5 border-r border-teal-200 text-left font-extrabold text-teal-950 text-xs sticky left-0 z-10 bg-teal-100">
-                            {getSubtotalLabel(row)}
-                        </td>
-                        <td className="p-3 font-bold text-teal-950">{formatCurrency(row.todayActual)}</td>
-                        <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.todayLy)}</td>
-                        <td className="p-3 border-r border-teal-200 bg-teal-50/50">{renderGrowth(row.todayGrowth)}</td>
-                        <td className="p-3 font-bold text-teal-950">{formatCurrency(row.mtdActual)}</td>
-                        <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.mtdLy)}</td>
-                        <td className="p-3 border-r border-teal-200 bg-teal-50/50">{renderGrowth(row.mtdGrowth)}</td>
-                        <td className="p-3 font-bold text-teal-950">{formatCurrency(row.ytdActual)}</td>
-                        <td className="p-3 text-teal-800/80 font-medium">{formatCurrency(row.ytdLy)}</td>
-                        <td className="p-3 bg-teal-50/50">{renderGrowth(row.ytdGrowth)}</td>
-                      </tr>
-                    );
-                  }
-
-                  // 3. 개별 영업장 행 (동적 Rowspan 적용)
-                  const teamKey = row.teamName || row.categoryName || '기타';
-                  const rowBg = teamColorMap.get(teamKey) || 'bg-white';
-                  
-                  return (
-                    <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className={`hover:brightness-[0.97] transition-all ${rowBg}`}>
-                      {/* 2. 중분류 셀 병합 */}
-                      {teamRowspans[idx] > 0 && (
-                        <td 
-                          rowSpan={teamRowspans[idx]} 
-                          className={`p-3 border-r border-slate-200 text-center font-bold text-slate-700 text-xs align-middle sticky left-0 z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}
-                        >
-                          {row.teamName && row.teamName !== '기타' ? row.teamName : (row.categoryName || '-')}
-                        </td>
-                      )}
-
-                      {/* 3. 영업장명 */}
-                      <td className={`p-3 border-r border-slate-200 text-left font-semibold text-slate-800 text-xs sticky left-40 z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}>
-                        {row.shopName}
-                      </td>
-
-                      {/* 실적 지표 (#,##0) */}
-                      <td className="p-3 font-medium text-slate-800">{formatCurrency(row.todayActual)}</td>
-                      <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.todayLy)}</td>
-                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.todayGrowth)}</td>
-
-                      <td className="p-3 font-medium text-slate-800">{formatCurrency(row.mtdActual)}</td>
-                      <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.mtdLy)}</td>
-                      <td className="p-3 border-r border-slate-200 bg-slate-50/30">{renderGrowth(row.mtdGrowth)}</td>
-
-                      <td className="p-3 font-medium text-slate-800">{formatCurrency(row.ytdActual)}</td>
-                      <td className="p-3 text-slate-500 font-medium">{formatCurrency(row.ytdLy)}</td>
-                      <td className="p-3 bg-slate-50/30">{renderGrowth(row.ytdGrowth)}</td>
-                    </tr>
-                  );
-                })
-              )}
+                  })
+                )}
             </tbody>
           </table>
         </div>

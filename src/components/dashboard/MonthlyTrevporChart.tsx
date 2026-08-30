@@ -229,23 +229,23 @@ export default function MonthlyTrevporChart() {
     
     return data.monthlyComparison.filter(d => {
       if (periodMode === 'CLOSED_ONLY') {
-        return d.month <= monthMeta.lastClosedMonth && d.ty !== null;
+        return d.month <= monthMeta.lastClosedMonth;
       } else if (periodMode === 'ALL_MTD') {
-        return d.month <= monthMeta.activeMonth && d.ty !== null;
+        return d.month <= monthMeta.activeMonth;
       } else if (periodMode === 'H1') {
-        return d.month <= 6 && d.ty !== null;
+        return d.month <= 6 && d.month <= monthMeta.activeMonth;
       } else if (periodMode === 'H2') {
-        return d.month >= 7 && d.month <= 12 && d.ty !== null;
+        return d.month >= 7 && d.month <= 12 && d.month <= monthMeta.activeMonth;
       } else if (periodMode === 'Q1') {
-        return d.month >= 1 && d.month <= 3 && d.ty !== null;
+        return d.month >= 1 && d.month <= 3 && d.month <= monthMeta.activeMonth;
       } else if (periodMode === 'Q2') {
-        return d.month >= 4 && d.month <= 6 && d.ty !== null;
+        return d.month >= 4 && d.month <= 6 && d.month <= monthMeta.activeMonth;
       } else if (periodMode === 'Q3') {
-        return d.month >= 7 && d.month <= 9 && d.ty !== null;
+        return d.month >= 7 && d.month <= 9 && d.month <= monthMeta.activeMonth;
       } else if (periodMode === 'Q4') {
-        return d.month >= 10 && d.month <= 12 && d.ty !== null;
+        return d.month >= 10 && d.month <= 12 && d.month <= monthMeta.activeMonth;
       }
-      return d.ty !== null;
+      return d.month <= monthMeta.activeMonth;
     });
   }, [data, periodMode, monthMeta]);
 

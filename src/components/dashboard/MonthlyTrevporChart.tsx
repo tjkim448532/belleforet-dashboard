@@ -159,7 +159,7 @@ export default function MonthlyTrevporChart() {
       .filter(d => d.ty !== null)
       .map(d => d.month);
 
-    const activeMonth = tyMonths.length > 0 ? Math.max(...tyMonths) : systemMonth;
+    const activeMonth = tyMonths.length > 0 ? Math.min(Math.max(...tyMonths), systemMonth) : systemMonth;
     
     // 현재 월이 진행 중(MTD)인지 확인: 당해 연도이고 현재 달이거나, 마지막 날 이전인 경우
     const isCurrentMonthOngoing = (data.baseYear === currentYear && activeMonth === systemMonth) || (activeMonth < 12 && systemDay < getDaysInMonth(data.baseYear, activeMonth));

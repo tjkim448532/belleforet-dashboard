@@ -1037,7 +1037,7 @@ export default function MonthlyTrevporChart() {
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
               }`}
             >
-              ⚠️ 당월 포함 (1~${monthMeta.activeMonth}월 진행중)
+              ⚠️ 당월 포함 (1~{monthMeta.activeMonth}월 진행중)
             </button>
           )}
 

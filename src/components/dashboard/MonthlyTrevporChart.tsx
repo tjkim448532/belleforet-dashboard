@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { getClosedBusinessDate } from '../../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
 import { Building, Info, Calendar, BarChart3, TrendingUp, HelpCircle, Award, ArrowUpRight, ArrowDownRight, Filter, AlertTriangle } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -138,7 +139,7 @@ export default function MonthlyTrevporChart() {
 
   // 1. [동적 월 감지 엔진] 시간 경과(8월➔9월➔10월➔12월)에 따라 마감월/진행월을 100% 자동 연산
   const monthMeta = useMemo(() => {
-    const today = new Date();
+    const today = getClosedBusinessDate(1);
     const currentYear = today.getFullYear();
     const systemMonth = today.getMonth() + 1; // 1 ~ 12
     const systemDay = today.getDate();

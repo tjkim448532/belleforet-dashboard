@@ -52,47 +52,29 @@ export function calculateHierarchyRowspans(rows: V6MatrixRow[]) {
     const row = rows[i];
 
     if (row.isSubtotal || row.isGrandTotal) {
-      categoryRowspans[i] = 1;
       teamRowspans[i] = 1;
       i++;
       continue;
     }
 
-    const currentCat = row.categoryCode || row.categoryName;
-    let catCount = 0;
+    // Since '대분류' (category) is hidden, we group purely by 'teamName' across the entire table
+    const currentTeam = row.teamName || '';
+    let tmCount = 0;
     while (
-      i + catCount < rows.length &&
-      !rows[i + catCount].isSubtotal &&
-      !rows[i + catCount].isGrandTotal &&
-      (rows[i + catCount].categoryCode === currentCat || rows[i + catCount].categoryName === currentCat)
+      i + tmCount < rows.length &&
+      !rows[i + tmCount].isSubtotal &&
+      !rows[i + tmCount].isGrandTotal &&
+      (rows[i + tmCount].teamName || '') === currentTeam
     ) {
-      catCount++;
+      tmCount++;
     }
 
-    categoryRowspans[i] = catCount;
-    for (let k = 1; k < catCount; k++) {
-      categoryRowspans[i + k] = 0;
+    teamRowspans[i] = tmCount;
+    for (let k = 1; k < tmCount; k++) {
+      teamRowspans[i + k] = 0;
     }
 
-    let t = i;
-    while (t < i + catCount) {
-      const currentTeam = `${rows[t].teamName || ''}_${rows[t].partName || ''}`;
-      let tmCount = 0;
-      while (
-        t + tmCount < i + catCount &&
-        `${rows[t + tmCount].teamName || ''}_${rows[t + tmCount].partName || ''}` === currentTeam
-      ) {
-        tmCount++;
-      }
-
-      teamRowspans[t] = tmCount;
-      for (let k = 1; k < tmCount; k++) {
-        teamRowspans[t + k] = 0;
-      }
-      t += tmCount;
-    }
-
-    i += catCount;
+    i += tmCount;
   }
 
   return { categoryRowspans, teamRowspans };

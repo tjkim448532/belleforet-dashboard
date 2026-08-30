@@ -111,7 +111,7 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
               사업 부문별 총매출 기여 비중
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              전체 총매출(₩{formatCurrency(totalValue)}원)에 대한 각 사업 부문의 실질 기여도입니다.
+              전체 총매출(₩{formatCurrency(resolvedTotal)}원)에 대한 각 사업 부문의 실질 기여도입니다.
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Sales</span>
             <span className="text-lg font-black text-slate-900 tracking-tight mt-0.5">
-              ₩{formatCurrency(totalValue)}
+              ₩{formatCurrency(resolvedTotal)}
             </span>
           </div>
         </div>

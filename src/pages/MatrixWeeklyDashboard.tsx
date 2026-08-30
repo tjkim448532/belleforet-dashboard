@@ -80,6 +80,20 @@ export function calculateHierarchyRowspans(rows: V6MatrixRow[]) {
   return { categoryRowspans, teamRowspans };
 }
 
+
+const TEAM_BG_COLORS = [
+  'bg-white',
+  'bg-blue-50/50',
+  'bg-emerald-50/50',
+  'bg-amber-50/50',
+  'bg-purple-50/50',
+  'bg-rose-50/50',
+  'bg-cyan-50/50',
+  'bg-orange-50/50',
+  'bg-lime-50/50',
+  'bg-sky-50/50',
+];
+
 export default function MatrixWeeklyDashboard() {
   const [data, setData] = useState<V6MatrixRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -237,6 +251,22 @@ export default function MatrixWeeklyDashboard() {
       return !isAllZero;
     });
   }, [data]);
+
+  
+  // 팀별 고유 배경색 매핑 (Subtotal/GrandTotal 제외)
+  const teamColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    let colorIdx = 0;
+    displayRows.forEach(row => {
+      if (row.isSubtotal || row.isGrandTotal) return;
+      const team = row.teamName || row.categoryName || '기타';
+      if (!map.has(team)) {
+        map.set(team, TEAM_BG_COLORS[colorIdx % TEAM_BG_COLORS.length]);
+        colorIdx++;
+      }
+    });
+    return map;
+  }, [displayRows]);
 
   // 계층별 동적 Rowspan 계산 (Phase 2)
   const { teamRowspans } = useMemo(() => {
@@ -557,20 +587,23 @@ export default function MatrixWeeklyDashboard() {
                   }
 
                   // 3. 개별 영업장 행 (동적 Rowspan 적용)
+                  const teamKey = row.teamName || row.categoryName || '기타';
+                  const rowBg = teamColorMap.get(teamKey) || 'bg-white';
+                  
                   return (
-                    <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={`${row.shopName}_${row.categoryCode}_${idx}`} className={`hover:brightness-[0.97] transition-all ${rowBg}`}>
                       {/* 2. 중분류 셀 병합 */}
                       {teamRowspans[idx] > 0 && (
                         <td 
                           rowSpan={teamRowspans[idx]} 
-                          className="p-3 border-r border-slate-200 bg-white text-center font-semibold text-slate-600 text-xs align-middle sticky left-0 z-10"
+                          className={`p-3 border-r border-slate-200 text-center font-bold text-slate-700 text-xs align-middle sticky left-0 z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}
                         >
                           {row.teamName && row.teamName !== '기타' ? row.teamName : (row.categoryName || '-')}
                         </td>
                       )}
 
                       {/* 3. 영업장명 */}
-                      <td className="p-3 border-r border-slate-200 text-left font-medium text-slate-800 text-xs sticky left-40 z-10 bg-white">
+                      <td className={`p-3 border-r border-slate-200 text-left font-semibold text-slate-800 text-xs sticky left-40 z-10 shadow-[1px_0_0_0_#e2e8f0] ${rowBg}`}>
                         {row.shopName}
                       </td>
 

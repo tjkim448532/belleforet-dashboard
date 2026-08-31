@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 // 공통 숫자 포맷팅 유틸리티 (₩ 기호 제외, #,##0 서식)
 const formatRevenue = (val: number | undefined | null) => {
@@ -9,6 +9,7 @@ const formatRevenue = (val: number | undefined | null) => {
 const renderRate = (rate?: number | null) => {
   if (rate === undefined || rate === null) return <span className="text-slate-400">-</span>;
   if (rate === 0) return <span className="text-slate-400">0%</span>;
+  
   // 달성율/증감율에 따른 색상 분기 (100% 이상 블루, 양수 그린, 음수 레드)
   let colorClass = "text-slate-600";
   if (rate >= 100) colorClass = "text-blue-600";
@@ -44,25 +45,62 @@ interface ValidationMaster {
 }
 
 interface GridProps {
-  data: any[]; // 1-Depth flatSummary array
+  data: any[]; // 백엔드 8-depth 트리 배열
   validationMaster: ValidationMaster;
 }
 
 export default function RevenueGrid({ data = [], validationMaster }: GridProps) {
   
+  // 백엔드의 8-depth 중첩 배열을 1-Depth 요약 배열(flatSummary)로 평면화
+  // ** Zero-Proxy 원칙 준수: 어떠한 산술 연산(reduce 등)도 하지 않으며, 백엔드가 미리 계산해 둔 subtotal 객체만 추출합니다.
+  const flatSummary = useMemo(() => {
+    const flat: any[] = [];
+    
+    data.forEach((category: any) => {
+      category.teams?.forEach((team: any) => {
+        let hasVenues = false;
+
+        // 해당 본부 하위의 모든 영업장(Venue)을 추출
+        team.parts?.forEach((part: any) => {
+          part.venues?.forEach((venue: any) => {
+            hasVenues = true;
+            flat.push({
+              teamName: team.team_name,
+              venueName: venue.venue_name,
+              isSubtotal: false,
+              metrics: venue.subtotal || {},
+            });
+          });
+        });
+
+        // 본부 합계 렌더링 (영업장이 하나라도 있거나 subtotal이 존재하는 경우)
+        if (hasVenues || team.subtotal) {
+          flat.push({
+            teamName: team.team_name,
+            venueName: `[${team.team_name} 합계]`,
+            isSubtotal: true,
+            metrics: team.subtotal || {},
+          });
+        }
+      });
+    });
+
+    return flat;
+  }, [data]);
+
   const renderRows = () => {
     const rows: React.ReactNode[] = [];
     let currentTeam = '';
 
-    data.forEach((row, idx) => {
+    flatSummary.forEach((row, idx) => {
       const isFirstTeamRow = row.teamName !== currentTeam;
       let rowSpan = 1;
 
-      // Calculate rowSpan for the team cell in a flat array
+      // Calculate rowSpan for the team cell in the flat array
       if (isFirstTeamRow) {
         currentTeam = row.teamName;
-        for (let i = idx + 1; i < data.length; i++) {
-          if (data[i].teamName === currentTeam) rowSpan++;
+        for (let i = idx + 1; i < flatSummary.length; i++) {
+          if (flatSummary[i].teamName === currentTeam) rowSpan++;
           else break;
         }
       }
@@ -70,7 +108,7 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
       const m: Metrics = row.metrics || {};
       const isSub = row.isSubtotal;
       
-      const bgClass = isSub ? 'bg-slate-100' : 'bg-white hover:bg-slate-50';
+      const bgClass = isSub ? 'bg-slate-100 border-b-[2px] border-slate-300' : 'bg-white hover:bg-slate-50';
       const textClass = isSub ? 'text-slate-900 font-bold' : 'text-slate-700';
 
       rows.push(
@@ -81,28 +119,28 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
             </td>
           )}
           <td className={`p-2 text-center border-r border-slate-300 ${isSub ? 'font-extrabold text-sm' : ''}`}>
-            {isSub ? `[${row.teamName} 합계]` : row.venueName}
+            {row.venueName}
           </td>
           
           {/* Today */}
-          <td className="p-2 text-right text-slate-500">{formatRevenue(m.todayTarget)}</td>
+          <td className="p-2 text-right text-slate-400">{formatRevenue(m.todayTarget)}</td>
           <td className="p-2 text-right font-medium text-slate-800">{formatRevenue(m.todayActual)}</td>
           <td className="p-2 text-right text-slate-500">{formatRevenue(m.todayLy)}</td>
-          <td className="p-2 text-right">{renderRate(m.todayAchieve)}</td>
+          <td className="p-2 text-right border-l border-slate-100">{renderRate(m.todayAchieve)}</td>
           <td className="p-2 text-right border-r border-slate-300 bg-slate-50/50">{renderRate(m.todayGrowth)}</td>
 
           {/* MTD */}
-          <td className="p-2 text-right text-slate-500">{formatRevenue(m.mtdTarget)}</td>
+          <td className="p-2 text-right text-slate-400">{formatRevenue(m.mtdTarget)}</td>
           <td className="p-2 text-right font-medium text-slate-800">{formatRevenue(m.mtdActual)}</td>
           <td className="p-2 text-right text-slate-500">{formatRevenue(m.mtdLy)}</td>
-          <td className="p-2 text-right">{renderRate(m.mtdAchieve)}</td>
+          <td className="p-2 text-right border-l border-slate-100">{renderRate(m.mtdAchieve)}</td>
           <td className="p-2 text-right border-r border-slate-300 bg-slate-50/50">{renderRate(m.mtdGrowth)}</td>
 
           {/* YTD */}
-          <td className="p-2 text-right text-slate-500">{formatRevenue(m.ytdTarget)}</td>
+          <td className="p-2 text-right text-slate-400">{formatRevenue(m.ytdTarget)}</td>
           <td className="p-2 text-right font-medium text-slate-800">{formatRevenue(m.ytdActual)}</td>
           <td className="p-2 text-right text-slate-500">{formatRevenue(m.ytdLy)}</td>
-          <td className="p-2 text-right">{renderRate(m.ytdAchieve)}</td>
+          <td className="p-2 text-right border-l border-slate-100">{renderRate(m.ytdAchieve)}</td>
           <td className="p-2 text-right bg-slate-50/50">{renderRate(m.ytdGrowth)}</td>
         </tr>
       );
@@ -129,26 +167,26 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">목표</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-blue-700">실적</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
+              <th className="p-2 border-l border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">증감율</th>
               
               {/* MTD */}
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">목표</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-indigo-700">실적</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
+              <th className="p-2 border-l border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">증감율</th>
               
               {/* YTD */}
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">목표</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-purple-700">실적</th>
               <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
+              <th className="p-2 border-l border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
               <th className="p-2 text-center sticky top-[41px] bg-[#f8f9fa] z-20">증감율</th>
             </tr>
           </thead>
           <tbody>
-            {data && data.length > 0 ? renderRows() : (
+            {flatSummary && flatSummary.length > 0 ? renderRows() : (
               <tr>
                 <td colSpan={17} className="p-12 text-center text-slate-500 text-sm font-medium">
                   조회된 요약 데이터가 없습니다.

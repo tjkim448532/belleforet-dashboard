@@ -43,7 +43,8 @@ export default function MatrixWeeklyDashboard() {
         if (!isMounted) return;
 
         const result = res.data || res;
-        const payloadArray = result.data || result.gridData || (Array.isArray(result) ? result : []);
+        const payloadArray = result.flatSummary || result.data || result.gridData || (Array.isArray(result) ? result : []);
+        
         
         // Zero-Variance validation payload (if present)
         const vm = result.validationMaster || {

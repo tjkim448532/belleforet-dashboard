@@ -6,34 +6,22 @@ const formatRevenue = (val: number | undefined | null) => {
   return Number(val).toLocaleString('ko-KR');
 };
 
-const renderRate = (rate?: number | null) => {
+const renderGrowth = (rate?: number | null) => {
   if (rate === undefined || rate === null) return <span className="text-slate-400">-</span>;
-  if (rate === 0) return <span className="text-slate-400">0%</span>;
-  
-  // 달성율/증감율에 따른 색상 분기 (100% 이상 블루, 양수 그린, 음수 레드)
-  let colorClass = "text-slate-600";
-  if (rate >= 100) colorClass = "text-blue-600";
-  else if (rate > 0) colorClass = "text-emerald-600";
-  else if (rate < 0) colorClass = "text-red-500";
-
-  return <span className={`font-medium ${colorClass}`}>{rate.toFixed(1)}%</span>;
+  if (rate === 0) return <span className="text-slate-400">0</span>;
+  return <span className={rate > 0 ? "text-blue-600" : "text-red-500"}>{rate.toFixed(1)}</span>;
 };
 
 interface Metrics {
-  todayTarget?: number;
   todayActual: number;
+  todayQuantity: number;
   todayLy?: number;
-  todayAchieve?: number;
   todayGrowth?: number;
-  mtdTarget?: number;
   mtdActual: number;
   mtdLy?: number;
-  mtdAchieve?: number;
   mtdGrowth?: number;
-  ytdTarget?: number;
   ytdActual: number;
   ytdLy?: number;
-  ytdAchieve?: number;
   ytdGrowth?: number;
 }
 
@@ -59,14 +47,17 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
     data.forEach((category: any) => {
       category.teams?.forEach((team: any) => {
         let hasVenues = false;
+        
+        // 본부명이 비어있을 경우 대분류(Category) 명칭으로 대체하여 공백 방지
+        const resolvedTeamName = team.team_name || category.category_code || '미분류';
 
         // 해당 본부 하위의 모든 영업장(Venue)을 추출
         team.parts?.forEach((part: any) => {
           part.venues?.forEach((venue: any) => {
             hasVenues = true;
             flat.push({
-              teamName: team.team_name,
-              venueName: venue.venue_name,
+              teamName: resolvedTeamName,
+              venueName: venue.venue_name || '미분류',
               isSubtotal: false,
               metrics: venue.subtotal || {},
             });
@@ -76,8 +67,8 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
         // 본부 합계 렌더링 (영업장이 하나라도 있거나 subtotal이 존재하는 경우)
         if (hasVenues || team.subtotal) {
           flat.push({
-            teamName: team.team_name,
-            venueName: `[${team.team_name} 합계]`,
+            teamName: resolvedTeamName,
+            venueName: `[${resolvedTeamName} 합계]`,
             isSubtotal: true,
             metrics: team.subtotal || {},
           });
@@ -123,25 +114,20 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
           </td>
           
           {/* Today */}
-          <td className="p-2 text-right text-slate-400">{formatRevenue(m.todayTarget)}</td>
           <td className="p-2 text-right font-medium text-slate-800">{formatRevenue(m.todayActual)}</td>
+          <td className="p-2 text-right text-slate-600">{formatRevenue(m.todayQuantity)}</td>
           <td className="p-2 text-right text-slate-500">{formatRevenue(m.todayLy)}</td>
-          <td className="p-2 text-right border-l border-slate-100">{renderRate(m.todayAchieve)}</td>
-          <td className="p-2 text-right border-r border-slate-300 bg-slate-50/50">{renderRate(m.todayGrowth)}</td>
+          <td className="p-2 text-right border-r border-slate-300 bg-slate-50/50">{renderGrowth(m.todayGrowth)}</td>
 
           {/* MTD */}
-          <td className="p-2 text-right text-slate-400">{formatRevenue(m.mtdTarget)}</td>
           <td className="p-2 text-right font-medium text-slate-800">{formatRevenue(m.mtdActual)}</td>
           <td className="p-2 text-right text-slate-500">{formatRevenue(m.mtdLy)}</td>
-          <td className="p-2 text-right border-l border-slate-100">{renderRate(m.mtdAchieve)}</td>
-          <td className="p-2 text-right border-r border-slate-300 bg-slate-50/50">{renderRate(m.mtdGrowth)}</td>
+          <td className="p-2 text-right border-r border-slate-300 bg-slate-50/50">{renderGrowth(m.mtdGrowth)}</td>
 
           {/* YTD */}
-          <td className="p-2 text-right text-slate-400">{formatRevenue(m.ytdTarget)}</td>
           <td className="p-2 text-right font-medium text-slate-800">{formatRevenue(m.ytdActual)}</td>
           <td className="p-2 text-right text-slate-500">{formatRevenue(m.ytdLy)}</td>
-          <td className="p-2 text-right border-l border-slate-100">{renderRate(m.ytdAchieve)}</td>
-          <td className="p-2 text-right bg-slate-50/50">{renderRate(m.ytdGrowth)}</td>
+          <td className="p-2 text-right bg-slate-50/50">{renderGrowth(m.ytdGrowth)}</td>
         </tr>
       );
     });
@@ -158,37 +144,32 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
               <th className="p-3 border-r border-slate-300 sticky left-0 bg-[#f8f9fa] z-30 text-center" rowSpan={2}>본부</th>
               <th className="p-3 border-r border-slate-300 text-center" rowSpan={2}>영업장(38개)</th>
               
-              <th className="p-2 border-r border-slate-300 text-center bg-blue-50/50" colSpan={5}>금일 (Today)</th>
-              <th className="p-2 border-r border-slate-300 text-center bg-indigo-50/50" colSpan={5}>월누계 (Month To Date)</th>
-              <th className="p-2 text-center bg-purple-50/50" colSpan={5}>연누계 (Year To Date)</th>
+              <th className="p-2 border-r border-slate-300 text-center bg-blue-50/50" colSpan={4}>금일 (Today)</th>
+              <th className="p-2 border-r border-slate-300 text-center bg-indigo-50/50" colSpan={3}>월누계 (Month To Date)</th>
+              <th className="p-2 text-center bg-purple-50/50" colSpan={3}>연누계 (Year To Date)</th>
             </tr>
             <tr className="text-xs">
               {/* Today */}
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">목표</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-blue-700">실적</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년</th>
-              <th className="p-2 border-l border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">증감율</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-blue-700">매출액</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">수량</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년동기</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">YoY</th>
               
               {/* MTD */}
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">목표</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-indigo-700">실적</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년</th>
-              <th className="p-2 border-l border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">증감율</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-indigo-700">매출액</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년동기</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">YoY</th>
               
               {/* YTD */}
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">목표</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-purple-700">실적</th>
-              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년</th>
-              <th className="p-2 border-l border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">달성율</th>
-              <th className="p-2 text-center sticky top-[41px] bg-[#f8f9fa] z-20">증감율</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20 text-purple-700">매출액</th>
+              <th className="p-2 border-r border-slate-300 text-center sticky top-[41px] bg-[#f8f9fa] z-20">전년동기</th>
+              <th className="p-2 text-center sticky top-[41px] bg-[#f8f9fa] z-20">YoY</th>
             </tr>
           </thead>
           <tbody>
             {flatSummary && flatSummary.length > 0 ? renderRows() : (
               <tr>
-                <td colSpan={17} className="p-12 text-center text-slate-500 text-sm font-medium">
+                <td colSpan={12} className="p-12 text-center text-slate-500 text-sm font-medium">
                   조회된 요약 데이터가 없습니다.
                 </td>
               </tr>

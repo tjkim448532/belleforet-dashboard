@@ -133,7 +133,7 @@ export default function RevenueGrid({ data, validationMaster }: GridProps) {
                 const s = tg.subtotal;
                 rows.push(
                   <tr key={`sub-tg-${tg.ticket_group}`} className="bg-slate-50 font-semibold border-b border-slate-300">
-                    <td colSpan={2} className="p-2 text-right border-r border-slate-300 text-slate-700">[{tg.ticket_group} 소계]</td>
+                    <td colSpan={3} className="p-2 text-right border-r border-slate-300 text-slate-700">[{tg.ticket_group} 소계]</td>
                     <td className="p-2 text-right text-slate-900">{formatRevenue(s.todayActual)}</td>
                     <td className="p-2 text-right text-slate-600">{formatRevenue(s.todayQuantity)}</td>
                     <td className="p-2 text-right text-slate-600">{formatRevenue(s.todayLy)}</td>
@@ -154,7 +154,7 @@ export default function RevenueGrid({ data, validationMaster }: GridProps) {
               const s = venue.subtotal;
               rows.push(
                 <tr key={`sub-venue-${venue.venue_name}`} className="bg-slate-100 font-bold border-b border-slate-300">
-                  <td colSpan={3} className="p-2 text-right border-r border-slate-300 text-slate-800">[{venue.venue_name} 합계]</td>
+                  <td colSpan={4} className="p-2 text-right border-r border-slate-300 text-slate-800">[{venue.venue_name} 합계]</td>
                   <td className="p-2 text-right text-slate-900">{formatRevenue(s.todayActual)}</td>
                   <td className="p-2 text-right text-slate-600">{formatRevenue(s.todayQuantity)}</td>
                   <td className="p-2 text-right text-slate-600">{formatRevenue(s.todayLy)}</td>
@@ -175,7 +175,7 @@ export default function RevenueGrid({ data, validationMaster }: GridProps) {
             const s = part.subtotal;
             rows.push(
               <tr key={`sub-part-${part.part_name}`} className="bg-slate-200/60 font-bold border-b border-slate-300">
-                <td colSpan={4} className="p-2 text-right border-r border-slate-300 text-slate-800">[{part.part_name} 합계]</td>
+                <td colSpan={5} className="p-2 text-right border-r border-slate-300 text-slate-800">[{part.part_name} 합계]</td>
                 <td className="p-2 text-right text-slate-900">{formatRevenue(s.todayActual)}</td>
                 <td className="p-2 text-right text-slate-600">{formatRevenue(s.todayQuantity)}</td>
                 <td className="p-2 text-right text-slate-600">{formatRevenue(s.todayLy)}</td>
@@ -196,7 +196,7 @@ export default function RevenueGrid({ data, validationMaster }: GridProps) {
           const s = team.subtotal;
           rows.push(
             <tr key={`sub-team-${team.team_name}`} className="bg-slate-200 font-extrabold border-b-[2px] border-slate-400">
-              <td colSpan={5} className="p-2 text-right border-r border-slate-300 text-slate-900 sticky left-[80px] z-10 bg-slate-200 shadow-[1px_0_0_0_#cbd5e1]">[{team.team_name} 총합계]</td>
+              <td colSpan={6} className="p-2 text-right border-r border-slate-300 text-slate-900 sticky left-[80px] z-10 bg-slate-200 shadow-[1px_0_0_0_#cbd5e1]">[{team.team_name} 총합계]</td>
               <td className="p-2 text-right text-slate-900">{formatRevenue(s.todayActual)}</td>
               <td className="p-2 text-right text-slate-700">{formatRevenue(s.todayQuantity)}</td>
               <td className="p-2 text-right text-slate-700">{formatRevenue(s.todayLy)}</td>
@@ -217,7 +217,7 @@ export default function RevenueGrid({ data, validationMaster }: GridProps) {
         const s = category.subtotal;
         rows.push(
           <tr key={`sub-cat-${category.category_code}`} className="bg-slate-300 font-black border-b-[3px] border-slate-500">
-            <td colSpan={6} className="p-3 text-right border-r border-slate-400 text-slate-900 sticky left-0 z-10 bg-slate-300 shadow-[1px_0_0_0_#94a3b8]">[{category.category_code} 총계]</td>
+            <td colSpan={7} className="p-3 text-right border-r border-slate-400 text-slate-900 sticky left-0 z-10 bg-slate-300 shadow-[1px_0_0_0_#94a3b8]">[{category.category_code} 총계]</td>
             <td className="p-3 text-right text-slate-900">{formatRevenue(s.todayActual)}</td>
             <td className="p-3 text-right text-slate-700">{formatRevenue(s.todayQuantity)}</td>
             <td className="p-3 text-right text-slate-700">{formatRevenue(s.todayLy)}</td>

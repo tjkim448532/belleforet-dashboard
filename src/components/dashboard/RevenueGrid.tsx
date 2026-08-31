@@ -1,6 +1,5 @@
 import React from 'react';
 
-// 1. 공통 숫자 포맷팅 유틸리티 (₩ 기호 제외, #,##0 서식)
 const formatRevenue = (val: number | undefined | null) => {
   if (val === undefined || val === null) return '0';
   return Number(val).toLocaleString('ko-KR');
@@ -40,26 +39,43 @@ interface GridProps {
 export default function RevenueGrid({ data, validationMaster }: GridProps) {
   
   // 소계 행 렌더링 헬퍼 함수
-  // colSpan 값은 상위 계층의 rowSpan이 현재 행을 덮고 있는지 여부에 따라 수학적으로 정확히 계산됨.
+  // 병합(colSpan)을 사용하지 않고, 계층에 맞춰 빈 td를 생성하여 세로 그리드 라인을 완벽하게 맞춥니다.
   const renderSubtotalRow = (
     key: string,
     label: string,
     s: any,
-    colSpan: number,
+    levelStartCol: number, // 이 소계가 시작되는 컬럼 인덱스 (1: 대분류, 2: 본부, 3: 파트, 4: 영업장, 5: 티켓그룹)
     bgClass: string,
-    textClass: string,
-    isStickyLeft: boolean = false,
-    stickyOffset: string = '0'
+    textClass: string
   ) => {
     if (!s) return null;
+    
+    // 총 7개의 계층 컬럼 중, 현재 레벨부터 7번째 채널 컬럼까지 칸을 렌더링해야 함.
+    const hierarchyCells = [];
+    
+    // 1. 소계 라벨이 들어갈 첫 번째 셀
+    hierarchyCells.push(
+      <td 
+        key="label" 
+        className={`p-2 text-center border-r border-slate-300 ${bgClass} ${levelStartCol <= 2 ? 'sticky z-10' : ''}`}
+        style={levelStartCol === 1 ? { left: '0' } : levelStartCol === 2 ? { left: '80px' } : {}}
+      >
+        {label}
+      </td>
+    );
+
+    // 2. 남은 계층 컬럼 수만큼 빈 셀 추가 (세로 선 유지용)
+    const emptyCellsCount = 7 - levelStartCol;
+    for (let i = 0; i < emptyCellsCount; i++) {
+      hierarchyCells.push(
+        <td key={`empty-${i}`} className={`p-2 border-r border-slate-300 ${bgClass}`}></td>
+      );
+    }
+
     return (
       <tr key={key} className={`${bgClass} ${textClass} border-b border-slate-300`}>
-        <td 
-          colSpan={colSpan} 
-          className={`p-2 text-right border-r border-slate-300 ${isStickyLeft ? `sticky ${stickyOffset} z-10 ${bgClass}` : ''}`}
-        >
-          {label}
-        </td>
+        {hierarchyCells}
+        
         {/* Today */}
         <td className="p-2 text-right font-medium">{formatRevenue(s.todayActual)}</td>
         <td className="p-2 text-right text-slate-700">{formatRevenue(s.todayQuantity)}</td>
@@ -144,33 +160,33 @@ export default function RevenueGrid({ data, validationMaster }: GridProps) {
                 );
               });
 
-              // 티켓그룹 소계 (colSpan 3)
+              // 티켓그룹 소계 (starts at col 5)
               if (tg.subtotal) {
-                rows.push(renderSubtotalRow(`sub-tg-${tg.ticket_group}`, `[${tg.ticket_group} 소계]`, tg.subtotal, 3, 'bg-slate-50', 'font-semibold'));
+                rows.push(renderSubtotalRow(`sub-tg-${tg.ticket_group}`, `[${tg.ticket_group} 소계]`, tg.subtotal, 5, 'bg-slate-50', 'font-semibold'));
               }
             });
 
-            // 영업장 소계 (colSpan 4)
+            // 영업장 소계 (starts at col 4)
             if (venue.subtotal) {
               rows.push(renderSubtotalRow(`sub-venue-${venue.venue_name}`, `[${venue.venue_name} 합계]`, venue.subtotal, 4, 'bg-slate-100', 'font-bold'));
             }
           });
 
-          // 파트 소계 (colSpan 5)
+          // 파트 소계 (starts at col 3)
           if (part.subtotal) {
-            rows.push(renderSubtotalRow(`sub-part-${part.part_name}`, `[${part.part_name} 합계]`, part.subtotal, 5, 'bg-slate-200', 'font-bold'));
+            rows.push(renderSubtotalRow(`sub-part-${part.part_name}`, `[${part.part_name} 합계]`, part.subtotal, 3, 'bg-slate-200', 'font-bold'));
           }
         });
 
-        // 본부 소계 (colSpan 6)
+        // 본부 소계 (starts at col 2)
         if (team.subtotal) {
-          rows.push(renderSubtotalRow(`sub-team-${team.team_name}`, `[${team.team_name} 총합계]`, team.subtotal, 6, 'bg-slate-300', 'font-extrabold', true, 'left-[80px]'));
+          rows.push(renderSubtotalRow(`sub-team-${team.team_name}`, `[${team.team_name} 총합계]`, team.subtotal, 2, 'bg-slate-300', 'font-extrabold'));
         }
       });
 
-      // 대분류 소계 (colSpan 7)
+      // 대분류 소계 (starts at col 1)
       if (category.subtotal) {
-        rows.push(renderSubtotalRow(`sub-cat-${category.category_code}`, `[${category.category_code} 총계]`, category.subtotal, 7, 'bg-slate-400', 'font-black', true, 'left-0'));
+        rows.push(renderSubtotalRow(`sub-cat-${category.category_code}`, `[${category.category_code} 총계]`, category.subtotal, 1, 'bg-slate-400', 'font-black'));
       }
     });
 

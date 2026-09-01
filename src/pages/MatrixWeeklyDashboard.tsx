@@ -38,7 +38,7 @@ export default function MatrixWeeklyDashboard() {
         const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-sales?${queryParams}&_t=${Date.now()}`);
         if (!isMounted) return;
 
-        const result = res.data || res;
+        const result = res;
         const payloadArray = result.flatSummary || result.data || result.gridData || (Array.isArray(result) ? result : []);
         
         const vm = result.validationMaster || {

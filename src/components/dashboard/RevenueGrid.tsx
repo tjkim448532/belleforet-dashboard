@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-// 공통 숫자 포맷팅 유틸리티
+// 공통 숫자 포맷 유틸리티
 const formatRevenue = (val: number | undefined | null) => {
   if (val === undefined || val === null) return '0';
   return Number(val).toLocaleString('ko-KR');
@@ -21,13 +21,13 @@ interface ValidationMaster {
 
 interface GridProps {
   data: any[]; // 백엔드 flatSummary 배열 또는 8-depth 트리
-  validationMaster: ValidationMaster;
+  validationMaster?: ValidationMaster;
 }
 
 export default function RevenueGrid({ data = [], validationMaster }: GridProps) {
   
   // 백엔드에서 flatSummary를 바로 넘겨준 경우 그대로 사용, 아니면 하위 호환성을 위해 직접 추출
-  const flatSummary = useMemo(() => {
+  const rawFlatSummary = useMemo(() => {
     if (data.length === 0) return [];
     
     // API V6 flatSummary 구조 감지
@@ -35,7 +35,7 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
       return data;
     }
 
-    // 8-Depth Legacy 구조 감지 시 클라이언트 평면화 (Grand Total은 계산할 수 없으므로 제외)
+    // 8-Depth Legacy 구조 감지 시 클라이언트 평면화 (Grand Total은 계산하지 않으므로 제외)
     const flat: any[] = [];
     data.forEach((category: any) => {
       category.teams?.forEach((team: any) => {
@@ -71,6 +71,40 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
     return flat;
   }, [data]);
 
+  // SSOT 무관용 원칙 적용: categoryCode에 상관없이 오직 teamName 기준으로만 완벽히 그룹핑 (표 찢어짐 방지)
+  const flatSummary = useMemo(() => {
+    if (!rawFlatSummary || rawFlatSummary.length === 0) return [];
+
+    const groups = new Map<string, any[]>();
+    let grandTotal: any = null;
+
+    rawFlatSummary.forEach(row => {
+      if (row.isGrandTotal || row.team_name === 'TOTAL') {
+        grandTotal = row;
+        return;
+      }
+      const tName = row.team_name || '미분류';
+      if (!groups.has(tName)) groups.set(tName, []);
+      groups.get(tName)!.push(row);
+    });
+
+    const finalArray: any[] = [];
+    groups.forEach((rows) => {
+      // 1. 일반 영업장 배열
+      const normals = rows.filter(r => !r.isSubtotal);
+      // 2. 단일 소계 행 (백엔드가 준 것 중 마지막 1개만 사용, 자체 연산 절대 금지)
+      // (만약 레거시 배열에서 여러 개가 들어왔더라도, 가장 하단의 1개만 매핑)
+      const subs = rows.filter(r => r.isSubtotal);
+      const sub = subs.length > 0 ? subs[subs.length - 1] : null;
+
+      finalArray.push(...normals);
+      if (sub) finalArray.push(sub);
+    });
+
+    if (grandTotal) finalArray.push(grandTotal);
+    return finalArray;
+  }, [rawFlatSummary]);
+
   const renderRows = () => {
     const rows: React.ReactNode[] = [];
     let currentTeam = '';
@@ -81,7 +115,7 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
       const isFirstTeamRow = !isGrandTotal && row.team_name !== currentTeam;
       let rowSpan = 1;
 
-      // Calculate rowSpan for the team cell
+      // Calculate rowSpan for the team cell (이제 flatSummary가 완벽히 그룹화되어 있으므로 단순 카운트 가능)
       if (isFirstTeamRow) {
         currentTeam = row.team_name;
         for (let i = idx + 1; i < flatSummary.length; i++) {
@@ -156,7 +190,7 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
           <thead className="bg-[#f8f9fa] text-slate-700 font-bold sticky top-0 z-20 shadow-sm border-b-2 border-slate-400">
             <tr>
               <th className="p-3 border-r border-slate-300 sticky left-0 bg-[#f8f9fa] z-30 text-center" rowSpan={2}>본부</th>
-              <th className="p-3 border-r border-slate-300 text-center" rowSpan={2}>영업장(38개)</th>
+              <th className="p-3 border-r border-slate-300 text-center" rowSpan={2}>영업장 38개</th>
               
               <th className="p-2 border-r border-slate-300 text-center bg-blue-50/50" colSpan={3}>금일 (Today)</th>
               <th className="p-2 border-r border-slate-300 text-center bg-indigo-50/50" colSpan={3}>월누계 (Month To Date)</th>

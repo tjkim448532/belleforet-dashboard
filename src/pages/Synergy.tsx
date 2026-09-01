@@ -157,7 +157,7 @@ export default function Synergy() {
 
       // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. Matrix Report (Category SSOT)
       const [channelRes, summaryRes, matrixRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v6/dashboard/room-sales-by-channel?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/dashboard/matrix-report?${queryParams}`).catch(() => null)
       ]);

@@ -89,13 +89,18 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
     });
 
     const finalArray: any[] = [];
-    groups.forEach((rows) => {
+    groups.forEach((rows, teamName) => {
       // 1. 일반 영업장 배열
       const normals = rows.filter(r => !r.isSubtotal);
       // 2. 단일 소계 행 (백엔드가 준 것 중 마지막 1개만 사용, 자체 연산 절대 금지)
       // (만약 레거시 배열에서 여러 개가 들어왔더라도, 가장 하단의 1개만 매핑)
       const subs = rows.filter(r => r.isSubtotal);
-      const sub = subs.length > 0 ? subs[subs.length - 1] : null;
+      const sub = subs.length > 0 ? { ...subs[subs.length - 1] } : null;
+
+      // 백엔드 인코딩 오류(글깨짐) 발생 시 UI 텍스트 복구
+      if (sub && sub.venue_name && (sub.venue_name.includes('?') || sub.venue_name.includes('궎'))) {
+        sub.venue_name = `[${teamName} 합계]`;
+      }
 
       finalArray.push(...normals);
       if (sub) finalArray.push(sub);

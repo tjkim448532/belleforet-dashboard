@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Layers } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { fetchLiveWeatherFallback } from '../lib/weatherService';
 import RevenueGrid from '../components/dashboard/RevenueGrid';
+import { useDate } from '../contexts/DateContext';
+import GlobalDatePicker from '../components/GlobalDatePicker';
+import { AlertCircle } from 'lucide-react';
 
 interface WeatherInfo {
   description?: string;
@@ -17,17 +19,12 @@ export default function MatrixWeeklyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
-  });
+  // Filters from context
+  const { startDate } = useDate();
 
-    
   // Weather States
   const [baseWeather, setBaseWeather] = useState<WeatherInfo | null>(null);
-    const [isWeatherLoading, setIsWeatherLoading] = useState(false);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,7 +33,6 @@ export default function MatrixWeeklyDashboard() {
       setError(null);
       try {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        // Base API endpoint for the nested 8-level tree payload
         const queryParams = `base_date=${startDate}`;
 
         const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-sales?${queryParams}&_t=${Date.now()}`);
@@ -45,8 +41,6 @@ export default function MatrixWeeklyDashboard() {
         const result = res.data || res;
         const payloadArray = result.flatSummary || result.data || result.gridData || (Array.isArray(result) ? result : []);
         
-        
-        // Zero-Variance validation payload (if present)
         const vm = result.validationMaster || {
           originalTotal: 0,
           payloadTotal: 0,
@@ -109,64 +103,71 @@ export default function MatrixWeeklyDashboard() {
   }, [startDate]);
 
   const renderWeatherIcon = (desc?: string) => {
-    if (!desc) return '☁️';
+    if (!desc) return '상태모름';
     if (desc.includes('비')) return '🌧️';
     if (desc.includes('눈')) return '❄️';
-    if (desc.includes('구름') || desc.includes('흐림')) return '⛅';
+    if (desc.includes('구름') || desc.includes('흐림')) return '☁️';
     if (desc.includes('맑음')) return '☀️';
     return '⛅';
   };
 
-  return (
-    <div className="p-6 max-w-[1600px] mx-auto h-[calc(100vh-64px)] flex flex-col">
-      <div className="flex justify-between items-end mb-6 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Layers className="text-blue-600" />
-            리조트 전사 부문별 실시간 통합 정산 현황
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">순매출 · 부가세 별도 · 포맷팅 `#,##0`</p>
-        </div>
+  if (isLoading || !data) {
+    return (
+      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="text-xl font-medium text-blue-600 animate-pulse">정산 현황 데이터를 불러오는 중입니다...</div>
+      </div>
+    );
+  }
 
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex gap-4 items-center">
-            {/* Base Date Picker */}
-            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
-              <Calendar size={18} className="text-slate-400" />
-              <input 
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="text-sm font-semibold text-slate-700 outline-none"
-              />
-              {baseWeather && !isWeatherLoading && (
-                <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-200">
-                  <span className="text-lg" title={baseWeather.description}>{renderWeatherIcon(baseWeather.description)}</span>
-                  {baseWeather.tempMax !== undefined && (
-                    <span className="text-xs font-medium text-slate-500">
-                      <span className="text-rose-500">{Math.round(baseWeather.tempMax)}°</span> / <span className="text-blue-500">{Math.round(baseWeather.tempMin || 0)}°</span>
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+  return (
+    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
+      
+      {/* Decorative Header Background */}
+      <div className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
+        <div className="absolute top-10 right-[15%] w-36 h-36 bg-white/10 rounded-full blur-2xl" />
+        <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
       </div>
 
-      <div className="flex-grow min-h-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        {isLoading ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-500 font-medium">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-            데이터를 불러오는 중입니다...
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+          <div className="text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-black text-3xl tracking-widest bg-white text-blue-600 px-3 py-1 rounded-sm shadow-md">
+                BELLE FORET
+              </span>
+              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
+            </div>
+            <h1 className="text-3xl font-medium tracking-tight mt-3">리조트 전사 부문별 통합 정산 현황</h1>
+            <p className="text-white/80 mt-1">부문별 당일 실적, 전년동기 대비, 연월 누계 등을 통합 조회합니다. (순매출 · 부가세 별도)</p>
           </div>
-        ) : error ? (
-          <div className="h-full flex items-center justify-center text-red-500 font-medium bg-red-50">
-            {error}
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {baseWeather && !isWeatherLoading && (
+              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm">
+                <span className="text-xl" title={baseWeather.description}>{renderWeatherIcon(baseWeather.description)}</span>
+                {baseWeather.tempMax !== undefined && (
+                  <span className="text-sm font-medium text-white/90">
+                    <span className="text-rose-300">{Math.round(baseWeather.tempMax)}°</span> / <span className="text-blue-300">{Math.round(baseWeather.tempMin || 0)}°</span>
+                  </span>
+                )}
+              </div>
+            )}
+            <GlobalDatePicker />
           </div>
-        ) : (
-          <RevenueGrid data={data} validationMaster={validationMaster} />
+        </div>
+
+        {error && (
+          <div className="bg-orange-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
+            <AlertCircle size={24} />
+            <span className="font-medium text-lg">{error}</span>
+          </div>
         )}
+
+        {/* Data Grid */}
+        <div className="flex-grow min-h-[calc(100vh-350px)] bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6">
+          <RevenueGrid data={data} validationMaster={validationMaster} />
+        </div>
       </div>
     </div>
   );

@@ -67,7 +67,7 @@ export default function ResortBusiness() {
           
         const [overviewRes, channelRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] }))
+          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] }))
         ]);
 
         const rawOverview = overviewRes.data || overviewRes;

@@ -41,7 +41,7 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
             const value = node[key];
             
             // 금액/지표 관련 필드명 매칭
-            if (key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i)) {
+            if (key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i) && !key.toLowerCase().includes('date')) {
                 if (typeof value !== 'number') {
                     // 문자열 숫자, null, undefined 전면 차단
                     errors.push(`[Type Error] 📍 ${currentVenue || 'Unknown'} ➔ Field '${key}' MUST be a strict Number. Received: ${value === null ? 'null' : typeof value} ('${value}')`);
@@ -119,3 +119,4 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
   
   return data;
 };
+

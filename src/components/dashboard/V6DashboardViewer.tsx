@@ -56,20 +56,18 @@ export default function V6DashboardViewer() {
     fetchV6Data();
   }, [startDate, endDate, isRange]);
 
-  if (loading) return <div className="p-4 font-bold">V6 0-Variance 엔진 데이터 동기화 중...</div>;
-  if (error) return <div className="p-4 text-red-600 font-bold">🚨 렌더링 중단: {error} (데이터 무결성 오류)</div>;
+  if (loading) return <div className="p-4 font-bold text-slate-600 flex items-center justify-center h-40">V6 0-Variance 엔진 데이터 동기화 중...</div>;
+  if (error) return <div className="p-4 text-red-600 font-bold bg-red-50 rounded-lg">🚨 렌더링 중단: {error} (데이터 무결성 오류)</div>;
   if (!data || !data.divisions) return <div className="p-4 text-red-600 font-bold">🚨 API 응답 규격 위반</div>;
 
   return (
-    <div className="w-full p-4 bg-white shadow-md rounded-lg">
-      <h2 className="text-xl font-bold mb-4">경영 대시보드 (2026 조직도 기준 0-Variance)</h2>
-      <table className="w-full border-collapse border border-gray-300 text-sm">
-        <thead className="bg-gray-100">
+    <div className="w-full">
+      <table className="w-full border-collapse text-sm text-left">
+        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-t border-slate-200">
           <tr>
-            <th className="border p-2 font-bold">대분류 (경영본부)</th>
-            <th className="border p-2 font-bold">영업장 (표준명)</th>
-            <th className="border p-2 font-bold">티켓그룹</th>
-            <th className="border p-2 font-bold text-right">매출액</th>
+            <th className="px-4 py-3 font-semibold border-x border-slate-200">대분류</th>
+            <th className="px-4 py-3 font-semibold border-x border-slate-200">영업장</th>
+            <th className="px-4 py-3 font-semibold text-right border-x border-slate-200">매출액</th>
           </tr>
         </thead>
         <tbody>
@@ -87,41 +85,40 @@ export default function V6DashboardViewer() {
                   const venueRowSpan = tickets.length;
                   
                   return tickets.map((ticket, ticketIdx) => (
-                    <tr key={`div-${divIdx}-ven-${venueIdx}-tik-${ticketIdx}`} className="hover:bg-gray-50">
+                    <tr key={`div-${divIdx}-ven-${venueIdx}-tik-${ticketIdx}`} className="hover:bg-slate-50 transition-colors">
                       
                       {/* 본부 첫 번째 줄에만 Cell 렌더링 및 병합 */}
                       {venueIdx === 0 && ticketIdx === 0 && (
-                        <td rowSpan={divisionRowSpan} className="border p-2 bg-gray-50 font-bold align-top">
+                        <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-bold align-top border border-slate-200 text-slate-800">
                           {division.orgDivision}
                         </td>
                       )}
                       
                       {/* 영업장 첫 번째 줄에만 Cell 렌더링 및 병합 */}
                       {ticketIdx === 0 && (
-                        <td rowSpan={venueRowSpan} className="border p-2 font-medium align-top">
+                        <td rowSpan={venueRowSpan} className="px-4 py-3 font-medium align-top border border-slate-200 text-slate-700">
                           {venue.venueName}
                         </td>
                       )}
                       
-                      <td className="border p-2">{ticket.ticketName}</td>
-                      <td className="border p-2 text-right font-mono">{formatNum(ticket.revenue)}</td>
+                      <td className="px-4 py-3 text-right font-mono border border-slate-200">{formatNum(ticket.revenue)}</td>
                     </tr>
                   ));
                 })}
                 
                 {/* 본부별 소계 (백엔드 제공 값 100% 맹신 바인딩) */}
-                <tr className="bg-blue-50 font-bold">
-                  <td className="border p-2" colSpan={2}>[{division.orgDivision}] 총계</td>
-                  <td className="border p-2 text-right font-mono text-blue-700">{formatNum(division.divisionSubtotal)}</td>
+                <tr className="bg-indigo-50 text-indigo-900 font-bold border-b border-slate-200">
+                  <td className="px-4 py-3 border border-slate-200" colSpan={2}>[{division.orgDivision}] 총계</td>
+                  <td className="px-4 py-3 text-right font-mono text-indigo-700 border border-slate-200">{formatNum(division.divisionSubtotal)}</td>
                 </tr>
               </React.Fragment>
             );
           })}
           
           {/* --- 5. 전사 총계 (API 최상단 grandTotal 바인딩) --- */}
-          <tr className="bg-gray-800 text-white font-bold text-lg">
-            <td className="border p-3 text-center" colSpan={3}>전사 누적 총계</td>
-            <td className="border p-3 text-right font-mono">{formatNum(data.grandTotal)}</td>
+          <tr className="bg-slate-800 text-white font-bold text-base">
+            <td className="px-4 py-4 text-center border border-slate-700 tracking-wider" colSpan={2}>전사 총계</td>
+            <td className="px-4 py-4 text-right font-mono border border-slate-700 text-lg">{formatNum(data.grandTotal)}</td>
           </tr>
         </tbody>
       </table>

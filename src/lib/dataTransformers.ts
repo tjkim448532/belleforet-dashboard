@@ -19,6 +19,7 @@ export interface TransformedHomeData {
     totalADR: number;
     revPAR: number;
     trevPAR: number;
+    trevPOR: number;
     days: number;
     raw: {
       totalRoomRev: number;
@@ -124,6 +125,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   const backendADR = parseNum(c.summary?.totalADR || c.summary?.adr || 0);
   const backendRevPAR = parseNum(c.summary?.revPAR || 0);
   const backendTrevPAR = parseNum(c.summary?.trevPAR || 0);
+  const backendTrevPOR = parseNum(c.summary?.trevPOR || 0);
   const backendOcc = parseNum(c.summary?.totalOcc || c.summary?.occRate || 0);
 
   // [SSOT 무결성 원칙 완벽 준수 (Zero-Proxy)] 
@@ -133,6 +135,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
     totalADR: backendADR,
     revPAR: backendRevPAR,
     trevPAR: backendTrevPAR,
+    trevPOR: backendTrevPOR,
     days: days,
     raw: {
       totalRoomRev,

@@ -429,9 +429,9 @@ export default function MonthlyTrevporChart() {
           type: 'value',
           name: '증감률',
           nameTextStyle: { color: '#64748b', fontWeight: 600, fontSize: 12, padding: [0, 0, 8, 0] },
-          min: -60,
-          max: 60,
-          interval: 30,
+          min: (value) => Math.floor(Math.min(value.min, -60) / 30) * 30,
+            max: (value) => Math.ceil(Math.max(value.max, 60) / 30) * 30,
+            alignTicks: true,
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { AlertCircle } from 'lucide-react';
@@ -40,9 +40,9 @@ export default function MatrixWeeklyDashboard() {
         
         if (liveW) {
           setBaseWeather({
-            description: liveW.description || liveW.weatherDesc,
-            tempMax: liveW.tempMax || liveW.maxTemp,
-            tempMin: liveW.tempMin || liveW.minTemp,
+            description: liveW.description,
+            tempMax: liveW.tempMax,
+            tempMin: liveW.tempMin,
           });
         } else {
           setBaseWeather(null);

@@ -840,10 +840,10 @@ export default function MonthlyTrevporChart() {
             </div>
             <div style="font-size:12px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
               <div>
-                <span style="color:#64748b;">2025년 TrevPAR:</span> <strong style="color:#334155;">${formatCurrency(lyTrevpar)}원</strong>
+                <span style="color:#64748b;">2025년 TrevPOR:</span> <strong style="color:#334155;">${formatCurrency(lyTrevpar)}원</strong>
               </div>
               <div>
-                <span style="color:#64748b;">2026년 TrevPAR:</span> <strong style="color:#0d9488;">${formatCurrency(tyTrevpar)}원</strong>
+                <span style="color:#64748b;">2026년 TrevPOR:</span> <strong style="color:#0d9488;">${formatCurrency(tyTrevpar)}원</strong>
                 ${growth !== null ? `<span style="font-size:11px; font-weight:800; color:${growth >= 0 ? '#0d9488' : '#e11d48'}; margin-left:4px;">(${growth > 0 ? '+' : ''}${growth}%)</span>` : ''}
               </div>
             </div>
@@ -942,13 +942,13 @@ export default function MonthlyTrevporChart() {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                객실당 총매출 (TrevPAR) 월별 전년 vs 올해 비교 분석
+                판매객실당 총매출 (TrevPOR) 월별 전년 vs 올해 비교 분석
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                  175실 고정 인프라 기준
+                  SSOT 완제품 바인딩 (Zero-Proxy)
                 </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                상단 주요 지표와 100% 동일한 기준 (리조트 총매출 ÷ 전체 175실) 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
+                프론트엔드 임의 연산을 배제하고 백엔드가 응답한 완제품(TrevPOR) 지표 그대로를 출력합니다. 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
               </p>
             </div>
           </div>
@@ -967,7 +967,7 @@ export default function MonthlyTrevporChart() {
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5 text-teal-600" />
-              <span>12개월 TrevPAR 성장 트렌드</span>
+              <span>12개월 TrevPOR 성장 트렌드</span>
             </button>
             <button
               onClick={() => setChartViewTab('STACKED_100')}
@@ -1227,7 +1227,7 @@ export default function MonthlyTrevporChart() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-teal-600"></span>
                     <h3 className="text-sm font-black text-slate-900">
-                      12개월 TrevPAR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
+                      12개월 TrevPOR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
                   <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">175실 인프라 고정 기준</span>
@@ -1346,13 +1346,13 @@ export default function MonthlyTrevporChart() {
                     2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPOR</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 판매객실</th>
                   <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[280px]">
                     2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPAR</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPOR</th>
                   <th className="py-3.5 px-3 text-right">전년 대비 증감액</th>
                   <th className="py-3.5 px-3 text-center">증감률</th>
                 </tr>

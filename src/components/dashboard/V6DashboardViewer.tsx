@@ -8,7 +8,9 @@ interface Ticket {
 }
 interface Venue {
   venueName: string;
-  tickets: Ticket[];
+  tickets?: Ticket[];
+  ticketGroup?: string;
+  revenue?: number;
   venueSubtotal: number;
 }
 interface Division {
@@ -74,14 +76,17 @@ export default function V6DashboardViewer() {
           {/* --- 4. 계층형 데이터 순회 및 동적 RowSpan 렌더링 --- */}
           {data.divisions.map((division, divIdx) => {
             // 본부별 RowSpan 계산 = (영업장별 티켓 개수의 합) + 1 (본부 소계용 Row)
-            const divisionRowSpan = division.venues.reduce((acc, v) => acc + (v.tickets.length || 1), 0) + 1;
+            const divisionRowSpan = division.venues.reduce((acc, v) => acc + (v.tickets?.length || 1), 0) + 1;
 
             return (
               <React.Fragment key={`div-${divIdx}`}>
                 {division.venues.map((venue, venueIdx) => {
-                  const venueRowSpan = venue.tickets.length || 1;
+                  const tickets = venue.tickets && venue.tickets.length > 0
+                    ? venue.tickets
+                    : [{ ticketName: venue.ticketGroup || '-', revenue: venue.revenue || 0 }];
+                  const venueRowSpan = tickets.length;
                   
-                  return venue.tickets.map((ticket, ticketIdx) => (
+                  return tickets.map((ticket, ticketIdx) => (
                     <tr key={`div-${divIdx}-ven-${venueIdx}-tik-${ticketIdx}`} className="hover:bg-gray-50">
                       
                       {/* 본부 첫 번째 줄에만 Cell 렌더링 및 병합 */}

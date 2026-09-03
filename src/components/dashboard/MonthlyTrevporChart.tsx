@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getClosedBusinessDate } from '../../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
 import { Building, Info, Calendar, BarChart3, TrendingUp, HelpCircle, Award, ArrowUpRight, ArrowDownRight, Filter, AlertTriangle } from 'lucide-react';
@@ -174,19 +174,13 @@ export default function MonthlyTrevporChart() {
     };
   }, [data]);
 
-  // Helper to extract exact TrevPAR (Total Revenue per Available 175 Rooms)
-  const getTrevporValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF', year: number, month: number) => {
+  // SSOT 1:1 완제품 바인딩 (Zero-Proxy 원칙에 따라 프론트엔드 자체 연산 전면 철폐)
+  const getTrevporValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF') => {
     if (!itemNode) return null;
-    const days = getDaysInMonth(year, month);
-    const availRooms = itemNode.availableRooms || (175 * days);
-    
     if (mode === 'TOTAL') {
-      if (itemNode.trevparTotal !== undefined && itemNode.trevparTotal !== null) return itemNode.trevparTotal;
-      return availRooms > 0 ? Math.round(Number(itemNode.totalRevenue || 0) / availRooms) : 0;
+      return itemNode.trevporTotal !== undefined ? itemNode.trevporTotal : null;
     } else {
-      if (itemNode.trevparWithoutGolf !== undefined && itemNode.trevparWithoutGolf !== null) return itemNode.trevparWithoutGolf;
-      const pureRev = Number(itemNode.netRevenueWithoutGolf ?? (Number(itemNode.totalRevenue || 0) - Number(itemNode.golfRevenue || 0)));
-      return availRooms > 0 ? Math.round(pureRev / availRooms) : 0;
+      return itemNode.trevporWithoutGolf !== undefined ? itemNode.trevporWithoutGolf : null;
     }
   };
 

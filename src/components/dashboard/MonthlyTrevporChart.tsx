@@ -175,7 +175,7 @@ export default function MonthlyTrevporChart() {
   }, [data]);
 
   // Helper to extract exact TrevPAR (Total Revenue per Available 175 Rooms)
-  const getTrevparValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF', year: number, month: number) => {
+  const getTrevporValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF', year: number, month: number) => {
     if (!itemNode) return null;
     const days = getDaysInMonth(year, month);
     const availRooms = itemNode.availableRooms || (175 * days);
@@ -260,8 +260,8 @@ export default function MonthlyTrevporChart() {
     let maxTrevpar = 0;
 
     targetPeriodMonths.forEach(m => {
-      const tyVal = getTrevparValue(m.ty, metricMode, 2026, m.month) || 0;
-      const lyVal = getTrevparValue(m.ly, metricMode, 2025, m.month) || 0;
+      const tyVal = getTrevporValue(m.ty, metricMode) || 0;
+      const lyVal = getTrevporValue(m.ly, metricMode) || 0;
       totalTyTrevparSum += tyVal;
       totalLyTrevparSum += lyVal;
       if (tyVal > maxTrevpar) {
@@ -313,8 +313,8 @@ export default function MonthlyTrevporChart() {
     const growthRates: (number | null)[] = [];
 
     data.monthlyComparison.forEach(item => {
-      const lyVal = getTrevparValue(item.ly, metricMode, 2025, item.month);
-      const tyVal = item.ty ? getTrevparValue(item.ty, metricMode, 2026, item.month) : null;
+      const lyVal = getTrevporValue(item.ly, metricMode);
+      const tyVal = item.ty ? getTrevporValue(item.ty, metricMode) : null;
       
       lyValues.push(lyVal || 0);
       tyValues.push(tyVal);
@@ -830,9 +830,9 @@ export default function MonthlyTrevporChart() {
           if (!ty) return '';
 
           const isOngoing = monthItem.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
-          const tyTrevpar = getTrevparValue(ty, metricMode, 2026, monthItem.month);
-          const lyTrevpar = ly ? getTrevparValue(ly, metricMode, 2025, monthItem.month) : null;
-          const growth = (tyTrevpar && lyTrevpar && lyTrevpar > 0) ? Number((((tyTrevpar - lyTrevpar) / lyTrevpar) * 100).toFixed(1)) : null;
+          const tyTrevpar = getTrevporValue(ty, metricMode);
+          const lyTrevpar = ly ? getTrevporValue(ly, metricMode) : null;
+          const growth = metricMode === 'TOTAL' ? monthItem.growthTotalRate : monthItem.growthWithoutGolfRate;
 
           let html = `
             <div style="font-weight:800; font-size:14px; color:#0f172a; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f5f9;">
@@ -1361,15 +1361,16 @@ export default function MonthlyTrevporChart() {
                 {data.monthlyComparison.map((item) => {
                   const isOngoing = item.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
-                  const lyTrevpar = getTrevparValue(item.ly, metricMode, 2025, item.month);
+                  const lyTrevpar = getTrevporValue(item.ly, metricMode);
                   const lyShares = getShareRatios(item.ly, metricMode);
                   
                   const tyRev = item.ty ? (metricMode === 'TOTAL' ? item.ty.totalRevenue : item.ty.netRevenueWithoutGolf) : null;
-                  const tyTrevpar = item.ty ? getTrevparValue(item.ty, metricMode, 2026, item.month) : null;
+                  const tyTrevpar = item.ty ? getTrevporValue(item.ty, metricMode) : null;
                   const tyShares = item.ty ? getShareRatios(item.ty, metricMode) : null;
                   
-                  const diffAmount = (tyTrevpar !== null && lyTrevpar !== null) ? (tyTrevpar - lyTrevpar) : null;
-                  const growthRate = (tyTrevpar !== null && lyTrevpar !== null && lyTrevpar > 0) ? Number((((tyTrevpar - lyTrevpar) / lyTrevpar) * 100).toFixed(1)) : null;
+                  // 백엔드 완제품 필드 직접 바인딩 (Zero-Proxy)
+                    const diffAmount = metricMode === 'TOTAL' ? item.diffTotalAmount : item.diffWithoutGolfAmount;
+                    const growthRate = metricMode === 'TOTAL' ? item.growthTotalRate : item.growthWithoutGolfRate;
 
                   return (
                     <tr key={item.month} className={`hover:bg-slate-50/80 transition-colors ${isOngoing ? 'bg-amber-50/30' : ''}`}>

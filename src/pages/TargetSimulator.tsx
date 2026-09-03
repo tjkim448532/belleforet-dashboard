@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, 
   Calendar, Layers, DollarSign, CalendarDays,
@@ -167,8 +167,8 @@ export default function TargetSimulator() {
       try {
         const isYearly = input.selectedMonth === 'ANNUAL';
         const url = isYearly
-          ? `${API_BASE}/api/v5/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
-          : `${API_BASE}/api/v5/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`;
+          ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
+          : `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`;
 
         const res = await secureFetcher(url) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
 
@@ -566,7 +566,7 @@ export default function TargetSimulator() {
               </span>
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              백엔드 공식 아코디언 API(<code>/api/v5/report/business-plan</code>)와 실시간 연동되어, <strong>[부문(본부) ➔ 파트 ➔ 소속 영업장] 3-Depth 계층 구조</strong>로 완벽하게 펼쳐집니다.
+              백엔드 공식 아코디언 API(<code>/api/v6/report/business-plan</code>)와 실시간 연동되어, <strong>[부문(본부) ➔ 파트 ➔ 소속 영업장] 3-Depth 계층 구조</strong>로 완벽하게 펼쳐집니다.
             </p>
           </div>
         </div>

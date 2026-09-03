@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
@@ -199,8 +199,8 @@ export default function StrategicSimulator() {
       try {
         const isYearly = input.selectedMonth === 'ANNUAL';
         const url = isYearly
-          ? `${API_BASE}/api/v5/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
-          : `${API_BASE}/api/v5/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`;
+          ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
+          : `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`;
 
         const res = await secureFetcher(url) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
 

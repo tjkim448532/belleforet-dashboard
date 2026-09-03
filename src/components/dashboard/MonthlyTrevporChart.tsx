@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { getClosedBusinessDate } from '../../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
 import { Building, Info, Calendar, BarChart3, TrendingUp, HelpCircle, Award, ArrowUpRight, ArrowDownRight, Filter, AlertTriangle } from 'lucide-react';
@@ -1214,7 +1214,7 @@ export default function MonthlyTrevporChart() {
           </div>
           <h3 className="text-base font-bold text-slate-800">백엔드 공식 전용 API 연동 대기 중</h3>
           <p className="text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
-            무관용 SSOT 원칙에 따라 백엔드 엔드포인트 <code>/api/v5/report/monthly-room-efficiency</code> 배포 후 100% 검증된 12개월 전수 데이터가 차트와 테이블에 자동 렌더링됩니다.
+            무관용 SSOT 원칙에 따라 백엔드 엔드포인트 <code>/api/v6/report/monthly-room-efficiency</code> 배포 후 100% 검증된 12개월 전수 데이터가 차트와 테이블에 자동 렌더링됩니다.
           </p>
         </div>
       ) : (

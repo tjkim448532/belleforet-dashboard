@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { secureFetcher } from '../lib/secureFetcher';
-import { fetchLiveWeatherFallback } from '../lib/weatherService';
-import RevenueGrid from '../components/dashboard/RevenueGrid';
+import React, { useEffect, useState } from 'react';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { AlertCircle } from 'lucide-react';
+import { DashboardTable } from '../components/dashboard/DashboardTable';
+import { useRevenueData } from '../hooks/useRevenueData';
+import { fetchLiveWeatherFallback } from '../lib/weatherService';
 
 interface WeatherInfo {
   description?: string;
@@ -13,82 +13,40 @@ interface WeatherInfo {
 }
 
 export default function MatrixWeeklyDashboard() {
-  const [data, setData] = useState<any[]>([]);
-  const [validationMaster, setValidationMaster] = useState<any>(null);
+  const { startDate, endDate, isRange } = useDate();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // V6 API 단일 호출 (다중 월, 단일 일자 모두 완벽 지원)
+  // endDate가 없을 경우 startDate를 그대로 사용하여 1일치(Daily) 조회
+  const targetEndDate = isRange && endDate ? endDate : startDate;
+  const { data, loading, error } = useRevenueData(startDate, targetEndDate);
 
-  // Filters from context
-  const { startDate } = useDate();
-
-  // Weather States
+  // Weather States (V5 호출 완전 제거, 공공 API Fallback만 사용)
   const [baseWeather, setBaseWeather] = useState<WeatherInfo | null>(null);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    const fetchMatrixData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const queryParams = `base_date=${startDate}`;
-
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-sales?${queryParams}&_t=${Date.now()}`);
-        if (!isMounted) return;
-
-        const result = res;
-        const payloadArray = result.flatSummary || result.data || result.gridData || (Array.isArray(result) ? result : []);
-        
-        const vm = result.validationMaster || {
-          originalTotal: 0,
-          payloadTotal: 0,
-          variance: 0,
-          isZeroVariance: true
-        };
-        
-        setData(payloadArray);
-        setValidationMaster(vm);
-      } catch (err: any) {
-        console.error('Failed to fetch V6 matrix overview', err);
-        if (isMounted) {
-          setError('데이터를 불러오는 중 문제가 발생했습니다.');
-          setData([]);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchMatrixData();
-    return () => {
-      isMounted = false;
-    };
-  }, [startDate]);
-
-  useEffect(() => {
-    let isMounted = true;
     const fetchWeather = async () => {
+      // 기간 조회일 경우 날씨 표출 생략
+      if (isRange) {
+        setBaseWeather(null);
+        return;
+      }
+      
       setIsWeatherLoading(true);
-      const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
       try {
-        const baseRes = await secureFetcher(`${API_BASE}/api/v5/dashboard/revenue-summary?date=${startDate}`);
-        const basePayload = baseRes.data || baseRes;
-        let bWeather = basePayload?.weather?.current || basePayload?.weather || null;
-
-        if (!bWeather || bWeather.description === '데이터없음' || (!bWeather.tempMax && !bWeather.tempMin)) {
-          const liveW = await fetchLiveWeatherFallback(startDate);
-          if (liveW) bWeather = liveW;
-        }
-
+        const liveW = await fetchLiveWeatherFallback(startDate);
         if (!isMounted) return;
-        setBaseWeather(bWeather ? {
-          description: bWeather.description || bWeather.weatherDesc,
-          tempMax: bWeather.tempMax || bWeather.maxTemp,
-          tempMin: bWeather.tempMin || bWeather.minTemp,
-        } : null);
-
+        
+        if (liveW) {
+          setBaseWeather({
+            description: liveW.description || liveW.weatherDesc,
+            tempMax: liveW.tempMax || liveW.maxTemp,
+            tempMin: liveW.tempMin || liveW.minTemp,
+          });
+        } else {
+          setBaseWeather(null);
+        }
       } catch (e) {
         console.error('Weather fetch error:', e);
       } finally {
@@ -100,7 +58,7 @@ export default function MatrixWeeklyDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [startDate]);
+  }, [startDate, isRange]);
 
   const renderWeatherIcon = (desc?: string) => {
     if (!desc) return '상태모름';
@@ -108,22 +66,13 @@ export default function MatrixWeeklyDashboard() {
     if (desc.includes('눈')) return '❄️';
     if (desc.includes('구름') || desc.includes('흐림')) return '☁️';
     if (desc.includes('맑음')) return '☀️';
-    return '⛅';
+    return '🌤️';
   };
-
-  if (isLoading || !data) {
-    return (
-      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-xl font-medium text-blue-600 animate-pulse">정산 현황 데이터를 불러오는 중입니다...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
-      
       {/* Decorative Header Background */}
-      <div className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
+      <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-800 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
         <div className="absolute top-10 right-[15%] w-36 h-36 bg-white/10 rounded-full blur-2xl" />
         <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
       </div>
@@ -134,13 +83,15 @@ export default function MatrixWeeklyDashboard() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-black text-3xl tracking-widest bg-white text-blue-600 px-3 py-1 rounded-sm shadow-md">
+              <span className="font-black text-3xl tracking-widest bg-white text-blue-700 px-3 py-1 rounded-sm shadow-md">
                 BELLE FORET
               </span>
               <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-medium tracking-tight mt-3">리조트 전사 부문별 통합 정산 현황</h1>
-            <p className="text-white/80 mt-1">부문별 당일 실적, 전년동기 대비, 연월 누계 등을 통합 조회합니다. (순매출 · 부가세 별도)</p>
+            <h1 className="text-3xl font-medium tracking-tight mt-3">경영 조직도 통합 정산 센터</h1>
+            <p className="text-white/80 mt-1">
+              V6 Zero-Variance 무결성 아키텍처 연동 <span>(Pure Consumer Mode)</span>
+            </p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {baseWeather && !isWeatherLoading && (
@@ -158,15 +109,21 @@ export default function MatrixWeeklyDashboard() {
         </div>
 
         {error && (
-          <div className="bg-orange-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
+          <div className="bg-red-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg">
             <AlertCircle size={24} />
-            <span className="font-medium text-lg">{error}</span>
+            <span className="font-medium text-lg">데이터 무결성 검증 실패: {error.message || '백엔드 서버 통신 에러'}</span>
           </div>
         )}
 
         {/* Data Grid */}
         <div className="flex-grow min-h-[calc(100vh-350px)] bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6">
-          <RevenueGrid data={data} validationMaster={validationMaster} />
+          {loading ? (
+            <div className="w-full h-[60vh] flex items-center justify-center">
+              <div className="text-xl font-medium text-blue-600 animate-pulse">V6 0-Variance 백엔드 실적 데이터를 동기화 중입니다...</div>
+            </div>
+          ) : (
+            <DashboardTable data={data} />
+          )}
         </div>
       </div>
     </div>

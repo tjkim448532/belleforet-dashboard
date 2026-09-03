@@ -1,4 +1,4 @@
-import { auth } from './firebase';
+﻿import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const getAuthToken = async (): Promise<string> => {
@@ -73,15 +73,9 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
 
 export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) => {
   let url = rawUrl;
-  if (url.includes('/api/v5/')) {
-    url = url
-      .replace('/api/v5/report/room-sales-by-channel', '/api/v6/dashboard/room-sales-by-channel')
-      .replace('/api/v5/report/room-channel-sales', '/api/v6/dashboard/room-channel-sales')
-      .replace('/api/v5/dashboard/matrix-weekly', '/api/v6/dashboard/matrix-report')
-      .replace('/api/v5/', '/api/v6/');
-  }
+  if (url.includes('/api/v5/')) { throw new Error('[Zero-Proxy] V5 구버전 API 호출이 감지되었습니다. V6 엔드포인트로 즉시 교체하십시오.'); }
 
-  const isV6Api = url.includes('/api/v6/') || url.includes('/api/v5/');
+  const isV6Api = url.includes('/api/v6/') ;
   const token = isV6Api ? 'belleforet-m2m-secret' : await getAuthToken();
 
   const headers = {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDate } from '../../contexts/DateContext';
 
 // --- 1. 백엔드(SSOT) 명세서 타입 정의 ---
 interface Ticket {
@@ -27,13 +28,17 @@ export default function V6DashboardViewer() {
   const [data, setData] = useState<V6ApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const { startDate, endDate, isRange } = useDate();
 
   // --- 3. V6 라이브 API 직접 연동 (Zero-Proxy) ---
   useEffect(() => {
     const fetchV6Data = async () => {
+      setLoading(true);
+      setError(null);
       try {
+        const targetEndDate = isRange && endDate ? endDate : startDate;
         // Vercel 서버의 최신 V6 API 엔드포인트 직접 호출
-        const res = await fetch('https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org');
+        const res = await fetch(`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?startDate=${startDate}&endDate=${targetEndDate}`);
         if (!res.ok) throw new Error(`HTTP 통신 에러: ${res.status}`);
         
         const json = await res.json();
@@ -47,7 +52,7 @@ export default function V6DashboardViewer() {
       }
     };
     fetchV6Data();
-  }, []);
+  }, [startDate, endDate, isRange]);
 
   if (loading) return <div className="p-4 font-bold">V6 0-Variance 엔진 데이터 동기화 중...</div>;
   if (error) return <div className="p-4 text-red-600 font-bold">🚨 렌더링 중단: {error} (데이터 무결성 오류)</div>;

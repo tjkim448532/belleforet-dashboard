@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDate } from '../contexts/DateContext';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import { AlertCircle } from 'lucide-react';
-import { DashboardTable } from '../components/dashboard/DashboardTable';
-import { useRevenueData } from '../hooks/useRevenueData';
+import V6DashboardViewer from '../components/dashboard/V6DashboardViewer';
 import { fetchLiveWeatherFallback } from '../lib/weatherService';
 
 interface WeatherInfo {
@@ -13,13 +11,8 @@ interface WeatherInfo {
 }
 
 export default function MatrixWeeklyDashboard() {
-  const { startDate, endDate, isRange } = useDate();
+  const { startDate, isRange } = useDate();
   
-  // V6 API 단일 호출 (다중 월, 단일 일자 모두 완벽 지원)
-  // endDate가 없을 경우 startDate를 그대로 사용하여 1일치(Daily) 조회
-  const targetEndDate = isRange && endDate ? endDate : startDate;
-  const { data, loading, error } = useRevenueData(startDate, targetEndDate);
-
   // Weather States (V5 호출 완전 제거, 공공 API Fallback만 사용)
   const [baseWeather, setBaseWeather] = useState<WeatherInfo | null>(null);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
@@ -108,22 +101,9 @@ export default function MatrixWeeklyDashboard() {
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg">
-            <AlertCircle size={24} />
-            <span className="font-medium text-lg">데이터 무결성 검증 실패: {error.message || '백엔드 서버 통신 에러'}</span>
-          </div>
-        )}
-
         {/* Data Grid */}
         <div className="flex-grow min-h-[calc(100vh-350px)] bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6">
-          {loading ? (
-            <div className="w-full h-[60vh] flex items-center justify-center">
-              <div className="text-xl font-medium text-blue-600 animate-pulse">V6 0-Variance 백엔드 실적 데이터를 동기화 중입니다...</div>
-            </div>
-          ) : (
-            <DashboardTable data={data} />
-          )}
+          <V6DashboardViewer />
         </div>
       </div>
     </div>

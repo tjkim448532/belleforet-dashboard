@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle, Plus, Trash2, Save } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 
 interface Allocation {
   target_name: string;
@@ -27,8 +26,7 @@ export default function AdminDaolRules() {
   const [unmappedRooms, setUnmappedRooms] = useState<string[]>([]);
   const [unmappedTickets, setUnmappedTickets] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState<Error | null>(null);
-
+  
   // Form State
   const [ruleType, setRuleType] = useState('ROOM_TICKET_MAPPING');
   const [sourceName, setSourceName] = useState('');

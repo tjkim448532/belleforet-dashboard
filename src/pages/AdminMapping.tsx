@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useMapping } from '../contexts/MappingContext';
 import { AlertCircle, Layers, Hotel, RefreshCw, Sparkles, Zap, LayoutGrid, List } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 
 interface RoomSegmentItem {
   id?: number;
@@ -48,8 +47,7 @@ export default function AdminMapping() {
   const [bins, setBins] = useState<string[]>(['MICE', 'OTA', '자사채널', '법인', '분양회원', '제휴&기타']);
   const [savingItemKey, setSavingItemKey] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'KANBAN' | 'TABLE'>('KANBAN');
-  const [apiError, setApiError] = useState<Error | null>(null);
-
+  
   // Bulk Approval State
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);

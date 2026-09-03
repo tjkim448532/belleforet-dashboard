@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { formatRevenue } from '../../utils/formatters';
-import { RevenueOrgData } from '../../hooks/useRevenueData';
+import type { RevenueOrgData } from '../../hooks/useRevenueData';
 
 interface Props {
     data: RevenueOrgData | null;

@@ -75,7 +75,7 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
     const flatSummary = useMemo(() => {
     if (!rawFlatSummary || rawFlatSummary.length === 0) return [];
     let grandTotal = null;
-    const normals = [];
+    const normals: any[] = [];
     rawFlatSummary.forEach(row => {
       if (row.isGrandTotal || row.category_code === 'TOTAL') {
         grandTotal = row;

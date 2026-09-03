@@ -60,7 +60,7 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
     scanNode(data, 'root', 'Global');
     
     // 3. 자바스크립트 합산 오차 검증 거절 통보 (NO SLICE SUMMATION 원칙 강제)
-    console.warn(`🚨 [Rule Enforcement] 'Array.prototype.reduce()' 기반 자바스크립트 프론트엔드 합산 오차 검증 시도는 V6 [NO SLICE SUMMATION] 무관용 헌법에 의거하여 시스템에서 강제 차단(Blocked) 되었습니다. 총합 1원 오차 검증은 프론트엔드가 아닌 백엔드 파이프라인에서 완결되어야 합니다.`);
+    
 
     // 4. 검증 결과 텍스트 리포팅
     if (errors.length > 0) {
@@ -119,4 +119,5 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
   
   return data;
 };
+
 

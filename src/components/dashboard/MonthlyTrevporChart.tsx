@@ -298,7 +298,7 @@ export default function MonthlyTrevporChart() {
     };
   }, [targetPeriodMonths, metricMode, periodMode, monthMeta]);
 
-  // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPAR 성장 트렌드 차트
+  // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPOR 성장 트렌드 차트
   const yoyTrendChartOptions = useMemo(() => {
     if (!data?.monthlyComparison) return null;
 
@@ -345,8 +345,8 @@ export default function MonthlyTrevporChart() {
 
           let result = `
             <div style="font-weight:800; font-size:14px; color:#0f172a; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
-              <span>📅 ${params[0].name} TrevPAR ${isOngoingMonth ? `<span style="color:#e11d48; font-size:11px; font-weight:700;">(${monthMeta.daysAccumulated}일 누적 진행중)</span>` : ''}</span>
-              <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">175실 기준</span>
+              <span>📅 ${params[0].name} TrevPOR ${isOngoingMonth ? `<span style="color:#e11d48; font-size:11px; font-weight:700;">(${monthMeta.daysAccumulated}일 누적 진행중)</span>` : ''}</span>
+              <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">판매객실 기준 (SSOT)</span>
             </div>
           `;
           params.forEach(p => {
@@ -411,7 +411,7 @@ export default function MonthlyTrevporChart() {
       yAxis: [
         {
           type: 'value',
-          name: '객실당 총매출 (TrevPAR)',
+          name: '판매객실당 총매출 (TrevPOR)',
           nameTextStyle: { color: '#64748b', fontWeight: 600, fontSize: 12, padding: [0, 0, 8, 0] },
           min: 0,
           max: yMax,
@@ -1120,7 +1120,7 @@ export default function MonthlyTrevporChart() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
             <div className="text-[11px] font-bold text-slate-500 mb-1">
-              2026년 평균 TrevPAR ({kpiHighlights.periodLabel})
+              2026년 평균 TrevPOR ({kpiHighlights.periodLabel})
             </div>
             <div className="text-xl font-black text-slate-900 tabular-nums">
               ₩{formatCurrency(kpiHighlights.avgTyTrevpar)} <span className="text-xs font-normal text-slate-400">/실·월</span>
@@ -1155,7 +1155,7 @@ export default function MonthlyTrevporChart() {
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
             <div className="text-[11px] font-bold text-slate-500 mb-1">기준 인프라 규모</div>
             <div className="text-xl font-black text-slate-900 tabular-nums">
-              175실 <span className="text-xs font-normal text-slate-500">(일평균 총자산 잣대)</span>
+              판매객실 <span className="text-xs font-normal text-slate-500">(실측 투숙객 기준)</span>
             </div>
             <div className="text-[11px] text-slate-500 mt-1">투숙률 편차 배제 동일 잣대 비교</div>
           </div>
@@ -1180,10 +1180,10 @@ export default function MonthlyTrevporChart() {
           </div>
           <div>
             <div className="font-bold text-slate-900 text-sm mb-0.5">
-              💡 객실당 총매출 (TrevPAR: Total Revenue Per Available Room)이란?
+              💡 판매객실당 총매출 (TrevPOR: Total Revenue Per Occupied Room)이란?
             </div>
             <div className="text-slate-600 leading-relaxed">
-              특정 월의 투숙률 편차에 구애받지 않고, 벨포레의 <strong>전체 보유 객실(175실) 인프라 1실이 벌어들인 월평균 총매출</strong>입니다. 리조트 전체 자산의 실질 생산성을 12개월 동일 잣대(Apple-to-Apple)로 전년 대비 성장률을 분석합니다.
+              백엔드 마트(SSOT)가 1원 단위로 정제한 공식 지표로, <strong>해당 월에 실제 판매된 객실 1실당 창출한 리조트 전체 총매출</strong>입니다. 프론트엔드의 가상 연산 없이 순수 백엔드 완제품을 직결하여 무결성을 보장합니다.
             </div>
           </div>
         </div>
@@ -1199,7 +1199,7 @@ export default function MonthlyTrevporChart() {
       {loading ? (
         <div className="h-72 flex flex-col items-center justify-center text-slate-400 animate-pulse">
           <Calendar className="w-8 h-8 text-slate-300 mb-2" />
-          <p className="text-sm font-medium">12개월 월별 객실당 총매출(TrevPAR) 지표를 집계하고 있습니다...</p>
+          <p className="text-sm font-medium">12개월 월별 판매객실당 총매출(TrevPOR) 지표를 집계하고 있습니다...</p>
         </div>
       ) : !data || error ? (
         <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center space-y-3">
@@ -1224,7 +1224,7 @@ export default function MonthlyTrevporChart() {
                       12개월 TrevPOR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
-                  <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">175실 인프라 고정 기준</span>
+                  <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">SSOT 실측 객실 기준</span>
                 </div>
                 {yoyTrendChartOptions && (
                   <ReactECharts option={yoyTrendChartOptions} style={{ height: '460px', width: '100%' }} />
@@ -1236,7 +1236,7 @@ export default function MonthlyTrevporChart() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-indigo-600"></span>
                     <h3 className="text-sm font-black text-slate-900">
-                      월별 TrevPAR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
+                      월별 TrevPOR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
                   

@@ -40,14 +40,14 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
     data.forEach((category: any) => {
       category.teams?.forEach((team: any) => {
         let hasVenues = false;
-        const resolvedTeamName = team.team_name || category.category_code || '미분류';
-
+        
         team.parts?.forEach((part: any) => {
           part.venues?.forEach((venue: any) => {
             hasVenues = true;
             flat.push({
-              team_name: resolvedTeamName,
+              category_code: category.category_code || category.org_department || category.org_division || '미분류',
               venue_name: venue.venue_name || '미분류',
+              ticket_group: team.team_name || '미분류',
               isSubtotal: false,
               today: { actual: venue.subtotal?.todayActual, ly: venue.subtotal?.todayLy, growth: venue.subtotal?.todayGrowth },
               mtd: { actual: venue.subtotal?.mtdActual, ly: venue.subtotal?.mtdLy, growth: venue.subtotal?.mtdGrowth },
@@ -58,8 +58,9 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
 
         if (hasVenues || team.subtotal) {
           flat.push({
-            team_name: resolvedTeamName,
-            venue_name: `[${resolvedTeamName} 합계]`,
+            category_code: category.category_code || category.org_department || category.org_division || '미분류',
+            venue_name: `[${category.category_code || '합계'} 소계]`,
+            ticket_group: `[${team.team_name || '합계'} 소계]`,
             isSubtotal: true,
             today: { actual: team.subtotal?.todayActual, ly: team.subtotal?.todayLy, growth: team.subtotal?.todayGrowth },
             mtd: { actual: team.subtotal?.mtdActual, ly: team.subtotal?.mtdLy, growth: team.subtotal?.mtdGrowth },
@@ -71,68 +72,55 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
     return flat;
   }, [data]);
 
-  // SSOT 무관용 원칙 적용: categoryCode에 상관없이 오직 teamName 기준으로만 완벽히 그룹핑 (표 찢어짐 방지)
-  const flatSummary = useMemo(() => {
+    const flatSummary = useMemo(() => {
     if (!rawFlatSummary || rawFlatSummary.length === 0) return [];
-
-    const groups = new Map<string, any[]>();
-    let grandTotal: any = null;
-
+    let grandTotal = null;
+    const normals = [];
     rawFlatSummary.forEach(row => {
-      if (row.isGrandTotal || row.team_name === 'TOTAL') {
+      if (row.isGrandTotal || row.category_code === 'TOTAL') {
         grandTotal = row;
-        return;
+      } else {
+        normals.push(row);
       }
-      const tName = row.team_name || '미분류';
-      if (!groups.has(tName)) groups.set(tName, []);
-      groups.get(tName)!.push(row);
     });
-
-    const finalArray: any[] = [];
-    groups.forEach((rows, teamName) => {
-      // 1. 일반 영업장 배열
-      const normals = rows.filter(r => !r.isSubtotal);
-      // 2. 단일 소계 행 (백엔드가 준 것 중 마지막 1개만 사용, 자체 연산 절대 금지)
-      // (만약 레거시 배열에서 여러 개가 들어왔더라도, 가장 하단의 1개만 매핑)
-      const subs = rows.filter(r => r.isSubtotal);
-      const sub = subs.length > 0 ? { ...subs[subs.length - 1] } : null;
-
-      // 백엔드 인코딩 오류(글깨짐) 발생 시 UI 텍스트 복구
-      if (sub && sub.venue_name && (sub.venue_name.includes('?') || sub.venue_name.includes('궎'))) {
-        sub.venue_name = `[${teamName} 합계]`;
-      }
-
-      finalArray.push(...normals);
-      if (sub) finalArray.push(sub);
-    });
-
-    if (grandTotal) finalArray.push(grandTotal);
-    return finalArray;
+    if (grandTotal) normals.push(grandTotal);
+    return normals;
   }, [rawFlatSummary]);
 
-  const renderRows = () => {
+    const renderRows = () => {
     const rows: React.ReactNode[] = [];
-    let currentTeam = '';
+    let currentCategory = '';
+    let currentVenue = '';
 
     flatSummary.forEach((row, idx) => {
-      const isGrandTotal = row.isGrandTotal === true || row.team_name === 'TOTAL';
+      const isGrandTotal = row.isGrandTotal === true || row.category_code === 'TOTAL';
       
-      const isFirstTeamRow = !isGrandTotal && row.team_name !== currentTeam;
-      let rowSpan = 1;
+      const isFirstCategoryRow = !isGrandTotal && row.category_code !== currentCategory;
+      let categoryRowSpan = 1;
 
-      // Calculate rowSpan for the team cell (이제 flatSummary가 완벽히 그룹화되어 있으므로 단순 카운트 가능)
-      if (isFirstTeamRow) {
-        currentTeam = row.team_name;
+      if (isFirstCategoryRow) {
+        currentCategory = row.category_code;
         for (let i = idx + 1; i < flatSummary.length; i++) {
-          if (flatSummary[i].isGrandTotal || flatSummary[i].team_name === 'TOTAL') break;
-          if (flatSummary[i].team_name === currentTeam) rowSpan++;
+          if (flatSummary[i].isGrandTotal || flatSummary[i].category_code === 'TOTAL') break;
+          if (flatSummary[i].category_code === currentCategory) categoryRowSpan++;
+          else break;
+        }
+      }
+
+      const isFirstVenueRow = !isGrandTotal && (isFirstCategoryRow || row.venue_name !== currentVenue);
+      let venueRowSpan = 1;
+
+      if (isFirstVenueRow) {
+        currentVenue = row.venue_name;
+        for (let i = idx + 1; i < flatSummary.length; i++) {
+          if (flatSummary[i].isGrandTotal || flatSummary[i].category_code === 'TOTAL') break;
+          if (flatSummary[i].category_code === currentCategory && flatSummary[i].venue_name === currentVenue) venueRowSpan++;
           else break;
         }
       }
 
       const isSub = row.isSubtotal;
       
-      // Styling
       let bgClass = isSub ? 'bg-slate-100 border-b-[2px] border-slate-300' : 'bg-white hover:bg-slate-50';
       let textClass = isSub ? 'text-slate-900 font-bold' : 'text-slate-700';
 
@@ -141,50 +129,45 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
         textClass = 'text-white font-black text-sm tracking-wide shadow-md';
       }
 
-      // Metrics
       const td = row.today || {};
       const mt = row.mtd || {};
       const yt = row.ytd || {};
 
       rows.push(
         <tr key={`row-${idx}`} className={`${bgClass} ${textClass} border-b border-slate-200`}>
-          
-          {/* 총합계 행일 경우 좌측 컬럼 병합 처리 */}
           {isGrandTotal ? (
-            <td colSpan={2} className="p-3 border-r border-slate-600 text-center uppercase tracking-widest sticky left-0 z-10 shadow-[1px_0_0_0_#475569]">
+            <td colSpan={3} className="p-3 border-r border-slate-600 text-center uppercase tracking-widest sticky left-0 z-10 shadow-[1px_0_0_0_#475569]">
               {row.venue_name || '전사 총합계 (GRAND TOTAL)'}
             </td>
           ) : (
             <>
-              {isFirstTeamRow && (
-                <td rowSpan={rowSpan} className="p-3 border-r border-slate-300 text-center font-bold text-slate-800 align-middle sticky left-0 z-10 bg-white shadow-[1px_0_0_0_#cbd5e1]">
-                  {row.team_name}
+              {isFirstCategoryRow && (
+                <td rowSpan={categoryRowSpan} className="p-3 border-r border-slate-300 text-center font-extrabold text-slate-800 align-middle sticky left-0 z-10 bg-slate-50 shadow-[1px_0_0_0_#cbd5e1]">
+                  {row.category_code}
+                </td>
+              )}
+              {isFirstVenueRow && (
+                <td rowSpan={venueRowSpan} className={`p-2 text-center border-r border-slate-300 ${isSub ? 'font-extrabold text-xs' : ''} align-middle`}>
+                  {row.venue_name}
                 </td>
               )}
               <td className={`p-2 text-center border-r border-slate-300 ${isSub ? 'font-extrabold text-xs' : ''}`}>
-                {row.venue_name}
+                {row.ticket_group}
               </td>
             </>
           )}
-          
-          {/* Today (수량 삭제, 매출액/전년동기/YoY 3칸만 유지) */}
           <td className={`p-2 text-right font-medium ${isGrandTotal ? 'text-white' : 'text-slate-800'}`}>{formatRevenue(td.actual)}</td>
           <td className={`p-2 text-right ${isGrandTotal ? 'text-slate-200' : 'text-slate-500'}`}>{formatRevenue(td.ly)}</td>
           <td className="p-2 text-right border-r border-slate-300 bg-black/5">{renderGrowth(td.growth)}</td>
-
-          {/* MTD */}
           <td className={`p-2 text-right font-medium ${isGrandTotal ? 'text-white' : 'text-slate-800'}`}>{formatRevenue(mt.actual)}</td>
           <td className={`p-2 text-right ${isGrandTotal ? 'text-slate-200' : 'text-slate-500'}`}>{formatRevenue(mt.ly)}</td>
           <td className="p-2 text-right border-r border-slate-300 bg-black/5">{renderGrowth(mt.growth)}</td>
-
-          {/* YTD */}
           <td className={`p-2 text-right font-medium ${isGrandTotal ? 'text-white' : 'text-slate-800'}`}>{formatRevenue(yt.actual)}</td>
           <td className={`p-2 text-right ${isGrandTotal ? 'text-slate-200' : 'text-slate-500'}`}>{formatRevenue(yt.ly)}</td>
           <td className="p-2 text-right bg-black/5">{renderGrowth(yt.growth)}</td>
         </tr>
       );
     });
-
     return rows;
   };
 
@@ -194,8 +177,9 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
         <table className="w-full text-[11.5px] text-left border-collapse whitespace-nowrap min-w-[1200px]">
           <thead className="bg-[#f8f9fa] text-slate-700 font-bold sticky top-0 z-20 shadow-sm border-b-2 border-slate-400">
             <tr>
-              <th className="p-3 border-r border-slate-300 sticky left-0 bg-[#f8f9fa] z-30 text-center" rowSpan={2}>본부</th>
-              <th className="p-3 border-r border-slate-300 text-center" rowSpan={2}>영업장 38개</th>
+              <th className="p-3 border-r border-slate-300 sticky left-0 bg-[#f8f9fa] z-30 text-center" rowSpan={2}>대분류(본부)</th>
+              <th className="p-3 border-r border-slate-300 text-center" rowSpan={2}>영업장</th>
+              <th className="p-3 border-r border-slate-300 text-center" rowSpan={2}>티켓그룹</th>
               
               <th className="p-2 border-r border-slate-300 text-center bg-blue-50/50" colSpan={3}>금일 (Today)</th>
               <th className="p-2 border-r border-slate-300 text-center bg-indigo-50/50" colSpan={3}>월누계 (Month To Date)</th>
@@ -221,7 +205,7 @@ export default function RevenueGrid({ data = [], validationMaster }: GridProps) 
           <tbody>
             {flatSummary && flatSummary.length > 0 ? renderRows() : (
               <tr>
-                <td colSpan={11} className="p-12 text-center text-slate-500 text-sm font-medium">
+                <td colSpan={12} className="p-12 text-center text-slate-500 text-sm font-medium">
                   조회된 요약 데이터가 없습니다.
                 </td>
               </tr>

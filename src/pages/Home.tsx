@@ -529,7 +529,7 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1">객실당 총매출 (TrevPAR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1">가용객실당 총매출 (TrevPAR)</div>
                   {(() => {
                     const trevPar = (coreData.core?.summary?.trevPAR && Number(coreData.core.summary.trevPAR) > 0) ? Number(coreData.core.summary.trevPAR)
                                   : displayData?.kpiMetrics?.trevPAR;
@@ -539,7 +539,7 @@ export default function Home() {
                           {formatCurrency(trevPar)} <span className="text-sm font-medium text-slate-500">원</span>
                         </div>
                         <div className="text-[11px] text-slate-500 mt-2 font-medium">
-                          리조트 총매출 ÷ 전체 객실 수
+                          물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출입니다.
                         </div>
                       </>
                     ) : (

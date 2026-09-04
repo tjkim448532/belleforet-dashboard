@@ -120,9 +120,9 @@ export default function Home() {
 
   const mtdGross = displayData.mtd?.gross || parseNum(coreData.core?.summary?.mtdRevenue || coreData.core?.summary?.mtdActual || 0);
   const mtdGrowth = coreData.core?.summary?.mtdGrowth;
-  const mtdDiff = coreData.core?.summary?.mtdDiff ?? ((coreData.core?.summary?.mtdRevenue && coreData.core?.summary?.mtdLy)
-    ? parseNum(coreData.core?.summary?.mtdRevenue) - parseNum(coreData.core?.summary?.mtdLy)
-    : undefined);
+  const mtdDiff = coreData.core?.summary?.mtdDiff;
+
+
   
   const multiNight = (() => {
     const s = coreData.core?.summary || {};

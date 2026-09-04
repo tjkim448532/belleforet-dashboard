@@ -37,8 +37,6 @@ export interface MonthlyEfficiencyItem {
     resortOtherRatio?: number;
     trevparTotal?: number;
     trevparWithoutGolf?: number;
-    trevporTotal?: number;
-    trevporWithoutGolf?: number;
   };
   ty: {
     year: number;
@@ -68,8 +66,6 @@ export interface MonthlyEfficiencyItem {
     resortOtherRatio?: number;
     trevparTotal?: number;
     trevparWithoutGolf?: number;
-    trevporTotal?: number;
-    trevporWithoutGolf?: number;
     isClosed?: boolean;
   } | null;
   growthTotalRate: number | null;
@@ -175,12 +171,12 @@ export default function MonthlyTrevporChart() {
   }, [data]);
 
   // SSOT 1:1 완제품 바인딩 (Zero-Proxy 원칙에 따라 프론트엔드 자체 연산 전면 철폐)
-  const getTrevporValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF') => {
+  const getTrevparValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF') => {
     if (!itemNode) return null;
     if (mode === 'TOTAL') {
-      return itemNode.trevporTotal !== undefined ? itemNode.trevporTotal : null;
+      return itemNode.trevPar !== undefined ? itemNode.trevPar : (itemNode.trevparTotal !== undefined ? itemNode.trevparTotal : null);
     } else {
-      return itemNode.trevporWithoutGolf !== undefined ? itemNode.trevporWithoutGolf : null;
+      return itemNode.trevParWithoutGolf !== undefined ? itemNode.trevParWithoutGolf : (itemNode.trevparWithoutGolf !== undefined ? itemNode.trevparWithoutGolf : null);
     }
   };
 
@@ -254,8 +250,8 @@ export default function MonthlyTrevporChart() {
     let maxTrevpar = 0;
 
     targetPeriodMonths.forEach(m => {
-      const tyVal = getTrevporValue(m.ty, metricMode) || 0;
-      const lyVal = getTrevporValue(m.ly, metricMode) || 0;
+      const tyVal = getTrevparValue(m.ty, metricMode) || 0;
+      const lyVal = getTrevparValue(m.ly, metricMode) || 0;
       totalTyTrevparSum += tyVal;
       totalLyTrevparSum += lyVal;
       if (tyVal > maxTrevpar) {
@@ -298,7 +294,7 @@ export default function MonthlyTrevporChart() {
     };
   }, [targetPeriodMonths, metricMode, periodMode, monthMeta]);
 
-  // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPOR 성장 트렌드 차트
+  // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPAR 성장 트렌드 차트
   const yoyTrendChartOptions = useMemo(() => {
     if (!data?.monthlyComparison) return null;
 
@@ -307,8 +303,8 @@ export default function MonthlyTrevporChart() {
     const growthRates: (number | null)[] = [];
 
     data.monthlyComparison.forEach(item => {
-      const lyVal = getTrevporValue(item.ly, metricMode);
-      const tyVal = item.ty ? getTrevporValue(item.ty, metricMode) : null;
+      const lyVal = getTrevparValue(item.ly, metricMode);
+      const tyVal = item.ty ? getTrevparValue(item.ty, metricMode) : null;
       
       lyValues.push(lyVal || 0);
       tyValues.push(tyVal);
@@ -345,8 +341,8 @@ export default function MonthlyTrevporChart() {
 
           let result = `
             <div style="font-weight:800; font-size:14px; color:#0f172a; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
-              <span>📅 ${params[0].name} TrevPOR ${isOngoingMonth ? `<span style="color:#e11d48; font-size:11px; font-weight:700;">(${monthMeta.daysAccumulated}일 누적 진행중)</span>` : ''}</span>
-              <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">판매객실 기준 (SSOT)</span>
+              <span>📅 ${params[0].name} TrevPAR ${isOngoingMonth ? `<span style="color:#e11d48; font-size:11px; font-weight:700;">(${monthMeta.daysAccumulated}일 누적 진행중)</span>` : ''}</span>
+              <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">가용객실 기준 (SSOT)</span>
             </div>
           `;
           params.forEach(p => {
@@ -411,7 +407,7 @@ export default function MonthlyTrevporChart() {
       yAxis: [
         {
           type: 'value',
-          name: '판매객실당 총매출 (TrevPOR)',
+          name: '가용객실당 총매출 (TrevPAR)',
           nameTextStyle: { color: '#64748b', fontWeight: 600, fontSize: 12, padding: [0, 0, 8, 0] },
           min: 0,
           max: yMax,
@@ -824,8 +820,8 @@ export default function MonthlyTrevporChart() {
           if (!ty) return '';
 
           const isOngoing = monthItem.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
-          const tyTrevpar = getTrevporValue(ty, metricMode);
-          const lyTrevpar = ly ? getTrevporValue(ly, metricMode) : null;
+          const tyTrevpar = getTrevparValue(ty, metricMode);
+          const lyTrevpar = ly ? getTrevparValue(ly, metricMode) : null;
           const growth = metricMode === 'TOTAL' ? monthItem.growthTotalRate : monthItem.growthWithoutGolfRate;
 
           let html = `
@@ -834,10 +830,10 @@ export default function MonthlyTrevporChart() {
             </div>
             <div style="font-size:12px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
               <div>
-                <span style="color:#64748b;">2025년 TrevPOR:</span> <strong style="color:#334155;">${formatCurrency(lyTrevpar)}원</strong>
+                <span style="color:#64748b;">2025년 TrevPAR:</span> <strong style="color:#334155;">${formatCurrency(lyTrevpar)}원</strong>
               </div>
               <div>
-                <span style="color:#64748b;">2026년 TrevPOR:</span> <strong style="color:#0d9488;">${formatCurrency(tyTrevpar)}원</strong>
+                <span style="color:#64748b;">2026년 TrevPAR:</span> <strong style="color:#0d9488;">${formatCurrency(tyTrevpar)}원</strong>
                 ${growth !== null ? `<span style="font-size:11px; font-weight:800; color:${growth >= 0 ? '#0d9488' : '#e11d48'}; margin-left:4px;">(${growth > 0 ? '+' : ''}${growth}%)</span>` : ''}
               </div>
             </div>
@@ -936,13 +932,13 @@ export default function MonthlyTrevporChart() {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                판매객실당 총매출 (TrevPOR) 월별 전년 vs 올해 비교 분석
+                가용객실당 총매출 (TrevPAR) 월별 전년 vs 올해 비교 분석
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
                   SSOT 완제품 바인딩 (Zero-Proxy)
                 </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                프론트엔드 임의 연산을 배제하고 백엔드가 응답한 완제품(TrevPOR) 지표 그대로를 출력합니다. 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
+                프론트엔드 임의 연산을 배제하고 백엔드가 응답한 완제품(TrevPAR) 지표 그대로를 출력합니다. 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
               </p>
             </div>
           </div>
@@ -961,7 +957,7 @@ export default function MonthlyTrevporChart() {
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5 text-teal-600" />
-              <span>12개월 TrevPOR 성장 트렌드</span>
+              <span>12개월 TrevPAR 성장 트렌드</span>
             </button>
             <button
               onClick={() => setChartViewTab('STACKED_100')}
@@ -1120,7 +1116,7 @@ export default function MonthlyTrevporChart() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
             <div className="text-[11px] font-bold text-slate-500 mb-1">
-              2026년 평균 TrevPOR ({kpiHighlights.periodLabel})
+              2026년 평균 TrevPAR ({kpiHighlights.periodLabel})
             </div>
             <div className="text-xl font-black text-slate-900 tabular-nums">
               ₩{formatCurrency(kpiHighlights.avgTyTrevpar)} <span className="text-xs font-normal text-slate-400">/실·월</span>
@@ -1180,10 +1176,10 @@ export default function MonthlyTrevporChart() {
           </div>
           <div>
             <div className="font-bold text-slate-900 text-sm mb-0.5">
-              💡 판매객실당 총매출 (TrevPOR: Total Revenue Per Occupied Room)이란?
+              💡 판매객실당 총매출 (TrevPAR: Total Revenue Per Occupied Room)이란?
             </div>
             <div className="text-slate-600 leading-relaxed">
-              백엔드 마트(SSOT)가 1원 단위로 정제한 공식 지표로, <strong>해당 월에 실제 판매된 객실 1실당 창출한 리조트 전체 총매출</strong>입니다. 프론트엔드의 가상 연산 없이 순수 백엔드 완제품을 직결하여 무결성을 보장합니다.
+              백엔드 마트(SSOT)가 1원 단위로 정제한 공식 지표로, <strong>해당 월의 물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출</strong>입니다. 프론트엔드의 가상 연산 없이 순수 백엔드 완제품을 직결하여 무결성을 보장합니다.
             </div>
           </div>
         </div>
@@ -1199,7 +1195,7 @@ export default function MonthlyTrevporChart() {
       {loading ? (
         <div className="h-72 flex flex-col items-center justify-center text-slate-400 animate-pulse">
           <Calendar className="w-8 h-8 text-slate-300 mb-2" />
-          <p className="text-sm font-medium">12개월 월별 판매객실당 총매출(TrevPOR) 지표를 집계하고 있습니다...</p>
+          <p className="text-sm font-medium">12개월 월별 가용객실당 총매출(TrevPAR) 지표를 집계하고 있습니다...</p>
         </div>
       ) : !data || error ? (
         <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center space-y-3">
@@ -1221,7 +1217,7 @@ export default function MonthlyTrevporChart() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-teal-600"></span>
                     <h3 className="text-sm font-black text-slate-900">
-                      12개월 TrevPOR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
+                      12개월 TrevPAR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
                   <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">SSOT 실측 객실 기준</span>
@@ -1236,7 +1232,7 @@ export default function MonthlyTrevporChart() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-indigo-600"></span>
                     <h3 className="text-sm font-black text-slate-900">
-                      월별 TrevPOR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
+                      월별 TrevPAR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
                   
@@ -1335,18 +1331,18 @@ export default function MonthlyTrevporChart() {
               <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3.5 px-3 text-center">월</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 판매객실</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 가용객실</th>
                   <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[280px]">
                     2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPOR</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 판매객실</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 가용객실</th>
                   <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[280px]">
                     2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPOR</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPAR</th>
                   <th className="py-3.5 px-3 text-right">전년 대비 증감액</th>
                   <th className="py-3.5 px-3 text-center">증감률</th>
                 </tr>
@@ -1355,11 +1351,11 @@ export default function MonthlyTrevporChart() {
                 {data.monthlyComparison.map((item) => {
                   const isOngoing = item.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
-                  const lyTrevpar = getTrevporValue(item.ly, metricMode);
+                  const lyTrevpar = getTrevparValue(item.ly, metricMode);
                   const lyShares = getShareRatios(item.ly, metricMode);
                   
                   const tyRev = item.ty ? (metricMode === 'TOTAL' ? item.ty.totalRevenue : item.ty.netRevenueWithoutGolf) : null;
-                  const tyTrevpar = item.ty ? getTrevporValue(item.ty, metricMode) : null;
+                  const tyTrevpar = item.ty ? getTrevparValue(item.ty, metricMode) : null;
                   const tyShares = item.ty ? getShareRatios(item.ty, metricMode) : null;
                   
                   // 백엔드 완제품 필드 직접 바인딩 (Zero-Proxy)
@@ -1375,7 +1371,7 @@ export default function MonthlyTrevporChart() {
                         )}
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">
-                        {item.ly?.roomsSold ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
+                        {item.ly?.availableRooms ? `${formatCurrency(item.ly.availableRooms)} 실` : '-'}
                       </td>
                       
                       {/* 2025년 매출 비중 */}
@@ -1420,7 +1416,7 @@ export default function MonthlyTrevporChart() {
                       </td>
                       
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">
-                        {item.ty?.roomsSold ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
+                        {item.ty?.availableRooms ? `${formatCurrency(item.ty.availableRooms)} 실` : <span className="text-slate-300">-</span>}
                       </td>
 
                       {/* 2026년 매출 비중 */}

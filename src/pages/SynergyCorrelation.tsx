@@ -164,10 +164,10 @@ export default function SynergyCorrelation() {
       // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT) and Overview Master (V6 SSOT)
       const [crossRes, overviewRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`).catch(() => null)
       ]);
 
-      const overviewPayload = overviewRes?.data || overviewRes || {};
+      const overviewPayload = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes?.data || overviewRes || {});
       const matrixRows: any[] = overviewPayload?.gridData || [];
       const categories: any[] = overviewPayload?.salesByCategory || [];
       const summaryObj = overviewPayload?.summary || {};

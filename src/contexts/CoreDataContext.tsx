@@ -56,9 +56,9 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         : `date=${validStart || todayStr}&_t=${Date.now()}`;
 
       try {
-        // [V6 SSOT Single API Call] Call ONLY the single V6 overview master endpoint
-        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`);
-        const payload = res?.data || res || {};
+        // [V6 SSOT Single API Call] Call ONLY the single V6 revenue-summary master endpoint
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`);
+        const payload = (res?.summary ? res : res?.data) || res || {};
 
         const corePayload = {
           date: payload.targetDate || validStart || todayStr,

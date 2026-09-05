@@ -114,13 +114,13 @@ export default function GolfBusiness() {
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
 
-        // 1. Fetch main overview and 2. channel & teetime analysis in parallel
+        // 1. Fetch main revenue-summary and 2. channel & teetime analysis in parallel
         const [overviewRes, channelTeetimeRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`).catch(e => ({ error: e })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`).catch(e => ({ error: e })),
           secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`).catch(e => ({ error: e }))
         ]);
 
-        let payload = overviewRes?.data ?? overviewRes;
+        let payload = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes?.data ?? overviewRes);
         if (Array.isArray(payload)) {
           payload = payload[payload.length - 1] || payload[0] || {};
         }

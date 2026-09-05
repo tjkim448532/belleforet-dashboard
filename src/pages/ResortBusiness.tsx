@@ -66,11 +66,11 @@ export default function ResortBusiness() {
           : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
           
         const [overviewRes, channelRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] }))
         ]);
 
-        const rawOverview = overviewRes.data || overviewRes;
+        const rawOverview = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes.data || overviewRes);
         const rawChannels = channelRes.data || channelRes;
 
         const transformed = transformResortData({

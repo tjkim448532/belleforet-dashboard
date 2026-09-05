@@ -84,7 +84,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           totalGolfCanceledTeams: Number(payload.summary?.totalGolfCanceledTeams || gs.totalGolfCanceledTeams || gs.totalCanceledTeams || overviewGolf.totalGolfCanceledTeams || 0),
           totalGolfPendingTeams: Number(payload.summary?.totalGolfPendingTeams || gs.totalPendingTeams || 0),
           totalGolfVisitors: Number(payload.summary?.totalGolfVisitors || gs.totalGolfVisitors || gs.totalPlayers || overviewGolf.totalGolfVisitors || 0),
-          // 골프 채널별 평균 그린피
+          // 골프 채널별 평균 그린피 및 전체 순수 평균 그린피 (카트비/프로샵 혼입 방지)
+          golfAvgGreenFee: Number(gs.avgGreenFeePerPlayer || overviewGolf.golfAvgGreenFee || payload.summary?.golfAvgGreenFee || 0),
           golfDirectAvgGreenFee: Number(directCh?.avgGreenFeePerPlayer || overviewGolf.golfDirectAvgGreenFee || payload.summary?.golfDirectAvgGreenFee || 0),
           golfOtaAvgGreenFee: Number(otaCh?.avgGreenFeePerPlayer || overviewGolf.golfOtaAvgGreenFee || payload.summary?.golfOtaAvgGreenFee || 0),
           golfMemberAvgGreenFee: Number(memberCh?.avgGreenFeePerPlayer || overviewGolf.golfMemberAvgGreenFee || payload.summary?.golfMemberAvgGreenFee || 0),

@@ -1,0 +1,151 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/components/dashboard/V6DashboardViewer.tsx', 'utf8');
+
+const replacement = `import React, { useState, useEffect } from 'react';
+import { useDate } from '../../contexts/DateContext';
+
+// --- 1. 백엔드(SSOT) 명세에 대한 정의 ---
+interface RevenueMetrics {
+  todayActual: number;
+  todayLy: number;
+  todayGrowth: number;
+  mtdActual: number;
+  mtdLy: number;
+  mtdGrowth: number;
+  ytdActual: number;
+  ytdLy: number;
+  ytdGrowth: number;
+}
+
+interface Ticket extends RevenueMetrics {
+  ticketName: string;
+}
+
+interface Venue {
+  venueName: string;
+  tickets: Ticket[];
+}
+
+interface Division {
+  orgDivision: string;
+  venues: Venue[];
+  divisionSubtotal: RevenueMetrics;
+}
+
+interface V6ApiResponse {
+  grandTotal: RevenueMetrics;
+  divisions: Division[];
+}
+
+// --- 2. 숫자 포맷팅 ---
+const formatNum = (num: number | undefined | null) => {
+  if (num === undefined || num === null || isNaN(num)) return '-';
+  return new Intl.NumberFormat('ko-KR').format(num);
+};
+
+export default function V6DashboardViewer() {
+  const [data, setData] = useState<V6ApiResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { startDate, endDate, isRange } = useDate();
+
+  // --- 3. V6 라이브 API 직접 연동 (Zero-Proxy) ---
+  useEffect(() => {
+    const fetchV6Data = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const targetEndDate = isRange && endDate ? endDate : startDate;
+        const res = await fetch(\`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?startDate=\${startDate}&endDate=\${targetEndDate}\`);
+        if (!res.ok) throw new Error(\`HTTP 통신 에러: \${res.status}\`);
+        
+        const json = await res.json();
+        setData(json.data || json);
+      } catch (err: any) {
+        setError(err.message || '데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchV6Data();
+  }, [startDate, endDate, isRange]);
+
+  if (loading) return <div className="p-4 font-bold text-slate-600 flex items-center justify-center h-40">V6 0-Variance 통합 데이터 동기화 중...</div>;
+  if (error) return <div className="p-4 text-red-600 font-bold bg-red-50 rounded-lg">뷰어 렌더링 중단: {error} (데이터 무결성 오류)</div>;
+  if (!data || !data.divisions) return <div className="p-4 text-red-600 font-bold">API 응답 규격 위반 (divisions 없음)</div>;
+
+  return (
+    <div className="w-full">
+      <table className="w-full border-collapse text-sm text-left">
+        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-t border-slate-200">
+          <tr>
+            <th className="px-4 py-3 font-semibold border-x border-slate-200">대분류</th>
+            <th className="px-4 py-3 font-semibold border-x border-slate-200">영업장 (상품/티켓)</th>
+            <th className="px-4 py-3 font-semibold text-right border-x border-slate-200">당일 매출</th>
+            <th className="px-4 py-3 font-semibold text-right border-x border-slate-200 text-blue-700">당월 누계(MTD)</th>
+            <th className="px-4 py-3 font-semibold text-right border-x border-slate-200 text-indigo-700">연 누계(YTD)</th>
+            <th className="px-4 py-3 font-semibold text-right border-x border-slate-200 text-slate-400">전년 동기(LY)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* --- 4. 계층형 데이터 순회 및 렌더링 (Zero-Proxy: reduce 절대 금지) --- */}
+          {data.divisions.map((division, divIdx) => {
+            // Calculate total rows for this division (sum of all tickets + 1 for subtotal)
+            const divisionRowSpan = division.venues.reduce((acc, v) => acc + (v.tickets ? v.tickets.length : 0), 0) + 1;
+
+            return (
+              <React.Fragment key={\`div-\${divIdx}\`}>
+                {division.venues.map((venue, venueIdx) => {
+                  return venue.tickets.map((ticket, ticketIdx) => {
+                    const isFirstVenueAndTicket = venueIdx === 0 && ticketIdx === 0;
+                    return (
+                      <tr key={\`div-\${divIdx}-ven-\${venueIdx}-tkt-\${ticketIdx}\`} className="hover:bg-slate-50 transition-colors">
+                        {/* 본부 첫 번째 줄에만 Cell 렌더링 및 병합 */}
+                        {isFirstVenueAndTicket && (
+                          <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-bold align-top border border-slate-200 text-slate-800">
+                            {division.orgDivision}
+                          </td>
+                        )}
+                        
+                        <td className="px-4 py-3 font-medium align-top border border-slate-200 text-slate-700">
+                          {venue.venueName} <span className="text-xs text-slate-400 font-normal ml-1">({ticket.ticketName})</span>
+                        </td>
+                        
+                        {/* 백엔드 완제품(todayActual 등) 1:1 바인딩 */}
+                        <td className="px-4 py-3 text-right font-mono border border-slate-200">{formatNum(ticket.todayActual)}</td>
+                        <td className="px-4 py-3 text-right font-mono border border-slate-200 text-blue-700 bg-blue-50/10">{formatNum(ticket.mtdActual)}</td>
+                        <td className="px-4 py-3 text-right font-mono border border-slate-200 text-indigo-700 bg-indigo-50/10">{formatNum(ticket.ytdActual)}</td>
+                        <td className="px-4 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(ticket.todayLy)}</td>
+                      </tr>
+                    );
+                  });
+                })}
+                
+                {/* 본부별 소계 (Zero-Proxy: 백엔드가 제공한 divisionSubtotal 완제품 직결) */}
+                <tr className="bg-indigo-50 text-indigo-900 font-bold border-b border-slate-200">
+                  <td className="px-4 py-3 border border-slate-200" colSpan={1}>[{division.orgDivision}] 소계</td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-900 border border-slate-200">{formatNum(division.divisionSubtotal?.todayActual)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-blue-800 border border-slate-200">{formatNum(division.divisionSubtotal?.mtdActual)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-indigo-800 border border-slate-200">{formatNum(division.divisionSubtotal?.ytdActual)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-600 border border-slate-200">{formatNum(division.divisionSubtotal?.todayLy)}</td>
+                </tr>
+              </React.Fragment>
+            );
+          })}
+          
+          {/* --- 5. 전사 총계 (Zero-Proxy: 백엔드가 제공한 grandTotal 완제품 직결) --- */}
+          <tr className="bg-slate-800 text-white font-bold text-base">
+            <td className="px-4 py-4 text-center border border-slate-700 tracking-wider" colSpan={2}>전사 총계</td>
+            <td className="px-4 py-4 text-right font-mono border border-slate-700 text-lg">{formatNum(data.grandTotal?.todayActual)}</td>
+            <td className="px-4 py-4 text-right font-mono border border-slate-700 text-lg text-blue-300">{formatNum(data.grandTotal?.mtdActual)}</td>
+            <td className="px-4 py-4 text-right font-mono border border-slate-700 text-lg text-indigo-300">{formatNum(data.grandTotal?.ytdActual)}</td>
+            <td className="px-4 py-4 text-right font-mono border border-slate-700 text-lg text-slate-300">{formatNum(data.grandTotal?.todayLy)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+`;
+
+fs.writeFileSync('src/components/dashboard/V6DashboardViewer.tsx', replacement);

@@ -174,9 +174,9 @@ export default function MonthlyTrevporChart() {
   const getTrevparValue = (itemNode: any, mode: 'TOTAL' | 'EX_GOLF') => {
     if (!itemNode) return null;
     if (mode === 'TOTAL') {
-      return itemNode.trevPar !== undefined ? itemNode.trevPar : (itemNode.trevparTotal !== undefined ? itemNode.trevparTotal : null);
+      return itemNode.trevporTotal ?? itemNode.trevparTotal ?? itemNode.trevPar ?? null;
     } else {
-      return itemNode.trevParWithoutGolf !== undefined ? itemNode.trevParWithoutGolf : (itemNode.trevparWithoutGolf !== undefined ? itemNode.trevparWithoutGolf : null);
+      return itemNode.trevporWithoutGolf ?? itemNode.trevparWithoutGolf ?? itemNode.trevParWithoutGolf ?? null;
     }
   };
 

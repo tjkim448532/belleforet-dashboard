@@ -1,0 +1,405 @@
+{
+  "success": true,
+  "data": [
+    {
+      "category_code": "MOTO",
+      "shop_name": "모토아레나",
+      "todayActual": "0.00",
+      "mtdActual": "142168629.00",
+      "ytdActual": "1236541587.00",
+      "todayRooms": "0",
+      "mtdRooms": "2681",
+      "ytdRooms": "19648"
+    },
+    {
+      "category_code": "PARKING",
+      "shop_name": "주차관제",
+      "todayActual": "0.00",
+      "mtdActual": "2847273.00",
+      "ytdActual": "28669093.00",
+      "todayRooms": "0",
+      "mtdRooms": "4",
+      "ytdRooms": "75"
+    },
+    {
+      "category_code": "MOTO",
+      "shop_name": "핏스탑",
+      "todayActual": "0.00",
+      "mtdActual": "8235471.00",
+      "ytdActual": "75692859.00",
+      "todayRooms": "0",
+      "mtdRooms": "1420",
+      "ytdRooms": "13361"
+    },
+    {
+      "category_code": "ROOM",
+      "shop_name": "ROOM",
+      "todayActual": "0.00",
+      "mtdActual": "708033210.00",
+      "ytdActual": "3831797173.00",
+      "todayRooms": "0",
+      "mtdRooms": "3453",
+      "ytdRooms": "20973"
+    },
+    {
+      "category_code": "ROOM",
+      "shop_name": "ROOM OTHER",
+      "todayActual": "0.00",
+      "mtdActual": "0.00",
+      "ytdActual": "433704.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "61"
+    },
+    {
+      "category_code": "GOLF",
+      "shop_name": "그린피",
+      "todayActual": "0.00",
+      "mtdActual": "628433089.00",
+      "ytdActual": "4913286807.00",
+      "todayRooms": "0",
+      "mtdRooms": "9858",
+      "ytdRooms": "65789"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "BHC(멕시카나)",
+      "todayActual": "0.00",
+      "mtdActual": "20251636.00",
+      "ytdActual": "122058932.00",
+      "todayRooms": "0",
+      "mtdRooms": "30",
+      "ytdRooms": "234"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "CU편의점",
+      "todayActual": "0.00",
+      "mtdActual": "62166073.00",
+      "ytdActual": "367208340.00",
+      "todayRooms": "0",
+      "mtdRooms": "30",
+      "ytdRooms": "244"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "기타매출",
+      "todayActual": "0.00",
+      "mtdActual": "0.00",
+      "ytdActual": "497273.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "42"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "남도예담",
+      "todayActual": "0.00",
+      "mtdActual": "155719547.00",
+      "ytdActual": "1146931209.00",
+      "todayRooms": "0",
+      "mtdRooms": "1030",
+      "ytdRooms": "35940"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "딜라이트",
+      "todayActual": "0.00",
+      "mtdActual": "8290901.00",
+      "ytdActual": "88216314.00",
+      "todayRooms": "0",
+      "mtdRooms": "1086",
+      "ytdRooms": "10875"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "밤밤테이블",
+      "todayActual": "0.00",
+      "mtdActual": "83081232.00",
+      "ytdActual": "567438418.00",
+      "todayRooms": "0",
+      "mtdRooms": "8034",
+      "ytdRooms": "50323"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "밤밤트럭",
+      "todayActual": "0.00",
+      "mtdActual": "15534136.00",
+      "ytdActual": "46389867.00",
+      "todayRooms": "0",
+      "mtdRooms": "3385",
+      "ytdRooms": "10850"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "브리스킷346",
+      "todayActual": "0.00",
+      "mtdActual": "103971022.00",
+      "ytdActual": "725597213.00",
+      "todayRooms": "0",
+      "mtdRooms": "1381",
+      "ytdRooms": "16157"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "쿠치나",
+      "todayActual": "0.00",
+      "mtdActual": "97457473.00",
+      "ytdActual": "726490260.00",
+      "todayRooms": "0",
+      "mtdRooms": "3682",
+      "ytdRooms": "28190"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "클럽-레스토랑",
+      "todayActual": "0.00",
+      "mtdActual": "24480067.00",
+      "ytdActual": "223407707.00",
+      "todayRooms": "0",
+      "mtdRooms": "1786",
+      "ytdRooms": "15605"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "클럽-스타트하우스",
+      "todayActual": "0.00",
+      "mtdActual": "44187253.00",
+      "ytdActual": "323659534.00",
+      "todayRooms": "0",
+      "mtdRooms": "3394",
+      "ytdRooms": "24059"
+    },
+    {
+      "category_code": "FNB",
+      "shop_name": "투썸플레이스",
+      "todayActual": "0.00",
+      "mtdActual": "43897583.00",
+      "ytdActual": "318113357.00",
+      "todayRooms": "0",
+      "mtdRooms": "30",
+      "ytdRooms": "243"
+    },
+    {
+      "category_code": "BANQUET",
+      "shop_name": "연회장",
+      "todayActual": "0.00",
+      "mtdActual": "17663626.00",
+      "ytdActual": "373102956.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "0"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "UNMAPPED_TICKET",
+      "todayActual": "0.00",
+      "mtdActual": "312731.00",
+      "ytdActual": "312731.00",
+      "todayRooms": "0",
+      "mtdRooms": "33",
+      "ytdRooms": "33"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "기타매출",
+      "todayActual": "0.00",
+      "mtdActual": "0.00",
+      "ytdActual": "54544.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "6"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "놀이동산",
+      "todayActual": "0.00",
+      "mtdActual": "40791545.00",
+      "ytdActual": "462170662.00",
+      "todayRooms": "0",
+      "mtdRooms": "4107",
+      "ytdRooms": "49988"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "마리나 클럽",
+      "todayActual": "0.00",
+      "mtdActual": "10211399.00",
+      "ytdActual": "42437175.00",
+      "todayRooms": "0",
+      "mtdRooms": "702",
+      "ytdRooms": "2714"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "마운틴카트",
+      "todayActual": "0.00",
+      "mtdActual": "31673846.00",
+      "ytdActual": "227331759.00",
+      "todayRooms": "0",
+      "mtdRooms": "3161",
+      "ytdRooms": "25219"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "모토아레나",
+      "todayActual": "0.00",
+      "mtdActual": "0.00",
+      "ytdActual": "30985685.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "1179"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "미디어-기프트샵",
+      "todayActual": "0.00",
+      "mtdActual": "2127346.00",
+      "ytdActual": "14397509.00",
+      "todayRooms": "0",
+      "mtdRooms": "342",
+      "ytdRooms": "2474"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "미디어-뮤지엄카페",
+      "todayActual": "0.00",
+      "mtdActual": "4278167.00",
+      "ytdActual": "24679143.00",
+      "todayRooms": "0",
+      "mtdRooms": "1461",
+      "ytdRooms": "8706"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "미디어아트센터",
+      "todayActual": "0.00",
+      "mtdActual": "59688968.00",
+      "ytdActual": "316835535.00",
+      "todayRooms": "0",
+      "mtdRooms": "6175",
+      "ytdRooms": "32340"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "벨포레 리조트",
+      "todayActual": "0.00",
+      "mtdActual": "454044.00",
+      "ytdActual": "1749391.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "2"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "벨포레 목장",
+      "todayActual": "0.00",
+      "mtdActual": "27155670.00",
+      "ytdActual": "313359084.00",
+      "todayRooms": "0",
+      "mtdRooms": "4931",
+      "ytdRooms": "46563"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "벨포레 목장(체험)",
+      "todayActual": "0.00",
+      "mtdActual": "5828968.00",
+      "ytdActual": "86803487.00",
+      "todayRooms": "0",
+      "mtdRooms": "2747",
+      "ytdRooms": "36672"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "사계절썰매장",
+      "todayActual": "0.00",
+      "mtdActual": "41864948.00",
+      "ytdActual": "350563864.00",
+      "todayRooms": "0",
+      "mtdRooms": "2998",
+      "ytdRooms": "27177"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "썸머랜드",
+      "todayActual": "0.00",
+      "mtdActual": "85327890.00",
+      "ytdActual": "181449922.00",
+      "todayRooms": "0",
+      "mtdRooms": "6652",
+      "ytdRooms": "12914"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "얼룩말카페",
+      "todayActual": "0.00",
+      "mtdActual": "12744697.00",
+      "ytdActual": "109042884.00",
+      "todayRooms": "0",
+      "mtdRooms": "3504",
+      "ytdRooms": "29647"
+    },
+    {
+      "category_code": "TICKET",
+      "shop_name": "원더풀",
+      "todayActual": "0.00",
+      "mtdActual": "28503632.00",
+      "ytdActual": "65876358.00",
+      "todayRooms": "0",
+      "mtdRooms": "1214",
+      "ytdRooms": "2698"
+    },
+    {
+      "category_code": "OTHER",
+      "shop_name": "미디어아트센터",
+      "todayActual": "0.00",
+      "mtdActual": "429990.00",
+      "ytdActual": "407992.00",
+      "todayRooms": "0",
+      "mtdRooms": "48",
+      "ytdRooms": "62"
+    },
+    {
+      "category_code": "OTHER",
+      "shop_name": "벨포레 리조트",
+      "todayActual": "0.00",
+      "mtdActual": "234544.00",
+      "ytdActual": "9691455.00",
+      "todayRooms": "0",
+      "mtdRooms": "11",
+      "ytdRooms": "614"
+    },
+    {
+      "category_code": "OTHER",
+      "shop_name": "펫포레",
+      "todayActual": "0.00",
+      "mtdActual": "90909.00",
+      "ytdActual": "181818.00",
+      "todayRooms": "0",
+      "mtdRooms": "1",
+      "ytdRooms": "2"
+    },
+    {
+      "category_code": "OTHER",
+      "shop_name": "프로샵",
+      "todayActual": "0.00",
+      "mtdActual": "11090899.00",
+      "ytdActual": "64671594.00",
+      "todayRooms": "0",
+      "mtdRooms": "343",
+      "ytdRooms": "1750"
+    },
+    {
+      "category_code": "ETC",
+      "shop_name": "기타매출",
+      "todayActual": "0.00",
+      "mtdActual": "0.00",
+      "ytdActual": "91364540.00",
+      "todayRooms": "0",
+      "mtdRooms": "0",
+      "ytdRooms": "687"
+    }
+  ]
+}

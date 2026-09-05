@@ -114,10 +114,11 @@ export default function GolfBusiness() {
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
           : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
 
-        // 1. Fetch main revenue-summary and 2. channel & teetime analysis in parallel
-        const [overviewRes, channelTeetimeRes] = await Promise.all([
+        // 1. Fetch main revenue-summary, channel teetime analysis, and new golf-sales (Zero-Variance)
+        const [overviewRes, channelTeetimeRes, golfSalesRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`).catch(e => ({ error: e })),
-          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`).catch(e => ({ error: e }))
+          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`).catch(e => ({ error: e })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/golf-sales?${queryParams}`).catch(e => ({ error: e }))
         ]);
 
         let payload = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes?.data ?? overviewRes);
@@ -138,17 +139,27 @@ export default function GolfBusiness() {
         const otaAgenciesDetail: GolfAgencyDetail[] = channelData.otaAgenciesDetail || salesByChannel.find(c => c.channelCode === 'OTA_AGENCY')?.agencies || [];
         const analysisByTimeSlot: GolfTimeSlotAnalysis[] = channelData.analysisByTimeSlot || [];
         const golfSummary = channelData.golfSummary || {};
+        const v6GolfSales = Array.isArray(golfSalesRes) ? golfSalesRes[0] : (golfSalesRes?.data?.[0] || null);
 
         if (payload) {
           // V6 Schema direct map (SSOT)
           const golfCategory = payload.salesByCategory?.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프');
-          let golf_revenue = parseNum(golfCategory?.totalSales || golfCategory?.todayActual || 0);
-          if (golf_revenue === 0 && golfSubtotalInMatrix > 0) {
-            golf_revenue = golfSubtotalInMatrix;
+          let golf_revenue = 0;
+          let cartFee = 0;
+
+          // 신규 v6 golf-sales SSOT 반영 (단일 객체 속성 매핑)
+          if (v6GolfSales) {
+            golf_revenue = parseNum(v6GolfSales.greenFeeRevenue || 0) + parseNum(v6GolfSales.cartFeeRevenue || 0) + parseNum(v6GolfSales.extraRevenue || 0) + parseNum(v6GolfSales.caddieFeeRevenue || 0);
+            cartFee = parseNum(v6GolfSales.cartFeeRevenue || 0);
+          } else {
+            golf_revenue = parseNum(golfCategory?.totalSales || golfCategory?.todayActual || 0);
+            if (golf_revenue === 0 && golfSubtotalInMatrix > 0) {
+              golf_revenue = golfSubtotalInMatrix;
+            }
           }
 
           const golf_visited_teams = parseNum(golfSummary.totalVisitedTeams || golfSummary.totalGolfTeams || payload.summary?.totalGolfTeams || 0);
-          const golf_visited_players = parseNum(golfSummary.totalGolfVisitors || golfSummary.totalPlayers || payload.summary?.totalGolfVisitors || 0);
+          const golf_visited_players = parseNum(v6GolfSales?.visitors || golfSummary.totalGolfVisitors || golfSummary.totalPlayers || payload.summary?.totalGolfVisitors || 0);
 
           let golfFacilities = payload.salesByFacility?.filter((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프') || payload.golfFacilityBreakdown || [];
           if (golfFacilities.length === 0 && golfFacilitiesInMatrix.length > 0) {
@@ -191,7 +202,21 @@ export default function GolfBusiness() {
             otaAgenciesDetail,
             analysisByTimeSlot,
             staySynergy: channelData.staySynergy || (channelTeetimeRes as any)?.staySynergy,
-            golfFacilityBreakdown: golfFacilities.map((f: any) => {
+            golfFacilityBreakdown: v6GolfSales ? [
+              { shopName: '__V6_CART_FEE__', totalSales: cartFee, todayActual: cartFee },
+              ...golfFacilities.map((f: any) => {
+                const name = f.shopName || f.facilityName || f.shop_name || f.facility_name || f.subGroupName || '기타업장';
+                const sales = parseNum(f.totalSales || f.todayActual || f.revenue || 0);
+                return {
+                  facility_name: name,
+                  shopName: name,
+                  shop_name: name,
+                  totalSales: sales,
+                  todayActual: sales,
+                  today_actual: sales
+                };
+              })
+            ] : golfFacilities.map((f: any) => {
               const name = f.shopName || f.facilityName || f.shop_name || f.facility_name || f.subGroupName || '기타업장';
               const sales = parseNum(f.totalSales || f.todayActual || f.revenue || 0);
               return {
@@ -273,7 +298,7 @@ export default function GolfBusiness() {
     ? (totalGreenFeeRevenue > 0 ? Math.round(totalGreenFeeRevenue / visitedTeams) : (visitedPlayers > 0 ? Math.round((avgGreenFee * visitedPlayers) / visitedTeams) : 0))
     : 0;
   const cartFacility = golfDetails.find((f: any) => f.shopName?.includes('카트') || (f as any).facility_name?.includes('카트'));
-  const actualCartRevenue = cartFacility?.totalSales || 0;
+  const actualCartRevenue = data?.golfFacilityBreakdown?.find(f => f.shopName === '__V6_CART_FEE__')?.totalSales || cartFacility?.totalSales || 0;
   const actualCartFeePerTeam = visitedTeams > 0 && actualCartRevenue > 0 
     ? Math.round(actualCartRevenue / visitedTeams) 
     : 0;

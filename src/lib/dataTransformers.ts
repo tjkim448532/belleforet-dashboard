@@ -124,7 +124,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   // [SSOT 무관용 원칙] 백엔드가 사전 산출한 ADR, RevPAR, TrevPAR 우선 바인딩
   const backendADR = parseNum(c.summary?.totalADR || c.summary?.adr || 0);
   const backendRevPAR = parseNum(c.summary?.revPAR || 0);
-  const backendTrevPAR = parseNum(c.summary?.trevPAR || 0);
+  const backendTrevPAR = parseNum(c.summary?.trevPar ?? c.summary?.trevPAR ?? 0);
   const backendTrevPOR = parseNum(c.summary?.trevPOR || 0);
   const backendOcc = parseNum(c.summary?.totalOcc || c.summary?.occRate || 0);
 

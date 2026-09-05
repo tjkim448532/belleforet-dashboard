@@ -531,8 +531,7 @@ export default function Home() {
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
                   <div className="text-sm text-slate-700 font-medium mb-1">가용객실당 총매출 (TrevPAR)</div>
                   {(() => {
-                    const trevPar = (coreData.core?.summary?.trevPAR && Number(coreData.core.summary.trevPAR) > 0) ? Number(coreData.core.summary.trevPAR)
-                                  : displayData?.kpiMetrics?.trevPAR;
+                    const trevPar = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
                     return trevPar !== undefined && trevPar !== null && Number(trevPar) > 0 ? (
                       <>
                         <div className="text-3xl font-extrabold text-teal-700 tracking-tight">

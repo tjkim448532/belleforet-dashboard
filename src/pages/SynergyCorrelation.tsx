@@ -287,27 +287,17 @@ export default function SynergyCorrelation() {
           isSpurious: item.isSpurious ?? false,
           pureElasticity,
           pureSpilloverPerMillion: pureSpillover,
-          causalInferenceGrade: item.causalInferenceGrade || (
-            item.isSpurious ? 'SPURIOUS' :
-            pureCoeff >= 0.7 ? 'CONFIRMED_TEMPORAL_CAUSAL' :
-            pureCoeff >= 0.3 ? 'CONTEMPORANEOUS_CORRELATION' : 'SPURIOUS'
-          ),
-          saturationThreshold_K: item.saturationThreshold_K || 120000000,
+          causalInferenceGrade: item.causalInferenceGrade,
+          saturationThreshold_K: item.saturationThreshold_K,
           currentCapacityUtilization: capaUtil,
           bottleneckRisk: bottleneck,
           timeLagDistribution: timeLag,
-          weatherImpact: (item as any).weatherImpact || { rain10mmEffect: division === '레저본부' ? -8.5 : +3.2, temp1degEffect: 0.4 },
+          weatherImpact: (item as any).weatherImpact,
           elasticityPercent: item.elasticityPercent,
           spilloverPerMillion: item.spilloverPerMillion,
           synergyGrade: item.synergyGrade,
           insight: item.insight,
-          aiStrategyInsight: item.aiStrategyInsight || item.insight || (
-            pureSpillover > 100000 
-              ? `앵커 유치 시 100만원당 +₩${formatCurrency(pureSpillover)}원의 순수 낙수가 발생하므로 ${shopName} 결합 패키지 번들링(최대 15% 할인)을 적극 권장합니다.`
-              : timeLag.nextDayRatio >= 30
-              ? `익일 오전 이연 소비 비중이 ${timeLag.nextDayRatio}%에 달하므로 퇴실 시간대 할인 프로모션 연계가 최적입니다.`
-              : `앵커 매출 증가와 직접 연동되는 핵심 매장으로 주말 피크 시 원활한 서비스 회전율 관리가 필요합니다.`
-          ),
+          aiStrategyInsight: item.aiStrategyInsight || item.insight,
           interactionGrade: item.synergyGrade === 'EXCELLENT' ? 'HIGH_SYNERGY' : item.synergyGrade === 'HIGH' ? 'MODERATE_SYNERGY' : 'WEAK',
           revPasContribution: totalRooms > 0 ? Math.round(venueSales / totalRooms) : 0,
           isGuestRatioTrackable: true,
@@ -338,7 +328,7 @@ export default function SynergyCorrelation() {
       } : null;
 
       const newSummaryMeta = {
-        totalShopsAnalyzed: validCorrList.length || 34,
+        totalShopsAnalyzed: validCorrList.length,
         totalPureSpillover: totalSpillover,
         topSynergyShop: topStore?.shopName || crossRes?.summary?.topSynergyStore?.name || '',
         maxSpilloverAmount: topStore?.pureSpilloverPerMillion || crossRes?.summary?.topSynergyStore?.pureSpillover || 0,
@@ -430,7 +420,7 @@ export default function SynergyCorrelation() {
               synergyMemoryCache.set(candKey, {
                 anchorData: cRes.anchor,
                 summaryMeta: {
-                  totalShopsAnalyzed: vList.length || 34,
+                  totalShopsAnalyzed: vList.length,
                   totalPureSpillover: tSpill,
                   topSynergyShop: tStore?.shopName || cRes.summary?.topSynergyStore?.name || '',
                   maxSpilloverAmount: tStore?.pureSpilloverPerMillion || cRes.summary?.topSynergyStore?.pureSpillover || 0,
@@ -592,7 +582,7 @@ export default function SynergyCorrelation() {
       links.push({
         source: '당일 즉시 소비 (t0)',
         target: `${s.shopName} (당일)`,
-        value: Math.max(10, Math.round((s.timeLagDistribution?.sameDayRatio || 25) / 2))
+        value: Math.max(10, Math.round((s.timeLagDistribution?.sameDayRatio ?? 0) / 2))
       });
     });
 
@@ -600,7 +590,7 @@ export default function SynergyCorrelation() {
       links.push({
         source: '익일 이연 소비 (t1)',
         target: `${s.shopName} (익일)`,
-        value: Math.max(10, Math.round((s.timeLagDistribution?.nextDayRatio || 20) / 2))
+        value: Math.max(10, Math.round((s.timeLagDistribution?.nextDayRatio ?? 0) / 2))
       });
     });
 
@@ -945,10 +935,10 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-2xl font-black text-rose-600 mb-1 truncate" title={criticalBottleneckStore?.shopName}>
-              {criticalBottleneckStore?.shopName || '쿠치나'}
+              {criticalBottleneckStore?.shopName || '분석불가'}
             </div>
             <p className="text-xs text-slate-500 font-medium truncate">
-              피크 CAPA 점유율: <strong className="text-rose-700">{criticalBottleneckStore?.currentCapacityUtilization || 94.2}%</strong> (임계 한계)
+              피크 CAPA 점유율: <strong className="text-rose-700">{criticalBottleneckStore?.currentCapacityUtilization ?? 0}%</strong> (임계 한계)
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">

@@ -635,8 +635,8 @@ export default function Home() {
                         </div>
                         <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                           {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
-                            const maxPrice = coreData.core.summary.golfRankedChannels[0]?.avgGreenFee || 1;
-                            const pct = Math.min(100, Math.max(10, Math.round((item.avgGreenFee / maxPrice) * 100)));
+                            const maxPrice = coreData.core.summary.golfRankedChannels[0]?.avgGreenFee ?? 0;
+                            const pct = maxPrice > 0 ? Math.min(100, Math.max(10, Math.round((item.avgGreenFee / maxPrice) * 100))) : 0;
                             return (
                               <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-emerald-200 transition-all">
                                 <div className="flex items-center gap-1.5 min-w-[120px] truncate">

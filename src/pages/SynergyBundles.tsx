@@ -97,13 +97,13 @@ export default function SynergyBundles() {
       if (payload && (payload.totalUniqueCustomers !== undefined || (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0) || (Array.isArray(payload.data) && payload.data.length > 0))) {
         if (Array.isArray(payload.bundleClusters) && payload.bundleClusters.length > 0) {
           setApiMeta({
-            totalUniqueCustomers: payload.totalUniqueCustomers || 1269,
-            multiFacilityRatioPct: payload.multiFacilityRatioPct || 38.4,
-            totalSales: payload.totalSales || 64996170,
-            multiFacilityCustomers: payload.multiFacilityCustomers || 487,
-            singleFacilityArpu: payload.singleFacilityArpu || 45000,
-            multiFacilityArpu: payload.multiFacilityArpu || 108000,
-            arpuLiftMultiplier: payload.arpuLiftMultiplier || 2.4
+            totalUniqueCustomers: payload.totalUniqueCustomers,
+            multiFacilityRatioPct: payload.multiFacilityRatioPct,
+            totalSales: payload.totalSales,
+            multiFacilityCustomers: payload.multiFacilityCustomers,
+            singleFacilityArpu: payload.singleFacilityArpu,
+            multiFacilityArpu: payload.multiFacilityArpu,
+            arpuLiftMultiplier: payload.arpuLiftMultiplier
           });
           setBundleData(payload.bundleClusters);
         } else {

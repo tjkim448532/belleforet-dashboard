@@ -99,7 +99,7 @@ export default function Members() {
   // Enrich with loyalty tier badges
   const enrichedVisitors = useMemo(() => {
     return visitors.map(m => {
-      const visits = m.ytdVisitCount || 1;
+      const visits = m.ytdVisitCount ?? 0;
       let tierBadge = '신규 1회';
       let tierColor = 'bg-slate-100 text-slate-600 border-slate-200';
 

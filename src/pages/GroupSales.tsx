@@ -163,7 +163,7 @@ export default function GroupSales() {
     return groupList.map(item => {
       const key = item.groupName.trim();
       const companyInfo = companyMap.get(key);
-      const calculatedVisits = item.visitCount || companyInfo?.visits.length || 1;
+      const calculatedVisits = item.visitCount || companyInfo?.visits.length || 0;
       const totalLtv = item.totalLtvRevenue || companyInfo?.totalLtv || item.totalRevenue;
 
       let tier: 'DIAMOND' | 'GOLD' | 'SILVER' | 'BRONZE' = 'BRONZE';
@@ -225,11 +225,11 @@ export default function GroupSales() {
       
       let matchLoyalty = true;
       if (selectedLoyaltyFilter === 'REPEAT_ALL') {
-        matchLoyalty = (g.visitCount || 1) >= 2;
+        matchLoyalty = (g.visitCount ?? 0) >= 2;
       } else if (selectedLoyaltyFilter === 'VIP_ONLY') {
         matchLoyalty = g.loyaltyTier === 'DIAMOND' || g.loyaltyTier === 'GOLD';
       } else if (selectedLoyaltyFilter === 'NEW_ONLY') {
-        matchLoyalty = (g.visitCount || 1) === 1;
+        matchLoyalty = (g.visitCount ?? 0) === 1;
       }
 
       let matchFacility = true;
@@ -255,7 +255,7 @@ export default function GroupSales() {
 
     return filtered.sort((a, b) => {
       if (sortBy === 'REVENUE') return b.totalRevenue - a.totalRevenue;
-      if (sortBy === 'VISITS') return (b.visitCount || 1) - (a.visitCount || 1);
+      if (sortBy === 'VISITS') return (b.visitCount ?? 0) - (a.visitCount ?? 0);
       if (sortBy === 'SPEND_PER_PAX') return b.avgSpendPerPax - a.avgSpendPerPax;
       if (sortBy === 'RECENT') return new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime();
       return 0;
@@ -843,7 +843,7 @@ export default function GroupSales() {
                       <div className="font-black text-slate-900 text-sm tabular-nums">
                         ₩{formatCurrency(group.totalRevenue)}
                       </div>
-                      {(group.visitCount || 1) > 1 && (
+                      {(group.visitCount ?? 0) > 1 && (
                         <div className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
                           누적 LTV ₩{formatCurrency(group.totalLtvRevenue)}
                         </div>
@@ -929,7 +929,7 @@ export default function GroupSales() {
               <div className="text-right">
                 <span className="text-xs text-slate-300 font-medium block">누적 방문 횟수</span>
                 <span className="text-xl font-bold text-amber-300">
-                  {selectedGroupModal.visitCount || 1}회 방문
+                  {selectedGroupModal.visitCount ?? 0}회 방문
                 </span>
               </div>
             </div>

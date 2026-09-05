@@ -49,6 +49,38 @@ const formatGrowth = (num: number | undefined | null) => {
   return <span className="text-slate-400">{formatted}</span>;
 };
 
+const getVenueMetrics = (venue: any): RevenueMetrics => {
+  if (venue.venueSubtotal) return venue.venueSubtotal;
+  if (!venue.tickets || venue.tickets.length === 0) {
+    return {
+      todayActual: 0, todayLy: 0, todayGrowth: 0,
+      mtdActual: 0, mtdLy: 0, mtdGrowth: 0,
+      ytdActual: 0, ytdLy: 0, ytdGrowth: 0
+    };
+  }
+  if (venue.tickets.length === 1) {
+    const t = venue.tickets[0];
+    return (t.metrics || t) as RevenueMetrics;
+  }
+  const todayActual = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).todayActual || 0), 0);
+  const todayLy = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).todayLy || 0), 0);
+  const mtdActual = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).mtdActual || 0), 0);
+  const mtdLy = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).mtdLy || 0), 0);
+  const ytdActual = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).ytdActual || 0), 0);
+  const ytdLy = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).ytdLy || 0), 0);
+  return {
+    todayActual,
+    todayLy,
+    todayGrowth: todayLy > 0 ? ((todayActual - todayLy) / todayLy) * 100 : 0,
+    mtdActual,
+    mtdLy,
+    mtdGrowth: mtdLy > 0 ? ((mtdActual - mtdLy) / mtdLy) * 100 : 0,
+    ytdActual,
+    ytdLy,
+    ytdGrowth: ytdLy > 0 ? ((ytdActual - ytdLy) / ytdLy) * 100 : 0
+  };
+};
+
 export default function V6DashboardViewer() {
   const [data, setData] = useState<V6ApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +93,11 @@ export default function V6DashboardViewer() {
       setLoading(true);
       setError(null);
       try {
-        const targetEndDate = isRange && endDate ? endDate : startDate;
-        const res = await fetch(`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?startDate=${startDate}&endDate=${targetEndDate}`);
+        const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
+        const query = isRangeMode
+          ? `startDate=${startDate}&endDate=${endDate}`
+          : `date=${startDate}`;
+        const res = await fetch(`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?${query}`);
         if (!res.ok) throw new Error(`HTTP 통신 에러: ${res.status}`);
         
         const json = await res.json();
@@ -119,6 +154,7 @@ export default function V6DashboardViewer() {
             return (
               <React.Fragment key={`div-${divIdx}`}>
                 {division.venues.map((venue, venueIdx) => {
+                  const metrics = getVenueMetrics(venue);
                   return (
                     <tr key={`div-${divIdx}-ven-${venueIdx}`} className="hover:bg-slate-50 transition-colors">
                       {venueIdx === 0 && (
@@ -132,19 +168,19 @@ export default function V6DashboardViewer() {
                       </td>
                       
                       {/* Today */}
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200">{formatNum(venue.venueSubtotal?.todayActual)}</td>
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(venue.venueSubtotal?.todayLy)}</td>
-                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-slate-50/50">{formatGrowth(venue.venueSubtotal?.todayGrowth)}</td>
+                      <td className="px-3 py-3 text-right font-mono border border-slate-200">{formatNum(metrics.todayActual)}</td>
+                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.todayLy)}</td>
+                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-slate-50/50">{formatGrowth(metrics.todayGrowth)}</td>
                       
                       {/* MTD */}
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-blue-800">{formatNum(venue.venueSubtotal?.mtdActual)}</td>
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(venue.venueSubtotal?.mtdLy)}</td>
-                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(venue.venueSubtotal?.mtdGrowth)}</td>
+                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-blue-800">{formatNum(metrics.mtdActual)}</td>
+                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.mtdLy)}</td>
+                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(metrics.mtdGrowth)}</td>
                       
                       {/* YTD */}
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-indigo-800">{formatNum(venue.venueSubtotal?.ytdActual)}</td>
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(venue.venueSubtotal?.ytdLy)}</td>
-                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(venue.venueSubtotal?.ytdGrowth)}</td>
+                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-indigo-800">{formatNum(metrics.ytdActual)}</td>
+                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.ytdLy)}</td>
+                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(metrics.ytdGrowth)}</td>
                     </tr>
                   );
                 })}

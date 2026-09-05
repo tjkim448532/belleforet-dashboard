@@ -84,7 +84,7 @@ export default function Home() {
         const name = fac.shopName || fac.facilityName;
         const count = parseNum(fac.visitors || fac.totalVisitors || 0);
         if (name) {
-          map[name] = count;
+          map[name] = (map[name] || 0) + count;
         }
       });
     }

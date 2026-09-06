@@ -297,7 +297,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
           channel: channelName,
           roomsSold: sold,
           totalRevenue: rev,
-          adr: sold > 0 ? Math.round(rev / sold) : 0
+          adr: parseNum(item.adr) || 0
         });
       }
     });
@@ -321,7 +321,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
           marketType: marketName,
           roomsSold: sold,
           totalRevenue: rev,
-          adr: sold > 0 ? Math.round(rev / sold) : 0
+          adr: parseNum(item.adr) || 0
         });
       }
     });
@@ -352,7 +352,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     revenue: summaryRevenue,
     roomsSold: summaryRoomsSold,
     totalCapacity: summaryTotalCapacity,
-    adr: summaryRoomsSold > 0 ? Math.round(summaryRevenue / summaryRoomsSold) : 0
+    adr: parseNum(payload.summary?.adr ?? payload.summary?.ADR ?? 0)
   };
 
   return {

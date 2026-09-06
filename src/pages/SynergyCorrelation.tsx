@@ -244,11 +244,7 @@ export default function SynergyCorrelation() {
           ? (rangeActive ? cleanNum(matchVenue.rangeActual || matchVenue.mtdActual || matchVenue.todayActual) : cleanNum(matchVenue.todayActual))
           : 0;
 
-        let division = '레저본부';
-        if (item.categoryName === '식음' || item.categoryName === '식음팀') division = '식음팀';
-        else if (item.categoryName === '모토아레나' || shopName.includes('모토아레나')) division = '모토아레나';
-        else if (item.categoryName === '골프' || item.categoryName === '골프본부') division = '골프본부';
-        else if (item.categoryName === '콘도' || item.categoryName === '객실') division = '콘도';
+        let division = item.categoryName || '미분류';
 
         const rawCoeff = item.rawCorrelation ?? item.correlationCoefficient ?? 0;
         const pureCoeff = item.pureCorrelation ?? rawCoeff;
@@ -378,7 +374,7 @@ export default function SynergyCorrelation() {
                 targetShopName: it.targetShopName || it.shopName || '',
                 shopName: it.targetShopName || it.shopName || '',
                 storeName: it.targetShopName || it.shopName || '',
-                divisionName: it.categoryName === '식음' ? '식음팀' : it.categoryName === '모토아레나' ? '모토아레나' : it.categoryName === '골프' ? '골프본부' : it.categoryName === '콘도' ? '콘도' : '레저본부',
+                divisionName: it.categoryName || '미분류',
                 totalRevenue: 0,
                 totalSales: 0,
                 correlatedSales: 0,

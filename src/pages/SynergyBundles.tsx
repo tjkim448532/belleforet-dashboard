@@ -29,10 +29,7 @@ export interface CustomerBundleItem {
 }
 
 const cleanStoreName = (name?: string) => {
-  if (!name) return '';
-  if (name === 'CRS') return '전화/예약실(CRS)';
-  if (name === '홈페이지') return '자사몰(홈페이지)';
-  return name;
+  return name || '';
 };
 
 const formatBundleTitle = (bundle: CustomerBundleItem) => {
@@ -44,7 +41,7 @@ const formatBundleTitle = (bundle: CustomerBundleItem) => {
     return `[${bundle.storeList.map(cleanStoreName).join(' + ')}]`;
   }
   const bName = bundle.bundleName || (bundle as any).name || (bundle as any).categoryCode || '';
-  return String(bName).replace(/\bCRS\b/g, '전화/예약실(CRS)').replace(/\b홈페이지\b/g, '자사몰(홈페이지)');
+  return String(bName);
 };
 
 export default function SynergyBundles() {

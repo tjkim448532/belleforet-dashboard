@@ -28,9 +28,8 @@ const DEFAULT_PALETTE = ['#1E3A8A', '#0D9488', '#D97706', '#E11D48', '#0891B2', 
 export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) {
   if (!data || data.length === 0) return null;
 
-  const resolvedTotal = totalValue !== undefined && totalValue > 0 
-    ? totalValue 
-    : data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+  // 프론트 연산(reduce) 철거: 백엔드가 내려주는 totalValue 사용
+  const resolvedTotal = totalValue || 0;
 
   const formatCurrency = (val: any) => {
     if (!val) return '0';
@@ -38,9 +37,10 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
     return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
-  const chartData = data.map((item, idx) => {
+  const chartData = data.map((item: any, idx) => {
     const color = CATEGORY_COLORS[item.name] || DEFAULT_PALETTE[idx % DEFAULT_PALETTE.length];
-    const pct = resolvedTotal > 0 ? Number(((item.value / resolvedTotal) * 100).toFixed(1)) : 0;
+    // 프론트 나눗셈 연산 철거: 백엔드가 계산해준 pct 값을 그대로 사용
+    const pct = item.pct || item.percent || 0;
     return {
       name: item.name,
       value: item.value,
@@ -59,7 +59,8 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
       extraCssText: 'box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-radius: 12px;',
       textStyle: { color: '#0f172a', fontFamily: 'Pretendard, sans-serif' },
       formatter: (params: any) => {
-        const pct = resolvedTotal > 0 ? ((params.value / resolvedTotal) * 100).toFixed(1) : '0';
+        // 프론트 나눗셈 연산 철거: 바인딩된 pct 사용
+        const pct = params.data.pct || '0';
         return `
           <div style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span style="width:8px; height:8px; border-radius:50%; background:${params.color}; display:inline-block;"></span>

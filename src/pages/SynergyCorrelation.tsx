@@ -203,16 +203,16 @@ export default function SynergyCorrelation() {
 
       if (currentAnchorPeriodSales <= 0 && Array.isArray(matrixRows) && matrixRows.length > 0) {
         if (targetAnchor === 'MEDIA_ART') {
-          const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트' || r.shopName === '미디어아트센터');
+          const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트센터');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
         } else if (targetAnchor === 'MOUNTAIN_CART') {
           const kartVenue = matrixRows.find((r: any) => r.shopName === '마운틴카트');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (kartVenue?.rangeActual || kartVenue?.mtdActual) : kartVenue?.todayActual);
         } else if (targetAnchor === 'WONDERPOOL') {
-          const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드' || r.shopName === '원더풀');
+          const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.mtdActual) : summerVenue?.todayActual);
         } else if (targetAnchor === 'FARM') {
-          const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장' || r.shopName === '목장');
+          const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장');
           currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.mtdActual) : farmVenue?.todayActual);
         } else if (targetAnchor === 'MOTO_ARENA') {
           const motoVenue = matrixRows.find((r: any) => r.shopName === '모토아레나');

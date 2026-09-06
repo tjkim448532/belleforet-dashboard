@@ -246,17 +246,10 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const DEFAULT_ROOM_CAPACITIES: Record<string, number> = {
-    '16평': 85, // 16평 물리 인벤토리 (50실 전용 + 35실 커넥티드)
-    '35평': 85, // 35평 물리 인벤토리 (50실 전용 + 35실 커넥티드)
-    '51평': 40, // 51평 가용 세트 (5실 전용 + 35세트 커넥티드)
-    '기타': 5
-  };
-
-  const dailyCap16 = parseNum(masterCapacities?.['16평']) || DEFAULT_ROOM_CAPACITIES['16평'];
-  const dailyCap35 = parseNum(masterCapacities?.['35평']) || DEFAULT_ROOM_CAPACITIES['35평'];
-  const dailyCap51 = parseNum(masterCapacities?.['51평']) || DEFAULT_ROOM_CAPACITIES['51평'];
-  const dailyCapEtc = parseNum(masterCapacities?.['기타']) || DEFAULT_ROOM_CAPACITIES['기타'];
+  const dailyCap16 = parseNum(masterCapacities?.['16평']) || 0;
+  const dailyCap35 = parseNum(masterCapacities?.['35평']) || 0;
+  const dailyCap51 = parseNum(masterCapacities?.['51평']) || 0;
+  const dailyCapEtc = parseNum(masterCapacities?.['기타']) || 0;
 
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
     '16평': { sold: 0, cap: dailyCap16 * days, rev: 0 },

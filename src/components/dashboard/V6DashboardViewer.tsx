@@ -50,34 +50,11 @@ const formatGrowth = (num: number | undefined | null) => {
 };
 
 const getVenueMetrics = (venue: any): RevenueMetrics => {
-  if (venue.venueSubtotal) return venue.venueSubtotal;
-  if (!venue.tickets || venue.tickets.length === 0) {
-    return {
-      todayActual: 0, todayLy: 0, todayGrowth: 0,
-      mtdActual: 0, mtdLy: 0, mtdGrowth: 0,
-      ytdActual: 0, ytdLy: 0, ytdGrowth: 0
-    };
-  }
-  if (venue.tickets.length === 1) {
-    const t = venue.tickets[0];
-    return (t.metrics || t) as RevenueMetrics;
-  }
-  const todayActual = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).todayActual || 0), 0);
-  const todayLy = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).todayLy || 0), 0);
-  const mtdActual = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).mtdActual || 0), 0);
-  const mtdLy = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).mtdLy || 0), 0);
-  const ytdActual = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).ytdActual || 0), 0);
-  const ytdLy = venue.tickets.reduce((sum: number, t: any) => sum + Number((t.metrics || t).ytdLy || 0), 0);
-  return {
-    todayActual,
-    todayLy,
-    todayGrowth: todayLy > 0 ? ((todayActual - todayLy) / todayLy) * 100 : 0,
-    mtdActual,
-    mtdLy,
-    mtdGrowth: mtdLy > 0 ? ((mtdActual - mtdLy) / mtdLy) * 100 : 0,
-    ytdActual,
-    ytdLy,
-    ytdGrowth: ytdLy > 0 ? ((ytdActual - ytdLy) / ytdLy) * 100 : 0
+  // 프론트 연산(reduce) 철거: 백엔드가 내려주는 venueSubtotal 객체를 1:1 바인딩
+  return venue.venueSubtotal || {
+    todayActual: 0, todayLy: 0, todayGrowth: 0,
+    mtdActual: 0, mtdLy: 0, mtdGrowth: 0,
+    ytdActual: 0, ytdLy: 0, ytdGrowth: 0
   };
 };
 

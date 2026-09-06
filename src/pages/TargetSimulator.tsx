@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, 
   Calendar, Layers, DollarSign, CalendarDays,
@@ -740,7 +740,7 @@ export default function TargetSimulator() {
                     목표 {input.includeGolf ? '전사 Total' : '순수 리조트 Resort'} {input.selectedMonth === 'ANNUAL' ? '일평균' : '일일'} TrevPAR
                   </div>
                   <div className="text-2xl font-black text-white tabular-nums mt-0.5">
-                    ₩{formatCurrency(apiData?.summary?.dailyTrevPAR || Math.round(summaryGrandTarget2026 / (175 * simulationResult.periodDays)))}
+                    {(apiData?.summary?.dailyTrevPAR ?? 0) > 0 ? `₩${formatCurrency(apiData!.summary!.dailyTrevPAR)}` : '-'}
                     <span className="text-xs font-normal text-slate-300 ml-1">/실·일</span>
                   </div>
                   <div className="text-[11px] text-teal-300 font-bold mt-1">
@@ -791,10 +791,10 @@ export default function TargetSimulator() {
             {input.targetYear}년 목표 {input.includeGolf ? '전사 Total' : '순수 리조트 Resort'} TrevPAR
           </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
-            ₩{formatCurrency(apiData?.summary?.dailyTrevPAR || Math.round(summaryGrandTarget2026 / (175 * simulationResult.periodDays)))} <span className="text-sm font-normal text-slate-500">/실·일</span>
+            {(apiData?.summary?.dailyTrevPAR ?? 0) > 0 ? `₩${formatCurrency(apiData!.summary!.dailyTrevPAR)}` : '-'} <span className="text-sm font-normal text-slate-500">/실·일</span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            175실 × {simulationResult.periodDays}일 ({175 * simulationResult.periodDays} 가용객실박) 대칭 기준
+            백엔드 연동 데이터 기준
           </div>
         </div>
 

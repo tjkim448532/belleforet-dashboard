@@ -244,24 +244,32 @@ export default function MonthlyTrevporChart() {
   const kpiHighlights = useMemo(() => {
     if (targetPeriodMonths.length === 0) return null;
 
-    let totalTyTrevparSum = 0;
-    let totalLyTrevparSum = 0;
+    let totalTyRevenue = 0;
+    let totalTyAvailRooms = 0;
+    let totalLyRevenue = 0;
+    let totalLyAvailRooms = 0;
     let maxMonth = targetPeriodMonths[0];
     let maxTrevpar = 0;
 
     targetPeriodMonths.forEach(m => {
+      if (m.ty) {
+        totalTyRevenue += (metricMode === 'TOTAL' ? m.ty.totalRevenue : m.ty.netRevenueWithoutGolf) || 0;
+        totalTyAvailRooms += m.ty.availableRooms || 0;
+      }
+      if (m.ly) {
+        totalLyRevenue += (metricMode === 'TOTAL' ? m.ly.totalRevenue : m.ly.netRevenueWithoutGolf) || 0;
+        totalLyAvailRooms += m.ly.availableRooms || 0;
+      }
+      
       const tyVal = getTrevparValue(m.ty, metricMode) || 0;
-      const lyVal = getTrevparValue(m.ly, metricMode) || 0;
-      totalTyTrevparSum += tyVal;
-      totalLyTrevparSum += lyVal;
       if (tyVal > maxTrevpar) {
         maxTrevpar = tyVal;
         maxMonth = m;
       }
     });
 
-    const avgTyTrevpar = Math.round(totalTyTrevparSum / targetPeriodMonths.length);
-    const avgLyTrevpar = Math.round(totalLyTrevparSum / targetPeriodMonths.length);
+    const avgTyTrevpar = totalTyAvailRooms > 0 ? Math.round(totalTyRevenue / totalTyAvailRooms) : 0;
+    const avgLyTrevpar = totalLyAvailRooms > 0 ? Math.round(totalLyRevenue / totalLyAvailRooms) : 0;
     const yoyGrowth = avgLyTrevpar > 0 ? Number((((avgTyTrevpar - avgLyTrevpar) / avgLyTrevpar) * 100).toFixed(1)) : 0;
 
     let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
@@ -1429,13 +1437,13 @@ export default function MonthlyTrevporChart() {
                 <tr>
                   <th className="py-3.5 px-3 text-center">월</th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 가용객실</th>
-                  <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[280px]">
+                  <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[360px] whitespace-nowrap">
                     2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 가용객실</th>
-                  <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[280px]">
+                  <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[360px] whitespace-nowrap">
                     2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
@@ -1472,30 +1480,30 @@ export default function MonthlyTrevporChart() {
                       </td>
                       
                       {/* 2025년 매출 비중 */}
-                      <td className="py-3 px-3 text-center bg-slate-100/20">
+                      <td className="py-3 px-3 text-center bg-slate-100/20 whitespace-nowrap">
                         {lyShares ? (
-                          <div className="flex items-center justify-center gap-1 text-[11px] font-medium flex-wrap">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200" title="숙박 비중">
+                          <div className="flex items-center justify-center gap-1 text-[10.5px] font-medium flex-nowrap whitespace-nowrap">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200 shrink-0" title="숙박 비중">
                               숙 {lyShares.roomRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200" title="식음 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200 shrink-0" title="식음 비중">
                               식 {lyShares.fnbRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200" title="레저 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 shrink-0" title="레저 비중">
                               레 {lyShares.leisureRatio}%
                             </span>
                             {lyShares.motoRatio !== undefined && (
-                              <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-900 border border-rose-200" title="모토아레나 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-900 border border-rose-200 shrink-0" title="모토아레나 비중">
                                 모 {lyShares.motoRatio}%
                               </span>
                             )}
                             {lyShares.banquetRatio !== undefined && (
-                              <span className="px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-900 border border-cyan-200" title="대관/연회 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-900 border border-cyan-200 shrink-0" title="대관/연회 비중">
                                 대 {lyShares.banquetRatio}%
                               </span>
                             )}
                             {metricMode === 'TOTAL' && lyShares.golfRatio !== null && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200" title="골프 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200 shrink-0" title="골프 비중">
                                 골 {lyShares.golfRatio}%
                               </span>
                             )}
@@ -1517,30 +1525,30 @@ export default function MonthlyTrevporChart() {
                       </td>
 
                       {/* 2026년 매출 비중 */}
-                      <td className="py-3 px-3 text-center bg-teal-50/20">
+                      <td className="py-3 px-3 text-center bg-teal-50/20 whitespace-nowrap">
                         {tyShares ? (
-                          <div className="flex items-center justify-center gap-1 text-[11px] font-medium flex-wrap">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200" title="숙박 비중">
+                          <div className="flex items-center justify-center gap-1 text-[10.5px] font-medium flex-nowrap whitespace-nowrap">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200 shrink-0" title="숙박 비중">
                               숙 {tyShares.roomRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200" title="식음 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200 shrink-0" title="식음 비중">
                               식 {tyShares.fnbRatio}%
                             </span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200" title="레저 비중">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 shrink-0" title="레저 비중">
                               레 {tyShares.leisureRatio}%
                             </span>
                             {tyShares.motoRatio !== undefined && (
-                              <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-900 border border-rose-200" title="모토아레나 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-900 border border-rose-200 shrink-0" title="모토아레나 비중">
                                 모 {tyShares.motoRatio}%
                               </span>
                             )}
                             {tyShares.banquetRatio !== undefined && (
-                              <span className="px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-900 border border-cyan-200" title="대관/연회 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-900 border border-cyan-200 shrink-0" title="대관/연회 비중">
                                 대 {tyShares.banquetRatio}%
                               </span>
                             )}
                             {metricMode === 'TOTAL' && tyShares.golfRatio !== null && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200" title="골프 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200 shrink-0" title="골프 비중">
                                 골 {tyShares.golfRatio}%
                               </span>
                             )}

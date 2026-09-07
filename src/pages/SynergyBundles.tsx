@@ -189,7 +189,7 @@ export default function SynergyBundles() {
 
     const multiFacilityCustomers = apiMeta?.multiFacilityCustomers !== undefined
       ? apiMeta.multiFacilityCustomers
-      : (totalCustomers > 0 ? Math.round(totalCustomers * (Number(multiFacilityRatio) / 100)) : 0);
+      : 0;
 
     const topCountBundle = [...bundleData].sort((a, b) => b.customerCount - a.customerCount)[0];
     const topRevenueBundle = [...bundleData].sort((a, b) => b.totalSales - a.totalSales)[0];

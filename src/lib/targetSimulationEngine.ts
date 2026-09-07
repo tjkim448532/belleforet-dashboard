@@ -54,10 +54,8 @@ export function runTargetSimulation(
   const baseLyTotalRevenue = isAnnual ? yearMeta.annual.totalRevenue : monthMeta.totalRevenue;
   const baseLyTrevpar = isAnnual ? yearMeta.annual.trevpar : monthMeta.trevpar;
 
-  // 1-1. 백엔드에서 내려준 물리 마스터 기반 동적 객실 CAPA 연산 (하드코딩 175 철거)
-  const totalRoomCapacity = capacityMaster
-    .filter(f => f.category === 'ROOM')
-    .reduce((sum, f) => sum + (f.maxDailyUnits || 0), 0) || 0;
+  // 1-1. 백엔드(apiData.summary)에서 완성된 totalRoomCap을 직접 주입받아 사용 (프론트엔드 자체 합산(reduce) 철거)
+  const totalRoomCapacity = input.totalRoomCapacity || 0;
 
   // 2. 연간 성장률 적용한 목표 전사 매출액 및 목표 TrevPAR
   let targetTotalRevenue = Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));

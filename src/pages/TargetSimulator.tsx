@@ -114,6 +114,7 @@ interface ApiSummary {
   grandTotal2025: number;
   grandTarget2026: number;
   grandActual2026?: number;
+  totalRoomCap?: number;
   overallAchievementRate?: number;
   dailyTargetRevenue?: number;
   dailyTrevPAR?: number;
@@ -156,8 +157,8 @@ export default function TargetSimulator() {
 
   // Fallback Simulation Engine
   const simulationResult = useMemo(() => {
-    return runTargetSimulation(input, capacityMaster);
-  }, [input, capacityMaster]);
+    return runTargetSimulation({ ...input, totalRoomCapacity: apiData?.summary?.totalRoomCap || 0 }, capacityMaster);
+  }, [input, capacityMaster, apiData]);
 
   // Fetch Business Plan from Backend API
   useEffect(() => {
@@ -248,7 +249,8 @@ export default function TargetSimulator() {
       !c.categoryName.includes('골프') && 
       c.categoryCode !== 'GOLF'
     );
-    const resortTargetTotal = nonGolf.reduce((sum, c) => sum + c.totalTarget2026, 0) || 1;
+    const rawGrandTarget = apiData?.summary?.grandTarget2026 || simulationResult.totalTargetRevenue;
+    const resortTargetTotal = Math.max(0, rawGrandTarget - (golfCategory?.totalTarget2026 || 0)) || 1;
     return nonGolf.map(c => ({
       ...c,
       totalWeight: Number(((c.totalTarget2026 / resortTargetTotal) * 100).toFixed(2))
@@ -731,7 +733,7 @@ export default function TargetSimulator() {
             <div>
               <div className="text-xs font-bold text-teal-300 flex items-center justify-between">
                 <span>🎯 {input.targetYear}년 {simulationResult.selectedMonthLabel} 목표 실적 지표</span>
-                <span className="text-[11px] text-slate-300">175실 × {simulationResult.periodDays}일 기준</span>
+                <span className="text-[11px] text-slate-300">백엔드 제공 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준</span>
               </div>
               
               <div className="grid grid-cols-2 gap-4 mt-3">

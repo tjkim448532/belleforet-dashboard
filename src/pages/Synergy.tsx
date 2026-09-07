@@ -112,7 +112,22 @@ export default function Synergy() {
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
   const [channelData, setChannelData] = useState<RoomChannelSalesItem[]>([]);
-  const [summaryData, setSummaryData] = useState<any>(null);
+  const [summaryData, setSummaryData] = useState<{
+    summary?: {
+      totalRevenue?: number;
+      totalRooms?: number;
+      occupiedRooms?: number;
+      totalRoomRev?: number;
+      totalADR?: number;
+      totalAncillary?: number;
+      totalTrevPOR?: number;
+      totalRevPAS?: number;
+      synergySales?: { total?: number; golf?: number; fnb?: number; leisure?: number; ticket?: number };
+    };
+    synergySales?: { total?: number; golf?: number; fnb?: number; leisure?: number; ticket?: number };
+    salesByCategory?: any[];
+    salesByFacility?: any[];
+  } | null>(null);
   const [matrixData, setMatrixData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
@@ -230,7 +245,7 @@ export default function Synergy() {
         return {
           rooms,
           revenue,
-          adr: rooms > 0 ? Math.round(revenue / rooms) : 0
+          adr: 0 /* adr */
         };
       }
     }
@@ -245,7 +260,7 @@ export default function Synergy() {
           return {
             rooms: roomsSold,
             revenue: roomRev,
-            adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : 0
+            adr: 0 /* adr */
           };
         }
       }
@@ -259,7 +274,7 @@ export default function Synergy() {
     return {
       rooms: roomsSold,
       revenue: roomRev,
-      adr: roomsSold > 0 ? Math.round(roomRev / roomsSold) : parseNum(summaryData?.summary?.totalADR || 0)
+      adr: parseNum(summaryData?.summary?.totalADR || 0)
     };
   }, [channelData, matrixData, summaryData, isActualRange]);
 
@@ -281,7 +296,7 @@ export default function Synergy() {
       const leisureRev = parseNum(ticketRow?.todayActual || ticketRow?.rangeActual || ticketRow?.mtdActual || 0) + 
                          parseNum(motoRow?.todayActual || motoRow?.rangeActual || motoRow?.mtdActual || 0);
 
-      const totalAncillary = Math.max(0, totalRev > 0 ? (totalRev - roomRev) : (golfRev + fnbRev + leisureRev));
+      const totalAncillary = parseNum(summaryData?.summary?.totalAncillary || 0) || Math.max(0, totalRev - roomRev);
       if (totalAncillary > 0) {
         return {
           golf: golfRev,
@@ -311,7 +326,7 @@ export default function Synergy() {
     
     const totalRev = parseNum(summaryData?.summary?.totalRevenue || 0);
     const roomRev = grandTotal.revenue || parseNum(cats.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.totalSales || cats.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도')?.todayActual || 0);
-    const totalAncillary = Math.max(0, totalRev > 0 ? (totalRev - roomRev) : (golfRev + fnbRev + leisureRev));
+    const totalAncillary = parseNum(summaryData?.summary?.totalAncillary || 0) || Math.max(0, totalRev - roomRev);
 
     return {
       golf: golfRev,
@@ -341,7 +356,7 @@ export default function Synergy() {
             name: cleanName,
             rooms,
             revenue,
-            adr: rooms > 0 ? Math.round(revenue / rooms) : 0,
+            adr: 0 /* adr */,
             sharePct: (shareRatio * 100).toFixed(1),
             isMtdFallback: false
           };
@@ -359,7 +374,7 @@ export default function Synergy() {
       const rev = parseNum(c.totalSales || c.todayActual || 0);
       const share = totalAncillary > 0 ? (rev / totalAncillary) * 100 : 0;
       const rooms = grandTotal.rooms || 0;
-      const revpas = rooms > 0 ? Math.round(rev / rooms) : 0;
+      const revpas = parseNum(summaryData?.summary?.totalRevPAS || 0);
       return {
         name: `${c.categoryName || c.categoryCode} 시너지`,
         rooms: rooms,
@@ -653,7 +668,7 @@ export default function Synergy() {
               통합 객실당 가치 (RevPAS · 골프 포함)
             </span>
             <div className="text-3xl lg:text-4xl font-black text-indigo-600 tracking-tight tabular-nums">
-              {formatCurrency(grandTotal.rooms > 0 ? Math.round((grandTotal.revenue + totalSynergySum) / grandTotal.rooms) : 0)} <span className="text-base text-slate-500 font-normal">원/실</span>
+              {formatCurrency(parseNum(summaryData?.summary?.totalTrevPOR || 0))} <span className="text-base text-slate-500 font-normal">원/실</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
@@ -833,7 +848,7 @@ export default function Synergy() {
 
                   const rooms = parseNum(isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0));
                   const rev = parseNum(isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0));
-                  const adr = rooms > 0 ? Math.round(rev / rooms) : 0;
+                  const adr = parseNum(summaryData?.summary?.totalADR || 0);
                   const mtdRooms = parseNum(item.mtdRooms || 0);
                   const mtdRev = parseNum(item.mtdRevenue || 0);
 

@@ -83,6 +83,8 @@ export default function GroupSales() {
     fnbRevenue: number;
     golfRevenue: number;
     leisureRevenue: number;
+    ancillaryRevenue?: number;
+    ancillaryRatio?: number;
     repeatGroupsCount?: number;
     loyaltyRate?: number;
     repeatRate?: number;
@@ -491,7 +493,7 @@ export default function GroupSales() {
               ₩{formatCurrency(totalCalculatedRevenue)} <span className="text-sm font-semibold text-slate-500">원</span>
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              행사당 평균: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerGroup || (enrichedGroups.length > 0 ? Math.round(totalCalculatedRevenue / enrichedGroups.length) : 0))}원</strong>
+              행사당 평균: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerGroup || 0)}원</strong>
             </div>
           </div>
         </div>
@@ -528,9 +530,7 @@ export default function GroupSales() {
           </div>
           <div>
             <div className="text-2xl font-black text-cyan-800 tabular-nums">
-              {summaryData && summaryData.totalRevenue > 0
-                ? Math.round(((summaryData.fnbRevenue + summaryData.golfRevenue + summaryData.leisureRevenue) / summaryData.totalRevenue) * 100)
-                : 36}%
+              {summaryData?.ancillaryRatio || 0}%
             </div>
             <div className="text-xs text-slate-500 mt-1">
               1인당 객단가: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>

@@ -160,7 +160,7 @@ export default function Members() {
   const metrics = useMemo(() => {
     const totalCount = summaryData?.totalVisitors || enrichedVisitors.length;
     const totalSpend = summaryData?.totalSpend || 0;
-    const avgSpend = summaryData?.avgSpendPerMember || (totalCount > 0 ? Math.round(totalSpend / totalCount) : 0);
+    const avgSpend = summaryData?.avgSpendPerMember || 0;
     const totalYtdSpend = summaryData?.totalYtdSpend || 0;
 
     const sortedByYtd = [...enrichedVisitors].sort((a, b) => b.ytdVisitCount - a.ytdVisitCount);

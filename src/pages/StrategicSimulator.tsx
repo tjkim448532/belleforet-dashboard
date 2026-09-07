@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
@@ -130,6 +130,7 @@ interface ApiSummary {
   grandTotal2025: number;
   grandTarget2026: number;
   grandActual2026?: number;
+  totalRoomCap?: number;
   overallAchievementRate?: number;
   dailyTargetRevenue?: number;
   dailyTrevPAR?: number;
@@ -189,8 +190,8 @@ export default function StrategicSimulator() {
 
   // Fallback Simulation Engine
   const simulationResult = useMemo(() => {
-    return runTargetSimulation(input, capacityMaster);
-  }, [input, capacityMaster]);
+    return runTargetSimulation({ ...input, totalRoomCapacity: apiData?.summary?.totalRoomCap || 0 }, capacityMaster);
+  }, [input, capacityMaster, apiData]);
 
   // Fetch Business Plan from Backend API
   useEffect(() => {
@@ -237,21 +238,16 @@ export default function StrategicSimulator() {
     const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024];
 
     let rev2025 = 0;
+    let rev2024 = 0;
+
     if (isAnnual) {
       rev2025 = y2025?.annual?.totalRevenue || 0;
-      if (rev2025 === 0 && y2025?.months) {
-        rev2025 = Object.values(y2025.months).reduce((sum, m) => sum + (m.totalRevenue || 0), 0);
-      }
     } else {
       rev2025 = y2025?.months?.[monthNum]?.totalRevenue || 0;
     }
 
-    let rev2024 = 0;
     if (isAnnual) {
       rev2024 = y2024?.annual?.totalRevenue || 0;
-      if (rev2024 === 0 && y2024?.months) {
-        rev2024 = Object.values(y2024.months).reduce((sum, m) => sum + (m.totalRevenue || 0), 0);
-      }
     } else {
       rev2024 = y2024?.months?.[monthNum]?.totalRevenue || 0;
     }
@@ -315,8 +311,10 @@ export default function StrategicSimulator() {
       );
     }
 
-    const totalBaseRev = sourceCats.reduce((sum, c) => sum + c.totalActual2025, 0) || 1;
-    const targetGrandTotal = input.includeGolf ? rawGrandTarget2026 : Math.round(rawGrandTarget2026 * (sourceCats.reduce((s, c) => s + c.totalActual2025, 0) / (rawGrandTotal2025 || 1)));
+    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF' || c.categoryName.includes('골프'));
+    const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
+    const totalBaseRev = input.includeGolf ? rawGrandTotal2025 : Math.max(0, rawGrandTotal2025 - golfActual2025);
+    const targetGrandTotal = input.includeGolf ? rawGrandTarget2026 : Math.round(rawGrandTarget2026 * (totalBaseRev / (rawGrandTotal2025 || 1)));
 
     // 1. Calculate raw weighted scores with β_f
     const scoredCats = sourceCats.map(cat => {
@@ -388,10 +386,14 @@ export default function StrategicSimulator() {
     return rebalancedCats;
   }, [rawCategories, input.includeGolf, rawGrandTarget2026, rawGrandTotal2025, strategicMultipliers]);
 
-  // Overall Financial Metrics Summary
   const grandTargetTotal = useMemo(() => {
-    return effectiveCategories.reduce((sum, c) => sum + c.totalTarget2026, 0);
-  }, [effectiveCategories]);
+    const rawTarget = Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100));
+    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF' || c.categoryName.includes('골프'));
+    const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
+    const rawGrandTotal = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
+    const totalBaseRev = input.includeGolf ? rawGrandTotal : Math.max(0, rawGrandTotal - golfActual2025);
+    return input.includeGolf ? rawTarget : Math.round(rawTarget * (totalBaseRev / (rawGrandTotal || 1)));
+  }, [input.includeGolf, input.targetGrowthRate, rawCategories, wmaBaselineData, apiData, simulationResult]);
 
   // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {
@@ -822,10 +824,10 @@ export default function StrategicSimulator() {
             목표 {input.includeGolf ? '전사 Total' : '순수 리조트'} TrevPAR
           </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
-            ₩{formatCurrency(Math.round(grandTargetTotal / (175 * simulationResult.periodDays)))} <span className="text-sm font-normal text-slate-500">/실·일</span>
+            ₩{formatCurrency(apiData?.summary?.totalRoomCap ? Math.round(grandTargetTotal / apiData.summary.totalRoomCap) : 0)} <span className="text-sm font-normal text-slate-500">/실</span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            175실 × {simulationResult.periodDays}일 대칭 기준
+            백엔드 제공 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준
           </div>
         </div>
 
@@ -964,7 +966,7 @@ export default function StrategicSimulator() {
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-2">
-              콘도(175실) 100% 가동률 도달 시, 투숙객 머릿수 증가가 한계에 봉착하므로 <strong>외래 당일객(+Q)</strong> 및 <strong>인당 객단가(+P)</strong> 전략으로 부대시설 목표를 견인합니다.
+              콘도 100% 가동률 도달 시, 투숙객 머릿수 증가가 한계에 봉착하므로 <strong>외래 당일객(+Q)</strong> 및 <strong>인당 객단가(+P)</strong> 전략으로 부대시설 목표를 견인합니다.
             </p>
 
             <div className="space-y-4 mt-4">
@@ -1019,11 +1021,21 @@ export default function StrategicSimulator() {
                   onChange={(e) => setSpendPerCapIncrease(Number(e.target.value))}
                   className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                 />
-                <div className="text-[11px] text-teal-800 flex items-center justify-between font-medium">
-                  <span>{simulationResult.selectedMonthLabel} 추가 F&B/레저 매출 창출:</span>
-                  <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * 175 * 3.5 * simulationResult.periodDays)}원</b>
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">일일 객단가 견인액:</span>
+                  <b className="text-rose-400">+{formatCurrency(spendPerCapIncrease * (apiData?.summary?.totalRoomCap || 0) * 3.5)}원</b>
                 </div>
-              </div>
+                <div className="flex items-center justify-between text-sm bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
+                  <span className="text-rose-200 font-medium">
+                    {simulationResult.selectedMonthLabel} 추가 F&B/레저 매출 창출:
+                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * (apiData?.summary?.totalRoomCap || 0) * 3.5 * simulationResult.periodDays)}원</b>
+                  </div>
+                </div>
+              </>
+            </div>
             </div>
           </div>
 

@@ -108,7 +108,7 @@ export default function ResortBusiness() {
     
     const groups = data.roomOccupancyMap;
     const result = [];
-    const keys = ['16평', '35평', '51평', '기타'];
+    const keys = Object.keys(groups);
     for (const key of keys) {
       const g = groups[key];
       if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
@@ -134,10 +134,10 @@ export default function ResortBusiness() {
     return result;
   })();
 
-  const connecting51Sold = data?.roomOccupancyMap?.['51평']?.sold || 0;
-  const connectingPhysicalRooms = connecting51Sold * 2; // 35세트 x 2 = 70실 (또는 기간 누적)
-  const standardPhysicalRooms = Math.max(0, lodgingStats.roomsSold - connecting51Sold);
-  const totalPhysicalOccupied = Number(data?.summary?.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));
+  const summary = data?.summary || {};
+  const standardPhysicalRooms = Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
+  const connectingPhysicalRooms = Number(summary.connectingPhysicalRooms || 0);
+  const totalPhysicalOccupied = Number(summary.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));
   const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || (175 * rangeDays));
   const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
 

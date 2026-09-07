@@ -25,6 +25,7 @@ export interface SimulationTargetInput {
   targetTotalRevenue: number; // 전사 총매출 목표 (원)
   strategyMode?: 'BALANCED' | 'PRICE_LEVERAGE' | 'VOLUME_MAXIMIZE';
   includeGolf: boolean;
+  totalRoomCapacity?: number;
 }
 
 export interface DivisionAllocationResult {

@@ -246,37 +246,25 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const dailyCap16 = parseNum(masterCapacities?.['16평']) || 0;
-  const dailyCap35 = parseNum(masterCapacities?.['35평']) || 0;
-  const dailyCap51 = parseNum(masterCapacities?.['51평']) || 0;
-  const dailyCapEtc = parseNum(masterCapacities?.['기타']) || 0;
+  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {};
+  if (masterCapacities) {
+    Object.entries(masterCapacities).forEach(([k, v]) => {
+      roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
+    });
+  }
 
-  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {
-    '16평': { sold: 0, cap: dailyCap16 * days, rev: 0 },
-    '35평': { sold: 0, cap: dailyCap35 * days, rev: 0 },
-    '51평': { sold: 0, cap: dailyCap51 * days, rev: 0 },
-    '기타': { sold: 0, cap: dailyCapEtc * days, rev: 0 }
-  };
-
-  // 🚨 [Pure Consumer] 프론트엔드 평형별 무단 덧셈(Slice Summation) 및 채널별 추출(Fallback) 완전 철거
-  // 오직 백엔드가 완제품으로 내려주는 roomSummaryByType 의 값만을 1:1 매핑하며(+= 연산 금지),
-  // 값이 없다면 빈 배열/0 처리하여 백엔드 파이프라인의 책임을 강제합니다.
+  // 🚨 [Pure Consumer] 프론트엔드의 평형별 무단 섹션(Slice Summation) 및 채널별 추출(Fallback) 완전 철거
+  // 💡 백엔드가 정제해주는 roomSummaryByType 의 값만을 1:1 매핑하며,
+  // 값이 없다면 빈 배열/0 처리하여 백엔드의 데이터파이프라인 책임을 강제합니다.
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType) && payload.roomSummaryByType.length > 0) {
     payload.roomSummaryByType.forEach((item: any) => {
-      const typeName = item.roomType || '기타';
+      const typeName = item.roomType || '미분류';
       const sold = parseNum(item.roomsSold || 0);
       const rev = parseNum(item.totalSales || item.revenue || 0);
-      const cap = item.capacity || item.totalRooms ? parseNum(item.capacity || item.totalRooms) * days : undefined;
+      const defaultCap = masterCapacities?.[typeName] ? parseNum(masterCapacities[typeName]) * days : 0;
+      const cap = item.capacity || item.totalRooms ? parseNum(item.capacity || item.totalRooms) * days : (roomOccupancyMap[typeName]?.cap ?? defaultCap);
 
-      if (typeName.includes('16평')) {
-        roomOccupancyMap['16평'] = { sold, rev, cap: cap ?? roomOccupancyMap['16평'].cap };
-      } else if (typeName.includes('35평')) {
-        roomOccupancyMap['35평'] = { sold, rev, cap: cap ?? roomOccupancyMap['35평'].cap };
-      } else if (typeName.includes('51평')) {
-        roomOccupancyMap['51평'] = { sold, rev, cap: cap ?? roomOccupancyMap['51평'].cap };
-      } else {
-        roomOccupancyMap['기타'] = { sold, rev, cap: cap ?? roomOccupancyMap['기타'].cap };
-      }
+      roomOccupancyMap[typeName] = { sold, rev, cap };
     });
   }
 

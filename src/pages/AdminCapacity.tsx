@@ -206,7 +206,7 @@ export default function AdminCapacity() {
               💡 백엔드 표준 영업장 캐파 제약 기반 역추산 규칙 (Capacity SSOT)
             </div>
             <div className="text-slate-600 leading-relaxed">
-              1. <strong>객실(175실) & 골프(80팀):</strong> 수용량 100% 매진 시 ADR/그린피 단가 인상 목표로 자동 전환됩니다.<br/>
+              1. <strong>객실 & 골프:</strong> 기준 수용량 100% 매진 시 ADR/그린피 단가 인상 목표로 자동 전환됩니다.<br/>
               2. <strong>얼룩말카페 / 미디어-기프트샵:</strong> 레저본부 귀속 / <strong>핏스탑:</strong> 모토아레나 귀속 / <strong>클럽-레스토랑:</strong> 골프 귀속 기준으로 연동됩니다.
             </div>
           </div>

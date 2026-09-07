@@ -310,11 +310,8 @@ export default function SynergyCorrelation() {
         return !isSelf && sName !== 'UNMAPPED_TICKET';
       });
 
-      const totalSpillover = validCorrList.reduce((acc, c) => acc + (c.pureSpilloverPerMillion || 0), 0);
-      const positiveItems = validCorrList.filter(c => (c.pureElasticity || 0) > 0);
-      const avgElasticity = positiveItems.length > 0 
-        ? positiveItems.reduce((acc, c) => acc + (c.pureElasticity || 0), 0) / positiveItems.length 
-        : 0;
+      const totalSpillover = crossRes?.summary?.totalSpillover || 0;
+      const avgElasticity = crossRes?.summary?.avgElasticity || 0;
       const topStore = [...validCorrList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
 
       const newAnchorData = crossRes?.anchor ? {
@@ -408,9 +405,8 @@ export default function SynergyCorrelation() {
                                (cand === 'FNB' && (sName.includes('식음') || sName === 'FNB'));
                 return !isSelf && sName !== 'UNMAPPED_TICKET';
               });
-              const tSpill = vList.reduce((a, b) => a + (b.pureSpilloverPerMillion || 0), 0);
-              const pItems = vList.filter(b => (b.pureElasticity || 0) > 0);
-              const aElast = pItems.length > 0 ? pItems.reduce((a, b) => a + (b.pureElasticity || 0), 0) / pItems.length : 0;
+              const tSpill = cRes.summary?.totalSpillover || 0;
+              const aElast = cRes.summary?.avgElasticity || 0;
               const tStore = [...vList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
 
               synergyMemoryCache.set(candKey, {

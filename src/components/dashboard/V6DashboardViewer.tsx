@@ -24,9 +24,17 @@ interface Venue {
   venueSubtotal: RevenueMetrics;
 }
 
+interface Part {
+  partName: string;
+  venues: Venue[];
+  partSubtotal: RevenueMetrics;
+  part_subtotal?: RevenueMetrics; // 백엔드 호환용
+}
+
 interface Division {
   orgDivision: string;
-  venues: Venue[];
+  parts?: Part[];
+  venues?: Venue[];
   divisionSubtotal: RevenueMetrics;
 }
 
@@ -99,6 +107,7 @@ export default function V6DashboardViewer() {
           {/* 그룹 헤더 (3개의 파트로 분리) */}
           <tr>
             <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>대분류</th>
+            <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>파트</th>
             <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>영업장</th>
             
             <th className="px-4 py-2 border-x border-slate-300 border-b bg-emerald-50/50 text-emerald-800" colSpan={3}>당일 실적 (Today)</th>
@@ -126,45 +135,87 @@ export default function V6DashboardViewer() {
         <tbody>
           {/* --- 4. 계층형 데이터 순회 및 렌더링 --- */}
           {data.divisions.map((division, divIdx) => {
-            const divisionRowSpan = division.venues.length + 1;
+            const parts = division.parts || [];
+            
+            // 본부 RowSpan 계산: 각 파트마다 (venues 수 + 파트 소계 1줄), 그리고 본부 소계 1줄
+            let divisionRowSpan = 1; // 본부 소계용 1줄
+            parts.forEach(part => {
+              divisionRowSpan += (part.venues?.length || 0) + 1;
+            });
 
             return (
               <React.Fragment key={`div-${divIdx}`}>
-                {division.venues.map((venue, venueIdx) => {
-                  const metrics = getVenueMetrics(venue);
+                {parts.map((part, partIdx) => {
+                  const partRowSpan = (part.venues?.length || 0) + 1;
+
                   return (
-                    <tr key={`div-${divIdx}-ven-${venueIdx}`} className="hover:bg-slate-50 transition-colors">
-                      {venueIdx === 0 && (
-                        <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-bold align-top border border-slate-200 text-slate-800">
-                          {division.orgDivision}
-                        </td>
-                      )}
+                    <React.Fragment key={`div-${divIdx}-part-${partIdx}`}>
+                      {part.venues.map((venue, venueIdx) => {
+                        const metrics = getVenueMetrics(venue);
+                        const isFirstOfDivision = partIdx === 0 && venueIdx === 0;
+                        const isFirstOfPart = venueIdx === 0;
+
+                        return (
+                          <tr key={`div-${divIdx}-part-${partIdx}-ven-${venueIdx}`} className="hover:bg-slate-50 transition-colors">
+                            {isFirstOfDivision && (
+                              <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-bold align-top border border-slate-200 text-slate-800">
+                                {division.orgDivision}
+                              </td>
+                            )}
+                            {isFirstOfPart && (
+                              <td rowSpan={partRowSpan} className="px-4 py-3 bg-slate-50/50 font-semibold align-top border border-slate-200 text-slate-700">
+                                {part.partName}
+                              </td>
+                            )}
+                            
+                            <td className="px-4 py-3 font-medium align-top border border-slate-200 text-slate-600">
+                              {venue.venueName}
+                            </td>
+                            
+                            {/* Today */}
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200">{formatNum(metrics.todayActual)}</td>
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.todayLy)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-slate-50/50">{formatGrowth(metrics.todayGrowth)}</td>
+                            
+                            {/* MTD */}
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-blue-800">{formatNum(metrics.mtdActual)}</td>
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.mtdLy)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(metrics.mtdGrowth)}</td>
+                            
+                            {/* YTD */}
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-indigo-800">{formatNum(metrics.ytdActual)}</td>
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.ytdLy)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(metrics.ytdGrowth)}</td>
+                          </tr>
+                        );
+                      })}
                       
-                      <td className="px-4 py-3 font-medium align-top border border-slate-200 text-slate-700">
-                        {venue.venueName}
-                      </td>
-                      
-                      {/* Today */}
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200">{formatNum(metrics.todayActual)}</td>
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.todayLy)}</td>
-                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-slate-50/50">{formatGrowth(metrics.todayGrowth)}</td>
-                      
-                      {/* MTD */}
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-blue-800">{formatNum(metrics.mtdActual)}</td>
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.mtdLy)}</td>
-                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(metrics.mtdGrowth)}</td>
-                      
-                      {/* YTD */}
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-indigo-800">{formatNum(metrics.ytdActual)}</td>
-                      <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.ytdLy)}</td>
-                      <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(metrics.ytdGrowth)}</td>
-                    </tr>
+                      {/* 파트별 소계 (API 완제품 바인딩) */}
+                      <tr className="bg-slate-50 text-slate-800 font-bold border-b border-slate-300">
+                        <td className="px-4 py-2 border border-slate-300 text-center text-xs" colSpan={1}>[{part.partName}] 소계</td>
+                        
+                        {/* Today */}
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300">{formatNum(part.partSubtotal?.todayActual || part.part_subtotal?.todayActual)}</td>
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.todayLy || part.part_subtotal?.todayLy)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-slate-100/50">{formatGrowth(part.partSubtotal?.todayGrowth || part.part_subtotal?.todayGrowth)}</td>
+                        
+                        {/* MTD */}
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-blue-800">{formatNum(part.partSubtotal?.mtdActual || part.part_subtotal?.mtdActual)}</td>
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.mtdLy || part.part_subtotal?.mtdLy)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-blue-50/50">{formatGrowth(part.partSubtotal?.mtdGrowth || part.part_subtotal?.mtdGrowth)}</td>
+                        
+                        {/* YTD */}
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-indigo-800">{formatNum(part.partSubtotal?.ytdActual || part.part_subtotal?.ytdActual)}</td>
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.ytdLy || part.part_subtotal?.ytdLy)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-indigo-50/50">{formatGrowth(part.partSubtotal?.ytdGrowth || part.part_subtotal?.ytdGrowth)}</td>
+                      </tr>
+                    </React.Fragment>
                   );
                 })}
                 
                 {/* 본부별 소계 */}
                 <tr className="bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300">
-                  <td className="px-4 py-3 border border-slate-300 text-center" colSpan={1}>[{division.orgDivision}] 소계</td>
+                  <td className="px-4 py-3 border border-slate-300 text-center" colSpan={2}>[{division.orgDivision}] 총계</td>
                   {/* Today */}
                   <td className="px-3 py-3 text-right font-mono border border-slate-300">{formatNum(division.divisionSubtotal?.todayActual)}</td>
                   <td className="px-3 py-3 text-right font-mono border border-slate-300 text-slate-600">{formatNum(division.divisionSubtotal?.todayLy)}</td>
@@ -186,7 +237,7 @@ export default function V6DashboardViewer() {
           
           {/* --- 5. 전사 총계 --- */}
           <tr className="bg-slate-800 text-white font-bold text-base border-t-4 border-slate-900">
-            <td className="px-4 py-5 text-center border border-slate-700 tracking-wider" colSpan={2}>전사 총합계 (Grand Total)</td>
+            <td className="px-4 py-5 text-center border border-slate-700 tracking-wider" colSpan={3}>전사 총합계 (Grand Total)</td>
             
             {/* Today */}
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px]">{formatNum(data.grandTotal?.todayActual)}</td>

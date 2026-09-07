@@ -66,6 +66,14 @@ const getVenueMetrics = (venue: any): RevenueMetrics => {
   };
 };
 
+const DIV_COLORS = [
+  { row: "hover:bg-slate-50 transition-colors", divCell: "bg-slate-50", partCell: "bg-slate-50/50", partSubRow: "bg-slate-50", divSubRow: "bg-slate-100" },
+  { row: "bg-blue-50/30 hover:bg-blue-50/80 transition-colors", divCell: "bg-blue-50", partCell: "bg-blue-50/50", partSubRow: "bg-blue-50/80", divSubRow: "bg-blue-100/80" },
+  { row: "bg-emerald-50/30 hover:bg-emerald-50/80 transition-colors", divCell: "bg-emerald-50", partCell: "bg-emerald-50/50", partSubRow: "bg-emerald-50/80", divSubRow: "bg-emerald-100/80" },
+  { row: "bg-amber-50/30 hover:bg-amber-50/80 transition-colors", divCell: "bg-amber-50", partCell: "bg-amber-50/50", partSubRow: "bg-amber-50/80", divSubRow: "bg-amber-100/80" },
+  { row: "bg-purple-50/30 hover:bg-purple-50/80 transition-colors", divCell: "bg-purple-50", partCell: "bg-purple-50/50", partSubRow: "bg-purple-50/80", divSubRow: "bg-purple-100/80" },
+];
+
 export default function V6DashboardViewer() {
   const [data, setData] = useState<V6ApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +143,7 @@ export default function V6DashboardViewer() {
         <tbody>
           {/* --- 4. 계층형 데이터 순회 및 렌더링 --- */}
           {data.divisions.map((division, divIdx) => {
+            const theme = DIV_COLORS[divIdx % DIV_COLORS.length];
             const parts = division.parts || [];
             
             // 본부 RowSpan 계산: 각 파트마다 (venues 수 + 파트 소계 1줄), 그리고 본부 소계 1줄
@@ -156,14 +165,14 @@ export default function V6DashboardViewer() {
                         const isFirstOfPart = venueIdx === 0;
 
                         return (
-                          <tr key={`div-${divIdx}-part-${partIdx}-ven-${venueIdx}`} className="hover:bg-slate-50 transition-colors">
+                          <tr key={`div-${divIdx}-part-${partIdx}-ven-${venueIdx}`} className={theme.row}>
                             {isFirstOfDivision && (
-                              <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-extrabold text-lg align-middle text-center border border-slate-200 text-slate-800 tracking-wider">
+                              <td rowSpan={divisionRowSpan} className={`px-4 py-3 ${theme.divCell} font-extrabold text-lg align-middle text-center border border-slate-200 text-slate-800 tracking-wider`}>
                                 {division.orgDivision}
                               </td>
                             )}
                             {isFirstOfPart && (
-                              <td rowSpan={partRowSpan} className="px-4 py-3 bg-slate-50/50 font-bold text-base align-middle text-center border border-slate-200 text-slate-700 tracking-wide">
+                              <td rowSpan={partRowSpan} className={`px-4 py-3 ${theme.partCell} font-bold text-base align-middle text-center border border-slate-200 text-slate-700 tracking-wide`}>
                                 {part.partName}
                               </td>
                             )}
@@ -191,7 +200,7 @@ export default function V6DashboardViewer() {
                       })}
                       
                       {/* 파트별 소계 (API 완제품 바인딩) */}
-                      <tr className="bg-slate-50 text-slate-800 font-bold border-b border-slate-300">
+                      <tr className={`${theme.partSubRow} text-slate-800 font-bold border-b border-slate-300`}>
                         <td className="px-4 py-2 border border-slate-300 text-center text-xs" colSpan={1}>[{part.partName}] 소계</td>
                         
                         {/* Today */}
@@ -214,7 +223,7 @@ export default function V6DashboardViewer() {
                 })}
                 
                 {/* 본부별 소계 */}
-                <tr className="bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300">
+                <tr className={`${theme.divSubRow} text-slate-900 font-bold border-b-2 border-slate-300`}>
                   <td className="px-4 py-3 border border-slate-300 text-center" colSpan={2}>[{division.orgDivision}] 총계</td>
                   {/* Today */}
                   <td className="px-3 py-3 text-right font-mono border border-slate-300">{formatNum(division.divisionSubtotal?.todayActual)}</td>

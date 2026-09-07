@@ -2,7 +2,7 @@ import ReactECharts from 'echarts-for-react';
 import { PieChart as PieIcon, TrendingUp } from 'lucide-react';
 
 interface SalesPieChartProps {
-  data: { name: string; value: number }[];
+  data: { name: string; value: number; pct?: number }[];
   totalValue?: number;
 }
 

@@ -44,7 +44,7 @@ export default function Home() {
   const pieChartData = React.useMemo(() => {
     if (!coreData.core?.salesByCategory) return [];
     // [SSOT 바이블 준수] 백엔드 카테고리 소계를 바인딩하되, 중복 소계 유입 방지 및 표준 명칭 적용
-    const categoryMap = new Map<string, { name: string; value: number }>();
+    const categoryMap = new Map<string, { name: string; value: number; pct?: number }>();
 
     coreData.core.salesByCategory.forEach((cat: any) => {
       const code = String(cat.categoryCode || cat.categoryName || 'ETC').trim();
@@ -62,10 +62,11 @@ export default function Home() {
       }
 
       const val = parseNum(cat.totalSales || cat.todayActual || 0);
+      const pct = cat.weight !== undefined ? Number(cat.weight) : (cat.pct !== undefined ? Number(cat.pct) : undefined);
       if (val > 0) {
         // 동일 카테고리 코드는 최상위 대표 소계 1개만 매핑 (또는 합산이 아닌 단일 대표치)
         if (!categoryMap.has(code) || categoryMap.get(code)!.value < val) {
-          categoryMap.set(code, { name: displayName, value: val });
+          categoryMap.set(code, { name: displayName, value: val, pct });
         }
       }
     });
@@ -795,7 +796,10 @@ export default function Home() {
 
           {/* 본부별 매출 파이 차트 */}
           {pieChartData.length > 0 && (
-            <SalesPieChart data={pieChartData} />
+            <SalesPieChart 
+              data={pieChartData} 
+              totalValue={coreData.core?.summary?.totalRevenue ?? todayGross} 
+            />
           )}
 
             {/* QA & KPI 상세 가이드 Accordion */}

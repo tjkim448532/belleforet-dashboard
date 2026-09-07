@@ -168,7 +168,7 @@ export default function V6DashboardViewer() {
                               </td>
                             )}
                             
-                            <td className="px-4 py-3 font-medium align-top border border-slate-200 text-slate-600">
+                            <td className="px-4 py-3 font-medium align-middle text-center border border-slate-200 text-slate-600">
                               {venue.venueName}
                             </td>
                             

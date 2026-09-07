@@ -1151,7 +1151,7 @@ export default function MonthlyTrevporChart() {
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
             <div className="text-[11px] font-bold text-slate-500 mb-1">기준 인프라 규모</div>
             <div className="text-xl font-black text-slate-900 tabular-nums">
-              가용객실 <span className="text-xs font-normal text-slate-500">(실측 투숙객 기준)</span>
+              가용객실 <span className="text-xs font-normal text-slate-500">(일 175실 인벤토리 기준)</span>
             </div>
             <div className="text-[11px] text-slate-500 mt-1">투숙률 편차 배제 동일 잣대 비교</div>
           </div>
@@ -1176,7 +1176,7 @@ export default function MonthlyTrevporChart() {
           </div>
           <div>
             <div className="font-bold text-slate-900 text-sm mb-0.5">
-              💡 가용객실당 총매출 (TrevPAR: Total Revenue Per Occupied Room)이란?
+              💡 가용객실당 총매출 (TrevPAR: Total Revenue Per Available Room)이란?
             </div>
             <div className="text-slate-600 leading-relaxed">
               백엔드 마트(SSOT)가 1원 단위로 정제한 공식 지표로, <strong>해당 월의 물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출</strong>입니다. 프론트엔드의 가상 연산 없이 순수 백엔드 완제품을 직결하여 무결성을 보장합니다.

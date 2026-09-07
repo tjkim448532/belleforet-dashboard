@@ -490,10 +490,10 @@ export default function GroupSales() {
           </div>
           <div>
             <div className="text-2xl font-black text-emerald-700 tabular-nums">
-              ₩{formatCurrency(totalCalculatedRevenue)} <span className="text-sm font-semibold text-slate-500">원</span>
+              {formatCurrency(totalCalculatedRevenue)}원
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              행사당 평균: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerGroup || 0)}원</strong>
+              행사당 평균: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerGroup || 0)}원</strong>
             </div>
           </div>
         </div>
@@ -533,7 +533,7 @@ export default function GroupSales() {
               {summaryData?.ancillaryRatio || 0}%
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              1인당 객단가: <strong className="text-slate-800">₩{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>
+              1인당 객단가: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>
             </div>
           </div>
         </div>
@@ -841,11 +841,11 @@ export default function GroupSales() {
                     {/* Settlement & LTV */}
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="font-black text-slate-900 text-sm tabular-nums">
-                        ₩{formatCurrency(group.totalRevenue)}
+                        {formatCurrency(group.totalRevenue)}원
                       </div>
                       {(group.visitCount ?? 0) > 1 && (
                         <div className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
-                          누적 LTV ₩{formatCurrency(group.totalLtvRevenue)}
+                          누적 LTV {formatCurrency(group.totalLtvRevenue)}원
                         </div>
                       )}
                     </td>
@@ -923,7 +923,7 @@ export default function GroupSales() {
                   고객사 생애가치 (Customer LTV)
                 </span>
                 <div className="text-2xl font-black mt-0.5 text-teal-300">
-                  ₩{formatCurrency(selectedGroupModal.totalLtvRevenue || selectedGroupModal.totalRevenue)}원
+                  {formatCurrency(selectedGroupModal.totalLtvRevenue || selectedGroupModal.totalRevenue)}원
                 </div>
               </div>
               <div className="text-right">
@@ -948,7 +948,7 @@ export default function GroupSales() {
                         <span className="font-semibold text-slate-800">{h.checkInDate} ~ {h.checkOutDate}</span>
                         <span className="text-slate-400 ml-2">({h.paxCount}명 · {h.categoryName})</span>
                       </div>
-                      <strong className="text-slate-900">₩{formatCurrency(h.totalRevenue)}원</strong>
+                      <strong className="text-slate-900">{formatCurrency(h.totalRevenue)}원</strong>
                     </div>
                   ))}
                 </div>
@@ -980,7 +980,7 @@ export default function GroupSales() {
                     <div className="flex items-center gap-2">
                       {renderFacilityBadge(fac, fIdx)}
                     </div>
-                    <strong className="text-slate-900">₩{formatCurrency(fac.revenue)}원</strong>
+                    <strong className="text-slate-900">{formatCurrency(fac.revenue)}원</strong>
                   </div>
                 ))}
               </div>
@@ -990,10 +990,10 @@ export default function GroupSales() {
             <div className="flex justify-between items-center bg-slate-900 text-white p-4 rounded-2xl">
               <div>
                 <span className="text-xs text-slate-300 font-semibold block">이번 행사 결제액</span>
-                <span className="text-xs text-slate-400">1인당 평균 ₩{formatCurrency(selectedGroupModal.avgSpendPerPax)}원</span>
+                <span className="text-xs text-slate-400">1인당 평균 {formatCurrency(selectedGroupModal.avgSpendPerPax)}원</span>
               </div>
               <div className="text-2xl font-black text-teal-300">
-                ₩{formatCurrency(selectedGroupModal.totalRevenue)}원
+                {formatCurrency(selectedGroupModal.totalRevenue)}원
               </div>
             </div>
 

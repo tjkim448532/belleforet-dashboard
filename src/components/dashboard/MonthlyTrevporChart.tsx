@@ -1325,6 +1325,103 @@ export default function MonthlyTrevporChart() {
             )}
           </div>
 
+          {/* 🏢 부문별(숙·식·레·모·대) 포함 영업장 안내 (부문별 정산 현황 기준) */}
+          <div className="bg-slate-50/80 p-4 sm:p-5 rounded-2xl border border-slate-200/90 mb-6 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-200/80 gap-2">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-slate-700 shrink-0" />
+                <h4 className="text-xs sm:text-sm font-black text-slate-800 tracking-tight">
+                  부문별({metricMode === 'TOTAL' ? '숙·식·레·모·대·골' : '숙·식·레·모·대'}) 실제 포함 영업장 안내
+                </h4>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+                  경영 조직도 부문별 정산 현황 기준
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 font-medium">
+                ※ 월별 TrevPAR 부문별 매출 비중 배지에 합산되는 공식 영업장 목록입니다.
+              </span>
+            </div>
+
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${metricMode === 'TOTAL' ? 'lg:grid-cols-3 xl:grid-cols-6' : 'lg:grid-cols-5'} gap-3`}>
+              {/* 🏨 숙박 (ROOM) */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200">숙</span>
+                  <span className="text-xs font-black text-slate-800">객실 (리조트본부)</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM</span>
+                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM OTHER</span>
+                </div>
+              </div>
+
+              {/* 🍽️ 식음 (F&B) */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">식</span>
+                  <span className="text-xs font-black text-slate-800">식음 (콘텐츠본부)</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                  {['남도예담', '쿠치나', '브리스킷346', '투썸플레이스', 'BHC(멕시카나)', 'CU편의점', '딜라이트', '밤밤테이블', '밤밤트럭', '썸머랜드 푸드트럭'].map((v) => (
+                    <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 🎢 레저 (TICKET) */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">레</span>
+                  <span className="text-xs font-black text-slate-800">레저 (레저본부)</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                  {['벨포레 목장', '벨포레 목장(체험)', '얼룩말카페', '사계절썰매장', '마운틴카트', '마리나 클럽', '미디어아트센터', '미디어-기프트샵', '미디어-뮤지엄카페', '썸머랜드', '원더풀', '놀이동산(2025)'].map((v) => (
+                    <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 🏎️ 모토 (MOTO) */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">모</span>
+                  <span className="text-xs font-black text-slate-800">모토 (모토아레나)</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                  {['모토아레나', '핏스탑'].map((v) => (
+                    <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 🏛️ 대관 (BANQUET) */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200">대</span>
+                  <span className="text-xs font-black text-slate-800">대관 (세일즈본부)</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">연회장</span>
+                </div>
+              </div>
+
+              {/* ⛳ 골프 (GOLF) */}
+              {metricMode === 'TOTAL' && (
+                <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                  <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                    <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">골</span>
+                    <span className="text-xs font-black text-slate-800">골프 (골프본부)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-auto">
+                    {['골프장', '클럽-레스토랑', '클럽-스타트하우스', '프로샵'].map((v) => (
+                      <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* 12-Month Detailed Reconciliation Table */}
           <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs">
             <table className="w-full text-left border-collapse text-xs">

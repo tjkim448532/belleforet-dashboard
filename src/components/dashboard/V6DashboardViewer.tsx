@@ -158,12 +158,12 @@ export default function V6DashboardViewer() {
                         return (
                           <tr key={`div-${divIdx}-part-${partIdx}-ven-${venueIdx}`} className="hover:bg-slate-50 transition-colors">
                             {isFirstOfDivision && (
-                              <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-bold align-top border border-slate-200 text-slate-800">
+                              <td rowSpan={divisionRowSpan} className="px-4 py-3 bg-slate-50 font-extrabold text-lg align-middle text-center border border-slate-200 text-slate-800 tracking-wider">
                                 {division.orgDivision}
                               </td>
                             )}
                             {isFirstOfPart && (
-                              <td rowSpan={partRowSpan} className="px-4 py-3 bg-slate-50/50 font-semibold align-top border border-slate-200 text-slate-700">
+                              <td rowSpan={partRowSpan} className="px-4 py-3 bg-slate-50/50 font-bold text-base align-middle text-center border border-slate-200 text-slate-700 tracking-wide">
                                 {part.partName}
                               </td>
                             )}

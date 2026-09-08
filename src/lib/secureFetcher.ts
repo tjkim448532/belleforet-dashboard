@@ -1,4 +1,4 @@
-﻿import { auth } from './firebase';
+import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const getAuthToken = async (): Promise<string> => {
@@ -40,8 +40,8 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
         for (const key in node) {
             const value = node[key];
             
-            // 금액/지표 관련 필드명 매칭
-            if (key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i) && !key.toLowerCase().includes('date')) {
+            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드 제외)
+            if (key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name')) {
                 if (typeof value === 'object' && value !== null) {
                     // 객체나 배열인 경우 구조적 노드이므로 Number 강제검사 스킵
                 } else if (typeof value !== 'number') {

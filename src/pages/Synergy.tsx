@@ -356,13 +356,11 @@ export default function Synergy() {
           const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
           const shareRatio = totalRoomRev > 0 ? revenue / totalRoomRev : 0;
 
-          const itemAdr = parseNum(isActualRange ? (item.mtdAdr || item.adr || 0) : (item.todayAdr || item.adr || 0));
-
           return {
             name: cleanName,
             rooms,
             revenue,
-            adr: itemAdr,
+            adr: parseNum(item.adr || 0),
             sharePct: (shareRatio * 100).toFixed(1),
             isMtdFallback: false
           };

@@ -41,7 +41,8 @@ export interface MemberVisitorItem {
 }
 
 export default function Members() {
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, isRange } = useDate();
+  const isEffectiveRange = isRange || (!!endDate && startDate !== endDate);
 
   const [visitors, setVisitors] = useState<MemberVisitorItem[]>([]);
   const [summaryData, setSummaryData] = useState<{
@@ -234,14 +235,14 @@ export default function Members() {
       {/* KPI Overview Summary (4-Grid) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
-        {/* Card 1: Total Daily Members */}
+        {/* Card 1: Total Members */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-              <User size={16} className="text-emerald-600 shrink-0" /> 당일 이용 회원수
+              <User size={16} className="text-emerald-600 shrink-0" /> {isEffectiveRange ? '기간 이용 회원수' : '당일 이용 회원수'}
             </span>
             <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">
-              선택일 기준
+              {isEffectiveRange ? '선택 기간 기준' : '선택일 기준'}
             </span>
           </div>
           <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap">
@@ -252,11 +253,11 @@ export default function Members() {
           </p>
         </div>
 
-        {/* Card 2: Total Daily Member Spend */}
+        {/* Card 2: Total Member Spend */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-              <DollarSign size={16} className="text-indigo-600 shrink-0" /> 당일 회원 총 이용액
+              <DollarSign size={16} className="text-indigo-600 shrink-0" /> {isEffectiveRange ? '기간 회원 총 이용액' : '당일 회원 총 이용액'}
             </span>
             <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 whitespace-nowrap">
               순매출 합계
@@ -302,7 +303,7 @@ export default function Members() {
             ₩{formatCurrency(metrics.totalYtdSpend)} <span className="text-sm font-medium text-slate-400">원</span>
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            선택일 방문 회원들의 2026년 전체 누적 결제액
+            {isEffectiveRange ? '선택 기간 방문 회원들의 2026년 전체 누적 결제액' : '선택일 방문 회원들의 2026년 전체 누적 결제액'}
           </p>
         </div>
 

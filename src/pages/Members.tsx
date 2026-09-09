@@ -187,35 +187,37 @@ export default function Members() {
       <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase">
+              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase whitespace-nowrap">
                 MEMBERSHIP & VIP LOYALTY INTELLIGENCE
               </span>
-              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10">
-                <Award size={12} className="text-brand-mint" /> 회원 이용 실적 및 연간 방문 추적
+              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 whitespace-nowrap">
+                <Award size={12} className="text-brand-mint shrink-0" /> 회원 이용 실적 및 연간 방문 추적
               </span>
-              <span className="bg-emerald-500/30 text-emerald-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium">
-                <Calendar size={12} className="text-emerald-300" />
-                조회일: <strong>{startDate} {endDate ? `~ ${endDate}` : '(1일)'}</strong>
+              <span className="bg-emerald-500/30 text-emerald-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium whitespace-nowrap">
+                <Calendar size={12} className="text-emerald-300 shrink-0" />
+                조회일: <strong className="ml-1">{startDate} {endDate ? `~ ${endDate}` : '(1일)'}</strong>
               </span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
-              <Award className="text-brand-mint" size={32} />
-              회원 이용 실적 및 올해 누적 방문 횟수(YTD) 분석
+            <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
+              <Award className="text-brand-mint shrink-0" size={32} />
+              <span className="break-keep whitespace-normal xl:whitespace-nowrap">
+                회원 이용 실적 및 올해 누적 방문 횟수(YTD) 분석
+              </span>
             </h1>
-            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-3xl">
+            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-3xl break-keep">
               선택된 날짜에 골프CC, 콘도 객실, 식음, 레저를 이용한 회원 리스트와 각 회원의 2026년 올해 총 방문 횟수의 합(YTD) 및 누적 기여액을 실시간 추적합니다.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <GlobalDatePicker showPresets={true} />
             <button
               onClick={fetchMemberVisitors}
               disabled={loading}
-              className="px-4 py-2.5 bg-brand-mint hover:bg-emerald-400 active:bg-emerald-600 active:scale-90 text-white rounded-xl text-xs font-bold transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer select-none"
+              className="px-4 py-2.5 bg-brand-mint hover:bg-emerald-400 active:bg-emerald-600 active:scale-90 text-white rounded-xl text-xs font-bold transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer select-none whitespace-nowrap shrink-0"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               새로고침
@@ -230,17 +232,17 @@ export default function Members() {
         {/* Card 1: Total Daily Members */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <User size={16} className="text-emerald-600" /> 당일 이용 회원수
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+              <User size={16} className="text-emerald-600 shrink-0" /> 당일 이용 회원수
             </span>
-            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">
               선택일 기준
             </span>
           </div>
-          <div className="text-3xl font-black text-slate-900 my-1">
+          <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap">
             {metrics.totalCount.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2 truncate">
             골프 내장 회원 및 콘도 투숙 회원 전수 집계
           </p>
         </div>
@@ -248,17 +250,17 @@ export default function Members() {
         {/* Card 2: Total Daily Member Spend */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <DollarSign size={16} className="text-indigo-600" /> 당일 회원 총 이용액
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+              <DollarSign size={16} className="text-indigo-600 shrink-0" /> 당일 회원 총 이용액
             </span>
-            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 whitespace-nowrap">
               순매출 합계
             </span>
           </div>
-          <div className="text-3xl font-black text-indigo-600 my-1">
+          <div className="text-3xl font-black text-indigo-600 my-1 whitespace-nowrap">
             ₩{formatCurrency(metrics.totalSpend)} <span className="text-sm font-medium text-slate-400">원</span>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2 truncate">
             회원 1인당 평균: <strong>₩{formatCurrency(metrics.avgSpend)}원</strong>
           </p>
         </div>
@@ -266,14 +268,14 @@ export default function Members() {
         {/* Card 3: 🏆 올해 최다 방문 충성 회원 */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-purple-600 flex items-center gap-1.5">
-              <Trophy size={16} className="text-purple-600" /> 올해 최다 방문 VIP
+            <span className="text-xs font-bold text-purple-600 flex items-center gap-1.5 whitespace-nowrap">
+              <Trophy size={16} className="text-purple-600 shrink-0" /> 올해 최다 방문 VIP
             </span>
-            <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+            <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 whitespace-nowrap">
               2026 YTD 1위
             </span>
           </div>
-          <div className="text-2xl font-black text-purple-800 my-1 truncate">
+          <div className="text-2xl font-black text-purple-800 my-1 truncate whitespace-nowrap" title={metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'}>
             {metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
@@ -284,17 +286,17 @@ export default function Members() {
         {/* Card 4: 올해 누적 회원 총 기여액 */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-              <Flame size={16} className="text-amber-500" /> 올해 회원 누적 LTV
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+              <Flame size={16} className="text-amber-500 shrink-0" /> 올해 회원 누적 LTV
             </span>
-            <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+            <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 whitespace-nowrap">
               당해 연간 누적
             </span>
           </div>
-          <div className="text-3xl font-black text-amber-600 my-1">
+          <div className="text-3xl font-black text-amber-600 my-1 whitespace-nowrap">
             ₩{formatCurrency(metrics.totalYtdSpend)} <span className="text-sm font-medium text-slate-400">원</span>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2 truncate">
             선택일 방문 회원들의 2026년 전체 누적 결제액
           </p>
         </div>
@@ -321,7 +323,7 @@ export default function Members() {
                 <button
                   key={t.key}
                   onClick={() => setSelectedTypeFilter(t.key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none whitespace-nowrap ${
                     selectedTypeFilter === t.key
                       ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 ring-offset-1 scale-105'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -348,12 +350,12 @@ export default function Members() {
           {/* Loyalty Sub-Filters & Sort Dropdown */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/70">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
-                <Trophy size={14} className="text-purple-600" /> 올해 방문 필터:
+              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1 whitespace-nowrap">
+                <Trophy size={14} className="text-purple-600 shrink-0" /> 올해 방문 필터:
               </span>
               <button
                 onClick={() => setSelectedLoyaltyFilter('ALL')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'ALL'
                     ? 'bg-slate-800 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -363,7 +365,7 @@ export default function Members() {
               </button>
               <button
                 onClick={() => setSelectedLoyaltyFilter('VIP')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'VIP'
                     ? 'bg-purple-600 text-white shadow-xs'
                     : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
@@ -373,7 +375,7 @@ export default function Members() {
               </button>
               <button
                 onClick={() => setSelectedLoyaltyFilter('REPEAT')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'REPEAT'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
@@ -383,7 +385,7 @@ export default function Members() {
               </button>
               <button
                 onClick={() => setSelectedLoyaltyFilter('NEW')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'NEW'
                     ? 'bg-slate-700 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -394,12 +396,12 @@ export default function Members() {
             </div>
 
             {/* Sort Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-medium">정렬 기준:</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">정렬 기준:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-bold outline-none cursor-pointer focus:border-emerald-500"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-bold outline-none cursor-pointer focus:border-emerald-500 whitespace-nowrap"
               >
                 <option value="YTD_VISITS">🔥 올해 방문 횟수의 합 높은순 ▾</option>
                 <option value="TODAY_SPEND">당일 결제액 높은순 ▾</option>
@@ -413,18 +415,18 @@ export default function Members() {
 
         {/* Member Visitors Table */}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[1100px]">
             <thead>
               <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl">회원번호 / 회원권명</th>
-                <th className="py-3.5 px-4">회원명</th>
-                <th className="py-3.5 px-4">회원 구분</th>
-                <th className="py-3.5 px-4">연락처</th>
-                <th className="py-3.5 px-4">당일 이용 시설/내역</th>
-                <th className="py-3.5 px-4 text-right">당일 결제액 (원)</th>
-                <th className="py-3.5 px-6 text-center">🔥 올해 총 방문 횟수의 합 (YTD)</th>
-                <th className="py-3.5 px-6 text-right">올해 누적 이용액 (LTV)</th>
-                <th className="py-3.5 px-4 text-center rounded-r-xl">상세</th>
+                <th className="py-3.5 px-6 rounded-l-xl whitespace-nowrap">회원번호 / 회원권명</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">회원명</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">회원 구분</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">연락처</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">당일 이용 시설/내역</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">당일 결제액 (원)</th>
+                <th className="py-3.5 px-6 text-center whitespace-nowrap">🔥 올해 총 방문 횟수의 합 (YTD)</th>
+                <th className="py-3.5 px-6 text-right whitespace-nowrap">올해 누적 이용액 (LTV)</th>
+                <th className="py-3.5 px-4 text-center rounded-r-xl whitespace-nowrap">상세</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -435,67 +437,67 @@ export default function Members() {
                     onClick={() => setSelectedMemberModal(member)}
                     className="hover:bg-emerald-50/30 transition-colors cursor-pointer"
                   >
-                    <td className="py-4 px-6 font-bold text-slate-900">
-                      <div className="flex items-center gap-2">
-                        <Award size={16} className="text-brand-mint flex-shrink-0" />
-                        <span>{member.memberNo}</span>
+                    <td className="py-4 px-6 font-bold text-slate-900 whitespace-nowrap">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <Award size={16} className="text-brand-mint shrink-0" />
+                        <span className="whitespace-nowrap">{member.memberNo}</span>
                       </div>
                       {member.membershipName && (
-                        <span className="text-[11px] text-slate-400 font-normal ml-6 block">
+                        <span className="text-[11px] text-slate-400 font-normal ml-6 block whitespace-nowrap">
                           {member.membershipName}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-4 px-4 font-extrabold text-slate-900">
-                      <div className="flex items-center gap-2">
-                        <span>{member.memberName}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${member.tierColor}`}>
+                    <td className="py-4 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="whitespace-nowrap">{member.memberName}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border whitespace-nowrap shrink-0 ${member.tierColor}`}>
                           {member.tierBadge}
                         </span>
                       </div>
                     </td>
 
-                    <td className="py-4 px-4">
-                      <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 whitespace-nowrap">
                         {member.memberType}
                       </span>
                     </td>
 
-                    <td className="py-4 px-4 text-xs text-slate-500 font-medium">
-                      <div className="flex items-center gap-1">
-                        <Phone size={11} className="text-slate-400" />
-                        {member.phone}
+                    <td className="py-4 px-4 text-xs text-slate-500 font-medium whitespace-nowrap">
+                      <div className="flex items-center gap-1 whitespace-nowrap">
+                        <Phone size={11} className="text-slate-400 shrink-0" />
+                        <span className="whitespace-nowrap">{member.phone}</span>
                       </div>
                     </td>
 
-                    <td className="py-4 px-4">
-                      <span className="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-lg font-bold">
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-lg font-bold whitespace-nowrap">
                         {member.visitedFacility}
                       </span>
                     </td>
 
-                    <td className="py-4 px-4 text-right font-black text-slate-900">
+                    <td className="py-4 px-4 text-right font-black text-slate-900 whitespace-nowrap">
                       ₩{formatCurrency(member.todaySpend)}
                     </td>
 
                     {/* 🔥 올해 방문 횟수의 합 (YTD) */}
-                    <td className="py-4 px-6 text-center">
-                      <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full font-black shadow-xs ${
+                    <td className="py-4 px-6 text-center whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full font-black shadow-xs whitespace-nowrap shrink-0 ${
                         member.ytdVisitCount >= 10 ? 'bg-purple-600 text-white shadow-purple-200' :
                         member.ytdVisitCount >= 5 ? 'bg-amber-500 text-white shadow-amber-200' :
                         member.ytdVisitCount >= 2 ? 'bg-blue-600 text-white shadow-blue-200' :
                         'bg-slate-100 text-slate-700 border border-slate-200'
                       }`}>
-                        <Flame size={12} /> 올해 총 {member.ytdVisitCount}회 방문
+                        <Flame size={12} className="shrink-0" /> 올해 총 {member.ytdVisitCount}회 방문
                       </span>
                     </td>
 
-                    <td className="py-4 px-6 text-right font-bold text-slate-800">
+                    <td className="py-4 px-6 text-right font-bold text-slate-800 whitespace-nowrap">
                       ₩{formatCurrency(member.ytdTotalSpend)}원
                     </td>
 
-                    <td className="py-4 px-4 text-center">
+                    <td className="py-4 px-4 text-center whitespace-nowrap">
                       <button className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                         <ChevronRight size={16} />
                       </button>

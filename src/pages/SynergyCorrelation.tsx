@@ -63,6 +63,8 @@ const synergyMemoryCache = new Map<string, {
   girfRows: any[];
   exogenousMeta: any;
   validCorrList: StoreCorrelationItem[];
+  isDataInsufficient?: boolean;
+  executiveInsights?: any[];
 }>();
 
 export default function SynergyCorrelation() {
@@ -73,6 +75,10 @@ export default function SynergyCorrelation() {
   const [startDate, setStartDate] = useState<string>(globalStartDate);
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
+  // Fail-Stop and Actionable Insights State
+  const [isDataInsufficient, setIsDataInsufficient] = useState<boolean>(false);
+  const [executiveInsights, setExecutiveInsights] = useState<any[]>([]);
+
   // Anchor Selection State (NEW SSOT)
   const [selectedAnchor, setSelectedAnchor] = useState<AnchorType>('GOLF');
   const [anchorData, setAnchorData] = useState<AnchorInfo | null>(null);
@@ -143,6 +149,8 @@ export default function SynergyCorrelation() {
       setGirfRows(cached.girfRows);
       setExogenousMeta(cached.exogenousMeta);
       setCorrelationData(cached.validCorrList);
+      setIsDataInsufficient(!!cached.isDataInsufficient);
+      setExecutiveInsights(cached.executiveInsights || []);
       setLoading(false);
       return;
     }
@@ -154,10 +162,9 @@ export default function SynergyCorrelation() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
 
-      // Calculate statistical time-series range (if single date, use MTD range for valid correlation calculation)
-      const monthStart = sDate ? `${sDate.substring(0, 7)}-01` : sDate;
-      const crossStartDate = rangeActive && eDate ? sDate : monthStart;
-      const crossEndDate = rangeActive && eDate ? eDate : sDate;
+      // Single date or Range: Pass exact dates without hidden monthStart expansion (SSOT)
+      const crossStartDate = sDate;
+      const crossEndDate = (rangeActive && eDate) ? eDate : sDate;
 
       const crossParams = `anchor=${targetAnchor}&startDate=${crossStartDate}&endDate=${crossEndDate}`;
 
@@ -166,6 +173,12 @@ export default function SynergyCorrelation() {
         secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`).catch(() => null)
       ]);
+
+      const insufficientData = !!(crossRes?.insufficientDataForRegression || crossRes?.summary?.insufficientDataForRegression);
+      setIsDataInsufficient(insufficientData);
+
+      const actionInsights: any[] = crossRes?.executiveActionableInsights || [];
+      setExecutiveInsights(actionInsights);
 
       const overviewPayload = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes?.data || overviewRes || {});
       const matrixRows: any[] = overviewPayload?.gridData || [];
@@ -260,18 +273,10 @@ export default function SynergyCorrelation() {
         const pureElasticity = item.pureElasticity ?? item.elasticityPercent ?? 0;
         const pureSpillover = item.pureSpilloverPerMillion ?? item.spilloverPerMillion ?? 0;
 
-        // Default or API derived CAPA and Time-lag metrics
-        const defaultCapa = shopName.includes('쿠치나') ? 94.2 : shopName.includes('남도예담') ? 85.0 : shopName.includes('투썸') ? 68.5 : 55.0;
-        const capaUtil = item.currentCapacityUtilization ?? defaultCapa;
+        // SSOT Direct Binding: Purely from Backend API without fake hardcoded ternary fallbacks
+        const capaUtil = cleanNum(item.currentCapacityUtilization ?? (item as any).capacityUtilization ?? 0);
         const bottleneck = item.bottleneckRisk ?? (capaUtil >= 90 ? 'CRITICAL' : capaUtil >= 80 ? 'WARNING' : 'SAFE');
-        
-        const timeLag = item.timeLagDistribution ?? (
-          shopName.includes('쿠치나') || shopName.includes('조식') 
-            ? { sameDayRatio: 57.5, nextDayRatio: 42.5 }
-            : shopName.includes('루지') || shopName.includes('마운틴') || shopName.includes('목장')
-            ? { sameDayRatio: 65.0, nextDayRatio: 35.0 }
-            : { sameDayRatio: 91.2, nextDayRatio: 8.8 }
-        );
+        const timeLag = item.timeLagDistribution ?? { sameDayRatio: 100, nextDayRatio: 0 };
 
         return {
           ...item,
@@ -357,7 +362,9 @@ export default function SynergyCorrelation() {
           summaryMeta: newSummaryMeta,
           girfRows: newGirfRows,
           exogenousMeta: newExogenousMeta,
-          validCorrList
+          validCorrList,
+          isDataInsufficient: insufficientData,
+          executiveInsights: actionInsights
         });
       }
 
@@ -369,9 +376,8 @@ export default function SynergyCorrelation() {
           const candKey = `${cand}_${sDate}_${eDate || sDate}_${rangeActive}`;
           if (synergyMemoryCache.has(candKey)) return;
           try {
-            const mStart = sDate ? `${sDate.substring(0, 7)}-01` : sDate;
-            const cStart = rangeActive && eDate ? sDate : mStart;
-            const cEnd = rangeActive && eDate ? eDate : sDate;
+            const cStart = sDate;
+            const cEnd = (rangeActive && eDate) ? eDate : sDate;
             const cRes = await secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?anchor=${cand}&startDate=${cStart}&endDate=${cEnd}`);
             if (cRes?.anchor) {
               const rawC: CrossSynergyItem[] = cRes.synergyMatrix || cRes.correlations || [];
@@ -394,9 +400,9 @@ export default function SynergyCorrelation() {
                 pureSpilloverPerMillion: it.pureSpilloverPerMillion ?? 0,
                 causalInferenceGrade: it.causalInferenceGrade || 'CONTEMPORANEOUS_CORRELATION',
                 saturationThreshold_K: 120000000,
-                currentCapacityUtilization: 55,
-                bottleneckRisk: 'SAFE',
-                timeLagDistribution: { sameDayRatio: 80, nextDayRatio: 20 },
+                currentCapacityUtilization: cleanNum(it.currentCapacityUtilization ?? (it as any).capacityUtilization ?? 0),
+                bottleneckRisk: it.bottleneckRisk || 'SAFE',
+                timeLagDistribution: it.timeLagDistribution || { sameDayRatio: 100, nextDayRatio: 0 },
                 weatherImpact: { rain10mmEffect: -5, temp1degEffect: 0.4 },
                 elasticityPercent: it.elasticityPercent,
                 spilloverPerMillion: it.spilloverPerMillion,
@@ -429,7 +435,9 @@ export default function SynergyCorrelation() {
                 },
                 girfRows: cRes.generalizedImpulseResponses?.girfTable || [],
                 exogenousMeta: cRes.exogenousControl || newExogenousMeta,
-                validCorrList: vList as any
+                validCorrList: vList as any,
+                isDataInsufficient: !!(cRes.insufficientDataForRegression || cRes.summary?.insufficientDataForRegression),
+                executiveInsights: cRes.executiveActionableInsights || []
               });
             }
           } catch {
@@ -846,6 +854,26 @@ export default function SynergyCorrelation() {
         </div>
       </div>
 
+      {/* ⚠️ Fail-Stop 경고 배너 */}
+      {isDataInsufficient && (
+        <div className="mb-8 p-5 bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl backdrop-blur-md flex items-start gap-4 text-amber-900 bg-amber-50/90 shadow-sm">
+          <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={24} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="font-extrabold text-sm text-amber-900">
+                ⚠️ 데이터 부족 (상관 분석은 최소 2일 이상 조회 필요)
+              </span>
+              <span className="text-[10px] px-2 py-0.5 bg-amber-200/60 text-amber-800 rounded-md border border-amber-300 font-bold whitespace-nowrap">
+                Fail-Stop Guard
+              </span>
+            </div>
+            <p className="text-xs text-amber-800 leading-relaxed font-medium">
+              단일 일자(1일) 조회 시에는 수학적으로 OLS 회귀분석 및 시계열 탄력성 추정이 불가능하여 가짜 데이터 생성을 차단(Fail-Stop)했습니다. 상단 분석 기간에서 <strong>기간 범위(최소 2일 이상)</strong>를 선택해 주십시오.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 🚀 4대 핵심 인과 & CAPA 요약 카드 (Top KPI Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* 1. Anchor Overview Card */}
@@ -1066,38 +1094,32 @@ export default function SynergyCorrelation() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-          {/* Card 1: Bundling */}
-          <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2">
-            <div className="font-bold text-indigo-900 text-sm flex items-center gap-1.5">
-              <Zap size={16} className="text-indigo-600" />
-              🎁 패키지 번들링 추천 (Bundling)
-            </div>
-            <p className="text-slate-700 leading-relaxed font-medium">
-              <strong>마운틴카트</strong> 및 <strong>투썸플레이스</strong>는 {currentAnchorObj.name}과의 순수 낙수액이 100만원당 최대 <strong>+₩48,200원</strong>으로 가장 높으므로, <strong>{currentAnchorObj.name} 연계 15% 할인 번들 패키지</strong> 구성을 강력 권장합니다.
-            </p>
-          </div>
+          {executiveInsights && executiveInsights.length > 0 ? (
+            executiveInsights.map((insightItem: any, idx: number) => {
+              const isWarning = insightItem.type === 'CAPACITY_ALERT' || insightItem.type === 'DATA_INSUFFICIENT';
+              const isOps = insightItem.type === 'OPERATIONS';
+              const bgClass = isWarning ? 'bg-rose-50/70 border-rose-100' : isOps ? 'bg-emerald-50/70 border-emerald-100' : 'bg-indigo-50/70 border-indigo-100';
+              const titleColor = isWarning ? 'text-rose-900' : isOps ? 'text-emerald-900' : 'text-indigo-900';
+              const iconColor = isWarning ? 'text-rose-600' : isOps ? 'text-emerald-600' : 'text-indigo-600';
+              const Icon = isWarning ? AlertTriangle : isOps ? Clock : Zap;
 
-          {/* Card 2: Operations */}
-          <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 space-y-2">
-            <div className="font-bold text-emerald-900 text-sm flex items-center gap-1.5">
-              <Clock size={16} className="text-emerald-600" />
-              👥 인력 및 재고 최적 배치 (Operations)
+              return (
+                <div key={idx} className={`${bgClass} p-4 rounded-2xl border space-y-2`}>
+                  <div className={`font-bold ${titleColor} text-sm flex items-center gap-1.5`}>
+                    <Icon size={16} className={iconColor} />
+                    {insightItem.badge || '전략 권고'}
+                  </div>
+                  <p className="text-slate-700 leading-relaxed font-medium">
+                    {insightItem.insight}
+                  </p>
+                </div>
+              );
+            })
+          ) : (
+            <div className="col-span-3 text-center py-6 text-slate-400">
+              수신된 경영진 전략 권고가 없습니다.
             </div>
-            <p className="text-slate-700 leading-relaxed font-medium">
-              <strong>투썸플레이스</strong>는 당일 소비 비중이 <strong>91.2%</strong>이며 주말 피크 시 매출 탄력성이 <strong>+7.8%</strong>에 달하므로, {currentAnchorObj.name} 풀부킹 일자에 <strong>바리스타 1인 사전 추가 배치</strong>가 필요합니다.
-            </p>
-          </div>
-
-          {/* Card 3: Capacity Warning */}
-          <div className="bg-rose-50/70 p-4 rounded-2xl border border-rose-100 space-y-2">
-            <div className="font-bold text-rose-900 text-sm flex items-center gap-1.5">
-              <AlertTriangle size={16} className="text-rose-600" />
-              🚨 CAPA 병목 임계 경보 (Capacity Alert)
-            </div>
-            <p className="text-slate-700 leading-relaxed font-medium">
-              <strong>쿠치나</strong>는 익일 조식 피크 시 점유율이 <strong>94.2% (CRITICAL)</strong>에 도달하여 대기열로 인한 기회손실이 추정되므로, <strong>조식 3부제 분산 예약제</strong> 또는 좌석 회전율 개선이 시급합니다.
-            </p>
-          </div>
+          )}
         </div>
       </div>
 

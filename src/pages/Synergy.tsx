@@ -153,6 +153,9 @@ export default function Synergy() {
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     setLoading(true);
+    // 즉시 기존 State 초기화 (구간 조회 시 이전 일자 데이터 잔존 방지)
+    setChannelData([]);
+    setMatrixData([]);
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
@@ -241,7 +244,21 @@ export default function Synergy() {
 
   // Grand Total Rooms & Revenue (API 7 SSOT with matrix-weekly & revenue-summary fallbacks)
   const grandTotal = useMemo(() => {
-    const gtRow = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계');
+    // 1. 최우선 SSOT: 백엔드가 계산해 준 완제품 summaryData.summary (totalRoomRev, totalADR, totalRooms)
+    const summaryTotalRoomRev = parseNum(summaryData?.summary?.totalRoomRev || 0);
+    const summaryTotalADR = parseNum(summaryData?.summary?.totalADR || 0);
+    const summaryTotalRooms = parseNum(summaryData?.summary?.totalRooms || 0);
+
+    if (summaryTotalRoomRev > 0 || summaryTotalRooms > 0 || summaryTotalADR > 0) {
+      return {
+        rooms: summaryTotalRooms,
+        revenue: summaryTotalRoomRev,
+        adr: summaryTotalADR
+      };
+    }
+
+    // 2. 차순위: channelData의 gtRow (단일 일자 등에서 summaryData가 비어있을 경우)
+    const gtRow = channelData.find(item => item.isGrandTotal || item.channelName === '전체 합계' || item.channelName === '총합계');
     if (gtRow) {
       const rooms = parseNum(isActualRange ? (gtRow.mtdRooms || gtRow.todayRooms || 0) : (gtRow.todayRooms || 0));
       const revenue = parseNum(isActualRange ? (gtRow.mtdRevenue || gtRow.todayRevenue || 0) : (gtRow.todayRevenue || 0));
@@ -249,38 +266,38 @@ export default function Synergy() {
         return {
           rooms,
           revenue,
-          adr: parseNum(gtRow.adr || summaryData?.summary?.totalADR || 0)
+          adr: parseNum(gtRow.adr || summaryTotalADR || 0)
         };
       }
     }
 
-    // Fallback: Bind directly from matrix-weekly SSOT
+    // 3. Fallback: Bind directly from matrix-weekly SSOT
     if (matrixData && matrixData.length > 0) {
       const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도' || r.categoryName === '콘도'));
       if (roomRow) {
-        const roomsSold = parseNum(summaryData?.summary?.totalRooms || roomRow.todayVisitors || roomRow.rangeVisitors || 0);
+        const roomsSold = parseNum(summaryTotalRooms || roomRow.todayVisitors || roomRow.rangeVisitors || 0);
         const roomRev = parseNum(roomRow.todayActual || roomRow.rangeActual || roomRow.mtdActual || 0);
         if (roomRev > 0 || roomsSold > 0) {
           return {
             rooms: roomsSold,
             revenue: roomRev,
-            adr: parseNum(summaryData?.summary?.totalADR || 0)
+            adr: summaryTotalADR
           };
         }
       }
     }
 
-    // Fallback: Bind directly from revenue-summary SSOT
+    // 4. Fallback: Bind directly from revenue-summary SSOT (salesByCategory)
     const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도');
     const roomRev = parseNum(roomCat?.totalSales || roomCat?.todayActual || 0);
-    const roomsSold = parseNum(summaryData?.summary?.totalRooms || 0);
+    const roomsSold = parseNum(summaryTotalRooms || 0);
     
     return {
       rooms: roomsSold,
       revenue: roomRev,
-      adr: parseNum(summaryData?.summary?.totalADR || 0)
+      adr: summaryTotalADR
     };
-  }, [channelData, matrixData, summaryData, isActualRange]);
+  }, [summaryData, channelData, matrixData, isActualRange]);
 
   // SSOT: 부대시설 연계 시너지 매출 (총매출 - 객실매출 또는 부대시설 카테고리 합)
   const ancillarySales = useMemo(() => {

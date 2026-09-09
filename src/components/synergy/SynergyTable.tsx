@@ -102,11 +102,18 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
                 </td>
                 <td className="py-4 px-6 text-center">
                   {bottleneck ? (
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                      bottleneck === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : bottleneck === 'WARNING' ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-800'
-                    }`}>
-                      {capaUtil ? `${capaUtil}% ` : ''}({bottleneck})
-                    </span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                        bottleneck === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : bottleneck === 'WARNING' ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-800'
+                      }`}>
+                        {(item as any).peakHourCapacityUtilization ? `피크 ${(item as any).peakHourCapacityUtilization}%` : capaUtil ? `${capaUtil}% ` : ''}({bottleneck})
+                      </span>
+                      {(item as any).missedSpilloverRevenue > 0 && (
+                        <span className="text-[10px] text-rose-600 font-extrabold">
+                          손실 -₩{formatCurrency((item as any).missedSpilloverRevenue)}
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-slate-400 text-xs">-</span>
                   )}

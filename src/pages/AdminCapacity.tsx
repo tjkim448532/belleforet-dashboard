@@ -5,7 +5,10 @@ import {
 } from 'lucide-react';
 import type { FacilityCapacityItem } from '../types/simulation';
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
+import { secureFetcher } from '../lib/secureFetcher';
 export { DEFAULT_CAPACITY_SEEDS };
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function AdminCapacity() {
   const [items, setItems] = useState<FacilityCapacityItem[]>([]);
@@ -21,32 +24,38 @@ export default function AdminCapacity() {
   const loadCapacityMaster = async () => {
     setLoading(true);
     try {
-      // 1. Try Firebase Firestore
-      try {
-        const { db } = await import('../lib/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
-        const docSnap = await getDoc(doc(db, 'simulationMaster', 'facilityCapacities_v3'));
-        if (docSnap.exists() && Array.isArray(docSnap.data()?.items)) {
-          const cleaned = docSnap.data().items.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지');
-          setItems(cleaned);
-          setLoading(false);
-          return;
-        }
-      } catch (fbErr) {
-        console.warn('Firebase fetch skipped, checking localStorage cache:', fbErr);
+      // 1. Try V6 Backend Capacity Master API (SSOT)
+      const res = await secureFetcher(`${API_BASE}/api/v6/admin/capacity/master`).catch(() => null);
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        const cleaned: FacilityCapacityItem[] = res.data.map((r: any) => ({
+          id: r.shopCode || `cap_${r.shopName}`,
+          shopCode: r.shopCode,
+          shopName: r.shopName,
+          category: (r.categoryCode || 'OTHER') as any,
+          categoryLabel: r.categoryCode === 'FNB' ? '식음' : r.categoryCode === 'ROOM' ? '객실' : r.categoryCode === 'GOLF' ? '골프' : r.categoryCode === 'LEISURE' ? '레저본부' : r.categoryCode === 'BANQUET' ? '대관' : r.categoryCode === 'MOTO' ? '모토아레나' : '독립/기타',
+          maxDailyUnits: Number(r.maxDailyCapacityUnits || (r.seatingCapacity * r.dailyTurnoverRate) || 100),
+          unitName: r.unitName || '명',
+          baseUnitPrice: Number(r.baseUnitPrice || 0),
+          allowPriceLeverage: true,
+          maxPriceHikeRate: 20,
+          allowSpillover: Boolean(r.allowSpillover),
+          spilloverPriority: 1,
+          notes: `${r.shopName} (좌석: ${r.seatingCapacity || 0}, 회전: ${r.dailyTurnoverRate || 1}회, 피크: ${r.peakHourWindow || '12:00-14:00'})`
+        }));
+        setItems(cleaned);
+        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(cleaned));
+        setLoading(false);
+        return;
       }
 
-      // 2. Fallback to LocalStorage Cache (V3: 백엔드 표준 영업장 SSOT)
+      // 2. Fallback to LocalStorage Cache
       const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER_V3');
       if (cached) {
         const parsed = JSON.parse(cached);
         const cleaned = Array.isArray(parsed) ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') : DEFAULT_CAPACITY_SEEDS;
         setItems(cleaned);
-        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(cleaned));
       } else {
-        // 3. Fallback to Initial Default Seeds (백엔드 표준 영업장 공식 항목)
         setItems(DEFAULT_CAPACITY_SEEDS);
-        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(DEFAULT_CAPACITY_SEEDS));
       }
     } catch (err) {
       console.error('Failed to load capacity master:', err);
@@ -69,21 +78,27 @@ export default function AdminCapacity() {
     setSaving(true);
     setSaveSuccess(false);
     try {
-      // 1. Save to LocalStorage cache
-      localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(items));
+      // 1. Save to Backend V6 DB via Admin API (SSOT)
+      const payload = items.map(item => ({
+        shopCode: item.shopCode,
+        shopName: item.shopName,
+        categoryCode: item.category,
+        seatingCapacity: Math.round((item.maxDailyUnits || 100) / 2),
+        dailyTurnoverRate: 2.0,
+        unitName: item.unitName || '명',
+        baseUnitPrice: item.baseUnitPrice || 0,
+        allowSpillover: item.allowSpillover ?? true
+      }));
 
-      // 2. Save to Firebase Firestore
-      try {
-        const { db } = await import('../lib/firebase');
-        const { doc, setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'simulationMaster', 'facilityCapacities_v3'), {
-          items,
-          updatedAt: new Date().toISOString(),
-          updatedBy: 'Admin'
-        });
-      } catch (fbErr) {
-        console.warn('Firebase sync warning (local cache preserved):', fbErr);
-      }
+      await secureFetcher(`${API_BASE}/api/v6/admin/capacity/master`, {
+        method: 'POST',
+        body: JSON.stringify({ items: payload })
+      }).catch(err => {
+        console.warn('Backend capacity save warning:', err);
+      });
+
+      // 2. Save to LocalStorage cache
+      localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(items));
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -95,10 +110,18 @@ export default function AdminCapacity() {
     }
   };
 
-  const handleResetToDefault = () => {
+  const handleResetToDefault = async () => {
     if (window.confirm('백엔드 마트 공식 표준 영업장 캐파 설정값으로 초기화하시겠습니까?')) {
-      setItems(DEFAULT_CAPACITY_SEEDS);
-      localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(DEFAULT_CAPACITY_SEEDS));
+      try {
+        setLoading(true);
+        await secureFetcher(`${API_BASE}/api/v6/admin/capacity/reset`, { method: 'POST' }).catch(() => null);
+        await loadCapacityMaster();
+      } catch (err) {
+        console.error('Reset error:', err);
+        setItems(DEFAULT_CAPACITY_SEEDS);
+        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(DEFAULT_CAPACITY_SEEDS));
+        setLoading(false);
+      }
     }
   };
 

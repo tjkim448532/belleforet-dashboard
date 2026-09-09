@@ -130,12 +130,29 @@ export default function SynergyStoreCard({ store, type, anchorName = '객실' }:
             }`}>
               <div className="flex items-center gap-1.5 font-bold text-xs">
                 <Gauge size={14} />
-                <span>CAPA 점유율: {capaUtil || 0}%</span>
+                <span>
+                  {(store as any).peakHourCapacityUtilization 
+                    ? `피크 점유율: ${(store as any).peakHourCapacityUtilization}% (${(store as any).peakHourWindow || '피크'})`
+                    : `CAPA 점유율: ${capaUtil || 0}%`}
+                </span>
               </div>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
                 bottleneckRisk === 'CRITICAL' ? 'bg-rose-600 text-white' : bottleneckRisk === 'WARNING' ? 'bg-amber-500 text-white' : 'bg-teal-600 text-white'
               }`}>
                 {bottleneckRisk === 'CRITICAL' ? '🚨 병목 임계 도달' : bottleneckRisk === 'WARNING' ? '⚠️ 주의 단계' : '✅ 수용 여유'}
+              </span>
+            </div>
+          )}
+
+          {/* Missed Spillover Revenue (If bottleneck exceeded) */}
+          {(store as any).missedSpilloverRevenue !== undefined && Number((store as any).missedSpilloverRevenue) > 0 && (
+            <div className="px-3 py-1.5 rounded-xl bg-rose-100/70 border border-rose-300 text-rose-900 text-[11px] font-bold flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <AlertTriangle size={13} className="text-rose-600 shrink-0" />
+                초과수요 기회손실:
+              </span>
+              <span className="text-rose-700 font-black tabular-nums">
+                -₩{formatCurrency((store as any).missedSpilloverRevenue)}원
               </span>
             </div>
           )}

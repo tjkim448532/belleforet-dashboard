@@ -99,6 +99,10 @@ interface RoomChannelSalesItem {
   mtdRevenue: number;
   ytdRooms: number;
   ytdRevenue: number;
+  adr?: number;
+  todayAdr?: number;
+  mtdAdr?: number;
+  ytdAdr?: number;
   isChannelSubtotal?: boolean;
   isGrandTotal?: boolean;
 }
@@ -245,7 +249,7 @@ export default function Synergy() {
         return {
           rooms,
           revenue,
-          adr: 0 /* adr */
+          adr: parseNum(gtRow.adr || summaryData?.summary?.totalADR || 0)
         };
       }
     }
@@ -260,7 +264,7 @@ export default function Synergy() {
           return {
             rooms: roomsSold,
             revenue: roomRev,
-            adr: 0 /* adr */
+            adr: parseNum(summaryData?.summary?.totalADR || 0)
           };
         }
       }
@@ -352,11 +356,13 @@ export default function Synergy() {
           const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
           const shareRatio = totalRoomRev > 0 ? revenue / totalRoomRev : 0;
 
+          const itemAdr = parseNum(isActualRange ? (item.mtdAdr || item.adr || 0) : (item.todayAdr || item.adr || 0));
+
           return {
             name: cleanName,
             rooms,
             revenue,
-            adr: 0 /* adr */,
+            adr: itemAdr,
             sharePct: (shareRatio * 100).toFixed(1),
             isMtdFallback: false
           };

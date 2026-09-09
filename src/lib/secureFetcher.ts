@@ -39,22 +39,32 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
         
         for (const key in node) {
             const value = node[key];
+
+            if (typeof value === 'object' && value !== null) {
+                scanNode(value, `${path}.${key}`, currentVenue);
+                continue;
+            }
+
+            // 불리언(Boolean) 필드(isSubtotal, isStatisticallySignificant 등)는 숫자 검증 대상에서 제외
+            if (typeof value === 'boolean' || key.startsWith('is') || key.startsWith('has')) {
+                continue;
+            }
             
-            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드 제외)
-            if (key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name')) {
-                if (typeof value === 'object' && value !== null) {
-                    // 객체나 배열인 경우 구조적 노드이므로 Number 강제검사 스킵
-                } else if (typeof value !== 'number') {
+            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드, 코드 등 제외)
+            const isMetricKey = (
+                key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|occ|rooms|gross)/i) ||
+                key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
+                key.match(/^ly([A-Z_]|$)/i)
+            ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code');
+
+            if (isMetricKey) {
+                if (typeof value !== 'number') {
                     // 문자열 숫자, null, undefined 전면 차단
                     errors.push(`[Type Error] 📍 ${currentVenue || 'Unknown'} ➔ Field '${key}' MUST be a strict Number. Received: ${value === null ? 'null' : typeof value} ('${value}')`);
                 } else if (Number.isNaN(value)) {
                     // NaN 차단
                     errors.push(`[NaN Error] 📍 ${currentVenue || 'Unknown'} ➔ Field '${key}' is NaN.`);
                 }
-            }
-            
-            if (typeof value === 'object' && value !== null) {
-                scanNode(value, `${path}.${key}`, currentVenue);
             }
         }
     };
@@ -85,13 +95,24 @@ const sanitizePayloadNumbers = (node: any) => {
     if (!node || typeof node !== 'object') return;
     for (const key in node) {
         const value = node[key];
-        if (typeof value === 'string' && key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name')) {
+        if (typeof value === 'object' && value !== null) {
+            sanitizePayloadNumbers(value);
+            continue;
+        }
+        if (typeof value === 'boolean' || key.startsWith('is') || key.startsWith('has')) {
+            continue;
+        }
+        const isMetricKey = (
+            key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|occ|rooms|gross)/i) ||
+            key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
+            key.match(/^ly([A-Z_]|$)/i)
+        ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code');
+
+        if (typeof value === 'string' && isMetricKey) {
             const parsed = Number(value);
             if (!Number.isNaN(parsed)) {
                 node[key] = parsed;
             }
-        } else if (typeof value === 'object' && value !== null) {
-            sanitizePayloadNumbers(value);
         }
     }
 };

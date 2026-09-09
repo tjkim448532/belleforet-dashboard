@@ -233,17 +233,6 @@ export interface TransformedResortData {
   };
 }
 
-// 벨포레 리조트 175실 공식 평형별 물리 인벤토리 기준 마스터 SSOT
-export const DEFAULT_ROOM_CAPACITIES: Record<string, number> = {
-  '16평': 71,
-  '35평': 60,
-  '51평': 40, // 전용 5실 + 16평/35평 커넥티드 35세트 조합 인벤토리
-  'R51평': 5,
-  '펫룸 35평': 5,
-  '펫룸 16평': 4,
-  '펫룸 51평': 5,
-};
-
 export const transformResortData = (payload: any, masterCapacities?: Record<string, number>): TransformedResortData | null => {
   if (!payload) return null;
 
@@ -257,23 +246,23 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const effectiveMasterCaps = (masterCapacities && Object.keys(masterCapacities).length > 0)
-    ? masterCapacities
-    : DEFAULT_ROOM_CAPACITIES;
-
   const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {};
-  Object.entries(effectiveMasterCaps).forEach(([k, v]) => {
-    roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
-  });
+  if (masterCapacities && Object.keys(masterCapacities).length > 0) {
+    Object.entries(masterCapacities).forEach(([k, v]) => {
+      roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
+    });
+  }
 
-  // 🚨 [Pure Consumer] 백엔드가 정제해주는 roomSummaryByType 의 값 매핑
+  // 🚨 [Pure Consumer / Fail-Stop] 백엔드가 정제해주는 roomSummaryByType 의 값만을 1:1 매핑
+  // 백엔드에서 모수(capacity)가 누락되면 0으로 유지하여 결함을 그대로 노출 (프론트 임의 모수 할당 금지)
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType) && payload.roomSummaryByType.length > 0) {
     payload.roomSummaryByType.forEach((item: any) => {
       const typeName = item.roomType || '미분류';
       const sold = parseNum(item.roomsSold || 0);
       const rev = parseNum(item.totalSales || item.revenue || 0);
-      const defaultCap = effectiveMasterCaps[typeName] ? parseNum(effectiveMasterCaps[typeName]) * days : 0;
-      const cap = item.capacity || item.totalRooms ? parseNum(item.capacity || item.totalRooms) * days : (roomOccupancyMap[typeName]?.cap || defaultCap);
+      const cap = item.capacity || item.totalRooms 
+        ? parseNum(item.capacity || item.totalRooms) * days 
+        : (roomOccupancyMap[typeName]?.cap ?? 0);
 
       roomOccupancyMap[typeName] = { sold, rev, cap };
     });
@@ -351,7 +340,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     revenue: summaryRevenue || parseNum(payload.summary?.totalRoomRev || 0),
     roomsSold: summaryRoomsSold,
     totalCapacity: summaryTotalCapacity,
-    adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? (summaryRoomsSold > 0 && (summaryRevenue || payload.summary?.totalRoomRev) ? Math.round((summaryRevenue || payload.summary?.totalRoomRev) / summaryRoomsSold) : 0))
+    adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0)
   };
 
   return {

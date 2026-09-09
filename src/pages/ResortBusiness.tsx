@@ -113,10 +113,11 @@ export default function ResortBusiness() {
       const g = groups[key];
       if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
       
-      const effectiveCap = g.cap > 0 ? g.cap : g.sold;
+      // Fail-Stop: 백엔드가 내려준 정원(g.cap)이 없으면 g.sold로 대체하지 않고 결함을 그대로 노출
+      const effectiveCap = g.cap;
       const rate = effectiveCap > 0 ? Math.round((g.sold / effectiveCap) * 100) : 0;
       const cappedRate = Math.min(rate, 100);
-      const displayRate = `${rate}%`;
+      const displayRate = effectiveCap > 0 ? `${rate}%` : '0% (모수누락)';
 
       result.push({
         roomSize: key,
@@ -138,8 +139,8 @@ export default function ResortBusiness() {
   const standardPhysicalRooms = Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
   const connectingPhysicalRooms = Number(summary.connectingPhysicalRooms || 0);
   const totalPhysicalOccupied = Number(summary.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));
-  const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || (175 * rangeDays));
-  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
+  const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || 0);
+  const remainingRooms = totalBaseRooms > 0 ? Math.max(0, totalBaseRooms - totalPhysicalOccupied) : 0;
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];

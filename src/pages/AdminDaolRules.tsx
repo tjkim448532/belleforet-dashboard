@@ -150,7 +150,7 @@ export default function AdminDaolRules() {
   return (
     <div className="p-4 lg:p-8 space-y-8 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-medium text-slate-800 tracking-tight">객실 패키지 분배 관리</h1>
+        <h1 className="text-2xl font-medium text-slate-800 tracking-tight break-keep whitespace-nowrap">객실 패키지 분배 관리</h1>
         <p className="text-slate-500 mt-2 text-sm">
           객실 패키지 요금(ROOM_TICKET_MAPPING)에 포함된 식음/레져 쿠폰의 원가를 각 본부로 배분하는 룰을 설정합니다.
         </p>
@@ -247,13 +247,13 @@ export default function AdminDaolRules() {
       {/* 기존 룰 목록 */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                <th className="px-6 py-4 font-semibold">종류</th>
-                <th className="px-6 py-4 font-semibold">원본 (계정코드명 / 티켓상품명)</th>
-                <th className="px-6 py-4 font-semibold">분배 대상 (Target)</th>
-                <th className="px-6 py-4 font-semibold text-right">삭제</th>
+                <th className="px-6 py-4 font-semibold whitespace-nowrap">종류</th>
+                <th className="px-6 py-4 font-semibold whitespace-nowrap">원본 (계정코드명 / 티켓상품명)</th>
+                <th className="px-6 py-4 font-semibold whitespace-nowrap">분배 대상 (Target)</th>
+                <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">삭제</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">

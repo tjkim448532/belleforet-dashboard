@@ -18,10 +18,10 @@ export const DashboardTable: React.FC<Props> = ({ data }) => {
         if (data.grandTotal !== undefined) {
             renderRows.push(
                 <tr key="grand-total" className="bg-slate-800 text-white font-black text-sm tracking-wide shadow-md">
-                    <td colSpan={3} className="px-6 py-4 border-r border-slate-700 text-center uppercase tracking-widest sticky left-0 z-10 shadow-[1px_0_0_0_#334155]">
+                    <td colSpan={3} className="px-6 py-4 border-r border-slate-700 text-center uppercase tracking-widest sticky left-0 z-10 shadow-[1px_0_0_0_#334155] whitespace-nowrap">
                         전사 총합계 (GRAND TOTAL)
                     </td>
-                    <td className="px-6 py-4 text-right font-mono font-bold text-lg">
+                    <td className="px-6 py-4 text-right font-mono font-bold text-lg whitespace-nowrap">
                         {formatRevenue(data.grandTotal)}
                     </td>
                 </tr>
@@ -43,17 +43,17 @@ export const DashboardTable: React.FC<Props> = ({ data }) => {
                 renderRows.push(
                     <tr key={`venue-${dIndex}-${vIndex}`} className="hover:bg-slate-50 transition-colors border-b border-gray-200 bg-white">
                         {isFirst && (
-                            <td rowSpan={rowSpan} className="px-6 py-4 border-r border-gray-200 font-extrabold text-slate-800 bg-slate-50/70 align-middle text-center sticky left-0 z-10 shadow-[1px_0_0_0_#e2e8f0]">
+                            <td rowSpan={rowSpan} className="px-6 py-4 border-r border-gray-200 font-extrabold text-slate-800 bg-slate-50/70 align-middle text-center sticky left-0 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-nowrap">
                                 {div.orgDivision}
                             </td>
                         )}
-                        <td className="px-6 py-4 border-r border-gray-100 font-bold text-slate-700 align-middle">
+                        <td className="px-6 py-4 border-r border-gray-100 font-bold text-slate-700 align-middle whitespace-nowrap">
                             {venue.venueName}
                         </td>
-                        <td className="px-6 py-4 font-medium text-slate-500 border-r border-gray-100 text-center">
+                        <td className="px-6 py-4 font-medium text-slate-500 border-r border-gray-100 text-center whitespace-nowrap">
                             {venue.ticketGroup}
                         </td>
-                        <td className="px-6 py-4 text-right font-mono font-semibold text-slate-800">
+                        <td className="px-6 py-4 text-right font-mono font-semibold text-slate-800 whitespace-nowrap">
                             {formatRevenue(venue.revenue)}
                         </td>
                     </tr>
@@ -63,10 +63,10 @@ export const DashboardTable: React.FC<Props> = ({ data }) => {
             // 3. 본부별 소계 (Subtotal) 렌더링 - 백엔드 데이터 그대로 바인딩
             renderRows.push(
                 <tr key={`subtotal-${dIndex}`} className="bg-slate-100 border-b-[2px] border-slate-300">
-                    <td colSpan={2} className="px-6 py-3 border-r border-slate-300 font-extrabold text-xs text-slate-900 text-center tracking-wide">
+                    <td colSpan={2} className="px-6 py-3 border-r border-slate-300 font-extrabold text-xs text-slate-900 text-center tracking-wide whitespace-nowrap">
                         [{div.orgDivision} 소계]
                     </td>
-                    <td className="px-6 py-3 text-right font-mono font-bold text-slate-900">
+                    <td className="px-6 py-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                         {formatRevenue(div.subtotal)}
                     </td>
                 </tr>
@@ -82,13 +82,13 @@ export const DashboardTable: React.FC<Props> = ({ data }) => {
 
     return (
         <div className="overflow-x-auto w-full bg-white rounded-xl shadow-sm border border-slate-300">
-            <table className="min-w-full text-sm text-left border-collapse">
+            <table className="min-w-full text-sm text-left border-collapse whitespace-nowrap min-w-[600px]">
                 <thead className="bg-slate-100 border-b-2 border-slate-300 text-slate-700">
                     <tr>
-                        <th className="px-6 py-4 font-bold tracking-tight text-center sticky left-0 bg-slate-100 z-20 shadow-[1px_0_0_0_#cbd5e1]">본부</th>
-                        <th className="px-6 py-4 font-bold tracking-tight text-center">영업장</th>
-                        <th className="px-6 py-4 font-bold tracking-tight text-center">티켓그룹</th>
-                        <th className="px-6 py-4 font-bold tracking-tight text-right">매출액</th>
+                        <th className="px-6 py-4 font-bold tracking-tight text-center sticky left-0 bg-slate-100 z-20 shadow-[1px_0_0_0_#cbd5e1] whitespace-nowrap">본부</th>
+                        <th className="px-6 py-4 font-bold tracking-tight text-center whitespace-nowrap">영업장</th>
+                        <th className="px-6 py-4 font-bold tracking-tight text-center whitespace-nowrap">티켓그룹</th>
+                        <th className="px-6 py-4 font-bold tracking-tight text-right whitespace-nowrap">매출액</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

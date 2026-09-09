@@ -68,7 +68,7 @@ export default function AdminLayout() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm whitespace-nowrap ${
                     isActive
                       ? 'bg-brand-mint text-white shadow-lg font-bold'
                       : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
@@ -84,7 +84,7 @@ export default function AdminLayout() {
         <div className="p-4">
           <NavLink
             to="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700 whitespace-nowrap"
           >
             <LayoutDashboard size={20} />
             일반 대시보드로 복귀

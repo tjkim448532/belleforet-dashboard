@@ -81,17 +81,17 @@ export default function MatrixWeeklyDashboard() {
               </span>
               <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-medium tracking-tight mt-3">경영 조직도 통합 정산 센터</h1>
-            <p className="text-white/80 mt-1">
+            <h1 className="text-3xl font-medium tracking-tight mt-3 break-keep whitespace-nowrap">경영 조직도 통합 정산 센터</h1>
+            <p className="text-white/80 mt-1 break-keep">
               V6 Zero-Variance 무결성 아키텍처 연동 <span>(Pure Consumer Mode)</span>
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {baseWeather && !isWeatherLoading && (
-              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm">
+              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm whitespace-nowrap">
                 <span className="text-xl" title={baseWeather.description}>{renderWeatherIcon(baseWeather.description)}</span>
                 {baseWeather.tempMax !== undefined && (
-                  <span className="text-sm font-medium text-white/90">
+                  <span className="text-sm font-medium text-white/90 whitespace-nowrap">
                     <span className="text-rose-300">{Math.round(baseWeather.tempMax)}°</span> / <span className="text-blue-300">{Math.round(baseWeather.tempMin || 0)}°</span>
                   </span>
                 )}

@@ -561,9 +561,9 @@ export default function TargetSimulator() {
             <Target className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 break-keep whitespace-nowrap">
               목표수립 시뮬레이터 v1 (3-Depth 아코디언)
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 whitespace-nowrap">
                 Official API v5.0 Connected
               </span>
             </h1>
@@ -1041,22 +1041,22 @@ export default function TargetSimulator() {
 
                     {/* Depth 1 Header Metrics */}
                     <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
-                      <div className="text-slate-600">
+                      <div className="text-slate-600 whitespace-nowrap">
                         비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
                       </div>
-                      <div className="text-slate-500">
+                      <div className="text-slate-500 whitespace-nowrap">
                         {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
                       </div>
-                      <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                      <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 whitespace-nowrap">
                         {input.targetYear} 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
                       </div>
                       {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
-                        <div className="text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+                        <div className="text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 whitespace-nowrap">
                           {input.targetYear} 실적: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
                         </div>
                       )}
                       {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
-                        <div className="text-slate-700">
+                        <div className="text-slate-700 whitespace-nowrap">
                           달성률: <span className={`font-black ${cat.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
                             {cat.achievementRate}%
                           </span>
@@ -1106,22 +1106,22 @@ export default function TargetSimulator() {
 
                               {/* Depth 2 Part Metrics */}
                               <div className="flex flex-wrap items-center gap-3.5 text-xs font-semibold">
-                                <div className="text-slate-500">
+                                <div className="text-slate-500 whitespace-nowrap">
                                   파트 비중: <span className="font-bold text-slate-800">{part.totalWeight}%</span>
                                 </div>
-                                <div className="text-slate-500">
+                                <div className="text-slate-500 whitespace-nowrap">
                                   {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">₩{formatCurrency(part.totalActual2025)}원</span>
                                 </div>
-                                <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                                <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 whitespace-nowrap">
                                   {input.targetYear} 목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
                                 </div>
                                 {part.totalActual2026 > 0 && (
-                                  <div className="text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                                  <div className="text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200 whitespace-nowrap">
                                     {input.targetYear} 실적: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(part.totalActual2026)}원</span>
                                   </div>
                                 )}
                                 {part.achievementRate > 0 && (
-                                  <div className="text-slate-600">
+                                  <div className="text-slate-600 whitespace-nowrap">
                                     달성률: <span className={`font-black ${part.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
                                       {part.achievementRate}%
                                     </span>
@@ -1133,53 +1133,53 @@ export default function TargetSimulator() {
                             {/* Depth 3: Facilities Table (백엔드 영업장명 100% 사용) */}
                             {isPartOpen && (
                               <div className="overflow-x-auto bg-white">
-                                <table className="w-full text-left border-collapse text-xs">
+                                <table className="w-full text-left border-collapse text-xs whitespace-nowrap min-w-[850px]">
                                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
                                     <tr>
-                                      <th className="py-2.5 px-4 w-12 text-center">No</th>
-                                      <th className="py-2.5 px-4 min-w-[180px]">영업장명</th>
-                                      <th className="py-2.5 px-4 text-right">비중 (%)</th>
-                                      <th className="py-2.5 px-4 text-right">{input.baseYear}년 실적</th>
-                                      <th className="py-2.5 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표</th>
-                                      <th className="py-2.5 px-4 text-right min-w-[120px] font-bold text-emerald-900">{input.targetYear}년 실적</th>
-                                      <th className="py-2.5 px-4 text-center min-w-[90px]">달성률</th>
+                                      <th className="py-2.5 px-4 w-12 text-center whitespace-nowrap">No</th>
+                                      <th className="py-2.5 px-4 min-w-[180px] whitespace-nowrap">영업장명</th>
+                                      <th className="py-2.5 px-4 text-right whitespace-nowrap">비중 (%)</th>
+                                      <th className="py-2.5 px-4 text-right whitespace-nowrap">{input.baseYear}년 실적</th>
+                                      <th className="py-2.5 px-4 text-right font-black text-indigo-950 whitespace-nowrap">{input.targetYear}년 목표</th>
+                                      <th className="py-2.5 px-4 text-right min-w-[120px] font-bold text-emerald-900 whitespace-nowrap">{input.targetYear}년 실적</th>
+                                      <th className="py-2.5 px-4 text-center min-w-[90px] whitespace-nowrap">달성률</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100 text-slate-800">
                                     {part.facilities.map((fac) => (
                                       <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="py-2.5 px-4 text-center font-bold text-slate-400">
+                                        <td className="py-2.5 px-4 text-center font-bold text-slate-400 whitespace-nowrap">
                                           {fac.no}
                                         </td>
-                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-sm">
-                                          <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span>{fac.facilityName}</span>
+                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-sm whitespace-nowrap">
+                                          <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+                                            <span className="whitespace-nowrap">{fac.facilityName}</span>
                                             {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
                                                 ADR 레버리지 권장
                                               </span>
                                             ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
                                                 핵심 볼륨 견인
                                               </span>
                                             ) : null}
                                           </div>
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold">
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold whitespace-nowrap">
                                           {fac.weight}%
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-600">
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-600 whitespace-nowrap">
                                           ₩{formatCurrency(fac.actual2025)}원
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
+                                        <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm whitespace-nowrap">
                                           ₩{formatCurrency(fac.target2026)}원
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums text-emerald-800 font-bold">
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-emerald-800 font-bold whitespace-nowrap">
                                           {fac.actual2026 && fac.actual2026 > 0 ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
                                         </td>
-                                        <td className="py-2.5 px-4 text-center">
+                                        <td className="py-2.5 px-4 text-center whitespace-nowrap">
                                           {fac.achievementRate && fac.achievementRate > 0 ? (
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-extrabold text-[11px] ${
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-extrabold text-[11px] whitespace-nowrap ${
                                               fac.achievementRate >= 80
                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                 : fac.achievementRate >= 50

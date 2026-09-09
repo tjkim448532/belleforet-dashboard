@@ -37,7 +37,7 @@ export default function Login() {
             <Lock size={36} strokeWidth={2.5} />
           </div>
           <div className="font-emphatic text-3xl tracking-widest text-brand-mint mb-2">BELLE FORET</div>
-          <h1 className="text-2xl font-medium tracking-tight mb-3">임직원 전용 대시보드</h1>
+          <h1 className="text-2xl font-medium tracking-tight mb-3 break-keep whitespace-nowrap">임직원 전용 대시보드</h1>
           <p className="text-sm text-slate-500 font-medium">벨포레 회사 이메일로 로그인하세요.</p>
         </div>
 

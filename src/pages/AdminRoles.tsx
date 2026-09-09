@@ -282,8 +282,8 @@ export default function AdminRoles() {
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-medium text-slate-800 flex items-center gap-2">
-            <Users className="text-brand-mint" />
+          <h1 className="text-2xl font-medium text-slate-800 flex items-center gap-2 break-keep whitespace-nowrap">
+            <Users className="text-brand-mint shrink-0" />
             임직원 대시보드 권한 관리
           </h1>
           <p className="text-slate-500 mt-1 text-sm">등록된 임직원 목록에서 권한을 직접 수정하거나, 신규 임직원을 등록합니다.</p>
@@ -440,13 +440,13 @@ export default function AdminRoles() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 uppercase tracking-wider">
-                  <th className="px-6 py-3.5 font-semibold">임직원 성명</th>
-                  <th className="px-6 py-3.5 font-semibold">회사 이메일 계정</th>
-                  <th className="px-6 py-3.5 font-semibold">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
-                  <th className="px-6 py-3.5 font-semibold text-right">수정 / 삭제</th>
+                  <th className="px-6 py-3.5 font-semibold whitespace-nowrap">임직원 성명</th>
+                  <th className="px-6 py-3.5 font-semibold whitespace-nowrap">회사 이메일 계정</th>
+                  <th className="px-6 py-3.5 font-semibold whitespace-nowrap">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
+                  <th className="px-6 py-3.5 font-semibold text-right whitespace-nowrap">수정 / 삭제</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">

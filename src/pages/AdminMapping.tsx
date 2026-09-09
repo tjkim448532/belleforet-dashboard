@@ -177,17 +177,17 @@ export default function AdminMapping() {
     <div className="p-4 lg:p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-medium text-slate-800 tracking-tight">V6 통합 매핑 관리 센터</h1>
+          <h1 className="text-2xl font-medium text-slate-800 tracking-tight break-keep whitespace-nowrap">V6 통합 매핑 관리 센터</h1>
           <p className="text-slate-500 mt-1 text-sm">
             POS 매장 및 원천 객실 요금제(Rate Type)를 정식 본부 및 세그먼트로 동적 매핑합니다.
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="inline-flex p-1 bg-slate-200/80 rounded-xl">
+        <div className="inline-flex p-1 bg-slate-200/80 rounded-xl whitespace-nowrap shrink-0">
           <button
             onClick={() => setActiveTab('FACILITY')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'FACILITY' 
                 ? 'bg-white text-slate-800 shadow-sm' 
                 : 'text-slate-600 hover:text-slate-900'
@@ -197,7 +197,7 @@ export default function AdminMapping() {
           </button>
           <button
             onClick={() => setActiveTab('ROOM_SEGMENT')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'ROOM_SEGMENT' 
                 ? 'bg-emerald-600 text-white shadow-sm' 
                 : 'text-slate-600 hover:text-slate-900'
@@ -215,14 +215,14 @@ export default function AdminMapping() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
               <span className="text-sm font-bold text-slate-700">POS 매장 소속 본부 현황 (조회 전용)</span>
-              <span className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold">총 {mappings.length}개 매장 연동 중</span>
+              <span className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold whitespace-nowrap">총 {mappings.length}개 매장 연동 중</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                    <th className="px-6 py-4 font-semibold w-1/2">원천 매장명 (POS 기준)</th>
-                    <th className="px-6 py-4 font-semibold w-1/2">소속 본부 (대시보드 표시 카테고리)</th>
+                    <th className="px-6 py-4 font-semibold w-1/2 whitespace-nowrap">원천 매장명 (POS 기준)</th>
+                    <th className="px-6 py-4 font-semibold w-1/2 whitespace-nowrap">소속 본부 (대시보드 표시 카테고리)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -400,13 +400,13 @@ export default function AdminMapping() {
               </div>
 
               <div className="overflow-x-auto max-h-96">
-                <table className="w-full text-left border-collapse text-sm">
+                <table className="w-full text-left border-collapse text-sm whitespace-nowrap min-w-[700px]">
                   <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
                     <tr>
-                      <th className="px-6 py-3 font-semibold">원천 테이블 / 출처</th>
-                      <th className="px-6 py-3 font-semibold">원천 마켓타입 / 상품명 (Market Type)</th>
-                      <th className="px-6 py-3 font-semibold text-center">AI 추천 세그먼트</th>
-                      <th className="px-6 py-3 font-semibold text-right">정식 세그먼트 지정 및 승인</th>
+                      <th className="px-6 py-3 font-semibold whitespace-nowrap">원천 테이블 / 출처</th>
+                      <th className="px-6 py-3 font-semibold whitespace-nowrap">원천 마켓타입 / 상품명 (Market Type)</th>
+                      <th className="px-6 py-3 font-semibold text-center whitespace-nowrap">AI 추천 세그먼트</th>
+                      <th className="px-6 py-3 font-semibold text-right whitespace-nowrap">정식 세그먼트 지정 및 승인</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -476,12 +476,12 @@ export default function AdminMapping() {
               </h2>
             </div>
             <div className="overflow-x-auto max-h-96">
-              <table className="w-full text-left border-collapse text-sm">
+              <table className="w-full text-left border-collapse text-sm whitespace-nowrap min-w-[500px]">
                 <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 font-semibold">원천 마켓타입 (Market Type)</th>
-                    <th className="px-6 py-3 font-semibold">배정된 정식 세그먼트</th>
-                    <th className="px-6 py-3 font-semibold text-right">변경</th>
+                    <th className="px-6 py-3 font-semibold whitespace-nowrap">원천 마켓타입 (Market Type)</th>
+                    <th className="px-6 py-3 font-semibold whitespace-nowrap">배정된 정식 세그먼트</th>
+                    <th className="px-6 py-3 font-semibold text-right whitespace-nowrap">변경</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

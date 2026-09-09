@@ -200,11 +200,11 @@ export default function ResortBusiness() {
       {/* Top Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div>
-          <div className="flex items-center gap-2">
-            <Hotel className="w-6 h-6 text-emerald-500" />
-            <h1 className="text-2xl font-medium text-slate-800 tracking-tight">리조트사업본부 경영 현황</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Hotel className="w-6 h-6 text-emerald-500 shrink-0" />
+            <h1 className="text-2xl font-medium text-slate-800 tracking-tight break-keep whitespace-nowrap">리조트사업본부 경영 현황</h1>
           </div>
-          <p className="text-slate-400 text-xs mt-1">객실 실적, 채널별 ADR 및 175실 기준 실운영 점유율 분석 대시보드</p>
+          <p className="text-slate-400 text-xs mt-1 break-keep">객실 실적, 채널별 ADR 및 175실 기준 실운영 점유율 분석 대시보드</p>
         </div>
         <GlobalDatePicker />
       </div>
@@ -223,47 +223,47 @@ export default function ResortBusiness() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Total Revenue */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
                 <Coins className="w-5 h-5 text-emerald-500" /> 객실 총 매출
               </h2>
-              <div className="text-3xl font-bold text-slate-800 tracking-tight">
+              <div className="text-3xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
                 {formatCurrency(lodgingStats.revenue)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
+              <p className="text-[11px] text-slate-400 mt-2 break-keep">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
             </div>
 
             {/* 판매 건수 (계약) */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
                 <CalendarDays className="w-5 h-5 text-emerald-500" /> 판매 건수 (계약)
               </h2>
-              <div className="text-3xl font-bold text-slate-800 tracking-tight">
+              <div className="text-3xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
                 {lodgingStats.roomsSold}건
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
+              <p className="text-[11px] text-slate-400 mt-2 break-keep">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
             </div>
 
             {/* 실운영 점유실 (물리) */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/20">
-              <h2 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2 whitespace-nowrap">
                 <KeyRound className="w-5 h-5 text-emerald-600" /> 실운영 점유실 (물리)
               </h2>
-              <div className="text-3xl font-bold text-emerald-700 tracking-tight flex items-baseline gap-2">
+              <div className="text-3xl font-bold text-emerald-700 tracking-tight flex items-baseline gap-2 whitespace-nowrap">
                 <span>{totalPhysicalOccupied.toLocaleString()}실</span>
                 <span className="text-xs text-emerald-600 font-semibold">({totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
+              <p className="text-[11px] text-slate-500 mt-2 break-keep">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
             </div>
 
             {/* Overall ADR */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
                 <Coins className="w-5 h-5 text-emerald-500" /> 객실 평균 단가 (ADR)
               </h2>
-              <div className="text-3xl font-bold text-emerald-600 tracking-tight">
+              <div className="text-3xl font-bold text-emerald-600 tracking-tight whitespace-nowrap">
                 {formatCurrency(lodgingStats.adr)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">총 객실 매출 ÷ 판매 건수(계약)</p>
+              <p className="text-[11px] text-slate-400 mt-2 break-keep">총 객실 매출 ÷ 판매 건수(계약)</p>
             </div>
           </div>
 
@@ -601,13 +601,13 @@ export default function ResortBusiness() {
                   </span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                    <thead className="bg-slate-100/80 text-slate-600 font-bold">
-                      <tr>
-                        <th className="py-2.5 px-4">비교 항목</th>
-                        <th className="py-2.5 px-4 text-slate-600">1박 단기 투숙 (1일 기준)</th>
-                        <th className="py-2.5 px-4 text-indigo-700 bg-indigo-50/50">2박 연박 투숙 (1일 평균 및 일자별)</th>
-                        <th className="py-2.5 px-4 text-emerald-700">1일 단위 비교 분석 및 경영 효과</th>
+                  <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden whitespace-nowrap min-w-[750px]">
+                    <thead className="bg-slate-100/80 text-slate-600 font-bold whitespace-nowrap">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-2.5 px-4 whitespace-nowrap">비교 항목</th>
+                        <th className="py-2.5 px-4 text-slate-600 whitespace-nowrap">1박 단기 투숙 (1일 기준)</th>
+                        <th className="py-2.5 px-4 text-indigo-700 bg-indigo-50/50 whitespace-nowrap">2박 연박 투숙 (1일 평균 및 일자별)</th>
+                        <th className="py-2.5 px-4 text-emerald-700 whitespace-nowrap">1일 단위 비교 분석 및 경영 효과</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
@@ -658,22 +658,22 @@ export default function ResortBusiness() {
               </h2>
               {channelAdrData.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left">
+                  <table className="w-full border-collapse text-left whitespace-nowrap min-w-[500px]">
                     <thead>
-                      <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                        <th className="py-3 px-4">판매 채널명</th>
-                        <th className="py-3 px-4 text-right">판매 건수(계약)</th>
-                        <th className="py-3 px-4 text-right">총 매출액</th>
-                        <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
+                      <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                        <th className="py-3 px-4 whitespace-nowrap">판매 채널명</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">판매 건수(계약)</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">총 매출액</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">평균 객단가 (ADR)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-sm">
                       {channelAdrData.map((row: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.channel}</td>
-                          <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}건</td>
-                          <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
-                          <td className="py-3.5 px-4 text-right font-medium text-slate-900">{formatCurrency(row.adr)}</td>
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.channel}</td>
+                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold}건</td>
+                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}</td>
+                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{formatCurrency(row.adr)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -692,22 +692,22 @@ export default function ResortBusiness() {
               </h2>
               {rateAdrData.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left">
+                  <table className="w-full border-collapse text-left whitespace-nowrap min-w-[500px]">
                     <thead>
-                      <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                        <th className="py-3 px-4">마켓타입 세그먼트명</th>
-                        <th className="py-3 px-4 text-right">판매 건수(계약)</th>
-                        <th className="py-3 px-4 text-right">총 매출액</th>
-                        <th className="py-3 px-4 text-right">평균 객단가 (ADR)</th>
+                      <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                        <th className="py-3 px-4 whitespace-nowrap">마켓타입 세그먼트명</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">판매 건수(계약)</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">총 매출액</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">평균 객단가 (ADR)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-sm">
                       {rateAdrData.map((row: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3.5 px-4 text-slate-700 font-semibold">{row.marketType}</td>
-                          <td className="py-3.5 px-4 text-right text-slate-500">{row.roomsSold}건</td>
-                          <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(row.totalRevenue)}</td>
-                          <td className="py-3.5 px-4 text-right font-medium text-slate-900">{formatCurrency(row.adr)}</td>
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.marketType}</td>
+                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold}건</td>
+                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}</td>
+                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{formatCurrency(row.adr)}</td>
                         </tr>
                       ))}
                     </tbody>

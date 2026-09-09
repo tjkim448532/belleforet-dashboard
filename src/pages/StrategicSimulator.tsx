@@ -593,9 +593,9 @@ export default function StrategicSimulator() {
                 BELLE FORET AI STRATEGIC REBALANCING & TARGET ENGINE [PRO]
               </span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3 break-keep whitespace-nowrap">
               {input.targetYear}년 목표수립 시뮬레이터 v2
-              <span className="text-xs bg-indigo-600/60 backdrop-blur-md px-3 py-1 rounded-full text-teal-200 border border-indigo-400/40 font-bold">
+              <span className="text-xs bg-indigo-600/60 backdrop-blur-md px-3 py-1 rounded-full text-teal-200 border border-indigo-400/40 font-bold whitespace-nowrap">
                 PRO Engine v6.0
               </span>
             </h1>
@@ -1133,16 +1133,16 @@ export default function StrategicSimulator() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
-                    <div className="text-slate-600">
+                    <div className="text-slate-600 whitespace-nowrap">
                       전략 비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
                     </div>
-                    <div className="text-slate-600">
+                    <div className="text-slate-600 whitespace-nowrap">
                       {input.baseYear}년 실적: <span className="font-extrabold text-slate-700 tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
                     </div>
-                    <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                    <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 whitespace-nowrap">
                       {input.targetYear}년 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
                     </div>
-                    <div className={`px-3 py-1 rounded-lg border font-bold tabular-nums ${
+                    <div className={`px-3 py-1 rounded-lg border font-bold tabular-nums whitespace-nowrap ${
                       catDiff >= 0 ? 'text-teal-900 bg-teal-50 border-teal-200' : 'text-rose-900 bg-rose-50 border-rose-200'
                     }`}>
                       증감: {catDiff >= 0 ? '+' : ''}₩{formatCurrency(catDiff)}원
@@ -1176,19 +1176,19 @@ export default function StrategicSimulator() {
                               </button>
                               <span className="text-lg">{partIcon}</span>
                               <span className="text-sm font-black text-slate-800">{part.partName} 파트</span>
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 whitespace-nowrap">
                                 {part.facilityCount}개 영업장
                               </span>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3.5 text-xs font-semibold">
-                              <div className="text-slate-600">
+                              <div className="text-slate-600 whitespace-nowrap">
                                 {input.baseYear}년: <span className="font-bold text-slate-700 tabular-nums">₩{formatCurrency(part.totalActual2025)}원</span>
                               </div>
-                              <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                              <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 whitespace-nowrap">
                                 목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
                               </div>
-                              <div className={`px-2.5 py-0.5 rounded-md border font-bold tabular-nums ${
+                              <div className={`px-2.5 py-0.5 rounded-md border font-bold tabular-nums whitespace-nowrap ${
                                 partDiff >= 0 ? 'text-teal-800 bg-teal-50 border-teal-100' : 'text-rose-800 bg-rose-50 border-rose-100'
                               }`}>
                                 증감: {partDiff >= 0 ? '+' : ''}₩{formatCurrency(partDiff)}원
@@ -1199,15 +1199,15 @@ export default function StrategicSimulator() {
                           {/* Depth 3 Facilities Table */}
                           {isPartOpen && (
                             <div className="overflow-x-auto bg-white">
-                              <table className="w-full text-left border-collapse text-xs">
+                              <table className="w-full text-left border-collapse text-xs whitespace-nowrap min-w-[850px]">
                                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
                                   <tr>
-                                    <th className="py-2.5 px-4 w-12 text-center">No</th>
-                                    <th className="py-2.5 px-4 min-w-[200px]">영업장명 및 전략 뱃지</th>
-                                    <th className="py-2.5 px-4 text-right">전략 비중 (%)</th>
-                                    <th className="py-2.5 px-4 text-right">{input.baseYear}년 실적</th>
-                                    <th className="py-2.5 px-4 text-right font-black text-indigo-950">{input.targetYear}년 목표 매출</th>
-                                    <th className="py-2.5 px-4 text-right font-bold text-teal-800">목표 증감액 (Δ)</th>
+                                    <th className="py-2.5 px-4 w-12 text-center whitespace-nowrap">No</th>
+                                    <th className="py-2.5 px-4 min-w-[200px] whitespace-nowrap">영업장명 및 전략 뱃지</th>
+                                    <th className="py-2.5 px-4 text-right whitespace-nowrap">전략 비중 (%)</th>
+                                    <th className="py-2.5 px-4 text-right whitespace-nowrap">{input.baseYear}년 실적</th>
+                                    <th className="py-2.5 px-4 text-right font-black text-indigo-950 whitespace-nowrap">{input.targetYear}년 목표 매출</th>
+                                    <th className="py-2.5 px-4 text-right font-bold text-teal-800 whitespace-nowrap">목표 증감액 (Δ)</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -1215,33 +1215,33 @@ export default function StrategicSimulator() {
                                     const facDiff = fac.target2026 - fac.actual2025;
                                     return (
                                       <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="py-2.5 px-4 text-center font-bold text-slate-400">
+                                        <td className="py-2.5 px-4 text-center font-bold text-slate-400 whitespace-nowrap">
                                           {fac.no}
                                         </td>
-                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-sm">
-                                          <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span>{fac.facilityName}</span>
+                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-sm whitespace-nowrap">
+                                          <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+                                            <span className="whitespace-nowrap">{fac.facilityName}</span>
                                             {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
                                                 ADR 레버리지 권장
                                               </span>
                                             ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
                                                 핵심 볼륨 견인
                                               </span>
                                             ) : null}
                                           </div>
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold">
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 font-semibold whitespace-nowrap">
                                           {fac.weight}%
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-600">
+                                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-600 whitespace-nowrap">
                                           ₩{formatCurrency(fac.actual2025)}원
                                         </td>
-                                        <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm">
+                                        <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm whitespace-nowrap">
                                           ₩{formatCurrency(fac.target2026)}원
                                         </td>
-                                        <td className={`py-2.5 px-4 text-right tabular-nums font-bold ${
+                                        <td className={`py-2.5 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
                                           facDiff >= 0 ? 'text-teal-700 bg-teal-50/20' : 'text-rose-700 bg-rose-50/20'
                                         }`}>
                                           {facDiff >= 0 ? '+' : ''}₩{formatCurrency(facDiff)}원

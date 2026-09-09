@@ -239,19 +239,19 @@ export default function Home() {
                 )}
               </div>
               
-              <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight transition-all duration-300">
+              <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight transition-all duration-300 whitespace-nowrap">
                 {formatCurrency(todayGross)}
               </div>
               {todayGrowth !== undefined ? (
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${todayGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                  <span>{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                  <span>{todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(todayGrowth).toFixed(1)}%</span>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${todayGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                  <span className="whitespace-nowrap">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                  <span className="whitespace-nowrap">{todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(todayGrowth).toFixed(1)}%</span>
                   {todayDiff !== undefined && (
-                    <span className="font-medium opacity-80">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
+                    <span className="font-medium opacity-80 whitespace-nowrap">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
                   )}
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-400">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-400 whitespace-nowrap">
                   <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
                 </div>
               )}
@@ -263,33 +263,33 @@ export default function Home() {
               {/* 1. 올해 누적 매출 (YTD) */}
               <div className="relative z-10">
                 <div className="mb-1 flex flex-col justify-start">
-                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap">
-                    <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse" />
-                    <span>올해 누적 매출 (YTD)</span>
+                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap break-keep">
+                    <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse shrink-0" />
+                    <span className="whitespace-nowrap">올해 누적 매출 (YTD)</span>
                     {isRangeMode ? (
-                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg whitespace-nowrap">
                         종료일({currentEndDateStr}) 기준 연누계 ({currentEndDateStr.slice(0, 4)}-01-01 ~ {currentEndDateStr})
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-400 font-normal">
+                      <span className="text-xs text-slate-400 font-normal whitespace-nowrap">
                         ({startDate.slice(0, 4)}-01-01 ~ {startDate})
                       </span>
                     )}
                   </h2>
                 </div>
-                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight">
+                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight whitespace-nowrap">
                   {formatCurrency(ytdGross)}
                 </div>
                 {ytdGrowth !== undefined ? (
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${ytdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                    <span>전년 동기 대비</span>
-                    <span>{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${ytdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                    <span className="whitespace-nowrap">전년 동기 대비</span>
+                    <span className="whitespace-nowrap">{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
                     {ytdDiff !== undefined && (
-                      <span className="font-medium opacity-80">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
+                      <span className="font-medium opacity-80 whitespace-nowrap">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
                     )}
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400 whitespace-nowrap">
                     <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
                   </div>
                 )}
@@ -315,42 +315,42 @@ export default function Home() {
 
                     {/* 🎈 공휴일수 (토·일·국가지정공휴일) 비교 배지 */}
                     <div 
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs whitespace-nowrap"
                       title={`[당해 MTD] 총 ${mtdHolidays.currentPeriod.totalDays}일 중 휴일 ${mtdHolidays.currentPeriod.totalHolidays}일 (토 ${mtdHolidays.currentPeriod.saturdays}, 일 ${mtdHolidays.currentPeriod.sundays}, 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 MTD] 총 ${mtdHolidays.lastYearPeriod.totalDays}일 중 휴일 ${mtdHolidays.lastYearPeriod.totalHolidays}일 (토 ${mtdHolidays.lastYearPeriod.saturdays}, 일 ${mtdHolidays.lastYearPeriod.sundays}, 평일공휴일 ${mtdHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
                     >
-                      <span className="text-amber-800">🎈 공휴일(주말+공휴일):</span>
-                      <strong className="text-amber-950 font-black">{mtdHolidays.currentPeriod.totalHolidays}일</strong>
-                      <span className="text-amber-700 font-normal">vs 전년 {mtdHolidays.lastYearPeriod.totalHolidays}일</span>
+                      <span className="text-amber-800 whitespace-nowrap">🎈 공휴일(주말+공휴일):</span>
+                      <strong className="text-amber-950 font-black whitespace-nowrap">{mtdHolidays.currentPeriod.totalHolidays}일</strong>
+                      <span className="text-amber-700 font-normal whitespace-nowrap">vs 전년 {mtdHolidays.lastYearPeriod.totalHolidays}일</span>
                       {mtdHolidays.diffHolidays !== 0 ? (
-                        <span className={`text-[10px] font-black ${mtdHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        <span className={`text-[10px] font-black whitespace-nowrap ${mtdHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                           ({mtdHolidays.diffHolidays > 0 ? `+${mtdHolidays.diffHolidays}일` : `${mtdHolidays.diffHolidays}일`})
                         </span>
                       ) : (
-                        <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
+                        <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">(동일)</span>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight">
+                <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight whitespace-nowrap">
                   {formatCurrency(mtdGross)}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {mtdGrowth !== undefined ? (
-                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${mtdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                      <span>전년 동기간 대비</span>
-                      <span>{mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdGrowth).toFixed(1)}%</span>
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${mtdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                      <span className="whitespace-nowrap">전년 동기간 대비</span>
+                      <span className="whitespace-nowrap">{mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdGrowth).toFixed(1)}%</span>
                       {mtdDiff !== undefined && (
-                        <span className="font-medium opacity-80">({mtdDiff > 0 ? '+' : ''}{formatCurrency(mtdDiff)})</span>
+                        <span className="font-medium opacity-80 whitespace-nowrap">({mtdDiff > 0 ? '+' : ''}{formatCurrency(mtdDiff)})</span>
                       )}
                     </div>
                   ) : (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400 whitespace-nowrap">
                       <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
                     </div>
                   )}
 
                   {/* 세부 휴일 구성 안내 (토/일/국경일) */}
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
                     (토 {mtdHolidays.currentPeriod.saturdays}일 · 일 {mtdHolidays.currentPeriod.sundays}일
                     {mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`}
                     {mtdHolidays.currentPeriod.holidaysList.length > 0 && ` [${mtdHolidays.currentPeriod.holidaysList.map(h => h.name).join(', ')}]`})
@@ -363,28 +363,28 @@ export default function Home() {
               <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-150" />
               <div>
                 <div className="min-h-[44px] mb-1 relative z-10 flex flex-col justify-start">
-                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse" /> 통합 숙박객 수 <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
+                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 whitespace-nowrap">
+                    <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse shrink-0" /> <span className="whitespace-nowrap">통합 숙박객 수</span> <span className="text-xs text-slate-400 font-normal whitespace-nowrap">(콘도 투숙객)</span>
                   </h2>
                 </div>
-                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight relative z-10 flex items-baseline gap-2">
+                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight relative z-10 flex items-baseline gap-2 whitespace-nowrap">
                   <span>{new Intl.NumberFormat('ko-KR').format(roomCapActual)}</span>
                   <span className="text-lg font-medium text-slate-500">명</span>
                 </div>
 
                 {/* 과거 비교 숙박객 수 및 증감률 배지 */}
                 {roomCapLy !== undefined && roomCapLy > 0 ? (
-                  <div className={`mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 ${roomCapGrowth !== undefined && roomCapGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                    <span>{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                  <div className={`mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 whitespace-nowrap ${roomCapGrowth !== undefined && roomCapGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                    <span className="whitespace-nowrap">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
                     {roomCapGrowth !== undefined && (
-                      <span>{roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%</span>
+                      <span className="whitespace-nowrap">{roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%</span>
                     )}
-                    <span className="font-medium opacity-80">
+                    <span className="font-medium opacity-80 whitespace-nowrap">
                       (전년 {new Intl.NumberFormat('ko-KR').format(roomCapLy)}명{roomCapDiff !== undefined ? `, ${roomCapDiff > 0 ? '+' : ''}${new Intl.NumberFormat('ko-KR').format(roomCapDiff)}명` : ''})
                     </span>
                   </div>
                 ) : (
-                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 bg-slate-100 text-slate-400">
+                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 bg-slate-100 text-slate-400 whitespace-nowrap">
                     <span>전년 비교 데이터 산출 불가</span>
                   </div>
                 )}
@@ -414,35 +414,35 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-1.5 text-xs">
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🎨 미디어아트</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['미디어아트센터'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['미디어아트센터'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🏊 썸머랜드</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['[썸머랜드 전체 소계]'] || leisureVisitorsMap['썸머랜드'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['[썸머랜드 전체 소계]'] || leisureVisitorsMap['썸머랜드'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🐑 벨포레 목장</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['벨포레 목장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['벨포레 목장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🎡 원더풀</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['원더풀'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['원더풀'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🛷 사계절썰매</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['사계절썰매장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['사계절썰매장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🚤 마리나 클럽</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마리나 클럽'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마리나 클럽'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🏎️ 마운틴카트</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
                       <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                   </div>
                 </div>
@@ -462,17 +462,17 @@ export default function Home() {
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1">객실 점유율 (Occ)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">객실 점유율 (Occ)</div>
                   {(() => {
                     const occ = (coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
                               : (coreData.core?.summary?.occRate && Number(coreData.core.summary.occRate) > 0) ? Number(coreData.core.summary.occRate)
                               : displayData?.kpiMetrics?.totalOcc;
                     return occ !== undefined && occ !== null ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
                           {Number(occ).toFixed(1)}%
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium whitespace-nowrap">
                           {isRangeMode ? '선택 기간 평균 점유율' : '(Inventory 기준 자동 산출)'}
                         </div>
                       </>
@@ -485,17 +485,17 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1">객단가 (ADR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">객단가 (ADR)</div>
                   {(() => {
                     const adr = (coreData.core?.summary?.totalADR && Number(coreData.core.summary.totalADR) > 0) ? Number(coreData.core.summary.totalADR)
                               : (coreData.core?.summary?.adr && Number(coreData.core.summary.adr) > 0) ? Number(coreData.core.summary.adr)
                               : displayData?.kpiMetrics?.totalADR;
                     return adr !== undefined && adr !== null && Number(adr) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
                           {formatCurrency(adr)} <span className="text-sm font-medium text-slate-500">원</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium whitespace-nowrap">
                           객실 총매출 ÷ 판매 객실 수
                         </div>
                       </>
@@ -508,16 +508,16 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1">객실당 매출 (RevPAR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">객실당 매출 (RevPAR)</div>
                   {(() => {
                     const revPar = (coreData.core?.summary?.revPAR && Number(coreData.core.summary.revPAR) > 0) ? Number(coreData.core.summary.revPAR)
                                  : displayData?.kpiMetrics?.revPAR;
                     return revPar !== undefined && revPar !== null && Number(revPar) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
                           {formatCurrency(revPar)} <span className="text-sm font-medium text-slate-500">원</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium whitespace-nowrap">
                           객실 총매출 ÷ 전체 객실 수
                         </div>
                       </>
@@ -530,15 +530,15 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1">가용객실당 총매출 (TrevPAR)</div>
+                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">가용객실당 총매출 (TrevPAR)</div>
                   {(() => {
                     const trevPar = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
                     return trevPar !== undefined && trevPar !== null && Number(trevPar) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight">
+                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
                           {formatCurrency(trevPar)} <span className="text-sm font-medium text-slate-500">원</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium">
+                        <div className="text-[11px] text-slate-500 mt-2 font-medium break-keep">
                           물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출입니다.
                         </div>
                       </>
@@ -571,7 +571,7 @@ export default function Home() {
                         <span className="font-semibold text-slate-700">🏆 전체 1인 평균 그린피</span>
                         <span className="text-slate-400 font-normal">{isRangeMode ? '선택 기간 합산' : '금일 실적'}</span>
                       </div>
-                      <div className="text-3xl font-black text-emerald-600 tracking-tight tabular-nums">
+                      <div className="text-3xl font-black text-emerald-600 tracking-tight tabular-nums whitespace-nowrap">
                         ₩{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)} <span className="text-sm font-normal text-slate-500">/인</span>
                       </div>
                     </div>
@@ -580,45 +580,45 @@ export default function Home() {
                     <div className="grid grid-cols-3 gap-2.5">
                       {/* 자사 평균 */}
                       <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-indigo-700 bg-indigo-50 py-0.5 px-1.5 rounded-lg mb-1 truncate">
+                        <div className="text-xs font-bold text-indigo-700 bg-indigo-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap">
                           자사 평균
                         </div>
-                        <div className="text-base font-black text-slate-900 tabular-nums my-1">
+                        <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.directAvgGreenFee)}`
                             : '-'}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate">
+                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
                           홈페이지 예약
                         </div>
                       </div>
 
                       {/* OTA 평균 */}
                       <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-amber-700 bg-amber-50 py-0.5 px-1.5 rounded-lg mb-1 truncate">
+                        <div className="text-xs font-bold text-amber-700 bg-amber-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap">
                           OTA 평균
                         </div>
-                        <div className="text-base font-black text-slate-900 tabular-nums my-1">
+                        <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.otaAvgGreenFee)}`
                             : '-'}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate">
+                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
                           대행사 제휴처
                         </div>
                       </div>
 
                       {/* 회원 평균 */}
                       <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-purple-700 bg-purple-50 py-0.5 px-1.5 rounded-lg mb-1 truncate">
+                        <div className="text-xs font-bold text-purple-700 bg-purple-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap">
                           회원 평균
                         </div>
-                        <div className="text-base font-black text-slate-900 tabular-nums my-1">
+                        <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.memberAvgGreenFee)}`
                             : '-'}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate">
+                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
                           회원 우대 단가
                         </div>
                       </div>
@@ -683,20 +683,20 @@ export default function Home() {
                     </div>
                     <div className="grid grid-cols-3 gap-2.5">
                       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-                        <div className="text-xs text-slate-500 font-semibold mb-1">총 예약 팀수</div>
-                        <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums">
+                        <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">총 예약 팀수</div>
+                        <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums whitespace-nowrap">
                           {`${golfReservedTeams}`} <span className="text-sm font-normal text-slate-500">팀</span>
                         </div>
                       </div>
                       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-                        <div className="text-xs text-slate-500 font-semibold mb-1">실제 입장 (내장)</div>
-                        <div className="text-2xl lg:text-3xl font-black text-brand-mint tabular-nums">
+                        <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">실제 입장 (내장)</div>
+                        <div className="text-2xl lg:text-3xl font-black text-brand-mint tabular-nums whitespace-nowrap">
                           {displayData.golfSummary ? `${displayData.golfSummary.visitedTeams}` : '0'} <span className="text-sm font-normal text-slate-500">팀</span>
                         </div>
                       </div>
                       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-                        <div className="text-xs text-rose-500 font-semibold mb-1">취소 / 미내장</div>
-                        <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums">
+                        <div className="text-xs text-rose-500 font-semibold mb-1 whitespace-nowrap">취소 / 미내장</div>
+                        <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums whitespace-nowrap">
                           {`${(displayData.golfSummary?.canceledTeams || 0) + (displayData.golfSummary?.pendingTeams || 0)}`} <span className="text-sm font-normal text-slate-500">팀</span>
                         </div>
                         {((displayData.golfSummary?.canceledTeams || 0) > 0 || (displayData.golfSummary?.pendingTeams || 0) > 0) && (

@@ -75,7 +75,7 @@ export const DataSyncStatus: React.FC = () => {
             </div>
             <div className="text-[10px] text-slate-500 font-mono tracking-wider">NODE: AWS-RDS-APNE2</div>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center">
+          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center break-keep whitespace-nowrap">
             DATA WAREHOUSE <span className="text-slate-600 mx-3">/</span> <span className="text-blue-400 font-light">SYNC STATUS</span>
           </h1>
         </div>
@@ -179,9 +179,9 @@ export const DataSyncStatus: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="flex items-center space-x-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-sm border border-emerald-500/20 mb-2">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[9px] text-emerald-400 font-medium tracking-wider">SYNCED</span>
+                    <div className="flex items-center space-x-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-sm border border-emerald-500/20 mb-2 whitespace-nowrap shrink-0">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span className="text-[9px] text-emerald-400 font-medium tracking-wider whitespace-nowrap">SYNCED</span>
                     </div>
                     <span className="text-2xl font-light font-mono text-white tabular-nums">
                       {log.record_count.toLocaleString()}

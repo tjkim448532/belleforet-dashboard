@@ -634,8 +634,8 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3">
-              <Grid className="text-indigo-400" size={32} />
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep whitespace-nowrap">
+              <Grid className="text-indigo-400 shrink-0" size={32} />
               영업장별 앵커 연계 순수 인과 시너지 분석
             </h1>
             <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed">
@@ -1115,14 +1115,14 @@ export default function SynergyCorrelation() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs">
+            <table className="w-full border-collapse text-left text-xs whitespace-nowrap min-w-[950px]">
               <thead>
                 <tr className="border-b border-slate-200 font-bold text-slate-600 bg-slate-50">
-                  <th className="py-3.5 px-4 rounded-l-xl">충격 시점 (Horizon)</th>
-                  <th className="py-3.5 px-4">골프 부문 (GOLF) 반응액 [90% BCa CI]</th>
-                  <th className="py-3.5 px-4">객실 부문 (ROOM) 반응액 [90% BCa CI]</th>
-                  <th className="py-3.5 px-4">식음 부문 (F&B) 반응액 [90% BCa CI]</th>
-                  <th className="py-3.5 px-4 rounded-r-xl">레저 부문 (LEISURE) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4 rounded-l-xl whitespace-nowrap">충격 시점 (Horizon)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">골프 부문 (GOLF) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">객실 부문 (ROOM) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">식음 부문 (F&B) 반응액 [90% BCa CI]</th>
+                  <th className="py-3.5 px-4 rounded-r-xl whitespace-nowrap">레저 부문 (LEISURE) 반응액 [90% BCa CI]</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">

@@ -150,10 +150,10 @@ export default function Simulator() {
     <div className="w-full max-w-[1000px] mx-auto bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-80px)]">
       
       {/* Header */}
-      <div className="bg-brand-mint p-6 text-white flex items-center justify-between">
+      <div className="bg-brand-mint p-6 text-white flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-4 mb-1">
-            <h1 className="text-2xl font-medium">본부지정</h1>
+          <div className="flex items-center gap-4 mb-1 flex-wrap">
+            <h1 className="text-2xl font-medium break-keep whitespace-nowrap">본부지정</h1>
             {/* [12차 패치] 달력 (Date Picker) 추가 */}
             <input 
               type="date" 
@@ -164,11 +164,11 @@ export default function Simulator() {
           </div>
           <p className="text-white/90 text-sm font-medium">1. 상단의 본부를 선택하세요 ➔ 2. 아래 영업장을 클릭하여 해당 본부 매출로 할당하세요.</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={handleClear} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors font-medium text-sm">
+        <div className="flex gap-3 whitespace-nowrap shrink-0">
+          <button onClick={handleClear} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors font-medium text-sm whitespace-nowrap">
             <RotateCcw size={16} /> 초기화
           </button>
-          <button onClick={handleApply} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-xl transition-colors font-medium text-sm text-brand-mint shadow-lg">
+          <button onClick={handleApply} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-xl transition-colors font-medium text-sm text-brand-mint shadow-lg whitespace-nowrap">
             <Save size={16} /> 대시보드에 적용
           </button>
         </div>
@@ -221,31 +221,31 @@ export default function Simulator() {
       </div>
 
       {/* Summary Banner */}
-      <div className="bg-white border-b border-slate-100 p-4 flex gap-6 items-center text-sm font-medium shadow-sm z-20">
-        <div className="flex items-center gap-2">
-          <div className="text-slate-500">대시보드 총액:</div>
-          <div className="text-2xl font-medium text-brand-mint">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
+      <div className="bg-white border-b border-slate-100 p-4 flex gap-6 items-center text-sm font-medium shadow-sm z-20 overflow-x-auto whitespace-nowrap">
+        <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
+          <div className="text-slate-500 whitespace-nowrap">대시보드 총액:</div>
+          <div className="text-2xl font-medium text-brand-mint whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(totalSales)}원</div>
         </div>
         
         {/* [13차 패치] 마리아DB VS 대시보드 실시간 교차 검증 배지 (Cross-Checker) */}
         {!loading && (
-          <div className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all border ${
+          <div className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all border whitespace-nowrap shrink-0 ${
             totalSales === dbGrandTotal 
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
               : 'bg-red-50 text-red-600 border-red-200 animate-pulse'
           }`}>
             {totalSales === dbGrandTotal ? (
               <>
-                <CheckCircle2 size={18} className="text-emerald-500" />
-                <span>DB 실매출 일치 (무결성 검증 완료 🟢)</span>
+                <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                <span className="whitespace-nowrap">DB 실매출 일치 (무결성 검증 완료 🟢)</span>
               </>
             ) : (
               <>
-                <X size={18} className="text-red-500" />
-                <span>
+                <X size={18} className="text-red-500 shrink-0" />
+                <span className="whitespace-nowrap">
                   DB 불일치 경고 🔴 (차액: {new Intl.NumberFormat('ko-KR').format(Math.abs(dbGrandTotal - totalSales))}원 누락)
                 </span>
-                <div className="text-xs ml-2 opacity-70">
+                <div className="text-xs ml-2 opacity-70 whitespace-nowrap">
                   (DB 총액: {new Intl.NumberFormat('ko-KR').format(dbGrandTotal)}원)
                 </div>
               </>
@@ -253,22 +253,22 @@ export default function Simulator() {
           </div>
         )}
 
-        <div className="ml-auto text-slate-400 bg-slate-100 px-4 py-2 rounded-full flex items-center gap-2">
+        <div className="ml-auto text-slate-400 bg-slate-100 px-4 py-2 rounded-full flex items-center gap-2 whitespace-nowrap shrink-0">
           Step 2. 아래 리스트를 클릭하여 색칠하세요 👇
         </div>
       </div>
 
       {/* Table List */}
       <div className="flex-1 overflow-y-auto p-0 bg-slate-50">
-        <table className="w-full text-left text-sm text-slate-600">
+        <table className="w-full text-left text-sm text-slate-600 whitespace-nowrap min-w-[750px]">
           <thead className="bg-white sticky top-0 border-b border-slate-200 shadow-sm z-10">
             <tr>
-              <th className="p-4 w-16 text-center">No.</th>
-              <th className="p-4 w-28">결제 시간</th>
-              <th className="p-4 w-32">트랜잭션 ID</th>
-              <th className="p-4 w-32">지정 본부</th>
-              <th className="p-4">영업장 명칭 (결제 영업장)</th>
-              <th className="p-4 text-right">결제 금액</th>
+              <th className="p-4 w-16 text-center whitespace-nowrap">No.</th>
+              <th className="p-4 w-28 whitespace-nowrap">결제 시간</th>
+              <th className="p-4 w-32 whitespace-nowrap">트랜잭션 ID</th>
+              <th className="p-4 w-32 whitespace-nowrap">지정 본부</th>
+              <th className="p-4 whitespace-nowrap">영업장 명칭 (결제 영업장)</th>
+              <th className="p-4 text-right whitespace-nowrap">결제 금액</th>
             </tr>
           </thead>
           <tbody>

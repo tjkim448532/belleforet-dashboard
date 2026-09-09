@@ -27,17 +27,17 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-left text-sm">
+      <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[1000px]">
         <thead>
           <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-            <th className="py-3.5 px-6 rounded-l-xl">{label}</th>
-            <th className="py-3.5 px-6">영업장 관할 구분</th>
-            <th className="py-3.5 px-6 text-right">영업장 총매출 (POS)</th>
-            <th className="py-3.5 px-6 text-center">순수 인과 상관계수 (r)</th>
-            <th className="py-3.5 px-6 text-center">순수 탄력성 (+10%)</th>
-            <th className="py-3.5 px-6 text-right">100만원당 순수 낙수액</th>
-            <th className="py-3.5 px-6 text-center">CAPA 점유/병목</th>
-            <th className="py-3.5 px-6 text-center rounded-r-xl">인과 신뢰도</th>
+            <th className="py-3.5 px-6 rounded-l-xl whitespace-nowrap">{label}</th>
+            <th className="py-3.5 px-6 whitespace-nowrap">영업장 관할 구분</th>
+            <th className="py-3.5 px-6 text-right whitespace-nowrap">영업장 총매출 (POS)</th>
+            <th className="py-3.5 px-6 text-center whitespace-nowrap">순수 인과 상관계수 (r)</th>
+            <th className="py-3.5 px-6 text-center whitespace-nowrap">순수 탄력성 (+10%)</th>
+            <th className="py-3.5 px-6 text-right whitespace-nowrap">100만원당 순수 낙수액</th>
+            <th className="py-3.5 px-6 text-center whitespace-nowrap">CAPA 점유/병목</th>
+            <th className="py-3.5 px-6 text-center rounded-r-xl whitespace-nowrap">인과 신뢰도</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
@@ -70,13 +70,13 @@ export default function SynergyTable({ type, correlationRows = [], stores }: Syn
 
             return (
               <tr key={idx} className={`${theme.hoverBg} transition-colors`}>
-                <td className="py-4 px-6 font-semibold text-slate-800">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`${theme.badgeBg} px-2.5 py-1 rounded-full text-xs font-medium`}>
+                <td className="py-4 px-6 font-semibold text-slate-800 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+                    <span className={`${theme.badgeBg} px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0`}>
                       {item.shopName || item.storeName || item.targetShopName}
                     </span>
                     {isSpurious && (
-                      <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-bold" title="외생변수(요일/날씨)를 통제하면 실제 인과성이 매우 낮습니다.">
+                      <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0" title="외생변수(요일/날씨)를 통제하면 실제 인과성이 매우 낮습니다.">
                         착시 필터링
                       </span>
                     )}

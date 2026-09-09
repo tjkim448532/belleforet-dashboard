@@ -142,9 +142,9 @@ export default function AdminCapacity() {
               <Gauge className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 break-keep whitespace-nowrap">
                 영업장별 물리적 캐파(Capacity) 및 단가 마스터 관리
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 whitespace-nowrap">
                   백엔드 표준 영업장 SSOT
                 </span>
               </h1>
@@ -251,18 +251,18 @@ export default function AdminCapacity() {
           </div>
         ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs whitespace-nowrap min-w-[1000px]">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th className="py-3.5 px-4 w-12 text-center">No</th>
-                <th className="py-3.5 px-4 min-w-[220px]">영업장명 (Facility Name)</th>
-                <th className="py-3.5 px-4 min-w-[120px]">공식 시스템 분류</th>
-                <th className="py-3.5 px-4 min-w-[140px]">1일 최대 캐파 (수용량)</th>
-                <th className="py-3.5 px-4 min-w-[140px]">기준 평균단가 (원)</th>
-                <th className="py-3.5 px-4 min-w-[120px] text-center">단가인상 허용</th>
-                <th className="py-3.5 px-4 min-w-[120px] text-center">초과분 재배분</th>
-                <th className="py-3.5 px-4 min-w-[220px]">비고 및 산출 근거</th>
-                <th className="py-3.5 px-4 w-16 text-center">삭제</th>
+                <th className="py-3.5 px-4 w-12 text-center whitespace-nowrap">No</th>
+                <th className="py-3.5 px-4 min-w-[220px] whitespace-nowrap">영업장명 (Facility Name)</th>
+                <th className="py-3.5 px-4 min-w-[120px] whitespace-nowrap">공식 시스템 분류</th>
+                <th className="py-3.5 px-4 min-w-[140px] whitespace-nowrap">1일 최대 캐파 (수용량)</th>
+                <th className="py-3.5 px-4 min-w-[140px] whitespace-nowrap">기준 평균단가 (원)</th>
+                <th className="py-3.5 px-4 min-w-[120px] text-center whitespace-nowrap">단가인상 허용</th>
+                <th className="py-3.5 px-4 min-w-[120px] text-center whitespace-nowrap">초과분 재배분</th>
+                <th className="py-3.5 px-4 min-w-[220px] whitespace-nowrap">비고 및 산출 근거</th>
+                <th className="py-3.5 px-4 w-16 text-center whitespace-nowrap">삭제</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">

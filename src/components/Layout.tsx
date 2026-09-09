@@ -94,7 +94,7 @@ export default function Layout() {
             <NavLink
               key={idx}
               to={item.path}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl ${
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl whitespace-nowrap ${
                 isActive && (item.path === '/' ? window.location.pathname === '/' : true)
                   ? 'bg-brand-mint/10 text-brand-mint'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
@@ -116,7 +116,7 @@ export default function Layout() {
             <div className="mt-2">
             <button
               onClick={() => setResortOpen(!resortOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
             >
               <div className="flex items-center gap-3">
                 <Hotel size={20} />
@@ -129,7 +129,7 @@ export default function Layout() {
               <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
                 <NavLink
                   to="/resort-business"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -140,7 +140,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/members"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -158,7 +158,7 @@ export default function Layout() {
           <div className="mt-2">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
             >
               <div className="flex items-center gap-3">
                 <MonitorPlay size={20} />
@@ -172,7 +172,7 @@ export default function Layout() {
                 <NavLink
                   to="/synergy"
                   end
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -184,7 +184,7 @@ export default function Layout() {
 
                 <NavLink
                   to="/synergy/correlation"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -196,7 +196,7 @@ export default function Layout() {
 
                 <NavLink
                   to="/synergy/bundles"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -214,7 +214,7 @@ export default function Layout() {
           <div className="mt-2">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
             >
               <div className="flex items-center gap-3">
                 <Ticket size={20} />
@@ -228,7 +228,7 @@ export default function Layout() {
                 <NavLink
                   to="/leisure"
                   end
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -239,7 +239,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/leisure/organization"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
                   onClick={() => { 
@@ -258,7 +258,7 @@ export default function Layout() {
             <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
               <NavLink
                 to="/target-simulator"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl ${
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
                   isActive
                     ? 'bg-teal-50 text-teal-700 font-bold border border-teal-200/60 shadow-xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -273,7 +273,7 @@ export default function Layout() {
 
               <NavLink
                 to="/strategic-simulator"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl ${
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
                   isActive
                     ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-900 font-bold border border-indigo-200/60 shadow-xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'

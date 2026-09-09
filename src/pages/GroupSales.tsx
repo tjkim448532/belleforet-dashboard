@@ -304,41 +304,41 @@ export default function GroupSales() {
     const name = f.facilityName;
     if (name.includes('남도예담')) {
       return (
-        <span key={fIdx} className="bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+        <span key={fIdx} className="bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
           🍱 {name}
         </span>
       );
     }
     if (name.includes('목장')) {
       return (
-        <span key={fIdx} className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+        <span key={fIdx} className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
           🐑 {name}
         </span>
       );
     }
     if (name.includes('연회장') || name.includes('세미나') || name.includes('대관')) {
       return (
-        <span key={fIdx} className="bg-blue-50 text-blue-900 border border-blue-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+        <span key={fIdx} className="bg-blue-50 text-blue-900 border border-blue-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
           🏛️ {name}
         </span>
       );
     }
     if (name.includes('골프') || name.includes('CC')) {
       return (
-        <span key={fIdx} className="bg-purple-50 text-purple-900 border border-purple-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+        <span key={fIdx} className="bg-purple-50 text-purple-900 border border-purple-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
           ⛳ {name}
         </span>
       );
     }
     if (name.includes('모토아레나')) {
       return (
-        <span key={fIdx} className="bg-rose-50 text-rose-900 border border-rose-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+        <span key={fIdx} className="bg-rose-50 text-rose-900 border border-rose-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
           🏎️ {name}
         </span>
       );
     }
     return (
-      <span key={fIdx} className="bg-slate-50 text-slate-700 border border-slate-200/80 text-[11px] px-2 py-0.5 rounded-md font-medium">
+      <span key={fIdx} className="bg-slate-50 text-slate-700 border border-slate-200/80 text-[11px] px-2 py-0.5 rounded-md font-medium whitespace-nowrap">
         {name}
       </span>
     );
@@ -356,15 +356,15 @@ export default function GroupSales() {
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight break-keep whitespace-nowrap">
                 B2B 법인 & 단체 영업 실적 관리
               </h1>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
                 Corporate Ledger
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1 break-keep">
               산하 PMS 법인 마스터 폴리오 및 연회·골프·부대시설 결제 데이터를 통합하여 기업별 지출 및 이용 동선을 정밀 분석합니다.
             </p>
           </div>
@@ -460,19 +460,19 @@ export default function GroupSales() {
         {/* Card 1: Total Corporate Groups */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-              <Building2 size={15} className="text-blue-600" /> 유치 단체수 & 기업수
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <Building2 size={15} className="text-blue-600" /> 유치 단체 수
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
               B2B 모수
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900 tabular-nums">
+            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
               {enrichedGroups.length} <span className="text-sm font-semibold text-slate-500">건</span>
               <span className="text-sm font-bold text-blue-600 ml-2">({loyaltyMetrics.totalUniqueCompanies}개사)</span>
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               총 참가 인원: <strong className="text-slate-800">{(summaryData?.totalPax || 0).toLocaleString()}명</strong>
             </div>
           </div>
@@ -481,18 +481,18 @@ export default function GroupSales() {
         {/* Card 2: Total Revenue */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <DollarSign size={15} className="text-emerald-600" /> 단체 총 결제 매출
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
               순매출 기준
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-emerald-700 tabular-nums">
+            <div className="text-2xl font-black text-emerald-700 tabular-nums whitespace-nowrap">
               {formatCurrency(totalCalculatedRevenue)}원
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               행사당 평균: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerGroup || 0)}원</strong>
             </div>
           </div>
@@ -501,18 +501,18 @@ export default function GroupSales() {
         {/* Card 3: Loyalty & Repeat Rate */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <Award size={15} className="text-purple-600" /> 단체 로열티 (재방문율)
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap">
               충성도 지수
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-purple-800 tabular-nums">
+            <div className="text-2xl font-black text-purple-800 tabular-nums whitespace-nowrap">
               {loyaltyMetrics.repeatRate}% <span className="text-sm font-semibold text-slate-500">재방문</span>
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               재방문 기업: <strong className="text-purple-700">{loyaltyMetrics.repeatCompaniesCount}개사</strong> · 기여: <strong className="text-slate-800">{loyaltyMetrics.repeatSpendRate}%</strong>
             </div>
           </div>
@@ -521,18 +521,18 @@ export default function GroupSales() {
         {/* Card 4: Ancillary Cross-selling Contribution */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <Layers size={15} className="text-cyan-600" /> 부대시설 교차 기여
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-100">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-100 whitespace-nowrap">
               식음·골프·레저
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-cyan-800 tabular-nums">
+            <div className="text-2xl font-black text-cyan-800 tabular-nums whitespace-nowrap">
               {summaryData?.ancillaryRatio || 0}%
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               1인당 객단가: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>
             </div>
           </div>
@@ -624,7 +624,7 @@ export default function GroupSales() {
               </span>
               <button
                 onClick={() => setSelectedLoyaltyFilter('ALL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'ALL'
                     ? 'bg-slate-800 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -634,7 +634,7 @@ export default function GroupSales() {
               </button>
               <button
                 onClick={() => setSelectedLoyaltyFilter('REPEAT_ALL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'REPEAT_ALL'
                     ? 'bg-purple-600 text-white shadow-xs'
                     : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
@@ -644,7 +644,7 @@ export default function GroupSales() {
               </button>
               <button
                 onClick={() => setSelectedLoyaltyFilter('VIP_ONLY')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'VIP_ONLY'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
@@ -654,13 +654,13 @@ export default function GroupSales() {
               </button>
               <button
                 onClick={() => setSelectedLoyaltyFilter('NEW_ONLY')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedLoyaltyFilter === 'NEW_ONLY'
                     ? 'bg-slate-700 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                신규 유치 (1회)
+                신규 단체 (1회차)
               </button>
             </div>
 
@@ -751,18 +751,18 @@ export default function GroupSales() {
 
         {/* Group Ledger Table */}
         <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200/90">
+          <table className="w-full border-collapse text-left text-xs whitespace-nowrap min-w-[1200px]">
+            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200/90 whitespace-nowrap">
               <tr>
-                <th className="py-3.5 px-4 min-w-[200px]">단체명 / 기업명</th>
-                <th className="py-3.5 px-3 text-center min-w-[110px]">로열티</th>
-                <th className="py-3.5 px-3 text-center min-w-[130px]">구분</th>
-                <th className="py-3.5 px-4 min-w-[160px]">담당자 / 연락처</th>
-                <th className="py-3.5 px-4 min-w-[160px]">행사 기간</th>
-                <th className="py-3.5 px-3 text-right min-w-[70px]">인원</th>
-                <th className="py-3.5 px-4 text-right min-w-[130px]">결제액 / 누적 LTV</th>
-                <th className="py-3.5 px-4 min-w-[240px]">이용 영업장 내역</th>
-                <th className="py-3.5 px-3 text-center w-12">상세</th>
+                <th className="py-3.5 px-4 min-w-[200px] whitespace-nowrap">단체명 / 기업명</th>
+                <th className="py-3.5 px-3 text-center min-w-[110px] whitespace-nowrap">로열티</th>
+                <th className="py-3.5 px-3 text-center min-w-[130px] whitespace-nowrap">구분</th>
+                <th className="py-3.5 px-4 min-w-[160px] whitespace-nowrap">담당자 / 연락처</th>
+                <th className="py-3.5 px-4 min-w-[160px] whitespace-nowrap">행사 기간</th>
+                <th className="py-3.5 px-3 text-right min-w-[70px] whitespace-nowrap">인원</th>
+                <th className="py-3.5 px-4 text-right min-w-[130px] whitespace-nowrap">결제액 / 누적 LTV</th>
+                <th className="py-3.5 px-4 min-w-[240px] whitespace-nowrap">이용 영업장 내역</th>
+                <th className="py-3.5 px-3 text-center w-12 whitespace-nowrap">상세</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">

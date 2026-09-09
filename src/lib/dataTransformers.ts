@@ -337,10 +337,10 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   const summaryTotalCapacity = parseNum(payload.summary?.totalRoomCap || 0);
 
   const lodgingStats = {
-    revenue: summaryRevenue,
+    revenue: summaryRevenue || parseNum(payload.summary?.totalRoomRev || 0),
     roomsSold: summaryRoomsSold,
     totalCapacity: summaryTotalCapacity,
-    adr: parseNum(payload.summary?.adr ?? payload.summary?.ADR ?? 0)
+    adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? (summaryRoomsSold > 0 && (summaryRevenue || payload.summary?.totalRoomRev) ? Math.round((summaryRevenue || payload.summary?.totalRoomRev) / summaryRoomsSold) : 0))
   };
 
   return {

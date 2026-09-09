@@ -38,6 +38,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchCoreData = async () => {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -56,46 +58,43 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         : `date=${validStart || todayStr}&_t=${Date.now()}`;
 
       try {
-        // [V6 SSOT Single API Call] Call V6 revenue-summary master endpoint & teetime/overview in parallel
-        const [res, golfTeetimeRes, overviewRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
-          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/overview?${queryParams}`).catch(() => null)
-        ]);
+        // [V6 SSOT Direct Call] Call V6 revenue-summary master endpoint (primary SSOT)
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`);
+        if (isCancelled) return;
 
         const payload = (res?.summary ? res : res?.data) || res || {};
-        const gs = golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
-        const channels = golfTeetimeRes?.salesByChannel || [];
-        const overviewGolf = overviewRes?.overview || {};
 
-        const directCh = channels.find((c: any) => c.channelCode === 'DIRECT_WEB' || c.channelName?.includes('자사'));
-        const otaCh = channels.find((c: any) => c.channelCode === 'OTA_AGENCY' || c.channelCode === 'KAKAO_GOLF' || c.channelName?.includes('OTA') || c.channelName?.includes('카카오'));
-        const memberCh = channels.find((c: any) => c.channelCode === 'MEMBER' || c.channelName?.includes('회원'));
+        const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = []) => {
+          const directCh = channels.find((c: any) => c.channelCode === 'DIRECT_WEB' || c.channelName?.includes('자사'));
+          const otaCh = channels.find((c: any) => c.channelCode === 'OTA_AGENCY' || c.channelCode === 'KAKAO_GOLF' || c.channelName?.includes('OTA') || c.channelName?.includes('카카오'));
+          const memberCh = channels.find((c: any) => c.channelCode === 'MEMBER' || c.channelName?.includes('회원'));
 
-        const coreSummary = {
-          ...payload.summary,
-          // TrevPAR 대소문자 호환성 (trevPar vs trevPAR)
-          trevPAR: payload.summary?.trevPar ?? payload.summary?.trevPAR,
-          trevPar: payload.summary?.trevPar ?? payload.summary?.trevPAR,
-          // 골프 예약/내장/취소 팀수
-          totalGolfReservedTeams: Number(payload.summary?.totalGolfReservedTeams || gs.totalGolfReservedTeams || gs.totalReservedTeams || overviewGolf.totalGolfReservedTeams || 0),
-          totalGolfTeams: Number(payload.summary?.totalGolfTeams || gs.totalGolfTeams || gs.totalVisitedTeams || overviewGolf.totalGolfTeams || 0),
-          totalGolfVisitedTeams: Number(payload.summary?.totalGolfVisitedTeams || gs.totalGolfVisitedTeams || gs.totalVisitedTeams || overviewGolf.totalGolfTeams || 0),
-          totalGolfCanceledTeams: Number(payload.summary?.totalGolfCanceledTeams || gs.totalGolfCanceledTeams || gs.totalCanceledTeams || overviewGolf.totalGolfCanceledTeams || 0),
-          totalGolfPendingTeams: Number(payload.summary?.totalGolfPendingTeams || gs.totalPendingTeams || 0),
-          totalGolfVisitors: Number(payload.summary?.totalGolfVisitors || gs.totalGolfVisitors || gs.totalPlayers || overviewGolf.totalGolfVisitors || 0),
-          // 골프 채널별 평균 그린피 및 전체 순수 평균 그린피 (카트비/프로샵 혼입 방지)
-          golfAvgGreenFee: Number(gs.avgGreenFeePerPlayer || overviewGolf.golfAvgGreenFee || payload.summary?.golfAvgGreenFee || 0),
-          golfDirectAvgGreenFee: Number(directCh?.avgGreenFeePerPlayer || overviewGolf.golfDirectAvgGreenFee || payload.summary?.golfDirectAvgGreenFee || 0),
-          golfOtaAvgGreenFee: Number(otaCh?.avgGreenFeePerPlayer || overviewGolf.golfOtaAvgGreenFee || payload.summary?.golfOtaAvgGreenFee || 0),
-          golfMemberAvgGreenFee: Number(memberCh?.avgGreenFeePerPlayer || overviewGolf.golfMemberAvgGreenFee || payload.summary?.golfMemberAvgGreenFee || 0),
-          golfRankedChannels: channels.length > 0 ? channels.map((ch: any) => ({
-            name: ch.channelName,
-            avgGreenFee: ch.avgGreenFeePerPlayer,
-            players: ch.visitedPlayers || 0
-          })) : (payload.summary?.golfRankedChannels || [])
+          return {
+            ...payloadSummary,
+            // TrevPAR 대소문자 호환성 (trevPar vs trevPAR)
+            trevPAR: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
+            trevPar: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
+            // 골프 예약/내장/취소 팀수
+            totalGolfReservedTeams: Number(payloadSummary?.totalGolfReservedTeams || gs.totalGolfReservedTeams || gs.totalReservedTeams || 0),
+            totalGolfTeams: Number(payloadSummary?.totalGolfTeams || gs.totalGolfTeams || gs.totalVisitedTeams || 0),
+            totalGolfVisitedTeams: Number(payloadSummary?.totalGolfVisitedTeams || gs.totalGolfVisitedTeams || gs.totalVisitedTeams || 0),
+            totalGolfCanceledTeams: Number(payloadSummary?.totalGolfCanceledTeams || gs.totalGolfCanceledTeams || gs.totalCanceledTeams || 0),
+            totalGolfPendingTeams: Number(payloadSummary?.totalGolfPendingTeams || gs.totalPendingTeams || 0),
+            totalGolfVisitors: Number(payloadSummary?.totalGolfVisitors || gs.totalGolfVisitors || gs.totalPlayers || 0),
+            // 골프 채널별 평균 그린피 및 전체 순수 평균 그린피 (카트비/프로샵 혼입 방지)
+            golfAvgGreenFee: Number(gs.avgGreenFeePerPlayer || payloadSummary?.golfAvgGreenFee || 0),
+            golfDirectAvgGreenFee: Number(directCh?.avgGreenFeePerPlayer || payloadSummary?.golfDirectAvgGreenFee || 0),
+            golfOtaAvgGreenFee: Number(otaCh?.avgGreenFeePerPlayer || payloadSummary?.golfOtaAvgGreenFee || 0),
+            golfMemberAvgGreenFee: Number(memberCh?.avgGreenFeePerPlayer || payloadSummary?.golfMemberAvgGreenFee || 0),
+            golfRankedChannels: channels.length > 0 ? channels.map((ch: any) => ({
+              name: ch.channelName,
+              avgGreenFee: ch.avgGreenFeePerPlayer,
+              players: ch.visitedPlayers || 0
+            })) : (payloadSummary?.golfRankedChannels || [])
+          };
         };
 
+        const initialSummary = buildCoreSummary(payload.summary);
         const corePayload = {
           ...payload,
           date: payload.targetDate || validStart || todayStr,
@@ -104,23 +103,53 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           leisureVisitors: payload.leisureVisitors || {},
           gridData: payload.gridData || [],
           weather: payload.weather || {},
-          summary: coreSummary
+          summary: initialSummary
         };
 
+        // Render dashboard immediately with SSOT master payload
         setState({
           core: corePayload,
-          summary: corePayload.summary,
+          summary: initialSummary,
           matrix: payload.gridData || [],
           isLoading: false,
           error: null
         });
+
+        // Non-blocking background enhancement: fetch golf channel tee-time breakdown without blocking page load
+        secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`)
+          .then((golfTeetimeRes) => {
+            if (isCancelled || !golfTeetimeRes) return;
+            const gs = golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
+            const channels = golfTeetimeRes?.salesByChannel || [];
+            if (channels.length > 0 || Object.keys(gs).length > 0) {
+              setState(prev => {
+                if (!prev.core) return prev;
+                const updatedSummary = buildCoreSummary(payload.summary, gs, channels);
+                return {
+                  ...prev,
+                  core: {
+                    ...prev.core,
+                    summary: updatedSummary
+                  },
+                  summary: updatedSummary
+                };
+              });
+            }
+          })
+          .catch(() => {});
+
       } catch (error) {
+        if (isCancelled) return;
         console.error("[V6 Dashboard API Fetch Error]", error);
         setState(prev => ({ ...prev, isLoading: false, error: '데이터를 불러오는 데 실패했습니다.' }));
       }
     };
 
     fetchCoreData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [startDate, endDate]);
 
   return (

@@ -191,44 +191,53 @@ export default function SynergyCorrelation() {
       if (Array.isArray(categories) && categories.length > 0) {
         if (targetAnchor === 'ROOM') {
           const roomCat = categories.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (roomCat?.mtdActual || roomCat?.rangeActual) : roomCat?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (roomCat?.rangeActual || roomCat?.todayActual || roomCat?.revenue || roomCat?.totalSales || roomCat?.mtdActual) : roomCat?.todayActual);
         } else if (targetAnchor === 'GOLF') {
           const golfCat = categories.find((c: any) => c.categoryCode === 'GOLF' || c.categoryCode === '골프');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (golfCat?.mtdActual || golfCat?.rangeActual) : golfCat?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (golfCat?.rangeActual || golfCat?.todayActual || golfCat?.revenue || golfCat?.totalSales || golfCat?.mtdActual) : golfCat?.todayActual);
         } else if (targetAnchor === 'FNB') {
           const fnbCat = categories.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (fnbCat?.mtdActual || fnbCat?.rangeActual) : fnbCat?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (fnbCat?.rangeActual || fnbCat?.todayActual || fnbCat?.revenue || fnbCat?.totalSales || fnbCat?.mtdActual) : fnbCat?.todayActual);
         }
       }
 
       if (currentAnchorPeriodSales <= 0 && Array.isArray(matrixRows) && matrixRows.length > 0) {
         if (targetAnchor === 'MEDIA_ART') {
           const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트센터');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.todayActual || mediaVenue?.totalSales || mediaVenue?.revenue || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
         } else if (targetAnchor === 'MOUNTAIN_CART') {
           const kartVenue = matrixRows.find((r: any) => r.shopName === '마운틴카트');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (kartVenue?.rangeActual || kartVenue?.mtdActual) : kartVenue?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (kartVenue?.rangeActual || kartVenue?.todayActual || kartVenue?.totalSales || kartVenue?.revenue || kartVenue?.mtdActual) : kartVenue?.todayActual);
         } else if (targetAnchor === 'WONDERPOOL') {
           const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.mtdActual) : summerVenue?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.todayActual || summerVenue?.totalSales || summerVenue?.revenue || summerVenue?.mtdActual) : summerVenue?.todayActual);
         } else if (targetAnchor === 'FARM') {
           const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.mtdActual) : farmVenue?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.todayActual || farmVenue?.totalSales || farmVenue?.revenue || farmVenue?.mtdActual) : farmVenue?.todayActual);
         } else if (targetAnchor === 'MOTO_ARENA') {
           const motoVenue = matrixRows.find((r: any) => r.shopName === '모토아레나');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (motoVenue?.rangeActual || motoVenue?.mtdActual) : motoVenue?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (motoVenue?.rangeActual || motoVenue?.todayActual || motoVenue?.totalSales || motoVenue?.revenue || motoVenue?.mtdActual) : motoVenue?.todayActual);
         } else if (targetAnchor === 'AMUSEMENT') {
           const amuseVenue = matrixRows.find((r: any) => r.shopName === '놀이동산');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (amuseVenue?.rangeActual || amuseVenue?.mtdActual) : amuseVenue?.todayActual);
+          currentAnchorPeriodSales = cleanNum(rangeActive ? (amuseVenue?.rangeActual || amuseVenue?.todayActual || amuseVenue?.totalSales || amuseVenue?.revenue || amuseVenue?.mtdActual) : amuseVenue?.todayActual);
         }
       }
+
+      // SSOT Revenue Binding: Never clobber crossRes.anchor.periodTotalRevenue with 1-month MTD numbers
+      const anchorPeriodRevenue = rangeActive
+        ? (cleanNum(crossRes?.anchor?.periodTotalRevenue) || cleanNum(crossRes?.summary?.anchorRevenue) || currentAnchorPeriodSales)
+        : (currentAnchorPeriodSales || cleanNum(crossRes?.anchor?.periodTotalRevenue) || cleanNum(crossRes?.anchor?.dailyAvgRevenue));
+
+      const anchorDailyAvgRevenue = cleanNum(crossRes?.anchor?.dailyAvgRevenue) ||
+        cleanNum(crossRes?.summary?.anchorDailyAvgRevenue) ||
+        (anchorPeriodRevenue > 0 && totalDays > 0 ? Math.round(anchorPeriodRevenue / totalDays) : currentAnchorPeriodSales);
 
       // Set Anchor Info
       if (crossRes?.anchor) {
         setAnchorData({
           ...crossRes.anchor,
-          periodTotalRevenue: currentAnchorPeriodSales > 0 ? currentAnchorPeriodSales : (rangeActive ? crossRes.anchor.periodTotalRevenue : crossRes.anchor.dailyAvgRevenue),
-          dailyAvgRevenue: crossRes.anchor.dailyAvgRevenue || currentAnchorPeriodSales
+          periodTotalRevenue: anchorPeriodRevenue,
+          dailyAvgRevenue: anchorDailyAvgRevenue
         });
       }
 
@@ -241,7 +250,7 @@ export default function SynergyCorrelation() {
         // Find corresponding venue in matrix-weekly for actual POS sales
         const matchVenue = physicalShops.find((r: any) => r.shopName === shopName || r.facilityName === shopName);
         const venueSales = matchVenue 
-          ? (rangeActive ? cleanNum(matchVenue.rangeActual || matchVenue.mtdActual || matchVenue.todayActual) : cleanNum(matchVenue.todayActual))
+          ? (rangeActive ? cleanNum(matchVenue.rangeActual || matchVenue.todayActual || matchVenue.totalSales || matchVenue.revenue || matchVenue.mtdActual) : cleanNum(matchVenue.todayActual))
           : 0;
 
         let division = item.categoryName || '미분류';
@@ -272,8 +281,8 @@ export default function SynergyCorrelation() {
           divisionName: division,
           totalRevenue: venueSales,
           totalSales: venueSales,
-          correlatedSales: pureSpillover > 0 && crossRes?.anchor?.periodTotalRevenue 
-            ? Math.round((crossRes.anchor.periodTotalRevenue / 1000000) * pureSpillover) 
+          correlatedSales: pureSpillover > 0 && (crossRes?.anchor?.periodTotalRevenue || anchorPeriodRevenue) 
+            ? Math.round(((crossRes?.anchor?.periodTotalRevenue || anchorPeriodRevenue) / 1000000) * pureSpillover) 
             : 0,
           correlatedVisitors: matchVenue ? cleanNum(matchVenue.todayVisitors || matchVenue.rangeVisitors || 0) : 0,
           spilloverRate: Math.round(pureElasticity * 10) / 10,
@@ -316,8 +325,8 @@ export default function SynergyCorrelation() {
 
       const newAnchorData = crossRes?.anchor ? {
         ...crossRes.anchor,
-        periodTotalRevenue: currentAnchorPeriodSales > 0 ? currentAnchorPeriodSales : (rangeActive ? crossRes.anchor.periodTotalRevenue : crossRes.anchor.dailyAvgRevenue),
-        dailyAvgRevenue: crossRes.anchor.dailyAvgRevenue || currentAnchorPeriodSales
+        periodTotalRevenue: anchorPeriodRevenue,
+        dailyAvgRevenue: anchorDailyAvgRevenue
       } : null;
 
       const newSummaryMeta = {

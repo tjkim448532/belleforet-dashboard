@@ -45,16 +45,21 @@ export default function Members() {
 
   const [visitors, setVisitors] = useState<MemberVisitorItem[]>([]);
   const [summaryData, setSummaryData] = useState<{
-    totalVisitors: number;
-    totalSpend: number;
-    avgSpendPerMember: number;
+    totalVisitors?: number;
+    totalSpend?: number;
+    avgSpendPerMember?: number;
     totalYtdSpend?: number;
     topLoyalMember?: {
       memberName: string;
       memberNo: string;
       ytdVisitCount: number;
       ytdTotalSpend: number;
-    };
+    } | null;
+    totalMembers?: number;
+    totalTodaySpend?: number;
+    avgTodaySpend?: number;
+    totalYtdVisits?: number;
+    breakdown?: any;
   } | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -158,24 +163,24 @@ export default function Members() {
 
   // Computed summary metrics (SSOT Pure Consumer)
   const metrics = useMemo(() => {
-    const totalCount = summaryData?.totalVisitors || enrichedVisitors.length;
-    const totalSpend = summaryData?.totalSpend || 0;
-    const avgSpend = summaryData?.avgSpendPerMember || 0;
-    const totalYtdSpend = summaryData?.totalYtdSpend || 0;
+    const totalCount = summaryData?.totalVisitors ?? summaryData?.totalMembers ?? enrichedVisitors.length;
+    const totalSpend = summaryData?.totalSpend ?? summaryData?.totalTodaySpend ?? 0;
+    const avgSpend = summaryData?.avgSpendPerMember ?? summaryData?.avgTodaySpend ?? 0;
+    const totalYtdSpend = summaryData?.totalYtdSpend ?? 0;
 
     const sortedByYtd = [...enrichedVisitors].sort((a, b) => b.ytdVisitCount - a.ytdVisitCount);
-    const topMember = sortedByYtd[0] || null;
+    const fallbackTopMember = sortedByYtd[0] || null;
 
     return {
       totalCount,
       totalSpend,
       avgSpend,
       totalYtdSpend,
-      topMember: summaryData?.topLoyalMember || (topMember ? {
-        memberName: topMember.memberName,
-        memberNo: topMember.memberNo,
-        ytdVisitCount: topMember.ytdVisitCount,
-        ytdTotalSpend: topMember.ytdTotalSpend
+      topMember: summaryData?.topLoyalMember ?? (fallbackTopMember ? {
+        memberName: fallbackTopMember.memberName,
+        memberNo: fallbackTopMember.memberNo,
+        ytdVisitCount: fallbackTopMember.ytdVisitCount,
+        ytdTotalSpend: fallbackTopMember.ytdTotalSpend
       } : null)
     };
   }, [enrichedVisitors, summaryData]);

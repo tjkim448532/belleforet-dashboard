@@ -64,12 +64,35 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
     // 3. 자바스크립트 합산 오차 검증 거절 통보 (NO SLICE SUMMATION 원칙 강제)
     
 
-    // 4. 검증 결과 텍스트 리포팅
+    // 4. 검증 결과 텍스트 리포팅 (대량 오류 시 콘솔 폭주 및 브라우저 프리징 방지)
     if (errors.length > 0) {
-        console.error(`❌ [Data Integrity FAILED] ${url.split('?')[0]}`);
-        errors.forEach(err => console.error(err));
+        console.error(`❌ [Data Integrity FAILED] ${url.split('?')[0]} (총 ${errors.length}건 타입 위반 감지)`);
+        // 상위 5개 대표 오류만 출력하여 브라우저 OOM/멈춤 방지
+        errors.slice(0, 5).forEach(err => console.error(err));
+        if (errors.length > 5) {
+            console.warn(`⚠️ [Throttled] 나머지 ${errors.length - 5}건의 타입 오류는 브라우저 프리징 방지를 위해 생략되었습니다.`);
+        }
     } else {
         console.log(`✅ [Data Integrity PASSED] ${url.split('?')[0]} - No type/number violations detected.`);
+    }
+};
+
+/**
+ * 백엔드 배포 전 과도기 또는 미정규화 문자열 숫자('1119093.00') 수신 시
+ * UI 컴포넌트 크래시 및 문자열 연결 버그 방지를 위한 프론트엔드 방어적 정규화
+ */
+const sanitizePayloadNumbers = (node: any) => {
+    if (!node || typeof node !== 'object') return;
+    for (const key in node) {
+        const value = node[key];
+        if (typeof value === 'string' && key.match(/(revenue|actual|ly|growth|diff|amount|fee|ratio|trevpar|occ|rooms|gross)/i) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name')) {
+            const parsed = Number(value);
+            if (!Number.isNaN(parsed)) {
+                node[key] = parsed;
+            }
+        } else if (typeof value === 'object' && value !== null) {
+            sanitizePayloadNumbers(value);
+        }
     }
 };
 
@@ -116,8 +139,11 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
 
   const data = await response.json();
   
-  // 데이터 정합성 QA 전수 검증 인터셉터 호출
+  // 데이터 정합성 QA 전수 검증 인터셉터 호출 (백엔드 계약 위반 감지)
   validatePayloadIntegrity(data, url, startTime, response.status);
+  
+  // UI 런타임 안정성을 위한 방어적 정규화 (문자열 숫자를 안전한 Number로 보정)
+  sanitizePayloadNumbers(data);
   
   return data;
 };

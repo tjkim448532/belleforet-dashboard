@@ -36,14 +36,19 @@ export default function LeisureFacility() {
 
   const [apiTopItems, setApiTopItems] = useState<TopTicketItem[]>([]);
 
+  const [isTopItemsLoading, setIsTopItemsLoading] = useState<boolean>(true);
+
   // Fetch item-level top tickets from backend API (excluding Moto Arena)
   useEffect(() => {
+    let isCancelled = false;
     const fetchTopItems = async () => {
+      setIsTopItemsLoading(true);
       try {
         const queryParams = endDate
-          ? `startDate=${startDate}&endDate=${endDate}&limit=15`
-          : `date=${startDate}&limit=15`;
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-organization?${queryParams}`).catch(() => null);
+          ? `startDate=${startDate}&endDate=${endDate}&limit=30`
+          : `date=${startDate}&limit=30`;
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/top-ticket-items?${queryParams}`).catch(() => null);
+        if (isCancelled) return;
         const payload = res?.data ?? res;
         if (payload?.topItems && Array.isArray(payload.topItems) && payload.topItems.length > 0) {
           const filtered = payload.topItems
@@ -65,6 +70,8 @@ export default function LeisureFacility() {
 
               return !isMoto;
             })
+            // 총액수(sales) 기준 내림차순 정렬
+            .sort((a: any, b: any) => parseNumber(b.sales || b.totalSales || 0) - parseNumber(a.sales || a.totalSales || 0))
             .slice(0, 5);
 
           setApiTopItems(filtered.map((item: any, idx: number) => ({
@@ -79,15 +86,20 @@ export default function LeisureFacility() {
           setApiTopItems([]);
         }
       } catch {
-        setApiTopItems([]);
+        if (!isCancelled) setApiTopItems([]);
+      } finally {
+        if (!isCancelled) setIsTopItemsLoading(false);
       }
     };
     fetchTopItems();
+    return () => {
+      isCancelled = true;
+    };
   }, [startDate, endDate]);
 
-  const { totalSales, topTickets, top5Tickets } = useMemo(() => {
+  const { totalSales, topTickets } = useMemo(() => {
     if (!core?.salesByFacility) {
-      return { totalSales: 0, topTickets: [], top5Tickets: [] };
+      return { totalSales: 0, topTickets: [] };
     }
 
     const ticketFacilities = core.salesByFacility.filter((item: any) => 
@@ -117,12 +129,10 @@ export default function LeisureFacility() {
       });
 
     const sortedTickets = mappedTickets.sort((a, b) => b.sales - a.sales);
-    const top5 = sortedTickets.slice(0, 5);
 
     return { 
       totalSales: ssotTotalSales, 
-      topTickets: sortedTickets, 
-      top5Tickets: top5
+      topTickets: sortedTickets
     };
   }, [core]);
 
@@ -201,39 +211,50 @@ export default function LeisureFacility() {
             </p>
 
             <div className="space-y-3">
-              {(apiTopItems.length > 0 ? apiTopItems : top5Tickets).map((t: any, idx: number) => {
-                const itemName = t.itemName || t.name;
-                const venueName = t.facilityName;
-                const sales = t.sales;
-                const qty = t.quantity || t.qty;
+              {isTopItemsLoading ? (
+                <div className="py-8 flex items-center justify-center text-slate-400 text-xs">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-mint mr-2"></div>
+                  티켓 품목 순위를 불러오는 중입니다...
+                </div>
+              ) : apiTopItems.length > 0 ? (
+                apiTopItems.map((t: any, idx: number) => {
+                  const itemName = t.itemName || t.name;
+                  const venueName = t.facilityName;
+                  const sales = t.sales;
+                  const qty = t.quantity || t.qty;
 
-                return (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-purple-50/40 transition-colors">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                        idx === 0 ? 'bg-amber-400 text-white shadow-xs' :
-                        idx === 1 ? 'bg-slate-400 text-white' :
-                        idx === 2 ? 'bg-amber-700 text-white' :
-                        'bg-slate-200 text-slate-600'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <span className="font-bold text-slate-800 text-sm block truncate">{itemName}</span>
-                        {venueName && (
-                          <span className="text-xs text-slate-500 font-medium block truncate">
-                            {venueName}
-                          </span>
-                        )}
+                  return (
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-purple-50/40 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          idx === 0 ? 'bg-amber-400 text-white shadow-xs' :
+                          idx === 1 ? 'bg-slate-400 text-white' :
+                          idx === 2 ? 'bg-amber-700 text-white' :
+                          'bg-slate-200 text-slate-600'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <span className="font-bold text-slate-800 text-sm block truncate">{itemName}</span>
+                          {venueName && (
+                            <span className="text-xs text-slate-500 font-medium block truncate">
+                              {venueName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 tabular-nums whitespace-nowrap ml-3">
+                        <span className="font-bold text-sm text-slate-900 block">{formatCurrency(sales)}원</span>
+                        <span className="text-xs text-slate-500 font-medium">{qty.toLocaleString()}개</span>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 tabular-nums whitespace-nowrap ml-3">
-                      <span className="font-bold text-sm text-slate-900 block">{formatCurrency(sales)}원</span>
-                      <span className="text-xs text-slate-500 font-medium">{qty.toLocaleString()}개</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center text-slate-400 text-xs font-medium bg-slate-50 rounded-2xl border border-slate-200/50">
+                  해당 기간 판매된 단일 티켓 상품 데이터가 없습니다.
+                </div>
+              )}
             </div>
           </div>
         </div>

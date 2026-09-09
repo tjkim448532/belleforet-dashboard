@@ -233,6 +233,17 @@ export interface TransformedResortData {
   };
 }
 
+// 벨포레 리조트 175실 공식 평형별 물리 인벤토리 기준 마스터 SSOT
+export const DEFAULT_ROOM_CAPACITIES: Record<string, number> = {
+  '16평': 71,
+  '35평': 60,
+  '51평': 40, // 전용 5실 + 16평/35평 커넥티드 35세트 조합 인벤토리
+  'R51평': 5,
+  '펫룸 35평': 5,
+  '펫룸 16평': 4,
+  '펫룸 51평': 5,
+};
+
 export const transformResortData = (payload: any, masterCapacities?: Record<string, number>): TransformedResortData | null => {
   if (!payload) return null;
 
@@ -246,23 +257,23 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {};
-  if (masterCapacities) {
-    Object.entries(masterCapacities).forEach(([k, v]) => {
-      roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
-    });
-  }
+  const effectiveMasterCaps = (masterCapacities && Object.keys(masterCapacities).length > 0)
+    ? masterCapacities
+    : DEFAULT_ROOM_CAPACITIES;
 
-  // 🚨 [Pure Consumer] 프론트엔드의 평형별 무단 섹션(Slice Summation) 및 채널별 추출(Fallback) 완전 철거
-  // 💡 백엔드가 정제해주는 roomSummaryByType 의 값만을 1:1 매핑하며,
-  // 값이 없다면 빈 배열/0 처리하여 백엔드의 데이터파이프라인 책임을 강제합니다.
+  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {};
+  Object.entries(effectiveMasterCaps).forEach(([k, v]) => {
+    roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
+  });
+
+  // 🚨 [Pure Consumer] 백엔드가 정제해주는 roomSummaryByType 의 값 매핑
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType) && payload.roomSummaryByType.length > 0) {
     payload.roomSummaryByType.forEach((item: any) => {
       const typeName = item.roomType || '미분류';
       const sold = parseNum(item.roomsSold || 0);
       const rev = parseNum(item.totalSales || item.revenue || 0);
-      const defaultCap = masterCapacities?.[typeName] ? parseNum(masterCapacities[typeName]) * days : 0;
-      const cap = item.capacity || item.totalRooms ? parseNum(item.capacity || item.totalRooms) * days : (roomOccupancyMap[typeName]?.cap ?? defaultCap);
+      const defaultCap = effectiveMasterCaps[typeName] ? parseNum(effectiveMasterCaps[typeName]) * days : 0;
+      const cap = item.capacity || item.totalRooms ? parseNum(item.capacity || item.totalRooms) * days : (roomOccupancyMap[typeName]?.cap || defaultCap);
 
       roomOccupancyMap[typeName] = { sold, rev, cap };
     });

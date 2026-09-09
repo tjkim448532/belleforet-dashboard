@@ -622,7 +622,7 @@ export default function GolfBusiness() {
 
           {/* 채널별 종합 비교 테이블 */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden">
+            <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[900px]">
               <thead className="bg-slate-100/80 text-slate-600 font-bold">
                 <tr>
                   <th className="py-3 px-4">예약 채널명</th>
@@ -762,7 +762,7 @@ export default function GolfBusiness() {
 
                   {/* 세부 OTA 대행사 실적 테이블 */}
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                    <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden shadow-xs whitespace-nowrap min-w-[900px]">
                       <thead className="bg-slate-100/90 text-slate-700 font-bold">
                         <tr>
                           <th className="py-3 px-4 text-center">순위</th>
@@ -1020,7 +1020,7 @@ export default function GolfBusiness() {
           
           {golfDetails.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-xs">
+              <table className="w-full border-collapse text-left text-xs whitespace-nowrap min-w-[500px]">
                 <thead>
                   <tr className="border-b border-slate-100 font-bold text-slate-500 uppercase tracking-wider bg-slate-50/70">
                     <th className="py-3.5 px-6">영업장명 (항목)</th>

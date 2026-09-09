@@ -623,8 +623,8 @@ export default function SynergyCorrelation() {
       {/* Top Banner Header with Navigation Sub-Tabs */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div>
+        <div className="relative z-10 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="bg-indigo-400/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide flex items-center gap-1.5">
                 <Cpu size={14} className="text-amber-400" /> 차세대 외생변수 통제 인과 시너지 엔진 [V6 PRO]
@@ -634,7 +634,7 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep whitespace-nowrap">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
               <Grid className="text-indigo-400 shrink-0" size={32} />
               영업장별 앵커 연계 순수 인과 시너지 분석
             </h1>

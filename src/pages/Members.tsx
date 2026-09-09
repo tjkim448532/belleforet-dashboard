@@ -191,7 +191,7 @@ export default function Members() {
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase whitespace-nowrap">
@@ -208,7 +208,7 @@ export default function Members() {
             
             <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
               <Award className="text-brand-mint shrink-0" size={32} />
-              <span className="break-keep whitespace-normal xl:whitespace-nowrap">
+              <span className="break-keep">
                 회원 이용 실적 및 올해 누적 방문 횟수(YTD) 분석
               </span>
             </h1>
@@ -217,7 +217,7 @@ export default function Members() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 self-start 2xl:self-center">
             <GlobalDatePicker showPresets={true} />
             <button
               onClick={fetchMemberVisitors}

@@ -318,7 +318,7 @@ export default function ResortBusiness() {
               </h2>
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
                 <Layers size={14} className="text-brand-mint" />
-                <span>총 물리 기준: 175실 (점유 145실 / 잔여 30실)</span>
+                <span>총 물리 기준: {totalBaseRooms.toLocaleString()}실 (점유 {totalPhysicalOccupied.toLocaleString()}실 / 잔여 {remainingRooms.toLocaleString()}실)</span>
               </div>
             </div>
 

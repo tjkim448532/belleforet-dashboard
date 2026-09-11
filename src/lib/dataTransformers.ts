@@ -358,12 +358,20 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0)
   };
 
+  const connecting51Sold = parseNum(roomOccupancyMap['51평']?.sold ?? 0);
+  const standardRoomsSold = Math.max(0, summaryRoomsSold - connecting51Sold);
+
   return {
     success: payload.success || true,
     date: payload.date,
     ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
     today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
-    summary: payload.summary,
+    summary: {
+      ...payload.summary,
+      connectingPhysicalRooms: parseNum(payload.summary?.connectingPhysicalRooms) || connecting51Sold,
+      standardPhysicalRooms: parseNum(payload.summary?.standardPhysicalRooms) || standardRoomsSold,
+      totalPhysicalKeysSold: parseNum(payload.summary?.totalPhysicalKeysSold) || summaryRoomsSold
+    },
     roomOccupancyMap,
     channelAdrData,
     marketTypeAdrData,

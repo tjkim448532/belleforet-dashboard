@@ -6,7 +6,7 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Building2, Phone, DollarSign, Search, 
   ChevronRight, RefreshCw, Layers, Award, Utensils,
-  ShieldCheck, X, ChevronDown, ChevronUp
+  ShieldCheck, X, ChevronDown, ChevronUp, HelpCircle
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -37,6 +37,7 @@ export interface VisitHistoryEntry {
 export interface CorporateGroupItem {
   groupId: string;
   groupName: string;
+  corporateName?: string;
   category: 'RESORT_CORP' | 'SEMINAR' | 'GOLF_GROUP' | 'BANQUET' | 'OTHER';
   categoryName: string;
   contactName: string;
@@ -266,15 +267,45 @@ export default function GroupSales() {
 
   // Repeat metrics for KPI
   const loyaltyMetrics = useMemo(() => {
-    // 🚨 [Pure Consumer] 프론트엔드 합산 철거: 백엔드가 내려주는 총합 및 재방문 소계만 사용
+    const uniqueCompanies = new Set(
+      enrichedGroups
+        .map(g => (g.corporateName || g.groupName || '').trim())
+        .filter(Boolean)
+    );
+    const repeatCompanies = new Set(
+      enrichedGroups
+        .filter(g => (g.visitCount ?? 0) >= 2)
+        .map(g => (g.corporateName || g.groupName || '').trim())
+        .filter(Boolean)
+    );
+    const repeatSpend = enrichedGroups
+      .filter(g => (g.visitCount ?? 0) >= 2)
+      .reduce((s, g) => s + g.totalRevenue, 0);
+    const totalSpend = Number(summaryData?.totalRevenue || enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0));
+
+    const calculatedRepeatRate = uniqueCompanies.size > 0 
+      ? Number(((repeatCompanies.size / uniqueCompanies.size) * 100).toFixed(1)) 
+      : 0;
+    const calculatedRepeatSpendRate = totalSpend > 0 
+      ? Number(((repeatSpend / totalSpend) * 100).toFixed(1)) 
+      : 0;
+
     return {
-      totalUniqueCompanies: summaryData?.totalUniqueCompanies || 0,
-      repeatCompaniesCount: summaryData?.repeatCompaniesCount || 0,
-      repeatRate: summaryData?.repeatRate || 0,
-      repeatSpendRate: summaryData?.repeatSpendRate || 0,
-      repeatSpend: summaryData?.repeatSpend || 0
+      totalUniqueCompanies: (summaryData?.totalUniqueCompanies !== undefined && summaryData.totalUniqueCompanies > 0)
+        ? summaryData.totalUniqueCompanies
+        : uniqueCompanies.size,
+      repeatCompaniesCount: (summaryData?.repeatCompaniesCount !== undefined && summaryData.repeatCompaniesCount > 0)
+        ? summaryData.repeatCompaniesCount
+        : repeatCompanies.size,
+      repeatRate: (summaryData?.repeatRate !== undefined && summaryData.repeatRate > 0)
+        ? summaryData.repeatRate
+        : calculatedRepeatRate,
+      repeatSpendRate: (summaryData?.repeatSpendRate !== undefined && summaryData.repeatSpendRate > 0)
+        ? summaryData.repeatSpendRate
+        : calculatedRepeatSpendRate,
+      repeatSpend: summaryData?.repeatSpend || repeatSpend
     };
-  }, [summaryData]);
+  }, [enrichedGroups, summaryData]);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -414,13 +445,13 @@ export default function GroupSales() {
               <ShieldCheck className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
-              총결제 매출 및 이용 영업장 데이터 산출 기준 (Data Lineage & Methodology)
+              B2B 단체 실적 및 교차 기여 데이터 산출 기준 (Data Lineage & Methodology)
               <span className="text-[11px] font-normal text-slate-400">
                 {showLogicExplainer ? '접기' : '자세히 보기'}
               </span>
             </h3>
           </div>
-          <button className="text-slate-400 hover:text-white p-1">
+          <button className="text-slate-400 hover:text-white p-1 cursor-pointer">
             {showLogicExplainer ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
@@ -428,10 +459,22 @@ export default function GroupSales() {
         {showLogicExplainer && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-800 text-xs">
             
-            {/* Logic 1: How Total Revenue is Calculated */}
+            {/* Logic 1: How Groups & Companies are Counted */}
+            <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
+              <div className="flex items-center gap-2 text-blue-400 font-bold">
+                <Building2 size={15} /> 1. 유치 단체 수(건수) vs 유치 기업 수(개사)
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                • <strong>행사 건수(건):</strong> 조회 기간 내 산하 PMS B2B 마스터 폴리오에 등록된 총 단체 행사(계약) 건수입니다.<br />
+                • <strong>고객사 수(개사):</strong> 동일 법인/기관(예: 한국생산성본부, 공공기관 등)이 여러 차례 나누어 행사를 진행한 경우, 상호명을 정규화하여 <strong>중복을 제거한 순수 유치 기업체 수</strong>입니다.<br />
+                • <strong>총 참가 인원:</strong> 모든 단체 행사에 참가한 임직원 및 교육생의 누적 합계(명)입니다.
+              </p>
+            </div>
+
+            {/* Logic 2: How Total Revenue is Calculated */}
             <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
               <div className="flex items-center gap-2 text-teal-400 font-bold">
-                <DollarSign size={15} /> 1. 총결제 매출(순매출) 산출 원리
+                <DollarSign size={15} /> 2. 단체 총결제 매출(순매출) 산출 원리
               </div>
               <p className="text-slate-300 leading-relaxed">
                 • <strong>원천 장부:</strong> 호텔 산하 PMS의 <strong>B2B 법인 예약 마스터 폴리오(Master Billing Folio)</strong> 데이터와 법인 세금계산서/카드 정산 내역 기준.<br />
@@ -439,14 +482,27 @@ export default function GroupSales() {
               </p>
             </div>
 
-            {/* Logic 2: How Facilities Used are Traced */}
+            {/* Logic 3: Ancillary Cross-selling Contribution */}
             <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-indigo-300 font-bold">
-                <Layers size={15} /> 2. 이용 영업장(Facilities) 추적 및 식별 원리
+              <div className="flex items-center gap-2 text-cyan-400 font-bold">
+                <Layers size={15} /> 3. 부대시설 교차 기여율 (Cross-Selling Ratio) 산출 원리
               </div>
               <p className="text-slate-300 leading-relaxed">
-                • <strong>추적 방식:</strong> 단체 행사 시 발행된 <strong>객실 키 / 부대시설 바우처 사용 내역</strong> 및 현장 POS에서 단체 룸차지(Room Charge)로 승인된 POS 트랜잭션 매핑.<br />
-                • <strong>식별 예시:</strong> 객실 76실 배정 ➔ <span className="text-blue-300">콘도 객실</span>, 벨포레홀 대관 ➔ <span className="text-cyan-300">대연회장</span>, 단체식사 ➔ <span className="text-amber-300">남도예담/쿠치나</span>, 티켓 발권 ➔ <span className="text-emerald-300">목장/미디어아트</span>로 자동 분배.
+                • <strong>정의 및 공식:</strong> 단체 총 결제 매출 중 <strong>객실(숙박료)을 제외하고</strong>, 단체 고객들이 리조트 내 부대시설(식음료 F&B, 골프장 Green Fee, 목장/미디어아트/카트 레저 등)에서 추가 소비한 매출의 비중입니다.<br />
+                • <code className="text-cyan-300 font-mono block my-1 bg-slate-900 px-2 py-1 rounded">교차 기여율(%) = (식음 + 골프 + 레저 부대시설 매출) ÷ 단체 총 결제 매출 × 100</code>
+                • <strong>경영적 의미:</strong> 객실만 단순 투숙하는 단체 대비, 리조트 내 F&B 및 액티비티를 함께 이용하도록 유도한 <strong>리조트 복합 시너지 성과</strong>를 측정합니다.
+              </p>
+            </div>
+
+            {/* Logic 4: Corporate Loyalty & LTV */}
+            <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
+              <div className="flex items-center gap-2 text-purple-400 font-bold">
+                <Award size={15} /> 4. 단체 로열티(재방문율) 및 고객사 생애가치 (LTV)
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                • <strong>재방문율:</strong> 전체 유치 기업 중 과거 2회 이상 벨포레를 재방문하여 행사를 개최한 법인의 비율(<code className="text-purple-300 font-mono">재방문 기업 수 ÷ 전체 순수 기업 수 × 100</code>)입니다.<br />
+                • <strong>매출 기여도:</strong> 재방문 고객사들이 결제한 금액이 전체 단체 매출에서 차지하는 비중입니다.<br />
+                • <strong>누적 LTV:</strong> 해당 법인이 벨포레와 맺은 최초 계약 이후 발생시킨 누적 총 결제액(Life Time Value)을 추적합니다.
               </p>
             </div>
 
@@ -458,10 +514,18 @@ export default function GroupSales() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Card 1: Total Corporate Groups */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <Building2 size={15} className="text-blue-600" /> 유치 단체 수
+              <div className="relative group/tip inline-flex items-center">
+                <HelpCircle size={14} className="text-slate-400 hover:text-blue-600 cursor-pointer transition-colors" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tip:block w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
+                  <p className="font-bold text-blue-300 mb-1">📌 유치 단체 수 vs 기업 수 기준</p>
+                  • <strong className="text-white">건수(Events):</strong> 조회 기간 내 등록된 B2B 행사 총 건수<br />
+                  • <strong className="text-white">개사(Companies):</strong> 동일 기업의 복수 행사를 중복 제거한 실제 유치 법인 수
+                </div>
+              </div>
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
               B2B 모수
@@ -475,14 +539,25 @@ export default function GroupSales() {
             <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               총 참가 인원: <strong className="text-slate-800">{(summaryData?.totalPax || 0).toLocaleString()}명</strong>
             </div>
+            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
+              <span>💡</span>
+              <span className="truncate">동일 기업 분할 행사 중복 제외 순수 고객사</span>
+            </div>
           </div>
         </div>
 
         {/* Card 2: Total Revenue */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <DollarSign size={15} className="text-emerald-600" /> 단체 총 결제 매출
+              <div className="relative group/tip inline-flex items-center">
+                <HelpCircle size={14} className="text-slate-400 hover:text-emerald-600 cursor-pointer transition-colors" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tip:block w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
+                  <p className="font-bold text-emerald-300 mb-1">📌 단체 총 결제 매출 산출 기준</p>
+                  호텔 PMS 법인 마스터 폴리오에 정산된 [객실 + 대연회장 대관 + 단체 식음 + 골프/레저]의 부가세 제외 순매출(Gross / 1.1) 합계입니다.
+                </div>
+              </div>
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
               순매출 기준
@@ -495,14 +570,26 @@ export default function GroupSales() {
             <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               행사당 평균: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerGroup || 0)}원</strong>
             </div>
+            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
+              <span>💡</span>
+              <span className="truncate">객실 + 연회 + 식음 + 골프·레저 통합 순매출</span>
+            </div>
           </div>
         </div>
 
         {/* Card 3: Loyalty & Repeat Rate */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <Award size={15} className="text-purple-600" /> 단체 로열티 (재방문율)
+              <div className="relative group/tip inline-flex items-center">
+                <HelpCircle size={14} className="text-slate-400 hover:text-purple-600 cursor-pointer transition-colors" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tip:block w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
+                  <p className="font-bold text-purple-300 mb-1">📌 단체 재방문 로열티 기준</p>
+                  • <strong className="text-white">재방문율:</strong> 전체 유치 기업 중 과거 2회 이상 벨포레를 재방문한 충성 기업 비율<br />
+                  • <strong className="text-white">매출 기여도:</strong> 재방문 기업 결제액이 전체 단체 매출에서 차지하는 비중
+                </div>
+              </div>
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap">
               충성도 지수
@@ -515,14 +602,26 @@ export default function GroupSales() {
             <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               재방문 기업: <strong className="text-purple-700">{loyaltyMetrics.repeatCompaniesCount}개사</strong> · 기여: <strong className="text-slate-800">{loyaltyMetrics.repeatSpendRate}%</strong>
             </div>
+            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
+              <span>💡</span>
+              <span className="truncate">2회 이상 벨포레를 다시 찾은 충성 법인 기업</span>
+            </div>
           </div>
         </div>
 
         {/* Card 4: Ancillary Cross-selling Contribution */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <Layers size={15} className="text-cyan-600" /> 부대시설 교차 기여
+              <div className="relative group/tip inline-flex items-center">
+                <HelpCircle size={14} className="text-slate-400 hover:text-cyan-600 cursor-pointer transition-colors" />
+                <div className="absolute right-0 sm:left-0 bottom-full mb-2 hidden group-hover/tip:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
+                  <p className="font-bold text-cyan-300 mb-1">📌 부대시설 교차 기여율이란?</p>
+                  단체 총매출 중 <strong>객실(숙박)을 제외한 부대시설(식음료 F&B, 골프장, 목장/레저 등)에서 추가 소비한 매출 비중</strong>입니다.<br />
+                  <span className="text-cyan-200 font-mono text-[10px] mt-1 block">공식: (부대시설 매출 ÷ 단체 총매출) × 100</span>
+                </div>
+              </div>
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-100 whitespace-nowrap">
               식음·골프·레저
@@ -534,6 +633,10 @@ export default function GroupSales() {
             </div>
             <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
               1인당 객단가: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>
+            </div>
+            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
+              <span>💡</span>
+              <span className="truncate">단체 총매출 중 객실 외 식음·골프·레저 소비 비중</span>
             </div>
           </div>
         </div>

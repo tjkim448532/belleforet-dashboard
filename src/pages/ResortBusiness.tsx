@@ -139,9 +139,20 @@ export default function ResortBusiness() {
   })();
 
   const summary = data?.summary || {};
-  const standardPhysicalRooms = Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
-  const connectingPhysicalRooms = Number(summary.connectingPhysicalRooms || 0);
-  const totalPhysicalOccupied = Number(summary.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));
+  const connectingPhysicalRooms = Number(
+    summary.connectingPhysicalRooms ||
+    data?.roomOccupancyMap?.['51평']?.sold ||
+    roomOccupancyData.find(r => r.isConnectedType || r.roomSize?.includes('51평'))?.sold ||
+    0
+  );
+  const standardPhysicalRooms = Number(
+    summary.standardPhysicalRooms ||
+    Math.max(0, lodgingStats.roomsSold - connectingPhysicalRooms)
+  );
+  const totalPhysicalOccupied = Number(
+    summary.totalPhysicalKeysSold ||
+    (standardPhysicalRooms + connectingPhysicalRooms)
+  );
   // 절대 0이 될 수 없도록 최소 175실(1일치) 하한선 강제 (0 나눗셈 원천 차단)
   const totalBaseRooms = Math.max(
     175,

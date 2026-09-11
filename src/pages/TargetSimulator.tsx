@@ -9,6 +9,7 @@ import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simul
 import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 import { secureFetcher } from '../lib/secureFetcher';
+import { getClosedBusinessDate } from '../lib/dateUtils';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -402,17 +403,87 @@ export default function TargetSimulator() {
   const summaryGrandTarget2026 = input.includeGolf ? rawGrandTarget2026 : (rawGrandTarget2026 - golfTarget2026);
   const summaryGrandActual2026 = input.includeGolf ? rawGrandActual2026 : (rawGrandActual2026 - golfActual2026);
 
+  // Current Business Progress Tracker (SSOT D-1 마감 기준)
+  const currentStatus = useMemo(() => {
+    const closedDate = getClosedBusinessDate(1);
+    const currentBizYear = closedDate.getFullYear();
+    const currentBizMonth = closedDate.getMonth() + 1;
+    const latestClosedDay = closedDate.getDate();
+
+    const isCurrentYear = input.targetYear === currentBizYear;
+    const isAnnual = input.selectedMonth === 'ANNUAL';
+    const isCurrentMonth = isCurrentYear && !isAnnual && input.selectedMonth === currentBizMonth;
+    const isYTD = isCurrentYear && isAnnual;
+    const isPast = input.targetYear < currentBizYear || (isCurrentYear && !isAnnual && typeof input.selectedMonth === 'number' && input.selectedMonth < currentBizMonth);
+    const isFuture = input.targetYear > currentBizYear || (isCurrentYear && !isAnnual && typeof input.selectedMonth === 'number' && input.selectedMonth > currentBizMonth);
+
+    let daysElapsed = 0;
+    let totalDays = 30;
+    if (isCurrentMonth) {
+      daysElapsed = latestClosedDay;
+      const monthInt = Number(input.selectedMonth);
+      totalDays = [4, 6, 9, 11].includes(monthInt) ? 30 : (monthInt === 2 ? (input.targetYear % 4 === 0 ? 29 : 28) : 31);
+    } else if (isYTD) {
+      const startOfYear = new Date(currentBizYear, 0, 1);
+      daysElapsed = Math.floor((closedDate.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+      totalDays = 365;
+    } else if (typeof input.selectedMonth === 'number') {
+      const monthInt = Number(input.selectedMonth);
+      totalDays = [4, 6, 9, 11].includes(monthInt) ? 30 : (monthInt === 2 ? (input.targetYear % 4 === 0 ? 29 : 28) : 31);
+      daysElapsed = totalDays;
+    } else {
+      totalDays = 365;
+      daysElapsed = 365;
+    }
+
+    const elapsedRate = totalDays > 0 ? Number(((daysElapsed / totalDays) * 100).toFixed(1)) : 0;
+
+    return {
+      currentBizYear,
+      currentBizMonth,
+      latestClosedDay,
+      isCurrentYear,
+      isCurrentMonth,
+      isYTD,
+      isPast,
+      isFuture,
+      daysElapsed,
+      totalDays,
+      elapsedRate
+    };
+  }, [input.targetYear, input.selectedMonth]);
+
   // Real-world Actual Performance & Achievement Rate Calculator
   const actualPerformance = useMemo(() => {
     if (summaryGrandActual2026 > 0) {
       const act = summaryGrandActual2026;
       const rate = summaryGrandTarget2026 > 0 ? Number(((act / summaryGrandTarget2026) * 100).toFixed(1)) : 0;
+      
+      let badgeColor = 'text-indigo-600';
+      let statusText = '';
+
+      if (currentStatus.isCurrentMonth) {
+        const paceDiff = Number((rate - currentStatus.elapsedRate).toFixed(1));
+        const paceText = paceDiff >= 0 
+          ? `+${paceDiff}%p 초과 달성 중 (순항 🚀)` 
+          : `${paceDiff}%p 지연`;
+        badgeColor = paceDiff >= 0 ? 'text-teal-600' : 'text-amber-600';
+        statusText = `${input.selectedMonth}월 1일~${currentStatus.latestClosedDay}일 MTD 누적: ₩${(act / 100000000).toFixed(2)}억원 (경과율 ${currentStatus.elapsedRate}% 대비 ${paceText})`;
+      } else if (currentStatus.isYTD) {
+        const paceDiff = Number((rate - currentStatus.elapsedRate).toFixed(1));
+        badgeColor = paceDiff >= 0 ? 'text-teal-600' : 'text-amber-600';
+        statusText = `1월 1일~${currentStatus.currentBizMonth}월 ${currentStatus.latestClosedDay}일 YTD 실적: ₩${(act / 100000000).toFixed(2)}억원 (경과율 ${currentStatus.elapsedRate}%)`;
+      } else {
+        badgeColor = rate >= 80 ? 'text-teal-600' : 'text-amber-600';
+        statusText = `${input.selectedMonth === 'ANNUAL' ? '연간 종합' : `${input.selectedMonth}월`} 최종 마감 실적: ₩${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`;
+      }
+
       return {
         revenue: act,
         rate,
         rateDisplay: `${rate}%`,
-        badgeColor: rate >= 80 ? 'text-teal-600' : 'text-indigo-600',
-        statusText: `${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ₩${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`
+        badgeColor,
+        statusText
       };
     }
 
@@ -424,7 +495,7 @@ export default function TargetSimulator() {
       badgeColor: 'text-slate-400',
       statusText: `${input.targetYear}년 ${monthLabel} 목표 실행 단계 (실적 집계 전)`
     };
-  }, [input.targetYear, input.selectedMonth, summaryGrandActual2026, summaryGrandTarget2026]);
+  }, [input.targetYear, input.selectedMonth, summaryGrandActual2026, summaryGrandTarget2026, currentStatus]);
 
   // 주중 vs 내일이 휴일인 날(금/토/공휴일 전야) 일평균 목표 계산기
   const dailyTargetStats = useMemo(() => {
@@ -649,27 +720,38 @@ export default function TargetSimulator() {
               <Calendar className="w-4 h-4 text-teal-400" />
               시뮬레이션 대상 월 선택 ({input.baseYear}년 해당 월의 실측 매출 비중 자동 대입)
             </span>
-            <span className="text-teal-300 font-extrabold">
-              현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
+            <span className="text-teal-300 font-extrabold flex items-center gap-1.5 flex-wrap">
+              <span>현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)</span>
+              {currentStatus.isCurrentMonth && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-400 text-slate-950 shadow-xs">
+                  MTD 1~{currentStatus.latestClosedDay}일 집계중 (경과율 {currentStatus.elapsedRate}%)
+                </span>
+              )}
             </span>
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-13 gap-1.5">
             {MONTH_NAMES.map(m => {
               const isSelected = input.selectedMonth === m.id;
+              const isCurrentBiz = m.id === currentStatus.currentBizMonth && input.targetYear === currentStatus.currentBizYear;
               return (
                 <button
                   key={String(m.id)}
                   onClick={() => handleMonthSelect(m.id as any)}
-                  className={`px-2.5 py-2.5 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 border ${
+                  className={`px-2.5 py-2.5 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 border relative ${
                     isSelected
                       ? 'bg-teal-400 text-slate-950 font-black border-teal-300 shadow-md scale-[1.02]'
                       : 'bg-white/10 text-slate-200 hover:bg-white/20 border-white/10 font-bold'
                   }`}
                 >
-                  <span className="text-xs leading-tight">{m.shortLabel}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs leading-tight">{m.shortLabel}</span>
+                    {isCurrentBiz && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" title="현재 진행 중인 월"></span>
+                    )}
+                  </div>
                   <span className={`text-[9px] truncate max-w-full ${isSelected ? 'text-slate-900 font-extrabold' : 'text-slate-400'}`}>
-                    {m.season}
+                    {isCurrentBiz ? '진행중 MTD' : m.season}
                   </span>
                 </button>
               );
@@ -800,15 +882,26 @@ export default function TargetSimulator() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs relative overflow-hidden">
+          {currentStatus.isCurrentMonth && (
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              MTD 1~{currentStatus.latestClosedDay}일 진행중
+            </div>
+          )}
           <div className="text-[11px] font-bold text-slate-500 mb-1">
-            {input.targetYear}년 실제 달성률 {input.selectedMonth === 'ANNUAL' ? '(연간 누적)' : (input.selectedMonth === 8 ? '(진행중)' : '')}
+            {input.targetYear}년 {currentStatus.isCurrentMonth ? '실적 진척도 (MTD)' : currentStatus.isYTD ? '누적 진척도 (YTD)' : '실제 달성률'} {currentStatus.isPast ? '(월 마감)' : ''}
           </div>
           <div className="text-2xl font-black text-indigo-900 tabular-nums flex items-center gap-1">
             <TrendingUp className={`w-6 h-6 ${actualPerformance.badgeColor}`} />
             <span className={actualPerformance.badgeColor}>
               {actualPerformance.rateDisplay}
             </span>
+            {currentStatus.isCurrentMonth && (
+              <span className="text-xs font-bold text-slate-500 ml-1">
+                / 경과율 {currentStatus.elapsedRate}%
+              </span>
+            )}
           </div>
           <div className="text-xs text-slate-500 mt-1">
             {actualPerformance.statusText}
@@ -992,6 +1085,28 @@ export default function TargetSimulator() {
           </div>
         </div>
 
+        {/* MTD Guidance Banner for Ongoing Month */}
+        {currentStatus.isCurrentMonth && (
+          <div className="mb-4 bg-gradient-to-r from-teal-50/90 via-cyan-50/90 to-indigo-50/90 border border-teal-200/90 rounded-2xl p-4.5 shadow-xs">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0 mt-0.5">ℹ️</span>
+              <div className="space-y-1 text-xs leading-relaxed">
+                <div className="font-extrabold text-teal-950 flex flex-wrap items-center gap-2">
+                  <span>{input.targetYear}년 {currentStatus.currentBizMonth}월 MTD 실적 안내 (진행 중인 월)</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-200/80 text-teal-900">
+                    {currentStatus.currentBizMonth}월 1일 ~ {currentStatus.latestClosedDay}일 (총 {currentStatus.latestClosedDay}일 마감 / 기간 경과율 {currentStatus.elapsedRate}%)
+                  </span>
+                </div>
+                <div className="text-slate-700 space-y-0.5 pt-0.5">
+                  <p>• <strong>{input.baseYear}년 실적 및 {input.targetYear}년 목표</strong>: 9월 한 달 전체(30일) 기준입니다.</p>
+                  <p>• <strong>{input.targetYear}년 실적</strong>: 현재 <strong>{currentStatus.currentBizMonth}월 1일 ~ {currentStatus.latestClosedDay}일 ({currentStatus.latestClosedDay}일간)</strong>만 집계된 MTD 실적입니다. (기간 경과율 {currentStatus.elapsedRate}% 대비 전사 달성률 {actualPerformance.rateDisplay}로 목표 페이스를 초과 달성 중입니다.)</p>
+                  <p>• <strong>특수 영업장</strong>: 썸머랜드·원더풀 등 늦더위 특수 시설은 10일 만에 월간 목표를 조기 달성(100% 초과)하였으며, 마운틴카트 등 일반 액티비티는 추석 연휴 등 하순에 수요가 집중되는 정상 매출 패턴입니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 3-Depth Accordion List */}
         {apiLoading && effectiveCategories.length === 0 ? (
           <div className="p-12 text-center text-slate-400 font-bold text-xs animate-pulse">
@@ -1052,14 +1167,19 @@ export default function TargetSimulator() {
                       </div>
                       {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
                         <div className="text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 whitespace-nowrap">
-                          {input.targetYear} 실적: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
+                          {input.targetYear} 실적{currentStatus.isCurrentMonth ? ` (${currentStatus.currentBizMonth}/1~${currentStatus.latestClosedDay}일 MTD)` : ''}: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
                         </div>
                       )}
                       {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
                         <div className="text-slate-700 whitespace-nowrap">
-                          달성률: <span className={`font-black ${cat.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
+                          달성률: <span className={`font-black ${cat.achievementRate >= (currentStatus.isCurrentMonth ? currentStatus.elapsedRate : 80) ? 'text-teal-600' : 'text-amber-600'}`}>
                             {cat.achievementRate}%
                           </span>
+                          {currentStatus.isCurrentMonth && (
+                            <span className="text-[10px] text-slate-400 font-semibold ml-1">
+                              (진척 {currentStatus.elapsedRate}%)
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1117,14 +1237,19 @@ export default function TargetSimulator() {
                                 </div>
                                 {part.totalActual2026 > 0 && (
                                   <div className="text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200 whitespace-nowrap">
-                                    {input.targetYear} 실적: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(part.totalActual2026)}원</span>
+                                    {input.targetYear} 실적{currentStatus.isCurrentMonth ? ` (${currentStatus.currentBizMonth}/1~${currentStatus.latestClosedDay}일 MTD)` : ''}: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(part.totalActual2026)}원</span>
                                   </div>
                                 )}
                                 {part.achievementRate > 0 && (
                                   <div className="text-slate-600 whitespace-nowrap">
-                                    달성률: <span className={`font-black ${part.achievementRate >= 80 ? 'text-teal-600' : 'text-amber-600'}`}>
+                                    달성률: <span className={`font-black ${part.achievementRate >= (currentStatus.isCurrentMonth ? currentStatus.elapsedRate : 80) ? 'text-teal-600' : 'text-amber-600'}`}>
                                       {part.achievementRate}%
                                     </span>
+                                    {currentStatus.isCurrentMonth && (
+                                      <span className="text-[10px] text-slate-400 font-semibold ml-1">
+                                        (진척 {currentStatus.elapsedRate}%)
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1141,8 +1266,12 @@ export default function TargetSimulator() {
                                       <th className="py-2.5 px-4 text-right whitespace-nowrap">비중 (%)</th>
                                       <th className="py-2.5 px-4 text-right whitespace-nowrap">{input.baseYear}년 실적</th>
                                       <th className="py-2.5 px-4 text-right font-black text-indigo-950 whitespace-nowrap">{input.targetYear}년 목표</th>
-                                      <th className="py-2.5 px-4 text-right min-w-[120px] font-bold text-emerald-900 whitespace-nowrap">{input.targetYear}년 실적</th>
-                                      <th className="py-2.5 px-4 text-center min-w-[90px] whitespace-nowrap">달성률</th>
+                                      <th className="py-2.5 px-4 text-right min-w-[130px] font-bold text-emerald-900 whitespace-nowrap">
+                                        {input.targetYear}년 실적{currentStatus.isCurrentMonth ? ` (MTD 1~${currentStatus.latestClosedDay}일)` : ''}
+                                      </th>
+                                      <th className="py-2.5 px-4 text-center min-w-[100px] whitespace-nowrap">
+                                        달성률{currentStatus.isCurrentMonth ? ` (진척 ${currentStatus.elapsedRate}%)` : ''}
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -1180,13 +1309,16 @@ export default function TargetSimulator() {
                                         <td className="py-2.5 px-4 text-center whitespace-nowrap">
                                           {fac.achievementRate && fac.achievementRate > 0 ? (
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-extrabold text-[11px] whitespace-nowrap ${
-                                              fac.achievementRate >= 80
+                                              fac.achievementRate >= 100
+                                                ? 'bg-purple-50 text-purple-700 border border-purple-200 font-black'
+                                                : fac.achievementRate >= (currentStatus.isCurrentMonth ? currentStatus.elapsedRate : 80)
                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                : fac.achievementRate >= 50
+                                                : fac.achievementRate >= (currentStatus.isCurrentMonth ? currentStatus.elapsedRate * 0.7 : 50)
                                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                                 : 'bg-amber-50 text-amber-700 border border-amber-200'
                                             }`}>
                                               {fac.achievementRate}%
+                                              {fac.achievementRate >= 100 && <span className="ml-0.5 text-[9px]">🚀</span>}
                                             </span>
                                           ) : (
                                             <span className="text-slate-400 text-xs">-</span>

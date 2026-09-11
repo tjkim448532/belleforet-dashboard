@@ -68,6 +68,20 @@ const getChannelMeta = (name: string, rank: number) => {
     borderHover = 'hover:border-amber-300';
     barColor = 'from-amber-500 to-orange-400';
     badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200/60';
+  } else if (name.includes('정산원장') || name.includes('원장')) {
+    icon = CreditCard;
+    iconColor = 'text-teal-600';
+    iconBg = 'bg-teal-50';
+    borderHover = 'hover:border-teal-300';
+    barColor = 'from-teal-500 to-emerald-400';
+    badgeStyle = 'bg-teal-50 text-teal-700 border-teal-200/60';
+  } else if (name.includes('부대') || name.includes('기타')) {
+    icon = Sparkles;
+    iconColor = 'text-rose-600';
+    iconBg = 'bg-rose-50';
+    borderHover = 'hover:border-rose-300';
+    barColor = 'from-rose-500 to-pink-400';
+    badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200/60';
   } else {
     icon = Layers;
     iconColor = 'text-slate-600';
@@ -801,13 +815,21 @@ export default function Synergy() {
                     <div className="pr-3 flex flex-col justify-center">
                       <span className="text-[11px] font-medium text-slate-400 mb-0.5">판매 객실수</span>
                       <span className="text-base font-extrabold text-slate-900 tabular-nums">
-                        {item.rooms.toLocaleString()}<span className="text-xs font-medium text-slate-500 ml-0.5">실</span>
+                        {item.rooms > 0 ? (
+                          <>{item.rooms.toLocaleString()}<span className="text-xs font-medium text-slate-500 ml-0.5">실</span></>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-500">부대 정산</span>
+                        )}
                       </span>
                     </div>
                     <div className="pl-3.5 flex flex-col justify-center">
                       <span className="text-[11px] font-medium text-slate-400 mb-0.5">객실 단가 (ADR)</span>
                       <span className="text-base font-extrabold text-slate-900 tabular-nums">
-                        {formatCurrency(item.adr)}<span className="text-xs font-medium text-slate-500 ml-0.5">원</span>
+                        {item.adr > 0 ? (
+                          <>{formatCurrency(item.adr)}<span className="text-xs font-medium text-slate-500 ml-0.5">원</span></>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-400">-</span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -877,19 +899,19 @@ export default function Synergy() {
                     <tr key={idx} className={`${rowClass} whitespace-nowrap`}>
                       <td className="py-4 px-6 font-bold whitespace-nowrap">
                         {isGrand 
-                          ? '전체 합계' 
-                          : isSub 
-                          ? `${item.channelName || '채널'} [소계]` 
-                          : item.partnerName && item.partnerName !== item.channelName && item.partnerName !== item.segmentName
-                          ? `${item.channelName || item.segmentName || '채널'} - ${item.partnerName}${item.roomType ? ` (${item.roomType})` : ''}`
-                          : item.roomType && item.roomType !== '채널 소계' && item.roomType !== '전체 합계'
-                          ? `${item.segmentName || item.channelName || '세그먼트'} (${item.roomType})`
-                          : `${item.segmentName || item.channelName || '세그먼트'}`}
+                          ? (item.channelName || '총합계') 
+                          : (item.channelName || item.segmentName || '채널')}
                       </td>
-                      <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">{rooms.toLocaleString()}실</td>
+                      <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">
+                        {rooms > 0 ? `${rooms.toLocaleString()}실` : (item.channelName?.includes('부대') ? '부대 정산' : '0실')}
+                      </td>
                       <td className="py-4 px-6 text-right font-extrabold tabular-nums whitespace-nowrap">{formatCurrency(rev)}원</td>
-                      <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">{formatCurrency(adr)}원</td>
-                      <td className={`py-4 px-6 text-right font-medium tabular-nums whitespace-nowrap ${isGrand ? 'text-slate-200' : 'text-slate-500'}`}>{mtdRooms.toLocaleString()}실</td>
+                      <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">
+                        {adr > 0 ? `${formatCurrency(adr)}원` : '-'}
+                      </td>
+                      <td className={`py-4 px-6 text-right font-medium tabular-nums whitespace-nowrap ${isGrand ? 'text-slate-200' : 'text-slate-500'}`}>
+                        {mtdRooms > 0 ? `${mtdRooms.toLocaleString()}실` : (item.channelName?.includes('부대') ? '부대 정산' : '0실')}
+                      </td>
                       <td className={`py-4 px-6 text-right font-bold tabular-nums whitespace-nowrap ${isGrand ? 'text-emerald-400' : 'text-slate-600'}`}>{formatCurrency(mtdRev)}원</td>
                     </tr>
                   );

@@ -54,8 +54,13 @@ export function runTargetSimulation(
   const baseLyTotalRevenue = isAnnual ? yearMeta.annual.totalRevenue : monthMeta.totalRevenue;
   const baseLyTrevpar = isAnnual ? yearMeta.annual.trevpar : monthMeta.trevpar;
 
-  // 1-1. 백엔드(apiData.summary)에서 완성된 totalRoomCap을 직접 주입받아 사용 (프론트엔드 자체 합산(reduce) 철거)
-  const totalRoomCapacity = input.totalRoomCapacity || 0;
+  // 1-1. 벨포레 물리 객실 상한선(175실) 불변식 기반 수학적 정규화 가드 (매직 넘버 500 완전 폐기)
+  // rawCap이 175를 초과하면 무조건 periodDays가 곱해진 기간 누적 모수(예: 350실, 5,250실)로 판별하여
+  // periodDays로 나누어 1일 물리 객실 수(175실)로 안전하게 수렴 (2일, 30일, 365일 전 구간 이중 곱셈 완벽 방어)
+  const rawCap = Number(input.totalRoomCapacity || 0);
+  const dailyRoomCapacity = (rawCap > 175 && periodDays > 1)
+    ? Math.min(175, Math.max(1, Math.round(rawCap / periodDays)))
+    : (rawCap > 0 && rawCap <= 175 ? rawCap : 175);
 
   // 2. 연간 성장률 적용한 목표 전사 매출액 및 목표 TrevPAR
   let targetTotalRevenue = Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));
@@ -63,7 +68,7 @@ export function runTargetSimulation(
 
   if (input.metricInputMode === 'TREVPAR' && input.targetTrevpar > 0) {
     achievedTrevpar = input.targetTrevpar;
-    targetTotalRevenue = Math.round(input.targetTrevpar * periodDays * totalRoomCapacity);
+    targetTotalRevenue = Math.round(input.targetTrevpar * periodDays * dailyRoomCapacity);
   }
 
   // 3. 골프 포함 여부에 따른 사업부 구성

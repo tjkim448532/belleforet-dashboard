@@ -99,7 +99,10 @@ export default function ResortBusiness() {
 
   // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
   const isRange = Boolean(startDate && endDate && startDate !== endDate);
-  const rangeDays = isRange && startDate && endDate ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
+  const safeRangeDays = isRange && startDate && endDate 
+    ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) 
+    : 1;
+  const rangeDays = safeRangeDays;
 
   const lodgingStats = data?.lodgingStats || { revenue: 0, roomsSold: 0, adr: 0, totalCapacity: 0 };
   
@@ -139,8 +142,12 @@ export default function ResortBusiness() {
   const standardPhysicalRooms = Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
   const connectingPhysicalRooms = Number(summary.connectingPhysicalRooms || 0);
   const totalPhysicalOccupied = Number(summary.totalPhysicalKeysSold || (standardPhysicalRooms + connectingPhysicalRooms));
-  const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || 0);
-  const remainingRooms = totalBaseRooms > 0 ? Math.max(0, totalBaseRooms - totalPhysicalOccupied) : 0;
+  // 절대 0이 될 수 없도록 최소 175실(1일치) 하한선 강제 (0 나눗셈 원천 차단)
+  const totalBaseRooms = Math.max(
+    175,
+    Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || (175 * safeRangeDays))
+  );
+  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];
@@ -339,7 +346,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1)}%</div>
+                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
                   </div>
                 </div>
 
@@ -353,7 +360,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1)}%</div>
+                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
                   </div>
                 </div>
 
@@ -367,7 +374,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-slate-700">{remainingRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{((remainingRooms / totalBaseRooms) * 100).toFixed(1)}%</div>
+                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((remainingRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
                   </div>
                 </div>
               </div>

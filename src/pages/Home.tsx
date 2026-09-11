@@ -809,18 +809,72 @@ export default function Home() {
                 지표 산출 공식 및 경영 의미 가이드
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* RevPAR & Occ */}
-                <div className="bg-slate-50 p-5 rounded-2xl flex flex-col justify-between border border-slate-200/80">
+                {/* Resort & Room Indicators: TrevPAR, ADR, RevPAR, Occ */}
+                <div className="bg-slate-50 p-5 rounded-2xl flex flex-col justify-between border border-slate-200/80 lg:col-span-2">
                   <div>
-                    <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">객실 지표 산출 방식 안내</h4>
-                    <ul className="space-y-4 text-slate-600">
-                      <li className="flex flex-col">
-                        <span className="font-semibold text-slate-800">객실 점유율 (Occ) 및 객단가 (RevPAR)</span>
-                        <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-1.5 border border-teal-100 font-medium">
-                          <strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(객실 점유율, 판매 객단가 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.
+                    <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">객실 및 복합 리조트 핵심 지표 산출 방식 안내</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      {/* TrevPAR */}
+                      <div className="bg-white p-4 rounded-xl border border-teal-200/70 shadow-xs flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-extrabold text-teal-900 text-sm">가용객실당 총매출 (TrevPAR)</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">핵심 지표</span>
+                          </div>
+                          <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
+                            Total Revenue Per Available Room
+                          </p>
+                          <div className="p-2.5 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100">
+                            리조트 전사 총매출 ÷ 전체 가용 객실 수 (175실)
+                          </div>
                         </div>
-                      </li>
-                    </ul>
+                        <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
+                          단순 숙박을 넘어 <strong>객실 1실이 골프, 식음, 레저(목장/루지), 모토 등 리조트 전반에서 창출하는 총체적 부가가치</strong>를 평가하는 벨포레의 최우선 경영 지표입니다.
+                        </p>
+                      </div>
+
+                      {/* ADR */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-extrabold text-slate-800 text-sm">판매 객단가 (ADR)</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">실판매 단가</span>
+                          </div>
+                          <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
+                            Average Daily Rate
+                          </p>
+                          <div className="p-2.5 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60">
+                            순수 객실 매출 ÷ 실제 판매 객실 수 (Rooms Sold)
+                          </div>
+                        </div>
+                        <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
+                          실제 투숙 고객에게 판매된 객실 1실당 순수 평균 판매 가격입니다.
+                        </p>
+                      </div>
+
+                      {/* RevPAR & Occ */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-extrabold text-slate-800 text-sm">객실당 매출 (RevPAR) & 점유율 (Occ)</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">객실 효율</span>
+                          </div>
+                          <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
+                            Revenue Per Available Room & Occupancy
+                          </p>
+                          <div className="p-2.5 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60">
+                            RevPAR = 객실 매출 ÷ 가용 175실 = ADR × 점유율
+                          </div>
+                        </div>
+                        <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
+                          전체 보유 객실(175실) 대비 순수 객실 판매 효율을 나타내며, 점유율(판매객실 ÷ 175실)과 직결됩니다.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-3.5 border border-teal-100 font-medium">
+                      <strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(TrevPAR, ADR, RevPAR, 객실 점유율 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.
+                    </div>
                   </div>
                 </div>
 

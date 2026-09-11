@@ -1021,20 +1021,28 @@ export default function StrategicSimulator() {
                   onChange={(e) => setSpendPerCapIncrease(Number(e.target.value))}
                   className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                 />
-              <>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">일일 객단가 견인액:</span>
-                  <b className="text-rose-400">+{formatCurrency(spendPerCapIncrease * (apiData?.summary?.totalRoomCap || 0) * 3.5)}원</b>
-                </div>
-                <div className="flex items-center justify-between text-sm bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
-                  <span className="text-rose-200 font-medium">
-                    {simulationResult.selectedMonthLabel} 추가 F&B/레저 매출 창출:
-                  </span>
-                  <div className="flex flex-col items-end gap-1">
-                    <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * (apiData?.summary?.totalRoomCap || 0) * 3.5 * simulationResult.periodDays)}원</b>
-                  </div>
-                </div>
-              </>
+              {(() => {
+                const rawCap = Number(apiData?.summary?.totalRoomCap || 0);
+                const dailyCap = (rawCap > 175 && (simulationResult.periodDays || 1) > 1)
+                  ? Math.min(175, Math.round(rawCap / simulationResult.periodDays))
+                  : (rawCap > 0 && rawCap <= 175 ? rawCap : 175);
+                return (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400">일일 객단가 견인액:</span>
+                      <b className="text-rose-400">+{formatCurrency(spendPerCapIncrease * dailyCap * 3.5)}원</b>
+                    </div>
+                    <div className="flex items-center justify-between text-sm bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
+                      <span className="text-rose-200 font-medium">
+                        {simulationResult.selectedMonthLabel} 추가 F&B/레저 매출 창출:
+                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * dailyCap * 3.5 * simulationResult.periodDays)}원</b>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             </div>
           </div>

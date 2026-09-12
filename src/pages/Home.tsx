@@ -688,7 +688,9 @@ export default function Home() {
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.directAvgGreenFee)}`
-                            : '-'}
+                            : (coreData.summary?.isGolfChannelsLoading ? (
+                                <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
+                              ) : '-')}
                         </div>
                         <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
                           홈페이지 예약
@@ -703,7 +705,9 @@ export default function Home() {
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.otaAvgGreenFee)}`
-                            : '-'}
+                            : (coreData.summary?.isGolfChannelsLoading ? (
+                                <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
+                              ) : '-')}
                         </div>
                         <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
                           대행사 제휴처
@@ -718,7 +722,9 @@ export default function Home() {
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
                             ? `₩${formatCurrency(displayData.golfSummary.memberAvgGreenFee)}`
-                            : '-'}
+                            : (coreData.summary?.isGolfChannelsLoading ? (
+                                <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
+                              ) : '-')}
                         </div>
                         <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
                           회원 우대 단가

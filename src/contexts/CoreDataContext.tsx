@@ -64,10 +64,17 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         const payload = (res?.summary ? res : res?.data) || res || {};
 
-        const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = []) => {
+        const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false) => {
           const directCh = channels.find((c: any) => c.channelCode === 'DIRECT_WEB' || c.channelName?.includes('자사'));
-          const otaCh = channels.find((c: any) => c.channelCode === 'OTA_AGENCY' || c.channelCode === 'KAKAO_GOLF' || c.channelName?.includes('OTA') || c.channelName?.includes('카카오'));
+          
+          // OTA 대행사 + 카카오골프 가중 평균 그린피 산출
+          const otaAgencies = channels.filter((c: any) => c.channelCode === 'OTA_AGENCY' || c.channelCode === 'KAKAO_GOLF' || c.channelName?.includes('OTA') || c.channelName?.includes('카카오'));
+          const otaPlayers = otaAgencies.reduce((acc: number, c: any) => acc + (Number(c.visitedPlayers) || 0), 0);
+          const otaRev = otaAgencies.reduce((acc: number, c: any) => acc + (Number(c.greenFeeRevenue) || 0), 0);
+          const combinedOtaAvg = otaPlayers > 0 ? Math.round(otaRev / otaPlayers) : (otaAgencies[0]?.avgGreenFeePerPlayer || 0);
+
           const memberCh = channels.find((c: any) => c.channelCode === 'MEMBER' || c.channelName?.includes('회원'));
+          const memberAvg = Number(gs.golfMemberAvgGreenFee || memberCh?.avgGreenFeePerPlayer || payloadSummary?.golfMemberAvgGreenFee || 0);
 
           return {
             ...payloadSummary,
@@ -84,8 +91,9 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             // 골프 채널별 평균 그린피 및 전체 순수 평균 그린피 (카트비/프로샵 혼입 방지)
             golfAvgGreenFee: Number(gs.avgGreenFeePerPlayer || payloadSummary?.golfAvgGreenFee || 0),
             golfDirectAvgGreenFee: Number(directCh?.avgGreenFeePerPlayer || payloadSummary?.golfDirectAvgGreenFee || 0),
-            golfOtaAvgGreenFee: Number(otaCh?.avgGreenFeePerPlayer || payloadSummary?.golfOtaAvgGreenFee || 0),
-            golfMemberAvgGreenFee: Number(memberCh?.avgGreenFeePerPlayer || payloadSummary?.golfMemberAvgGreenFee || 0),
+            golfOtaAvgGreenFee: Number(combinedOtaAvg || payloadSummary?.golfOtaAvgGreenFee || 0),
+            golfMemberAvgGreenFee: memberAvg,
+            isGolfChannelsLoading: !isGolfLoaded,
             golfRankedChannels: channels.length > 0 ? channels.map((ch: any) => ({
               name: ch.channelName,
               avgGreenFee: ch.avgGreenFeePerPlayer,
@@ -94,7 +102,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           };
         };
 
-        const initialSummary = buildCoreSummary(payload.summary);
+        const initialSummary = buildCoreSummary(payload.summary, {}, [], false);
         const corePayload = {
           ...payload,
           date: payload.targetDate || validStart || todayStr,
@@ -124,7 +132,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             if (channels.length > 0 || Object.keys(gs).length > 0) {
               setState(prev => {
                 if (!prev.core) return prev;
-                const updatedSummary = buildCoreSummary(payload.summary, gs, channels);
+                const updatedSummary = buildCoreSummary(payload.summary, gs, channels, true);
                 return {
                   ...prev,
                   core: {
@@ -136,7 +144,18 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
               });
             }
           })
-          .catch(() => {});
+          .catch(() => {
+            if (isCancelled) return;
+            setState(prev => {
+              if (!prev.core?.summary) return prev;
+              const nonLoadingSummary = { ...prev.core.summary, isGolfChannelsLoading: false };
+              return {
+                ...prev,
+                core: { ...prev.core, summary: nonLoadingSummary },
+                summary: nonLoadingSummary
+              };
+            });
+          });
 
       } catch (error) {
         if (isCancelled) return;

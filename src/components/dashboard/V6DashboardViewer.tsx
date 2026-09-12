@@ -79,6 +79,7 @@ export default function V6DashboardViewer() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { startDate, endDate, isRange } = useDate();
+  const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
 
   // --- 3. V6 라이브 API 직접 연동 (Zero-Proxy) ---
   useEffect(() => {
@@ -86,7 +87,6 @@ export default function V6DashboardViewer() {
       setLoading(true);
       setError(null);
       try {
-        const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
         const query = isRangeMode
           ? `startDate=${startDate}&endDate=${endDate}`
           : `date=${startDate}`;
@@ -118,15 +118,17 @@ export default function V6DashboardViewer() {
             <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>파트</th>
             <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>영업장</th>
             
-            <th className="px-4 py-2 border-x border-slate-300 border-b bg-emerald-50/50 text-emerald-800" colSpan={3}>당일 실적 (Today)</th>
+            <th className="px-4 py-2 border-x border-slate-300 border-b bg-emerald-50/50 text-emerald-800" colSpan={3}>
+              {isRangeMode ? '선택 기간 실적 (Period)' : '당일 실적 (Today)'}
+            </th>
             <th className="px-4 py-2 border-x border-slate-300 border-b bg-blue-50/50 text-blue-800" colSpan={3}>당월 누계 (MTD)</th>
             <th className="px-4 py-2 border-x border-slate-300 border-b bg-indigo-50/50 text-indigo-800" colSpan={3}>올해 누계 (YTD)</th>
           </tr>
           {/* 하위 컬럼 헤더 */}
           <tr className="bg-slate-100/50 text-xs text-slate-600">
             {/* Today */}
-            <th className="px-3 py-2 border-x border-slate-200">올해 당일</th>
-            <th className="px-3 py-2 border-x border-slate-200">전년 당일</th>
+            <th className="px-3 py-2 border-x border-slate-200">{isRangeMode ? '올해 기간' : '올해 당일'}</th>
+            <th className="px-3 py-2 border-x border-slate-200">{isRangeMode ? '전년 동기간' : '전년 당일'}</th>
             <th className="px-3 py-2 border-x border-slate-300">증감(%)</th>
             
             {/* MTD */}

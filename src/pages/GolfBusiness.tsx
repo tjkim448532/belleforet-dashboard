@@ -121,7 +121,8 @@ export default function GolfBusiness() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOtaDrilldown, setShowOtaDrilldown] = useState(true);
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, isRange } = useDate();
+  const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -298,6 +299,15 @@ export default function GolfBusiness() {
   const packageRatio = visitedTeams > 0 ? ((packageTeams / visitedTeams) * 100).toFixed(1) : '0.0';
   const staySynergy = data?.staySynergy;
 
+  // 4. 최고 이행 시간대 동적 계산 (취소율 최저 슬롯)
+  const activeTimeSlots = analysisByTimeSlot.filter(s => (s.reservedTeams || 0) > 0);
+  const bestSlot = activeTimeSlots.length > 0
+    ? [...activeTimeSlots].sort((a, b) => a.cancellationRate - b.cancellationRate)[0]
+    : (analysisByTimeSlot[0] || null);
+
+  // 5. 미정산/노쇼 팀수
+  const pendingTeams = Math.max(0, reservedTeams - (visitedTeams + canceledTeams));
+
   if (loading || !data) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
@@ -339,7 +349,7 @@ export default function GolfBusiness() {
           {/* Golf Revenue */}
           <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
             <h2 className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-emerald-500" /> 선택 기간 골프 총매출
+              <Coins className="w-4 h-4 text-emerald-500" /> {isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}
             </h2>
             <div className="text-2xl font-black text-slate-800 tracking-tight">
               ₩{formatCurrency(golfRevenue)}
@@ -360,7 +370,14 @@ export default function GolfBusiness() {
             <div className="text-2xl font-black text-emerald-600 tracking-tight">
               {visitedTeams}팀 <span className="text-sm font-normal text-slate-400">/ {reservedTeams}팀 예약</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">예약 이행률: {reservedTeams > 0 ? ((visitedTeams / reservedTeams) * 100).toFixed(1) : 0}% (취소율 {cancellationRate}%)</p>
+            <p className="text-[11px] text-slate-400 mt-2">
+              예약 이행률: {reservedTeams > 0 ? ((visitedTeams / reservedTeams) * 100).toFixed(1) : 0}% (취소율 {cancellationRate}%)
+              {pendingTeams > 0 && (
+                <span className="text-slate-400 font-normal ml-1">
+                  · 노쇼/미내장 {pendingTeams}팀
+                </span>
+              )}
+            </p>
           </div>
 
           {/* Visited Players */}
@@ -420,7 +437,7 @@ export default function GolfBusiness() {
                     <DollarSign className="w-4 h-4 text-emerald-600" /> 자사몰 직접 예약 성과
                   </span>
                   <span className="text-[10px] font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">
-                    직접 채널 100%
+                    대행수수료 0% 마진
                   </span>
                 </div>
                 <div className="text-2xl font-black text-emerald-900 my-1">
@@ -468,11 +485,10 @@ export default function GolfBusiness() {
                 </div>
               </div>
               <p className="text-[11px] text-rose-950 mt-4 pt-2 border-t border-rose-200/40 leading-relaxed">
-                🌧️ 당일 취소된 {canceledTeams}팀으로 인해 <strong>약 {formatCurrency(totalRevenueAtRisk)}원의 그린피 및 카트비 매출 기회를 상실</strong>했습니다. 우천 시 실내 시설 바우처로 전환하는 방어 상품이 필요합니다.
+                🌧️ {isRangeMode ? '선택 기간 동안' : '당일'} 취소된 {canceledTeams}팀으로 인해 <strong>약 {formatCurrency(totalRevenueAtRisk)}원의 그린피 및 카트비 매출 기회를 상실</strong>했습니다. 우천 시 실내 시설 바우처로 전환하는 방어 상품이 필요합니다.
               </p>
             </div>
 
-            {/* 카드 3: 시간대별(1부/2부/야간) 예약 이행 현황 */}
             {/* 카드 3: 시간대별(1부/2부/야간) 예약 이행 현황 */}
             <div className="bg-gradient-to-br from-indigo-50/80 to-purple-50/40 p-6 rounded-2xl border border-indigo-200 flex flex-col justify-between">
               <div>
@@ -485,17 +501,17 @@ export default function GolfBusiness() {
                   </span>
                 </div>
                 <div className="text-2xl font-black text-indigo-900 my-1 tabular-nums">
-                  {analysisByTimeSlot[2]?.slotGroup || analysisByTimeSlot[0]?.slotGroup || '시간대별 실적'} <span className="text-xs font-normal text-slate-500">취소율 {analysisByTimeSlot[2]?.cancellationRate ?? analysisByTimeSlot[0]?.cancellationRate ?? 0}%</span>
+                  {bestSlot?.slotGroup || '시간대별 실적'} <span className="text-xs font-normal text-slate-500">취소율 {bestSlot?.cancellationRate ?? 0}%</span>
                 </div>
                 <div className="space-y-1 text-xs text-slate-700 mt-3 pt-2 border-t border-indigo-200/60 tabular-nums">
-                  <div className="flex justify-between">
-                    <span>• 1부 (새벽) 취소율:</span>
-                    <strong className="text-rose-600">{analysisByTimeSlot[0]?.cancellationRate ?? 0}%</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>• 2부 (오후) 취소율:</span>
-                    <strong>{analysisByTimeSlot[1]?.cancellationRate ?? 0}%</strong>
-                  </div>
+                  {analysisByTimeSlot.map((slot) => (
+                    <div key={slot.slotGroup} className="flex justify-between">
+                      <span>• {slot.slotGroup} 취소율:</span>
+                      <strong className={slot.cancellationRate >= 30 ? "text-rose-600" : "text-slate-800"}>
+                        {slot.cancellationRate}%
+                      </strong>
+                    </div>
+                  ))}
                 </div>
               </div>
               <p className="text-xs text-indigo-950 mt-4 pt-2 border-t border-indigo-200/40 leading-relaxed">
@@ -533,10 +549,10 @@ export default function GolfBusiness() {
                     <span>• 🚗 순수 당일치기 골퍼:</span>
                     <strong>{staySynergy?.pureDayTripTeams ?? (visitedTeams - packageTeams)}팀 ({staySynergy?.pureDayTripRatio ?? (visitedTeams > 0 ? (100 - Number(packageRatio)).toFixed(1) : '100.0')}%)</strong>
                   </div>
-                  {staySynergy?.estimatedAdditionalRoomRevenue && staySynergy.estimatedAdditionalRoomRevenue > 0 && (
+                  {(staySynergy?.estimatedAdditionalRoomRevenue ?? 0) > 0 && (
                     <div className="flex justify-between pt-1 border-t border-amber-200/50 text-xs">
                       <span className="text-amber-900">• 체류 골퍼 유치 추가 객실매출:</span>
-                      <strong className="text-indigo-700">+₩{formatCurrency(staySynergy.estimatedAdditionalRoomRevenue)}원</strong>
+                      <strong className="text-indigo-700">+₩{formatCurrency(staySynergy?.estimatedAdditionalRoomRevenue)}원</strong>
                     </div>
                   )}
                 </div>

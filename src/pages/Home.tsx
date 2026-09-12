@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -122,6 +122,30 @@ export default function Home() {
   const mtdGross = displayData.mtd?.gross || parseNum(coreData.core?.summary?.mtdRevenue || coreData.core?.summary?.mtdActual || 0);
   const mtdGrowth = coreData.core?.summary?.mtdGrowth;
   const mtdDiff = coreData.core?.summary?.mtdDiff;
+
+  const roomSub = React.useMemo(() => {
+    const list = coreData.core?.gridData || [];
+    const sub = list.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === '콘도'));
+    if (sub) return sub;
+    const catList = coreData.core?.salesByCategory || [];
+    return catList.find((c: any) => c.categoryCode === 'ROOM' || c.categoryName === '콘도' || c.categoryCode === '콘도');
+  }, [coreData.core?.gridData, coreData.core?.salesByCategory]);
+
+  const mtdRoomsSold = displayData?.mtd?.roomsSold !== undefined 
+    ? displayData.mtd.roomsSold 
+    : parseNum(coreData.core?.summary?.mtdRooms || roomSub?.mtdVisitors || roomSub?.mtdRooms || 0);
+
+  const lyMtdRoomsSold = displayData?.mtd?.ly_roomsSold !== undefined 
+    ? displayData.mtd.ly_roomsSold 
+    : parseNum(coreData.core?.summary?.mtdRoomsLy || coreData.core?.summary?.lyMtdRooms || roomSub?.mtdLyVisitors || roomSub?.lyMtdVisitors || 0);
+
+  const mtdRoomsDiff = displayData?.mtd?.roomsDiff !== undefined 
+    ? displayData.mtd.roomsDiff 
+    : (mtdRoomsSold - lyMtdRoomsSold);
+
+  const mtdRoomsGrowth = displayData?.mtd?.roomsGrowth !== undefined 
+    ? displayData.mtd.roomsGrowth 
+    : (lyMtdRoomsSold > 0 ? Number((((mtdRoomsSold - lyMtdRoomsSold) / lyMtdRoomsSold) * 100).toFixed(1)) : null);
 
 
   
@@ -355,6 +379,58 @@ export default function Home() {
                     {mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`}
                     {mtdHolidays.currentPeriod.holidaysList.length > 0 && ` [${mtdHolidays.currentPeriod.holidaysList.map(h => h.name).join(', ')}]`})
                   </span>
+                </div>
+
+                {/* 🛏️ [NEW] 월별 누적 객실 판매수 vs 전년동기간 비교 레이아웃 */}
+                <div className="mt-3.5 pt-3 border-t border-slate-100/90">
+                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-100/90 shadow-2xs">
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                        <BedDouble className="w-4 h-4 text-emerald-600" />
+                        <span>월별 누적 객실 판매</span>
+                      </div>
+                      {lyMtdRoomsSold > 0 && mtdRoomsGrowth !== null ? (
+                        <div className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap ${
+                          mtdRoomsGrowth >= 0 
+                            ? 'bg-emerald-100/90 text-emerald-800 border border-emerald-200/60' 
+                            : 'bg-rose-100/90 text-rose-800 border border-rose-200/60'
+                        }`}>
+                          <span>{mtdRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdRoomsGrowth).toFixed(1)}%</span>
+                          <span className="font-semibold text-[10px] opacity-90">({mtdRoomsDiff > 0 ? '+' : ''}{mtdRoomsDiff.toLocaleString()}실)</span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 불가</span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* 당해 월별 누적 객실 판매수 */}
+                      <div className="bg-white p-2.5 rounded-xl border border-emerald-100/80 shadow-2xs">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-0.5">
+                          <span>월별 누적 객실수</span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">당해</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-black text-slate-900 tracking-tight">{mtdRoomsSold.toLocaleString()}</span>
+                          <span className="text-xs font-semibold text-slate-500">실</span>
+                        </div>
+                      </div>
+
+                      {/* 전년동기간 월별 누적 객실 판매수 */}
+                      <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
+                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-0.5">
+                          <span>전년동기간 객실수</span>
+                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60">전년</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-black text-slate-600 tracking-tight">
+                            {lyMtdRoomsSold > 0 ? lyMtdRoomsSold.toLocaleString() : '-'}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-400">실</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

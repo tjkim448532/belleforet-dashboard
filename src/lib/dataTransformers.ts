@@ -43,6 +43,10 @@ export interface TransformedHomeData {
     gross: number;
     ly_gross: number;
     ly_day: number;
+    roomsSold?: number;
+    ly_roomsSold?: number;
+    roomsGrowth?: number | null;
+    roomsDiff?: number;
   };
   today: {
     actual: number;
@@ -158,6 +162,18 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   const mtdRev = parseNum(c.summary?.mtdRevenue || c.summary?.mtdActual || 0);
   const mtdLyRev = parseNum(c.summary?.mtdLy || 0);
 
+  const roomSub = (c.gridData && Array.isArray(c.gridData))
+    ? c.gridData.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === '콘도'))
+    : null;
+  const roomCat = (c.salesByCategory && Array.isArray(c.salesByCategory))
+    ? c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryName === '콘도' || x.categoryCode === '콘도')
+    : null;
+
+  const mtdRoomsSold = parseNum(c.summary?.mtdRooms || roomSub?.mtdVisitors || roomCat?.mtdVisitors || roomSub?.mtdRooms || 0);
+  const lyMtdRoomsSold = parseNum(c.summary?.mtdRoomsLy || c.summary?.lyMtdRooms || roomSub?.mtdLyVisitors || roomCat?.mtdLyVisitors || roomSub?.lyMtdVisitors || 0);
+  const mtdRoomsDiff = mtdRoomsSold - lyMtdRoomsSold;
+  const mtdRoomsGrowth = lyMtdRoomsSold > 0 ? Number((((mtdRoomsSold - lyMtdRoomsSold) / lyMtdRoomsSold) * 100).toFixed(1)) : null;
+
   return {
     success: true,
     date: c.date || '',
@@ -174,7 +190,11 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
       ly_actual: mtdLyRev,
       gross: mtdRev,
       ly_gross: mtdLyRev,
-      ly_day: mtdLyRev
+      ly_day: mtdLyRev,
+      roomsSold: mtdRoomsSold,
+      ly_roomsSold: lyMtdRoomsSold,
+      roomsGrowth: mtdRoomsGrowth,
+      roomsDiff: mtdRoomsDiff
     },
     today: { 
       actual: actualRev, 

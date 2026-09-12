@@ -123,13 +123,8 @@ export default function Home() {
   const mtdGrowth = coreData.core?.summary?.mtdGrowth;
   const mtdDiff = coreData.core?.summary?.mtdDiff;
 
-  const roomSub = React.useMemo(() => {
-    const list = coreData.core?.gridData || [];
-    const sub = list.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === '콘도'));
-    if (sub) return sub;
-    const catList = coreData.core?.salesByCategory || [];
-    return catList.find((c: any) => c.categoryCode === 'ROOM' || c.categoryName === '콘도' || c.categoryCode === '콘도');
-  }, [coreData.core?.gridData, coreData.core?.salesByCategory]);
+  const roomSub = (coreData.core?.gridData || []).find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === '콘도'))
+    || (coreData.core?.salesByCategory || []).find((c: any) => c.categoryCode === 'ROOM' || c.categoryName === '콘도' || c.categoryCode === '콘도');
 
   const mtdRoomsSold = displayData?.mtd?.roomsSold !== undefined 
     ? displayData.mtd.roomsSold 

@@ -102,7 +102,11 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           };
         };
 
-        const initialSummary = buildCoreSummary(payload.summary, {}, [], false);
+        const hasFullGolfMetrics = payload.summary?.golfDirectAvgGreenFee !== undefined && 
+                                   payload.summary?.golfOtaAvgGreenFee !== undefined && 
+                                   payload.summary?.golfMemberAvgGreenFee !== undefined;
+
+        const initialSummary = buildCoreSummary(payload.summary, {}, [], hasFullGolfMetrics);
         const corePayload = {
           ...payload,
           date: payload.targetDate || validStart || todayStr,
@@ -123,39 +127,41 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           error: null
         });
 
-        // Non-blocking background enhancement: fetch golf channel tee-time breakdown without blocking page load
-        secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`)
-          .then((golfTeetimeRes) => {
-            if (isCancelled || !golfTeetimeRes) return;
-            const gs = golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
-            const channels = golfTeetimeRes?.salesByChannel || [];
-            if (channels.length > 0 || Object.keys(gs).length > 0) {
+        // If master API already returned complete golf metrics via mat_v6_golf_daily, skip redundant 20s background fetch
+        if (!hasFullGolfMetrics) {
+          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`)
+            .then((golfTeetimeRes) => {
+              if (isCancelled || !golfTeetimeRes) return;
+              const gs = golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
+              const channels = golfTeetimeRes?.salesByChannel || [];
+              if (channels.length > 0 || Object.keys(gs).length > 0) {
+                setState(prev => {
+                  if (!prev.core) return prev;
+                  const updatedSummary = buildCoreSummary(payload.summary, gs, channels, true);
+                  return {
+                    ...prev,
+                    core: {
+                      ...prev.core,
+                      summary: updatedSummary
+                    },
+                    summary: updatedSummary
+                  };
+                });
+              }
+            })
+            .catch(() => {
+              if (isCancelled) return;
               setState(prev => {
-                if (!prev.core) return prev;
-                const updatedSummary = buildCoreSummary(payload.summary, gs, channels, true);
+                if (!prev.core?.summary) return prev;
+                const nonLoadingSummary = { ...prev.core.summary, isGolfChannelsLoading: false };
                 return {
                   ...prev,
-                  core: {
-                    ...prev.core,
-                    summary: updatedSummary
-                  },
-                  summary: updatedSummary
+                  core: { ...prev.core, summary: nonLoadingSummary },
+                  summary: nonLoadingSummary
                 };
               });
-            }
-          })
-          .catch(() => {
-            if (isCancelled) return;
-            setState(prev => {
-              if (!prev.core?.summary) return prev;
-              const nonLoadingSummary = { ...prev.core.summary, isGolfChannelsLoading: false };
-              return {
-                ...prev,
-                core: { ...prev.core, summary: nonLoadingSummary },
-                summary: nonLoadingSummary
-              };
             });
-          });
+        }
 
       } catch (error) {
         if (isCancelled) return;

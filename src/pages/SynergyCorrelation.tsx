@@ -180,7 +180,12 @@ export default function SynergyCorrelation() {
         secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`).catch(() => null)
       ]);
 
-      const insufficientData = !!(crossRes?.insufficientDataForRegression || crossRes?.summary?.insufficientDataForRegression);
+      const insufficientData = !!(
+        crossRes?.insufficientDataForRegression || 
+        crossRes?.summary?.insufficientDataForRegression ||
+        crossRes?.isInsufficientData ||
+        crossRes?.summary?.isInsufficientData
+      );
       setIsDataInsufficient(insufficientData);
 
       const actionInsights: any[] = crossRes?.executiveActionableInsights || [];
@@ -328,11 +333,11 @@ export default function SynergyCorrelation() {
         return !isSelf && sName !== 'UNMAPPED_TICKET';
       });
 
-      // 🚫 골프 제외 순수 리조트 부대시설 총 낙수액 및 탄력성 실측 재계산
-      const totalSpillover = validCorrList.reduce((sum, item) => sum + (item.pureSpilloverPerMillion || 0), 0);
-      const avgElasticity = validCorrList.length > 0 
+      // 🚫 NO SLICE SUMMATION SSOT: 백엔드가 내려주는 완성형 총합 직접 바인딩
+      const totalSpillover = crossRes?.summary?.totalPureSpillover ?? 0;
+      const avgElasticity = crossRes?.summary?.averageElasticity ?? (validCorrList.length > 0 
         ? Number((validCorrList.reduce((sum, item) => sum + (item.pureElasticity || 0), 0) / validCorrList.length).toFixed(1))
-        : 0;
+        : 0);
       const topStore = [...validCorrList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
 
       const newAnchorData = crossRes?.anchor ? {
@@ -342,18 +347,22 @@ export default function SynergyCorrelation() {
       } : null;
 
       const newSummaryMeta = {
-        totalShopsAnalyzed: validCorrList.length,
+        totalShopsAnalyzed: crossRes?.summary?.totalShopsAnalyzed ?? validCorrList.length,
         totalPureSpillover: totalSpillover,
-        topSynergyShop: topStore?.shopName || '',
-        maxSpilloverAmount: topStore?.pureSpilloverPerMillion || 0,
+        topSynergyShop: crossRes?.summary?.topSynergyShop || topStore?.shopName || '',
+        maxSpilloverAmount: crossRes?.summary?.maxSpilloverAmount || topStore?.pureSpilloverPerMillion || 0,
         averageElasticity: avgElasticity,
       };
 
       const newGirfRows = crossRes?.generalizedImpulseResponses?.girfTable || [];
-      const newExogenousMeta = crossRes?.exogenousControl || {
+      const newExogenousMeta = crossRes?.exogenousControl ? {
+        ...crossRes.exogenousControl,
+        isExogenousControlled: crossRes.exogenousControl.isExogenousControlled ?? crossRes.isExogenousControlled ?? (totalDays >= 14)
+      } : {
         controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
         observationDays: totalDays > 1 ? totalDays : 236,
-        totalOffDays: 77
+        totalOffDays: 77,
+        isExogenousControlled: totalDays >= 14
       };
 
       if (newAnchorData) setAnchorData(newAnchorData);
@@ -428,25 +437,25 @@ export default function SynergyCorrelation() {
                                (cand === 'FNB' && (sName.includes('식음') || sName === 'FNB'));
                 return !isSelf && sName !== 'UNMAPPED_TICKET';
               });
-              const tSpill = vList.reduce((sum, item) => sum + (item.pureSpilloverPerMillion || 0), 0);
-              const aElast = vList.length > 0 
+              const tSpill = cRes?.summary?.totalPureSpillover ?? 0;
+              const aElast = cRes?.summary?.averageElasticity ?? (vList.length > 0 
                 ? Number((vList.reduce((sum, item) => sum + (item.pureElasticity || 0), 0) / vList.length).toFixed(1))
-                : 0;
+                : 0);
               const tStore = [...vList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
 
               synergyMemoryCache.set(candKey, {
                 anchorData: cRes.anchor,
                 summaryMeta: {
-                  totalShopsAnalyzed: vList.length,
+                  totalShopsAnalyzed: cRes?.summary?.totalShopsAnalyzed ?? vList.length,
                   totalPureSpillover: tSpill,
-                  topSynergyShop: tStore?.shopName || '',
-                  maxSpilloverAmount: tStore?.pureSpilloverPerMillion || 0,
+                  topSynergyShop: cRes?.summary?.topSynergyShop || tStore?.shopName || '',
+                  maxSpilloverAmount: cRes?.summary?.maxSpilloverAmount || tStore?.pureSpilloverPerMillion || 0,
                   averageElasticity: aElast
                 },
                 girfRows: cRes.generalizedImpulseResponses?.girfTable || [],
                 exogenousMeta: cRes.exogenousControl || newExogenousMeta,
                 validCorrList: vList as any,
-                isDataInsufficient: !!(cRes.insufficientDataForRegression || cRes.summary?.insufficientDataForRegression),
+                isDataInsufficient: !!(cRes.insufficientDataForRegression || cRes.summary?.insufficientDataForRegression || cRes.isInsufficientData || cRes.summary?.isInsufficientData),
                 executiveInsights: cRes.executiveActionableInsights || []
               });
             }
@@ -668,9 +677,15 @@ export default function SynergyCorrelation() {
               <span className="bg-indigo-400/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide flex items-center gap-1.5">
                 <Cpu size={14} className="text-amber-400" /> 차세대 외생변수 통제 인과 시너지 엔진 [V6 PRO]
               </span>
-              <span className="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium">
-                <ShieldCheck size={14} className="text-emerald-400" /> 요일/날씨/공휴일 다변량 OLS 통제 ({exogenousMeta?.observationDays || totalDays}일 관측치 · p &lt; 0.01)
-              </span>
+              {exogenousMeta?.isExogenousControlled ? (
+                <span className="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium">
+                  <ShieldCheck size={14} className="text-emerald-400" /> 요일/날씨/공휴일 다변량 OLS 통제 ({exogenousMeta?.observationDays || totalDays}일 관측치 · {exogenousMeta?.specification === 'FULL_13_COVARIATES' ? '13대 외생변수' : '핵심 외생변수'})
+                </span>
+              ) : (
+                <span className="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-amber-400/30 font-medium">
+                  <AlertTriangle size={14} className="text-amber-400" /> 외생변수 통제 대기 ({totalDays}일 관측치 · 14일 이상 필요)
+                </span>
+              )}
             </div>
             
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
@@ -883,14 +898,15 @@ export default function SynergyCorrelation() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="font-extrabold text-sm text-amber-900">
-                ⚠️ 데이터 부족 (상관 분석은 최소 2일 이상 조회 필요)
+                {executiveInsights.find(i => i.type === 'DATA_INSUFFICIENT')?.badge || '⚠️ 인과 분석 관측치 부족 안내 (Fail-Stop)'}
               </span>
               <span className="text-[10px] px-2 py-0.5 bg-amber-200/60 text-amber-800 rounded-md border border-amber-300 font-bold whitespace-nowrap">
-                Fail-Stop Guard
+                Econometric Guard
               </span>
             </div>
             <p className="text-xs text-amber-800 leading-relaxed font-medium">
-              단일 일자(1일) 조회 시에는 수학적으로 OLS 회귀분석 및 시계열 탄력성 추정이 불가능하여 가짜 데이터 생성을 차단(Fail-Stop)했습니다. 상단 분석 기간에서 <strong>기간 범위(최소 2일 이상)</strong>를 선택해 주십시오.
+              {executiveInsights.find(i => i.type === 'DATA_INSUFFICIENT')?.insight || 
+                '외생변수(주말/공휴일/날씨) 통제 및 인과 시너지 분석을 위해서는 최소 14일 이상의 시계열 관측치(또는 앵커 매출 200만원 이상)가 필요합니다. 상단 분석 기간에서 최근 1개월(MTD) 또는 14일 이상의 기간 범위를 선택해 주십시오.'}
             </p>
           </div>
         </div>
@@ -936,15 +952,23 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-2xl font-black text-blue-600 mb-1 truncate">
-              +₩{formatCurrency(summaryMeta.totalPureSpillover || 0)} <span className="text-xs text-slate-500 font-normal">/ 100만</span>
+              {isDataInsufficient ? (
+                <span className="text-slate-400 text-lg font-bold">측정 불가 (14일 이상 필요)</span>
+              ) : (
+                <>+₩{formatCurrency(summaryMeta.totalPureSpillover || 0)} <span className="text-xs text-slate-500 font-normal">/ 100만</span></>
+              )}
             </div>
             <p className="text-xs text-slate-500 font-medium truncate">
-              앵커 100만원 발생 시 전사 <strong>34개 영업장</strong>으로 유입되는 순수 부대매출
+              {isDataInsufficient 
+                ? '단기 조회(14일 미만) 시에는 주말 왜곡 방지를 위해 비활성화됩니다.' 
+                : <>앵커 100만원 발생 시 전사 <strong>34개 영업장</strong>으로 유입되는 순수 부대매출</>}
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
             <span>평균 순수 탄력성:</span>
-            <strong className="text-blue-700 tabular-nums whitespace-nowrap">+{summaryMeta.averageElasticity ? summaryMeta.averageElasticity.toFixed(1) : '0.0'}% (10%↑ 시)</strong>
+            <strong className="text-blue-700 tabular-nums whitespace-nowrap">
+              {isDataInsufficient ? '-' : `+${summaryMeta.averageElasticity ? summaryMeta.averageElasticity.toFixed(1) : '0.0'}% (10%↑ 시)`}
+            </strong>
           </div>
         </div>
 
@@ -961,15 +985,19 @@ export default function SynergyCorrelation() {
               </span>
             </div>
             <div className="text-2xl font-black text-emerald-600 mb-1 truncate" title={summaryMeta.topSynergyShop || topPureStore?.shopName}>
-              {summaryMeta.topSynergyShop || topPureStore?.shopName || '-'}
+              {isDataInsufficient ? '-' : (summaryMeta.topSynergyShop || topPureStore?.shopName || '-')}
             </div>
             <p className="text-xs text-slate-500 font-medium truncate">
-              순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation ? topPureStore.pureCorrelation.toFixed(2) : '0.00'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity ? topPureStore.pureElasticity.toFixed(1) : '0.0'}%</strong>
+              {isDataInsufficient 
+                ? '외생변수 통제 유효 구간(14일 이상)에서만 활성화됩니다.' 
+                : <>순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation ? topPureStore.pureCorrelation.toFixed(2) : '0.00'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity ? topPureStore.pureElasticity.toFixed(1) : '0.0'}%</strong></>}
             </p>
           </div>
           <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
             <span>100만원당 순수 낙수:</span>
-            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">+₩{formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 0)} / 100만</strong>
+            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">
+              {isDataInsufficient ? '-' : `+₩${formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 0)} / 100만`}
+            </strong>
           </div>
         </div>
 

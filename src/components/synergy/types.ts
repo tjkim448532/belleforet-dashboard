@@ -21,6 +21,8 @@ export interface ExogenousControlMeta {
   controlledVariables: string[]; // 통제된 8종 외생 변수 목록
   observationDays: number;       // 관측 일수 (예: 236일)
   totalOffDays?: number;         // 주말 및 법정 공휴일 일수 (예: 77일)
+  isExogenousControlled?: boolean; // 외생변수 다변량 OLS 통제 완료 여부 (14일 이상)
+  specification?: string;        // 'FULL_13_COVARIATES' 등
 }
 
 // 3. GIRF 시계열 충격 반응 (T+0 ~ T+3)

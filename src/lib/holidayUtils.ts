@@ -196,3 +196,35 @@ export function getMtdHolidayComparison(targetDateStr: string, endDateOverride?:
     lastYearLabel: `${lyStartStr} ~ ${lyEndStr}`
   };
 }
+
+/**
+ * 단일 일자 및 기간 모드를 모두 지원하는 통합 공휴일 비교 함수
+ * - isRangeMode (startDate !== endDate): 선택 기간 [startDate, endDate] vs 전년 동기간
+ * - 단일 일자 모드: 당월 1일부터 targetDate까지의 MTD vs 전년 동기간 MTD
+ */
+export function getPeriodHolidayComparison(startDateStr: string, endDateStr?: string): HolidayComparisonInfo {
+  const isRange = Boolean(endDateStr && startDateStr !== endDateStr);
+  if (isRange) {
+    const curStartStr = startDateStr;
+    const curEndStr = endDateStr!;
+    const curInfo = calculateHolidayInfo(curStartStr, curEndStr);
+
+    const curStartYear = parseInt(curStartStr.slice(0, 4), 10);
+    const curEndYear = parseInt(curEndStr.slice(0, 4), 10);
+    const lyStartStr = `${curStartYear - 1}-${curStartStr.slice(5)}`;
+    const lyEndStr = `${curEndYear - 1}-${curEndStr.slice(5)}`;
+    const lyInfo = calculateHolidayInfo(lyStartStr, lyEndStr);
+
+    return {
+      currentPeriod: curInfo,
+      lastYearPeriod: lyInfo,
+      diffHolidays: curInfo.totalHolidays - lyInfo.totalHolidays,
+      currentLabel: `${curStartStr} ~ ${curEndStr}`,
+      lastYearLabel: `${lyStartStr} ~ ${lyEndStr}`
+    };
+  }
+
+  // 단일 일자 모드: MTD 비교
+  return getMtdHolidayComparison(startDateStr, endDateStr);
+}
+

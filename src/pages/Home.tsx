@@ -7,7 +7,7 @@ import { transformHomeData } from '../lib/dataTransformers';
 import SalesPieChart from '../components/dashboard/SalesPieChart';
 import MonthlyTrevporChart from '../components/dashboard/MonthlyTrevporChart';
 import { parseNum } from '../lib/dataTransformers';
-import { getMtdHolidayComparison } from '../lib/holidayUtils';
+import { getPeriodHolidayComparison } from '../lib/holidayUtils';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
@@ -15,9 +15,9 @@ export default function Home() {
   const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && (coreData.core?.endDate || endDate) && startDate !== (coreData.core?.endDate || endDate)));
 
   const currentEndDateStr = isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate;
-  const mtdHolidays = React.useMemo(() => {
-    return getMtdHolidayComparison(startDate, currentEndDateStr);
-  }, [startDate, currentEndDateStr]);
+  const periodHolidays = React.useMemo(() => {
+    return getPeriodHolidayComparison(startDate, isRangeMode ? currentEndDateStr : undefined);
+  }, [startDate, isRangeMode, currentEndDateStr]);
 
   const transformedData = React.useMemo(() => {
     if (coreData.isLoading || coreData.error) return null;
@@ -141,6 +141,29 @@ export default function Home() {
   const mtdRoomsGrowth = displayData?.mtd?.roomsGrowth !== undefined 
     ? displayData.mtd.roomsGrowth 
     : (lyMtdRoomsSold > 0 ? Number((((mtdRoomsSold - lyMtdRoomsSold) / lyMtdRoomsSold) * 100).toFixed(1)) : null);
+
+  // [기간 모드 지능형 동적 바인딩] 선택 기간 모드 시 선택 기간 전체 실적 바인딩, 단일 일자 시 MTD 당월 실적 바인딩
+  const rangeRoomsSold = parseNum(coreData.core?.summary?.totalRooms || roomSub?.todayVisitors || roomSub?.visitors || 0);
+  const rangeLyRoomsSold = parseNum(roomSub?.todayLyVisitors || roomSub?.lyVisitors || coreData.core?.summary?.totalRoomsLy || 0);
+  const rangeRoomsDiff = rangeRoomsSold - rangeLyRoomsSold;
+  const rangeRoomsGrowth = rangeLyRoomsSold > 0 ? Number((((rangeRoomsSold - rangeLyRoomsSold) / rangeLyRoomsSold) * 100).toFixed(1)) : null;
+
+  const activeRoomsSold = isRangeMode ? rangeRoomsSold : mtdRoomsSold;
+  const activeLyRoomsSold = isRangeMode ? rangeLyRoomsSold : lyMtdRoomsSold;
+  const activeRoomsDiff = isRangeMode ? rangeRoomsDiff : mtdRoomsDiff;
+  const activeRoomsGrowth = isRangeMode ? rangeRoomsGrowth : mtdRoomsGrowth;
+
+  // 카드 2 중간 섹션: 기간 모드 시 선택 기간 객실 총매출, 단일 일자 시 MTD 총매출
+  const rangeRoomRev = parseNum(roomSub?.todayActual || coreData.core?.summary?.totalRoomRev || 0);
+  const rangeLyRoomRev = parseNum(roomSub?.todayLy || 0);
+  const rangeRoomRevDiff = rangeRoomRev - rangeLyRoomRev;
+  const rangeRoomRevGrowth = roomSub?.todayGrowth !== undefined 
+    ? Number(roomSub.todayGrowth) 
+    : (rangeLyRoomRev > 0 ? Number((((rangeRoomRev - rangeLyRoomRev) / rangeLyRoomRev) * 100).toFixed(1)) : null);
+
+  const activeSecondaryRev = isRangeMode ? rangeRoomRev : mtdGross;
+  const activeSecondaryDiff = isRangeMode ? rangeRoomRevDiff : mtdDiff;
+  const activeSecondaryGrowth = isRangeMode ? rangeRoomRevGrowth : mtdGrowth;
 
 
   
@@ -314,16 +337,16 @@ export default function Home() {
                 )}
               </div>
 
-              {/* 2. 💡 [NEW] 월별 누적 매출 (MTD) - 매달 1일부터 오늘(조회일)까지의 누적 매출 및 전년 동기간 대비 등락율 + 공휴일(토·일·국가지정공휴일) 일수 비교 */}
+              {/* 2. 💡 [NEW] 월별 누적 매출(단일일자) / 선택기간 객실부문 실적(기간모드) + 공휴일 일수 비교 */}
               <div className="mt-4 pt-3.5 border-t border-slate-100 relative z-10">
                 <div className="mb-1 flex flex-col justify-start">
                   <div className="flex items-center justify-between flex-wrap gap-1.5 mb-1">
                     <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5 flex-wrap">
                       <CalendarDays className="w-4 h-4 text-emerald-600" />
-                      <span>월별 누적 매출 (MTD)</span>
+                      <span>{isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출 (MTD)'}</span>
                       {isRangeMode ? (
                         <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
-                          종료일({currentEndDateStr}) 기준 당월누계 ({currentEndDateStr.slice(0, 7)}-01 ~ {currentEndDateStr})
+                          선택기간 ({startDate} ~ {currentEndDateStr})
                         </span>
                       ) : (
                         <span className="text-xs text-slate-400 font-normal">
@@ -335,14 +358,14 @@ export default function Home() {
                     {/* 🎈 공휴일수 (토·일·국가지정공휴일) 비교 배지 */}
                     <div 
                       className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs whitespace-nowrap"
-                      title={`[당해 MTD] 총 ${mtdHolidays.currentPeriod.totalDays}일 중 휴일 ${mtdHolidays.currentPeriod.totalHolidays}일 (토 ${mtdHolidays.currentPeriod.saturdays}, 일 ${mtdHolidays.currentPeriod.sundays}, 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 MTD] 총 ${mtdHolidays.lastYearPeriod.totalDays}일 중 휴일 ${mtdHolidays.lastYearPeriod.totalHolidays}일 (토 ${mtdHolidays.lastYearPeriod.saturdays}, 일 ${mtdHolidays.lastYearPeriod.sundays}, 평일공휴일 ${mtdHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
+                      title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
                     >
                       <span className="text-amber-800 whitespace-nowrap">🎈 공휴일(주말+공휴일):</span>
-                      <strong className="text-amber-950 font-black whitespace-nowrap">{mtdHolidays.currentPeriod.totalHolidays}일</strong>
-                      <span className="text-amber-700 font-normal whitespace-nowrap">vs 전년 {mtdHolidays.lastYearPeriod.totalHolidays}일</span>
-                      {mtdHolidays.diffHolidays !== 0 ? (
-                        <span className={`text-[10px] font-black whitespace-nowrap ${mtdHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          ({mtdHolidays.diffHolidays > 0 ? `+${mtdHolidays.diffHolidays}일` : `${mtdHolidays.diffHolidays}일`})
+                      <strong className="text-amber-950 font-black whitespace-nowrap">{periodHolidays.currentPeriod.totalHolidays}일</strong>
+                      <span className="text-amber-700 font-normal whitespace-nowrap">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
+                      {periodHolidays.diffHolidays !== 0 ? (
+                        <span className={`text-[10px] font-black whitespace-nowrap ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
                         </span>
                       ) : (
                         <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">(동일)</span>
@@ -350,16 +373,17 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight whitespace-nowrap">
-                  {formatCurrency(mtdGross)}
+                <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight whitespace-nowrap flex items-baseline gap-2">
+                  <span>{formatCurrency(activeSecondaryRev)}</span>
+                  {isRangeMode && <span className="text-xs text-slate-400 font-normal">(객실 순매출)</span>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {mtdGrowth !== undefined ? (
-                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${mtdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
+                  {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${activeSecondaryGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
                       <span className="whitespace-nowrap">전년 동기간 대비</span>
-                      <span className="whitespace-nowrap">{mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdGrowth).toFixed(1)}%</span>
-                      {mtdDiff !== undefined && (
-                        <span className="font-medium opacity-80 whitespace-nowrap">({mtdDiff > 0 ? '+' : ''}{formatCurrency(mtdDiff)})</span>
+                      <span className="whitespace-nowrap">{activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
+                      {activeSecondaryDiff !== undefined && (
+                        <span className="font-medium opacity-80 whitespace-nowrap">({activeSecondaryDiff > 0 ? '+' : ''}{formatCurrency(activeSecondaryDiff)})</span>
                       )}
                     </div>
                   ) : (
@@ -370,28 +394,28 @@ export default function Home() {
 
                   {/* 세부 휴일 구성 안내 (토/일/국경일) */}
                   <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-                    (토 {mtdHolidays.currentPeriod.saturdays}일 · 일 {mtdHolidays.currentPeriod.sundays}일
-                    {mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${mtdHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`}
-                    {mtdHolidays.currentPeriod.holidaysList.length > 0 && ` [${mtdHolidays.currentPeriod.holidaysList.map(h => h.name).join(', ')}]`})
+                    (토 {periodHolidays.currentPeriod.saturdays}일 · 일 {periodHolidays.currentPeriod.sundays}일
+                    {periodHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`}
+                    {periodHolidays.currentPeriod.holidaysList.length > 0 && ` [${periodHolidays.currentPeriod.holidaysList.map(h => h.name).join(', ')}]`})
                   </span>
                 </div>
 
-                {/* 🛏️ [NEW] 월별 누적 객실 판매수 vs 전년동기간 비교 레이아웃 */}
+                {/* 🛏️ [NEW] 객실 판매수 vs 전년동기간 비교 레이아웃 (단일일자: MTD / 기간모드: 선택기간 누적) */}
                 <div className="mt-3.5 pt-3 border-t border-slate-100/90">
                   <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-100/90 shadow-2xs">
                     <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
                         <BedDouble className="w-4 h-4 text-emerald-600" />
-                        <span>월별 누적 객실 판매</span>
+                        <span>{isRangeMode ? '선택 기간 객실 판매 비교' : '월별 누적 객실 판매'}</span>
                       </div>
-                      {lyMtdRoomsSold > 0 && mtdRoomsGrowth !== null ? (
+                      {activeLyRoomsSold > 0 && activeRoomsGrowth !== null ? (
                         <div className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap ${
-                          mtdRoomsGrowth >= 0 
+                          activeRoomsGrowth >= 0 
                             ? 'bg-emerald-100/90 text-emerald-800 border border-emerald-200/60' 
                             : 'bg-rose-100/90 text-rose-800 border border-rose-200/60'
                         }`}>
-                          <span>{mtdRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(mtdRoomsGrowth).toFixed(1)}%</span>
-                          <span className="font-semibold text-[10px] opacity-90">({mtdRoomsDiff > 0 ? '+' : ''}{mtdRoomsDiff.toLocaleString()}실)</span>
+                          <span>{activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
+                          <span className="font-semibold text-[10px] opacity-90">({activeRoomsDiff > 0 ? '+' : ''}{activeRoomsDiff.toLocaleString()}실)</span>
                         </div>
                       ) : (
                         <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 불가</span>
@@ -399,19 +423,19 @@ export default function Home() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      {/* 당해 월별 누적 객실 판매수 */}
+                      {/* 당해 객실 판매수 */}
                       <div className="bg-white p-2.5 rounded-xl border border-emerald-100/80 shadow-2xs">
                         <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-0.5">
-                          <span>월별 누적 객실수</span>
+                          <span>{isRangeMode ? '선택기간 누적 객실수' : '월별 누적 객실수'}</span>
                           <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">당해</span>
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-black text-slate-900 tracking-tight">{mtdRoomsSold.toLocaleString()}</span>
+                          <span className="text-xl font-black text-slate-900 tracking-tight">{activeRoomsSold.toLocaleString()}</span>
                           <span className="text-xs font-semibold text-slate-500">실</span>
                         </div>
                       </div>
 
-                      {/* 전년동기간 월별 누적 객실 판매수 */}
+                      {/* 전년동기간 객실 판매수 */}
                       <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
                         <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-0.5">
                           <span>전년동기간 객실수</span>
@@ -419,7 +443,7 @@ export default function Home() {
                         </div>
                         <div className="flex items-baseline gap-1">
                           <span className="text-xl font-black text-slate-600 tracking-tight">
-                            {lyMtdRoomsSold > 0 ? lyMtdRoomsSold.toLocaleString() : '-'}
+                            {activeLyRoomsSold > 0 ? activeLyRoomsSold.toLocaleString() : '-'}
                           </span>
                           <span className="text-xs font-semibold text-slate-400">실</span>
                         </div>

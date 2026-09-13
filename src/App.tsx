@@ -27,7 +27,6 @@ import { DataSyncStatus } from './pages/DataSyncStatus';
 import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
-import SynergyBundles from './pages/SynergyBundles';
 import GroupSales from './pages/GroupSales';
 import TargetSimulator from './pages/TargetSimulator';
 import StrategicSimulator from './pages/StrategicSimulator';
@@ -85,8 +84,6 @@ export function App() {
                     <Route path="synergy" element={<Synergy />} />
                     <Route path="synergy/correlation" element={<SynergyCorrelation />} />
                     <Route path="synergy-correlation" element={<SynergyCorrelation />} />
-                    <Route path="synergy/bundles" element={<SynergyBundles />} />
-                    <Route path="synergy-bundles" element={<SynergyBundles />} />
                   </Route>
 
                   <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

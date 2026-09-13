@@ -4,6 +4,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
 import { AlertCircle, BarChart2, Activity, Map as MapIcon, CalendarDays, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -282,17 +283,21 @@ export default function DayOfWeekSales() {
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 pt-6">
         
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <BarChart2 className="w-8 h-8 text-brand-mint" />
             <h1 className="text-3xl font-medium tracking-tight">요일별·부문별 매출 분석</h1>
           </div>
-          {data.validationMaster?.isZeroVariance && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full font-bold text-sm border border-emerald-100">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Zero-Variance 검증 완료
-            </div>
-          )}
+          
+          <div className="flex items-center gap-4 flex-wrap">
+            {data.validationMaster?.isZeroVariance && (
+              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full font-bold text-sm border border-emerald-100">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Zero-Variance 검증 완료
+              </div>
+            )}
+            <GlobalDatePicker showPresets={true} />
+          </div>
         </div>
 
         {/* 상단 메인 KPI 및 3분할 휴일 요약 패널 */}

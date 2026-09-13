@@ -92,6 +92,33 @@ export default function Home() {
     return map;
   }, [coreData.core?.leisureVisitors, coreData.core?.salesByFacility]);
 
+  // [모토아레나 숙박객/회원 수 연동] 백엔드에서 전달받은 숙박객/회원 숫자 바인딩
+  const motoGuestMemberCount = React.useMemo(() => {
+    // 1. 백엔드 summary 내 motoGuestMemberVisitors (SSOT 1순위)
+    if (coreData.core?.summary?.motoGuestMemberVisitors !== undefined && coreData.core?.summary?.motoGuestMemberVisitors !== null) {
+      return parseNum(coreData.core.summary.motoGuestMemberVisitors);
+    }
+    // 2. 백엔드 summary 내 개별 필드 (투숙객 + 회원)
+    if (coreData.core?.summary?.motoGuestVisitors !== undefined || coreData.core?.summary?.motoMemberVisitors !== undefined) {
+      return parseNum(coreData.core.summary?.motoGuestVisitors || 0) + parseNum(coreData.core.summary?.motoMemberVisitors || 0);
+    }
+    // 3. 백엔드 salesByFacility 내 모토아레나 객체의 guestMemberVisitors 속성
+    const list = coreData.core?.salesByFacility || [];
+    if (Array.isArray(list)) {
+      const motoFac = list.find((fac: any) => (fac.shopName || fac.facilityName)?.includes('모토아레나'));
+      if (motoFac?.guestMemberVisitors !== undefined && motoFac?.guestMemberVisitors !== null) {
+        return parseNum(motoFac.guestMemberVisitors);
+      }
+    }
+    // 4. leisureVisitorsMap 매핑 데이터 확인
+    if (leisureVisitorsMap['모토아레나_숙박회원'] !== undefined) {
+      return parseNum(leisureVisitorsMap['모토아레나_숙박회원']);
+    }
+    // 5. fallback: 모토아레나 기본 이용객 수
+    return parseNum(leisureVisitorsMap['모토아레나'] || 0);
+  }, [coreData.core?.summary, coreData.core?.salesByFacility, leisureVisitorsMap]);
+
+
 
 
   if (apiError && !loading) {
@@ -543,8 +570,11 @@ export default function Home() {
                       <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                     <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200/60 font-medium whitespace-nowrap">숙박·회원</span>
+                      </div>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(motoGuestMemberCount)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
                     </div>
                   </div>
                 </div>

@@ -44,44 +44,7 @@ export default function DayOfWeekSales() {
     return () => { isMounted = false; };
   }, [startDate, endDate]);
 
-  if (error422) {
-    return (
-      <div className="w-full min-h-[80vh] flex flex-col items-center justify-center p-6 bg-[#f8fafc]">
-        <div className="bg-white border-2 border-red-500/50 p-8 rounded-[32px] max-w-2xl text-center shadow-[0_20px_40px_rgb(239,68,68,0.1)]">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4 animate-bounce" />
-          <h2 className="text-2xl font-bold text-red-600 mb-4 tracking-tight">데이터 정합성 오류 감지 (HTTP 422)</h2>
-          <p className="text-slate-600 mb-4 leading-relaxed font-medium">
-            {error422.message}
-          </p>
-          {error422.details?.sampleVenues && (
-            <div className="bg-red-50 p-4 rounded-xl mb-6 text-sm text-red-700 text-left">
-              <strong>누락된 영업장 예시:</strong> {error422.details.sampleVenues.join(', ')}
-              {error422.details.unmappedCount > 1 && ` 외 ${error422.details.unmappedCount - 1}건`}
-            </div>
-          )}
-          <p className="text-slate-400 text-sm mb-8">
-            프론트엔드 Bypass 방지 원칙에 따라, 회계 왜곡을 막기 위해 화면 렌더링이 강제 차단되었습니다.
-          </p>
-          <Link to="/admin/mapping" className="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:shadow-lg">
-            관리자 통제 센터에서 매핑 해결하기
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading || !data) {
-    return (
-      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-brand-mint border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-lg font-medium text-brand-mint animate-pulse">데이터를 불러오는 중입니다...</div>
-        </div>
-      </div>
-    );
-  }
-
-  const { summary = {}, hierarchyDrilldown = [], dayOfWeekSummary = [], monthDayMatrix = [] } = data;
+  const hierarchyDrilldown = data?.hierarchyDrilldown || [];
 
   // 1. Flatten hierarchyDrilldown & calculate rowSpans
   const flattenedTable = useMemo(() => {
@@ -148,6 +111,45 @@ export default function DayOfWeekSales() {
     });
     return rows;
   }, [hierarchyDrilldown]);
+
+  if (error422) {
+    return (
+      <div className="w-full min-h-[80vh] flex flex-col items-center justify-center p-6 bg-[#f8fafc]">
+        <div className="bg-white border-2 border-red-500/50 p-8 rounded-[32px] max-w-2xl text-center shadow-[0_20px_40px_rgb(239,68,68,0.1)]">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4 animate-bounce" />
+          <h2 className="text-2xl font-bold text-red-600 mb-4 tracking-tight">데이터 정합성 오류 감지 (HTTP 422)</h2>
+          <p className="text-slate-600 mb-4 leading-relaxed font-medium">
+            {error422.message}
+          </p>
+          {error422.details?.sampleVenues && (
+            <div className="bg-red-50 p-4 rounded-xl mb-6 text-sm text-red-700 text-left">
+              <strong>누락된 영업장 예시:</strong> {error422.details.sampleVenues.join(', ')}
+              {error422.details.unmappedCount > 1 && ` 외 ${error422.details.unmappedCount - 1}건`}
+            </div>
+          )}
+          <p className="text-slate-400 text-sm mb-8">
+            프론트엔드 Bypass 방지 원칙에 따라, 회계 왜곡을 막기 위해 화면 렌더링이 강제 차단되었습니다.
+          </p>
+          <Link to="/admin/mapping" className="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:shadow-lg">
+            관리자 통제 센터에서 매핑 해결하기
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading || !data) {
+    return (
+      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-brand-mint border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-lg font-medium text-brand-mint animate-pulse">데이터를 불러오는 중입니다...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const { summary = {}, dayOfWeekSummary = [], monthDayMatrix = [] } = data;
 
   // 2. Pseudo-3D Pie Options
   const getPieOptions = (title: string, pieData: any[]) => ({

@@ -7,7 +7,7 @@ import ReactECharts from 'echarts-for-react';
 import { 
   Building2, TrendingUp, Sparkles, 
   Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
-  Grid, CreditCard, Zap, Compass, Waves,
+  Grid, Zap, Compass, Waves,
   CloudRain, Gauge, Clock, Cpu, AlertTriangle
 } from 'lucide-react';
 

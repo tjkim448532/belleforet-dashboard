@@ -136,7 +136,7 @@ export default function Members() {
       if (!matchType) {
         if (selectedTypeFilter === '골프') matchType = m.categoryCode === 'GOLF';
         else if (selectedTypeFilter === '콘도') matchType = m.categoryCode === 'ROOM';
-        else matchType = m.memberType.includes(selectedTypeFilter) || (m.membershipName && m.membershipName.includes(selectedTypeFilter));
+        else matchType = m.memberType.includes(selectedTypeFilter) || Boolean(m.membershipName && m.membershipName.includes(selectedTypeFilter));
       }
 
       let matchLoyalty = true;

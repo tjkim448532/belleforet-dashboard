@@ -136,12 +136,12 @@ export default function DayOfWeekSales() {
 
   const totalPieData = hierarchyDrilldown
     .filter((r: any) => rowSpans.get(hierarchyDrilldown.indexOf(r))?.deptSpan && rowSpans.get(hierarchyDrilldown.indexOf(r))!.deptSpan > 0)
-    .map((r: any) => ({ name: r.deptName, value: parseFloat(r.sharePctFormatted || '0') }));
+    .map((r: any) => ({ name: r.deptName, value: r.sharePct }));
 
   const leisureData = hierarchyDrilldown.filter((r: any) => r.deptName === '레저');
   const leisurePieData = leisureData
     .filter((r: any) => rowSpans.get(hierarchyDrilldown.indexOf(r))?.shopSpan && rowSpans.get(hierarchyDrilldown.indexOf(r))!.shopSpan > 0)
-    .map((r: any) => ({ name: r.shopName, value: parseFloat(r.sharePctFormatted || '0') }));
+    .map((r: any) => ({ name: r.shopName, value: r.sharePct }));
 
   const barOptions = {
     tooltip: {
@@ -151,7 +151,7 @@ export default function DayOfWeekSales() {
         const item = dayOfWeekSummary[params[0].dataIndex];
         return `
           <div class="font-bold mb-1">${item?.dayName || ''}</div>
-          <div>매출: ${item?.revenueFormatted || '0'}</div>
+          <div>매출: ${item?.revenueFormatted}</div>
           <div class="mt-2 text-xs bg-slate-100 p-1 rounded text-brand-mint">${item?.badgeText || ''}</div>
         `;
       }
@@ -168,7 +168,7 @@ export default function DayOfWeekSales() {
         type: 'bar',
         barWidth: '60%',
         itemStyle: { borderRadius: [8, 8, 0, 0], color: '#00AE95' },
-        data: dayOfWeekSummary.map((d: any) => parseFloat((d.revenueFormatted||'0').replace(/,/g, '')))
+        data: dayOfWeekSummary.map((d: any) => d.revenue)
       }
     ]
   };
@@ -178,7 +178,7 @@ export default function DayOfWeekSales() {
   const heatmapData = monthDayMatrix.map((d: any) => [
     days.indexOf(d.day),
     d.month - 1,
-    parseFloat((d.revenueFormatted||'0').replace(/,/g, ''))
+    d.revenue
   ]);
 
   const heatmapOptions = {
@@ -224,7 +224,7 @@ export default function DayOfWeekSales() {
                 {item.icon} {item.title}
               </div>
               <div className="text-3xl font-black text-slate-800 tracking-tight">
-                {item.data?.dailyAvgFormatted || '0'}
+                {item.data?.dailyAvgFormatted}
               </div>
             </div>
           ))}

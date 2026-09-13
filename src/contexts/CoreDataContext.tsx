@@ -163,6 +163,49 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             });
         }
 
+        // [모토아레나 숙박객/회원 세분화] revenue-summary에 미포함된 경우 top-ticket-items API로 즉각 보완 (400ms)
+        const hasMotoGuestMetrics = payload.summary?.motoGuestMemberVisitors !== undefined;
+        if (!hasMotoGuestMetrics) {
+          secureFetcher(`${API_BASE}/api/v6/report/top-ticket-items?${queryParams}&category=MOTO&limit=50`)
+            .then((motoRes) => {
+              if (isCancelled || !motoRes) return;
+              let gVisitors = 0;
+              let mVisitors = 0;
+              for (const item of (motoRes.topItems || [])) {
+                const name = item.itemName || '';
+                const mult = name.includes('2인승') ? 2 : 1;
+                const qty = Number(item.quantity || 0);
+                if (name.includes('콘도숙박') || name.includes('객실투숙') || name.includes('투숙')) {
+                  gVisitors += qty * mult;
+                } else if (name.includes('콘도회원') || name.includes('회원')) {
+                  mVisitors += qty * mult;
+                }
+              }
+              const totalVisitors = gVisitors + mVisitors;
+              setState(prev => {
+                if (!prev.core?.summary) return prev;
+                const updatedSummary = {
+                  ...prev.core.summary,
+                  motoGuestVisitors: gVisitors,
+                  motoMemberVisitors: mVisitors,
+                  motoGuestMemberVisitors: totalVisitors
+                };
+                return {
+                  ...prev,
+                  core: {
+                    ...prev.core,
+                    summary: updatedSummary
+                  },
+                  summary: updatedSummary
+                };
+              });
+            })
+            .catch((e) => {
+              console.warn('[CoreDataContext] Moto ticket items fetch warning:', e);
+            });
+        }
+
+
       } catch (error) {
         if (isCancelled) return;
         console.error("[V6 Dashboard API Fetch Error]", error);

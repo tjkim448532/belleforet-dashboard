@@ -93,30 +93,36 @@ export default function Home() {
   }, [coreData.core?.leisureVisitors, coreData.core?.salesByFacility]);
 
   // [모토아레나 숙박객/회원 수 연동] 백엔드에서 전달받은 숙박객/회원 숫자 바인딩
-  const motoGuestMemberCount = React.useMemo(() => {
-    // 1. 백엔드 summary 내 motoGuestMemberVisitors (SSOT 1순위)
+  const { motoGuestCount, motoMemberCount, motoTotalCount } = React.useMemo(() => {
+    let guest = 0;
+    let member = 0;
+    let hasLoaded = false;
+
+    if (coreData.core?.summary?.motoGuestVisitors !== undefined) {
+      guest = parseNum(coreData.core.summary.motoGuestVisitors);
+      hasLoaded = true;
+    }
+    if (coreData.core?.summary?.motoMemberVisitors !== undefined) {
+      member = parseNum(coreData.core.summary.motoMemberVisitors);
+      hasLoaded = true;
+    }
+
+    let total = 0;
     if (coreData.core?.summary?.motoGuestMemberVisitors !== undefined && coreData.core?.summary?.motoGuestMemberVisitors !== null) {
-      return parseNum(coreData.core.summary.motoGuestMemberVisitors);
+      total = parseNum(coreData.core.summary.motoGuestMemberVisitors);
+    } else if (hasLoaded) {
+      total = guest + member;
+    } else {
+      total = 0;
     }
-    // 2. 백엔드 summary 내 개별 필드 (투숙객 + 회원)
-    if (coreData.core?.summary?.motoGuestVisitors !== undefined || coreData.core?.summary?.motoMemberVisitors !== undefined) {
-      return parseNum(coreData.core.summary?.motoGuestVisitors || 0) + parseNum(coreData.core.summary?.motoMemberVisitors || 0);
-    }
-    // 3. 백엔드 salesByFacility 내 모토아레나 객체의 guestMemberVisitors 속성
-    const list = coreData.core?.salesByFacility || [];
-    if (Array.isArray(list)) {
-      const motoFac = list.find((fac: any) => (fac.shopName || fac.facilityName)?.includes('모토아레나'));
-      if (motoFac?.guestMemberVisitors !== undefined && motoFac?.guestMemberVisitors !== null) {
-        return parseNum(motoFac.guestMemberVisitors);
-      }
-    }
-    // 4. leisureVisitorsMap 매핑 데이터 확인
-    if (leisureVisitorsMap['모토아레나_숙박회원'] !== undefined) {
-      return parseNum(leisureVisitorsMap['모토아레나_숙박회원']);
-    }
-    // 5. fallback: 모토아레나 기본 이용객 수
-    return parseNum(leisureVisitorsMap['모토아레나'] || 0);
-  }, [coreData.core?.summary, coreData.core?.salesByFacility, leisureVisitorsMap]);
+
+    return {
+      motoGuestCount: guest,
+      motoMemberCount: member,
+      motoTotalCount: total
+    };
+  }, [coreData.core?.summary]);
+
 
 
 
@@ -574,7 +580,15 @@ export default function Home() {
                         <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
                         <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200/60 font-medium whitespace-nowrap">숙박·회원</span>
                       </div>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(motoGuestMemberCount)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
+                      <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                        <span className="text-[11px] text-slate-400 font-normal">
+                          (숙박 {motoGuestCount} · 회원 {motoMemberCount})
+                        </span>
+                        <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">
+                          {new Intl.NumberFormat('ko-KR').format(motoTotalCount)}
+                          <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

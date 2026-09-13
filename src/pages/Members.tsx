@@ -132,7 +132,12 @@ export default function Members() {
   const filteredAndSortedVisitors = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     const filtered = enrichedVisitors.filter(m => {
-      const matchType = selectedTypeFilter === 'ALL' || m.memberType.includes(selectedTypeFilter);
+      let matchType = selectedTypeFilter === 'ALL';
+      if (!matchType) {
+        if (selectedTypeFilter === '골프') matchType = m.categoryCode === 'GOLF';
+        else if (selectedTypeFilter === '콘도') matchType = m.categoryCode === 'ROOM';
+        else matchType = m.memberType.includes(selectedTypeFilter) || (m.membershipName && m.membershipName.includes(selectedTypeFilter));
+      }
 
       let matchLoyalty = true;
       if (selectedLoyaltyFilter === 'REPEAT') {

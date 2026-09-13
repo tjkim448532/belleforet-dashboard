@@ -1357,7 +1357,7 @@ export default function MonthlyTrevporChart() {
                   <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200">숙</span>
                   <span className="text-xs font-black text-slate-800">객실 (리조트본부)</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-auto">
+                <div className="flex flex-wrap gap-1 content-start">
                   <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM</span>
                   <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM OTHER</span>
                 </div>
@@ -1369,7 +1369,7 @@ export default function MonthlyTrevporChart() {
                   <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">식</span>
                   <span className="text-xs font-black text-slate-800">식음 (콘텐츠본부)</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-auto">
+                <div className="flex flex-wrap gap-1 content-start">
                   {['남도예담', '쿠치나', '브리스킷346', '투썸플레이스', 'BHC(멕시카나)', 'CU편의점', '딜라이트', '밤밤테이블', '밤밤트럭', '썸머랜드 푸드트럭'].map((v) => (
                     <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
                   ))}
@@ -1382,7 +1382,7 @@ export default function MonthlyTrevporChart() {
                   <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">레</span>
                   <span className="text-xs font-black text-slate-800">레저 (레저본부)</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-auto">
+                <div className="flex flex-wrap gap-1 content-start">
                   {['벨포레 목장', '벨포레 목장(체험)', '얼룩말카페', '사계절썰매장', '마운틴카트', '마리나 클럽', '미디어아트센터', '미디어-기프트샵', '미디어-뮤지엄카페', '썸머랜드', '원더풀', '놀이동산(2025)'].map((v) => (
                     <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
                   ))}
@@ -1395,7 +1395,7 @@ export default function MonthlyTrevporChart() {
                   <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">모</span>
                   <span className="text-xs font-black text-slate-800">모토 (모토아레나)</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-auto">
+                <div className="flex flex-wrap gap-1 content-start">
                   {['모토아레나', '핏스탑'].map((v) => (
                     <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
                   ))}
@@ -1408,7 +1408,7 @@ export default function MonthlyTrevporChart() {
                   <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200">대</span>
                   <span className="text-xs font-black text-slate-800">대관 (세일즈본부)</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-auto">
+                <div className="flex flex-wrap gap-1 content-start">
                   <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">연회장</span>
                 </div>
               </div>
@@ -1420,7 +1420,7 @@ export default function MonthlyTrevporChart() {
                     <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">골</span>
                     <span className="text-xs font-black text-slate-800">골프 (골프본부)</span>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-auto">
+                  <div className="flex flex-wrap gap-1 content-start">
                     {['골프장', '클럽-레스토랑', '클럽-스타트하우스', '프로샵'].map((v) => (
                       <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
                     ))}

@@ -580,16 +580,26 @@ export default function Home() {
                         <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
                         <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200/60 font-medium whitespace-nowrap">숙박·회원</span>
                       </div>
-                      <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                        <span className="text-[11px] text-slate-400 font-normal">
-                          (숙박 {motoGuestCount} · 회원 {motoMemberCount})
-                        </span>
-                        <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight">
-                          {new Intl.NumberFormat('ko-KR').format(motoTotalCount)}
-                          <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
-                        </span>
-                      </div>
+                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
+                        {new Intl.NumberFormat('ko-KR').format(motoTotalCount)}
+                        <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                      </span>
                     </div>
+                  </div>
+
+                  {/* 모토아레나 숙박/회원 세부 내역 (하단 전용 바) */}
+                  <div className="mt-2 px-3 py-1.5 rounded-lg bg-slate-50/90 border border-slate-200/70 flex items-center justify-between text-xs text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100/80 text-amber-800 border border-amber-200/60 whitespace-nowrap">
+                        모토아레나 세부
+                      </span>
+                      <span className="text-slate-600 font-medium">
+                        숙박할인 <strong className="text-slate-800 font-bold">{motoGuestCount}</strong>명 · 회원할인 <strong className="text-slate-800 font-bold">{motoMemberCount}</strong>명
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-normal">
+                      (전체 {new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}명 중)
+                    </span>
                   </div>
                 </div>
               </div>

@@ -25,6 +25,7 @@ import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 
 import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
+import DayOfWeekSales from './pages/DayOfWeekSales';
 import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
 import GroupSales from './pages/GroupSales';
@@ -79,6 +80,7 @@ export function App() {
                       <Route path="target-simulator/strategic" element={<StrategicSimulator />} />
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
+                    <Route path="day-of-week-sales" element={<DayOfWeekSales />} />
                     <Route path="members" element={<Members />} />
                     <Route path="etl-status" element={<DataSyncStatus />} />
                     <Route path="synergy" element={<Synergy />} />

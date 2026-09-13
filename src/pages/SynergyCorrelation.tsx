@@ -714,15 +714,6 @@ export default function SynergyCorrelation() {
               >
                 <Zap size={14} /> 2. 앵커시설 순수 인과 & CAPA 분석
               </NavLink>
-
-              <NavLink 
-                to="/synergy/bundles" 
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  isActive ? 'bg-cyan-500 text-white shadow-md' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
-              >
-                <CreditCard size={14} /> 3. 고객 결제 묶음(Bundle) 분석
-              </NavLink>
             </div>
           </div>
 

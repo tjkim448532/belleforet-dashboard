@@ -342,19 +342,19 @@ export default function DayOfWeekSales() {
               <ReactECharts option={barOptions} style={{ height: '100%', width: '100%' }} />
             </div>
             {/* 요일별 칩 범례 (Chips) */}
-            <div className="mt-auto pt-4 flex flex-wrap gap-2 justify-center border-t border-slate-50">
+            <div className="mt-auto pt-4 grid grid-cols-7 gap-1.5 border-t border-slate-50">
               {dayOfWeekSummary.map((d: any, idx: number) => {
                 const isSelected = selectedDay === idx;
                 return (
                   <div 
                     key={idx} 
                     onClick={() => setSelectedDay(isSelected ? null : idx)}
-                    className={`flex flex-col items-center px-4 py-3 rounded-2xl border transition-colors cursor-pointer group relative min-w-[120px] flex-1 max-w-[160px] ${isSelected ? 'bg-brand-mint/10 border-brand-mint/30' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
+                    className={`flex flex-col items-center px-2 py-3 rounded-2xl border transition-colors cursor-pointer group relative w-full ${isSelected ? 'bg-brand-mint/10 border-brand-mint/30' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
                   >
-                    <span className={`text-base font-bold mb-2 ${isSelected ? 'text-brand-mint' : 'text-slate-700'}`}>{d.dayShort} ({d.daysCount}일)</span>
-                    <div className="flex gap-1.5 flex-wrap justify-center w-full">
+                    <span className={`text-base font-bold mb-2 whitespace-nowrap ${isSelected ? 'text-brand-mint' : 'text-slate-700'}`}>{d.dayShort} ({d.daysCount}일)</span>
+                    <div className="flex flex-col gap-1.5 items-center w-full">
                       {(d.deptShares || []).slice(0,3).map((s: any, sIdx: number) => (
-                        <span key={sIdx} className={`text-[14px] font-medium px-2 py-1 border rounded-md leading-none ${isSelected ? 'text-brand-mint bg-white border-brand-mint/20' : 'text-slate-500 bg-white border-slate-200'}`}>
+                        <span key={sIdx} className={`text-[14px] font-medium px-1.5 py-1 border rounded-md leading-none whitespace-nowrap ${isSelected ? 'text-brand-mint bg-white border-brand-mint/20' : 'text-slate-500 bg-white border-slate-200'}`}>
                           {s.badgeText}
                         </span>
                       ))}

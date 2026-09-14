@@ -109,37 +109,37 @@ export default function V6DashboardViewer() {
   if (!data || !data.divisions) return <div className="p-4 text-red-600 font-bold">API 응답 규격 위반 (divisions 없음)</div>;
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-auto max-h-[calc(100vh-280px)] rounded-lg">
       <table className="w-full border-collapse text-sm text-left whitespace-nowrap min-w-[1200px]">
-        <thead className="bg-slate-50 text-slate-700 font-bold border-b border-t border-slate-200 text-center">
+        <thead className="text-slate-700 font-bold border-t border-slate-200 text-center sticky top-0 z-20 shadow-sm outline outline-1 outline-slate-200">
           {/* 그룹 헤더 (3개의 파트로 분리) */}
           <tr>
-            <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>대분류</th>
-            <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>파트</th>
-            <th className="px-4 py-2 border-x border-slate-200 border-b" rowSpan={2}>영업장</th>
+            <th className="px-4 py-2 border-x border-slate-200 border-b bg-slate-50" rowSpan={2}>대분류</th>
+            <th className="px-4 py-2 border-x border-slate-200 border-b bg-slate-50" rowSpan={2}>파트</th>
+            <th className="px-4 py-2 border-x border-slate-200 border-b bg-slate-50" rowSpan={2}>영업장</th>
             
-            <th className="px-4 py-2 border-x border-slate-300 border-b bg-emerald-50/50 text-emerald-800" colSpan={3}>
+            <th className="px-4 py-2 border-x border-slate-300 border-b bg-emerald-50 text-emerald-800" colSpan={3}>
               {isRangeMode ? '선택 기간 실적 (Period)' : '당일 실적 (Today)'}
             </th>
-            <th className="px-4 py-2 border-x border-slate-300 border-b bg-blue-50/50 text-blue-800" colSpan={3}>당월 누계 (MTD)</th>
-            <th className="px-4 py-2 border-x border-slate-300 border-b bg-indigo-50/50 text-indigo-800" colSpan={3}>올해 누계 (YTD)</th>
+            <th className="px-4 py-2 border-x border-slate-300 border-b bg-blue-50 text-blue-800" colSpan={3}>당월 누계 (MTD)</th>
+            <th className="px-4 py-2 border-x border-slate-300 border-b bg-indigo-50 text-indigo-800" colSpan={3}>올해 누계 (YTD)</th>
           </tr>
           {/* 하위 컬럼 헤더 */}
-          <tr className="bg-slate-100/50 text-xs text-slate-600">
+          <tr className="text-xs text-slate-600">
             {/* Today */}
-            <th className="px-3 py-2 border-x border-slate-200">{isRangeMode ? '올해 기간' : '올해 당일'}</th>
-            <th className="px-3 py-2 border-x border-slate-200">{isRangeMode ? '전년 동기간' : '전년 당일'}</th>
-            <th className="px-3 py-2 border-x border-slate-300">증감(%)</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#f1fcf8]">{isRangeMode ? '올해 기간' : '올해 당일'}</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#f1fcf8]">{isRangeMode ? '전년 동기간' : '전년 당일'}</th>
+            <th className="px-3 py-2 border-x border-slate-300 bg-[#f1fcf8]">증감(%)</th>
             
             {/* MTD */}
-            <th className="px-3 py-2 border-x border-slate-200">올해 당월</th>
-            <th className="px-3 py-2 border-x border-slate-200">전년 당월</th>
-            <th className="px-3 py-2 border-x border-slate-300">증감(%)</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#f0f6ff]">올해 당월</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#f0f6ff]">전년 당월</th>
+            <th className="px-3 py-2 border-x border-slate-300 bg-[#f0f6ff]">증감(%)</th>
             
             {/* YTD */}
-            <th className="px-3 py-2 border-x border-slate-200">올해 누적</th>
-            <th className="px-3 py-2 border-x border-slate-200">전년 누적</th>
-            <th className="px-3 py-2 border-x border-slate-300">증감(%)</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#f3f5ff]">올해 누적</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#f3f5ff]">전년 누적</th>
+            <th className="px-3 py-2 border-x border-slate-300 bg-[#f3f5ff]">증감(%)</th>
           </tr>
         </thead>
         <tbody>

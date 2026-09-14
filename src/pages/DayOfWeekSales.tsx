@@ -207,10 +207,8 @@ export default function DayOfWeekSales() {
     daysKeys.forEach((dKey, dIdx) => {
       const cell = m.days?.[dKey];
       const rev = Number(cell?.revenue || 0);
-      if (cell && rev > 0) {
-        heatmapData.push([dIdx, mIdx, rev, cell.revenueFormatted]);
-        if (rev > maxRevenue) maxRevenue = rev;
-      }
+      heatmapData.push([dIdx, mIdx, rev, cell?.revenueFormatted || '0']);
+      if (rev > maxRevenue) maxRevenue = rev;
     });
   });
 
@@ -222,7 +220,7 @@ export default function DayOfWeekSales() {
         return `<div class="font-bold">${months[val[1]]} ${daysLabels[val[0]]}요일</div><div>매출: ${val[3]}</div>`;
       }
     },
-    grid: { top: '5%', right: '5%', bottom: '15%', left: '10%' },
+    grid: { top: '5%', right: '5%', bottom: '25%', left: '10%' },
     xAxis: { type: 'category', data: daysLabels, splitArea: { show: true } },
     yAxis: { type: 'category', data: months, splitArea: { show: true } },
     visualMap: {
@@ -232,6 +230,7 @@ export default function DayOfWeekSales() {
       orient: 'horizontal',
       left: 'center',
       bottom: 0,
+      itemWidth: 15,
       inRange: { color: ['#f8fafc', '#00AE95'] }
     },
     series: [{
@@ -350,12 +349,12 @@ export default function DayOfWeekSales() {
                   <div 
                     key={idx} 
                     onClick={() => setSelectedDay(isSelected ? null : idx)}
-                    className={`flex flex-col items-center px-3 py-2 rounded-2xl border transition-colors cursor-pointer group relative ${isSelected ? 'bg-brand-mint/10 border-brand-mint/30' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
+                    className={`flex flex-col items-center px-3 py-2 rounded-2xl border transition-colors cursor-pointer group relative min-w-[100px] flex-1 max-w-[140px] ${isSelected ? 'bg-brand-mint/10 border-brand-mint/30' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
                   >
-                    <span className={`text-xs font-bold mb-1 ${isSelected ? 'text-brand-mint' : 'text-slate-700'}`}>{d.dayShort} ({d.daysCount}일)</span>
-                    <div className="flex gap-1 flex-wrap justify-center w-32">
+                    <span className={`text-xs font-bold mb-1.5 ${isSelected ? 'text-brand-mint' : 'text-slate-700'}`}>{d.dayShort} ({d.daysCount}일)</span>
+                    <div className="flex gap-1 flex-wrap justify-center w-full">
                       {(d.deptShares || []).slice(0,3).map((s: any, sIdx: number) => (
-                        <span key={sIdx} className={`text-[10px] font-medium px-1 border rounded ${isSelected ? 'text-brand-mint bg-white border-brand-mint/20' : 'text-brand-mint bg-white border-slate-200'}`}>
+                        <span key={sIdx} className={`text-[10px] font-medium px-1.5 py-0.5 border rounded-md leading-none ${isSelected ? 'text-brand-mint bg-white border-brand-mint/20' : 'text-slate-500 bg-white border-slate-200'}`}>
                           {s.badgeText}
                         </span>
                       ))}

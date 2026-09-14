@@ -242,9 +242,10 @@ export default function DayOfWeekSales() {
   monthDayMatrix.forEach((m: any, mIdx: number) => {
     daysKeys.forEach((dKey, dIdx) => {
       const cell = m.days?.[dKey];
-      if (cell && cell.revenue > 0) {
-        heatmapData.push([dIdx, mIdx, cell.revenue, cell.revenueFormatted]);
-        if (cell.revenue > maxRevenue) maxRevenue = cell.revenue;
+      const rev = Number(cell?.revenue || 0);
+      if (cell && rev > 0) {
+        heatmapData.push([dIdx, mIdx, rev, cell.revenueFormatted]);
+        if (rev > maxRevenue) maxRevenue = rev;
       }
     });
   });
@@ -257,7 +258,7 @@ export default function DayOfWeekSales() {
         return `<div class="font-bold">${months[val[1]]} ${daysLabels[val[0]]}요일</div><div>매출: ${val[3]}</div>`;
       }
     },
-    grid: { height: '75%', top: '5%' },
+    grid: { top: '5%', right: '5%', bottom: '15%', left: '10%' },
     xAxis: { type: 'category', data: daysLabels, splitArea: { show: true } },
     yAxis: { type: 'category', data: months, splitArea: { show: true } },
     visualMap: {
@@ -266,7 +267,7 @@ export default function DayOfWeekSales() {
       calculable: true,
       orient: 'horizontal',
       left: 'center',
-      bottom: '2%',
+      bottom: 0,
       inRange: { color: ['#f8fafc', '#00AE95'] }
     },
     series: [{
@@ -275,7 +276,7 @@ export default function DayOfWeekSales() {
       data: heatmapData,
       label: { show: false },
       emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
-      itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }
+      itemStyle: { borderColor: '#ffffff', borderWidth: 1 }
     }]
   };
 

@@ -367,11 +367,20 @@ export default function DayOfWeekSales() {
           </div>
           
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <h2 className="text-lg font-medium text-slate-700 mb-2 flex items-center gap-2">
+            <h2 className="text-lg font-medium text-slate-700 mb-4 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-rose-400 rounded-full"></span>
               월 × 요일 매트릭스 (Heatmap)
             </h2>
-            <p className="text-sm text-slate-400 mb-6 ml-3">1~12월 성수기/비성수기 요일별 패턴 농도</p>
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-rose-300"></div>
+              <p className="text-[13px] text-slate-700 font-bold mb-1 flex items-center gap-1.5">
+                <span className="text-base">💡</span> 1년 중 어느 달, 무슨 요일에 매출이 가장 많이 발생할까요?
+              </p>
+              <p className="text-[12px] text-slate-500 leading-relaxed break-keep">
+                각 셀의 <strong>매출이 높을수록 짙은 초록색</strong>으로 표시되는 매출 농도(패턴) 지도입니다.<br />
+                직관적으로 색이 짙은 구간(성수기 주말)과 옅은 구간(비수기 평일)을 파악하여 <strong>타겟 프로모션이나 경영 전략</strong>을 세우는 데 활용하세요.
+              </p>
+            </div>
             <div className="h-[400px]">
               <ReactECharts option={heatmapOptions} style={{ height: '100%', width: '100%' }} />
             </div>

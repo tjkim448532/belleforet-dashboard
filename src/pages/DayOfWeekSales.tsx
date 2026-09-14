@@ -13,21 +13,42 @@ export default function DayOfWeekSales() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error422, setError422] = useState<any>(null);
+  const [activeFilter, setActiveFilter] = useState({ type: 'ALL', value: '' });
+  const [filterOptions, setFilterOptions] = useState<{parts: string[], venues: string[]}>({ parts: [], venues: [] });
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
     setError422(null);
 
-    const queryParams = startDate === endDate || !endDate
+    let queryParams = startDate === endDate || !endDate
       ? `date=${startDate}`
       : `startDate=${startDate}&endDate=${endDate}`;
+
+    if (activeFilter.type === 'PART') {
+      queryParams += `&partName=${encodeURIComponent(activeFilter.value)}`;
+    } else if (activeFilter.type === 'VENUE') {
+      queryParams += `&venueName=${encodeURIComponent(activeFilter.value)}`;
+    }
 
     secureFetcher(`${API_BASE}/api/v6/report/day-of-week-sales?${queryParams}`)
       .then(res => {
         if (!isMounted) return;
         setData(res);
         setLoading(false);
+        
+        // 캐시용 필터 옵션 추출 (필터가 적용되지 않은 전체 조회일 때만 갱신)
+        if (!res.appliedFilters?.isFiltered && res.hierarchyDrilldown) {
+          const parts = new Set<string>();
+          const venues = new Set<string>();
+          res.hierarchyDrilldown.forEach((div: any) => {
+            div.parts?.forEach((p: any) => {
+              parts.add(p.partName);
+              p.venues?.forEach((v: any) => venues.add(v.venueName));
+            });
+          });
+          setFilterOptions({ parts: Array.from(parts), venues: Array.from(venues) });
+        }
       })
       .catch(err => {
         if (!isMounted) return;
@@ -43,7 +64,7 @@ export default function DayOfWeekSales() {
       });
 
     return () => { isMounted = false; };
-  }, [startDate, endDate]);
+  }, [startDate, endDate, activeFilter]);
 
   const hierarchyDrilldown = data?.hierarchyDrilldown || [];
 
@@ -138,55 +159,45 @@ export default function DayOfWeekSales() {
     ]
   });
 
-  const totalPieData = selectedDay !== null && dayOfWeekSummary[selectedDay]
-    ? (dayOfWeekSummary[selectedDay].deptShares || []).map((d: any) => ({
-        name: d.fullName,
-        value: d.sharePct
-      })).filter((d: any) => d.value > 0)
-    : hierarchyDrilldown.map((org: any) => ({
-        name: org.orgDivision,
-        value: org.sharePct
-      })).filter((d: any) => d.value > 0);
+  const targetHierarchy = selectedDay !== null && dayOfWeekSummary[selectedDay]
+    ? (dayOfWeekSummary[selectedDay].hierarchyDrilldown || [])
+    : hierarchyDrilldown;
+
+  const totalPieData = targetHierarchy.map((org: any) => ({
+      name: org.orgDivision,
+      value: org.sharePct
+    })).filter((d: any) => d.value > 0);
 
   const leisurePieData: any[] = [];
-  if (selectedDay === null) {
-    const leisureOrg = hierarchyDrilldown.find((org: any) => org.orgDivision.includes('레저') || org.orgDivision.includes('콘텐츠'));
-    if (leisureOrg && leisureOrg.parts) {
-      leisureOrg.parts.forEach((p: any) => {
-        p.venues?.forEach((v: any) => {
-          if (v.revenue > 0) {
-            leisurePieData.push({ name: v.venueName, value: v.revenue });
-          }
-        });
+  const leisureOrg = targetHierarchy.find((org: any) => org.orgDivision.includes('레저') || org.orgDivision.includes('콘텐츠'));
+  if (leisureOrg && leisureOrg.parts) {
+    leisureOrg.parts.forEach((p: any) => {
+      p.venues?.forEach((v: any) => {
+        if (v.revenue > 0) {
+          leisurePieData.push({ name: v.venueName, value: v.revenue });
+        }
       });
-    }
+    });
   }
 
   // 3. Day of Week Bar Chart (using totalRevenue)
   const barOptions = {
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (params: any) => {
-        const item = dayOfWeekSummary[params[0].dataIndex];
-        return `
-          <div class="font-bold mb-1 text-slate-800">${item?.dayName || ''}</div>
-          <div class="text-slate-600 mb-2">매출: <span class="font-bold">${item?.totalRevenueFormatted || ''}</span></div>
-          <div class="flex flex-wrap gap-1 w-48">
-            ${(item?.deptShares || []).map((s: any) => `<span class="text-xs bg-slate-100 px-1.5 py-0.5 rounded text-brand-mint border border-slate-200">${s.badgeText}</span>`).join('')}
-          </div>
-        `;
-      }
+      axisPointer: { type: 'shadow' }
     },
-    grid: { left: '3%', right: '4%', bottom: '5%', containLabel: true },
+    grid: { top: '10%', left: '5%', right: '5%', bottom: '15%' },
     xAxis: {
       type: 'category',
       data: dayOfWeekSummary.map((d: any) => d.dayShort),
-      axisTick: { alignWithLabel: true }
+      axisLine: { lineStyle: { color: '#cbd5e1' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#64748b', fontWeight: 'bold' }
     },
-    yAxis: { type: 'value', show: false },
+    yAxis: { show: false },
     series: [
       {
+        name: '매출',
         type: 'bar',
         barWidth: '60%',
         itemStyle: { borderRadius: [8, 8, 0, 0], color: '#00AE95' },
@@ -254,15 +265,37 @@ export default function DayOfWeekSales() {
             <h1 className="text-3xl font-medium tracking-tight">요일별·부문별 매출 분석</h1>
           </div>
           
-          <div className="flex items-center gap-4 flex-wrap">
-            {data.validationMaster?.isZeroVariance && (
-              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full font-bold text-sm border border-emerald-100">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Zero-Variance 검증 완료
-              </div>
-            )}
-            <GlobalDatePicker showPresets={true} />
-          </div>
+            <div className="flex items-center gap-4 flex-wrap">
+              {data.validationMaster?.isZeroVariance && (
+                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full font-bold text-sm border border-emerald-100">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Zero-Variance 검증 완료
+                </div>
+              )}
+              
+              <select 
+                className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint text-slate-700 min-w-[200px] shadow-sm cursor-pointer"
+                value={`${activeFilter.type}|${activeFilter.value}`}
+                onChange={(e) => {
+                  const [type, value] = e.target.value.split('|');
+                  setActiveFilter({ type, value });
+                }}
+              >
+                <option value="ALL|">🏢 전체 리조트 통합 실적</option>
+                {filterOptions.parts.length > 0 && (
+                  <optgroup label="--- 파트 (Part) ---">
+                    {filterOptions.parts.map(p => <option key={`PART|${p}`} value={`PART|${p}`}>{p}</option>)}
+                  </optgroup>
+                )}
+                {filterOptions.venues.length > 0 && (
+                  <optgroup label="--- 영업장 (Venue) ---">
+                    {filterOptions.venues.map(v => <option key={`VENUE|${v}`} value={`VENUE|${v}`}>{v}</option>)}
+                  </optgroup>
+                )}
+              </select>
+
+              <GlobalDatePicker showPresets={true} />
+            </div>
         </div>
 
         {/* 상단 메인 KPI 및 3분할 휴일 요약 패널 */}
@@ -283,25 +316,92 @@ export default function DayOfWeekSales() {
               최고 실적: {summary.peakDayName} ({summary.peakMonth}월)
             </div>
           </div>
-
-          {[
-            { title: '순수 평일 일평균', data: summary.weekday, icon: <CalendarDays className="w-5 h-5 text-indigo-500" /> },
-            { title: '순수 주말 일평균', data: summary.weekend, icon: <Activity className="w-5 h-5 text-orange-500" /> },
-            { title: '주중 공휴일 일평균', data: summary.publicHoliday, icon: <MapIcon className="w-5 h-5 text-rose-500" /> },
-          ].map((item, idx) => (
-            <div key={idx} className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 border border-slate-100">
-              <div className="flex items-center gap-2 text-slate-500 font-medium mb-4">
-                {item.icon} {item.title}
-              </div>
-              <div className="text-3xl font-black text-slate-800 tracking-tight mb-2">
-                {item.data?.dailyAvgFormatted}
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">총 {item.data?.daysCount || 0}일</span>
-                <span className="font-bold text-brand-mint bg-brand-mint/10 px-2 py-0.5 rounded-md">{item.data?.sharePctFormatted}</span>
-              </div>
+          
+          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
+              <CalendarDays className="w-5 h-5 text-indigo-500" /> 순수 평일 일평균
             </div>
-          ))}
+            <div className="text-3xl font-black text-slate-800 tracking-tight">
+              {summary.dayType3WaySummary?.weekday?.dailyAvgFormatted || '0'}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-slate-400">총 {summary.dayType3WaySummary?.weekday?.daysCount || 0}일</span>
+              <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md">
+                {((summary.dayType3WaySummary?.weekday?.dailyAvg || 0) / (summary.totalRevenue || 1) * 100).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
+              <Activity className="w-5 h-5 text-orange-500" /> 순수 주말 일평균
+            </div>
+            <div className="text-3xl font-black text-slate-800 tracking-tight">
+              {summary.dayType3WaySummary?.weekend?.dailyAvgFormatted || '0'}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-slate-400">총 {summary.dayType3WaySummary?.weekend?.daysCount || 0}일</span>
+              <span className="text-xs font-bold bg-orange-50 text-orange-600 px-2 py-1 rounded-md">
+                {((summary.dayType3WaySummary?.weekend?.dailyAvg || 0) / (summary.totalRevenue || 1) * 100).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
+              <MapIcon className="w-5 h-5 text-rose-500" /> 주중 공휴일 일평균
+            </div>
+            <div className="text-3xl font-black text-slate-800 tracking-tight">
+              {summary.dayType3WaySummary?.holiday?.dailyAvgFormatted || '0'}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-slate-400">총 {summary.dayType3WaySummary?.holiday?.daysCount || 0}일</span>
+              <span className="text-xs font-bold bg-rose-50 text-rose-600 px-2 py-1 rounded-md">
+                {((summary.dayType3WaySummary?.holiday?.dailyAvg || 0) / (summary.totalRevenue || 1) * 100).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 요일별 종합 비교 테이블 */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden mb-8 border border-slate-100">
+          <h2 className="text-lg font-medium text-slate-700 mb-6 flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-slate-800 rounded-full"></span>
+            요일별 실적 종합 비교표
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-600 border-collapse">
+              <thead className="bg-slate-50 text-slate-500 font-bold border-y border-slate-200">
+                <tr>
+                  <th className="px-4 py-4 w-24">요일</th>
+                  <th className="px-4 py-4 text-right">매출액 (Share)</th>
+                  <th className="px-4 py-4 text-right">전년 동기간 매출액</th>
+                  <th className="px-4 py-4 text-right">증감률</th>
+                  <th className="px-4 py-4 text-right bg-indigo-50/50">일평균 매출</th>
+                  <th className="px-4 py-4 text-right bg-indigo-50/50">누적 일수</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {dayOfWeekSummary.map((d: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-bold text-slate-700">{d.dayName}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-bold text-slate-800">{d.totalRevenueFormatted}</div>
+                      <div className="text-xs text-brand-mint font-medium">{d.sharePctFormatted}</div>
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-500">{d.lyRevenueFormatted}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`font-bold ${Number(d.growthRate) > 0 ? 'text-red-500' : Number(d.growthRate) < 0 ? 'text-blue-500' : 'text-slate-400'}`}>
+                        {Number(d.growthRate) > 0 ? '▲' : Number(d.growthRate) < 0 ? '▼' : '-'} {Math.abs(Number(d.growthRate))}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right bg-indigo-50/20 font-bold text-indigo-700">{d.dailyAvgRevenueFormatted}</td>
+                    <td className="px-4 py-3 text-right bg-indigo-50/20 text-slate-500">{d.daysCount}일</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -320,14 +420,7 @@ export default function DayOfWeekSales() {
               레저/콘텐츠 영업장별 비중 (3D)
             </h2>
             <div className="h-[300px]">
-              {selectedDay !== null ? (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                  <span className="text-sm font-medium mb-1">요일별 세부 영업장 데이터 미제공</span>
-                  <span className="text-xs">전체 기간 조회 시에만 노출됩니다.</span>
-                </div>
-              ) : (
-                <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
-              )}
+              <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
         </div>

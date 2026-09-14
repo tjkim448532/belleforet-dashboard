@@ -316,51 +316,24 @@ export default function DayOfWeekSales() {
               최고 실적: {summary.peakDayName} ({summary.peakMonth}월)
             </div>
           </div>
-          
-          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
-              <CalendarDays className="w-5 h-5 text-indigo-500" /> 순수 평일 일평균
+          {[
+            { title: '순수 평일 일평균', data: summary.weekday, icon: <CalendarDays className="w-5 h-5 text-indigo-500" /> },
+            { title: '순수 주말 일평균', data: summary.weekend, icon: <Activity className="w-5 h-5 text-orange-500" /> },
+            { title: '주중 공휴일 일평균', data: summary.publicHoliday, icon: <MapIcon className="w-5 h-5 text-rose-500" /> },
+          ].map((item, idx) => (
+            <div key={idx} className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 border border-slate-100">
+              <div className="flex items-center gap-2 text-slate-500 font-medium mb-4">
+                {item.icon} {item.title}
+              </div>
+              <div className="text-3xl font-black text-slate-800 tracking-tight mb-2">
+                {item.data?.dailyAvgFormatted || '0'}
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">총 {item.data?.daysCount || 0}일</span>
+                <span className="font-bold text-brand-mint bg-brand-mint/10 px-2 py-0.5 rounded-md">{item.data?.sharePctFormatted || '0.0%'}</span>
+              </div>
             </div>
-            <div className="text-3xl font-black text-slate-800 tracking-tight">
-              {summary.dayType3WaySummary?.weekday?.dailyAvgFormatted || '0'}
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm text-slate-400">총 {summary.dayType3WaySummary?.weekday?.daysCount || 0}일</span>
-              <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md">
-                {((summary.dayType3WaySummary?.weekday?.dailyAvg || 0) / (summary.totalRevenue || 1) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
-              <Activity className="w-5 h-5 text-orange-500" /> 순수 주말 일평균
-            </div>
-            <div className="text-3xl font-black text-slate-800 tracking-tight">
-              {summary.dayType3WaySummary?.weekend?.dailyAvgFormatted || '0'}
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm text-slate-400">총 {summary.dayType3WaySummary?.weekend?.daysCount || 0}일</span>
-              <span className="text-xs font-bold bg-orange-50 text-orange-600 px-2 py-1 rounded-md">
-                {((summary.dayType3WaySummary?.weekend?.dailyAvg || 0) / (summary.totalRevenue || 1) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
-              <MapIcon className="w-5 h-5 text-rose-500" /> 주중 공휴일 일평균
-            </div>
-            <div className="text-3xl font-black text-slate-800 tracking-tight">
-              {summary.dayType3WaySummary?.holiday?.dailyAvgFormatted || '0'}
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm text-slate-400">총 {summary.dayType3WaySummary?.holiday?.daysCount || 0}일</span>
-              <span className="text-xs font-bold bg-rose-50 text-rose-600 px-2 py-1 rounded-md">
-                {((summary.dayType3WaySummary?.holiday?.dailyAvg || 0) / (summary.totalRevenue || 1) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* 요일별 종합 비교 테이블 */}

@@ -231,6 +231,7 @@ export default function DayOfWeekSales() {
       left: 'center',
       bottom: 0,
       itemWidth: 15,
+      dimension: 2,
       inRange: { color: ['#f8fafc', '#00AE95'] }
     },
     series: [{

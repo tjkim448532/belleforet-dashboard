@@ -153,7 +153,7 @@ export default function DayOfWeekSales() {
   const { summary = {}, dayOfWeekSummary = [], monthDayMatrix = [] } = data;
 
   // 2. Pseudo-3D Pie Options
-  const getPieOptions = (title: string, pieData: any[]) => ({
+  const getPieOptions = (title: string, pieData: any[], formatter: string) => ({
     title: { text: title, left: 'center', textStyle: { color: '#475569', fontSize: 16 } },
     tooltip: { trigger: 'item' },
     series: [
@@ -172,7 +172,7 @@ export default function DayOfWeekSales() {
         },
         label: {
           show: true,
-          formatter: '{b}\\n{c}%',
+          formatter: formatter,
           color: '#475569',
           fontWeight: 'bold'
         },
@@ -346,7 +346,7 @@ export default function DayOfWeekSales() {
               본부별 종합 점유율 (3D)
             </h2>
             <div className="h-[300px]">
-              <ReactECharts option={getPieOptions('', totalPieData)} style={{ height: '100%', width: '100%' }} />
+              <ReactECharts option={getPieOptions('', totalPieData, '{b}\n{c}%')} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
@@ -355,7 +355,7 @@ export default function DayOfWeekSales() {
               레저/콘텐츠 영업장별 비중 (3D)
             </h2>
             <div className="h-[300px]">
-              <ReactECharts option={getPieOptions('', leisurePieData)} style={{ height: '100%', width: '100%' }} />
+              <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
         </div>

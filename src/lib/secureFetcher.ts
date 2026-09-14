@@ -55,7 +55,7 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
                 key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|occ|rooms|gross)/i) ||
                 key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
                 key.match(/^ly([A-Z_]|$)/i)
-            ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code');
+            ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code') && !key.toLowerCase().includes('formatted');
 
             if (isMetricKey) {
                 if (typeof value !== 'number') {
@@ -106,7 +106,7 @@ const sanitizePayloadNumbers = (node: any) => {
             key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|occ|rooms|gross)/i) ||
             key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
             key.match(/^ly([A-Z_]|$)/i)
-        ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code');
+        ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code') && !key.toLowerCase().includes('formatted');
 
         if (typeof value === 'string' && isMetricKey) {
             const parsed = Number(value);

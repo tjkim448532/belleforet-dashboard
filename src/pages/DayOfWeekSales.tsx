@@ -47,6 +47,7 @@ export default function DayOfWeekSales() {
 
   const hierarchyDrilldown = data?.hierarchyDrilldown || [];
 
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
   const [expandedParts, setExpandedParts] = useState<Set<string>>(new Set());
 
@@ -137,21 +138,28 @@ export default function DayOfWeekSales() {
     ]
   });
 
-  const totalPieData = hierarchyDrilldown.map((org: any) => ({
-    name: org.orgDivision,
-    value: org.sharePct
-  })).filter((d: any) => d.value > 0);
+  const totalPieData = selectedDay !== null && dayOfWeekSummary[selectedDay]
+    ? (dayOfWeekSummary[selectedDay].deptShares || []).map((d: any) => ({
+        name: d.fullName,
+        value: d.sharePct
+      })).filter((d: any) => d.value > 0)
+    : hierarchyDrilldown.map((org: any) => ({
+        name: org.orgDivision,
+        value: org.sharePct
+      })).filter((d: any) => d.value > 0);
 
-  const leisureOrg = hierarchyDrilldown.find((org: any) => org.orgDivision.includes('레저') || org.orgDivision.includes('콘텐츠'));
   const leisurePieData: any[] = [];
-  if (leisureOrg && leisureOrg.parts) {
-    leisureOrg.parts.forEach((p: any) => {
-      p.venues?.forEach((v: any) => {
-        if (v.revenue > 0) {
-          leisurePieData.push({ name: v.venueName, value: v.revenue });
-        }
+  if (selectedDay === null) {
+    const leisureOrg = hierarchyDrilldown.find((org: any) => org.orgDivision.includes('레저') || org.orgDivision.includes('콘텐츠'));
+    if (leisureOrg && leisureOrg.parts) {
+      leisureOrg.parts.forEach((p: any) => {
+        p.venues?.forEach((v: any) => {
+          if (v.revenue > 0) {
+            leisurePieData.push({ name: v.venueName, value: v.revenue });
+          }
+        });
       });
-    });
+    }
   }
 
   // 3. Day of Week Bar Chart (using totalRevenue)
@@ -306,13 +314,20 @@ export default function DayOfWeekSales() {
               <ReactECharts option={getPieOptions('', totalPieData, '{b}\n{c}%')} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative">
             <h2 className="text-lg font-medium text-slate-700 mb-6 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-orange-400 rounded-full"></span>
               레저/콘텐츠 영업장별 비중 (3D)
             </h2>
             <div className="h-[300px]">
-              <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
+              {selectedDay !== null ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <span className="text-sm font-medium mb-1">요일별 세부 영업장 데이터 미제공</span>
+                  <span className="text-xs">전체 기간 조회 시에만 노출됩니다.</span>
+                </div>
+              ) : (
+                <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
+              )}
             </div>
           </div>
         </div>
@@ -329,18 +344,25 @@ export default function DayOfWeekSales() {
             </div>
             {/* 요일별 칩 범례 (Chips) */}
             <div className="mt-auto pt-4 flex flex-wrap gap-2 justify-center border-t border-slate-50">
-              {dayOfWeekSummary.map((d: any, idx: number) => (
-                <div key={idx} className="flex flex-col items-center bg-slate-50 px-3 py-2 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer group relative">
-                  <span className="text-xs font-bold text-slate-700 mb-1">{d.dayShort} ({d.daysCount}일)</span>
-                  <div className="flex gap-1 flex-wrap justify-center w-32">
-                    {(d.deptShares || []).slice(0,3).map((s: any, sIdx: number) => (
-                      <span key={sIdx} className="text-[10px] text-brand-mint font-medium bg-white px-1 border border-slate-200 rounded">
-                        {s.badgeText}
-                      </span>
-                    ))}
+              {dayOfWeekSummary.map((d: any, idx: number) => {
+                const isSelected = selectedDay === idx;
+                return (
+                  <div 
+                    key={idx} 
+                    onClick={() => setSelectedDay(isSelected ? null : idx)}
+                    className={`flex flex-col items-center px-3 py-2 rounded-2xl border transition-colors cursor-pointer group relative ${isSelected ? 'bg-brand-mint/10 border-brand-mint/30' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
+                  >
+                    <span className={`text-xs font-bold mb-1 ${isSelected ? 'text-brand-mint' : 'text-slate-700'}`}>{d.dayShort} ({d.daysCount}일)</span>
+                    <div className="flex gap-1 flex-wrap justify-center w-32">
+                      {(d.deptShares || []).slice(0,3).map((s: any, sIdx: number) => (
+                        <span key={sIdx} className={`text-[10px] font-medium px-1 border rounded ${isSelected ? 'text-brand-mint bg-white border-brand-mint/20' : 'text-brand-mint bg-white border-slate-200'}`}>
+                          {s.badgeText}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           

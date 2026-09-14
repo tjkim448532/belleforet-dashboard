@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
-import { AlertCircle, BarChart2, Activity, Map as MapIcon, CalendarDays, TrendingUp } from 'lucide-react';
+import { AlertCircle, BarChart2, Activity, Map as MapIcon, CalendarDays, TrendingUp, ChevronDown, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
@@ -47,71 +47,27 @@ export default function DayOfWeekSales() {
 
   const hierarchyDrilldown = data?.hierarchyDrilldown || [];
 
-  // 1. Flatten hierarchyDrilldown & calculate rowSpans
-  const flattenedTable = useMemo(() => {
-    const rows: any[] = [];
-    hierarchyDrilldown.forEach((org: any) => {
-      let orgRowSpan = 0;
-      org.parts?.forEach((part: any) => {
-        part.venues?.forEach((venue: any) => {
-          orgRowSpan += Math.max(1, venue.ticketGroups?.length || 1);
-        });
-      });
-      orgRowSpan = Math.max(1, orgRowSpan);
+  const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
+  const [expandedParts, setExpandedParts] = useState<Set<string>>(new Set());
 
-      if (!org.parts || org.parts.length === 0) {
-        rows.push({
-          orgName: org.orgDivision, orgSpan: orgRowSpan,
-          partName: '-', partSpan: 1,
-          venueName: '-', venueSpan: 1,
-          groupName: '-', revenueFormatted: org.revenueFormatted, sharePctFormatted: org.sharePctFormatted
-        });
-        return;
-      }
-
-      org.parts.forEach((part: any, pIdx: number) => {
-        let partRowSpan = 0;
-        part.venues?.forEach((venue: any) => {
-          partRowSpan += Math.max(1, venue.ticketGroups?.length || 1);
-        });
-        partRowSpan = Math.max(1, partRowSpan);
-
-        if (!part.venues || part.venues.length === 0) {
-          rows.push({
-            orgName: org.orgDivision, orgSpan: pIdx === 0 ? orgRowSpan : 0,
-            partName: part.partName, partSpan: partRowSpan,
-            venueName: '-', venueSpan: 1,
-            groupName: '-', revenueFormatted: part.revenueFormatted, sharePctFormatted: '-'
-          });
-          return;
-        }
-
-        part.venues.forEach((venue: any, vIdx: number) => {
-          const venueRowSpan = Math.max(1, venue.ticketGroups?.length || 1);
-
-          if (!venue.ticketGroups || venue.ticketGroups.length === 0) {
-            rows.push({
-              orgName: org.orgDivision, orgSpan: (pIdx === 0 && vIdx === 0) ? orgRowSpan : 0,
-              partName: part.partName, partSpan: vIdx === 0 ? partRowSpan : 0,
-              venueName: venue.venueName, venueSpan: venueRowSpan,
-              groupName: '-', revenueFormatted: venue.revenueFormatted, sharePctFormatted: '-'
-            });
-            return;
-          }
-
-          venue.ticketGroups.forEach((group: any, gIdx: number) => {
-            rows.push({
-              orgName: org.orgDivision, orgSpan: (pIdx === 0 && vIdx === 0 && gIdx === 0) ? orgRowSpan : 0,
-              partName: part.partName, partSpan: (vIdx === 0 && gIdx === 0) ? partRowSpan : 0,
-              venueName: venue.venueName, venueSpan: (gIdx === 0) ? venueRowSpan : 0,
-              groupName: group.groupName, revenueFormatted: group.revenueFormatted, sharePctFormatted: (gIdx === 0 && vIdx === 0 && pIdx === 0) ? org.sharePctFormatted : '-'
-            });
-          });
-        });
-      });
+  const toggleOrg = (orgName: string) => {
+    setExpandedOrgs(prev => {
+      const next = new Set(prev);
+      if (next.has(orgName)) next.delete(orgName);
+      else next.add(orgName);
+      return next;
     });
-    return rows;
-  }, [hierarchyDrilldown]);
+  };
+
+  const togglePart = (orgName: string, partName: string) => {
+    const key = `${orgName}|${partName}`;
+    setExpandedParts(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   if (error422) {
     return (
@@ -411,55 +367,90 @@ export default function DayOfWeekSales() {
               Zero-Computation Table
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 border-collapse">
-              <thead className="bg-slate-50 text-slate-500 font-bold border-y border-slate-200">
-                <tr>
-                  <th className="px-4 py-4">대분류 (본부)</th>
-                  <th className="px-4 py-4">파트 (팀)</th>
-                  <th className="px-4 py-4">영업장</th>
-                  <th className="px-4 py-4">상세 분류 (티켓그룹)</th>
-                  <th className="px-4 py-4 text-right">매출액</th>
-                  <th className="px-4 py-4 text-right">대분류 내 비중</th>
-                </tr>
-              </thead>
-              <tbody>
-                {flattenedTable.map((row: any, i: number) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                    {row.orgSpan > 0 && (
-                      <td className="px-4 py-4 font-black text-slate-800 align-top border-r border-slate-100 bg-white" rowSpan={row.orgSpan}>
-                        {row.orgName}
-                      </td>
-                    )}
-                    {row.partSpan > 0 && (
-                      <td className="px-4 py-4 font-bold text-slate-700 align-top border-r border-slate-100 bg-slate-50/30" rowSpan={row.partSpan}>
-                        {row.partName}
-                      </td>
-                    )}
-                    {row.venueSpan > 0 && (
-                      <td className="px-4 py-4 font-medium text-slate-600 align-top border-r border-slate-100" rowSpan={row.venueSpan}>
-                        {row.venueName}
-                      </td>
-                    )}
-                    <td className="px-4 py-3 text-slate-500">
-                      {row.groupName}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-800">
-                      {row.revenueFormatted}
-                    </td>
-                    {row.orgSpan > 0 && (
-                      <td className="px-4 py-3 text-right text-brand-mint font-black align-top" rowSpan={row.orgSpan}>
-                        {row.sharePctFormatted}
-                      </td>
-                    )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600 border-collapse">
+                <thead className="bg-slate-50 text-slate-500 font-bold border-y border-slate-200">
+                  <tr>
+                    <th className="px-4 py-4 w-1/3">부서 / 영업장</th>
+                    <th className="px-4 py-4">상세 분류 (티켓그룹)</th>
+                    <th className="px-4 py-4 text-right">매출액</th>
+                    <th className="px-4 py-4 text-right">대분류 내 비중</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {hierarchyDrilldown.map((org: any) => {
+                    const isOrgExpanded = expandedOrgs.has(org.orgDivision);
+                    return (
+                      <React.Fragment key={org.orgDivision}>
+                        <tr 
+                          className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer select-none"
+                          onClick={() => toggleOrg(org.orgDivision)}
+                        >
+                          <td className="px-4 py-4 font-black text-slate-800 flex items-center gap-2">
+                            {isOrgExpanded ? <ChevronDown size={18} className="text-brand-mint" /> : <ChevronRight size={18} className="text-slate-400" />}
+                            {org.orgDivision}
+                          </td>
+                          <td className="px-4 py-4 text-slate-400">-</td>
+                          <td className="px-4 py-4 text-right font-black text-brand-mint text-base">{org.revenueFormatted}</td>
+                          <td className="px-4 py-4 text-right font-black text-slate-800">{org.sharePctFormatted}</td>
+                        </tr>
 
+                        {isOrgExpanded && (org.parts || []).map((part: any) => {
+                          const partKey = `${org.orgDivision}|${part.partName}`;
+                          const isPartExpanded = expandedParts.has(partKey);
+                          return (
+                            <React.Fragment key={partKey}>
+                              <tr 
+                                className="border-b border-slate-100 bg-slate-50/50 hover:bg-slate-100 cursor-pointer select-none"
+                                onClick={() => togglePart(org.orgDivision, part.partName)}
+                              >
+                                <td className="px-4 py-3 font-bold text-slate-700 pl-10 flex items-center gap-2">
+                                  {isPartExpanded ? <ChevronDown size={16} className="text-brand-mint" /> : <ChevronRight size={16} className="text-slate-400" />}
+                                  {part.partName}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400">-</td>
+                                <td className="px-4 py-3 text-right font-bold text-slate-700">{part.revenueFormatted}</td>
+                                <td className="px-4 py-3 text-right text-slate-400">-</td>
+                              </tr>
+
+                              {isPartExpanded && (part.venues || []).map((venue: any) => {
+                                if (!venue.ticketGroups || venue.ticketGroups.length === 0) {
+                                  return (
+                                    <tr key={`${partKey}|${venue.venueName}`} className="border-b border-slate-50 bg-white hover:bg-slate-50/30 transition-colors">
+                                      <td className="px-4 py-2.5 text-slate-600 pl-16 font-medium">{venue.venueName}</td>
+                                      <td className="px-4 py-2.5 text-slate-400">-</td>
+                                      <td className="px-4 py-2.5 text-right font-medium text-slate-600">{venue.revenueFormatted}</td>
+                                      <td className="px-4 py-2.5"></td>
+                                    </tr>
+                                  );
+                                }
+                                return venue.ticketGroups.map((group: any, gIdx: number) => (
+                                  <tr key={`${partKey}|${venue.venueName}|${group.groupName}`} className="border-b border-slate-50 bg-white hover:bg-slate-50/30 transition-colors">
+                                    {gIdx === 0 ? (
+                                      <td className="px-4 py-2.5 text-slate-600 pl-16 font-medium align-top" rowSpan={venue.ticketGroups.length}>
+                                        <div className="pt-0.5">{venue.venueName}</div>
+                                      </td>
+                                    ) : null}
+                                    <td className="px-4 py-2.5 text-slate-500 text-xs align-middle">
+                                      <span className="bg-slate-100 px-2 py-1 rounded">{group.groupName}</span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right font-medium text-slate-600">{group.revenueFormatted}</td>
+                                    <td className="px-4 py-2.5"></td>
+                                  </tr>
+                                ));
+                              })}
+                            </React.Fragment>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
       </div>
-    </div>
-  );
+    );
 }

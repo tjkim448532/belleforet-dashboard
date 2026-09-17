@@ -443,7 +443,17 @@ export default function ResortBusiness() {
               <div className="text-3xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
                 {formatCurrency(lodgingStats.revenue)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2 break-keep">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
+              {lodgingStats.lyRevenue !== undefined && lodgingStats.lyRevenue > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                    (lodgingStats.revenueGrowth || 0) > 0 ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                    {(lodgingStats.revenueGrowth || 0) > 0 ? '▲' : '▼'} {Math.abs(lodgingStats.revenueGrowth || 0).toFixed(1)}%
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">전년 {formatCurrency(lodgingStats.lyRevenue)}원</span>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-400 mt-2 break-keep">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
             </div>
 
             {/* 판매 건수 (계약) */}
@@ -452,9 +462,19 @@ export default function ResortBusiness() {
                 <CalendarDays className="w-5 h-5 text-emerald-500" /> 판매 건수 (계약)
               </h2>
               <div className="text-3xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
-                {lodgingStats.roomsSold}건
+                {formatCurrency(lodgingStats.roomsSold)}건
               </div>
-              <p className="text-[11px] text-slate-400 mt-2 break-keep">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
+              {lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                    lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                    {lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? '▲' : '▼'} {Math.abs(((lodgingStats.roomsSold - lodgingStats.lyRoomsSold) / lodgingStats.lyRoomsSold) * 100).toFixed(1)}%
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">전년 {formatCurrency(lodgingStats.lyRoomsSold)}건</span>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-400 mt-2 break-keep">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
             </div>
 
             {/* 실운영 점유실 (물리) */}

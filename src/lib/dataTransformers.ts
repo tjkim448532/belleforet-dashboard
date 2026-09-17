@@ -251,7 +251,10 @@ export interface TransformedResortData {
   summary?: any;
   lodgingStats: {
     revenue: number;
+    lyRevenue?: number;
+    revenueGrowth?: number;
     roomsSold: number;
+    lyRoomsSold?: number;
     totalCapacity: number;
     totalRoomInventory?: number;
     totalGuestCapacity?: number;
@@ -366,13 +369,29 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   // 투숙객 인원 모수 (Guests / Pax)
   const guestCap = parseNum(payload.summary?.totalRoomCap || (summaryRoomsSold * 4));
 
+  let lyRevenue = 0;
+  let lyRoomsSold = 0;
+  let revenueGrowth = 0;
+
+  if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
+    const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
+    if (roomCat) {
+      lyRevenue = parseNum(roomCat.todayLy || roomCat.ly_actual || 0);
+      lyRoomsSold = parseNum(roomCat.todayLyVisitors || roomCat.lyVisitors || 0);
+      revenueGrowth = parseNum(roomCat.todayGrowth || roomCat.growthRate || 0);
+    }
+  }
+
   const lodgingStats = {
     revenue: summaryRevenue || parseNum(payload.summary?.totalRoomRev || 0),
+    lyRevenue,
+    revenueGrowth,
     roomsSold: summaryRoomsSold,
-    // [완전 분리] 객실 수 모수
+    lyRoomsSold,
+    // [안전 분리] 객실 동 모수
     totalRoomInventory: physicalRoomCap,
     totalCapacity: physicalRoomCap,
-    // [완전 분리] 투숙객 인원 모수 (Pax) - 기존 컴포넌트 하위 호환성 100% 보장
+    // [안전 분리] 투숙객 인원 모수 (Pax) - 기존 컴포넌트 하위 호환성 100% 보장
     totalGuestCapacity: guestCap,
     guestCapacity: guestCap,
     adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0)

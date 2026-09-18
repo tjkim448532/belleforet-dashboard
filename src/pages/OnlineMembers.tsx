@@ -83,17 +83,26 @@ export default function OnlineMembers() {
         name: '고객 충성도 퍼널',
         type: 'funnel',
         left: '10%',
-        width: '80%',
+        width: '60%',
         maxSize: '100%',
         sort: 'descending',
         gap: 2,
         label: {
           show: true,
-          position: 'inside',
-          formatter: '{b} ({c}명)',
-          fontSize: 12,
-          color: '#fff',
-          fontWeight: 'bold'
+          position: 'right',
+          formatter: '{b}\n{c}명',
+          fontSize: 13,
+          color: '#334155',
+          fontWeight: 'bold',
+          lineHeight: 18
+        },
+        labelLine: {
+          length: 20,
+          lineStyle: {
+            width: 1,
+            type: 'solid',
+            color: '#94a3b8'
+          }
         },
         itemStyle: {
           borderColor: '#fff',

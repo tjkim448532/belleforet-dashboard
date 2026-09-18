@@ -28,6 +28,7 @@ import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import DayOfWeekSales from './pages/DayOfWeekSales';
 import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
+import OnlineMembers from './pages/OnlineMembers';
 import GroupSales from './pages/GroupSales';
 import TargetSimulator from './pages/TargetSimulator';
 import StrategicSimulator from './pages/StrategicSimulator';
@@ -86,6 +87,7 @@ export function App() {
                     <Route path="synergy" element={<Synergy />} />
                     <Route path="synergy/correlation" element={<SynergyCorrelation />} />
                     <Route path="synergy-correlation" element={<SynergyCorrelation />} />
+                    <Route path="online-members" element={<OnlineMembers />} />
                   </Route>
 
                   <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

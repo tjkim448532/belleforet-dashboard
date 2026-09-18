@@ -398,6 +398,10 @@ export default function OnlineMembers() {
                   총 {formatCurrency(summary.totalTransactions || 0)}건의 결제·예약 중 중복을 제거한 순수 {formatCurrency(summary.totalActiveMembers || 0)}명 분석
                   <span className="ml-1 text-slate-400 font-medium">(기준일: {endDate || '오늘'})</span>
                 </p>
+                <p className="text-[11px] text-slate-400/70 mt-1.5 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-slate-500"></span>
+                  기준일자 안내: 우측 상단 달력에서 설정한 종료일({endDate || '오늘'}) 시점까지 누적된 전체 실적 및 회원 스냅샷입니다.
+                </p>
               </div>
             </div>
 

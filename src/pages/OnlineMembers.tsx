@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import { Users, TrendingUp, UserPlus, RefreshCw, Activity, CalendarDays, PieChart } from 'lucide-react';
+import { Users, TrendingUp, UserPlus, RefreshCw, Activity, CalendarDays, PieChart, TableProperties, BarChart3 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -17,6 +17,7 @@ export default function OnlineMembers() {
   const { startDate, endDate } = useDate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [monthlyViewMode, setMonthlyViewMode] = useState<'table' | 'chart'>('table');
 
   const fetchOnlineMembers = async () => {
     setLoading(true);
@@ -172,71 +173,116 @@ export default function OnlineMembers() {
         </div>
       ) : (
         <>
-          {/* Summary Cards */}
+                    {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
+            {/* Card 1: Total Active Members */}
+            <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all flex flex-col justify-between relative overflow-hidden min-h-[168px]">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <Users size={64} />
               </div>
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3">
-                <Activity size={18} className="text-indigo-500" /> 총 활성 회원 수 (누적)
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                  <Activity size={16} className="text-indigo-500 shrink-0" /> 총 활성 회원 수 (누적)
+                </span>
+                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100 whitespace-nowrap">
+                  전체 누적
+                </span>
               </div>
-              <div className="text-3xl font-extrabold text-slate-800">
-                {formatCurrency(summary.totalActiveMembers)}<span className="text-lg font-bold text-slate-500 ml-1">명</span>
+              <div className="text-3xl font-extrabold text-slate-900 my-1 whitespace-nowrap flex items-baseline">
+                {formatCurrency(summary.totalActiveMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-3 leading-relaxed border-t border-slate-100 pt-3 font-medium">
-                휴대폰 번호 기준 중복 제거된 고유 활동(가입/예약) 고객 수
-              </p>
+              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium truncate">
+                휴대폰 번호 기준 중복 제거된 고유 회원
+              </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
+            {/* Card 2: Period Joined Members */}
+            <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all flex flex-col justify-between relative overflow-hidden min-h-[168px]">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <CalendarDays size={64} />
               </div>
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3">
-                <UserPlus size={18} className="text-emerald-500" /> 기간 내 신규 가입
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                  <UserPlus size={16} className="text-emerald-500 shrink-0" /> 기간 내 신규 가입
+                </span>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">
+                  선택 기간
+                </span>
               </div>
-              <div className="flex items-end gap-3">
-                <div className="text-3xl font-extrabold text-slate-800">
-                  {formatCurrency(summary.periodJoinedMembers)}<span className="text-lg font-bold text-slate-500 ml-1">명</span>
+              <div className="text-3xl font-extrabold text-slate-900 my-1 whitespace-nowrap flex items-baseline gap-2">
+                <div>
+                  {formatCurrency(summary.periodJoinedMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
                 </div>
-                <div className="text-sm font-semibold text-emerald-600 mb-1">
-                  (오늘 {formatCurrency(summary.todayJoinedMembers)}명)
-                </div>
+                {summary.todayJoinedMembers !== undefined && Number(summary.todayJoinedMembers) > 0 && (
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/60">
+                    오늘 +{formatCurrency(summary.todayJoinedMembers)}명
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
+                <span>조회 기간 내 신규 유입 회원 수</span>
+                {summary.todayJoinedMembers !== undefined && (
+                  <span className="text-emerald-600 font-semibold">당일 {formatCurrency(summary.todayJoinedMembers)}명</span>
+                )}
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
+            {/* Card 3: Prior Year Comparison */}
+            <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all flex flex-col justify-between relative overflow-hidden min-h-[168px]">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <TrendingUp size={64} />
               </div>
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3">
-                <TrendingUp size={18} className="text-amber-500" /> 전년 동기 가입자
-              </div>
-              <div className="flex items-end gap-3">
-                <div className="text-3xl font-extrabold text-slate-800">
-                  {formatCurrency(summary.lyPeriodJoinedMembers)}<span className="text-lg font-bold text-slate-500 ml-1">명</span>
-                </div>
-                {summary.lyPeriodJoinedMembers > 0 && summary.periodJoinedMembers !== undefined && (
-                  <div className={`text-sm font-semibold mb-1 ${summary.periodJoinedMembers > summary.lyPeriodJoinedMembers ? 'text-rose-500' : 'text-blue-500'}`}>
-                    {summary.periodJoinedMembers > summary.lyPeriodJoinedMembers ? '▲' : '▼'} {Math.abs(Math.round(((summary.periodJoinedMembers - summary.lyPeriodJoinedMembers) / summary.lyPeriodJoinedMembers) * 100))}%
-                  </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                  <TrendingUp size={16} className="text-amber-500 shrink-0" /> 전년 동기 가입자
+                </span>
+                {summary.lyPeriodJoinedMembers > 0 && summary.periodJoinedMembers !== undefined ? (
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
+                    summary.periodJoinedMembers >= summary.lyPeriodJoinedMembers 
+                      ? 'text-rose-700 bg-rose-50 border-rose-100' 
+                      : 'text-blue-700 bg-blue-50 border-blue-100'
+                  }`}>
+                    {summary.periodJoinedMembers >= summary.lyPeriodJoinedMembers ? '▲' : '▼'} {Math.abs(Math.round(((summary.periodJoinedMembers - summary.lyPeriodJoinedMembers) / summary.lyPeriodJoinedMembers) * 100))}%
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200/60 whitespace-nowrap">
+                    전년비 비교
+                  </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-3 leading-relaxed border-t border-slate-100 pt-3 font-medium">
-                통합 데이터 수집 시점(25년 12월 16일) 이전은 0명으로 표기
-              </p>
+              <div className="text-3xl font-extrabold text-slate-900 my-1 whitespace-nowrap flex items-baseline">
+                {formatCurrency(summary.lyPeriodJoinedMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium truncate">
+                전년 동기간 신규 유입 대비 성장 추이
+              </div>
             </div>
             
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
+            {/* Card 4: Channel Influx Breakdown */}
+            <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all flex flex-col justify-between relative overflow-hidden min-h-[168px]">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <PieChart size={64} />
               </div>
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3">
-                <Users size={18} className="text-cyan-500" /> 객실가입자 (기간내)
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                  <PieChart size={16} className="text-cyan-500 shrink-0" /> 부문별 신규 가입
+                </span>
+                <span className="text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-100 whitespace-nowrap">
+                  채널 현황
+                </span>
               </div>
-              <div className="text-3xl font-extrabold text-slate-800">
-                {formatCurrency(summary.periodRoomJoined)}<span className="text-lg font-bold text-slate-500 ml-1">명</span>
+              <div className="text-3xl font-extrabold text-slate-900 my-1 whitespace-nowrap flex items-baseline gap-2">
+                <div>
+                  {formatCurrency(summary.periodRoomJoined)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
+                </div>
+                <span className="text-xs font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-100/60">
+                  객실
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
+                <span>티켓 <strong className="text-slate-700">{formatCurrency(summary.periodTicketJoined || 0)}명</strong></span>
+                <span className="text-slate-300">·</span>
+                <span>골프 <strong className="text-slate-700">{formatCurrency(summary.periodGolfJoined || 0)}명</strong></span>
               </div>
             </div>
           </div>
@@ -265,60 +311,276 @@ export default function OnlineMembers() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Bar Chart (Monthly) */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <CalendarDays size={18} className="text-slate-500" />
-                월별 가입자 연간 비교
-              </h3>
-              <div className="h-[300px]">
-                <ReactECharts option={barOptions} style={{ height: '100%', width: '100%' }} />
+                    {/* Monthly Comparison Table & Chart Section */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <CalendarDays size={20} className="text-brand-mint" />
+                  월별 온라인 가입자 실적 및 전년 동기 비교 (1월 ~ 12월)
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  당해 연도와 전년 동월의 신규 가입자 수 및 전년비 증감률을 한눈에 비교 분석합니다.
+                </p>
+              </div>
+
+              {/* View Mode Toggle: Table vs Chart */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setMonthlyViewMode('table')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    monthlyViewMode === 'table'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <TableProperties size={14} />
+                  비교 표 (테이블)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyViewMode('chart')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    monthlyViewMode === 'chart'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <BarChart3 size={14} />
+                  막대 그래프
+                </button>
               </div>
             </div>
 
-            {/* Recent Members Table */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col">
-              <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2 shrink-0">
-                <Users size={18} className="text-slate-500" />
-                최근 가입/활동 회원 목록
-              </h3>
-              <div className="overflow-x-auto flex-1">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 rounded-l-lg">고객명</th>
-                      <th className="px-4 py-3">연락처</th>
-                      <th className="px-4 py-3">채널</th>
-                      <th className="px-4 py-3 rounded-r-lg">최초 활동일</th>
+            {monthlyViewMode === 'table' ? (
+              /* Executive Monthly Comparison Matrix Table */
+              <div className="overflow-x-auto">
+                <table className="w-full text-center text-sm border-collapse min-w-[900px]">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-xs">
+                      <th className="px-4 py-3 text-left sticky left-0 bg-slate-50 z-10 w-36">구분 (연도)</th>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <th key={i} className="px-2 py-3 font-extrabold text-slate-700">
+                          {i + 1}월
+                        </th>
+                      ))}
+                      <th className="px-4 py-3 bg-emerald-50/80 text-emerald-900 font-black sticky right-0 z-10 w-28">
+                        누적 합계 (YTD)
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {recentMembers.slice(0, 7).map((m: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3 font-semibold text-slate-800">{m.custName}</td>
-                        <td className="px-4 py-3 text-slate-500 font-mono text-xs">{m.phone}</td>
-                        <td className="px-4 py-3">
-                          <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold">
-                            {m.firstChannel}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-500">{m.firstActivityDate}</td>
-                      </tr>
-                    ))}
-                    {recentMembers.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
-                          조회된 회원 내역이 없습니다.
-                        </td>
-                      </tr>
-                    )}
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {/* Row 1: Current Year (2026) */}
+                    <tr className="hover:bg-slate-50/70 font-semibold transition-colors">
+                      <td className="px-4 py-3.5 text-left sticky left-0 bg-white font-bold text-slate-800 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span>당해 가입자</span>
+                      </td>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
+                        const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
+                        const val = item?.joined ?? 0;
+                        const isPastOrCurrent = (i + 1) <= 9; // up to current month (Sep)
+                        return (
+                          <td key={i} className="px-2 py-3.5 font-bold text-slate-800 font-mono">
+                            {isPastOrCurrent ? (
+                              <span className="text-slate-900">{formatCurrency(val)}<span className="text-[10px] text-slate-400 ml-0.5">명</span></span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      {/* YTD Total */}
+                      <td className="px-4 py-3.5 bg-emerald-50/50 font-black text-emerald-700 sticky right-0 font-mono text-sm">
+                        {formatCurrency(
+                          trends.monthly
+                            .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                            .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0)
+                        )}
+                        <span className="text-[11px] text-emerald-600/70 ml-0.5 font-sans font-medium">명</span>
+                      </td>
+                    </tr>
+
+                    {/* Row 2: Prior Year (2025) */}
+                    <tr className="hover:bg-slate-50/70 text-slate-600 transition-colors">
+                      <td className="px-4 py-3.5 text-left sticky left-0 bg-white font-bold text-slate-600 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
+                        <span>전년 동월</span>
+                      </td>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
+                        const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
+                        const val = item?.lyJoined ?? 0;
+                        return (
+                          <td key={i} className="px-2 py-3.5 text-slate-500 font-mono">
+                            {val > 0 ? (
+                              <span>{formatCurrency(val)}<span className="text-[10px] text-slate-400 ml-0.5">명</span></span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      {/* Ly YTD Total */}
+                      <td className="px-4 py-3.5 bg-slate-50/80 font-bold text-slate-600 sticky right-0 font-mono text-sm">
+                        {formatCurrency(
+                          trends.monthly
+                            .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                            .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0)
+                        )}
+                        <span className="text-[11px] text-slate-400 ml-0.5 font-sans font-medium">명</span>
+                      </td>
+                    </tr>
+
+                    {/* Row 3: Difference (Δ) */}
+                    <tr className="hover:bg-slate-50/70 text-slate-600 transition-colors">
+                      <td className="px-4 py-3 text-left sticky left-0 bg-white font-bold text-slate-700">
+                        전년비 증감 (Δ)
+                      </td>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
+                        const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
+                        const isPastOrCurrent = (i + 1) <= 9;
+                        if (!isPastOrCurrent) {
+                          return <td key={i} className="px-2 py-3 text-slate-300 font-mono">-</td>;
+                        }
+                        const curVal = item?.joined ?? 0;
+                        const lyVal = item?.lyJoined ?? 0;
+                        const diff = curVal - lyVal;
+                        return (
+                          <td key={i} className={`px-2 py-3 font-semibold font-mono ${
+                            diff > 0 ? 'text-rose-600' : diff < 0 ? 'text-blue-600' : 'text-slate-500'
+                          }`}>
+                            {diff > 0 ? `+${formatCurrency(diff)}` : formatCurrency(diff)}명
+                          </td>
+                        );
+                      })}
+                      {/* YTD Total Diff */}
+                      {(() => {
+                        const curTotal = trends.monthly
+                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0);
+                        const lyTotal = trends.monthly
+                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0);
+                        const diffTotal = curTotal - lyTotal;
+                        return (
+                          <td className={`px-4 py-3 font-black sticky right-0 font-mono text-xs ${
+                            diffTotal >= 0 ? 'text-rose-600 bg-rose-50/40' : 'text-blue-600 bg-blue-50/40'
+                          }`}>
+                            {diffTotal > 0 ? `+${formatCurrency(diffTotal)}` : formatCurrency(diffTotal)}명
+                          </td>
+                        );
+                      })()}
+                    </tr>
+
+                    {/* Row 4: Growth Rate (%) */}
+                    <tr className="hover:bg-slate-50/70 border-t border-slate-200/80 bg-slate-50/30 transition-colors">
+                      <td className="px-4 py-3 text-left sticky left-0 bg-slate-50 font-bold text-slate-800">
+                        전년비 증감률
+                      </td>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
+                        const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
+                        const isPastOrCurrent = (i + 1) <= 9;
+                        if (!isPastOrCurrent) {
+                          return <td key={i} className="px-2 py-3 text-slate-300 font-mono">-</td>;
+                        }
+                        const curVal = item?.joined ?? 0;
+                        const lyVal = item?.lyJoined ?? 0;
+                        const diff = curVal - lyVal;
+                        const rate = lyVal > 0 ? Number(((diff / lyVal) * 100).toFixed(1)) : (curVal > 0 ? 100 : 0);
+                        return (
+                          <td key={i} className="px-2 py-3">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold font-mono ${
+                              rate > 0 
+                                ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                                : rate < 0 
+                                ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                                : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {rate > 0 ? `▲ ${rate}%` : rate < 0 ? `▼ ${Math.abs(rate)}%` : '0.0%'}
+                            </span>
+                          </td>
+                        );
+                      })}
+                      {/* YTD Total Growth Rate */}
+                      {(() => {
+                        const curTotal = trends.monthly
+                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0);
+                        const lyTotal = trends.monthly
+                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0);
+                        const rateTotal = lyTotal > 0 ? Number((((curTotal - lyTotal) / lyTotal) * 100).toFixed(1)) : 0;
+                        return (
+                          <td className="px-4 py-3 sticky right-0 bg-slate-50">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-black font-mono ${
+                              rateTotal >= 0 
+                                ? 'bg-rose-100 text-rose-700 border border-rose-200' 
+                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                              {rateTotal >= 0 ? `▲ ${rateTotal}%` : `▼ ${Math.abs(rateTotal)}%`}
+                            </span>
+                          </td>
+                        );
+                      })()}
+                    </tr>
                   </tbody>
                 </table>
               </div>
-            </div>
+            ) : (
+              /* Full-Width Enhanced Bar Chart */
+              <div className="h-[340px] pt-2">
+                <ReactECharts option={barOptions} style={{ height: '100%', width: '100%' }} />
+              </div>
+            )}
           </div>
 
+          {/* Recent Members Table Section */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden mb-8">
+            <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <Users size={18} className="text-slate-500" />
+              최근 가입/활동 회원 목록
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 rounded-l-lg">고객명</th>
+                    <th className="px-4 py-3">연락처</th>
+                    <th className="px-4 py-3">가입 채널</th>
+                    <th className="px-4 py-3">최초 활동일</th>
+                    <th className="px-4 py-3 rounded-r-lg">최근 활동일</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recentMembers.slice(0, 10).map((m: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-3 font-semibold text-slate-800">{m.custName}</td>
+                      <td className="px-4 py-3 text-slate-500 font-mono text-xs">{m.phone}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold">
+                          {m.firstChannel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">{m.firstActivityDate}</td>
+                      <td className="px-4 py-3 text-slate-500">{m.lastActivityDate || m.firstActivityDate}</td>
+                    </tr>
+                  ))}
+                  {recentMembers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                        조회된 회원 내역이 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </>
       )}
     </div>

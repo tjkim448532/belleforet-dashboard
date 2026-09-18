@@ -51,15 +51,15 @@ export default function OnlineMembers() {
 
   const pieOptions = {
     tooltip: { trigger: 'item', formatter: '{b}: {c}명 ({d}%)' },
-    legend: { bottom: '5%', left: 'center', textStyle: { color: '#64748b' } },
     color: ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6'],
     series: [
       {
         name: '가입 채널',
         type: 'pie',
-        radius: ['40%', '70%'],
+        radius: ['55%', '85%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+        itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
         label: { show: false, position: 'center' },
         emphasis: {
           label: { show: true, fontSize: 16, fontWeight: 'bold', color: '#334155' }
@@ -75,31 +75,101 @@ export default function OnlineMembers() {
     ]
   };
 
-  const lineOptions = {
-    tooltip: { trigger: 'axis' },
-    grid: { top: '15%', left: '3%', right: '4%', bottom: '10%', containLabel: true },
+  const funnelOptions = {
+    tooltip: { trigger: 'item', formatter: '{b} : {c}명' },
+    color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+    series: [
+      {
+        name: '고객 충성도 퍼널',
+        type: 'funnel',
+        left: '10%',
+        width: '80%',
+        maxSize: '100%',
+        sort: 'descending',
+        gap: 2,
+        label: {
+          show: true,
+          position: 'inside',
+          formatter: '{b} ({c}명)',
+          fontSize: 12,
+          color: '#fff',
+          fontWeight: 'bold'
+        },
+        itemStyle: {
+          borderColor: '#fff',
+          borderWidth: 1,
+          borderRadius: 4
+        },
+        data: [
+          { value: summary.totalActiveMembers || 0, name: '전체 고유 회원' },
+          { value: summary.repeatBuyers || 0, name: '2회 이상 재구매' },
+          { value: summary.recentActiveMembers || 0, name: '최근 1년 실활동' },
+          { value: channelBreakdown.multiChannel || 0, name: '2개 채널 복합 이용' }
+        ]
+      }
+    ]
+  };
+
+  const dualAxisDailyOptions = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: { top: 0, textStyle: { color: '#64748b' } },
+    grid: { top: '15%', left: '3%', right: '3%', bottom: '5%', containLabel: true },
     xAxis: { 
       type: 'category', 
       data: trends.daily.map((d: any) => d.date.slice(5)),
       axisLine: { lineStyle: { color: '#cbd5e1' } },
       axisLabel: { color: '#64748b' }
     },
-    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
+    yAxis: [
+      { 
+        type: 'value', 
+        name: '채널별 유입 (명)',
+        position: 'left',
+        splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, 
+        axisLabel: { color: '#64748b' },
+        nameTextStyle: { color: '#64748b', fontSize: 10, padding: [0, 0, 0, 20] }
+      },
+      { 
+        type: 'value', 
+        name: '실활동 고객 (명)',
+        position: 'right',
+        splitLine: { show: false }, 
+        axisLabel: { color: '#8b5cf6', fontWeight: 'bold' },
+        nameTextStyle: { color: '#8b5cf6', fontSize: 10 }
+      }
+    ],
     series: [
       {
-        name: '일일 신규 가입',
+        name: '티켓 가입',
+        type: 'bar',
+        stack: 'Total',
+        itemStyle: { color: '#f59e0b' },
+        data: trends.daily.map((d: any) => d.ticketJoined || 0)
+      },
+      {
+        name: '객실 가입',
+        type: 'bar',
+        stack: 'Total',
+        itemStyle: { color: '#06b6d4' },
+        data: trends.daily.map((d: any) => d.roomJoined || 0)
+      },
+      {
+        name: '골프 가입',
+        type: 'bar',
+        stack: 'Total',
+        itemStyle: { color: '#10b981', borderRadius: [4, 4, 0, 0] },
+        data: trends.daily.map((d: any) => d.golfJoined || 0)
+      },
+      {
+        name: '일일 실활동(DAU)',
         type: 'line',
+        yAxisIndex: 1,
         smooth: true,
-        data: trends.daily.map((d: any) => d.joined),
-        itemStyle: { color: '#3b82f6' },
-        areaStyle: {
-          color: {
-            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: 'rgba(59,130,246,0.3)' }, { offset: 1, color: 'rgba(59,130,246,0.05)' }]
-          }
-        },
+        data: trends.daily.map((d: any) => d.active || 0),
+        itemStyle: { color: '#8b5cf6' },
+        lineStyle: { width: 3 },
         symbol: 'circle',
-        symbolSize: 6
+        symbolSize: 8
       }
     ]
   };
@@ -360,27 +430,74 @@ export default function OnlineMembers() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Pie Chart */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] lg:col-span-1">
-              <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <PieChart size={18} className="text-slate-500" />
-                가입 채널 비중 (누적)
+          {/* Royalty Funnel & Cross-Selling Analysis */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Funnel Chart */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+              <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                <Users size={18} className="text-brand-mint" />
+                벨포레 고객 로열티 퍼널 분석
               </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                단발성 결제에서 핵심 VIP(복합 이용) 충성 고객으로 전환되는 과정을 분석합니다.
+              </p>
               <div className="h-[300px]">
-                <ReactECharts option={pieOptions} style={{ height: '100%', width: '100%' }} />
+                <ReactECharts option={funnelOptions} style={{ height: '100%', width: '100%' }} />
               </div>
             </div>
 
-            {/* Line Chart */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] lg:col-span-2">
-              <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <TrendingUp size={18} className="text-slate-500" />
-                일별 신규 가입 추세
+            {/* Cross Selling Analysis */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col">
+              <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                <RefreshCw size={18} className="text-cyan-500" />
+                크로스셀링(Cross-selling) 전환 성과
               </h3>
-              <div className="h-[300px]">
-                <ReactECharts option={lineOptions} style={{ height: '100%', width: '100%' }} />
+              <p className="text-xs text-slate-500 mb-4">
+                단일 시설만 이용하던 고객이 리조트의 여러 시설을 함께 즐기게 된 복합 전환율입니다.
+              </p>
+              <div className="flex-1 flex flex-col md:flex-row items-center gap-6">
+                <div className="w-full md:w-1/2 h-[220px]">
+                  <ReactECharts option={pieOptions} style={{ height: '100%', width: '100%' }} />
+                </div>
+                <div className="w-full md:w-1/2 flex flex-col justify-center gap-4">
+                  <div className="p-4 bg-cyan-50 rounded-2xl border border-cyan-100">
+                    <div className="text-xs font-bold text-cyan-700 mb-1">VIP 복합 이용 고객 비율</div>
+                    <div className="text-2xl font-black text-cyan-600 flex items-baseline gap-1">
+                      {channelBreakdown.multiChannelRatio || 0}<span className="text-sm">%</span>
+                    </div>
+                    <p className="text-[11px] text-cyan-600/80 mt-1">
+                      객실, 골프, 티켓 중 2개 이상을 함께 구매한 충성 고객군입니다. ({formatCurrency(channelBreakdown.multiChannel || 0)}명)
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="text-xs font-bold text-slate-600 mb-1">단일 채널 의존도 (이탈 위험군)</div>
+                    <div className="text-xl font-bold text-slate-500 flex items-baseline gap-1">
+                      {((100 - (channelBreakdown.multiChannelRatio || 0))).toFixed(1)}<span className="text-sm">%</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      리조트에 방문하여 1가지 시설(예: 콘도만)만 이용하고 떠나는 고객 비중입니다.
+                    </p>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Daily Stacked Area & Dual Axis Chart */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
+              <div>
+                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                  <TrendingUp size={18} className="text-indigo-500" />
+                  일별 채널별 유입 기여도 vs 실활동(DAU) 트렌드
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  어떤 채널(객실/티켓/골프)이 가입 폭증을 견인했는지 파악하고, 신규 가입과 실제 방문/결제 활동 간의 상관관계를 분석합니다.
+                </p>
+              </div>
+            </div>
+            <div className="h-[350px]">
+              <ReactECharts option={dualAxisDailyOptions} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
 

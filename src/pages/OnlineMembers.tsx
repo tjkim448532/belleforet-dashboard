@@ -51,25 +51,35 @@ export default function OnlineMembers() {
 
   const pieOptions = {
     tooltip: { trigger: 'item', formatter: '{b}: {c}명 ({d}%)' },
-    color: ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6'],
+    color: ['#cbd5e1', '#94a3b8', '#64748b', '#06b6d4'], // Gray tones for single channels, vibrant cyan for VIP
     series: [
       {
         name: '가입 채널',
         type: 'pie',
-        radius: ['55%', '85%'],
+        radius: ['45%', '75%'],
         center: ['50%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
-        label: { show: false, position: 'center' },
-        emphasis: {
-          label: { show: true, fontSize: 16, fontWeight: 'bold', color: '#334155' }
+        avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        label: { 
+          show: true, 
+          position: 'outside',
+          formatter: '{b}\n{d}%',
+          fontWeight: 'bold',
+          color: '#475569'
         },
-        labelLine: { show: false },
+        labelLine: { show: true, length: 10, length2: 15 },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+        },
         data: [
           { value: channelBreakdown.ticketOnly || 0, name: '티켓 전용' },
           { value: channelBreakdown.roomOnly || 0, name: '객실 전용' },
           { value: channelBreakdown.golfOnly || 0, name: '골프 전용' },
-          { value: channelBreakdown.multiChannel || 0, name: '복합 이용' }
+          { 
+            value: channelBreakdown.multiChannel || 0, 
+            name: '👑 VIP (복합 이용)', 
+            label: { color: '#0891b2', fontSize: 13, fontWeight: '900' }
+          }
         ]
       }
     ]

@@ -282,9 +282,9 @@ export default function OnlineMembers() {
                 {formatCurrency(summary.totalActiveMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
               </div>
               <div className="text-[11px] mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
-                <span>실활동 <strong className="text-emerald-600 font-bold">{formatCurrency(summary.recentActiveMembers || 9436)}명</strong> ({summary.recentActiveRate || '35.0'}%)</span>
+                <span>실활동 <strong className="text-emerald-600 font-bold">{formatCurrency(summary.recentActiveMembers || 0)}명</strong> ({summary.recentActiveRate || 0}%)</span>
                 <span className="text-slate-300">·</span>
-                <span className="text-slate-400">휴면 <strong className="text-slate-600 font-bold">{formatCurrency(summary.dormantMembers || 17486)}명</strong> ({summary.dormantRate || '65.0'}%)</span>
+                <span className="text-slate-400">휴면 <strong className="text-slate-600 font-bold">{formatCurrency(summary.dormantMembers || 0)}명</strong> ({summary.dormantRate || 0}%)</span>
               </div>
             </div>
 
@@ -394,7 +394,7 @@ export default function OnlineMembers() {
                   </span>
                 </h4>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  총 {formatCurrency(summary.totalTransactions || 125303)}건의 결제·예약 중 중복을 제거한 순수 {formatCurrency(summary.totalActiveMembers || 26922)}명 분석
+                  총 {formatCurrency(summary.totalTransactions || 0)}건의 결제·예약 중 중복을 제거한 순수 {formatCurrency(summary.totalActiveMembers || 0)}명 분석
                 </p>
               </div>
             </div>
@@ -403,14 +403,14 @@ export default function OnlineMembers() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">총 결제/예약 거래</div>
                 <div className="text-base font-extrabold text-white mt-0.5 font-mono">
-                  {formatCurrency(summary.totalTransactions || 125303)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
+                  {formatCurrency(summary.totalTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">반복·중복 거래</div>
                 <div className="text-base font-extrabold text-amber-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.duplicateTransactions || 98381)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
+                  {formatCurrency(summary.duplicateTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
                   <span className="text-[10px] text-amber-300/80 ml-1 font-sans">(-{(((summary.duplicateTransactions || 0) / (summary.totalTransactions || 1)) * 100).toFixed(1)}%)</span>
                 </div>
               </div>
@@ -418,23 +418,23 @@ export default function OnlineMembers() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">최근 1년 실활동</div>
                 <div className="text-base font-extrabold text-emerald-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.recentActiveMembers || 9436)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-emerald-300/80 ml-1 font-sans">({summary.recentActiveRate || '35.0'}%)</span>
+                  {formatCurrency(summary.recentActiveMembers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                  <span className="text-[10px] text-emerald-300/80 ml-1 font-sans">({summary.recentActiveRate || 0}%)</span>
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">1년 이상 휴면</div>
                 <div className="text-base font-extrabold text-slate-300 mt-0.5 font-mono">
-                  {formatCurrency(summary.dormantMembers || 17486)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-slate-400 ml-1 font-sans">({summary.dormantRate || '65.0'}%)</span>
+                  {formatCurrency(summary.dormantMembers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                  <span className="text-[10px] text-slate-400 ml-1 font-sans">({summary.dormantRate || 0}%)</span>
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">2회 이상 재구매</div>
                 <div className="text-base font-extrabold text-cyan-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.repeatBuyers || 14175)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                  {formatCurrency(summary.repeatBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
                   <span className="text-[10px] text-cyan-300/80 ml-1 font-sans">({(((summary.repeatBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
                 </div>
               </div>
@@ -442,7 +442,7 @@ export default function OnlineMembers() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">단발성 1회 이용</div>
                 <div className="text-base font-extrabold text-rose-300 mt-0.5 font-mono">
-                  {formatCurrency(summary.oneTimeBuyers || 12747)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                  {formatCurrency(summary.oneTimeBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
                   <span className="text-[10px] text-rose-300/80 ml-1 font-sans">({(((summary.oneTimeBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
                 </div>
               </div>

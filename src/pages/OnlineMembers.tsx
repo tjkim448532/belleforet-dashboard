@@ -87,7 +87,7 @@ export default function OnlineMembers() {
 
   const funnelOptions = {
     tooltip: { trigger: 'item', formatter: '{b} : {c}명' },
-    color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+    color: ['#3b82f6', '#10b981', '#f59e0b', '#eab308', '#8b5cf6'],
     series: [
       {
         name: '고객 충성도 퍼널',
@@ -123,6 +123,7 @@ export default function OnlineMembers() {
           { value: summary.totalActiveMembers || 0, name: '전체 고유 회원' },
           { value: summary.repeatBuyers || 0, name: '2회 이상 재구매' },
           { value: summary.recentActiveMembers || 0, name: '최근 1년 실활동' },
+          { value: summary.trueRepeatBuyers || 0, name: '찐 재방문 (5일+ 간격)' },
           { value: channelBreakdown.multiChannel || 0, name: '2개 채널 복합 이용' }
         ]
       }
@@ -399,7 +400,7 @@ export default function OnlineMembers() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs shrink-0 w-full xl:w-auto mt-4 xl:mt-0">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mt-5">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">총 결제/예약 거래</div>
                 <div className="text-base font-extrabold text-white mt-0.5 font-mono">
@@ -436,6 +437,14 @@ export default function OnlineMembers() {
                 <div className="text-base font-extrabold text-cyan-400 mt-0.5 font-mono">
                   {formatCurrency(summary.repeatBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
                   <span className="text-[10px] text-cyan-300/80 ml-1 font-sans">({(((summary.repeatBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                <div className="text-yellow-200 text-[11px] font-bold">찐 재방문(5일+)</div>
+                <div className="text-base font-extrabold text-yellow-400 mt-0.5 font-mono">
+                  {formatCurrency(summary.trueRepeatBuyers || 0)}<span className="text-xs font-normal text-yellow-500/80 ml-0.5">명</span>
+                  <span className="text-[10px] text-yellow-300/80 ml-1 font-sans">({summary.trueRepeatRate || 0}%)</span>
                 </div>
               </div>
 

@@ -332,7 +332,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     sourceRows.forEach((item: any) => {
       const sold = parseNum(isRange ? (item.ytdRooms || item.mtdRooms || item.todayRooms || item.roomsSold || 0) : (item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0));
       const rev = parseNum(isRange ? (item.ytdRevenue || item.mtdRevenue || item.todayRevenue || item.totalSales || 0) : (item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0));
-      const marketName = item.segmentName || item.marketType || '기타';
+      const marketName = item.rateName || item.segmentName || item.marketType || '기타';
 
       if (sold > 0 || rev > 0) {
         marketTypeAdrData.push({

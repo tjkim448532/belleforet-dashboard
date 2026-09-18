@@ -47,6 +47,7 @@ export default function OnlineMembers() {
   const trends = data?.trends || { daily: [], monthly: [] };
   const channelBreakdown = data?.channelBreakdown || {};
   const recentMembers = data?.recentMembers || [];
+  const currentMonthNum = parseInt(endDate ? endDate.slice(5, 7) : new Date().toISOString().slice(5, 7), 10);
 
   const pieOptions = {
     tooltip: { trigger: 'item', formatter: '{b}: {c}명 ({d}%)' },
@@ -309,7 +310,7 @@ export default function OnlineMembers() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs shrink-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs shrink-0 w-full xl:w-auto mt-4 xl:mt-0">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
                 <div className="text-slate-400 text-[11px] font-medium">총 결제/예약 거래</div>
                 <div className="text-base font-extrabold text-white mt-0.5 font-mono">
@@ -321,7 +322,7 @@ export default function OnlineMembers() {
                 <div className="text-slate-400 text-[11px] font-medium">반복·중복 거래</div>
                 <div className="text-base font-extrabold text-amber-400 mt-0.5 font-mono">
                   {formatCurrency(summary.duplicateTransactions || 98381)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
-                  <span className="text-[10px] text-amber-300 ml-1 font-sans">(-78.5%)</span>
+                  <span className="text-[10px] text-amber-300/80 ml-1 font-sans">(-{(((summary.duplicateTransactions || 0) / (summary.totalTransactions || 1)) * 100).toFixed(1)}%)</span>
                 </div>
               </div>
 
@@ -329,15 +330,31 @@ export default function OnlineMembers() {
                 <div className="text-slate-400 text-[11px] font-medium">최근 1년 실활동</div>
                 <div className="text-base font-extrabold text-emerald-400 mt-0.5 font-mono">
                   {formatCurrency(summary.recentActiveMembers || 9436)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-emerald-300 ml-1 font-sans">({summary.recentActiveRate || '35.0'}%)</span>
+                  <span className="text-[10px] text-emerald-300/80 ml-1 font-sans">({summary.recentActiveRate || '35.0'}%)</span>
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">1년 이상 미활동(휴면)</div>
+                <div className="text-slate-400 text-[11px] font-medium">1년 이상 휴면</div>
                 <div className="text-base font-extrabold text-slate-300 mt-0.5 font-mono">
                   {formatCurrency(summary.dormantMembers || 17486)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
                   <span className="text-[10px] text-slate-400 ml-1 font-sans">({summary.dormantRate || '65.0'}%)</span>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                <div className="text-slate-400 text-[11px] font-medium">2회 이상 재구매</div>
+                <div className="text-base font-extrabold text-cyan-400 mt-0.5 font-mono">
+                  {formatCurrency(summary.repeatBuyers || 14175)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                  <span className="text-[10px] text-cyan-300/80 ml-1 font-sans">({(((summary.repeatBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                <div className="text-slate-400 text-[11px] font-medium">단발성 1회 이용</div>
+                <div className="text-base font-extrabold text-rose-300 mt-0.5 font-mono">
+                  {formatCurrency(summary.oneTimeBuyers || 12747)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                  <span className="text-[10px] text-rose-300/80 ml-1 font-sans">({(((summary.oneTimeBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
                 </div>
               </div>
             </div>
@@ -437,7 +454,7 @@ export default function OnlineMembers() {
                         const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
                         const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
                         const val = item?.joined ?? 0;
-                        const isPastOrCurrent = (i + 1) <= 9; // up to current month (Sep)
+                        const isPastOrCurrent = (i + 1) <= currentMonthNum;
                         return (
                           <td key={i} className="px-2 py-3.5 font-bold text-slate-800 font-mono">
                             {isPastOrCurrent ? (
@@ -452,7 +469,7 @@ export default function OnlineMembers() {
                       <td className="px-4 py-3.5 bg-emerald-50/50 font-black text-emerald-700 sticky right-0 font-mono text-sm">
                         {formatCurrency(
                           trends.monthly
-                            .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                            .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
                             .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0)
                         )}
                         <span className="text-[11px] text-emerald-600/70 ml-0.5 font-sans font-medium">명</span>
@@ -483,7 +500,7 @@ export default function OnlineMembers() {
                       <td className="px-4 py-3.5 bg-slate-50/80 font-bold text-slate-600 sticky right-0 font-mono text-sm">
                         {formatCurrency(
                           trends.monthly
-                            .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                            .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
                             .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0)
                         )}
                         <span className="text-[11px] text-slate-400 ml-0.5 font-sans font-medium">명</span>
@@ -498,7 +515,7 @@ export default function OnlineMembers() {
                       {Array.from({ length: 12 }, (_, i) => {
                         const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
                         const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
-                        const isPastOrCurrent = (i + 1) <= 9;
+                        const isPastOrCurrent = (i + 1) <= currentMonthNum;
                         if (!isPastOrCurrent) {
                           return <td key={i} className="px-2 py-3 text-slate-300 font-mono">-</td>;
                         }
@@ -516,10 +533,10 @@ export default function OnlineMembers() {
                       {/* YTD Total Diff */}
                       {(() => {
                         const curTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
                           .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0);
                         const lyTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
                           .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0);
                         const diffTotal = curTotal - lyTotal;
                         return (
@@ -540,7 +557,7 @@ export default function OnlineMembers() {
                       {Array.from({ length: 12 }, (_, i) => {
                         const moStr = (i + 1) < 10 ? `0${i + 1}` : `${i + 1}`;
                         const item = trends.monthly.find((m: any) => m.month.endsWith(moStr));
-                        const isPastOrCurrent = (i + 1) <= 9;
+                        const isPastOrCurrent = (i + 1) <= currentMonthNum;
                         if (!isPastOrCurrent) {
                           return <td key={i} className="px-2 py-3 text-slate-300 font-mono">-</td>;
                         }
@@ -565,10 +582,10 @@ export default function OnlineMembers() {
                       {/* YTD Total Growth Rate */}
                       {(() => {
                         const curTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
                           .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0);
                         const lyTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= 9)
+                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
                           .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0);
                         const rateTotal = lyTotal > 0 ? Number((((curTotal - lyTotal) / lyTotal) * 100).toFixed(1)) : 0;
                         return (

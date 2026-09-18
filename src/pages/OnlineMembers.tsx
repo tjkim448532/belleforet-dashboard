@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import { Users, TrendingUp, UserPlus, RefreshCw, Activity, CalendarDays, PieChart } from 'lucide-react';
+import { Users, TrendingUp, UserPlus, RefreshCw, Activity, CalendarDays, PieChart, Info } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -178,8 +178,12 @@ export default function OnlineMembers() {
               <div className="absolute top-0 right-0 p-4 opacity-5">
                 <Users size={64} />
               </div>
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3">
+              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3 relative group">
                 <Activity size={18} className="text-indigo-500" /> 총 활성 회원 수 (누적)
+                <Info size={14} className="text-slate-400 cursor-help hover:text-slate-600" />
+                <div className="absolute left-0 top-full mt-2 hidden group-hover:block w-56 p-2.5 bg-slate-800 text-white text-xs rounded-lg shadow-xl z-20 font-normal leading-relaxed before:content-[''] before:absolute before:-top-1 before:left-14 before:w-2 before:h-2 before:bg-slate-800 before:rotate-45">
+                  객실, 골프, 티켓 등 전체 채널에서 휴대폰 번호 기준으로 중복을 제거한 실제 고유 활동(가입/예약) 고객 수입니다.
+                </div>
               </div>
               <div className="text-3xl font-extrabold text-slate-800">
                 {formatCurrency(summary.totalActiveMembers)}<span className="text-lg font-bold text-slate-500 ml-1">명</span>
@@ -207,8 +211,12 @@ export default function OnlineMembers() {
               <div className="absolute top-0 right-0 p-4 opacity-5">
                 <TrendingUp size={64} />
               </div>
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3">
+              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm mb-3 relative group">
                 <TrendingUp size={18} className="text-amber-500" /> 전년 동기 가입자
+                <Info size={14} className="text-slate-400 cursor-help hover:text-slate-600" />
+                <div className="absolute left-0 top-full mt-2 hidden group-hover:block w-56 p-2.5 bg-slate-800 text-white text-xs rounded-lg shadow-xl z-20 font-normal leading-relaxed before:content-[''] before:absolute before:-top-1 before:left-14 before:w-2 before:h-2 before:bg-slate-800 before:rotate-45">
+                  온라인 통합 회원 데이터는 2025년 12월 16일부터 수집이 시작되었습니다. 따라서 2025년 이전 구간을 조회할 경우 전년 데이터가 0명으로 표시됩니다.
+                </div>
               </div>
               <div className="flex items-end gap-3">
                 <div className="text-3xl font-extrabold text-slate-800">

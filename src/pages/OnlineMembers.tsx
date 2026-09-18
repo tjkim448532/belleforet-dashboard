@@ -396,6 +396,7 @@ export default function OnlineMembers() {
                 </h4>
                 <p className="text-xs text-slate-300 mt-0.5">
                   총 {formatCurrency(summary.totalTransactions || 0)}건의 결제·예약 중 중복을 제거한 순수 {formatCurrency(summary.totalActiveMembers || 0)}명 분석
+                  <span className="ml-1 text-slate-400 font-medium">(기준일: {endDate || '오늘'})</span>
                 </p>
               </div>
             </div>

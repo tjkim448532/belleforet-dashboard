@@ -118,14 +118,16 @@ export default function OnlineMembers() {
         name: '당해 가입자',
         type: 'bar',
         data: trends.monthly.map((d: any) => d.joined),
-        itemStyle: { color: '#10b981', borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: '#10b981' },
+        label: { show: true, position: 'top', color: '#10b981', formatter: (params: any) => params.value > 0 ? formatCurrency(params.value) : '' },
         barWidth: '40%'
       },
       {
         name: '전년 동월 가입자',
         type: 'bar',
         data: trends.monthly.map((d: any) => d.lyJoined),
-        itemStyle: { color: '#cbd5e1', borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: '#cbd5e1' },
+        label: { show: true, position: 'top', color: '#94a3b8', formatter: (params: any) => params.value > 0 ? formatCurrency(params.value) : '' },
         barWidth: '40%'
       }
     ]

@@ -8,7 +8,7 @@ import {
   Building2, TrendingUp, Sparkles, 
   Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
   Grid, Zap, Compass, Waves,
-  CloudRain, Clock, Cpu, AlertTriangle
+  Clock, Cpu, AlertTriangle
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -109,9 +109,7 @@ export default function SynergyCorrelation() {
   const [includeMoto, setIncludeMoto] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
 
-  // Weather & Scenario Simulation State
-  const [simulatedRain, setSimulatedRain] = useState<number>(0);
-  const [simulatedWeekend, setSimulatedWeekend] = useState<boolean>(true);
+
 
   const [selectedLeisureShop, setSelectedLeisureShop] = useState<string>('ALL');
   const [selectedFnbShop, setSelectedFnbShop] = useState<string>('ALL');
@@ -651,16 +649,7 @@ export default function SynergyCorrelation() {
   }, [currentAnchorObj, correlationData]);
 
   // Simulated Weather Impacts
-  const weatherSimulatedImpact = useMemo(() => {
-    const rainImpactPct = Math.round((simulatedRain / 10) * -8.5 * 10) / 10;
-    const indoorFnbBoostPct = Math.round((simulatedRain / 10) * +4.2 * 10) / 10;
-    const weekendMultiplier = simulatedWeekend ? 1.45 : 1.0;
-    return {
-      rainImpactPct,
-      indoorFnbBoostPct,
-      weekendMultiplier
-    };
-  }, [simulatedRain, simulatedWeekend]);
+  
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -990,11 +979,11 @@ export default function SynergyCorrelation() {
         </div>
       </div>
 
-      {/* 🌊 [NEW] 시차 연쇄 소비 이동 (Sankey Flow) & 🌦️ 기상 시뮬레이터 그리드 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+      {/* 🌊 [NEW] 시차 연쇄 소비 이동 (Sankey Flow) */}
+      <div className="mb-8">
         
-        {/* Left: Sankey Customer Spending Flow (7 Cols) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-slate-200 flex flex-col justify-between">
+        {/* Sankey Customer Spending Flow */}
+        <div className="bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-slate-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -1019,80 +1008,7 @@ export default function SynergyCorrelation() {
           </div>
         </div>
 
-        {/* Right: Weather & Scenario Simulator (5 Cols) */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 lg:p-7 shadow-md border border-indigo-800/40 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <CloudRain className="text-cyan-400" size={20} /> 🌦️ [시나리오] 기상 및 요일 민감도 시뮬레이터
-              </h3>
-              <span className="text-xs bg-cyan-500/20 text-cyan-300 font-bold px-2.5 py-1 rounded-full border border-cyan-400/30">
-                실시간 반응 계수
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-              강수량(mm) 및 주말 여부에 따라 야외 레저 감소분과 실내 식음/미디어아트 반사이익을 예측합니다.
-            </p>
 
-            {/* Slider 1: Rain */}
-            <div className="space-y-4 mb-5">
-              <div>
-                <div className="flex justify-between text-xs font-bold text-slate-200 mb-1.5">
-                  <span>예상 강수량 (Rainfall):</span>
-                  <span className="text-cyan-300 text-sm font-black tabular-nums">{simulatedRain} mm</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="50"
-                  step="5"
-                  value={simulatedRain}
-                  onChange={(e) => setSimulatedRain(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-                />
-              </div>
-
-              {/* Weekend Toggle */}
-              <div className="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
-                <span className="text-xs font-semibold text-slate-300">요일 모드:</span>
-                <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl">
-                  <button
-                    onClick={() => setSimulatedWeekend(false)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      !simulatedWeekend ? 'bg-indigo-500 text-white' : 'text-slate-400'
-                    }`}
-                  >
-                    평일 기준
-                  </button>
-                  <button
-                    onClick={() => setSimulatedWeekend(true)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      simulatedWeekend ? 'bg-indigo-500 text-white' : 'text-slate-400'
-                    }`}
-                  >
-                    주말 (+45% 프리미엄)
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Simulation Output Cards */}
-          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10 text-xs">
-            <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl">
-              <span className="text-rose-300 font-bold block mb-1">야외 레저/루지 변동폭:</span>
-              <span className="text-lg font-black text-rose-400 tabular-nums">
-                {weatherSimulatedImpact.rainImpactPct > 0 ? `+${weatherSimulatedImpact.rainImpactPct}%` : `${weatherSimulatedImpact.rainImpactPct}%`}
-              </span>
-            </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-2xl">
-              <span className="text-emerald-300 font-bold block mb-1">실내 식음/아트 반사이익:</span>
-              <span className="text-lg font-black text-emerald-400 tabular-nums">
-                +{weatherSimulatedImpact.indoorFnbBoostPct}%
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 💡 [NEW] AI 경영진 전략 권고 배너 (AI Actionable Insights) */}

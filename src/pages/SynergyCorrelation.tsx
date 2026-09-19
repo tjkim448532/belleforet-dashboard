@@ -8,7 +8,7 @@ import {
   Building2, TrendingUp, Sparkles, 
   Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
   Grid, Zap, Compass, Waves,
-  CloudRain, Gauge, Clock, Cpu, AlertTriangle
+  CloudRain, Clock, Cpu, AlertTriangle
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -588,10 +588,7 @@ export default function SynergyCorrelation() {
     return sorted[0] || null;
   }, [correlationData]);
 
-  const criticalBottleneckStore = useMemo(() => {
-    const sorted = [...correlationData].sort((a, b) => (b.currentCapacityUtilization || 0) - (a.currentCapacityUtilization || 0));
-    return sorted[0] || null;
-  }, [correlationData]);
+
 
   // ECharts Sankey Flow Options for Time-Lag Cascade
   const sankeyOptions = useMemo(() => {
@@ -903,8 +900,8 @@ export default function SynergyCorrelation() {
         </div>
       )}
 
-      {/* 🚀 4대 핵심 인과 & CAPA 요약 카드 (Top KPI Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* 🚀 4대 핵심 결과 & CAPA 제약 카드 (Top KPI Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {/* 1. Anchor Overview Card */}
         <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-700/40 flex flex-col justify-between overflow-hidden">
           <div>
@@ -989,31 +986,6 @@ export default function SynergyCorrelation() {
             <strong className="text-emerald-700 tabular-nums whitespace-nowrap">
               {isDataInsufficient ? '-' : `+₩${formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 0)} / 100만`}
             </strong>
-          </div>
-        </div>
-
-        {/* 4. Critical Bottleneck Store */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
-                <Gauge className="w-5 h-5 text-rose-600 shrink-0" /> 
-                <span className="truncate">CAPA 병목 위험 관리</span>
-              </span>
-              <span className="text-xs font-bold text-rose-800 bg-rose-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                병목 주의
-              </span>
-            </div>
-            <div className="text-2xl font-black text-rose-600 mb-1 truncate" title={criticalBottleneckStore?.shopName}>
-              {criticalBottleneckStore?.shopName || '분석불가'}
-            </div>
-            <p className="text-xs text-slate-500 font-medium truncate">
-              피크 CAPA 점유율: <strong className="text-rose-700">{criticalBottleneckStore?.currentCapacityUtilization ?? 0}%</strong> (임계 한계)
-            </p>
-          </div>
-          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
-            <span>병목 위험도 등급:</span>
-            <strong className="text-rose-700 font-black whitespace-nowrap">🚨 CRITICAL</strong>
           </div>
         </div>
       </div>

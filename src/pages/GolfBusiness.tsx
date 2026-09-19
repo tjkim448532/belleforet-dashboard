@@ -1034,7 +1034,7 @@ export default function GolfBusiness() {
             ⛳ 골프 세부 항목별 정산 내역 (그린피 / 카트대여)
           </h2>
           
-          {golfDetails.length > 0 ? (
+          {golfDetails.filter((f: any) => (f.totalSales || 0) !== 0).length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-xs whitespace-nowrap min-w-[500px]">
                 <thead>
@@ -1045,6 +1045,7 @@ export default function GolfBusiness() {
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
                   {golfDetails
+                    .filter((f: any) => (f.totalSales || 0) !== 0)
                     .sort((a: any, b: any) => (b.totalSales || 0) - (a.totalSales || 0))
                     .map((f: { shopName?: string, totalSales?: number }, idx: number) => (
                       <tr key={`${f.shopName}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">

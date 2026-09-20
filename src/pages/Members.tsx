@@ -65,7 +65,6 @@ export default function Members() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [selectedLoyaltyFilter, setSelectedLoyaltyFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'YTD_VISITS' | 'TODAY_SPEND' | 'YTD_SPEND' | 'NAME'>('YTD_VISITS');
   const [selectedMemberModal, setSelectedMemberModal] = useState<MemberVisitorItem | null>(null);
@@ -132,12 +131,7 @@ export default function Members() {
   const filteredAndSortedVisitors = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     const filtered = enrichedVisitors.filter(m => {
-      let matchType = selectedTypeFilter === 'ALL';
-      if (!matchType) {
-        if (selectedTypeFilter === '골프') matchType = m.categoryCode === 'GOLF';
-        else if (selectedTypeFilter === '콘도') matchType = m.categoryCode === 'ROOM';
-        else matchType = m.memberType.includes(selectedTypeFilter) || Boolean(m.membershipName && m.membershipName.includes(selectedTypeFilter));
-      }
+      const matchType = true;
 
       let matchLoyalty = true;
       if (selectedLoyaltyFilter === 'REPEAT') {
@@ -165,7 +159,7 @@ export default function Members() {
       if (sortBy === 'NAME') return a.memberName.localeCompare(b.memberName, 'ko');
       return 0;
     });
-  }, [enrichedVisitors, selectedTypeFilter, selectedLoyaltyFilter, searchQuery, sortBy]);
+  }, [enrichedVisitors, selectedLoyaltyFilter, searchQuery, sortBy]);
 
   // Computed summary metrics (SSOT Pure Consumer)
   const metrics = useMemo(() => {
@@ -322,27 +316,11 @@ export default function Members() {
           
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
-            {/* Member Type Filter Tabs */}
+            {/* Member Total Count Badge */}
             <div className="flex items-center gap-2 flex-wrap">
-              {[
-                { key: 'ALL', label: `전체 회원 (${enrichedVisitors.length}명)` },
-                { key: '골프', label: '⛳ 골프회원' },
-                { key: '콘도', label: '🏢 콘도회원' },
-                { key: '창립', label: '👑 창립/VIP' },
-                { key: '지정', label: '👥 지정회원' }
-              ].map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => setSelectedTypeFilter(t.key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-90 cursor-pointer select-none whitespace-nowrap ${
-                    selectedTypeFilter === t.key
-                      ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 ring-offset-1 scale-105'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+              <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md select-none whitespace-nowrap">
+                전체 회원 ({enrichedVisitors.length}명)
+              </span>
             </div>
 
             {/* Search Input */}

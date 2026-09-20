@@ -536,9 +536,6 @@ export default function GroupSales() {
               {enrichedGroups.length} <span className="text-sm font-semibold text-slate-500">건</span>
               <span className="text-sm font-bold text-blue-600 ml-2">({loyaltyMetrics.totalUniqueCompanies}개사)</span>
             </div>
-            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
-              총 참가 인원: <strong className="text-slate-800">{(summaryData?.totalPax || 0).toLocaleString()}명</strong>
-            </div>
             <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
               <span>💡</span>
               <span className="truncate">동일 기업 분할 행사 중복 제외 순수 고객사</span>

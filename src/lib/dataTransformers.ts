@@ -259,7 +259,7 @@ export interface TransformedResortData {
     totalRoomInventory?: number;
     totalGuestCapacity?: number;
     guestCapacity?: number;
-    adr: number;
+    adr: number; weekdayRevenue?: number; weekendRevenue?: number; weekdayRoomsSold?: number; weekendRoomsSold?: number; weekdayAdr?: number; weekendAdr?: number; weekdayOcc?: number; weekendOcc?: number;
   };
 }
 
@@ -394,7 +394,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     // [안전 분리] 투숙객 인원 모수 (Pax) - 기존 컴포넌트 하위 호환성 100% 보장
     totalGuestCapacity: guestCap,
     guestCapacity: guestCap,
-    adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0)
+    adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0), weekdayRevenue: parseNum(payload.summary?.weekdayRoomRev ?? 0), weekendRevenue: parseNum(payload.summary?.weekendRoomRev ?? 0), weekdayRoomsSold: parseNum(payload.summary?.weekdayRoomsCount ?? 0), weekendRoomsSold: parseNum(payload.summary?.weekendRoomsCount ?? 0), weekdayAdr: parseNum(payload.summary?.weekdayADR ?? 0), weekendAdr: parseNum(payload.summary?.weekendADR ?? 0), weekdayOcc: parseNum(payload.summary?.weekdayOcc ?? 0), weekendOcc: parseNum(payload.summary?.weekendOcc ?? 0)
   };
 
   const connecting51Sold = parseNum(roomOccupancyMap['51평']?.sold ?? 0);

@@ -49,8 +49,7 @@ const formatNum = (num: number | undefined | null) => {
   return new Intl.NumberFormat('ko-KR').format(num);
 };
 
-const formatGrowth = (num: number | undefined | null, actual?: number, ly?: number) => {
-  if (ly === 0 && actual && actual > 0) return <span className="text-red-500 font-bold">▲ 100.0%</span>;
+const formatGrowth = (num: number | undefined | null) => {
   if (num === undefined || num === null || isNaN(num)) return '-';
   const formatted = num.toFixed(1) + '%';
   if (num > 0) return <span className="text-red-500 font-bold">▲ {formatted}</span>;
@@ -187,17 +186,17 @@ export default function V6DashboardViewer() {
                             {/* Today */}
                             <td className="px-3 py-3 text-right font-mono border border-slate-200">{formatNum(metrics.todayActual)}</td>
                             <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.todayLy)}</td>
-                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-slate-50/50">{formatGrowth(metrics.todayGrowth, metrics.todayActual, metrics.todayLy)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-slate-50/50">{formatGrowth(metrics.todayGrowth)}</td>
                             
                             {/* MTD */}
                             <td className="px-3 py-3 text-right font-mono border border-slate-200 text-blue-800">{formatNum(metrics.mtdActual)}</td>
                             <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.mtdLy)}</td>
-                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(metrics.mtdGrowth, metrics.mtdActual, metrics.mtdLy)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(metrics.mtdGrowth)}</td>
                             
                             {/* YTD */}
                             <td className="px-3 py-3 text-right font-mono border border-slate-200 text-indigo-800">{formatNum(metrics.ytdActual)}</td>
                             <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.ytdLy)}</td>
-                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(metrics.ytdGrowth, metrics.ytdActual, metrics.ytdLy)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(metrics.ytdGrowth)}</td>
                           </tr>
                         );
                       })}
@@ -209,17 +208,17 @@ export default function V6DashboardViewer() {
                         {/* Today */}
                         <td className="px-3 py-2 text-right font-mono border border-slate-300">{formatNum(part.partSubtotal?.todayActual || part.part_subtotal?.todayActual)}</td>
                         <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.todayLy || part.part_subtotal?.todayLy)}</td>
-                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-slate-100/50">{formatGrowth(part.partSubtotal?.todayGrowth || part.part_subtotal?.todayGrowth, part.partSubtotal?.todayActual || part.part_subtotal?.todayActual, part.partSubtotal?.todayLy || part.part_subtotal?.todayLy)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-slate-100/50">{formatGrowth(part.partSubtotal?.todayGrowth || part.part_subtotal?.todayGrowth)}</td>
                         
                         {/* MTD */}
                         <td className="px-3 py-2 text-right font-mono border border-slate-300 text-blue-800">{formatNum(part.partSubtotal?.mtdActual || part.part_subtotal?.mtdActual)}</td>
                         <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.mtdLy || part.part_subtotal?.mtdLy)}</td>
-                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-blue-50/50">{formatGrowth(part.partSubtotal?.mtdGrowth || part.part_subtotal?.mtdGrowth, part.partSubtotal?.mtdActual || part.part_subtotal?.mtdActual, part.partSubtotal?.mtdLy || part.part_subtotal?.mtdLy)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-blue-50/50">{formatGrowth(part.partSubtotal?.mtdGrowth || part.part_subtotal?.mtdGrowth)}</td>
                         
                         {/* YTD */}
                         <td className="px-3 py-2 text-right font-mono border border-slate-300 text-indigo-800">{formatNum(part.partSubtotal?.ytdActual || part.part_subtotal?.ytdActual)}</td>
                         <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.ytdLy || part.part_subtotal?.ytdLy)}</td>
-                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-indigo-50/50">{formatGrowth(part.partSubtotal?.ytdGrowth || part.part_subtotal?.ytdGrowth, part.partSubtotal?.ytdActual || part.part_subtotal?.ytdActual, part.partSubtotal?.ytdLy || part.part_subtotal?.ytdLy)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-indigo-50/50">{formatGrowth(part.partSubtotal?.ytdGrowth || part.part_subtotal?.ytdGrowth)}</td>
                       </tr>
                     </React.Fragment>
                   );
@@ -231,17 +230,17 @@ export default function V6DashboardViewer() {
                   {/* Today */}
                   <td className="px-3 py-3 text-right font-mono border border-slate-300">{formatNum(division.divisionSubtotal?.todayActual)}</td>
                   <td className="px-3 py-3 text-right font-mono border border-slate-300 text-slate-600">{formatNum(division.divisionSubtotal?.todayLy)}</td>
-                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-slate-200/50">{formatGrowth(division.divisionSubtotal?.todayGrowth, division.divisionSubtotal?.todayActual, division.divisionSubtotal?.todayLy)}</td>
+                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-slate-200/50">{formatGrowth(division.divisionSubtotal?.todayGrowth)}</td>
                   
                   {/* MTD */}
                   <td className="px-3 py-3 text-right font-mono text-blue-900 border border-slate-300">{formatNum(division.divisionSubtotal?.mtdActual)}</td>
                   <td className="px-3 py-3 text-right font-mono border border-slate-300 text-slate-600">{formatNum(division.divisionSubtotal?.mtdLy)}</td>
-                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-blue-100/50">{formatGrowth(division.divisionSubtotal?.mtdGrowth, division.divisionSubtotal?.mtdActual, division.divisionSubtotal?.mtdLy)}</td>
+                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-blue-100/50">{formatGrowth(division.divisionSubtotal?.mtdGrowth)}</td>
                   
                   {/* YTD */}
                   <td className="px-3 py-3 text-right font-mono text-indigo-900 border border-slate-300">{formatNum(division.divisionSubtotal?.ytdActual)}</td>
                   <td className="px-3 py-3 text-right font-mono border border-slate-300 text-slate-600">{formatNum(division.divisionSubtotal?.ytdLy)}</td>
-                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-indigo-100/50">{formatGrowth(division.divisionSubtotal?.ytdGrowth, division.divisionSubtotal?.ytdActual, division.divisionSubtotal?.ytdLy)}</td>
+                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-indigo-100/50">{formatGrowth(division.divisionSubtotal?.ytdGrowth)}</td>
                 </tr>
               </React.Fragment>
             );
@@ -254,17 +253,17 @@ export default function V6DashboardViewer() {
             {/* Today */}
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px]">{formatNum(data.grandTotal?.todayActual)}</td>
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-slate-400">{formatNum(data.grandTotal?.todayLy)}</td>
-            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.todayGrowth, data.grandTotal?.todayActual, data.grandTotal?.todayLy)}</td>
+            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.todayGrowth)}</td>
             
             {/* MTD */}
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px] text-blue-300">{formatNum(data.grandTotal?.mtdActual)}</td>
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-slate-400">{formatNum(data.grandTotal?.mtdLy)}</td>
-            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.mtdGrowth, data.grandTotal?.mtdActual, data.grandTotal?.mtdLy)}</td>
+            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.mtdGrowth)}</td>
             
             {/* YTD */}
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px] text-indigo-300">{formatNum(data.grandTotal?.ytdActual)}</td>
             <td className="px-3 py-5 text-right font-mono border border-slate-700 text-slate-400">{formatNum(data.grandTotal?.ytdLy)}</td>
-            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.ytdGrowth, data.grandTotal?.ytdActual, data.grandTotal?.ytdLy)}</td>
+            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.ytdGrowth)}</td>
           </tr>
         </tbody>
       </table>

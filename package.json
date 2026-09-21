@@ -16,7 +16,6 @@
     "lucide-react": "^1.17.0",
     "mysql2": "^3.22.5",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6",
     "react-router-dom": "^7.17.0",
     "recharts": "^3.8.1"
   },
@@ -31,6 +30,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",

@@ -727,14 +727,14 @@ export default function GolfBusiness() {
                             <div>
                               <div className="flex items-center justify-between text-xs font-bold text-emerald-800 mb-1">
                                 <span>👑 1위 핵심 충성 공급처</span>
-                                <span className="bg-emerald-200/80 px-2 py-0.5 rounded-full text-xs font-bold">{topOta.shareRatioInOta.toFixed(1)}% 점유</span>
+                                <span className="bg-emerald-200/80 px-2 py-0.5 rounded-full text-xs font-bold">{(topOta.shareRatioInOta || 0).toFixed(1)}% 점유</span>
                               </div>
                               <div className="text-xl font-black text-slate-900 my-1 tabular-nums">
                                 {topOta.agencyName} <span className="text-xs font-semibold text-emerald-700">{topOta.visitedTeams}팀 내장</span>
                               </div>
                             </div>
                             <p className="text-xs text-slate-600 mt-2 leading-relaxed pt-2 border-t border-emerald-100 tabular-nums">
-                              취소 {topOta.canceledTeams}팀 (취소율 {topOta.cancellationRate.toFixed(1)}%)으로 전체 골프 내장의 {topOta.shareRatioOverall.toFixed(1)}%를 차지하는 최우수 제휴사입니다.
+                              취소 {topOta.canceledTeams}팀 (취소율 {(topOta.cancellationRate || 0).toFixed(1)}%)으로 전체 골프 내장의 {(topOta.shareRatioOverall || 0).toFixed(1)}%를 차지하는 최우수 제휴사입니다.
                             </p>
                           </div>
                         )}
@@ -744,14 +744,14 @@ export default function GolfBusiness() {
                             <div>
                               <div className="flex items-center justify-between text-xs font-bold text-blue-800 mb-1">
                                 <span>🥈 2위 안정적 공급처</span>
-                                <span className="bg-blue-200/80 px-2 py-0.5 rounded-full text-xs font-bold">{secondOta.shareRatioInOta.toFixed(1)}% 점유</span>
+                                <span className="bg-blue-200/80 px-2 py-0.5 rounded-full text-xs font-bold">{(secondOta.shareRatioInOta || 0).toFixed(1)}% 점유</span>
                               </div>
                               <div className="text-xl font-black text-slate-900 my-1 tabular-nums">
                                 {secondOta.agencyName} <span className="text-xs font-semibold text-blue-700">{secondOta.visitedTeams}팀 내장</span>
                               </div>
                             </div>
                             <p className="text-xs text-slate-600 mt-2 leading-relaxed pt-2 border-t border-blue-100 tabular-nums">
-                              취소 {secondOta.canceledTeams}팀 (취소율 {secondOta.cancellationRate.toFixed(1)}%)으로 안정적인 내장객 공급 역할을 수행 중입니다.
+                              취소 {secondOta.canceledTeams}팀 (취소율 {(secondOta.cancellationRate || 0).toFixed(1)}%)으로 안정적인 내장객 공급 역할을 수행 중입니다.
                             </p>
                           </div>
                         )}
@@ -761,7 +761,7 @@ export default function GolfBusiness() {
                             <div>
                               <div className="flex items-center justify-between text-xs font-bold text-rose-800 mb-1">
                                 <span>⚠️ 취소율 관리 대상</span>
-                                <span className="bg-rose-200/80 px-2 py-0.5 rounded-full text-xs font-bold text-rose-900">취소율 {highCancelOta.cancellationRate.toFixed(1)}%</span>
+                                <span className="bg-rose-200/80 px-2 py-0.5 rounded-full text-xs font-bold text-rose-900">취소율 {(highCancelOta.cancellationRate || 0).toFixed(1)}%</span>
                               </div>
                               <div className="text-xl font-black text-rose-700 my-1 tabular-nums">
                                 {highCancelOta.agencyName}
@@ -814,14 +814,14 @@ export default function GolfBusiness() {
                                     ? 'bg-amber-100 text-amber-700' 
                                     : 'bg-emerald-100 text-emerald-700'
                               }`}>
-                                {ag.cancellationRate.toFixed(1)}%
+                                {(ag.cancellationRate || 0).toFixed(1)}%
                               </span>
                             </td>
                             <td className="py-3 px-4 text-center font-bold text-teal-700 bg-teal-50/40">
-                              {ag.shareRatioInOta.toFixed(1)}%
+                              {(ag.shareRatioInOta || 0).toFixed(1)}%
                             </td>
                             <td className="py-3 px-4 text-center font-medium text-slate-700">
-                              {ag.shareRatioOverall.toFixed(1)}%
+                              {(ag.shareRatioOverall || 0).toFixed(1)}%
                             </td>
                             <td className="py-3 px-4 text-right font-black text-slate-900">
                               ₩{formatCurrency(ag.greenFeeRevenue)}

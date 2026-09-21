@@ -411,6 +411,41 @@ export default function ResortBusiness() {
     };
   })();
 
+  const ratePieOptions = (() => {
+    const pieData = (data?.rateAdrData || [])
+      .map(r => ({ value: r.roomsSold, name: r.marketType }))
+      .sort((a, b) => b.value - a.value);
+
+    return {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c}건 ({d}%)'
+      },
+      legend: {
+        top: 'bottom',
+        type: 'scroll',
+        textStyle: { color: '#475569', fontSize: 11, fontWeight: 600 }
+      },
+      color: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316', '#64748b'],
+      series: [
+        {
+          name: '요금타입별 점유율',
+          type: 'pie',
+          radius: ['40%', '65%'],
+          avoidLabelOverlap: true,
+          itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+          label: {
+            show: true,
+            formatter: '{b}\n{d}%',
+            fontSize: 10,
+            fontWeight: 600
+          },
+          data: pieData
+        }
+      ]
+    };
+  })();
+
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
       {/* Top Controls Bar */}
@@ -576,64 +611,80 @@ export default function ResortBusiness() {
           </div>
 
           {/* 175실 기준 실운영 점유 레이어링 도넛 차트 */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <PieChartIcon className="w-5 h-5 text-emerald-500" /> 전체 175실 기준 실운영 점유 레이어링 분석
-              </h2>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
-                <Layers size={14} className="text-brand-mint" />
-                <span>총 물리 기준: {totalBaseRooms.toLocaleString()}실 (점유 {totalPhysicalOccupied.toLocaleString()}실 / 잔여 {remainingRooms.toLocaleString()}실)</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full flex flex-col">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <PieChartIcon className="w-5 h-5 text-emerald-500" /> 실운영 점유 레이어링 (물리)
+                </h2>
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-xl">
+                  <Layers size={12} className="text-brand-mint" />
+                  <span>총 물리: {totalBaseRooms.toLocaleString()}실</span>
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col">
+                <div className="h-[240px] w-full">
+                  <ReactECharts option={pieOptions} style={{ height: '100%', width: '100%' }} />
+                </div>
+                
+                <div className="flex flex-col gap-2 mt-4">
+                  <div className="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-700">일반 점유 (물리)</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-emerald-800">{standardPhysicalRooms}실 <span className="text-[10px] text-slate-400 font-normal ml-1">({totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span></div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-cyan-50/60 border border-cyan-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-[#06b6d4]"></div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-700">커넥팅 점유 (물리)</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-cyan-800">{connectingPhysicalRooms}실 <span className="text-[10px] text-slate-400 font-normal ml-1">({totalBaseRooms > 0 ? ((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span></div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-[#cbd5e1]"></div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-700">잔여 미판매</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-slate-700">{remainingRooms}실 <span className="text-[10px] text-slate-400 font-normal ml-1">({totalBaseRooms > 0 ? ((remainingRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-7 h-[320px] w-full">
-                <ReactECharts option={pieOptions} style={{ height: '100%', width: '100%' }} />
+            {/* 요금타입별 점유율 도넛 차트 */}
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full flex flex-col">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <PieChartIcon className="w-5 h-5 text-blue-500" /> 요금타입(상품)별 점유율
+                </h2>
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-xl">
+                  <Layers size={12} className="text-blue-500" />
+                  <span>총 판매: {(lodgingStats?.roomsSold || 0).toLocaleString()}건</span>
+                </div>
               </div>
-              
-              <div className="lg:col-span-5 flex flex-col gap-3">
-                <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#10b981]"></div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-700">일반 점유 (물리)</div>
-                      <div className="text-[11px] text-slate-500">16평 / 35평 전용 판매 실적</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
-                  </div>
-                </div>
 
-                <div className="p-4 rounded-2xl bg-cyan-50/60 border border-cyan-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#06b6d4]"></div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-700">커넥팅 점유 (물리)</div>
-                      <div className="text-[11px] text-slate-500">51평 35세트 × 2개 객실(16평+35평)</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
-                  </div>
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="h-[300px] w-full">
+                  <ReactECharts option={ratePieOptions} style={{ height: '100%', width: '100%' }} />
                 </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#cbd5e1]"></div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-700">잔여 미판매</div>
-                      <div className="text-[11px] text-slate-500">당일 잔여 가용 객실</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-bold text-slate-700">{remainingRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((remainingRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
-                  </div>
-                </div>
+                <p className="text-[11px] text-slate-500 text-center mt-2">※ 실물리 객실이 아닌 요금타입(상품) 단위의 판매 점유율입니다.</p>
               </div>
             </div>
           </div>

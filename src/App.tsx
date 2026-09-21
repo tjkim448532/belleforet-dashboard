@@ -40,10 +40,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-800">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium text-slate-400">인증 확인 중...</p>
+          <p className="text-sm font-medium text-slate-500">인증 확인 중...</p>
         </div>
       </div>
     );

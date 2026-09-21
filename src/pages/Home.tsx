@@ -282,17 +282,17 @@ export default function Home() {
                               </>
                             )}
                           </div>
-                          {(lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0) && (
+                          {(lastYearWeather.tempMax != null && lastYearWeather.tempMin != null && (lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0)) && (
                             <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
                           )}
                         </>
                       ) : (
-                        <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">❓ 날씨없음</div>
+                        <div className="font-semibold text-slate-300 text-xs flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
                       )}
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
-                      {weather ? (
+                      {weather && (weather.weatherDesc || weather.description || weather.tempMax != null) ? (
                         <>
                           <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
                             {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
@@ -302,12 +302,12 @@ export default function Home() {
                               </>
                             )}
                           </div>
-                          {(weather.tempMax !== 0 || weather.tempMin !== 0) && (
+                          {(weather.tempMax != null && weather.tempMin != null && (weather.tempMax !== 0 || weather.tempMin !== 0)) && (
                             <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
                           )}
                         </>
                       ) : (
-                        <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">❓ 날씨없음</div>
+                        <div className="font-medium text-slate-400 text-sm flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
                       )}
                     </div>
                   </div>

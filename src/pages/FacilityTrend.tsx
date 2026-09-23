@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
 import { Store, TrendingUp, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
@@ -55,65 +55,118 @@ export default function FacilityTrend() {
     return new Intl.NumberFormat('ko-KR').format(Math.round(val || 0));
   };
 
-  // ECharts 옵션 구성
+  // ECharts 옵션 구성 (YoY 비교)
   const getChartOptions = () => {
     if (!data || !data.monthlyData || data.monthlyData.length === 0) return {};
 
-    const months = data.monthlyData.map((d: any) => d.month); // e.g., '2024-01', '2024-02'
-    const revenues = data.monthlyData.map((d: any) => d.revenue);
-    const visitors = data.monthlyData.map((d: any) => d.visitors);
+    const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const years = Array.from(new Set(data.monthlyData.map((d: any) => d.month.substring(0, 4)))).sort();
+    
+    const seriesData: any[] = [];
+    const legendData: string[] = [];
+    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#06b6d4'];
+    
+    years.forEach((year: any, idx: number) => {
+      const yearRevenue = Array(12).fill(0);
+      const yearVisitors = Array(12).fill(0);
+      
+      data.monthlyData.forEach((d: any) => {
+        if (d.month.startsWith(year)) {
+          const monthIdx = parseInt(d.month.substring(5, 7), 10) - 1;
+          yearRevenue[monthIdx] = d.revenue || 0;
+          yearVisitors[monthIdx] = d.visitors || 0;
+        }
+      });
+      
+      const color = colors[idx % colors.length];
+      
+      legendData.push(`${year}년 매출`);
+      seriesData.push({
+        name: `${year}년 매출`,
+        type: 'bar',
+        data: yearRevenue,
+        itemStyle: { color: color, borderRadius: [4, 4, 0, 0] }
+      });
+      
+      legendData.push(`${year}년 방문객`);
+      seriesData.push({
+        name: `${year}년 방문객`,
+        type: 'line',
+        yAxisIndex: 1,
+        data: yearVisitors,
+        itemStyle: { color: color },
+        lineStyle: { width: 2, type: 'dashed' }
+      });
+    });
 
     return {
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'cross' }
-      },
-      legend: {
-        data: ['매출액(원)', '방문객수(명)'],
-        bottom: 0
-      },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '10%',
-        containLabel: true
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: months,
-          axisPointer: { type: 'shadow' }
-        }
-      ],
+      tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+      legend: { data: legendData, bottom: 0, type: 'scroll' },
+      grid: { left: '3%', right: '3%', bottom: '15%', containLabel: true },
+      xAxis: [{ type: 'category', data: months, axisPointer: { type: 'shadow' } }],
       yAxis: [
-        {
-          type: 'value',
-          name: '매출액',
-          axisLabel: { formatter: '{value}' }
-        },
-        {
-          type: 'value',
-          name: '방문객수',
-          axisLabel: { formatter: '{value}' }
-        }
+        { type: 'value', name: '매출액', axisLabel: { formatter: '{value}' } },
+        { type: 'value', name: '방문객수', axisLabel: { formatter: '{value}' } }
       ],
-      series: [
-        {
-          name: '매출액(원)',
-          type: 'bar',
-          data: revenues,
-          itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] }
-        },
-        {
-          name: '방문객수(명)',
-          type: 'line',
-          yAxisIndex: 1,
-          data: visitors,
-          itemStyle: { color: '#10b981' },
-          lineStyle: { width: 3 }
-        }
-      ]
+      series: seriesData
     };
+  };
+
+  const renderPivotTable = () => {
+    if (!data || !data.monthlyData || data.monthlyData.length === 0) return null;
+    
+    const years = Array.from(new Set(data.monthlyData.map((d: any) => d.month.substring(0, 4)))).sort();
+    const rows = [];
+    for (let i = 1; i <= 12; i++) {
+      const monthStr = i.toString().padStart(2, '0');
+      const rowCols = years.map(year => {
+        const target = `${year}-${monthStr}`;
+        const match = data.monthlyData.find((d: any) => d.month === target);
+        return { year, revenue: match?.revenue || 0, visitors: match?.visitors || 0 };
+      });
+      rows.push({ month: `${i}월`, data: rowCols });
+    }
+    
+    return (
+      <table className="w-full text-left text-sm whitespace-nowrap">
+        <thead>
+          <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
+            <th className="px-6 py-4 rounded-tl-xl text-center border-b border-slate-200">월 (Month)</th>
+            {years.map((year: any, idx) => (
+              <th key={year} colSpan={2} className={`px-6 py-4 text-center border-b border-slate-200 ${idx === years.length - 1 ? 'rounded-tr-xl' : 'border-r'}`}>
+                {year}년
+              </th>
+            ))}
+          </tr>
+          <tr className="bg-slate-50/50 text-slate-500 text-[11px] font-bold">
+            <th className="px-6 py-2 text-center border-b border-slate-200 bg-slate-50/50"></th>
+            {years.map((year: any, idx) => (
+              <Fragment key={year}>
+                <th className="px-4 py-2 text-right border-b border-slate-200">매출액</th>
+                <th className={`px-4 py-2 text-right border-b border-slate-200 ${idx === years.length - 1 ? '' : 'border-r'}`}>방문객</th>
+              </Fragment>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((row, rIdx) => (
+            <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
+              <td className="px-6 py-4 font-bold text-slate-800 text-center bg-slate-50/30">{row.month}</td>
+              {row.data.map((col: any, cIdx) => (
+                <Fragment key={col.year as string}>
+                  <td className={`px-4 py-4 text-right font-black ${col.revenue > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {col.revenue > 0 ? `₩${formatCurrency(col.revenue)}` : '-'}
+                  </td>
+                  <td className={`px-4 py-4 text-right font-medium ${col.visitors > 0 ? 'text-emerald-600' : 'text-slate-400'} ${cIdx === years.length - 1 ? '' : 'border-r border-slate-100'}`}>
+                    {col.visitors > 0 ? `${formatCurrency(col.visitors)}명` : '-'}
+                  </td>
+                </Fragment>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   };
 
   return (
@@ -188,24 +241,7 @@ export default function FacilityTrend() {
               <Store className="w-5 h-5 text-blue-500" /> 월별 상세 실적
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
-                    <th className="px-6 py-4 rounded-l-xl">연월 (Month)</th>
-                    <th className="px-6 py-4 text-right">총 매출액 (원)</th>
-                    <th className="px-6 py-4 text-right rounded-r-xl">방문객 수 (명)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data.monthlyData.map((row: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800">{row.month}</td>
-                      <td className="px-6 py-4 text-right font-black text-blue-600">₩{formatCurrency(row.revenue)}</td>
-                      <td className="px-6 py-4 text-right font-medium text-emerald-600">{formatCurrency(row.visitors)}명</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {renderPivotTable()}
             </div>
           </div>
         </div>

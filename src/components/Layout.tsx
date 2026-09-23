@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  LogOut, Menu, X, LayoutDashboard, ShieldCheck, BarChart2,
+  LogOut, Menu, X, LayoutDashboard, ShieldCheck, BarChart2, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
   Briefcase, Target, Sparkles, Users
 } from 'lucide-react';
@@ -50,6 +50,7 @@ export default function Layout() {
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
     { name: '부문별 정산 현황', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
     { name: '요일/부문별 매출 분석', path: '/day-of-week-sales', icon: <BarChart2 size={20} />, roles: ['admin', 'executive', 'management'] },
+    { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} />, roles: ['admin', 'executive', 'fnb', 'leisure', 'resort'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
   ];

@@ -28,6 +28,7 @@ import MatrixWeeklyDashboard from './pages/MatrixWeeklyDashboard';
 import DayOfWeekSales from './pages/DayOfWeekSales';
 import Synergy from './pages/Synergy';
 import SynergyCorrelation from './pages/SynergyCorrelation';
+import FacilityTrend from './pages/FacilityTrend';
 import OnlineMembers from './pages/OnlineMembers';
 import GroupSales from './pages/GroupSales';
 import TargetSimulator from './pages/TargetSimulator';
@@ -82,6 +83,7 @@ export function App() {
 
                     <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                     <Route path="day-of-week-sales" element={<DayOfWeekSales />} />
+                    <Route path="facility-trend" element={<FacilityTrend />} />
                     <Route path="members" element={<Members />} />
                     <Route path="etl-status" element={<DataSyncStatus />} />
                     <Route path="synergy" element={<Synergy />} />

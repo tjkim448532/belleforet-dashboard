@@ -10,7 +10,10 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 const FACILITIES = [
   '브리스켓346',
   '벼루',
+  '벼루재촌',
   '클럽하우스',
+  '사계절썰매장',
+  '놀이동산',
   '루지',
   '익스트림루지',
   '미디어아트센터',
@@ -132,7 +135,10 @@ export default function FacilityTrend() {
               영업장별 월별 실적 추이
             </h1>
             <p className="text-sm text-slate-500 mt-2 font-medium">
-              선택한 영업장의 2024년부터 현재까지의 월별 매출 및 방문객 추이를 비교합니다.
+              선택한 영업장의 2024년부터 현재까지의 월별 매출 및 방문객 추이를 비교합니다.<br/>
+              <span className="text-[11px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg mt-1 inline-block border border-amber-100">
+                💡 식음료(FNB) 및 연회 업장은 아이템 단위 판매이므로 진성 방문객수가 0명으로 집계됩니다.
+              </span>
             </p>
           </div>
 

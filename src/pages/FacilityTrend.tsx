@@ -8,22 +8,17 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 
 // 하드코딩된 임시 영업장 목록 (추후 백엔드/매핑 컨텍스트에서 동적으로 가져올 수 있음)
 const FACILITIES = [
-  '브리스켓346',
-  '벼루',
-  '벼루재촌',
-  '클럽하우스',
-  '사계절썰매장',
-  '놀이동산',
-  '루지',
-  '익스트림루지',
-  '미디어아트센터',
-  '콘도',
-  '골프장'
+  'ROOM', 'ROOM OTHER', '그린피', '기타매출', '카트대여', '클럽-레스토랑',
+  '클럽-스타트하우스', '프로샵', '벨포레 리조트', 'BHC(멕시카나)', 'CU편의점',
+  '남도예담', '딜라이트', '밤밤테이블', '브리스킷346', '쿠치나', '투썸플레이스',
+  '연회장', '놀이동산', '회전그네', '벨포레 목장', '벨포레 목장(체험)', '얼룩말카페',
+  '미디어-기프트샵', '미디어-뮤지엄카페', '미디어아트센터', '마운틴카트', '사계절썰매장',
+  '썸머랜드', '원더풀', '모토아레나', '핏스탑'
 ];
 
 export default function FacilityTrend() {
   const { startDate } = useDate();
-  const [selectedFacility, setSelectedFacility] = useState<string>('브리스켓346');
+  const [selectedFacility, setSelectedFacility] = useState<string>('브리스킷346');
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<any>(null);
 

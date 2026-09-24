@@ -75,20 +75,23 @@ export default function Members() {
   const [sortBy, setSortBy] = useState<'YTD_VISITS' | 'TODAY_SPEND' | 'YTD_SPEND' | 'NAME'>('YTD_VISITS');
   const [selectedMemberModal, setSelectedMemberModal] = useState<MemberVisitorItem | null>(null);
 
-  const [annualTrend, setAnnualTrend] = useState<any>(null);
+  const [annualTrend, setAnnualTrend] = useState<any>({});
 
-  // Fetch Annual Trend from API (Waiting for Backend)
+  // Fetch YoY Annual Trend from API
   const fetchAnnualTrend = async () => {
     try {
-      const year = startDate.substring(0, 4);
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=${year}`).catch(() => null);
-      if (res && res.data) {
-        setAnnualTrend(res.data.monthlyTrend);
-      } else {
-        setAnnualTrend([]);
-      }
+      const [res24, res25, res26] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=2024`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=2025`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=2026`).catch(() => null)
+      ]);
+      setAnnualTrend({
+        '2024': res24?.data?.monthlyTrend || [],
+        '2025': res25?.data?.monthlyTrend || [],
+        '2026': res26?.data?.monthlyTrend || [],
+      });
     } catch (err) {
-      setAnnualTrend([]);
+      setAnnualTrend({});
     }
   };
 
@@ -126,9 +129,6 @@ export default function Members() {
   }, [startDate, endDate]);
 
   const getAnnualChartOptions = () => {
-    // If backend isn't ready or returned empty, return an empty shell options
-    const rawData = annualTrend || [];
-    
     let startM = 1;
     let endM = 12;
     
@@ -138,61 +138,60 @@ export default function Members() {
     }
 
     const months = [];
-    const s1_6 = [];
-    const s1_12 = [];
-    const sFull = [];
+    const seriesData: Record<string, number[]> = {
+      '24_1/6': [], '24_1/12': [], '24_Full': [],
+      '25_1/6': [], '25_1/12': [], '25_Full': [],
+      '26_1/6': [], '26_1/12': [], '26_Full': []
+    };
 
     for (let m = startM; m <= endM; m++) {
       months.push(`${m}월`);
-      const targetMonthStr = `${startDate.substring(0,4)}-${m.toString().padStart(2, '0')}`;
-      const item = rawData.find((d: any) => d.month === targetMonthStr);
+      const mStr = m.toString().padStart(2, '0');
       
-      s1_6.push(item?.membershipTypes?.['1/6구좌'] || 0);
-      s1_12.push(item?.membershipTypes?.['1/12구좌'] || 0);
-      sFull.push(item?.membershipTypes?.['창립/풀구좌'] || 0);
+      const item24 = (annualTrend['2024'] || []).find((d: any) => d.month === `2024-${mStr}`);
+      seriesData['24_1/6'].push(item24?.membershipTypes?.['1/6구좌'] || 0);
+      seriesData['24_1/12'].push(item24?.membershipTypes?.['1/12구좌'] || 0);
+      seriesData['24_Full'].push(item24?.membershipTypes?.['창립/풀구좌'] || 0);
+
+      const item25 = (annualTrend['2025'] || []).find((d: any) => d.month === `2025-${mStr}`);
+      seriesData['25_1/6'].push(item25?.membershipTypes?.['1/6구좌'] || 0);
+      seriesData['25_1/12'].push(item25?.membershipTypes?.['1/12구좌'] || 0);
+      seriesData['25_Full'].push(item25?.membershipTypes?.['창립/풀구좌'] || 0);
+
+      const item26 = (annualTrend['2026'] || []).find((d: any) => d.month === `2026-${mStr}`);
+      seriesData['26_1/6'].push(item26?.membershipTypes?.['1/6구좌'] || 0);
+      seriesData['26_1/12'].push(item26?.membershipTypes?.['1/12구좌'] || 0);
+      seriesData['26_Full'].push(item26?.membershipTypes?.['창립/풀구좌'] || 0);
     }
+
+    const series = [
+      { name: '24년 1/6', type: 'bar', stack: '24', data: seriesData['24_1/6'], itemStyle: { color: '#93c5fd' } },
+      { name: '24년 1/12', type: 'bar', stack: '24', data: seriesData['24_1/12'], itemStyle: { color: '#6ee7b7' } },
+      { name: '24년 창립/풀', type: 'bar', stack: '24', data: seriesData['24_Full'], itemStyle: { color: '#c4b5fd', borderRadius: [4, 4, 0, 0] } },
+
+      { name: '25년 1/6', type: 'bar', stack: '25', data: seriesData['25_1/6'], itemStyle: { color: '#3b82f6' } },
+      { name: '25년 1/12', type: 'bar', stack: '25', data: seriesData['25_1/12'], itemStyle: { color: '#10b981' } },
+      { name: '25년 창립/풀', type: 'bar', stack: '25', data: seriesData['25_Full'], itemStyle: { color: '#8b5cf6', borderRadius: [4, 4, 0, 0] } },
+
+      { name: '26년 1/6', type: 'bar', stack: '26', data: seriesData['26_1/6'], itemStyle: { color: '#1d4ed8' } },
+      { name: '26년 1/12', type: 'bar', stack: '26', data: seriesData['26_1/12'], itemStyle: { color: '#047857' } },
+      { name: '26년 창립/풀', type: 'bar', stack: '26', data: seriesData['26_Full'], itemStyle: { color: '#5b21b6', borderRadius: [4, 4, 0, 0] } }
+    ];
 
     return {
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        formatter: function (params: any) {
-          let total = 0;
-          params.forEach((p: any) => total += p.value);
-          let tooltipHtml = `<div class="font-bold text-sm mb-1">${params[0].name} 방문객</div>`;
-          params.forEach((p: any) => {
-            const percent = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0.0';
-            tooltipHtml += `<div class="flex justify-between gap-4 text-xs mt-1">
-              <span class="flex items-center gap-1">
-                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${p.color}"></span>
-                ${p.seriesName}
-              </span>
-              <span class="font-semibold">${p.value}명 <span class="text-slate-400 font-normal">(${percent}%)</span></span>
-            </div>`;
-          });
-          tooltipHtml += `<div class="border-t border-slate-200 mt-2 pt-1 flex justify-between gap-4 text-xs font-bold text-slate-800">
-            <span>총합</span><span>${total}명</span>
-          </div>`;
-          return tooltipHtml;
-        }
+        axisPointer: { type: 'shadow' }
       },
       legend: {
-        data: ['1/6구좌', '1/12구좌', '창립/풀구좌'],
+        data: ['24년 1/6', '24년 1/12', '24년 창립/풀', '25년 1/6', '25년 1/12', '25년 창립/풀', '26년 1/6', '26년 1/12', '26년 창립/풀'],
         bottom: 0,
+        type: 'scroll'
       },
       grid: { left: '2%', right: '2%', top: '8%', bottom: '15%', containLabel: true },
-      xAxis: {
-        type: 'category',
-        data: months,
-      },
-      yAxis: {
-        type: 'value',
-      },
-      series: [
-        { name: '1/6구좌', type: 'bar', stack: 'total', data: s1_6, itemStyle: { color: '#3b82f6' } },
-        { name: '1/12구좌', type: 'bar', stack: 'total', data: s1_12, itemStyle: { color: '#10b981' } },
-        { name: '창립/풀구좌', type: 'bar', stack: 'total', data: sFull, itemStyle: { color: '#8b5cf6', borderRadius: [4, 4, 0, 0] } }
-      ]
+      xAxis: { type: 'category', data: months },
+      yAxis: { type: 'value' },
+      series
     };
   };
 

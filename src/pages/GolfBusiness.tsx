@@ -60,14 +60,10 @@ export default function GolfBusiness() {
 
   const directWebChannel = channels.find(c => c.venueName === '자사몰' || c.venueName === 'DIRECT_WEB' || c.ticketGroup === 'DIRECT_WEB' || c.ticketGroup === '자사홈페이지');
   const directRevenue = directWebChannel?.revenueFormatted || '0';
-  const directTeams = Math.floor((directWebChannel?.playerCount || 0) / 4) || 0; // fallback
+  const directPlayers = directWebChannel?.playerCountFormatted || '0';
 
-  // Find agency revenue sum roughly (if we can't we just show direct)
-  const agencies = channels.filter(c => c.ticketGroup === 'OTA_AGENCY' || c.ticketGroup === 'KAKAO_GOLF' || c.venueName.includes('대행'));
-  const agencyRevenue = agencies.reduce((sum, c) => sum + c.totalRevenue, 0);
-  const agencyRevenueFormatted = new Intl.NumberFormat('ko-KR').format(agencyRevenue);
-  const agencyPlayers = agencies.reduce((sum, c) => sum + c.playerCount, 0);
-  const agencyTeams = Math.floor(agencyPlayers / 4);
+  // Major OTA agency channel (SSOT 직결 채널)
+  const topAgency = channels.find(c => c.ticketGroup === 'OTA_AGENCY' || c.ticketGroup === 'KAKAO_GOLF' || c.venueName.includes('대행'));
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -171,7 +167,7 @@ export default function GolfBusiness() {
                   </span>
                 </div>
                 <div className="text-2xl font-black text-emerald-900 my-1">
-                  ₩{directRevenue} <span className="text-xs font-normal text-slate-500">({directTeams}팀)</span>
+                  ₩{directRevenue} <span className="text-xs font-normal text-slate-500">({directPlayers}명)</span>
                 </div>
                 <div className="space-y-1 text-xs text-slate-700 mt-3 pt-2 border-t border-emerald-200/60">
                   <div className="flex justify-between">
@@ -179,8 +175,8 @@ export default function GolfBusiness() {
                     <strong>{directWebChannel?.revenueSharePct || 0}%</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 외부 대행사(OTA) 매출:</span>
-                    <strong className="text-slate-900">₩{agencyRevenueFormatted}원 (추정 {agencyTeams}팀)</strong>
+                    <span>• 주요 대행 채널({topAgency?.venueName || 'OTA'}):</span>
+                    <strong className="text-slate-900">₩{topAgency?.revenueFormatted || '0'} ({topAgency?.playerCountFormatted || '0'}명)</strong>
                   </div>
                 </div>
               </div>

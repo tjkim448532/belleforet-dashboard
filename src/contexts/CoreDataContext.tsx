@@ -129,11 +129,11 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         // If master API already returned complete golf metrics via mat_v6_golf_daily, skip redundant 20s background fetch
         if (!hasFullGolfMetrics) {
-          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis?${queryParams}`)
+          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`)
             .then((golfTeetimeRes) => {
               if (isCancelled || !golfTeetimeRes) return;
-              const gs = golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
-              const channels = golfTeetimeRes?.salesByChannel || [];
+              const gs = golfTeetimeRes?.meta?.summary || golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
+              const channels = golfTeetimeRes?.channels || golfTeetimeRes?.salesByChannel || [];
               if (channels.length > 0 || Object.keys(gs).length > 0) {
                 setState(prev => {
                   if (!prev.core) return prev;

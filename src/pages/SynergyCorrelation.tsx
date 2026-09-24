@@ -1,140 +1,32 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
-import ReactECharts from 'echarts-for-react';
+import type { SynergyStoreCorrelationV2Response } from '../types/reports-v2';
 import { 
-  Building2, TrendingUp, Sparkles, 
-  Ticket, Utensils, Calendar, RefreshCw, ShieldCheck,
-  Grid, Zap, Compass, Waves,
-  Clock, Cpu, AlertTriangle
+  TrendingUp, Calendar, RefreshCw, Grid, Zap,
+  Sparkles
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-const formatCurrency = (val: any) => {
-  if (!val) return '0';
-  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
-  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
-};
-
-import type { StoreCorrelationItem, AnchorInfo, CrossSynergyItem, ExogenousControlMeta } from '../components/synergy/types';
-import SynergyStoreCard from '../components/synergy/SynergyStoreCard';
-import SynergyTable from '../components/synergy/SynergyTable';
-
-type AnchorType = 
-  | 'ROOM'
-  | 'FNB'
-  | 'WONDERPOOL'
-  | 'MOUNTAIN_CART'
-  | 'MEDIA_ART'
-  | 'FARM'
-  | 'AMUSEMENT'
-  | 'MOTO_ARENA';
-
-export const isGolfVenue = (sName: string, div?: string) => {
-  const d = div || '';
-  const s = sName || '';
-  return d === '골프' || d === 'GOLF' || d === '골프본부' ||
-         s.includes('골프') || s.includes('클럽-') || s.includes('그린피') ||
-         s.includes('카트대여') || s.includes('스타트하우스') || s.includes('프로샵');
-};
-
-interface AnchorOption {
-  code: AnchorType;
-  name: string;
-  category: string;
-  icon: any;
-  color: string;
-  activeBg: string;
-  desc: string;
-}
-
-const ANCHOR_OPTIONS: AnchorOption[] = [
-  { code: 'ROOM', name: '객실 숙박료', category: '콘도', icon: Building2, color: 'text-indigo-400', activeBg: 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400/40', desc: '객실 투숙객 증가 시 전사 부대시설(식음/레저/모토) 동반 소비 파급 효과 (골프 제외)' },
-  { code: 'FNB', name: '식음 부문 전체', category: '식음', icon: Utensils, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '식음 이용 고객 증가 시 카페, 편의점 및 인근 레저 시설 연계 효과' },
-  { code: 'WONDERPOOL', name: '원더풀/썸머랜드', category: '레저', icon: Waves, color: 'text-cyan-400', activeBg: 'bg-cyan-600 text-white shadow-lg ring-2 ring-cyan-400/40', desc: '워터파크 피크 시 푸드트럭, 편의점, 수영복/용품샵 동반 반응' },
-  { code: 'MOUNTAIN_CART', name: '마운틴카트(루지)', category: '레저', icon: Compass, color: 'text-rose-400', activeBg: 'bg-rose-600 text-white shadow-lg ring-2 ring-rose-400/40', desc: '마운틴카트(액티비티) 이용객 증가 시 목장, 모토아레나, 식음 매장 연계 소비' },
-  { code: 'MEDIA_ART', name: '미디어아트센터', category: '레저', icon: Sparkles, color: 'text-purple-400', activeBg: 'bg-purple-600 text-white shadow-lg ring-2 ring-purple-400/40', desc: '미디어아트 관람객 증가 시 카페, 기프트샵, 인근 식음/레저 연동 반응' },
-  { code: 'FARM', name: '벨포레 목장', category: '레저', icon: Ticket, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400/40', desc: '목장/체험 가족 단위 방문객 증가 시 미디어아트, 힐사이드 카페 연계 반응' },
-  { code: 'AMUSEMENT', name: '놀이동산', category: '레저', icon: Ticket, color: 'text-pink-400', activeBg: 'bg-pink-600 text-white shadow-lg ring-2 ring-pink-400/40', desc: '놀이동산 방문 고객의 F&B, 간식, 굿즈샵 동반 유입 효과' },
-  { code: 'MOTO_ARENA', name: '모토아레나', category: '레저', icon: Compass, color: 'text-orange-400', activeBg: 'bg-orange-600 text-white shadow-lg ring-2 ring-orange-400/40', desc: '서킷/레이싱 매니아층의 식음 매장 및 숙박 연계 파급 효과' },
-];
-
-// High-Performance In-Memory Cache for Instant 0ms Tab Switching
-const synergyMemoryCache = new Map<string, {
-  anchorData: AnchorInfo;
-  summaryMeta: any;
-  girfRows: any[];
-  exogenousMeta: any;
-  validCorrList: StoreCorrelationItem[];
-  isDataInsufficient?: boolean;
-  executiveInsights?: any[];
-}>();
-
 export default function SynergyCorrelation() {
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
   
-  // Date Range State
   const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
   const [startDate, setStartDate] = useState<string>(globalStartDate);
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   
-  // Fail-Stop and Actionable Insights State
-  const [isDataInsufficient, setIsDataInsufficient] = useState<boolean>(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [executiveInsights, setExecutiveInsights] = useState<any[]>([]);
-
-  // Anchor Selection State (NEW SSOT - GOLF EXCLUDED)
-  const [selectedAnchor, setSelectedAnchor] = useState<AnchorType>('ROOM');
-  const [anchorData, setAnchorData] = useState<AnchorInfo | null>(null);
-
-  const [correlationData, setCorrelationData] = useState<StoreCorrelationItem[]>([]);
-  const [exogenousMeta, setExogenousMeta] = useState<ExogenousControlMeta | null>(null);
-  const [girfRows, setGirfRows] = useState<import('../components/synergy/types').GIRFHorizonRow[]>([]);
-  const [summaryMeta, setSummaryMeta] = useState<{
-    totalShopsAnalyzed: number;
-    totalPureSpillover: number;
-    topSynergyShop?: string;
-    maxSpilloverAmount?: number;
-    averageElasticity?: number;
-  }>({
-    totalShopsAnalyzed: 34,
-    totalPureSpillover: 0,
-    topSynergyShop: '',
-    maxSpilloverAmount: 0,
-    averageElasticity: 0
-  });
-
-  const [includeMoto, setIncludeMoto] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [data, setData] = useState<SynergyStoreCorrelationV2Response | null>(null);
 
-
-
-  const [selectedLeisureShop, setSelectedLeisureShop] = useState<string>('ALL');
-  const [selectedFnbShop, setSelectedFnbShop] = useState<string>('ALL');
-  const [sortMode, setSortMode] = useState<'default' | 'correlation' | 'elasticity' | 'spillover'>('correlation');
-
-  // Days difference calculation
-  const totalDays = useMemo(() => {
-    if (!isRangeMode || !endDate) return 1;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays > 0 ? diffDays : 1;
-  }, [startDate, endDate, isRangeMode]);
-
-  const isActualRange = useMemo(() => {
-    return isRangeMode && !!endDate && startDate !== endDate;
-  }, [isRangeMode, startDate, endDate]);
-
-  const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean, overrideAnchor?: AnchorType) => {
+  const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
-    const targetAnchor = overrideAnchor || selectedAnchor;
 
     if (rangeActive && sDate && eDate && sDate > eDate) {
       const temp = sDate;
@@ -144,346 +36,35 @@ export default function SynergyCorrelation() {
       setEndDate(eDate);
     }
 
-    const cacheKey = `${targetAnchor}_${sDate}_${eDate || sDate}_${rangeActive}`;
-
-    // ⚡ Instant Cache Hit (0ms Latency)
-    if (synergyMemoryCache.has(cacheKey)) {
-      const cached = synergyMemoryCache.get(cacheKey)!;
-      setAnchorData(cached.anchorData);
-      setSummaryMeta(cached.summaryMeta);
-      setGirfRows(cached.girfRows);
-      setExogenousMeta(cached.exogenousMeta);
-      setCorrelationData(cached.validCorrList);
-      setIsDataInsufficient(!!cached.isDataInsufficient);
-      setExecutiveInsights(cached.executiveInsights || []);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
-    setApiError(null);
+    setError(null);
 
     try {
-      const queryParams = rangeActive && eDate
+      const queryDateParams = (rangeActive && eDate) 
         ? `startDate=${sDate}&endDate=${eDate}`
-        : `date=${sDate}`;
+        : `startDate=${sDate}&endDate=${sDate}`; // ensure both are passed for exact mapping
 
-      // Single date or Range: Pass exact dates without hidden monthStart expansion (SSOT)
-      const crossStartDate = sDate;
-      const crossEndDate = (rangeActive && eDate) ? eDate : sDate;
-
-      const crossParams = `anchor=${targetAnchor}&startDate=${crossStartDate}&endDate=${crossEndDate}`;
-
-      // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT) and Overview Master (V6 SSOT)
-      const [crossRes, overviewRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`),
-        secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`)
-      ]);
-
-      const insufficientData = !!(
-        crossRes?.insufficientDataForRegression || 
-        crossRes?.summary?.insufficientDataForRegression ||
-        crossRes?.isInsufficientData ||
-        crossRes?.summary?.isInsufficientData
-      );
-      setIsDataInsufficient(insufficientData);
-
-      const actionInsights: any[] = crossRes?.executiveActionableInsights || [];
-      setExecutiveInsights(actionInsights);
-
-      const overviewPayload = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes?.data || overviewRes || {});
-      const matrixRows: any[] = overviewPayload?.gridData || [];
-      const categories: any[] = overviewPayload?.salesByCategory || [];
-      const summaryObj = overviewPayload?.summary || {};
+      const res = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation-v2?${queryDateParams}`);
       
-      const cleanNum = (val: any) => {
-        if (typeof val === 'number') return isNaN(val) ? 0 : val;
-        if (!val) return 0;
-        return Number(String(val).replace(/,/g, '').trim()) || 0;
-      };
-
-      // Extract total rooms sold
-      let totalRooms = cleanNum(summaryObj.totalRooms);
-      if (totalRooms <= 0) {
-        const roomSub = matrixRows.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도'));
-        totalRooms = cleanNum(rangeActive ? (roomSub?.rangeVisitors || roomSub?.mtdVisitors || summaryObj.totalRooms) : (roomSub?.todayVisitors || summaryObj.totalRooms || 0));
+      if (res && res.success) {
+        setData(res as SynergyStoreCorrelationV2Response);
+      } else {
+        throw new Error('API request failed or returned success: false');
       }
-      if (totalRooms <= 0) totalRooms = 0;
-
-      // Calculate current selected anchor's exact revenue for the selected timeframe
-      let currentAnchorPeriodSales = 0;
-      if (Array.isArray(categories) && categories.length > 0) {
-        if (targetAnchor === 'ROOM') {
-          const roomCat = categories.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (roomCat?.rangeActual || roomCat?.todayActual || roomCat?.revenue || roomCat?.totalSales || roomCat?.mtdActual) : roomCat?.todayActual);
-        } else if (targetAnchor === 'FNB') {
-          const fnbCat = categories.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (fnbCat?.rangeActual || fnbCat?.todayActual || fnbCat?.revenue || fnbCat?.totalSales || fnbCat?.mtdActual) : fnbCat?.todayActual);
-        }
-      }
-
-      if (currentAnchorPeriodSales <= 0 && Array.isArray(matrixRows) && matrixRows.length > 0) {
-        if (targetAnchor === 'MEDIA_ART') {
-          const mediaVenue = matrixRows.find((r: any) => r.shopName === '미디어아트센터');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (mediaVenue?.rangeActual || mediaVenue?.todayActual || mediaVenue?.totalSales || mediaVenue?.revenue || mediaVenue?.mtdActual) : mediaVenue?.todayActual);
-        } else if (targetAnchor === 'MOUNTAIN_CART') {
-          const kartVenue = matrixRows.find((r: any) => r.shopName === '마운틴카트');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (kartVenue?.rangeActual || kartVenue?.todayActual || kartVenue?.totalSales || kartVenue?.revenue || kartVenue?.mtdActual) : kartVenue?.todayActual);
-        } else if (targetAnchor === 'WONDERPOOL') {
-          const summerVenue = matrixRows.find((r: any) => r.shopName === '썸머랜드');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (summerVenue?.rangeActual || summerVenue?.todayActual || summerVenue?.totalSales || summerVenue?.revenue || summerVenue?.mtdActual) : summerVenue?.todayActual);
-        } else if (targetAnchor === 'FARM') {
-          const farmVenue = matrixRows.find((r: any) => r.shopName === '벨포레 목장');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (farmVenue?.rangeActual || farmVenue?.todayActual || farmVenue?.totalSales || farmVenue?.revenue || farmVenue?.mtdActual) : farmVenue?.todayActual);
-        } else if (targetAnchor === 'MOTO_ARENA') {
-          const motoVenue = matrixRows.find((r: any) => r.shopName === '모토아레나');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (motoVenue?.rangeActual || motoVenue?.todayActual || motoVenue?.totalSales || motoVenue?.revenue || motoVenue?.mtdActual) : motoVenue?.todayActual);
-        } else if (targetAnchor === 'AMUSEMENT') {
-          const amuseVenue = matrixRows.find((r: any) => r.shopName === '놀이동산');
-          currentAnchorPeriodSales = cleanNum(rangeActive ? (amuseVenue?.rangeActual || amuseVenue?.todayActual || amuseVenue?.totalSales || amuseVenue?.revenue || amuseVenue?.mtdActual) : amuseVenue?.todayActual);
-        }
-      }
-
-      // SSOT Revenue Binding: Never clobber crossRes.anchor.periodTotalRevenue with 1-month MTD numbers
-      const anchorPeriodRevenue = rangeActive
-        ? (cleanNum(crossRes?.anchor?.periodTotalRevenue) || cleanNum(crossRes?.summary?.anchorRevenue) || currentAnchorPeriodSales)
-        : (currentAnchorPeriodSales || cleanNum(crossRes?.anchor?.periodTotalRevenue) || cleanNum(crossRes?.anchor?.dailyAvgRevenue));
-
-      const anchorDailyAvgRevenue = cleanNum(crossRes?.anchor?.dailyAvgRevenue) ||
-        cleanNum(crossRes?.summary?.anchorDailyAvgRevenue) ||
-        (anchorPeriodRevenue > 0 && totalDays > 0 ? Math.round(anchorPeriodRevenue / totalDays) : currentAnchorPeriodSales);
-
-      // Set Anchor Info
-      if (crossRes?.anchor) {
-        setAnchorData({
-          ...crossRes.anchor,
-          periodTotalRevenue: anchorPeriodRevenue,
-          dailyAvgRevenue: anchorDailyAvgRevenue
-        });
-      }
-
-      // Map correlations from cross-synergy-matrix / causal API (V6 SSOT)
-      const rawCorrelations: CrossSynergyItem[] = crossRes?.synergyMatrix || crossRes?.correlations || [];
-      const physicalShops = Array.isArray(matrixRows) ? matrixRows.filter((r: any) => !r.isSubtotal && !r.isGrandTotal) : [];
-
-      const corrList: StoreCorrelationItem[] = rawCorrelations.map((item) => {
-        const shopName = item.targetShopName || item.shopName || '';
-        // Find corresponding venue in matrix-weekly for actual POS sales
-        const matchVenue = physicalShops.find((r: any) => r.shopName === shopName || r.facilityName === shopName);
-        const venueSales = matchVenue 
-          ? (rangeActive ? cleanNum(matchVenue.rangeActual || matchVenue.todayActual || matchVenue.totalSales || matchVenue.revenue || matchVenue.mtdActual) : cleanNum(matchVenue.todayActual))
-          : 0;
-
-        let division = item.categoryName || '미분류';
-
-        const rawCoeff = item.rawCorrelation ?? item.correlationCoefficient ?? 0;
-        const pureCoeff = item.pureCorrelation ?? rawCoeff;
-        const pureElasticity = item.pureElasticity ?? item.elasticityPercent ?? 0;
-        const pureSpillover = item.pureSpilloverPerMillion ?? item.spilloverPerMillion ?? 0;
-
-        // SSOT Direct Binding: Purely from Backend API without fake hardcoded ternary fallbacks
-        const capaUtil = cleanNum(item.currentCapacityUtilization ?? (item as any).capacityUtilization ?? 0);
-        const bottleneck = item.bottleneckRisk ?? (capaUtil >= 90 ? 'CRITICAL' : capaUtil >= 80 ? 'WARNING' : 'SAFE');
-        const timeLag = item.timeLagDistribution ?? { sameDayRatio: 100, nextDayRatio: 0 };
-
-        return {
-          ...item,
-          targetShopName: shopName,
-          shopName,
-          storeName: shopName,
-          divisionName: division,
-          totalRevenue: venueSales,
-          totalSales: venueSales,
-          correlatedSales: pureSpillover > 0 && (crossRes?.anchor?.periodTotalRevenue || anchorPeriodRevenue) 
-            ? Math.round(((crossRes?.anchor?.periodTotalRevenue || anchorPeriodRevenue) / 1000000) * pureSpillover) 
-            : 0,
-          correlatedVisitors: matchVenue ? cleanNum(matchVenue.todayVisitors || matchVenue.rangeVisitors || 0) : 0,
-          spilloverRate: Math.round(pureElasticity * 10) / 10,
-          correlationCoefficient: item.correlationCoefficient,
-          rawCorrelation: rawCoeff,
-          pureCorrelation: pureCoeff,
-          isSpurious: item.isSpurious ?? false,
-          pureElasticity,
-          pureSpilloverPerMillion: pureSpillover,
-          causalInferenceGrade: item.causalInferenceGrade,
-          saturationThreshold_K: item.saturationThreshold_K,
-          currentCapacityUtilization: capaUtil,
-          bottleneckRisk: bottleneck,
-          timeLagDistribution: timeLag,
-          weatherImpact: (item as any).weatherImpact,
-          elasticityPercent: item.elasticityPercent,
-          spilloverPerMillion: item.spilloverPerMillion,
-          synergyGrade: item.synergyGrade,
-          insight: item.insight,
-          aiStrategyInsight: item.aiStrategyInsight || item.insight,
-          interactionGrade: item.synergyGrade === 'EXCELLENT' ? 'HIGH_SYNERGY' : item.synergyGrade === 'HIGH' ? 'MODERATE_SYNERGY' : 'WEAK',
-          revPasContribution: totalRooms > 0 ? Math.round(venueSales / totalRooms) : 0,
-          isGuestRatioTrackable: true,
-          calculationMethod: 'TIME_SERIES_CAUSAL_OLS'
-        };
-      });
-
-      // 🚫 골프 관련 업장 및 매출 전면 배제 (골프본부, 클럽하우스 식당/스타트하우스, 프로샵, 카트, 그린피)
-      const validCorrList = corrList.filter(c => {
-        const sName = c.shopName || '';
-        const div = c.divisionName || c.categoryName || '';
-        if (isGolfVenue(sName, div)) return false; // 🚫 골프 전면 배제
-        const isSelf = (targetAnchor === 'ROOM' && (sName.includes('객실') || sName.includes('콘도') || sName === 'ROOM')) ||
-                       (targetAnchor === 'FNB' && (sName.includes('식음') || sName === 'FNB'));
-        return !isSelf && sName !== 'UNMAPPED_TICKET';
-      });
-
-      // 🚫 NO SLICE SUMMATION SSOT: 백엔드가 내려주는 완성형 총합 직접 바인딩
-      const totalSpillover = crossRes?.summary?.totalPureSpillover ?? 0;
-      const avgElasticity = crossRes?.summary?.averageElasticity ?? (validCorrList.length > 0 
-        ? Number((validCorrList.reduce((sum, item) => sum + (item.pureElasticity || 0), 0) / validCorrList.length).toFixed(1))
-        : 0);
-      const topStore = [...validCorrList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
-
-      const newAnchorData = crossRes?.anchor ? {
-        ...crossRes.anchor,
-        periodTotalRevenue: anchorPeriodRevenue,
-        dailyAvgRevenue: anchorDailyAvgRevenue
-      } : null;
-
-      const newSummaryMeta = {
-        totalShopsAnalyzed: crossRes?.summary?.totalShopsAnalyzed ?? validCorrList.length,
-        totalPureSpillover: totalSpillover,
-        topSynergyShop: crossRes?.summary?.topSynergyShop || topStore?.shopName || '',
-        maxSpilloverAmount: crossRes?.summary?.maxSpilloverAmount || topStore?.pureSpilloverPerMillion || 0,
-        averageElasticity: avgElasticity,
-      };
-
-      const newGirfRows = crossRes?.generalizedImpulseResponses?.girfTable || [];
-      const newExogenousMeta = crossRes?.exogenousControl ? {
-        ...crossRes.exogenousControl,
-        isExogenousControlled: crossRes.exogenousControl.isExogenousControlled ?? crossRes.isExogenousControlled ?? (totalDays >= 14)
-      } : {
-        controlledVariables: ['DayOfWeek (Mon~Sun)', 'Precipitation_mm (강수량)', 'Temperature_C (기온)', 'Holidays (공휴일)', 'PeakSeason (성수기)'],
-        observationDays: totalDays > 1 ? totalDays : 236,
-        totalOffDays: 77,
-        isExogenousControlled: totalDays >= 14
-      };
-
-      if (newAnchorData) setAnchorData(newAnchorData);
-      setSummaryMeta(newSummaryMeta);
-      setGirfRows(newGirfRows);
-      setExogenousMeta(newExogenousMeta);
-      setCorrelationData(validCorrList);
-
-      // Save to In-Memory Cache
-      if (newAnchorData) {
-        synergyMemoryCache.set(cacheKey, {
-          anchorData: newAnchorData,
-          summaryMeta: newSummaryMeta,
-          girfRows: newGirfRows,
-          exogenousMeta: newExogenousMeta,
-          validCorrList,
-          isDataInsufficient: insufficientData,
-          executiveInsights: actionInsights
-        });
-      }
-
-      // Background Pre-fetch Top Adjacent Anchors (ROOM, FNB, WONDERPOOL, MOUNTAIN_CART)
-      const candidateAnchors: AnchorType[] = ['ROOM', 'FNB', 'WONDERPOOL', 'MOUNTAIN_CART'];
-      setTimeout(() => {
-        candidateAnchors.forEach(async (cand) => {
-          if (cand === targetAnchor) return;
-          const candKey = `${cand}_${sDate}_${eDate || sDate}_${rangeActive}`;
-          if (synergyMemoryCache.has(candKey)) return;
-          try {
-            const cStart = sDate;
-            const cEnd = (rangeActive && eDate) ? eDate : sDate;
-            const cRes = await secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?anchor=${cand}&startDate=${cStart}&endDate=${cEnd}`);
-            if (cRes?.anchor) {
-              const rawC: CrossSynergyItem[] = cRes.synergyMatrix || cRes.correlations || [];
-              const vList = rawC.map(it => ({
-                ...it,
-                targetShopName: it.targetShopName || it.shopName || '',
-                shopName: it.targetShopName || it.shopName || '',
-                storeName: it.targetShopName || it.shopName || '',
-                divisionName: it.categoryName || '미분류',
-                totalRevenue: 0,
-                totalSales: 0,
-                correlatedSales: 0,
-                correlatedVisitors: 0,
-                spilloverRate: Math.round((it.pureElasticity ?? 0) * 10) / 10,
-                correlationCoefficient: it.correlationCoefficient,
-                rawCorrelation: it.rawCorrelation ?? 0,
-                pureCorrelation: it.pureCorrelation ?? 0,
-                isSpurious: it.isSpurious ?? false,
-                pureElasticity: it.pureElasticity ?? 0,
-                pureSpilloverPerMillion: it.pureSpilloverPerMillion ?? 0,
-                causalInferenceGrade: it.causalInferenceGrade || 'CONTEMPORANEOUS_CORRELATION',
-                saturationThreshold_K: 120000000,
-                currentCapacityUtilization: cleanNum(it.currentCapacityUtilization ?? (it as any).capacityUtilization ?? 0),
-                bottleneckRisk: it.bottleneckRisk || 'SAFE',
-                timeLagDistribution: it.timeLagDistribution || { sameDayRatio: 100, nextDayRatio: 0 },
-                weatherImpact: { rain10mmEffect: -5, temp1degEffect: 0.4 },
-                elasticityPercent: it.elasticityPercent,
-                spilloverPerMillion: it.spilloverPerMillion,
-                synergyGrade: it.synergyGrade,
-                insight: it.insight,
-                aiStrategyInsight: it.insight,
-                interactionGrade: 'HIGH_SYNERGY',
-                revPasContribution: 0,
-                isGuestRatioTrackable: true,
-                calculationMethod: 'TIME_SERIES_CAUSAL_OLS'
-              })).filter(c => {
-                const sName = c.shopName || '';
-                const div = c.divisionName || '';
-                if (isGolfVenue(sName, div)) return false; // 🚫 골프 전면 배제
-                const isSelf = (cand === 'ROOM' && (sName.includes('객실') || sName.includes('콘도') || sName === 'ROOM')) ||
-                               (cand === 'FNB' && (sName.includes('식음') || sName === 'FNB'));
-                return !isSelf && sName !== 'UNMAPPED_TICKET';
-              });
-              const tSpill = cRes?.summary?.totalPureSpillover ?? 0;
-              const aElast = cRes?.summary?.averageElasticity ?? (vList.length > 0 
-                ? Number((vList.reduce((sum, item) => sum + (item.pureElasticity || 0), 0) / vList.length).toFixed(1))
-                : 0);
-              const tStore = [...vList].sort((a, b) => (b.pureSpilloverPerMillion || 0) - (a.pureSpilloverPerMillion || 0))[0];
-
-              synergyMemoryCache.set(candKey, {
-                anchorData: cRes.anchor,
-                summaryMeta: {
-                  totalShopsAnalyzed: cRes?.summary?.totalShopsAnalyzed ?? vList.length,
-                  totalPureSpillover: tSpill,
-                  topSynergyShop: cRes?.summary?.topSynergyShop || tStore?.shopName || '',
-                  maxSpilloverAmount: cRes?.summary?.maxSpilloverAmount || tStore?.pureSpilloverPerMillion || 0,
-                  averageElasticity: aElast
-                },
-                girfRows: cRes.generalizedImpulseResponses?.girfTable || [],
-                exogenousMeta: cRes.exogenousControl || newExogenousMeta,
-                validCorrList: vList as any,
-                isDataInsufficient: !!(cRes.insufficientDataForRegression || cRes.summary?.insufficientDataForRegression || cRes.isInsufficientData || cRes.summary?.isInsufficientData),
-                executiveInsights: cRes.executiveActionableInsights || []
-              });
-            }
-          } catch {
-            // Ignore prefetch errors silently
-          }
-        });
-      }, 200);
     } catch (err: any) {
       console.error('Synergy Correlation API Error:', err);
-      setApiError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
+      setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Sync with global DateContext on mount and updates
   useEffect(() => {
     setIsRangeMode(globalIsRange);
     setStartDate(globalStartDate);
     setEndDate(globalEndDate || globalStartDate);
-    fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange, selectedAnchor);
-  }, [globalStartDate, globalEndDate, globalIsRange, selectedAnchor]);
-
-  const handleAnchorChange = (anchor: AnchorType) => {
-    setSelectedAnchor(anchor);
-    fetchData(startDate, endDate, isRangeMode, anchor);
-  };
+    fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange);
+  }, [globalStartDate, globalEndDate, globalIsRange]);
 
   const handleSearch = () => {
     let s = startDate;
@@ -496,196 +77,44 @@ export default function SynergyCorrelation() {
       setEndDate(e);
     }
     setDateRange(s, isRangeMode ? e : null, isRangeMode);
-    fetchData(s, e, isRangeMode, selectedAnchor);
+    fetchData(s, e, isRangeMode);
   };
 
-  // Quick Preset Handlers
   const applyPreset = (preset: DatePresetType) => {
     const res = getPresetDateRange(preset);
     setIsRangeMode(res.isRange);
     setStartDate(res.startDate);
     setEndDate(res.endDate || res.startDate);
     setDateRange(res.startDate, res.endDate, res.isRange);
-    fetchData(res.startDate, res.endDate || res.startDate, res.isRange, selectedAnchor);
+    fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 
-  // Sorting function
-  const sortCorrelations = (items: StoreCorrelationItem[]) => {
-    return [...items].sort((a, b) => {
-      if (sortMode === 'correlation') {
-        return (b.pureCorrelation ?? b.correlationCoefficient ?? -1) - (a.pureCorrelation ?? a.correlationCoefficient ?? -1);
-      } else if (sortMode === 'elasticity') {
-        return (b.pureElasticity ?? b.elasticityPercent ?? 0) - (a.pureElasticity ?? a.elasticityPercent ?? 0);
-      } else if (sortMode === 'spillover') {
-        return (b.pureSpilloverPerMillion ?? b.spilloverPerMillion ?? 0) - (a.pureSpilloverPerMillion ?? a.spilloverPerMillion ?? 0);
-      }
-      return (b.totalRevenue || b.totalSales || 0) - (a.totalRevenue || a.totalSales || 0);
-    });
+  const getInteractionColor = (grade: string) => {
+    switch (grade) {
+      case 'EXCELLENT':
+      case 'HIGH_SYNERGY': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'GOOD':
+      case 'MODERATE_SYNERGY': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'AVERAGE': return 'bg-amber-100 text-amber-800 border-amber-200';
+      default: return 'bg-slate-100 text-slate-800 border-slate-200';
+    }
   };
-
-  // Leisure and Moto Stores (골프장 제외)
-  const leisureStoreAnalysis = useMemo(() => {
-    const items = correlationData.filter(c => {
-      const sName = c.shopName || '';
-      const div = c.divisionName || c.categoryName || '';
-      if (div === '골프본부' || div === '식음팀' || isGolfVenue(sName, div)) return false;
-      if (!includeMoto && (div === '모토아레나' || sName.includes('모토아레나'))) return false;
-      return div === '레저본부' || div === '모토아레나';
-    }).map(c => ({
-      ...c,
-      color: 'border-purple-200 bg-purple-50/40 text-purple-900'
-    }));
-    return sortCorrelations(items);
-  }, [correlationData, includeMoto, sortMode]);
-
-  // F&B Stores (클럽하우스 식당 등 골프 식음 엄격 제외)
-  const fnbStoreAnalysis = useMemo(() => {
-    const items = correlationData.filter(c => {
-      const sName = c.shopName || '';
-      const div = c.divisionName || c.categoryName || '';
-      if (isGolfVenue(sName, div)) return false;
-      return div === '식음팀' || div === '식음';
-    }).map(c => ({
-      ...c,
-      color: 'border-amber-200 bg-amber-50/40 text-amber-900'
-    }));
-    return sortCorrelations(items);
-  }, [correlationData, sortMode]);
-
-  // Condo / Room Stores (골프장 완전 배제, 콘도/객실만 포함)
-  const roomStoreAnalysis = useMemo(() => {
-    const items = correlationData.filter(c => {
-      const sName = c.shopName || '';
-      const div = c.divisionName || c.categoryName || '';
-      if (isGolfVenue(sName, div)) return false;
-      return div === '콘도' || div === '객실' || sName.includes('콘도') || sName.includes('객실');
-    }).map(c => ({
-      ...c,
-      color: 'border-indigo-200 bg-indigo-50/40 text-indigo-900'
-    }));
-    return sortCorrelations(items);
-  }, [correlationData, sortMode]);
-
-  // Filtered for Cards
-  const filteredLeisureStores = useMemo(() => {
-    if (selectedLeisureShop !== 'ALL') {
-      return leisureStoreAnalysis.filter(s => s.shopName === selectedLeisureShop);
-    }
-    return leisureStoreAnalysis;
-  }, [leisureStoreAnalysis, selectedLeisureShop]);
-
-  const filteredFnbStores = useMemo(() => {
-    if (selectedFnbShop !== 'ALL') {
-      return fnbStoreAnalysis.filter(s => s.shopName === selectedFnbShop);
-    }
-    return fnbStoreAnalysis;
-  }, [fnbStoreAnalysis, selectedFnbShop]);
-
-  const currentAnchorObj = ANCHOR_OPTIONS.find(a => a.code === selectedAnchor) || ANCHOR_OPTIONS[0];
-
-  // Top Causal Highlight Stats
-  const topPureStore = useMemo(() => {
-    const sorted = [...correlationData].sort((a, b) => (b.pureSpilloverPerMillion || b.spilloverPerMillion || 0) - (a.pureSpilloverPerMillion || a.spilloverPerMillion || 0));
-    return sorted[0] || null;
-  }, [correlationData]);
-
-
-
-  // ECharts Sankey Flow Options for Time-Lag Cascade
-  const sankeyOptions = useMemo(() => {
-    const anchorName = currentAnchorObj.name;
-    const sameDayStores = correlationData.filter(c => (c.timeLagDistribution?.sameDayRatio || 0) >= 60).slice(0, 4);
-    const nextDayStores = correlationData.filter(c => (c.timeLagDistribution?.nextDayRatio || 0) >= 20).slice(0, 3);
-
-    const nodes = [
-      { name: `${anchorName} 유입`, itemStyle: { color: '#4f46e5' } },
-      { name: '당일 즉시 소비 (t0)', itemStyle: { color: '#9333ea' } },
-      { name: '익일 이연 소비 (t1)', itemStyle: { color: '#0d9488' } },
-    ];
-
-    sameDayStores.forEach((s, idx) => {
-      nodes.push({ name: `${s.shopName} (당일)`, itemStyle: { color: idx % 2 === 0 ? '#a855f7' : '#ec4899' } });
-    });
-
-    nextDayStores.forEach((s, idx) => {
-      nodes.push({ name: `${s.shopName} (익일)`, itemStyle: { color: idx % 2 === 0 ? '#14b8a6' : '#06b6d4' } });
-    });
-
-    const links: any[] = [
-      { source: `${anchorName} 유입`, target: '당일 즉시 소비 (t0)', value: 65 },
-      { source: `${anchorName} 유입`, target: '익일 이연 소비 (t1)', value: 35 },
-    ];
-
-    sameDayStores.forEach((s) => {
-      links.push({
-        source: '당일 즉시 소비 (t0)',
-        target: `${s.shopName} (당일)`,
-        value: Math.max(10, Math.round((s.timeLagDistribution?.sameDayRatio ?? 0) / 2))
-      });
-    });
-
-    nextDayStores.forEach((s) => {
-      links.push({
-        source: '익일 이연 소비 (t1)',
-        target: `${s.shopName} (익일)`,
-        value: Math.max(10, Math.round((s.timeLagDistribution?.nextDayRatio ?? 0) / 2))
-      });
-    });
-
-    return {
-      tooltip: {
-        trigger: 'item',
-        triggerOn: 'mousemove'
-      },
-      series: [
-        {
-          type: 'sankey',
-          layout: 'none',
-          emphasis: { focus: 'adjacency' },
-          data: nodes,
-          links: links,
-          lineStyle: { color: 'gradient', curveness: 0.5 },
-          label: { color: '#1e293b', fontSize: 12, fontWeight: 'bold' }
-        }
-      ]
-    };
-  }, [currentAnchorObj, correlationData]);
-
-  // Simulated Weather Impacts
-  
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
       
-      {/* Top Banner Header with Navigation Sub-Tabs */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="bg-indigo-400/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 tracking-wide flex items-center gap-1.5">
-                <Cpu size={14} className="text-amber-400" /> 차세대 외생변수 통제 인과 시너지 엔진 [V6 PRO]
-              </span>
-              {exogenousMeta?.isExogenousControlled ? (
-                <span className="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium">
-                  <ShieldCheck size={14} className="text-emerald-400" /> 요일/날씨/공휴일 다변량 OLS 통제 ({exogenousMeta?.observationDays || totalDays}일 관측치 · {exogenousMeta?.specification === 'FULL_13_COVARIATES' ? '13대 외생변수' : '핵심 외생변수'})
-                </span>
-              ) : (
-                <span className="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-amber-400/30 font-medium">
-                  <AlertTriangle size={14} className="text-amber-400" /> 외생변수 통제 대기 ({totalDays}일 관측치 · 14일 이상 필요)
-                </span>
-              )}
-            </div>
-            
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
               <Grid className="text-indigo-400 shrink-0" size={32} />
-              영업장별 앵커 연계 순수 인과 시너지 분석
+              매장 시너지 분석 V2
             </h1>
             <p className="text-indigo-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed">
-              주말/날씨 효과에 의한 착시 상관을 100% 분리하고, 앵커 시설 성장이 각 영업장의 순수 부대매출 창출 및 CAPA 병목에 미치는 실질적 인과 관계를 분석합니다.
+              객실 투숙과 전사 영업장 매출 간의 실질적 상관관계 및 시너지 파급 효과를 분석합니다.
             </p>
 
-            {/* Navigation Sub-Tabs Bar */}
             <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10 flex-wrap">
               <NavLink 
                 to="/synergy" 
@@ -701,12 +130,11 @@ export default function SynergyCorrelation() {
                 to="/synergy/correlation" 
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30"
               >
-                <Zap size={14} /> 2. 앵커시설 순수 인과 & CAPA 분석
+                <Zap size={14} /> 2. 매장 시너지 분석 V2
               </NavLink>
             </div>
           </div>
 
-          {/* Period Range Selection Bar */}
           <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 w-full xl:w-auto xl:min-w-[380px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
@@ -732,16 +160,12 @@ export default function SynergyCorrelation() {
               </div>
             </div>
 
-            {/* Quick Presets */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">오늘</button>
               <button onClick={() => applyPreset('WEEK')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">최근 7일</button>
-              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">금월 (1일~오늘)</button>
-              <button onClick={() => applyPreset('H1')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">상반기</button>
-              <button onClick={() => applyPreset('YTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">연누계 (YTD)</button>
+              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">금월</button>
             </div>
 
-            {/* Date Inputs */}
             <div className="flex items-center gap-2">
               <input
                 type="date"
@@ -769,366 +193,95 @@ export default function SynergyCorrelation() {
                 조회
               </button>
             </div>
-
-            <div className="text-xs text-slate-300 bg-white/5 px-3 py-1.5 rounded-xl flex items-center justify-between">
-              <span>조회 기간: <strong className="text-white">{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
-              <span className="text-indigo-300 font-bold">{isRangeMode ? `총 ${totalDays}일간 분석` : '단일 1일 분석'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 🎯 6대 앵커 시설 선택 바 (Anchor Selector Bar) */}
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-              <Zap size={15} className="text-amber-400" /> 분석 기준 앵커 시설 선택 (Driving Anchor Facility):
-            </span>
-            <span className="text-[11px] text-slate-400 font-normal">
-              선택한 시설의 성장이 전사 30여 개 영업장으로 흘러가는 순수 인과적 낙수액을 분석합니다.
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9 gap-2">
-            {ANCHOR_OPTIONS.map((opt) => {
-              const IconComponent = opt.icon;
-              const isSelected = selectedAnchor === opt.code;
-              return (
-                <button
-                  key={opt.code}
-                  type="button"
-                  onClick={() => handleAnchorChange(opt.code)}
-                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer active:scale-95 overflow-hidden ${
-                    isSelected 
-                      ? opt.activeBg 
-                      : 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <IconComponent size={18} className={`shrink-0 ${isSelected ? 'text-white' : opt.color}`} />
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0 ${
-                      isSelected ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-300'
-                    }`}>
-                      {opt.category}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-bold text-xs leading-snug truncate">{opt.name}</div>
-                    <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
-                      {opt.desc.substring(0, 14)}...
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Global Data Controls (Sorting & MotoArena Toggle Switch) */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
-          {/* MotoArena Inclusion Switch */}
-          <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/15 backdrop-blur-md">
-            <span className="text-xs font-bold text-slate-200">모토아레나(서킷) 분석:</span>
-            <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setIncludeMoto(true)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                  includeMoto 
-                    ? 'bg-purple-600 text-white shadow-sm' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                포함 (레저+모토)
-              </button>
-              <button
-                type="button"
-                onClick={() => setIncludeMoto(false)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                  !includeMoto 
-                    ? 'bg-amber-600 text-white shadow-sm' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                불포함 (순수 레저만)
-              </button>
-            </div>
-          </div>
-
-          {/* Sort Order */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-slate-300">데이터 정렬 기준:</span>
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as any)}
-              className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-4 py-2 outline-none focus:border-indigo-400 focus:bg-black/50 transition-colors cursor-pointer font-medium"
-            >
-              <option value="correlation" className="text-slate-800">순수 인과 상관계수(r) 높은 순</option>
-              <option value="elasticity" className="text-slate-800">순수 매출 탄력성(%) 높은 순</option>
-              <option value="spillover" className="text-slate-800">100만원당 순수 낙수액 높은 순</option>
-              <option value="default" className="text-slate-800">영업장 실제 총매출 순</option>
-            </select>
           </div>
         </div>
       </div>
 
-      {/* ⚠️ Fail-Stop 경고 배너 */}
-      {isDataInsufficient && !apiError && (
-        <div className="mb-8 p-5 bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl backdrop-blur-md flex items-start gap-4 text-amber-900 bg-amber-50/90 shadow-sm">
-          <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={24} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="font-extrabold text-sm text-amber-900">
-                {executiveInsights.find(i => i.type === 'DATA_INSUFFICIENT')?.badge || '⚠️ 인과 분석 관측치 부족 안내 (Fail-Stop)'}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 bg-amber-200/60 text-amber-800 rounded-md border border-amber-300 font-bold whitespace-nowrap">
-                Econometric Guard
-              </span>
-            </div>
-            <p className="text-xs text-amber-800 leading-relaxed font-medium">
-              {executiveInsights.find(i => i.type === 'DATA_INSUFFICIENT')?.insight || 
-                '외생변수(주말/공휴일/날씨) 통제 및 인과 시너지 분석을 위해서는 최소 14일 이상의 시계열 관측치(또는 앵커 매출 200만원 이상)가 필요합니다. 상단 분석 기간에서 최근 1개월(MTD) 또는 14일 이상의 기간 범위를 선택해 주십시오.'}
+      {error && (
+        <div className="bg-rose-50 text-rose-600 p-4 rounded-xl border border-rose-200 mb-6 font-medium">
+          {error}
+        </div>
+      )}
+
+      {data && data.meta && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="text-slate-500 text-sm font-semibold mb-2 flex items-center gap-2">
+              <TrendingUp size={16} className="text-indigo-500" /> 전사 리조트 매출
+            </h3>
+            <p className="text-3xl font-extrabold text-slate-800">
+              {data.meta.totalResortSalesFormatted}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="text-slate-500 text-sm font-semibold mb-2 flex items-center gap-2">
+              <TrendingUp size={16} className="text-emerald-500" /> 객실 총 판매수 (Anchor)
+            </h3>
+            <p className="text-3xl font-extrabold text-slate-800">
+              {data.meta.totalRoomsSold.toLocaleString()} <span className="text-base font-medium text-slate-500">실</span>
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="text-slate-500 text-sm font-semibold mb-2 flex items-center gap-2">
+              <TrendingUp size={16} className="text-purple-500" /> 객실 총 매출
+            </h3>
+            <p className="text-3xl font-extrabold text-slate-800">
+              {data.meta.totalRoomSales ? data.meta.totalRoomSales.toLocaleString() + '원' : '-'}
             </p>
           </div>
         </div>
       )}
 
-      {/* 💥 백엔드 API 장애 / 504 Timeout 배너 */}
-      {apiError && (
-        <div className="mb-8 p-8 bg-red-50 border-2 border-red-200 rounded-3xl shadow-sm flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-500 flex items-center justify-center mb-4">
-            <AlertTriangle size={32} />
+      {data && data.stores && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800">부대시설 매장별 시너지 지표</h2>
+            <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+              총 {data.stores.length}개 매장 분석
+            </span>
           </div>
-          <h3 className="text-xl font-bold text-red-800 mb-2">데이터 분석 엔진 응답 지연 및 오류</h3>
-          <p className="text-red-600 text-sm max-w-2xl mx-auto font-medium">
-            선택하신 기간({startDate} ~ {endDate || startDate})에 대한 인과 시너지 분석 중 백엔드 V6 엔진에서 문제가 발생했습니다.<br/>
-            조회 기간이 너무 길어 Vercel 504 Timeout이 발생했거나, 원천 데이터(girfTable) 무결성 제약에 걸려 처리되지 못했습니다.<br/>
-            <span className="block mt-2 font-bold text-red-700 bg-red-100/50 p-2 rounded-lg break-all">{apiError}</span>
-          </p>
-        </div>
-      )}
-
-      {/* 🚀 4대 핵심 결과 & CAPA 제약 카드 (Top KPI Cards) */}
-      {!apiError && (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {/* 1. Anchor Overview Card */}
-        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-700/40 flex flex-col justify-between overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <span className="text-sm font-bold text-indigo-200 flex items-center gap-2 min-w-0">
-                <Zap className="w-5 h-5 text-amber-400 shrink-0" /> <span className="truncate">기준 앵커 시설 실적</span>
-              </span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 whitespace-nowrap shrink-0">
-                {currentAnchorObj.name}
-              </span>
-            </div>
-            <div className="text-3xl font-black text-white mb-1 tabular-nums whitespace-nowrap truncate">
-              {formatCurrency(anchorData?.periodTotalRevenue || 0)} <span className="text-base text-slate-300 font-normal">원</span>
-            </div>
-            <p className="text-xs text-indigo-200 font-medium mb-3 truncate">
-              {isActualRange ? `선택 기간(총 ${totalDays}일간) ` : `${startDate} 당일 `}
-              <strong>{currentAnchorObj.name}</strong> 결제 실매출액
-            </p>
-          </div>
-          <div className="mt-2 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-indigo-200">
-            <span>{isActualRange ? '1일 평균 매출:' : '금월(MTD) 1일 평균:'}</span>
-            <strong className="text-white tabular-nums whitespace-nowrap">₩ {formatCurrency(anchorData?.dailyAvgRevenue || 0)}원/일</strong>
-          </div>
-        </div>
-
-        {/* 2. Total Pure Spillover Amount (NO SLICE SUMMATION SSOT) */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
-                <Sparkles className="w-5 h-5 text-blue-600 shrink-0" /> 
-                <span className="truncate">전사 총 순수 낙수액</span>
-              </span>
-              <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                34개 매장 전수
-              </span>
-            </div>
-            <div className="text-2xl font-black text-blue-600 mb-1 truncate">
-              {isDataInsufficient ? (
-                <span className="text-slate-400 text-lg font-bold">측정 불가 (14일 이상 필요)</span>
-              ) : (
-                <>+₩{formatCurrency(summaryMeta.totalPureSpillover || 0)} <span className="text-xs text-slate-500 font-normal">/ 100만</span></>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 font-medium truncate">
-              {isDataInsufficient 
-                ? '단기 조회(14일 미만) 시에는 주말 왜곡 방지를 위해 비활성화됩니다.' 
-                : <>앵커 100만원 발생 시 전사 <strong>34개 영업장</strong>으로 유입되는 순수 부대매출</>}
-            </p>
-          </div>
-          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
-            <span>평균 순수 탄력성:</span>
-            <strong className="text-blue-700 tabular-nums whitespace-nowrap">
-              {isDataInsufficient ? '-' : `+${summaryMeta.averageElasticity ? summaryMeta.averageElasticity.toFixed(1) : '0.0'}% (10%↑ 시)`}
-            </strong>
-          </div>
-        </div>
-
-        {/* 3. Top Pure Synergy Champion */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 flex flex-col justify-between transition-all overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <span className="text-sm font-bold text-slate-700 flex items-center gap-2 min-w-0">
-                <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0" /> 
-                <span className="truncate">최고 순수 인과 매장</span>
-              </span>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                낙수 1위
-              </span>
-            </div>
-            <div className="text-2xl font-black text-emerald-600 mb-1 truncate" title={summaryMeta.topSynergyShop || topPureStore?.shopName}>
-              {isDataInsufficient ? '-' : (summaryMeta.topSynergyShop || topPureStore?.shopName || '-')}
-            </div>
-            <p className="text-xs text-slate-500 font-medium truncate">
-              {isDataInsufficient 
-                ? '외생변수 통제 유효 구간(14일 이상)에서만 활성화됩니다.' 
-                : <>순수 상관도: <strong className="text-slate-900">+{topPureStore?.pureCorrelation ? topPureStore.pureCorrelation.toFixed(2) : '0.00'}</strong> · 순수 탄력성: <strong className="text-emerald-700">+{topPureStore?.pureElasticity ? topPureStore.pureElasticity.toFixed(1) : '0.0'}%</strong></>}
-            </p>
-          </div>
-          <div className="mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
-            <span>100만원당 순수 낙수:</span>
-            <strong className="text-emerald-700 tabular-nums whitespace-nowrap">
-              {isDataInsufficient ? '-' : `+₩${formatCurrency(summaryMeta.maxSpilloverAmount || topPureStore?.pureSpilloverPerMillion || 0)} / 100만`}
-            </strong>
-          </div>
-        </div>
-      </div>
-
-      {/* 🌊 [NEW] 시차 연쇄 소비 이동 (Sankey Flow) */}
-      <div className="mb-8">
-        
-        {/* Sankey Customer Spending Flow */}
-        <div className="bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-slate-200 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Clock className="text-indigo-600" size={20} /> ⏳ [시차 연쇄] {currentAnchorObj.name} 유입 고객 소비 이동 경로 (Sankey Flow)
-              </h3>
-              <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-full border border-indigo-200">
-                당일(t0) ➔ 익일(t1) 플로우
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-              {currentAnchorObj.name} 이용 고객이 당일 현장에서 즉시 지출하는 F&B/편의점 경로와, 숙박 후 익일 오전에 소비하는 조식/액티비티 경로의 다단계 이동 흐름입니다.
-            </p>
-          </div>
-
-          <div className="h-[280px] w-full">
-            <ReactECharts option={sankeyOptions} style={{ height: '100%', width: '100%' }} />
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span> 당일 소비 집중 (F&B/간식/치킨)</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block"></span> 익일 이연 소비 (조식뷔페/루지/목장)</span>
-          </div>
-        </div>
-
-
-      </div>
-
-      {/* 💡 [NEW] AI 경영진 전략 권고 배너 (AI Actionable Insights) */}
-      <div className="bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-slate-200 mb-8">
-        <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Sparkles className="text-amber-500" size={20} /> 💡 AI 경영진 의사결정 전략 권고 (Actionable Insights)
-          </h3>
-          <span className="text-xs bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full">
-            외생변수 통제 기반 추천
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-          {executiveInsights && executiveInsights.length > 0 ? (
-            executiveInsights.map((insightItem: any, idx: number) => {
-              const isWarning = insightItem.type === 'CAPACITY_ALERT' || insightItem.type === 'DATA_INSUFFICIENT';
-              const isOps = insightItem.type === 'OPERATIONS';
-              const bgClass = isWarning ? 'bg-rose-50/70 border-rose-100' : isOps ? 'bg-emerald-50/70 border-emerald-100' : 'bg-indigo-50/70 border-indigo-100';
-              const titleColor = isWarning ? 'text-rose-900' : isOps ? 'text-emerald-900' : 'text-indigo-900';
-              const iconColor = isWarning ? 'text-rose-600' : isOps ? 'text-emerald-600' : 'text-indigo-600';
-              const Icon = isWarning ? AlertTriangle : isOps ? Clock : Zap;
-
-              return (
-                <div key={idx} className={`${bgClass} p-4 rounded-2xl border space-y-2`}>
-                  <div className={`font-bold ${titleColor} text-sm flex items-center gap-1.5`}>
-                    <Icon size={16} className={iconColor} />
-                    {insightItem.badge || '전략 권고'}
-                  </div>
-                  <p className="text-slate-700 leading-relaxed font-medium">
-                    {insightItem.insight}
-                  </p>
-                </div>
-              );
-            })
-          ) : (
-            <div className="col-span-3 text-center py-6 text-slate-400">
-              수신된 경영진 전략 권고가 없습니다.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 📈 [NEW] GIRF 시계열 충격 반응 분석표 (T+0 ~ T+3 90% BCa Bootstrap CI) */}
-      {girfRows.length > 0 && (
-        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8 overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                  GIRF Econometric Model
-                </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  일반화 충격반응함수 · 90% BCa 부트스트랩 신뢰구간 (5% ~ 95%)
-                </span>
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <TrendingUp className="text-indigo-600" size={24} /> 📈 [{currentAnchorObj.name}] 매출 충격 시 부문별 시계열 충격 반응 (T+0 ~ T+3)
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 max-w-md">
-              기준 앵커 시설에 매출 충격 발생 시 당일(T+0)부터 3일차(T+3)까지 타 부문으로 전이되는 순수 반응액과 90% 신뢰구간입니다.
-            </p>
-          </div>
-
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs whitespace-nowrap min-w-[950px]">
-              <thead>
-                <tr className="border-b border-slate-200 font-bold text-slate-600 bg-slate-50">
-                  <th className="py-3.5 px-4 rounded-l-xl whitespace-nowrap">충격 시점 (Horizon)</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">객실 부문 (ROOM) 반응액 [90% BCa CI]</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">식음 부문 (F&B) 반응액 [90% BCa CI]</th>
-                  <th className="py-3.5 px-4 rounded-r-xl whitespace-nowrap">레저 부문 (LEISURE) 반응액 [90% BCa CI]</th>
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3">매장명</th>
+                  <th className="px-4 py-3">카테고리</th>
+                  <th className="px-4 py-3 text-right">매출액</th>
+                  <th className="px-4 py-3 text-right">수량</th>
+                  <th className="px-4 py-3 text-right">진성 방문객</th>
+                  <th className="px-4 py-3 text-center">시너지 등급</th>
+                  <th className="px-4 py-3 text-right">RevPAS 기울기</th>
+                  <th className="px-4 py-3 text-right">상관계수</th>
+                  <th className="px-4 py-3 text-right">낙수율</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {girfRows.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-4 px-4 font-bold text-indigo-900">
-                      <span className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 font-black text-xs">
-                        {row.horizonDay}
+              <tbody className="divide-y divide-slate-100">
+                {data.stores.map((store, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-800">{store.storeName}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                        {store.categoryCode}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-slate-800">
-                      <div className="font-extrabold text-sm text-indigo-700">₩{formatCurrency(row.responses.room?.mean || 0)}</div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        [90% CI: ₩{formatCurrency(row.responses.room?.bcaLowerCI || 0)} ~ ₩{formatCurrency(row.responses.room?.bcaUpperCI || 0)}]
-                      </div>
+                    <td className="px-4 py-3 text-right font-medium text-slate-700">{store.revenueFormatted}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{store.quantityFormatted}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{store.visitorCountFormatted}</td>
+                    <td className="px-4 py-3 text-center">
+                      {store.interactionGrade && (
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getInteractionColor(store.interactionGrade)}`}>
+                          {store.interactionGrade}
+                        </span>
+                      )}
                     </td>
-                    <td className="py-4 px-4 text-slate-800">
-                      <div className="font-extrabold text-sm text-amber-700">₩{formatCurrency(row.responses.fnb?.mean || 0)}</div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        [90% CI: ₩{formatCurrency(row.responses.fnb?.bcaLowerCI || 0)} ~ ₩{formatCurrency(row.responses.fnb?.bcaUpperCI || 0)}]
-                      </div>
+                    <td className="px-4 py-3 text-right text-indigo-600 font-medium">
+                      {store.revPasSlope ? `+${store.revPasSlope}` : '-'}
                     </td>
-                    <td className="py-4 px-4 text-slate-800">
-                      <div className="font-extrabold text-sm text-purple-700">₩{formatCurrency(row.responses.leisure?.mean || 0)}</div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        [90% CI: ₩{formatCurrency(row.responses.leisure?.bcaLowerCI || 0)} ~ ₩{formatCurrency(row.responses.leisure?.bcaUpperCI || 0)}]
-                      </div>
+                    <td className="px-4 py-3 text-right text-slate-600">
+                      {store.correlationCoefficient != null ? store.correlationCoefficient.toFixed(2) : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-right text-rose-600 font-medium">
+                      {store.spilloverRate != null ? `${store.spilloverRate}%` : '-'}
                     </td>
                   </tr>
                 ))}
@@ -1137,151 +290,6 @@ export default function SynergyCorrelation() {
           </div>
         </div>
       )}
-
-      {/* Section 1: 🎟️ 레저본부 영업장별 앵커 연계 시너지 분석 */}
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Ticket className="text-purple-600" size={24} /> 🎟️ 레저/어트랙션 영업장별 {currentAnchorObj.name} 연계 시너지 분석
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 font-medium">
-              {currentAnchorObj.name} 매출 발생 시 레저 영업장별 동반 매출 상관도 및 100만원당 낙수 효과입니다.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedLeisureShop('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedLeisureShop === 'ALL' ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              전체 레저 영업장 ({leisureStoreAnalysis.length})
-            </button>
-            {leisureStoreAnalysis.map((store, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedLeisureShop(store.shopName || store.targetShopName || '')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  selectedLeisureShop === (store.shopName || store.targetShopName) ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {store.shopName || store.targetShopName}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Store Contribution Cards Grid */}
-        {filteredLeisureStores.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredLeisureStores.map((store, idx) => (
-              <SynergyStoreCard key={idx} store={store} type="leisure" anchorName={currentAnchorObj.name} />
-            ))}
-          </div>
-        ) : (
-          <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl mb-8">
-            선택된 분석 기간 내 레저 영업장 데이터가 없습니다.
-          </div>
-        )}
-
-        {/* Leisure Correlation Table */}
-        <SynergyTable 
-          type="leisure" 
-          correlationRows={leisureStoreAnalysis} 
-          stores={filteredLeisureStores} 
-        />
-      </div>
-
-      {/* Section 2: 🍽️ 식음팀 영업장별 앵커 연계 시너지 분석 */}
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Utensils className="text-amber-600" size={24} /> 🍽️ 식음(F&B) 영업장별 {currentAnchorObj.name} 연계 시너지 분석
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 font-medium">
-              {currentAnchorObj.name} 매출 발생 시 식음 영업장별 동반 매출 상관도 및 100만원당 낙수 효과입니다.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedFnbShop('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedFnbShop === 'ALL' ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              전체 식음 영업장 ({fnbStoreAnalysis.length})
-            </button>
-            {fnbStoreAnalysis.map((store, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedFnbShop(store.shopName || store.targetShopName || '')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  selectedFnbShop === (store.shopName || store.targetShopName) ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {store.shopName || store.targetShopName}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* F&B Store Cards Grid */}
-        {filteredFnbStores.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredFnbStores.map((store, idx) => (
-              <SynergyStoreCard key={idx} store={store} type="fnb" anchorName={currentAnchorObj.name} />
-            ))}
-          </div>
-        ) : (
-          <div className="p-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl mb-8">
-            선택된 분석 기간 내 식음 영업장 데이터가 없습니다.
-          </div>
-        )}
-
-        {/* F&B Correlation Table */}
-        <SynergyTable 
-          type="fnb" 
-          correlationRows={fnbStoreAnalysis} 
-          stores={filteredFnbStores} 
-        />
-      </div>
-
-      {/* Section 3: 🛏️ 콘도(객실) 부대영업장별 앵커 연계 시너지 분석 (골프 완전 배제) */}
-      {roomStoreAnalysis.length > 0 && (
-        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Building2 className="text-indigo-600" size={24} /> 🛏️ 콘도(객실) 부대영업장 {currentAnchorObj.name} 연계 시너지 분석 (골프 제외)
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
-                {currentAnchorObj.name} 매출 발생 시 콘도/객실 관련 부대영업장 동반 매출 상관도 및 낙수 효과입니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {roomStoreAnalysis.map((store, idx) => (
-              <SynergyStoreCard key={idx} store={store} type="leisure" anchorName={currentAnchorObj.name} />
-            ))}
-          </div>
-
-          <SynergyTable 
-            type="leisure" 
-            correlationRows={roomStoreAnalysis} 
-            stores={roomStoreAnalysis} 
-          />
-        </div>
-      )}
-
-        </>
-      )}
-
     </div>
   );
 }
-

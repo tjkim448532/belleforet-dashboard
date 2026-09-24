@@ -1,125 +1,43 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import type { DailyMemberVisitorsV2Response } from '../types/reports-v2';
 import ReactECharts from 'echarts-for-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
-  Award, Search, Calendar, ChevronRight, User, 
-  DollarSign, RefreshCw, Trophy, Flame, Store
+  Users, Calendar, RefreshCw, DollarSign, Building, Store
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-
-const formatCurrency = (val: any) => {
-  if (!val) return '0';
-  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
-  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
-};
-
-export interface MemberVisitEntry {
-  visitNo: number;
-  date: string;
-  facility: string;
-  spend: number;
-}
-
-export interface MemberVisitorItem {
-  memberNo: string;
-  memberName: string;
-  phone: string;
-  memberType: '골프정회원' | '지정회원' | '콘도회원' | '창립회원' | 'VIP' | '일반회원';
-  membershipName?: string;
-  visitedFacility: string;
-  categoryCode?: string;
-  todaySpend: number;
-  ytdVisitCount: number; // 올해 누적 방문 횟수
-  ytdTotalSpend: number; // 올해 누적 총 결제액
-  firstVisitThisYear?: string;
-  lastVisitDate?: string;
-  visitHistory?: MemberVisitEntry[];
-  tierBadge?: string;
-  tierColor?: string;
-  
-  // 신규 추가 필드 (배정 호수, 골프 코스, 룸차지)
-  assignedRoom?: string;
-  golfCourse?: string;
-  fnbRoomCharge?: number;
-}
 
 export default function Members() {
   const { startDate, endDate, isRange } = useDate();
   const isEffectiveRange = isRange || (!!endDate && startDate !== endDate);
 
-  const [visitors, setVisitors] = useState<MemberVisitorItem[]>([]);
-  const [summaryData, setSummaryData] = useState<{
-    totalVisitors?: number;
-    totalSpend?: number;
-    avgSpendPerMember?: number;
-    totalYtdSpend?: number;
-    topLoyalMember?: {
-      memberName: string;
-      memberNo: string;
-      ytdVisitCount: number;
-      ytdTotalSpend: number;
-    } | null;
-    totalMembers?: number;
-    totalTodaySpend?: number;
-    avgTodaySpend?: number;
-    totalYtdVisits?: number;
-    breakdown?: any;
-  } | null>(null);
-
+  const [data, setData] = useState<DailyMemberVisitorsV2Response | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedLoyaltyFilter, setSelectedLoyaltyFilter] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'YTD_VISITS' | 'TODAY_SPEND' | 'YTD_SPEND' | 'NAME'>('YTD_VISITS');
-  const [selectedMemberModal, setSelectedMemberModal] = useState<MemberVisitorItem | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const [annualTrend, setAnnualTrend] = useState<any>({});
-
-  // Fetch YoY Annual Trend from API
-  const fetchAnnualTrend = async () => {
-    try {
-      const [res24, res25, res26] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=2024`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=2025`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=2026`).catch(() => null)
-      ]);
-      setAnnualTrend({
-        '2024': res24?.data?.monthlyTrend || [],
-        '2025': res25?.data?.monthlyTrend || [],
-        '2026': res26?.data?.monthlyTrend || [],
-      });
-    } catch (err) {
-      setAnnualTrend({});
-    }
-  };
-
-  // Fetch Member Visitors from API
   const fetchMemberVisitors = async () => {
     setLoading(true);
     setApiError(null);
     try {
-      const queryParams = endDate
+      const queryParams = isEffectiveRange
         ? `startDate=${startDate}&endDate=${endDate}`
-        : `date=${startDate}`;
+        : `startDate=${startDate}&endDate=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors?${queryParams}`);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors-v2?${queryParams}`);
       const payload = res?.data ?? res;
 
-      if (payload && (payload.visitors || payload.summary)) {
-        setVisitors(payload.visitors || []);
-        setSummaryData(payload.summary || null);
+      if (payload && payload.success) {
+        setData(payload);
       } else {
-        setVisitors([]);
-        setSummaryData(null);
+        setData(null);
       }
     } catch (err: any) {
-      console.error('Member Visitors Fetch Error:', err);
+      console.error('Member Visitors V2 Fetch Error:', err);
       setApiError(err.message || '데이터를 불러오는 중 문제가 발생했습니다.');
-      setVisitors([]);
-      setSummaryData(null);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -127,261 +45,67 @@ export default function Members() {
 
   useEffect(() => {
     fetchMemberVisitors();
-    fetchAnnualTrend();
   }, [startDate, endDate]);
 
-  const getAnnualChartOptions = () => {
-    let startM = 1;
-    let endM = 12;
-    
-    if (isEffectiveRange && endDate) {
-       startM = parseInt(startDate.split('-')[1], 10);
-       endM = parseInt(endDate.split('-')[1], 10);
-    }
+  const summary = data?.meta?.summary;
+  const venueVisitors = data?.venueVisitors || [];
+  const dailyVisitors = data?.dailyVisitors || [];
 
-    const months = [];
-    const seriesData: Record<string, number[]> = {
-      '24_1/6': [], '24_1/12': [], '24_Full': [],
-      '25_1/6': [], '25_1/12': [], '25_Full': [],
-      '26_1/6': [], '26_1/12': [], '26_Full': []
-    };
-
-    for (let m = startM; m <= endM; m++) {
-      months.push(`${m}월`);
-      const mStr = m.toString().padStart(2, '0');
-      
-      const item24 = (annualTrend['2024'] || []).find((d: any) => d.month === `2024-${mStr}`);
-      seriesData['24_1/6'].push(item24?.membershipTypes?.['1/6구좌'] || 0);
-      seriesData['24_1/12'].push(item24?.membershipTypes?.['1/12구좌'] || 0);
-      seriesData['24_Full'].push(item24?.membershipTypes?.['창립/풀구좌'] || 0);
-
-      const item25 = (annualTrend['2025'] || []).find((d: any) => d.month === `2025-${mStr}`);
-      seriesData['25_1/6'].push(item25?.membershipTypes?.['1/6구좌'] || 0);
-      seriesData['25_1/12'].push(item25?.membershipTypes?.['1/12구좌'] || 0);
-      seriesData['25_Full'].push(item25?.membershipTypes?.['창립/풀구좌'] || 0);
-
-      const item26 = (annualTrend['2026'] || []).find((d: any) => d.month === `2026-${mStr}`);
-      seriesData['26_1/6'].push(item26?.membershipTypes?.['1/6구좌'] || 0);
-      seriesData['26_1/12'].push(item26?.membershipTypes?.['1/12구좌'] || 0);
-      seriesData['26_Full'].push(item26?.membershipTypes?.['창립/풀구좌'] || 0);
-    }
-
-    const series = [
-      // 2024 (Opacity 0.3)
-      { name: '1/6구좌', type: 'bar', stack: '2024', data: seriesData['24_1/6'], itemStyle: { color: '#3b82f6', opacity: 0.3 } },
-      { name: '1/12구좌', type: 'bar', stack: '2024', data: seriesData['24_1/12'], itemStyle: { color: '#10b981', opacity: 0.3 } },
-      { name: '창립/풀구좌', type: 'bar', stack: '2024', data: seriesData['24_Full'], itemStyle: { color: '#8b5cf6', opacity: 0.3, borderRadius: [4, 4, 0, 0] } },
-
-      // 2025 (Opacity 0.6)
-      { name: '1/6구좌', type: 'bar', stack: '2025', data: seriesData['25_1/6'], itemStyle: { color: '#3b82f6', opacity: 0.6 } },
-      { name: '1/12구좌', type: 'bar', stack: '2025', data: seriesData['25_1/12'], itemStyle: { color: '#10b981', opacity: 0.6 } },
-      { name: '창립/풀구좌', type: 'bar', stack: '2025', data: seriesData['25_Full'], itemStyle: { color: '#8b5cf6', opacity: 0.6, borderRadius: [4, 4, 0, 0] } },
-
-      // 2026 (Opacity 1.0)
-      { name: '1/6구좌', type: 'bar', stack: '2026', data: seriesData['26_1/6'], itemStyle: { color: '#3b82f6', opacity: 1.0 } },
-      { name: '1/12구좌', type: 'bar', stack: '2026', data: seriesData['26_1/12'], itemStyle: { color: '#10b981', opacity: 1.0 } },
-      { name: '창립/풀구좌', type: 'bar', stack: '2026', data: seriesData['26_Full'], itemStyle: { color: '#8b5cf6', opacity: 1.0, borderRadius: [4, 4, 0, 0] } }
-    ];
+  const getTrendChartOptions = () => {
+    const dates = dailyVisitors.map(d => d.sales_date);
+    const visitors = dailyVisitors.map(d => d.daily_visitors);
+    const revenue = dailyVisitors.map(d => d.daily_revenue);
 
     return {
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        formatter: function (params: any) {
-          const monthLabel = params[0].axisValue;
-          let html = `<div style="font-weight:bold;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;">${monthLabel} 방문객 비교</div>`;
-          
-          const years = ['2026', '2025', '2024']; // Show latest year first in tooltip
-          years.forEach(year => {
-            const yearParams = params.filter((p: any) => p.seriesId.includes(year));
-            const yearTotal = yearParams.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
-            
-            if (yearTotal > 0) {
-              html += `<div style="margin-bottom:6px;font-size:12px;">`;
-              html += `<strong style="display:block;color:#475569;margin-bottom:2px;">[${year}년] 총 ${yearTotal}명</strong>`;
-              yearParams.forEach((p: any) => {
-                if (p.value > 0) {
-                  html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                             <span>${p.marker} ${p.seriesName}</span>
-                             <span style="font-weight:bold">${p.value}명</span>
-                           </div>`;
-                }
-              });
-              html += `</div>`;
-            }
-          });
-          return html;
-        }
+        axisPointer: { type: 'cross' }
       },
       legend: {
-        data: ['1/6구좌', '1/12구좌', '창립/풀구좌'],
-        bottom: 0,
-        icon: 'circle'
+        data: ['일일 진성 방문객', '일일 매출'],
+        bottom: 0
       },
-      grid: { left: '2%', right: '2%', top: '8%', bottom: '15%', containLabel: true },
-      xAxis: { type: 'category', data: months },
-      yAxis: { type: 'value' },
-      series
+      grid: { left: '3%', right: '3%', top: '10%', bottom: '15%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: { color: '#64748b' }
+      },
+      yAxis: [
+        {
+          type: 'value',
+          name: '방문객 수',
+          position: 'left',
+          axisLabel: { formatter: '{value} 명' }
+        },
+        {
+          type: 'value',
+          name: '매출',
+          position: 'right',
+          axisLabel: { formatter: '{value} 원' }
+        }
+      ],
+      series: [
+        {
+          name: '일일 매출',
+          type: 'bar',
+          yAxisIndex: 1,
+          data: revenue,
+          itemStyle: { color: '#3b82f6', opacity: 0.8 }
+        },
+        {
+          name: '일일 진성 방문객',
+          type: 'line',
+          yAxisIndex: 0,
+          data: visitors,
+          smooth: true,
+          symbolSize: 8,
+          itemStyle: { color: '#10b981' },
+          lineStyle: { width: 3 }
+        }
+      ]
     };
   };
-
-  const renderPivotTable = () => {
-    const years = ['2024', '2025', '2026'];
-    const rows = [];
-    
-    let startM = 1;
-    let endM = 12;
-    
-    if (isEffectiveRange && endDate) {
-       startM = parseInt(startDate.split('-')[1], 10);
-       endM = parseInt(endDate.split('-')[1], 10);
-    }
-    
-    for (let i = startM; i <= endM; i++) {
-      const monthStr = i.toString().padStart(2, '0');
-      const rowCols = years.map(year => {
-        const match = (annualTrend[year] || []).find((d: any) => d.month === `${year}-${monthStr}`);
-        const s1_6 = match?.membershipTypes?.['1/6구좌'] || 0;
-        const s1_12 = match?.membershipTypes?.['1/12구좌'] || 0;
-        const sFull = match?.membershipTypes?.['창립/풀구좌'] || 0;
-        return { year, s1_6, s1_12, sFull, total: s1_6 + s1_12 + sFull };
-      });
-      rows.push({ month: `${i}월`, data: rowCols });
-    }
-    
-    return (
-      <table className="w-full text-left text-sm whitespace-nowrap">
-        <thead>
-          <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
-            <th className="px-6 py-4 rounded-tl-xl text-center border-b border-slate-200">월 (Month)</th>
-            {years.map((year: any, idx) => (
-              <th key={year} colSpan={4} className={`px-6 py-4 text-center border-b border-slate-200 ${idx === years.length - 1 ? 'rounded-tr-xl' : 'border-r'}`}>
-                {year}년
-              </th>
-            ))}
-          </tr>
-          <tr className="bg-slate-50/50 text-slate-500 text-[11px] font-bold">
-            <th className="px-6 py-2 text-center border-b border-slate-200 bg-slate-50/50"></th>
-            {years.map((year: any, idx) => (
-              <Fragment key={year}>
-                <th className="px-3 py-2 text-right border-b border-slate-200 text-blue-600/70">1/6구좌</th>
-                <th className="px-3 py-2 text-right border-b border-slate-200 text-emerald-600/70">1/12구좌</th>
-                <th className="px-3 py-2 text-right border-b border-slate-200 text-purple-600/70">창립/풀구좌</th>
-                <th className={`px-3 py-2 text-right border-b border-slate-200 text-slate-700 ${idx === years.length - 1 ? '' : 'border-r'}`}>총합</th>
-              </Fragment>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((row, rIdx) => (
-            <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
-              <td className="px-6 py-3 font-bold text-slate-800 text-center bg-slate-50/30">{row.month}</td>
-              {row.data.map((col: any, cIdx) => (
-                <Fragment key={col.year as string}>
-                  <td className={`px-3 py-3 text-right font-medium ${col.s1_6 > 0 ? 'text-blue-600' : 'text-slate-300'}`}>
-                    {col.s1_6 > 0 ? col.s1_6 : '-'}
-                  </td>
-                  <td className={`px-3 py-3 text-right font-medium ${col.s1_12 > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
-                    {col.s1_12 > 0 ? col.s1_12 : '-'}
-                  </td>
-                  <td className={`px-3 py-3 text-right font-medium ${col.sFull > 0 ? 'text-purple-600' : 'text-slate-300'}`}>
-                    {col.sFull > 0 ? col.sFull : '-'}
-                  </td>
-                  <td className={`px-3 py-3 text-right font-black ${col.total > 0 ? 'text-slate-700' : 'text-slate-300'} ${cIdx === years.length - 1 ? '' : 'border-r border-slate-100'}`}>
-                    {col.total > 0 ? col.total : '-'}
-                  </td>
-                </Fragment>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  };
-
-  // Enrich with loyalty tier badges
-  const enrichedVisitors = useMemo(() => {
-    return visitors.map(m => {
-      const visits = m.ytdVisitCount ?? 0;
-      let tierBadge = '신규 1회';
-      let tierColor = 'bg-slate-100 text-slate-600 border-slate-200';
-
-      if (visits >= 10 || m.ytdTotalSpend >= 15000000) {
-        tierBadge = `👑 다이아 VIP (${visits}회)`;
-        tierColor = 'bg-purple-100 text-purple-800 border-purple-200';
-      } else if (visits >= 5 || m.ytdTotalSpend >= 8000000) {
-        tierBadge = `🥇 골드 (${visits}회)`;
-        tierColor = 'bg-amber-100 text-amber-800 border-amber-200';
-      } else if (visits >= 2) {
-        tierBadge = `🥈 실버 (${visits}회)`;
-        tierColor = 'bg-blue-50 text-blue-700 border-blue-200';
-      }
-
-      return {
-        ...m,
-        tierBadge,
-        tierColor
-      };
-    });
-  }, [visitors]);
-
-  // Filter and Sort
-  const filteredAndSortedVisitors = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    const filtered = enrichedVisitors.filter(m => {
-      const matchType = true;
-
-      let matchLoyalty = true;
-      if (selectedLoyaltyFilter === 'REPEAT') {
-        matchLoyalty = m.ytdVisitCount >= 2;
-      } else if (selectedLoyaltyFilter === 'VIP') {
-        matchLoyalty = m.ytdVisitCount >= 5;
-      } else if (selectedLoyaltyFilter === 'NEW') {
-        matchLoyalty = m.ytdVisitCount === 1;
-      }
-
-      const matchSearch = !q ||
-        m.memberName.toLowerCase().includes(q) ||
-        m.memberNo.toLowerCase().includes(q) ||
-        m.phone.includes(q) ||
-        (m.membershipName && m.membershipName.toLowerCase().includes(q)) ||
-        m.visitedFacility.toLowerCase().includes(q);
-
-      return matchType && matchLoyalty && matchSearch;
-    });
-
-    return filtered.sort((a, b) => {
-      if (sortBy === 'YTD_VISITS') return b.ytdVisitCount - a.ytdVisitCount;
-      if (sortBy === 'TODAY_SPEND') return b.todaySpend - a.todaySpend;
-      if (sortBy === 'YTD_SPEND') return b.ytdTotalSpend - a.ytdTotalSpend;
-      if (sortBy === 'NAME') return a.memberName.localeCompare(b.memberName, 'ko');
-      return 0;
-    });
-  }, [enrichedVisitors, selectedLoyaltyFilter, searchQuery, sortBy]);
-
-  // Computed summary metrics (SSOT Pure Consumer)
-  const metrics = useMemo(() => {
-    const totalCount = summaryData?.totalVisitors ?? summaryData?.totalMembers ?? enrichedVisitors.length;
-    const totalSpend = summaryData?.totalSpend ?? summaryData?.totalTodaySpend ?? 0;
-    const avgSpend = summaryData?.avgSpendPerMember ?? summaryData?.avgTodaySpend ?? 0;
-    const totalYtdSpend = summaryData?.totalYtdSpend ?? 0;
-
-    const sortedByYtd = [...enrichedVisitors].sort((a, b) => b.ytdVisitCount - a.ytdVisitCount);
-    const fallbackTopMember = sortedByYtd[0] || null;
-
-    return {
-      totalCount,
-      totalSpend,
-      avgSpend,
-      totalYtdSpend,
-      topMember: summaryData?.topLoyalMember ?? (fallbackTopMember ? {
-        memberName: fallbackTopMember.memberName,
-        memberNo: fallbackTopMember.memberNo,
-        ytdVisitCount: fallbackTopMember.ytdVisitCount,
-        ytdTotalSpend: fallbackTopMember.ytdTotalSpend
-      } : null)
-    };
-  }, [enrichedVisitors, summaryData]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
@@ -393,25 +117,22 @@ export default function Members() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase whitespace-nowrap">
-                MEMBERSHIP & VIP LOYALTY INTELLIGENCE
-              </span>
-              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 whitespace-nowrap">
-                <Award size={12} className="text-brand-mint shrink-0" /> 회원 이용 실적 및 연간 방문 추적
+                VISITORS INTELLIGENCE V2
               </span>
               <span className="bg-emerald-500/30 text-emerald-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium whitespace-nowrap">
                 <Calendar size={12} className="text-emerald-300 shrink-0" />
-                조회일: <strong className="ml-1">{startDate} {endDate ? `~ ${endDate}` : '(1일)'}</strong>
+                조회일: <strong className="ml-1">{startDate} {isEffectiveRange && endDate ? `~ ${endDate}` : ''}</strong>
               </span>
             </div>
             
             <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
-              <Award className="text-brand-mint shrink-0" size={32} />
+              <Users className="text-brand-mint shrink-0" size={32} />
               <span className="break-keep">
-                회원 이용 실적 및 올해 누적 방문 횟수(YTD) 분석
+                일일 진성 방문객 분석 (SSOT)
               </span>
             </h1>
             <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-3xl break-keep">
-              선택된 날짜에 골프CC, 콘도 객실, 식음, 레저를 이용한 회원 리스트와 각 회원의 2026년 올해 총 방문 횟수의 합(YTD) 및 누적 기여액을 실시간 추적합니다.
+              선택된 기간 동안의 업장별 총 방문객 및 기여액을 분석하여 진성 고객 데이터를 단일 소스(SSOT)로 제공합니다.
             </p>
           </div>
 
@@ -429,68 +150,33 @@ export default function Members() {
         </div>
       </div>
 
-      {/* Annual Trend Chart Section */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-500" /> 월별 회원권 유형별 내장 추이 (연간 차트)
-          </h2>
-          <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
-            실시간 연동 완료
-          </span>
-        </div>
-        <div className="h-[320px] w-full">
-          <ReactECharts option={getAnnualChartOptions()} style={{ height: '100%', width: '100%' }} />
-        </div>
-      </div>
-
-      {/* Annual Trend Pivot Table Section */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Store className="w-5 h-5 text-blue-500" /> 월별 상세 실적 (3개년 비교표)
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          {renderPivotTable()}
-        </div>
-      </div>
-
-      {/* KPI Overview Summary (4-Grid) */}
+      {/* KPI Overview Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
-        {/* Card 1: Total Members */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-              <User size={16} className="text-emerald-600 shrink-0" /> {isEffectiveRange ? '기간 이용 회원수' : '당일 이용 회원수'}
-            </span>
-            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">
-              {isEffectiveRange ? '선택 기간 기준' : '선택일 기준'}
+              <Users size={16} className="text-emerald-600 shrink-0" /> 총 진성 방문객
             </span>
           </div>
           <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap">
             {loading ? (
               <div className="animate-pulse h-9 w-24 bg-slate-200 rounded-lg inline-block align-middle"></div>
             ) : apiError ? (
-              <span className="text-xl text-red-500 font-bold">오류발생</span>
+              <span className="text-xl text-red-500 font-bold">오류</span>
             ) : (
-              <>{metrics.totalCount.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span></>
+              <>{summary?.totalVisitorsFormatted || '0'} <span className="text-sm font-medium text-slate-400">명</span></>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-2 truncate">
-            {apiError ? <span className="text-red-400">{apiError}</span> : '골프 내장 회원 및 콘도 투숙 회원 전수 집계'}
+          <p className="text-xs text-slate-500 mt-2">
+            객실: {summary?.roomGuestsFormatted || '0'}명 | 골프: {summary?.golfPlayersFormatted || '0'}명
           </p>
         </div>
 
-        {/* Card 2: Total Member Spend */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-              <DollarSign size={16} className="text-indigo-600 shrink-0" /> {isEffectiveRange ? '기간 회원 총 이용액' : '당일 회원 총 이용액'}
-            </span>
-            <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 whitespace-nowrap">
-              순매출 합계
+              <DollarSign size={16} className="text-indigo-600 shrink-0" /> 리조트 총 발생 매출
             </span>
           </div>
           <div className="text-3xl font-black text-indigo-600 my-1 whitespace-nowrap">
@@ -499,393 +185,129 @@ export default function Members() {
             ) : apiError ? (
               <span className="text-xl text-red-500 font-bold">-</span>
             ) : (
-              <>₩{formatCurrency(metrics.totalSpend)} <span className="text-sm font-medium text-slate-400">원</span></>
+              <>₩{summary?.totalResortSalesFormatted || '0'}</>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            {loading || apiError ? '-' : <>회원 1인당 평균: <strong>₩{formatCurrency(metrics.avgSpend)}원</strong></>}
+            방문객 1인당 소비: <strong>₩{summary?.spendPerVisitorFormatted || '0'}원</strong>
           </p>
         </div>
 
-        {/* Card 3: 🏆 올해 최다 방문 충성 회원 */}
         <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-purple-600 flex items-center gap-1.5 whitespace-nowrap">
-              <Trophy size={16} className="text-purple-600 shrink-0" /> 올해 최다 방문 VIP
-            </span>
-            <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 whitespace-nowrap">
-              2026 YTD 1위
+              <Store size={16} className="text-purple-600 shrink-0" /> 부대/레저 방문객
             </span>
           </div>
-          <div className="text-2xl font-black text-purple-800 my-1 truncate whitespace-nowrap" title={metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'}>
+          <div className="text-2xl font-black text-purple-800 my-1 truncate whitespace-nowrap">
             {loading ? (
               <div className="animate-pulse h-8 w-40 bg-purple-100 rounded-lg inline-block align-middle"></div>
             ) : apiError ? (
               <span className="text-xl text-red-500 font-bold">-</span>
             ) : (
-              metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'
+              <>{summary?.leisureVisitorsFormatted || '0'} <span className="text-sm font-medium text-slate-400">명</span></>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            {loading || apiError ? '-' : <>올해 누적 결제액: <strong>₩{formatCurrency(metrics.topMember?.ytdTotalSpend || 0)}원</strong></>}
-          </p>
-        </div>
-
-        {/* Card 4: 올해 누적 회원 총 기여액 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-              <Flame size={16} className="text-amber-500 shrink-0" /> 올해 회원 누적 LTV
-            </span>
-            <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 whitespace-nowrap">
-              당해 연간 누적
-            </span>
-          </div>
-          <div className="text-3xl font-black text-amber-600 my-1 whitespace-nowrap">
-            {loading ? (
-              <div className="animate-pulse h-9 w-32 bg-amber-100 rounded-lg inline-block align-middle"></div>
-            ) : apiError ? (
-              <span className="text-xl text-red-500 font-bold">-</span>
-            ) : (
-              <>₩{formatCurrency(metrics.totalYtdSpend)} <span className="text-sm font-medium text-slate-400">원</span></>
-            )}
-          </div>
-          <p className="text-xs text-slate-500 mt-2 truncate">
-            {isEffectiveRange ? '선택 기간 방문 회원들의 2026년 전체 누적 결제액' : '선택일 방문 회원들의 2026년 전체 누적 결제액'}
+            순수 레저 및 식음 시설 이용객
           </p>
         </div>
 
       </div>
 
-      {/* Main Section: Search, Filters & Member Table */}
+      {/* Daily Trends Chart Section */}
       <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
-        
-        {/* Controls Bar */}
-        <div className="space-y-4 border-b border-slate-100 pb-6 mb-6">
-          
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
-            {/* Member Total Count Badge */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md select-none whitespace-nowrap">
-                전체 회원 ({enrichedVisitors.length}명)
-              </span>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative min-w-[280px]">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="회원명, 회원번호, 연락처, 이용업장 검색..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 font-medium"
-              />
-            </div>
-          </div>
-
-          {/* Loyalty Sub-Filters & Sort Dropdown */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/70">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1 whitespace-nowrap">
-                <Trophy size={14} className="text-purple-600 shrink-0" /> 올해 방문 필터:
-              </span>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('ALL')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'ALL'
-                    ? 'bg-slate-800 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                전체
-              </button>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('VIP')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'VIP'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                }`}
-              >
-                👑 올해 5회 이상 VIP
-              </button>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('REPEAT')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'REPEAT'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                }`}
-              >
-                🔁 2회 이상 재방문
-              </button>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('NEW')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'NEW'
-                    ? 'bg-slate-700 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                🆕 올해 첫 방문 (1회)
-              </button>
-            </div>
-
-            {/* Sort Selector */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">정렬 기준:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-bold outline-none cursor-pointer focus:border-emerald-500 whitespace-nowrap"
-              >
-                <option value="YTD_VISITS">🔥 올해 방문 횟수의 합 높은순 ▾</option>
-                <option value="TODAY_SPEND">당일 결제액 높은순 ▾</option>
-                <option value="YTD_SPEND">올해 누적 LTV 지출액 높은순 ▾</option>
-                <option value="NAME">회원명 가나다순 ▾</option>
-              </select>
-            </div>
-          </div>
-
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-500" /> 일자별 방문객 및 매출 추이
+          </h2>
         </div>
+        <div className="h-[350px] w-full">
+          {!loading && !apiError && dailyVisitors.length > 0 ? (
+            <ReactECharts option={getTrendChartOptions()} style={{ height: '100%', width: '100%' }} />
+          ) : (
+            <div className="h-full flex items-center justify-center text-slate-400">
+              데이터가 없습니다.
+            </div>
+          )}
+        </div>
+      </div>
 
-        {/* Member Visitors Table */}
+      {/* Venue Visitors Table */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Building className="w-5 h-5 text-emerald-500" /> 업장별 방문객 집계 실적 (SSOT)
+          </h2>
+          <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
+            총 {venueVisitors.length}개 업장
+          </span>
+        </div>
+        
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[1100px]">
+          <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[800px]">
             <thead>
               <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl whitespace-nowrap">회원번호 / 회원권명</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">회원명</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">회원 구분</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">당일 이용 업장</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">배정 호수</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">골프 라운딩</th>
-                <th className="py-3.5 px-4 text-right whitespace-nowrap">식음/부대 결제액 (원)</th>
-                <th className="py-3.5 px-4 text-right whitespace-nowrap">당일 총 결제액 (원)</th>
-                <th className="py-3.5 px-6 text-center whitespace-nowrap">🔥 올해 방문 횟수 (YTD)</th>
-                <th className="py-3.5 px-6 text-right whitespace-nowrap">올해 누적 결제액 (LTV)</th>
-                <th className="py-3.5 px-4 text-center rounded-r-xl whitespace-nowrap">상세</th>
+                <th className="py-3.5 px-6 rounded-l-xl whitespace-nowrap">분류 코드</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">업장 명칭</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">티켓 그룹</th>
+                <th className="py-3.5 px-6 text-right whitespace-nowrap">순 방문객 수</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">방문객 점유율 (%)</th>
+                <th className="py-3.5 px-6 text-right rounded-r-xl whitespace-nowrap">발생 매출액 (원)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredAndSortedVisitors.length > 0 ? (
-                filteredAndSortedVisitors.map((member, idx) => (
-                  <tr 
-                    key={idx} 
-                    onClick={() => setSelectedMemberModal(member)}
-                    className="hover:bg-emerald-50/30 transition-colors cursor-pointer"
-                  >
-                    <td className="py-4 px-6 font-bold text-slate-900 whitespace-nowrap">
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <Award size={16} className="text-brand-mint shrink-0" />
-                        <span className="whitespace-nowrap">{member.memberNo}</span>
-                      </div>
-                      {member.membershipName && (
-                        <span className="text-[11px] text-slate-400 font-normal ml-6 block whitespace-nowrap">
-                          {member.membershipName}
-                        </span>
-                      )}
+              {venueVisitors.length > 0 ? (
+                venueVisitors.map((venue, idx) => (
+                  <tr key={idx} className="hover:bg-emerald-50/30 transition-colors">
+                    <td className="py-4 px-6 font-medium text-slate-500 whitespace-nowrap">
+                      {venue.category_code}
                     </td>
-
                     <td className="py-4 px-4 font-extrabold text-slate-900 whitespace-nowrap">
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <span className="whitespace-nowrap">{member.memberName}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border whitespace-nowrap shrink-0 ${member.tierColor}`}>
-                          {member.tierBadge}
-                        </span>
-                      </div>
+                      {venue.venue_name}
                     </td>
-
                     <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 whitespace-nowrap">
-                        {member.memberType}
+                      <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+                        {venue.ticket_group || '-'}
                       </span>
                     </td>
-
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-lg font-bold whitespace-nowrap">
-                        {member.visitedFacility}
-                      </span>
+                    <td className="py-4 px-6 text-right font-black text-emerald-700 whitespace-nowrap">
+                      {venue.visitor_count_formatted} 명
                     </td>
-
-                    <td className="py-4 px-4 whitespace-nowrap text-xs font-medium">
-                      {member.assignedRoom ? (
-                         member.assignedRoom.includes('미배정') 
-                           ? <span className="text-slate-400 italic">{member.assignedRoom}</span> 
-                           : <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-100">{member.assignedRoom}</span>
-                      ) : <span className="text-slate-300">-</span>}
+                    <td className="py-4 px-4 text-right font-medium text-slate-500 whitespace-nowrap">
+                      {venue.visitor_share_pct.toFixed(2)}%
                     </td>
-
-                    <td className="py-4 px-4 whitespace-nowrap text-xs font-medium">
-                      {member.golfCourse ? (
-                         member.golfCourse.includes('미이용') 
-                           ? <span className="text-slate-400 italic">{member.golfCourse}</span> 
-                           : <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100">{member.golfCourse}</span>
-                      ) : <span className="text-slate-300">-</span>}
-                    </td>
-
-                    <td className="py-4 px-4 text-right font-bold text-slate-700 whitespace-nowrap">
-                      {member.fnbRoomCharge ? `₩${formatCurrency(member.fnbRoomCharge)}` : '-'}
-                    </td>
-
-                    <td className="py-4 px-4 text-right font-black text-slate-900 whitespace-nowrap">
-                      ₩{formatCurrency(member.todaySpend)}
-                    </td>
-
-                    {/* 🔥 올해 방문 횟수의 합 (YTD) */}
-                    <td className="py-4 px-6 text-center whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full font-black shadow-xs whitespace-nowrap shrink-0 ${
-                        member.ytdVisitCount >= 10 ? 'bg-purple-600 text-white shadow-purple-200' :
-                        member.ytdVisitCount >= 5 ? 'bg-amber-500 text-white shadow-amber-200' :
-                        member.ytdVisitCount >= 2 ? 'bg-blue-600 text-white shadow-blue-200' :
-                        'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}>
-                        <Flame size={12} className="shrink-0" /> 올해 총 {member.ytdVisitCount}회 방문
-                      </span>
-                    </td>
-
                     <td className="py-4 px-6 text-right font-bold text-slate-800 whitespace-nowrap">
-                      ₩{formatCurrency(member.ytdTotalSpend)}원
-                    </td>
-
-                    <td className="py-4 px-4 text-center whitespace-nowrap">
-                      <button className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
-                        <ChevronRight size={16} />
-                      </button>
+                      ₩{venue.revenue_formatted}
                     </td>
                   </tr>
                 ))
               ) : loading ? (
                 <tr>
-                  <td colSpan={9} className="py-24 text-center">
+                  <td colSpan={6} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center space-y-4">
                       <RefreshCw size={32} className="animate-spin text-emerald-500" />
-                      <p className="text-sm font-bold text-slate-600">방대한 양의 실시간 회원 데이터를 집계하고 있습니다...</p>
-                      <p className="text-xs text-slate-400">조회 기간이 길수록 다소 시간이 소요될 수 있습니다. (최대 15초)</p>
+                      <p className="text-sm font-bold text-slate-600">데이터를 불러오는 중입니다...</p>
                     </div>
                   </td>
                 </tr>
               ) : apiError ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-red-500">
-                    <div className="max-w-md mx-auto space-y-3 bg-red-50 p-6 rounded-2xl border border-red-100">
-                      <p className="font-bold text-sm text-red-700">데이터 연동 실패 또는 시간 초과</p>
-                      <p className="text-xs text-red-600/80">{apiError}</p>
-                      <p className="text-[11px] text-red-500 mt-2">※ 기간을 짧게 설정하여 다시 시도해 주세요.</p>
-                    </div>
+                  <td colSpan={6} className="py-16 text-center text-red-500">
+                    <p className="text-sm font-bold">{apiError}</p>
                   </td>
                 </tr>
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-400">
-                    <div className="max-w-md mx-auto space-y-3">
-                      <Award size={36} className="mx-auto text-slate-300" />
-                      <p className="font-medium text-sm text-slate-600">
-                        선택한 기간에 방문한 회원 데이터가 없습니다.
-                      </p>
-                    </div>
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
+                    데이터가 없습니다.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
       </div>
-
-      {/* Member Detail Modal (With 2026 YTD History Timeline) */}
-      {selectedMemberModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[28px] max-w-2xl w-full p-6 lg:p-8 shadow-2xl border border-slate-100 space-y-6 max-h-[90vh] overflow-y-auto">
-            
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                    {selectedMemberModal.memberType}
-                  </span>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200">
-                    {selectedMemberModal.tierBadge}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mt-2">
-                  {selectedMemberModal.memberName} 회원 ({selectedMemberModal.memberNo})
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  회원권: {selectedMemberModal.membershipName || '정규 회원권'} · 연락처: {selectedMemberModal.phone}
-                </p>
-              </div>
-              <button 
-                onClick={() => setSelectedMemberModal(null)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* 🏆 2026 YTD Loyalty Summary Banner */}
-            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white p-5 rounded-2xl flex items-center justify-between shadow-md">
-              <div>
-                <span className="text-[11px] font-bold text-emerald-300 block uppercase tracking-wide">
-                  2026년 올해 총 방문 횟수의 합 (YTD)
-                </span>
-                <div className="text-3xl font-black text-amber-300 mt-0.5 flex items-center gap-2">
-                  <Flame size={24} className="text-amber-400" />
-                  올해 총 {selectedMemberModal.ytdVisitCount}회 방문
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-slate-300 font-medium block">올해 누적 이용액 (LTV)</span>
-                <span className="text-xl font-bold text-white">
-                  ₩{formatCurrency(selectedMemberModal.ytdTotalSpend)}원
-                </span>
-              </div>
-            </div>
-
-            {/* Past Visit Timeline */}
-            {selectedMemberModal.visitHistory && selectedMemberModal.visitHistory.length > 0 ? (
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <h4 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
-                  <Calendar size={14} className="text-emerald-600" /> 2026년 방문 히스토리 상세 ({selectedMemberModal.visitHistory.length}회 기록)
-                </h4>
-                <div className="space-y-2 max-h-56 overflow-y-auto">
-                  {selectedMemberModal.visitHistory.map((h, hIdx) => (
-                    <div key={hIdx} className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-emerald-700 mr-2">[{h.visitNo}회차]</span>
-                        <span className="font-semibold text-slate-800">{h.date}</span>
-                        <span className="text-slate-400 ml-2">({h.facility})</span>
-                      </div>
-                      <strong className="text-slate-900">₩{formatCurrency(h.spend)}원</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs text-slate-500">
-                <span className="font-bold text-slate-700 block mb-1">방문 정보 요약</span>
-                <div>• 당일 이용 시설: <strong>{selectedMemberModal.visitedFacility}</strong> (₩{formatCurrency(selectedMemberModal.todaySpend)}원)</div>
-                <div>• 2026년 첫 방문일: {selectedMemberModal.firstVisitThisYear || selectedMemberModal.lastVisitDate || startDate}</div>
-                <div>• 2026년 최근 방문일: {selectedMemberModal.lastVisitDate || startDate}</div>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="flex justify-between items-center bg-emerald-50/70 p-4 rounded-2xl text-emerald-950 border border-emerald-100">
-              <div>
-                <span className="text-xs text-emerald-700 font-semibold block">당일 결제 금액</span>
-                <span className="text-xs text-slate-500">{startDate} 이용 내역</span>
-              </div>
-              <div className="text-2xl font-black text-emerald-900">
-                ₩{formatCurrency(selectedMemberModal.todaySpend)}원
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );

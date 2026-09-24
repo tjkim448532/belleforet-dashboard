@@ -1,108 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import { 
-  Building2, Phone, DollarSign, Search, 
-  ChevronRight, RefreshCw, Layers, Award, Utensils,
-  ShieldCheck, X, ChevronDown, ChevronUp, HelpCircle
-} from 'lucide-react';
+import { Building2, DollarSign, Users, RefreshCw, BedDouble, TrendingUp } from 'lucide-react';
+import type { CorporateGroupSalesV2Response } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-
-const formatCurrency = (val: any) => {
-  if (!val && val !== 0) return '0';
-  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
-  return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
-};
-
-export interface GroupFacilityItem {
-  facilityName: string;
-  category: 'ROOM' | 'BANQUET' | 'FNB' | 'GOLF' | 'LEISURE' | 'OTHER';
-  revenue: number;
-}
-
-export interface VisitHistoryEntry {
-  visitNo: number;
-  checkInDate: string;
-  checkOutDate: string;
-  categoryName: string;
-  paxCount: number;
-  totalRevenue: number;
-  stayDays: number;
-  facilitiesUsed?: GroupFacilityItem[];
-}
-
-export interface CorporateGroupItem {
-  groupId: string;
-  groupName: string;
-  corporateName?: string;
-  category: 'RESORT_CORP' | 'SEMINAR' | 'GOLF_GROUP' | 'BANQUET' | 'OTHER';
-  categoryName: string;
-  contactName: string;
-  contactPhone: string;
-  contactEmail?: string;
-  salesManager?: string;
-  checkInDate: string;
-  checkOutDate: string;
-  stayDays: number;
-  paxCount: number;
-  totalRevenue: number;
-  avgSpendPerPax: number;
-  // Loyalty & Repeat Visit Metrics
-  visitCount?: number;
-  totalLtvRevenue?: number;
-  loyaltyTier?: 'DIAMOND' | 'GOLD' | 'SILVER' | 'BRONZE';
-  tierLabel?: string;
-  visitHistory?: VisitHistoryEntry[];
-  spendingBreakdown: {
-    roomRevenue: number;
-    roomsCount?: number;
-    roomTypesUsed?: string[];
-    fnbRevenue: number;
-    golfRevenue: number;
-    golfTeams?: number;
-    leisureRevenue: number;
-  };
-  facilitiesUsed: GroupFacilityItem[];
-  paymentMethod?: string;
-  notes?: string;
-}
 
 export default function GroupSales() {
   const { startDate, endDate, setStartDate, setEndDate } = useDate();
   
-  const [groupList, setGroupList] = useState<CorporateGroupItem[]>([]);
-  const [summaryData, setSummaryData] = useState<{
-    totalGroups: number;
-    totalPax: number;
-    totalRevenue: number;
-    avgSpendPerGroup: number;
-    avgSpendPerPax: number;
-    roomRevenue: number;
-    fnbRevenue: number;
-    golfRevenue: number;
-    leisureRevenue: number;
-    ancillaryRevenue?: number;
-    ancillaryRatio?: number;
-    repeatGroupsCount?: number;
-    loyaltyRate?: number;
-    repeatRate?: number;
-    repeatSpendRate?: number;
-    repeatSpend?: number;
-    repeatCompaniesCount?: number;
-    totalUniqueCompanies?: number;
-  } | null>(null);
-
+  const [data, setData] = useState<CorporateGroupSalesV2Response | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [selectedLoyaltyFilter, setSelectedLoyaltyFilter] = useState<string>('ALL');
-  const [selectedFacilityFilter, setSelectedFacilityFilter] = useState<'ALL' | 'NAMDO' | 'RANCH' | 'BANQUET' | 'GOLF' | 'MOTO'>('ALL');
-  const [sortBy, setSortBy] = useState<'REVENUE' | 'VISITS' | 'SPEND_PER_PAX' | 'RECENT'>('REVENUE');
-  const [searchKeyword, setSearchKeyword] = useState<string>('');
-  const [selectedGroupModal, setSelectedGroupModal] = useState<CorporateGroupItem | null>(null);
-  const [showLogicExplainer, setShowLogicExplainer] = useState<boolean>(true);
 
   const applyPreset = (preset: DatePresetType) => {
     const range = getPresetDateRange(preset);
@@ -123,22 +33,19 @@ export default function GroupSales() {
     try {
       const queryParams = endDate
         ? `startDate=${startDate}&endDate=${endDate}`
-        : `date=${startDate}`;
+        : `startDate=${startDate}&endDate=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null);
-      const payload = res?.data ?? res;
-
-      if (payload && (payload.groups || payload.summary)) {
-        setGroupList(payload.groups || []);
-        setSummaryData(payload.summary || null);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales-v2?${queryParams}`).catch(() => null);
+      if (res?.data && res.data.success) {
+        setData(res.data);
+      } else if (res && res.success) {
+        setData(res);
       } else {
-        setGroupList([]);
-        setSummaryData(null);
+        setData(null);
       }
     } catch (err) {
       console.error('Corporate Group Sales Fetch Error:', err);
-      setGroupList([]);
-      setSummaryData(null);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -148,239 +55,13 @@ export default function GroupSales() {
     fetchGroupSales();
   }, [startDate, endDate]);
 
-  // Enrich groups with Loyalty Profiles and deduplication across intervals
-  const enrichedGroups = useMemo(() => {
-    const companyMap = new Map<string, {
-      visits: CorporateGroupItem[];
-      totalLtv: number;
-    }>();
-
-    groupList.forEach(item => {
-      const key = item.groupName.trim();
-      const existing = companyMap.get(key) || { visits: [], totalLtv: 0 };
-      existing.visits.push(item);
-      existing.totalLtv += item.totalRevenue;
-      companyMap.set(key, existing);
-    });
-
-    return groupList.map(item => {
-      const key = item.groupName.trim();
-      const companyInfo = companyMap.get(key);
-      const calculatedVisits = item.visitCount || companyInfo?.visits.length || 0;
-      const totalLtv = item.totalLtvRevenue || companyInfo?.totalLtv || item.totalRevenue;
-
-      let tier: 'DIAMOND' | 'GOLD' | 'SILVER' | 'BRONZE' = 'BRONZE';
-      let tierLabel = '신규 1회';
-
-      if (calculatedVisits >= 4 || totalLtv >= 40000000) {
-        tier = 'DIAMOND';
-        tierLabel = `VIP ${calculatedVisits}회차`;
-      } else if (calculatedVisits >= 3 || totalLtv >= 20000000) {
-        tier = 'GOLD';
-        tierLabel = `골드 ${calculatedVisits}회차`;
-      } else if (calculatedVisits >= 2) {
-        tier = 'SILVER';
-        tierLabel = `재방문 ${calculatedVisits}회`;
-      }
-
-      const history: VisitHistoryEntry[] = item.visitHistory && item.visitHistory.length > 0
-        ? item.visitHistory
-        : (companyInfo?.visits || [item]).map((v, vIdx) => ({
-            visitNo: vIdx + 1,
-            checkInDate: v.checkInDate,
-            checkOutDate: v.checkOutDate,
-            categoryName: v.categoryName || v.category,
-            paxCount: v.paxCount,
-            totalRevenue: v.totalRevenue,
-            stayDays: v.stayDays,
-            facilitiesUsed: v.facilitiesUsed
-          }));
-
-      // Clean facilities list: sanitize obsolete facility names
-      const cleanFacilities = (item.facilitiesUsed || []).map(f => {
-        let name = f.facilityName;
-        if (name.includes('루지')) {
-          name = name.replace('루지/', '').replace('/루지', '').replace('루지', '');
-          if (!name.trim()) name = '벨포레 목장/미디어아트';
-        }
-        return {
-          ...f,
-          facilityName: name
-        };
-      });
-
-      return {
-        ...item,
-        visitCount: calculatedVisits,
-        totalLtvRevenue: totalLtv,
-        loyaltyTier: tier,
-        tierLabel,
-        visitHistory: history,
-        facilitiesUsed: cleanFacilities
-      };
-    });
-  }, [groupList]);
-
-  // Filter & Sort
-  const filteredAndSortedGroups = useMemo(() => {
-    const filtered = enrichedGroups.filter(g => {
-      const matchCategory = selectedCategory === 'ALL' || g.category === selectedCategory;
-      
-      let matchLoyalty = true;
-      if (selectedLoyaltyFilter === 'REPEAT_ALL') {
-        matchLoyalty = (g.visitCount ?? 0) >= 2;
-      } else if (selectedLoyaltyFilter === 'VIP_ONLY') {
-        matchLoyalty = g.loyaltyTier === 'DIAMOND' || g.loyaltyTier === 'GOLD';
-      } else if (selectedLoyaltyFilter === 'NEW_ONLY') {
-        matchLoyalty = (g.visitCount ?? 0) === 1;
-      }
-
-      let matchFacility = true;
-      if (selectedFacilityFilter === 'NAMDO') {
-        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('남도예담'));
-      } else if (selectedFacilityFilter === 'RANCH') {
-        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('목장'));
-      } else if (selectedFacilityFilter === 'BANQUET') {
-        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('연회장') || f.facilityName.includes('세미나') || f.facilityName.includes('대관'));
-      } else if (selectedFacilityFilter === 'GOLF') {
-        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('CC') || f.facilityName.includes('골프')) || (g.spendingBreakdown?.golfRevenue || 0) > 0;
-      } else if (selectedFacilityFilter === 'MOTO') {
-        matchFacility = (g.facilitiesUsed || []).some(f => f.facilityName.includes('모토아레나'));
-      }
-
-      const matchSearch = !searchKeyword.trim() || 
-        g.groupName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        g.contactName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        g.contactPhone.includes(searchKeyword) ||
-        (g.facilitiesUsed || []).some(f => f.facilityName.toLowerCase().includes(searchKeyword.toLowerCase()));
-      return matchCategory && matchLoyalty && matchFacility && matchSearch;
-    });
-
-    return filtered.sort((a, b) => {
-      if (sortBy === 'REVENUE') return b.totalRevenue - a.totalRevenue;
-      if (sortBy === 'VISITS') return (b.visitCount ?? 0) - (a.visitCount ?? 0);
-      if (sortBy === 'SPEND_PER_PAX') return b.avgSpendPerPax - a.avgSpendPerPax;
-      if (sortBy === 'RECENT') return new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime();
-      return 0;
-    });
-  }, [enrichedGroups, selectedCategory, selectedLoyaltyFilter, selectedFacilityFilter, searchKeyword, sortBy]);
-
-  // Repeat metrics for KPI
-  const loyaltyMetrics = useMemo(() => {
-    const uniqueCompanies = new Set(
-      enrichedGroups
-        .map(g => (g.corporateName || g.groupName || '').trim())
-        .filter(Boolean)
-    );
-    const repeatCompanies = new Set(
-      enrichedGroups
-        .filter(g => (g.visitCount ?? 0) >= 2)
-        .map(g => (g.corporateName || g.groupName || '').trim())
-        .filter(Boolean)
-    );
-    const repeatSpend = enrichedGroups
-      .filter(g => (g.visitCount ?? 0) >= 2)
-      .reduce((s, g) => s + g.totalRevenue, 0);
-    const totalSpend = Number(summaryData?.totalRevenue || enrichedGroups.reduce((s, g) => s + g.totalRevenue, 0));
-
-    const calculatedRepeatRate = uniqueCompanies.size > 0 
-      ? Number(((repeatCompanies.size / uniqueCompanies.size) * 100).toFixed(1)) 
-      : 0;
-    const calculatedRepeatSpendRate = totalSpend > 0 
-      ? Number(((repeatSpend / totalSpend) * 100).toFixed(1)) 
-      : 0;
-
-    return {
-      totalUniqueCompanies: (summaryData?.totalUniqueCompanies !== undefined && summaryData.totalUniqueCompanies > 0)
-        ? summaryData.totalUniqueCompanies
-        : uniqueCompanies.size,
-      repeatCompaniesCount: (summaryData?.repeatCompaniesCount !== undefined && summaryData.repeatCompaniesCount > 0)
-        ? summaryData.repeatCompaniesCount
-        : repeatCompanies.size,
-      repeatRate: (summaryData?.repeatRate !== undefined && summaryData.repeatRate > 0)
-        ? summaryData.repeatRate
-        : calculatedRepeatRate,
-      repeatSpendRate: (summaryData?.repeatSpendRate !== undefined && summaryData.repeatSpendRate > 0)
-        ? summaryData.repeatSpendRate
-        : calculatedRepeatSpendRate,
-      repeatSpend: summaryData?.repeatSpend || repeatSpend
-    };
-  }, [enrichedGroups, summaryData]);
-
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    return {
-      ALL: enrichedGroups.length,
-      RESORT_CORP: enrichedGroups.filter(g => g.category === 'RESORT_CORP').length,
-      SEMINAR: enrichedGroups.filter(g => g.category === 'SEMINAR').length,
-      GOLF_GROUP: enrichedGroups.filter(g => g.category === 'GOLF_GROUP').length,
-      BANQUET: enrichedGroups.filter(g => g.category === 'BANQUET').length,
-    };
-  }, [enrichedGroups]);
-
-  // Facility-specific counts for direct filtering
-  const facilityCounts = useMemo(() => {
-    return {
-      ALL: enrichedGroups.length,
-      NAMDO: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('남도예담'))).length,
-      RANCH: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('목장'))).length,
-      BANQUET: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('연회장') || f.facilityName.includes('세미나') || f.facilityName.includes('대관'))).length,
-      GOLF: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('CC') || f.facilityName.includes('골프')) || (g.spendingBreakdown?.golfRevenue || 0) > 0).length,
-      MOTO: enrichedGroups.filter(g => (g.facilitiesUsed || []).some(f => f.facilityName.includes('모토아레나'))).length,
-    };
-  }, [enrichedGroups]);
-
-  // Crisp, banking-app style badge chips
-  const renderFacilityBadge = (f: GroupFacilityItem, fIdx: number) => {
-    const name = f.facilityName;
-    if (name.includes('남도예담')) {
-      return (
-        <span key={fIdx} className="bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
-          🍱 {name}
-        </span>
-      );
-    }
-    if (name.includes('목장')) {
-      return (
-        <span key={fIdx} className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
-          🐑 {name}
-        </span>
-      );
-    }
-    if (name.includes('연회장') || name.includes('세미나') || name.includes('대관')) {
-      return (
-        <span key={fIdx} className="bg-blue-50 text-blue-900 border border-blue-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
-          🏛️ {name}
-        </span>
-      );
-    }
-    if (name.includes('골프') || name.includes('CC')) {
-      return (
-        <span key={fIdx} className="bg-purple-50 text-purple-900 border border-purple-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
-          ⛳ {name}
-        </span>
-      );
-    }
-    if (name.includes('모토아레나')) {
-      return (
-        <span key={fIdx} className="bg-rose-50 text-rose-900 border border-rose-200/80 text-[11px] px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 whitespace-nowrap">
-          🏎️ {name}
-        </span>
-      );
-    }
-    return (
-      <span key={fIdx} className="bg-slate-50 text-slate-700 border border-slate-200/80 text-[11px] px-2 py-0.5 rounded-md font-medium whitespace-nowrap">
-        {name}
-      </span>
-    );
-  };
-
-  const totalCalculatedRevenue = Number(summaryData?.totalRevenue || 0);
+  const summary = data?.meta?.summary;
+  const segments = data?.segments || [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       
-      {/* 1. Header: Modern Banking Style Account Overview */}
+      {/* 1. Header */}
       <div className="bg-white p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-blue-50 text-blue-700 rounded-2xl border border-blue-100/80">
@@ -389,14 +70,14 @@ export default function GroupSales() {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight break-keep whitespace-nowrap">
-                B2B 법인 & 단체 영업 실적 관리
+                법인/단체 객실 실적
               </h1>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
-                Corporate Ledger
+                V2
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1 break-keep">
-              산하 PMS 법인 마스터 폴리오 및 연회·골프·부대시설 결제 데이터를 통합하여 기업별 지출 및 이용 동선을 정밀 분석합니다.
+              법인 및 단체의 객실 실적을 세그먼트별로 정확히 분석합니다. (SSOT)
             </p>
           </div>
         </div>
@@ -437,669 +118,117 @@ export default function GroupSales() {
         </div>
       </div>
 
-      {/* 2. 💡 Financial Logic Explanation Card (은행앱 스타일 직관적 산출 가이드) */}
-      <div className="bg-slate-900 text-white rounded-[28px] p-6 shadow-md border border-slate-800 relative overflow-hidden">
-        <div className="flex items-center justify-between cursor-pointer select-none" onClick={() => setShowLogicExplainer(!showLogicExplainer)}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-teal-500/20 text-teal-400 rounded-lg border border-teal-500/30">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
-              B2B 단체 실적 및 교차 기여 데이터 산출 기준 (Data Lineage & Methodology)
-              <span className="text-[11px] font-normal text-slate-400">
-                {showLogicExplainer ? '접기' : '자세히 보기'}
-              </span>
-            </h3>
-          </div>
-          <button className="text-slate-400 hover:text-white p-1 cursor-pointer">
-            {showLogicExplainer ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
-        </div>
-
-        {showLogicExplainer && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-800 text-xs">
-            
-            {/* Logic 1: How Groups & Companies are Counted */}
-            <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-blue-400 font-bold">
-                <Building2 size={15} /> 1. 유치 단체 수(건수) vs 유치 기업 수(개사)
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                • <strong>행사 건수(건):</strong> 조회 기간 내 산하 PMS B2B 마스터 폴리오에 등록된 총 단체 행사(계약) 건수입니다.<br />
-                • <strong>고객사 수(개사):</strong> 동일 법인/기관(예: 한국생산성본부, 공공기관 등)이 여러 차례 나누어 행사를 진행한 경우, 상호명을 정규화하여 <strong>중복을 제거한 순수 유치 기업체 수</strong>입니다.<br />
-                • <strong>총 참가 인원:</strong> 모든 단체 행사에 참가한 임직원 및 교육생의 누적 합계(명)입니다.
-              </p>
-            </div>
-
-            {/* Logic 2: How Total Revenue is Calculated */}
-            <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-teal-400 font-bold">
-                <DollarSign size={15} /> 2. 단체 총결제 매출(순매출) 산출 원리
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                • <strong>원천 장부:</strong> 호텔 산하 PMS의 <strong>B2B 법인 예약 마스터 폴리오(Master Billing Folio)</strong> 데이터와 법인 세금계산서/카드 정산 내역 기준.<br />
-                • <strong>합산 로직:</strong> 해당 단체 코드(<code className="text-teal-300 font-mono">groupId</code>)에 일괄 청구된 <strong>[객실료 + 대연회장 대관료 + 단체 식음 뷔페 + 골프/레저 티켓]</strong>을 1원 단위 순매출(Gross / 1.1)로 집계한 값입니다.
-              </p>
-            </div>
-
-            {/* Logic 3: Ancillary Cross-selling Contribution */}
-            <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-cyan-400 font-bold">
-                <Layers size={15} /> 3. 부대시설 교차 기여율 (Cross-Selling Ratio) 산출 원리
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                • <strong>정의 및 공식:</strong> 단체 총 결제 매출 중 <strong>객실(숙박료)을 제외하고</strong>, 단체 고객들이 리조트 내 부대시설(식음료 F&B, 골프장 Green Fee, 목장/미디어아트/카트 레저 등)에서 추가 소비한 매출의 비중입니다.<br />
-                • <code className="text-cyan-300 font-mono block my-1 bg-slate-900 px-2 py-1 rounded">교차 기여율(%) = (식음 + 골프 + 레저 부대시설 매출) ÷ 단체 총 결제 매출 × 100</code>
-                • <strong>경영적 의미:</strong> 객실만 단순 투숙하는 단체 대비, 리조트 내 F&B 및 액티비티를 함께 이용하도록 유도한 <strong>리조트 복합 시너지 성과</strong>를 측정합니다.
-              </p>
-            </div>
-
-            {/* Logic 4: Corporate Loyalty & LTV */}
-            <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-purple-400 font-bold">
-                <Award size={15} /> 4. 단체 로열티(재방문율) 및 고객사 생애가치 (LTV)
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                • <strong>재방문율:</strong> 전체 유치 기업 중 과거 2회 이상 벨포레를 재방문하여 행사를 개최한 법인의 비율(<code className="text-purple-300 font-mono">재방문 기업 수 ÷ 전체 순수 기업 수 × 100</code>)입니다.<br />
-                • <strong>매출 기여도:</strong> 재방문 고객사들이 결제한 금액이 전체 단체 매출에서 차지하는 비중입니다.<br />
-                • <strong>누적 LTV:</strong> 해당 법인이 벨포레와 맺은 최초 계약 이후 발생시킨 누적 총 결제액(Life Time Value)을 추적합니다.
-              </p>
-            </div>
-
-          </div>
-        )}
-      </div>
-
-      {/* 3. 🏦 4 Executive Financial Summary Cards (Toss Bank Style) */}
+      {/* 2. Executive Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Card 1: Total Corporate Groups */}
+        {/* Card 1: Total Revenue */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <Building2 size={15} className="text-blue-600" /> 유치 단체 수
-              <div className="relative group/tip inline-flex items-center">
-                <HelpCircle size={14} className="text-slate-400 hover:text-blue-600 cursor-pointer transition-colors" />
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tip:block w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
-                  <p className="font-bold text-blue-300 mb-1">📌 유치 단체 수 vs 기업 수 기준</p>
-                  • <strong className="text-white">건수(Events):</strong> 조회 기간 내 등록된 B2B 행사 총 건수<br />
-                  • <strong className="text-white">개사(Companies):</strong> 동일 기업의 복수 행사를 중복 제거한 실제 유치 법인 수
-                </div>
-              </div>
+              <DollarSign size={15} className="text-emerald-600" /> 총 매출액
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
-              B2B 모수
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
+              순매출
             </span>
           </div>
           <div>
             <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
-              {enrichedGroups.length} <span className="text-sm font-semibold text-slate-500">건</span>
-              <span className="text-sm font-bold text-blue-600 ml-2">({loyaltyMetrics.totalUniqueCompanies}개사)</span>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
-              <span>💡</span>
-              <span className="truncate">동일 기업 분할 행사 중복 제외 순수 고객사</span>
+              {summary?.totalRevenueFormatted || '0'}원
             </div>
           </div>
         </div>
 
-        {/* Card 2: Total Revenue */}
+        {/* Card 2: Rooms Sold */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <DollarSign size={15} className="text-emerald-600" /> 단체 총 결제 매출
-              <div className="relative group/tip inline-flex items-center">
-                <HelpCircle size={14} className="text-slate-400 hover:text-emerald-600 cursor-pointer transition-colors" />
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tip:block w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
-                  <p className="font-bold text-emerald-300 mb-1">📌 단체 총 결제 매출 산출 기준</p>
-                  호텔 PMS 법인 마스터 폴리오에 정산된 [객실 + 대연회장 대관 + 단체 식음 + 골프/레저]의 부가세 제외 순매출(Gross / 1.1) 합계입니다.
-                </div>
-              </div>
-            </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
-              순매출 기준
+              <BedDouble size={15} className="text-blue-600" /> 판매 객실
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-emerald-700 tabular-nums whitespace-nowrap">
-              {formatCurrency(totalCalculatedRevenue)}원
-            </div>
-            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
-              행사당 평균: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerGroup || 0)}원</strong>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
-              <span>💡</span>
-              <span className="truncate">객실 + 연회 + 식음 + 골프·레저 통합 순매출</span>
+            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+              {summary?.totalRoomsSoldFormatted || '0'}
+              <span className="text-sm font-semibold text-slate-500 ml-1">실</span>
             </div>
           </div>
         </div>
 
-        {/* Card 3: Loyalty & Repeat Rate */}
+        {/* Card 3: Total Guests */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <Award size={15} className="text-purple-600" /> 단체 로열티 (재방문율)
-              <div className="relative group/tip inline-flex items-center">
-                <HelpCircle size={14} className="text-slate-400 hover:text-purple-600 cursor-pointer transition-colors" />
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tip:block w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
-                  <p className="font-bold text-purple-300 mb-1">📌 단체 재방문 로열티 기준</p>
-                  • <strong className="text-white">재방문율:</strong> 전체 유치 기업 중 과거 2회 이상 벨포레를 재방문한 충성 기업 비율<br />
-                  • <strong className="text-white">매출 기여도:</strong> 재방문 기업 결제액이 전체 단체 매출에서 차지하는 비중
-                </div>
-              </div>
-            </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap">
-              충성도 지수
+              <Users size={15} className="text-purple-600" /> 총 투숙객
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-purple-800 tabular-nums whitespace-nowrap">
-              {loyaltyMetrics.repeatRate}% <span className="text-sm font-semibold text-slate-500">재방문</span>
-            </div>
-            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
-              재방문 기업: <strong className="text-purple-700">{loyaltyMetrics.repeatCompaniesCount}개사</strong> · 기여: <strong className="text-slate-800">{loyaltyMetrics.repeatSpendRate}%</strong>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
-              <span>💡</span>
-              <span className="truncate">2회 이상 벨포레를 다시 찾은 충성 법인 기업</span>
+            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+              {summary?.totalGuestsFormatted || '0'}
+              <span className="text-sm font-semibold text-slate-500 ml-1">명</span>
             </div>
           </div>
         </div>
 
-        {/* Card 4: Ancillary Cross-selling Contribution */}
+        {/* Card 4: ADR */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <Layers size={15} className="text-cyan-600" /> 부대시설 교차 기여
-              <div className="relative group/tip inline-flex items-center">
-                <HelpCircle size={14} className="text-slate-400 hover:text-cyan-600 cursor-pointer transition-colors" />
-                <div className="absolute right-0 sm:left-0 bottom-full mb-2 hidden group-hover/tip:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-50 pointer-events-none leading-relaxed border border-slate-700">
-                  <p className="font-bold text-cyan-300 mb-1">📌 부대시설 교차 기여율이란?</p>
-                  단체 총매출 중 <strong>객실(숙박)을 제외한 부대시설(식음료 F&B, 골프장, 목장/레저 등)에서 추가 소비한 매출 비중</strong>입니다.<br />
-                  <span className="text-cyan-200 font-mono text-[10px] mt-1 block">공식: (부대시설 매출 ÷ 단체 총매출) × 100</span>
-                </div>
-              </div>
-            </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-100 whitespace-nowrap">
-              식음·골프·레저
+              <TrendingUp size={15} className="text-amber-600" /> ADR (객단가)
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-cyan-800 tabular-nums whitespace-nowrap">
-              {summaryData?.ancillaryRatio || 0}%
-            </div>
-            <div className="text-xs text-slate-500 mt-1 whitespace-nowrap">
-              1인당 객단가: <strong className="text-slate-800">{formatCurrency(summaryData?.avgSpendPerPax ?? 0)}원/인</strong>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 border-t border-slate-100 pt-1.5 flex items-center gap-1">
-              <span>💡</span>
-              <span className="truncate">단체 총매출 중 객실 외 식음·골프·레저 소비 비중</span>
+            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+              {summary?.adrFormatted || '0'}원
             </div>
           </div>
         </div>
 
       </div>
 
-      {/* 4. 🗂️ Banking Ledger Table & Filter Controls */}
-      <div className="bg-white rounded-[32px] p-7 border border-slate-200/90 shadow-xs space-y-5">
-        
-        {/* Filter Controls Header */}
-        <div className="space-y-4 border-b border-slate-100 pb-5">
-          
-          {/* Row 1: Segment Tabs & Search */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
-            {/* Category Segment Tabs */}
-            <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl text-xs overflow-x-auto">
-              <button
-                onClick={() => setSelectedCategory('ALL')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedCategory === 'ALL'
-                    ? 'bg-white text-slate-900 shadow-xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                전체 단체 ({categoryCounts.ALL}개)
-              </button>
-              <button
-                onClick={() => setSelectedCategory('RESORT_CORP')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedCategory === 'RESORT_CORP'
-                    ? 'bg-purple-600 text-white shadow-xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                🏢 기업 휴양소 ({categoryCounts.RESORT_CORP}개)
-              </button>
-              <button
-                onClick={() => setSelectedCategory('SEMINAR')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedCategory === 'SEMINAR'
-                    ? 'bg-blue-600 text-white shadow-xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                👥 세미나/워크샵 ({categoryCounts.SEMINAR}개)
-              </button>
-              <button
-                onClick={() => setSelectedCategory('GOLF_GROUP')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedCategory === 'GOLF_GROUP'
-                    ? 'bg-emerald-600 text-white shadow-xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                ⛳ 골프 단체 ({categoryCounts.GOLF_GROUP}개)
-              </button>
-              <button
-                onClick={() => setSelectedCategory('BANQUET')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedCategory === 'BANQUET'
-                    ? 'bg-amber-600 text-white shadow-xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                🍽️ 연회/만찬 ({categoryCounts.BANQUET}개)
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative min-w-[280px]">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-              <input
-                type="text"
-                placeholder="기업명, 담당자, 연락처 검색..."
-                value={searchKeyword}
-                onChange={e => setSearchKeyword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200/90 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium"
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Loyalty Filter & Sort Options */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
-                <Award size={13} className="text-purple-600" /> 로열티:
-              </span>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('ALL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'ALL'
-                    ? 'bg-slate-800 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                전체 고객사
-              </button>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('REPEAT_ALL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'REPEAT_ALL'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                }`}
-              >
-                재방문 단체 (2회 이상)
-              </button>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('VIP_ONLY')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'VIP_ONLY'
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
-                }`}
-              >
-                앵커 VIP (3회+ / 다이아)
-              </button>
-              <button
-                onClick={() => setSelectedLoyaltyFilter('NEW_ONLY')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLoyaltyFilter === 'NEW_ONLY'
-                    ? 'bg-slate-700 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                신규 단체 (1회차)
-              </button>
-            </div>
-
-            {/* Sort Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-medium">정렬 기준:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-bold outline-none cursor-pointer focus:border-blue-500"
-              >
-                <option value="REVENUE">총 결제액 높은순 ▾</option>
-                <option value="VISITS">방문 횟수(로열티) 높은순 ▾</option>
-                <option value="SPEND_PER_PAX">1인당 객단가 높은순 ▾</option>
-                <option value="RECENT">최신 행사일자순 ▾</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Row 3: Facility Chips Filter */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
-              <Utensils size={13} className="text-amber-600" /> 이용 시설:
-            </span>
-            <button
-              onClick={() => setSelectedFacilityFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedFacilityFilter === 'ALL'
-                  ? 'bg-slate-800 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              전체 시설 ({facilityCounts.ALL}개)
-            </button>
-            <button
-              onClick={() => setSelectedFacilityFilter('NAMDO')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedFacilityFilter === 'NAMDO'
-                  ? 'bg-amber-600 text-white shadow-xs font-bold'
-                  : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200'
-              }`}
-            >
-              🍱 남도예담 ({facilityCounts.NAMDO}개)
-            </button>
-            <button
-              onClick={() => setSelectedFacilityFilter('RANCH')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedFacilityFilter === 'RANCH'
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                  : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
-              }`}
-            >
-              🐑 벨포레 목장 ({facilityCounts.RANCH}개)
-            </button>
-            <button
-              onClick={() => setSelectedFacilityFilter('BANQUET')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedFacilityFilter === 'BANQUET'
-                  ? 'bg-blue-600 text-white shadow-xs font-bold'
-                  : 'bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200'
-              }`}
-            >
-              🏛️ 대연회장/세미나 ({facilityCounts.BANQUET}개)
-            </button>
-            <button
-              onClick={() => setSelectedFacilityFilter('GOLF')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedFacilityFilter === 'GOLF'
-                  ? 'bg-purple-600 text-white shadow-xs font-bold'
-                  : 'bg-purple-50 text-purple-900 hover:bg-purple-100 border border-purple-200'
-              }`}
-            >
-              ⛳ 벨포레CC ({facilityCounts.GOLF}개)
-            </button>
-            <button
-              onClick={() => setSelectedFacilityFilter('MOTO')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedFacilityFilter === 'MOTO'
-                  ? 'bg-rose-600 text-white shadow-xs font-bold'
-                  : 'bg-rose-50 text-rose-900 hover:bg-rose-100 border border-rose-200'
-              }`}
-            >
-              🏎️ 모토아레나 ({facilityCounts.MOTO}개)
-            </button>
-          </div>
-
-        </div>
-
-        {/* Group Ledger Table */}
-        <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
-          <table className="w-full border-collapse text-left text-xs whitespace-nowrap min-w-[1200px]">
-            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200/90 whitespace-nowrap">
-              <tr>
-                <th className="py-3.5 px-4 min-w-[200px] whitespace-nowrap">단체명 / 기업명</th>
-                <th className="py-3.5 px-3 text-center min-w-[110px] whitespace-nowrap">로열티</th>
-                <th className="py-3.5 px-3 text-center min-w-[130px] whitespace-nowrap">구분</th>
-                <th className="py-3.5 px-4 min-w-[160px] whitespace-nowrap">담당자 / 연락처</th>
-                <th className="py-3.5 px-4 min-w-[160px] whitespace-nowrap">행사 기간</th>
-                <th className="py-3.5 px-3 text-right min-w-[70px] whitespace-nowrap">인원</th>
-                <th className="py-3.5 px-4 text-right min-w-[130px] whitespace-nowrap">결제액 / 누적 LTV</th>
-                <th className="py-3.5 px-4 min-w-[240px] whitespace-nowrap">이용 영업장 내역</th>
-                <th className="py-3.5 px-3 text-center w-12 whitespace-nowrap">상세</th>
+      {/* 3. Data Table */}
+      <div className="bg-white rounded-[32px] p-7 border border-slate-200/90 shadow-xs space-y-5 overflow-hidden">
+        <h3 className="text-lg font-black text-slate-900">세그먼트별 실적 상세</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b-2 border-slate-800 text-sm font-bold text-slate-900">
+                <th className="py-4 px-4 whitespace-nowrap">세그먼트 그룹</th>
+                <th className="py-4 px-4 whitespace-nowrap">세그먼트명</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">판매 객실</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">매출액</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">투숙객</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">ADR</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">비중</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
-              {filteredAndSortedGroups.length > 0 ? (
-                filteredAndSortedGroups.map((group, idx) => (
-                  <tr 
-                    key={idx} 
-                    onClick={() => setSelectedGroupModal(group)}
-                    className="hover:bg-slate-50/80 transition-colors cursor-pointer"
-                  >
-                    {/* Company Name */}
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      <div className="flex items-center gap-2">
-                        <Building2 size={15} className="text-blue-600 flex-shrink-0" />
-                        <span className="text-sm font-black">{group.groupName}</span>
-                      </div>
-                      {group.salesManager && (
-                        <span className="text-[11px] text-slate-400 font-normal ml-5 block mt-0.5">
-                          영업 담당: {group.salesManager}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Loyalty Badge */}
-                    <td className="py-3.5 px-3 text-center">
-                      {group.loyaltyTier === 'DIAMOND' && (
-                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-purple-50 text-purple-800 border border-purple-200 whitespace-nowrap inline-block">
-                          {group.tierLabel}
-                        </span>
-                      )}
-                      {group.loyaltyTier === 'GOLD' && (
-                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap inline-block">
-                          {group.tierLabel}
-                        </span>
-                      )}
-                      {group.loyaltyTier === 'SILVER' && (
-                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap inline-block">
-                          {group.tierLabel}
-                        </span>
-                      )}
-                      {(!group.loyaltyTier || group.loyaltyTier === 'BRONZE') && (
-                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap inline-block">
-                          {group.tierLabel || '신규 1회'}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Category Type */}
-                    <td className="py-3.5 px-3 text-center">
-                      <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold bg-slate-100 text-slate-700 whitespace-nowrap inline-block">
-                        {group.categoryName || group.category}
-                      </span>
-                    </td>
-
-                    {/* Contact */}
-                    <td className="py-3.5 px-4 text-xs">
-                      <div className="font-semibold text-slate-900">{group.contactName}</div>
-                      <div className="text-slate-400 flex items-center gap-1 mt-0.5 whitespace-nowrap">
-                        <Phone size={11} /> {group.contactPhone}
-                      </div>
-                    </td>
-
-                    {/* Date / Stay */}
-                    <td className="py-3.5 px-4 text-xs text-slate-600">
-                      <div className="whitespace-nowrap">{group.checkInDate} ~ {group.checkOutDate}</div>
-                      <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
-                        {group.stayDays}박
-                      </span>
-                    </td>
-
-                    {/* Pax */}
-                    <td className="py-3.5 px-3 text-right font-medium text-slate-800 whitespace-nowrap">
-                      {group.paxCount.toLocaleString()}명
-                    </td>
-
-                    {/* Settlement & LTV */}
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="font-black text-slate-900 text-sm tabular-nums">
-                        {formatCurrency(group.totalRevenue)}원
-                      </div>
-                      {(group.visitCount ?? 0) > 1 && (
-                        <div className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
-                          누적 LTV {formatCurrency(group.totalLtvRevenue)}원
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Facilities Used */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {group.facilitiesUsed?.slice(0, 3).map((f, fIdx) => renderFacilityBadge(f, fIdx))}
-                        {(group.facilitiesUsed?.length || 0) > 3 && (
-                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                            +{(group.facilitiesUsed?.length || 0) - 3}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Detail Action */}
-                    <td className="py-3.5 px-3 text-center">
-                      <button className="p-1 text-slate-400 hover:text-blue-600 transition-colors">
-                        <ChevronRight size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+            <tbody className="divide-y divide-slate-100">
+              {segments.map((seg, idx) => (
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-4 px-4 text-sm font-semibold text-slate-900 whitespace-nowrap">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md">
+                      {seg.ticketGroup}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-sm font-bold text-slate-800 whitespace-nowrap">{seg.venueName}</td>
+                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.roomsSoldFormatted}</td>
+                  <td className="py-4 px-4 text-sm font-bold text-slate-900 text-right whitespace-nowrap">{seg.revenueFormatted}</td>
+                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.guestCountFormatted}</td>
+                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.adrFormatted}</td>
+                  <td className="py-4 px-4 text-sm text-right font-medium text-slate-500 whitespace-nowrap">
+                    {seg.revenueSharePct.toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+              {segments.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-400">
-                    <Building2 size={36} className="mx-auto text-slate-300 mb-2" />
-                    <p className="font-medium text-xs text-slate-600">
-                      조회된 조건에 일치하는 B2B 법인 단체 데이터가 없습니다.
-                    </p>
+                  <td colSpan={7} className="py-12 text-center text-slate-400 text-sm">
+                    해당 기간의 데이터가 없습니다.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
       </div>
-
-      {/* 5. Detail Modal */}
-      {selectedGroupModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[28px] max-w-2xl w-full p-6 lg:p-8 shadow-2xl border border-slate-100 space-y-6 max-h-[90vh] overflow-y-auto">
-            
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                    {selectedGroupModal.categoryName || selectedGroupModal.category}
-                  </span>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200">
-                    {selectedGroupModal.tierLabel || '신규 고객'}
-                  </span>
-                </div>
-                <h3 className="text-xl font-black text-slate-900 mt-2">
-                  {selectedGroupModal.groupName}
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  행사 기간: {selectedGroupModal.checkInDate} ~ {selectedGroupModal.checkOutDate} ({selectedGroupModal.stayDays}박) · 총 {selectedGroupModal.paxCount}명 참가
-                </p>
-              </div>
-              <button 
-                onClick={() => setSelectedGroupModal(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Loyalty & LTV Overview Banner */}
-            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-5 rounded-2xl flex items-center justify-between shadow-md">
-              <div>
-                <span className="text-[11px] font-bold text-slate-300 block uppercase tracking-wide">
-                  고객사 생애가치 (Customer LTV)
-                </span>
-                <div className="text-2xl font-black mt-0.5 text-teal-300">
-                  {formatCurrency(selectedGroupModal.totalLtvRevenue || selectedGroupModal.totalRevenue)}원
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-slate-300 font-medium block">누적 방문 횟수</span>
-                <span className="text-xl font-bold text-amber-300">
-                  {selectedGroupModal.visitCount ?? 0}회 방문
-                </span>
-              </div>
-            </div>
-
-            {/* Visit History Timeline */}
-            {selectedGroupModal.visitHistory && selectedGroupModal.visitHistory.length > 1 && (
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <h4 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
-                  <Award size={14} className="text-purple-600" /> 과거 행사 방문 히스토리 ({selectedGroupModal.visitHistory.length}회차)
-                </h4>
-                <div className="space-y-2">
-                  {selectedGroupModal.visitHistory.map((h, hIdx) => (
-                    <div key={hIdx} className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-purple-700 mr-2">[{h.visitNo}회차]</span>
-                        <span className="font-semibold text-slate-800">{h.checkInDate} ~ {h.checkOutDate}</span>
-                        <span className="text-slate-400 ml-2">({h.paxCount}명 · {h.categoryName})</span>
-                      </div>
-                      <strong className="text-slate-900">{formatCurrency(h.totalRevenue)}원</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Contact & Account Info */}
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl text-xs text-slate-700">
-              <div>
-                <span className="text-slate-400 block mb-0.5">단체 담당자</span>
-                <strong className="text-slate-900 text-sm">{selectedGroupModal.contactName}</strong>
-                <span className="block text-slate-500 mt-0.5">{selectedGroupModal.contactPhone}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block mb-0.5">결제 방식 / 영업 담당</span>
-                <strong className="text-slate-900">{selectedGroupModal.paymentMethod || '법인 후정산'}</strong>
-                <span className="block text-slate-500 mt-0.5">{selectedGroupModal.salesManager || '영업팀'}</span>
-              </div>
-            </div>
-
-            {/* Facility Spending Ledger */}
-            <div>
-              <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-                <Layers size={16} className="text-blue-600" /> 이번 행사 이용 영업장 및 지출 내역
-              </h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {selectedGroupModal.facilitiesUsed?.map((fac, fIdx) => (
-                  <div key={fIdx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 text-xs">
-                    <div className="flex items-center gap-2">
-                      {renderFacilityBadge(fac, fIdx)}
-                    </div>
-                    <strong className="text-slate-900">{formatCurrency(fac.revenue)}원</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Total Footer */}
-            <div className="flex justify-between items-center bg-slate-900 text-white p-4 rounded-2xl">
-              <div>
-                <span className="text-xs text-slate-300 font-semibold block">이번 행사 결제액</span>
-                <span className="text-xs text-slate-400">1인당 평균 {formatCurrency(selectedGroupModal.avgSpendPerPax)}원</span>
-              </div>
-              <div className="text-2xl font-black text-teal-300">
-                {formatCurrency(selectedGroupModal.totalRevenue)}원
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );

@@ -679,7 +679,7 @@ export default function Synergy() {
           </div>
         </div>
 
-        {/* KPI 4: RevPAS */}
+        {/* KPI 4: TRevPOR */}
         <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -691,14 +691,14 @@ export default function Synergy() {
               </span>
             </div>
             <span className="text-xs font-bold text-slate-500 block mb-1 whitespace-nowrap">
-              통합 객실당 가치 (RevPAS · 골프 포함)
+              통합 객실당 가치 (TRevPOR · 골프 포함)
             </span>
             <div className="text-3xl lg:text-4xl font-black text-indigo-600 tracking-tight tabular-nums whitespace-nowrap">
               {formatCurrency(parseNum(summaryData?.summary?.totalTrevPOR || 0))} <span className="text-base text-slate-500 font-normal">원/실</span>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="whitespace-nowrap">(객실 + 골프 + 식음 + 레저) ÷ 객실수</span>
+            <span className="whitespace-nowrap">(객실 + 골프 + 식음 + 레저) ÷ 판매 객실수</span>
             <span className="text-indigo-700 font-bold whitespace-nowrap">전사 총합 기준</span>
           </div>
         </div>

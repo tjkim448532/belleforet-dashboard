@@ -129,21 +129,27 @@ export default function Members() {
     // If backend isn't ready or returned empty, return an empty shell options
     const rawData = annualTrend || [];
     
-    // Default months
-    const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-    const s1_6 = new Array(12).fill(0);
-    const s1_12 = new Array(12).fill(0);
-    const sFull = new Array(12).fill(0);
+    let startM = 1;
+    let endM = 12;
+    
+    if (isEffectiveRange && endDate) {
+       startM = parseInt(startDate.split('-')[1], 10);
+       endM = parseInt(endDate.split('-')[1], 10);
+    }
 
-    if (rawData.length > 0) {
-      rawData.forEach((item: any) => {
-        const mIdx = parseInt(item.month.split('-')[1], 10) - 1;
-        if (mIdx >= 0 && mIdx < 12) {
-          s1_6[mIdx] = item.membershipTypes?.['1/6구좌'] || 0;
-          s1_12[mIdx] = item.membershipTypes?.['1/12구좌'] || 0;
-          sFull[mIdx] = item.membershipTypes?.['창립/풀구좌'] || 0;
-        }
-      });
+    const months = [];
+    const s1_6 = [];
+    const s1_12 = [];
+    const sFull = [];
+
+    for (let m = startM; m <= endM; m++) {
+      months.push(`${m}월`);
+      const targetMonthStr = `${startDate.substring(0,4)}-${m.toString().padStart(2, '0')}`;
+      const item = rawData.find((d: any) => d.month === targetMonthStr);
+      
+      s1_6.push(item?.membershipTypes?.['1/6구좌'] || 0);
+      s1_12.push(item?.membershipTypes?.['1/12구좌'] || 0);
+      sFull.push(item?.membershipTypes?.['창립/풀구좌'] || 0);
     }
 
     return {

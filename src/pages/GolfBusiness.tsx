@@ -58,12 +58,12 @@ export default function GolfBusiness() {
   const { summary } = data.meta;
   const { channels } = data;
 
-  const directWebChannel = channels.find(c => c.venueName === '자사몰' || c.venueName === 'DIRECT_WEB' || c.ticketGroup === 'DIRECT_WEB' || c.ticketGroup === '자사홈페이지');
-  const directRevenue = directWebChannel?.revenueFormatted || '0';
-  const directPlayers = directWebChannel?.playerCountFormatted || '0';
+  const directWebChannel = channels.find(c => c.venueName === '자사몰' || (c as any).venue_name === '자사몰' || c.venueName === 'DIRECT_WEB' || (c as any).venue_name === 'DIRECT_WEB' || c.ticketGroup === 'DIRECT_WEB' || (c as any).product_group === 'DIRECT_WEB' || c.ticketGroup === '자사홈페이지');
+  const directRevenue = directWebChannel?.revenueFormatted || (directWebChannel as any)?.revenue_formatted || '0';
+  const directPlayers = directWebChannel?.playerCountFormatted || (directWebChannel as any)?.players_formatted || (directWebChannel as any)?.quantity_formatted || '0';
 
   // Major OTA agency channel (SSOT 직결 채널)
-  const topAgency = channels.find(c => c.ticketGroup === 'OTA_AGENCY' || c.ticketGroup === 'KAKAO_GOLF' || c.venueName.includes('대행'));
+  const topAgency = channels.find(c => c.ticketGroup === 'OTA_AGENCY' || c.ticketGroup === 'KAKAO_GOLF' || (c as any).product_group === 'OTA_AGENCY' || (c as any).product_group === 'KAKAO_GOLF' || (c.venueName && c.venueName.includes('대행')) || ((c as any).venue_name && (c as any).venue_name.includes('대행')));
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -213,7 +213,7 @@ export default function GolfBusiness() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             {channels.map((ch, idx) => (
               <div 
-                key={`${ch.ticketGroup}-${ch.venueName}-${idx}`}
+                key={`${ch.ticketGroup || (ch as any).product_group || (ch as any).ticket_group}-${ch.venueName || (ch as any).venue_name}-${idx}`}
                 className={`p-5 rounded-2xl border transition-all duration-200 ${
                   idx === 0 
                     ? 'bg-gradient-to-br from-emerald-50/90 to-teal-50/40 border-emerald-200 shadow-xs' 
@@ -226,30 +226,30 @@ export default function GolfBusiness() {
                     {ch.venueName}
                   </span>
                   <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                    점유 {ch.revenueSharePct}%
+                    점유 {ch.revenueSharePct ?? (ch as any).revenue_share_pct ?? 0}%
                   </span>
                 </div>
                 
                 <div className="text-2xl font-black text-slate-900 my-1">
-                  {ch.playerCountFormatted} <span className="text-xs font-normal text-slate-500">명 내장</span>
+                  {(ch.playerCountFormatted || (ch as any).players_formatted || (ch as any).quantity_formatted)} <span className="text-xs font-normal text-slate-500">명 내장</span>
                 </div>
 
                 <div className="space-y-1 text-[11px] text-slate-600 mt-3 pt-2 border-t border-slate-200/60">
                   <div className="flex justify-between">
                     <span className="text-slate-400">1인 객단가:</span>
-                    <strong>₩{ch.arpuFormatted}</strong>
+                    <strong>₩{(ch.arpuFormatted || ((ch as any).players > 0 ? Math.round(Number((ch as any).revenue || 0) / Number((ch as any).players)).toLocaleString() : "-"))}</strong>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-slate-200/40 text-emerald-800 font-bold">
                     <span>그린피 매출:</span>
-                    <span>₩{ch.greenFeeFormatted}</span>
+                    <span>₩{(ch.greenFeeFormatted || (ch as any).green_fee_formatted || "-")}</span>
                   </div>
                   <div className="flex justify-between text-emerald-800 font-bold">
                     <span>카트비 매출:</span>
-                    <span>₩{ch.cartFeeFormatted}</span>
+                    <span>₩{(ch.cartFeeFormatted || (ch as any).cart_fee_formatted || "-")}</span>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-slate-200/40 text-emerald-900 font-black">
                     <span>총매출:</span>
-                    <span>₩{ch.revenueFormatted}</span>
+                    <span>₩{(ch.revenueFormatted || (ch as any).revenue_formatted)}</span>
                   </div>
                 </div>
               </div>
@@ -280,9 +280,9 @@ export default function GolfBusiness() {
                       {ch.venueName}
                     </td>
                     <td className="py-3 px-4 text-center font-bold text-emerald-700 bg-emerald-50/30">
-                      {ch.revenueSharePct}%
+                      {ch.revenueSharePct ?? (ch as any).revenue_share_pct ?? 0}%
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-emerald-700">{ch.playerCountFormatted}명</td>
+                    <td className="py-3 px-4 text-right font-bold text-emerald-700">{(ch.playerCountFormatted || (ch as any).players_formatted || (ch as any).quantity_formatted)}명</td>
                     <td className="py-3 px-4 text-right font-medium text-slate-800">₩{ch.arpuFormatted}</td>
                     <td className="py-3 px-4 text-right text-slate-700">₩{ch.greenFeeFormatted}</td>
                     <td className="py-3 px-4 text-right text-slate-700">₩{ch.cartFeeFormatted}</td>

@@ -205,16 +205,16 @@ export default function GroupSales() {
                 <tr key={idx} className="hover:bg-slate-50 transition-colors">
                   <td className="py-4 px-4 text-sm font-semibold text-slate-900 whitespace-nowrap">
                     <span className="bg-slate-100 px-2.5 py-1 rounded-md">
-                      {seg.ticketGroup}
+                      {seg.ticketGroup || (seg as any).segment_name || (seg as any).ticket_group}
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-sm font-bold text-slate-800 whitespace-nowrap">{seg.venueName}</td>
-                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.roomsSoldFormatted}</td>
-                  <td className="py-4 px-4 text-sm font-bold text-slate-900 text-right whitespace-nowrap">{seg.revenueFormatted}</td>
-                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.guestCountFormatted}</td>
-                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.adrFormatted}</td>
+                  <td className="py-4 px-4 text-sm font-bold text-slate-800 whitespace-nowrap">{seg.venueName || (seg as any).venue_name}</td>
+                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.roomsSoldFormatted || (seg as any).rooms_sold_formatted}</td>
+                  <td className="py-4 px-4 text-sm font-bold text-slate-900 text-right whitespace-nowrap">{seg.revenueFormatted || (seg as any).revenue_formatted}</td>
+                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.guestCountFormatted || (seg as any).visitor_count_formatted}</td>
+                  <td className="py-4 px-4 text-sm text-right text-slate-700 whitespace-nowrap">{seg.adrFormatted || ((seg as any).adr ? (seg as any).adr.toLocaleString() : (Number((seg as any).rooms_sold || 0) > 0 ? Math.round(Number((seg as any).revenue || 0) / Number((seg as any).rooms_sold)).toLocaleString() : "-"))}</td>
                   <td className="py-4 px-4 text-sm text-right font-medium text-slate-500 whitespace-nowrap">
-                    {seg.revenueSharePct.toFixed(1)}%
+                    {Number(seg.revenueSharePct ?? (seg as any).revenue_share_pct ?? 0).toFixed(1)}%
                   </td>
                 </tr>
               ))}

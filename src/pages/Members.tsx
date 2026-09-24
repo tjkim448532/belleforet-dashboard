@@ -48,13 +48,13 @@ export default function Members() {
   }, [startDate, endDate]);
 
   const summary = data?.meta?.summary;
-  const venueVisitors = data?.venueVisitors || [];
-  const dailyVisitors = data?.dailyVisitors || [];
+  const venueVisitors = (data as any)?.venueVisitors || (data as any)?.venues || [];
+  const dailyVisitors = (data as any)?.dailyVisitors || (data as any)?.dailyTrends || [];
 
   const getTrendChartOptions = () => {
-    const dates = dailyVisitors.map(d => d.sales_date);
-    const visitors = dailyVisitors.map(d => d.daily_visitors);
-    const revenue = dailyVisitors.map(d => d.daily_revenue);
+    const dates = dailyVisitors.map((d: any) => d.sales_date || d.date || d.date_id);
+    const visitors = dailyVisitors.map((d: any) => Number(d.daily_visitors ?? d.dailyVisitors ?? 0));
+    const revenue = dailyVisitors.map((d: any) => Number(d.daily_revenue ?? d.dailyRevenue ?? 0));
 
     return {
       tooltip: {
@@ -258,27 +258,27 @@ export default function Members() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {venueVisitors.length > 0 ? (
-                venueVisitors.map((venue, idx) => (
+                venueVisitors.map((venue: any, idx: number) => (
                   <tr key={idx} className="hover:bg-emerald-50/30 transition-colors">
                     <td className="py-4 px-6 font-medium text-slate-500 whitespace-nowrap">
-                      {venue.category_code}
+                      {venue.category_code || (venue as any).categoryCode}
                     </td>
                     <td className="py-4 px-4 font-extrabold text-slate-900 whitespace-nowrap">
-                      {venue.venue_name}
+                      {venue.venue_name || (venue as any).venueName}
                     </td>
                     <td className="py-4 px-4 whitespace-nowrap">
                       <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
-                        {venue.ticket_group || '-'}
+                        {venue.ticket_group || (venue as any).ticketGroup || '-'}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right font-black text-emerald-700 whitespace-nowrap">
-                      {venue.visitor_count_formatted} 명
+                      {(venue.visitor_count_formatted || (venue as any).visitorCountFormatted || Number(venue.visitor_count || 0).toLocaleString())} 명
                     </td>
                     <td className="py-4 px-4 text-right font-medium text-slate-500 whitespace-nowrap">
-                      {venue.visitor_share_pct.toFixed(2)}%
+                      {Number(venue.visitor_share_pct ?? (venue as any).visitorSharePct ?? 0).toFixed(2)}%
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-slate-800 whitespace-nowrap">
-                      ₩{venue.revenue_formatted}
+                      ₩{(venue.revenue_formatted || (venue as any).revenueFormatted || Number(venue.revenue || 0).toLocaleString())}
                     </td>
                   </tr>
                 ))

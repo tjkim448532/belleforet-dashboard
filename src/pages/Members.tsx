@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Award, Search, Calendar, ChevronRight, User, 
-  DollarSign, RefreshCw, Trophy, Flame
+  DollarSign, RefreshCw, Trophy, Flame, Store
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -195,6 +195,72 @@ export default function Members() {
     };
   };
 
+  const renderPivotTable = () => {
+    const years = ['2024', '2025', '2026'];
+    const rows = [];
+    
+    for (let i = 1; i <= 12; i++) {
+      const monthStr = i.toString().padStart(2, '0');
+      const rowCols = years.map(year => {
+        const match = (annualTrend[year] || []).find((d: any) => d.month === `${year}-${monthStr}`);
+        const s1_6 = match?.membershipTypes?.['1/6구좌'] || 0;
+        const s1_12 = match?.membershipTypes?.['1/12구좌'] || 0;
+        const sFull = match?.membershipTypes?.['창립/풀구좌'] || 0;
+        return { year, s1_6, s1_12, sFull, total: s1_6 + s1_12 + sFull };
+      });
+      rows.push({ month: `${i}월`, data: rowCols });
+    }
+    
+    return (
+      <table className="w-full text-left text-sm whitespace-nowrap">
+        <thead>
+          <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
+            <th className="px-6 py-4 rounded-tl-xl text-center border-b border-slate-200">월 (Month)</th>
+            {years.map((year: any, idx) => (
+              <th key={year} colSpan={4} className={`px-6 py-4 text-center border-b border-slate-200 ${idx === years.length - 1 ? 'rounded-tr-xl' : 'border-r'}`}>
+                {year}년
+              </th>
+            ))}
+          </tr>
+          <tr className="bg-slate-50/50 text-slate-500 text-[11px] font-bold">
+            <th className="px-6 py-2 text-center border-b border-slate-200 bg-slate-50/50"></th>
+            {years.map((year: any, idx) => (
+              <Fragment key={year}>
+                <th className="px-3 py-2 text-right border-b border-slate-200 text-blue-600/70">1/6구좌</th>
+                <th className="px-3 py-2 text-right border-b border-slate-200 text-emerald-600/70">1/12구좌</th>
+                <th className="px-3 py-2 text-right border-b border-slate-200 text-purple-600/70">창립/풀구좌</th>
+                <th className={`px-3 py-2 text-right border-b border-slate-200 text-slate-700 ${idx === years.length - 1 ? '' : 'border-r'}`}>총합</th>
+              </Fragment>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((row, rIdx) => (
+            <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
+              <td className="px-6 py-3 font-bold text-slate-800 text-center bg-slate-50/30">{row.month}</td>
+              {row.data.map((col: any, cIdx) => (
+                <Fragment key={col.year as string}>
+                  <td className={`px-3 py-3 text-right font-medium ${col.s1_6 > 0 ? 'text-blue-600' : 'text-slate-300'}`}>
+                    {col.s1_6 > 0 ? col.s1_6 : '-'}
+                  </td>
+                  <td className={`px-3 py-3 text-right font-medium ${col.s1_12 > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
+                    {col.s1_12 > 0 ? col.s1_12 : '-'}
+                  </td>
+                  <td className={`px-3 py-3 text-right font-medium ${col.sFull > 0 ? 'text-purple-600' : 'text-slate-300'}`}>
+                    {col.sFull > 0 ? col.sFull : '-'}
+                  </td>
+                  <td className={`px-3 py-3 text-right font-black ${col.total > 0 ? 'text-slate-700' : 'text-slate-300'} ${cIdx === years.length - 1 ? '' : 'border-r border-slate-100'}`}>
+                    {col.total > 0 ? col.total : '-'}
+                  </td>
+                </Fragment>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
+
   // Enrich with loyalty tier badges
   const enrichedVisitors = useMemo(() => {
     return visitors.map(m => {
@@ -337,6 +403,18 @@ export default function Members() {
         </div>
         <div className="h-[320px] w-full">
           <ReactECharts option={getAnnualChartOptions()} style={{ height: '100%', width: '100%' }} />
+        </div>
+      </div>
+
+      {/* Annual Trend Pivot Table Section */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Store className="w-5 h-5 text-blue-500" /> 월별 상세 실적 (3개년 비교표)
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          {renderPivotTable()}
         </div>
       </div>
 

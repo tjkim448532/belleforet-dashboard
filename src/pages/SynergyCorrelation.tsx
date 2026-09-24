@@ -44,7 +44,7 @@ export default function SynergyCorrelation() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `startDate=${sDate}&endDate=${sDate}`; // ensure both are passed for exact mapping
 
-      const res = await secureFetcher(`${API_BASE}/api/v5/report/synergy-store-correlation-v2?${queryDateParams}`);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/synergy-store-correlation-v2?${queryDateParams}`);
       
       if (res && res.success) {
         setData(res as SynergyStoreCorrelationV2Response);

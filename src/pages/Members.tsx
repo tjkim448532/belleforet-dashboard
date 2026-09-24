@@ -326,8 +326,8 @@ export default function Members() {
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-500" /> 월별 회원권 유형별 내장 추이 (연간 차트)
           </h2>
-          <span className="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full border border-slate-200">
-            데이터 연동 대기 중
+          <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
+            실시간 연동 완료
           </span>
         </div>
         <div className="h-[320px] w-full">

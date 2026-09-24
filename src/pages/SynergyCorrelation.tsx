@@ -83,6 +83,7 @@ export default function SynergyCorrelation() {
   
   // Fail-Stop and Actionable Insights State
   const [isDataInsufficient, setIsDataInsufficient] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [executiveInsights, setExecutiveInsights] = useState<any[]>([]);
 
   // Anchor Selection State (NEW SSOT - GOLF EXCLUDED)
@@ -160,6 +161,7 @@ export default function SynergyCorrelation() {
     }
 
     setLoading(true);
+    setApiError(null);
 
     try {
       const queryParams = rangeActive && eDate
@@ -174,8 +176,8 @@ export default function SynergyCorrelation() {
 
       // Parallel Fetch: Cross-Synergy Matrix API (V6 SSOT) and Overview Master (V6 SSOT)
       const [crossRes, overviewRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/cross-synergy-matrix?${crossParams}`),
+        secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`)
       ]);
 
       const insufficientData = !!(
@@ -462,8 +464,9 @@ export default function SynergyCorrelation() {
           }
         });
       }, 200);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Synergy Correlation API Error:', err);
+      setApiError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -869,7 +872,7 @@ export default function SynergyCorrelation() {
       </div>
 
       {/* ⚠️ Fail-Stop 경고 배너 */}
-      {isDataInsufficient && (
+      {isDataInsufficient && !apiError && (
         <div className="mb-8 p-5 bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl backdrop-blur-md flex items-start gap-4 text-amber-900 bg-amber-50/90 shadow-sm">
           <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={24} />
           <div className="flex-1 min-w-0">
@@ -889,9 +892,26 @@ export default function SynergyCorrelation() {
         </div>
       )}
 
+      {/* 💥 백엔드 API 장애 / 504 Timeout 배너 */}
+      {apiError && (
+        <div className="mb-8 p-8 bg-red-50 border-2 border-red-200 rounded-3xl shadow-sm flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-500 flex items-center justify-center mb-4">
+            <AlertTriangle size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-red-800 mb-2">데이터 분석 엔진 응답 지연 및 오류</h3>
+          <p className="text-red-600 text-sm max-w-2xl mx-auto font-medium">
+            선택하신 기간({startDate} ~ {endDate || startDate})에 대한 인과 시너지 분석 중 백엔드 V6 엔진에서 문제가 발생했습니다.<br/>
+            조회 기간이 너무 길어 Vercel 504 Timeout이 발생했거나, 원천 데이터(girfTable) 무결성 제약에 걸려 처리되지 못했습니다.<br/>
+            <span className="block mt-2 font-bold text-red-700 bg-red-100/50 p-2 rounded-lg break-all">{apiError}</span>
+          </p>
+        </div>
+      )}
+
       {/* 🚀 4대 핵심 결과 & CAPA 제약 카드 (Top KPI Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {/* 1. Anchor Overview Card */}
+      {!apiError && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {/* 1. Anchor Overview Card */}
         <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-700/40 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="flex items-center justify-between mb-3 gap-2">
@@ -1256,6 +1276,9 @@ export default function SynergyCorrelation() {
             stores={roomStoreAnalysis} 
           />
         </div>
+      )}
+
+        </>
       )}
 
     </div>

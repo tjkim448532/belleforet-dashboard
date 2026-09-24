@@ -160,6 +160,14 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
 
   const data = await response.json();
   
+  // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
+  if (data && data.status === 'error') {
+    const errorMsg = data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';
+    const error = new Error(errorMsg) as Error & { status?: number };
+    error.status = 200;
+    throw error;
+  }
+  
   // 데이터 정합성 QA 전수 검증 인터셉터 호출 (백엔드 계약 위반 감지)
   validatePayloadIntegrity(data, url, startTime, response.status);
   

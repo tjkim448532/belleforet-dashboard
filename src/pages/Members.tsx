@@ -199,7 +199,15 @@ export default function Members() {
     const years = ['2024', '2025', '2026'];
     const rows = [];
     
-    for (let i = 1; i <= 12; i++) {
+    let startM = 1;
+    let endM = 12;
+    
+    if (isEffectiveRange && endDate) {
+       startM = parseInt(startDate.split('-')[1], 10);
+       endM = parseInt(endDate.split('-')[1], 10);
+    }
+    
+    for (let i = startM; i <= endM; i++) {
       const monthStr = i.toString().padStart(2, '0');
       const rowCols = years.map(year => {
         const match = (annualTrend[year] || []).find((d: any) => d.month === `${year}-${monthStr}`);

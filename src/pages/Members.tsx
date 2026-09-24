@@ -74,6 +74,7 @@ export default function Members() {
   const [selectedLoyaltyFilter, setSelectedLoyaltyFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'YTD_VISITS' | 'TODAY_SPEND' | 'YTD_SPEND' | 'NAME'>('YTD_VISITS');
   const [selectedMemberModal, setSelectedMemberModal] = useState<MemberVisitorItem | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [annualTrend, setAnnualTrend] = useState<any>({});
 
@@ -98,24 +99,25 @@ export default function Members() {
   // Fetch Member Visitors from API
   const fetchMemberVisitors = async () => {
     setLoading(true);
+    setApiError(null);
     try {
       const queryParams = endDate
         ? `startDate=${startDate}&endDate=${endDate}`
         : `date=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors?${queryParams}`).catch(() => null);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors?${queryParams}`);
       const payload = res?.data ?? res;
 
       if (payload && (payload.visitors || payload.summary)) {
         setVisitors(payload.visitors || []);
         setSummaryData(payload.summary || null);
       } else {
-        // Fallback to empty list
         setVisitors([]);
         setSummaryData(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Member Visitors Fetch Error:', err);
+      setApiError(err.message || '데이터를 불러오는 중 문제가 발생했습니다.');
       setVisitors([]);
       setSummaryData(null);
     } finally {
@@ -440,10 +442,16 @@ export default function Members() {
             </span>
           </div>
           <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap">
-            {metrics.totalCount.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span>
+            {loading ? (
+              <div className="animate-pulse h-9 w-24 bg-slate-200 rounded-lg inline-block align-middle"></div>
+            ) : apiError ? (
+              <span className="text-xl text-red-500 font-bold">오류발생</span>
+            ) : (
+              <>{metrics.totalCount.toLocaleString()} <span className="text-sm font-medium text-slate-400">명</span></>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            골프 내장 회원 및 콘도 투숙 회원 전수 집계
+            {apiError ? <span className="text-red-400">{apiError}</span> : '골프 내장 회원 및 콘도 투숙 회원 전수 집계'}
           </p>
         </div>
 
@@ -458,10 +466,16 @@ export default function Members() {
             </span>
           </div>
           <div className="text-3xl font-black text-indigo-600 my-1 whitespace-nowrap">
-            ₩{formatCurrency(metrics.totalSpend)} <span className="text-sm font-medium text-slate-400">원</span>
+            {loading ? (
+              <div className="animate-pulse h-9 w-32 bg-indigo-100 rounded-lg inline-block align-middle"></div>
+            ) : apiError ? (
+              <span className="text-xl text-red-500 font-bold">-</span>
+            ) : (
+              <>₩{formatCurrency(metrics.totalSpend)} <span className="text-sm font-medium text-slate-400">원</span></>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            회원 1인당 평균: <strong>₩{formatCurrency(metrics.avgSpend)}원</strong>
+            {loading || apiError ? '-' : <>회원 1인당 평균: <strong>₩{formatCurrency(metrics.avgSpend)}원</strong></>}
           </p>
         </div>
 
@@ -476,10 +490,16 @@ export default function Members() {
             </span>
           </div>
           <div className="text-2xl font-black text-purple-800 my-1 truncate whitespace-nowrap" title={metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'}>
-            {metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'}
+            {loading ? (
+              <div className="animate-pulse h-8 w-40 bg-purple-100 rounded-lg inline-block align-middle"></div>
+            ) : apiError ? (
+              <span className="text-xl text-red-500 font-bold">-</span>
+            ) : (
+              metrics.topMember ? `${metrics.topMember.memberName} (${metrics.topMember.ytdVisitCount}회)` : '-'
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            올해 누적 결제액: <strong>₩{formatCurrency(metrics.topMember?.ytdTotalSpend || 0)}원</strong>
+            {loading || apiError ? '-' : <>올해 누적 결제액: <strong>₩{formatCurrency(metrics.topMember?.ytdTotalSpend || 0)}원</strong></>}
           </p>
         </div>
 
@@ -494,7 +514,13 @@ export default function Members() {
             </span>
           </div>
           <div className="text-3xl font-black text-amber-600 my-1 whitespace-nowrap">
-            ₩{formatCurrency(metrics.totalYtdSpend)} <span className="text-sm font-medium text-slate-400">원</span>
+            {loading ? (
+              <div className="animate-pulse h-9 w-32 bg-amber-100 rounded-lg inline-block align-middle"></div>
+            ) : apiError ? (
+              <span className="text-xl text-red-500 font-bold">-</span>
+            ) : (
+              <>₩{formatCurrency(metrics.totalYtdSpend)} <span className="text-sm font-medium text-slate-400">원</span></>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
             {isEffectiveRange ? '선택 기간 방문 회원들의 2026년 전체 누적 결제액' : '선택일 방문 회원들의 2026년 전체 누적 결제액'}
@@ -703,16 +729,33 @@ export default function Members() {
                     </td>
                   </tr>
                 ))
+              ) : loading ? (
+                <tr>
+                  <td colSpan={9} className="py-24 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <RefreshCw size={32} className="animate-spin text-emerald-500" />
+                      <p className="text-sm font-bold text-slate-600">방대한 양의 실시간 회원 데이터를 집계하고 있습니다...</p>
+                      <p className="text-xs text-slate-400">조회 기간이 길수록 다소 시간이 소요될 수 있습니다. (최대 15초)</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : apiError ? (
+                <tr>
+                  <td colSpan={9} className="py-16 text-center text-red-500">
+                    <div className="max-w-md mx-auto space-y-3 bg-red-50 p-6 rounded-2xl border border-red-100">
+                      <p className="font-bold text-sm text-red-700">데이터 연동 실패 또는 시간 초과</p>
+                      <p className="text-xs text-red-600/80">{apiError}</p>
+                      <p className="text-[11px] text-red-500 mt-2">※ 기간을 짧게 설정하여 다시 시도해 주세요.</p>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 <tr>
                   <td colSpan={9} className="py-16 text-center text-slate-400">
                     <div className="max-w-md mx-auto space-y-3">
                       <Award size={36} className="mx-auto text-slate-300" />
                       <p className="font-medium text-sm text-slate-600">
-                        {startDate}에 방문한 회원 데이터가 없거나 백엔드 API 연동 준비 중입니다.
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        골프 CC 내장객 및 콘도 회원 원천 데이터가 연결되면 당일 방문 회원과 올해 누적 방문 횟수가 자동 집계됩니다.
+                        선택한 기간에 방문한 회원 데이터가 없습니다.
                       </p>
                     </div>
                   </td>

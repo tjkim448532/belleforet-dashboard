@@ -167,28 +167,56 @@ export default function Members() {
     }
 
     const series = [
-      { name: '24년 1/6', type: 'bar', stack: '24', data: seriesData['24_1/6'], itemStyle: { color: '#93c5fd' } },
-      { name: '24년 1/12', type: 'bar', stack: '24', data: seriesData['24_1/12'], itemStyle: { color: '#6ee7b7' } },
-      { name: '24년 창립/풀', type: 'bar', stack: '24', data: seriesData['24_Full'], itemStyle: { color: '#c4b5fd', borderRadius: [4, 4, 0, 0] } },
+      // 2024 (Opacity 0.3)
+      { name: '1/6구좌', type: 'bar', stack: '2024', data: seriesData['24_1/6'], itemStyle: { color: '#3b82f6', opacity: 0.3 } },
+      { name: '1/12구좌', type: 'bar', stack: '2024', data: seriesData['24_1/12'], itemStyle: { color: '#10b981', opacity: 0.3 } },
+      { name: '창립/풀구좌', type: 'bar', stack: '2024', data: seriesData['24_Full'], itemStyle: { color: '#8b5cf6', opacity: 0.3, borderRadius: [4, 4, 0, 0] } },
 
-      { name: '25년 1/6', type: 'bar', stack: '25', data: seriesData['25_1/6'], itemStyle: { color: '#3b82f6' } },
-      { name: '25년 1/12', type: 'bar', stack: '25', data: seriesData['25_1/12'], itemStyle: { color: '#10b981' } },
-      { name: '25년 창립/풀', type: 'bar', stack: '25', data: seriesData['25_Full'], itemStyle: { color: '#8b5cf6', borderRadius: [4, 4, 0, 0] } },
+      // 2025 (Opacity 0.6)
+      { name: '1/6구좌', type: 'bar', stack: '2025', data: seriesData['25_1/6'], itemStyle: { color: '#3b82f6', opacity: 0.6 } },
+      { name: '1/12구좌', type: 'bar', stack: '2025', data: seriesData['25_1/12'], itemStyle: { color: '#10b981', opacity: 0.6 } },
+      { name: '창립/풀구좌', type: 'bar', stack: '2025', data: seriesData['25_Full'], itemStyle: { color: '#8b5cf6', opacity: 0.6, borderRadius: [4, 4, 0, 0] } },
 
-      { name: '26년 1/6', type: 'bar', stack: '26', data: seriesData['26_1/6'], itemStyle: { color: '#1d4ed8' } },
-      { name: '26년 1/12', type: 'bar', stack: '26', data: seriesData['26_1/12'], itemStyle: { color: '#047857' } },
-      { name: '26년 창립/풀', type: 'bar', stack: '26', data: seriesData['26_Full'], itemStyle: { color: '#5b21b6', borderRadius: [4, 4, 0, 0] } }
+      // 2026 (Opacity 1.0)
+      { name: '1/6구좌', type: 'bar', stack: '2026', data: seriesData['26_1/6'], itemStyle: { color: '#3b82f6', opacity: 1.0 } },
+      { name: '1/12구좌', type: 'bar', stack: '2026', data: seriesData['26_1/12'], itemStyle: { color: '#10b981', opacity: 1.0 } },
+      { name: '창립/풀구좌', type: 'bar', stack: '2026', data: seriesData['26_Full'], itemStyle: { color: '#8b5cf6', opacity: 1.0, borderRadius: [4, 4, 0, 0] } }
     ];
 
     return {
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' }
+        axisPointer: { type: 'shadow' },
+        formatter: function (params: any) {
+          const monthLabel = params[0].axisValue;
+          let html = `<div style="font-weight:bold;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;">${monthLabel} 방문객 비교</div>`;
+          
+          const years = ['2026', '2025', '2024']; // Show latest year first in tooltip
+          years.forEach(year => {
+            const yearParams = params.filter((p: any) => p.seriesId.includes(year));
+            const yearTotal = yearParams.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
+            
+            if (yearTotal > 0) {
+              html += `<div style="margin-bottom:6px;font-size:12px;">`;
+              html += `<strong style="display:block;color:#475569;margin-bottom:2px;">[${year}년] 총 ${yearTotal}명</strong>`;
+              yearParams.forEach((p: any) => {
+                if (p.value > 0) {
+                  html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                             <span>${p.marker} ${p.seriesName}</span>
+                             <span style="font-weight:bold">${p.value}명</span>
+                           </div>`;
+                }
+              });
+              html += `</div>`;
+            }
+          });
+          return html;
+        }
       },
       legend: {
-        data: ['24년 1/6', '24년 1/12', '24년 창립/풀', '25년 1/6', '25년 1/12', '25년 창립/풀', '26년 1/6', '26년 1/12', '26년 창립/풀'],
+        data: ['1/6구좌', '1/12구좌', '창립/풀구좌'],
         bottom: 0,
-        type: 'scroll'
+        icon: 'circle'
       },
       grid: { left: '2%', right: '2%', top: '8%', bottom: '15%', containLabel: true },
       xAxis: { type: 'category', data: months },

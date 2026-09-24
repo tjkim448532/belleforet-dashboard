@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import ReactECharts from 'echarts-for-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Award, Search, Calendar, ChevronRight, User, 
-  DollarSign, RefreshCw, Trophy, Flame, Phone
+  DollarSign, RefreshCw, Trophy, Flame
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -38,6 +39,11 @@ export interface MemberVisitorItem {
   visitHistory?: MemberVisitEntry[];
   tierBadge?: string;
   tierColor?: string;
+  
+  // 신규 추가 필드 (배정 호수, 골프 코스, 룸차지)
+  assignedRoom?: string;
+  golfCourse?: string;
+  fnbRoomCharge?: number;
 }
 
 export default function Members() {
@@ -69,6 +75,23 @@ export default function Members() {
   const [sortBy, setSortBy] = useState<'YTD_VISITS' | 'TODAY_SPEND' | 'YTD_SPEND' | 'NAME'>('YTD_VISITS');
   const [selectedMemberModal, setSelectedMemberModal] = useState<MemberVisitorItem | null>(null);
 
+  const [annualTrend, setAnnualTrend] = useState<any>(null);
+
+  // Fetch Annual Trend from API (Waiting for Backend)
+  const fetchAnnualTrend = async () => {
+    try {
+      const year = startDate.substring(0, 4);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/member-annual-trend?year=${year}`).catch(() => null);
+      if (res && res.data) {
+        setAnnualTrend(res.data.monthlyTrend);
+      } else {
+        setAnnualTrend([]);
+      }
+    } catch (err) {
+      setAnnualTrend([]);
+    }
+  };
+
   // Fetch Member Visitors from API
   const fetchMemberVisitors = async () => {
     setLoading(true);
@@ -99,7 +122,73 @@ export default function Members() {
 
   useEffect(() => {
     fetchMemberVisitors();
+    fetchAnnualTrend();
   }, [startDate, endDate]);
+
+  const getAnnualChartOptions = () => {
+    // If backend isn't ready or returned empty, return an empty shell options
+    const rawData = annualTrend || [];
+    
+    // Default months
+    const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const s1_6 = new Array(12).fill(0);
+    const s1_12 = new Array(12).fill(0);
+    const sFull = new Array(12).fill(0);
+
+    if (rawData.length > 0) {
+      rawData.forEach((item: any) => {
+        const mIdx = parseInt(item.month.split('-')[1], 10) - 1;
+        if (mIdx >= 0 && mIdx < 12) {
+          s1_6[mIdx] = item.membershipTypes?.['1/6구좌'] || 0;
+          s1_12[mIdx] = item.membershipTypes?.['1/12구좌'] || 0;
+          sFull[mIdx] = item.membershipTypes?.['창립/풀구좌'] || 0;
+        }
+      });
+    }
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: function (params: any) {
+          let total = 0;
+          params.forEach((p: any) => total += p.value);
+          let tooltipHtml = `<div class="font-bold text-sm mb-1">${params[0].name} 방문객</div>`;
+          params.forEach((p: any) => {
+            const percent = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0.0';
+            tooltipHtml += `<div class="flex justify-between gap-4 text-xs mt-1">
+              <span class="flex items-center gap-1">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${p.color}"></span>
+                ${p.seriesName}
+              </span>
+              <span class="font-semibold">${p.value}명 <span class="text-slate-400 font-normal">(${percent}%)</span></span>
+            </div>`;
+          });
+          tooltipHtml += `<div class="border-t border-slate-200 mt-2 pt-1 flex justify-between gap-4 text-xs font-bold text-slate-800">
+            <span>총합</span><span>${total}명</span>
+          </div>`;
+          return tooltipHtml;
+        }
+      },
+      legend: {
+        data: ['1/6구좌', '1/12구좌', '창립/풀구좌'],
+        bottom: 0,
+      },
+      grid: { left: '2%', right: '2%', top: '8%', bottom: '15%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: months,
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: [
+        { name: '1/6구좌', type: 'bar', stack: 'total', data: s1_6, itemStyle: { color: '#3b82f6' } },
+        { name: '1/12구좌', type: 'bar', stack: 'total', data: s1_12, itemStyle: { color: '#10b981' } },
+        { name: '창립/풀구좌', type: 'bar', stack: 'total', data: sFull, itemStyle: { color: '#8b5cf6', borderRadius: [4, 4, 0, 0] } }
+      ]
+    };
+  };
 
   // Enrich with loyalty tier badges
   const enrichedVisitors = useMemo(() => {
@@ -228,6 +317,21 @@ export default function Members() {
               새로고침
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Annual Trend Chart Section */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-500" /> 월별 회원권 유형별 내장 추이 (연간 차트)
+          </h2>
+          <span className="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full border border-slate-200">
+            데이터 연동 대기 중
+          </span>
+        </div>
+        <div className="h-[320px] w-full">
+          <ReactECharts option={getAnnualChartOptions()} style={{ height: '100%', width: '100%' }} />
         </div>
       </div>
 
@@ -410,11 +514,13 @@ export default function Members() {
                 <th className="py-3.5 px-6 rounded-l-xl whitespace-nowrap">회원번호 / 회원권명</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">회원명</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">회원 구분</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">연락처</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">당일 이용 시설/내역</th>
-                <th className="py-3.5 px-4 text-right whitespace-nowrap">당일 결제액 (원)</th>
-                <th className="py-3.5 px-6 text-center whitespace-nowrap">🔥 올해 총 방문 횟수의 합 (YTD)</th>
-                <th className="py-3.5 px-6 text-right whitespace-nowrap">올해 누적 이용액 (LTV)</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">당일 이용 업장</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">배정 호수</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">골프 라운딩</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">식음/부대 결제액 (원)</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">당일 총 결제액 (원)</th>
+                <th className="py-3.5 px-6 text-center whitespace-nowrap">🔥 올해 방문 횟수 (YTD)</th>
+                <th className="py-3.5 px-6 text-right whitespace-nowrap">올해 누적 결제액 (LTV)</th>
                 <th className="py-3.5 px-4 text-center rounded-r-xl whitespace-nowrap">상세</th>
               </tr>
             </thead>
@@ -453,17 +559,30 @@ export default function Members() {
                       </span>
                     </td>
 
-                    <td className="py-4 px-4 text-xs text-slate-500 font-medium whitespace-nowrap">
-                      <div className="flex items-center gap-1 whitespace-nowrap">
-                        <Phone size={11} className="text-slate-400 shrink-0" />
-                        <span className="whitespace-nowrap">{member.phone}</span>
-                      </div>
-                    </td>
-
                     <td className="py-4 px-4 whitespace-nowrap">
                       <span className="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-lg font-bold whitespace-nowrap">
                         {member.visitedFacility}
                       </span>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap text-xs font-medium">
+                      {member.assignedRoom ? (
+                         member.assignedRoom.includes('미배정') 
+                           ? <span className="text-slate-400 italic">{member.assignedRoom}</span> 
+                           : <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-100">{member.assignedRoom}</span>
+                      ) : <span className="text-slate-300">-</span>}
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap text-xs font-medium">
+                      {member.golfCourse ? (
+                         member.golfCourse.includes('미이용') 
+                           ? <span className="text-slate-400 italic">{member.golfCourse}</span> 
+                           : <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100">{member.golfCourse}</span>
+                      ) : <span className="text-slate-300">-</span>}
+                    </td>
+
+                    <td className="py-4 px-4 text-right font-bold text-slate-700 whitespace-nowrap">
+                      {member.fnbRoomCharge ? `₩${formatCurrency(member.fnbRoomCharge)}` : '-'}
                     </td>
 
                     <td className="py-4 px-4 text-right font-black text-slate-900 whitespace-nowrap">

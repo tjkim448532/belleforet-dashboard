@@ -117,6 +117,57 @@ const sanitizePayloadNumbers = (node: any) => {
     }
 };
 
+
+let sleepOverlayInjected = false;
+const showSleepModeOverlay = () => {
+  if (sleepOverlayInjected || typeof document === 'undefined') return;
+  sleepOverlayInjected = true;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'sleep-mode-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+  overlay.style.zIndex = '999999';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.backdropFilter = 'blur(10px)';
+  overlay.style.color = 'white';
+  overlay.style.fontFamily = 'Pretendard, sans-serif';
+  
+  overlay.innerHTML = `
+    <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">🌙</div>
+    <h1 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 16px; text-align: center;">현재 서버가 자고 있습니다</h1>
+    <p style="font-size: 1.1rem; color: #94a3b8; text-align: center; max-width: 500px; line-height: 1.6; margin-bottom: 30px;">
+      야간 비용 절감을 위해 매일 <b>20:00 ~ 08:00</b> 에는<br/>
+      데이터베이스가 수면(Sleep) 모드에 들어갑니다.<br/>
+      매일 아침 08:00에 다시 활기차게 가동됩니다!
+    </p>
+    <button id="sleep-mode-btn" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 99px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+      알겠습니다
+    </button>
+    <style>
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+      }
+      #sleep-mode-btn:hover { background: #2563eb !important; }
+    </style>
+  `;
+  
+  document.body.appendChild(overlay);
+  
+  document.getElementById('sleep-mode-btn')?.addEventListener('click', () => {
+    overlay.remove();
+    sleepOverlayInjected = false;
+  });
+};
+
 export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) => {
   let url = rawUrl;
   if (url.includes('/api/v5/')) { throw new Error('[Zero-Proxy] V5 구버전 API 호출이 감지되었습니다. V6 엔드포인트로 즉시 교체하십시오.'); }
@@ -153,6 +204,10 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    if (errorData?.details?.includes('심야 절전 운영')) {
+      showSleepModeOverlay();
+      return new Promise(() => {}); // 무한 대기
+    }
     const error = new Error(errorData.error || 'API 요청 중 오류가 발생했습니다.') as Error & { status?: number };
     error.status = response.status;
     throw error;
@@ -160,6 +215,11 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
 
   const data = await response.json();
   
+  if (data && data.success === false && data.details?.includes('심야 절전 운영')) {
+    showSleepModeOverlay();
+    return new Promise(() => {}); // 무한 대기
+  }
+
   // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
   if (data && data.status === 'error') {
     const errorMsg = data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';

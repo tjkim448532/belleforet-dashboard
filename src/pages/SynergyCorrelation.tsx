@@ -13,7 +13,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function SynergyCorrelation() {
-  const { getCategoryForStore } = useMapping();
+  const { getCategoryForStore, categories: hqCategories } = useMapping();
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
   
   const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
@@ -72,10 +72,8 @@ export default function SynergyCorrelation() {
   }, [globalStartDate, globalEndDate, globalIsRange]);
 
   const categories = useMemo(() => {
-    if (!data?.stores) return [];
-    const cats = new Set(data.stores.map(s => getCategoryForStore(s.storeName)));
-    return ['ALL', ...Array.from(cats)];
-  }, [data, getCategoryForStore]);
+    return ['ALL', ...hqCategories];
+  }, [hqCategories]);
 
   const filteredStores = useMemo(() => {
     if (!data?.stores) return [];

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
@@ -18,6 +18,7 @@ export default function SynergyCorrelation() {
   const [startDate, setStartDate] = useState<string>(globalStartDate);
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
   const [sortBy, setSortBy] = useState<'elasticity' | 'totalSales'>('elasticity');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +68,18 @@ export default function SynergyCorrelation() {
     setEndDate(globalEndDate || globalStartDate);
     fetchData(globalStartDate, globalEndDate || globalStartDate, globalIsRange);
   }, [globalStartDate, globalEndDate, globalIsRange]);
+
+  const categories = useMemo(() => {
+    if (!data?.stores) return [];
+    const cats = new Set(data.stores.map(s => s.categoryCode));
+    return ['ALL', ...Array.from(cats)];
+  }, [data]);
+
+  const filteredStores = useMemo(() => {
+    if (!data?.stores) return [];
+    if (selectedCategory === 'ALL') return data.stores;
+    return data.stores.filter(s => s.categoryCode === selectedCategory);
+  }, [data, selectedCategory]);
 
   const handleSearch = () => {
     let s = startDate;
@@ -285,7 +298,7 @@ export default function SynergyCorrelation() {
             </div>
             <div className="flex flex-col items-end gap-3 shrink-0 xl:self-start">
               <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
-                총 {data.stores.length}개 매장 분석
+                총 {filteredStores.length}개 매장 분석
               </span>
               <div className="flex bg-slate-200 p-1 rounded-xl">
                 <button
@@ -306,8 +319,26 @@ export default function SynergyCorrelation() {
                 </button>
               </div>
             </div>
+          
+          </div>
+          <div className="bg-slate-50/50 border-b border-slate-200 px-5 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <span className="text-xs font-bold text-slate-500 mr-2 whitespace-nowrap">대분류 필터:</span>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-full transition-all ${
+                  selectedCategory === cat 
+                    ? 'bg-indigo-500 text-white shadow-md' 
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {cat === 'ALL' ? '전체 보기' : cat === 'TICKET' ? 'TICKET(레저)' : cat}
+              </button>
+            ))}
           </div>
           <div className="overflow-x-auto">
+
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
@@ -380,7 +411,7 @@ export default function SynergyCorrelation() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.stores.map((store, idx) => (
+                {filteredStores.map((store, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-4 py-3 font-semibold text-slate-800">{store.storeName}</td>
                     <td className="px-4 py-3">

@@ -221,10 +221,15 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
   }
 
   // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
-  if (data && data.status === 'error') {
-    const errorMsg = data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';
-    const error = new Error(errorMsg) as Error & { status?: number };
+  if (data && (data.status === 'error' || data.success === false)) {
+    const details = data.details || data.message || data.error || '';
+    if (typeof details === 'string' && (details.includes('심야 절전 운영') || details.includes('수면 모드') || details.includes('절전'))) {
+      showSleepModeOverlay();
+    }
+    const errorMsg = details || data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';
+    const error = new Error(errorMsg) as Error & { status?: number; details?: string };
     error.status = 200;
+    error.details = details;
     throw error;
   }
   

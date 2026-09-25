@@ -27,6 +27,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      const err = this.state.error as any;
+      const errMsg = (err?.message || '') + ' ' + (err?.details || '');
+      if (errMsg.includes('심야 절전 운영') || errMsg.includes('수면')) {
+        return null;
+      }
       return (
         <div className="flex items-center justify-center h-full min-h-[500px] w-full bg-slate-900 p-8">
           <div className="bg-rose-950/40 border border-rose-500/50 rounded-xl p-8 max-w-2xl w-full flex flex-col items-center justify-center text-center shadow-2xl">

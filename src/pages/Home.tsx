@@ -128,6 +128,19 @@ export default function Home() {
 
 
   if (apiError && !loading) {
+    const isSleep = (coreData.error || '').includes('심야 절전 운영') || (coreData.error || '').includes('수면');
+    if (isSleep) {
+      return (
+        <div className="w-full h-[80vh] flex flex-col items-center justify-center bg-slate-900/5 text-slate-600 gap-3">
+          <span className="text-5xl animate-bounce">🌙</span>
+          <div className="text-xl font-bold text-slate-800">현재 서버가 자고 있습니다 🌙</div>
+          <div className="text-sm text-slate-500 max-w-md text-center leading-relaxed">
+            야간 비용 절감을 위해 매일 20:00 ~ 08:00에는 데이터베이스가 수면 모드에 들어갑니다.<br/>
+            매일 아침 08:00에 정상 가동됩니다!
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
         <div className="text-xl font-medium text-red-500">{apiError}</div>

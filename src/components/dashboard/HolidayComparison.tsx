@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 export default function HolidayComparison() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
-  const [selectedHolidayType, setSelectedHolidayType] = useState<string>('ALL');
+  const [selectedHolidayLabel, setSelectedHolidayLabel] = useState<string>('설날 연휴'); // Default to a major one
 
   useEffect(() => {
     fetchHolidayData();
@@ -19,7 +19,7 @@ export default function HolidayComparison() {
     try {
       const res = await secureFetcher(`${API_BASE}/api/v6/report/holiday-comparison`).catch(() => null);
       const payload = res?.data ?? res;
-      if (payload && payload.summaryByYear) {
+      if (payload && payload.groupedByYear) {
         setData(payload);
       } else {
         setData(null);
@@ -32,38 +32,70 @@ export default function HolidayComparison() {
     }
   };
 
-  const allAvailableTypes = useMemo(() => {
-    if (!data?.summaryByYear) return [];
-    const types = new Set<string>();
-    Object.keys(data.summaryByYear).forEach(year => {
-      Object.keys(data.summaryByYear[year]).forEach(type => types.add(type));
+  const allAvailableLabels = useMemo(() => {
+    if (!data?.groupedByYear) return [];
+    const labels = new Set<string>();
+    Object.values(data.groupedByYear).forEach((yearData: any) => {
+      Object.values(yearData).forEach((categoryBlocks: any) => {
+        categoryBlocks.forEach((block: any) => {
+          if (block.holidayNameLabel) {
+            labels.add(block.holidayNameLabel);
+          }
+        });
+      });
     });
-    return Array.from(types).sort();
+    
+    // Sort logically: Seollal/Chuseok first, then alphabetical
+    return Array.from(labels).sort((a, b) => {
+      if (a.includes('설날')) return -1;
+      if (b.includes('설날')) return 1;
+      if (a.includes('추석')) return -1;
+      if (b.includes('추석')) return 1;
+      return a.localeCompare(b);
+    });
   }, [data]);
 
+  // If the fetched data doesn't have the default '설날 연휴', set it to the first available or ALL
+  useEffect(() => {
+    if (allAvailableLabels.length > 0 && !allAvailableLabels.includes(selectedHolidayLabel) && selectedHolidayLabel !== 'ALL') {
+      setSelectedHolidayLabel(allAvailableLabels[0]);
+    }
+  }, [allAvailableLabels, selectedHolidayLabel]);
+
   const getChartOptions = () => {
-    if (!data?.summaryByYear) return {};
+    if (!data?.groupedByYear) return {};
 
-    const years = Object.keys(data.summaryByYear).sort();
+    const years = Object.keys(data.groupedByYear).sort();
     
-    // Filter types
-    const typesToRender = selectedHolidayType === 'ALL' 
-      ? allAvailableTypes 
-      : [selectedHolidayType];
+    // Filter labels to render
+    const labelsToRender = selectedHolidayLabel === 'ALL' 
+      ? allAvailableLabels 
+      : [selectedHolidayLabel];
 
-    const xAxisData = typesToRender; // Keys are now properly formatted in Korean (e.g. '설날')
+    const xAxisData = labelsToRender;
     
-    // Build series for each year directly from summaryByYear (Zero-Slice Summation)
+    // Build series for each year directly from the detailed blocks (Zero-Slice Summation)
     const series = years.map(year => {
-      const yearData = typesToRender.map(type => {
-        const summary = data.summaryByYear[year][type];
-        return summary?.totalSales || 0;
+      const yearData = labelsToRender.map(label => {
+        let grandTotal = 0;
+        const categories = data.groupedByYear[year];
+        if (categories) {
+          // Find the block with the exact holidayNameLabel
+          for (const cat of Object.values(categories)) {
+            const block = (cat as any[]).find(b => b.holidayNameLabel === label);
+            if (block) {
+              grandTotal = block.grandTotalSales || 0;
+              break; // Found it
+            }
+          }
+        }
+        return grandTotal;
       });
       
       return {
         name: `${year}년`,
         type: 'bar',
-        barMaxWidth: 60,
+        barMaxWidth: selectedHolidayLabel === 'ALL' ? 30 : 80, // Thinner bars if showing all
         itemStyle: { borderRadius: [6, 6, 0, 0] },
         data: yearData,
         label: {
@@ -86,8 +118,22 @@ export default function HolidayComparison() {
         valueFormatter: (val: number) => new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(val)
       },
       legend: { data: years.map(y => `${y}년`), bottom: 0 },
-      grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
-      xAxis: { type: 'category', data: xAxisData, axisLabel: { interval: 0, rotate: 15 } },
+      grid: { 
+        left: '3%', 
+        right: '4%', 
+        bottom: selectedHolidayLabel === 'ALL' ? '25%' : '15%', // More bottom margin if ALL to fit rotated labels
+        top: '10%', 
+        containLabel: true 
+      },
+      xAxis: { 
+        type: 'category', 
+        data: xAxisData, 
+        axisLabel: { 
+          interval: 0, 
+          rotate: selectedHolidayLabel === 'ALL' ? 45 : 0,
+          fontSize: 11
+        } 
+      },
       yAxis: { 
         type: 'value', 
         name: '매출액(원)',
@@ -99,98 +145,6 @@ export default function HolidayComparison() {
       },
       series
     };
-  };
-
-  const renderHolidayTable = () => {
-    if (!data?.summaryByYear) return null;
-    const years = Object.keys(data.summaryByYear).sort((a, b) => Number(b) - Number(a)); // desc
-
-    return (
-      <div className="space-y-8">
-        {years.map(year => {
-          const yearHolidays = data.groupedByYear?.[year] || {}; // Detail list for cards
-          const yearSummary = data.summaryByYear[year] || {}; // Summary for when detail is empty
-          
-          let holidayKeys = Object.keys(yearSummary); // Use summary keys which are padded and reliable
-          if (selectedHolidayType !== 'ALL') {
-            holidayKeys = holidayKeys.filter(k => k === selectedHolidayType);
-          }
-          
-          if (holidayKeys.length === 0) return null;
-
-          return (
-            <div key={year}>
-              <h3 className="text-md font-black text-slate-800 mb-4 bg-slate-100 px-4 py-2 rounded-xl inline-block">{year}년 명절/연휴 요약</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {holidayKeys.map(key => {
-                  const items = yearHolidays[key] || [];
-                  const summary = yearSummary[key] || { totalSales: 0, totalSalesFormatted: '0원', totalRooms: 0 };
-                  
-                  // If there are detailed items, render them. If not (e.g. 2026 Christmas not yet passed), render a skeleton card using summary
-                  if (items.length > 0) {
-                    return items.map((hol: any) => (
-                      <div key={hol.id || Math.random()} className="border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow bg-white relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-2 h-full bg-amber-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h4 className="font-bold text-slate-800 text-lg">{hol.holidayNameLabel || key}</h4>
-                            <p className="text-xs text-slate-500 mt-1 font-medium bg-slate-50 px-2 py-0.5 rounded-md inline-block">
-                              {hol.startDate} ~ {hol.endDate} ({hol.duration}일)
-                            </p>
-                          </div>
-                          {hol.hasBridgeDay && (
-                            <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-1 rounded-lg flex items-center gap-1">
-                              <Palmtree className="w-3 h-3" />
-                              징검다리
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-500 font-medium">총 매출(Grand Total)</span>
-                            <span className="text-sm font-black text-blue-600">{hol.grandTotalSalesFormatted || summary.totalSalesFormatted || new Intl.NumberFormat('ko-KR').format(hol.grandTotalSales || summary.totalSales || 0)}원</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-500 font-medium">객실 판매(Rooms)</span>
-                            <span className="text-sm font-bold text-emerald-600">{new Intl.NumberFormat('ko-KR').format(hol.grandTotalRooms || summary.totalRooms || 0)}실</span>
-                          </div>
-                        </div>
-                      </div>
-                    ));
-                  } else {
-                    // Empty / zero-padded state
-                    return (
-                      <div key={`empty-${key}`} className="border border-slate-200 rounded-2xl p-5 bg-white relative overflow-hidden opacity-60">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h4 className="font-bold text-slate-800 text-lg">{key}</h4>
-                            <p className="text-xs text-slate-400 mt-1 font-medium bg-slate-50 px-2 py-0.5 rounded-md inline-block">
-                              데이터 없음
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-500 font-medium">총 매출(Grand Total)</span>
-                            <span className="text-sm font-black text-slate-400">{summary.totalSalesFormatted || '0원'}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-500 font-medium">객실 판매(Rooms)</span>
-                            <span className="text-sm font-bold text-slate-400">{summary.totalRooms || 0}실</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
   };
 
   return (
@@ -209,25 +163,25 @@ export default function HolidayComparison() {
           </div>
           <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
             <Palmtree className="w-7 h-7 text-amber-500" />
-            연도별 명절 및 징검다리 연휴 실적 비교
+            연도별 세부 명절 및 공휴일 실적 비교
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-2">
-            백엔드 API(<code className="bg-slate-100 text-slate-700 px-1 py-0.5 rounded text-[11px]">/api/v6/report/holiday-comparison</code>)에서 징검다리를 자동 병합하고 사전 연산(Slice Summation 금지)된 총합만 반환받아 렌더링합니다.
+            백엔드 API(<code className="bg-slate-100 text-slate-700 px-1 py-0.5 rounded text-[11px]">/api/v6/report/holiday-comparison</code>)에서 징검다리를 자동 병합하고 사전 연산(Slice Summation 금지)된 개별 공휴일 총합을 렌더링합니다.
           </p>
         </div>
 
-        {data?.summaryByYear && (
+        {allAvailableLabels.length > 0 && (
           <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100">
             <CalendarDays className="w-5 h-5 text-amber-500 ml-2" />
             <select
-              value={selectedHolidayType}
-              onChange={(e) => setSelectedHolidayType(e.target.value)}
-              className="bg-white border border-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-amber-500 focus:border-amber-500 block w-48 p-2.5 outline-none cursor-pointer"
+              value={selectedHolidayLabel}
+              onChange={(e) => setSelectedHolidayLabel(e.target.value)}
+              className="bg-white border border-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-amber-500 focus:border-amber-500 block w-56 p-2.5 outline-none cursor-pointer"
             >
-              <option value="ALL">전체 명절/연휴</option>
-              {allAvailableTypes.map(type => (
-                <option key={type} value={type}>
-                  {type}
+              <option value="ALL">전체 비교 보기</option>
+              {allAvailableLabels.map(label => (
+                <option key={label} value={label}>
+                  {label}
                 </option>
               ))}
             </select>
@@ -240,16 +194,11 @@ export default function HolidayComparison() {
           <RefreshCw className="w-8 h-8 animate-spin mb-4 text-amber-500" />
           <p className="font-bold">연휴 데이터를 분석 중입니다...</p>
         </div>
-      ) : data?.summaryByYear ? (
-        <div className="space-y-10">
+      ) : data?.groupedByYear ? (
+        <div className="space-y-4">
           {/* Chart */}
-          <div className="h-[350px] w-full border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
+          <div className="h-[400px] w-full border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
             <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
-          </div>
-
-          {/* Cards */}
-          <div>
-            {renderHolidayTable()}
           </div>
         </div>
       ) : (

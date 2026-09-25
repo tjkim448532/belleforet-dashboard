@@ -154,22 +154,28 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.error || 'API 요청 중 오류가 발생했습니다.') as Error & { status?: number };
+    const details = errorData.details || errorData.message || errorData.error || '';
+    if (typeof details === 'string' && (details.includes('심야 절전 운영') || details.includes('수면 모드') || details.includes('절전'))) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
+      }
+    }
+    const error = new Error(errorData.error || errorData.message || 'API 요청 중 오류가 발생했습니다.') as Error & { status?: number; details?: string };
     error.status = response.status;
+    error.details = details;
     throw error;
   }
 
   const data = await response.json();
   
-  if (data && data.success === false && data.details?.includes('심야 절전 운영')) {
-    showSleepModeOverlay();
-    return new Promise(() => {}); // 무한 대기
-  }
-
   // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
   if (data && (data.status === 'error' || data.success === false)) {
     const details = data.details || data.message || data.error || '';
-    
+    if (typeof details === 'string' && (details.includes('심야 절전 운영') || details.includes('수면 모드') || details.includes('절전'))) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
+      }
+    }
     const errorMsg = details || data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';
     const error = new Error(errorMsg) as Error & { status?: number; details?: string };
     error.status = 200;

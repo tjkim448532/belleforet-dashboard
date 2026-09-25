@@ -9,6 +9,7 @@ import { CoreDataProvider } from './contexts/CoreDataContext';
 
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
+import SleepModeModal from './components/SleepModeModal';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Simulator from './pages/Simulator';
@@ -66,6 +67,7 @@ export function App() {
             <DateProvider>
               <CoreDataProvider>
                 <BrowserRouter>
+                  <SleepModeModal />
                   <Routes>
                   <Route path="/login" element={<Login />} />
                     

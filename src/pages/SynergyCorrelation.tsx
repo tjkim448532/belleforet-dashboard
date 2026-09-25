@@ -17,16 +17,18 @@ export default function SynergyCorrelation() {
   const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
   const [startDate, setStartDate] = useState<string>(globalStartDate);
   const [endDate, setEndDate] = useState<string>(globalEndDate || globalStartDate);
+  const [sortBy, setSortBy] = useState<'elasticity' | 'totalSales'>('elasticity');
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [data, setData] = useState<SynergyStoreCorrelationV2Response | null>(null);
 
-  const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
+  const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean, overrideSortBy?: 'elasticity' | 'totalSales') => {
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
     const rangeActive = overrideIsRange !== undefined ? overrideIsRange : (isRangeMode && !!eDate && sDate !== eDate);
+    const activeSortBy = overrideSortBy || sortBy;
 
     if (rangeActive && sDate && eDate && sDate > eDate) {
       const temp = sDate;
@@ -42,9 +44,9 @@ export default function SynergyCorrelation() {
     try {
       const queryDateParams = (rangeActive && eDate) 
         ? `startDate=${sDate}&endDate=${eDate}`
-        : `startDate=${sDate}&endDate=${sDate}`; // ensure both are passed for exact mapping
+        : `startDate=${sDate}&endDate=${sDate}`; 
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/synergy-store-correlation-v2?${queryDateParams}`);
+      const res = await secureFetcher(`${API_BASE}/api/v6/report/synergy-store-correlation-v2?${queryDateParams}&sortBy=${activeSortBy}`);
       
       if (res && res.success) {
         setData(res as SynergyStoreCorrelationV2Response);
@@ -87,6 +89,16 @@ export default function SynergyCorrelation() {
     setEndDate(res.endDate || res.startDate);
     setDateRange(res.startDate, res.endDate, res.isRange);
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
+  };
+
+  const getQuadrantBadge = (quadrant?: string) => {
+    switch (quadrant) {
+      case 'CORE_ANCHOR': return { text: '전사 앵커', color: 'bg-indigo-100 text-indigo-800' };
+      case 'HIDDEN_GEM': return { text: '숨은 알짜 ★', color: 'bg-purple-100 text-purple-800' };
+      case 'INDEPENDENT_CASHCOW': return { text: '독립 캐시카우', color: 'bg-slate-100 text-slate-700' };
+      case 'STANDALONE': return { text: '독립 매장', color: 'bg-gray-100 text-gray-500' };
+      default: return { text: '-', color: 'bg-slate-100 text-slate-400' };
+    }
   };
 
   const getInteractionColor = (grade: string) => {
@@ -260,9 +272,29 @@ export default function SynergyCorrelation() {
                 <p><strong className="text-slate-800">낙수율:</strong> 객실 투숙객 중 해당 부대시설을 동시에 방문하여 결제한 비율</p>
               </div>
             </div>
-            <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full shrink-0 xl:self-start">
-              총 {data.stores.length}개 매장 분석
-            </span>
+            <div className="flex flex-col items-end gap-3 shrink-0 xl:self-start">
+              <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+                총 {data.stores.length}개 매장 분석
+              </span>
+              <div className="flex bg-slate-200 p-1 rounded-xl">
+                <button
+                  onClick={() => { setSortBy('elasticity'); fetchData(undefined, undefined, undefined, 'elasticity'); }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    sortBy === 'elasticity' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  ✨ 시너지 탄력도순 (추천)
+                </button>
+                <button
+                  onClick={() => { setSortBy('totalSales'); fetchData(undefined, undefined, undefined, 'totalSales'); }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    sortBy === 'totalSales' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  💰 매출액 규모순
+                </button>
+              </div>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -280,6 +312,27 @@ export default function SynergyCorrelation() {
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none">
                         상관계수 및 낙수율을 종합하여 판정한 교차 판매 시너지 강도입니다. (STRONG, MODERATE, WEAK, NONE)
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">시너지 분류</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5 group relative">
+                      객실 탄력도
+                      <HelpCircle size={14} className="text-slate-400 cursor-help" />
+                      <div className="absolute bottom-full right-0 mb-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                        객실 판매량이 10% 증가할 때 기대되는 매장 매출 변동폭입니다.
+                        <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5 group relative">
+                      주말 진폭
+                      <HelpCircle size={14} className="text-slate-400 cursor-help" />
+                      <div className="absolute bottom-full right-0 mb-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                        평일 대비 주말/공휴일 평균 매출의 팽창 배수입니다.
+                        <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
                       </div>
                     </div>
                   </th>
@@ -333,6 +386,28 @@ export default function SynergyCorrelation() {
                           {store.interactionGrade}
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      {store.synergyQuadrant && (
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${getQuadrantBadge(store.synergyQuadrant).color}`}>
+                          {getQuadrantBadge(store.synergyQuadrant).text}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                      {store.elasticity != null ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-slate-800">{store.elasticity}배</span>
+                          {store.elasticityPercent != null && (
+                            <span className={`text-[10px] font-bold tracking-tight ${store.elasticityPercent > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {store.elasticityPercent > 0 ? '+' : ''}{store.elasticityPercent}%
+                            </span>
+                          )}
+                        </div>
+                      ) : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-slate-700 whitespace-nowrap">
+                      {store.swingMultiplier != null ? `${store.swingMultiplier}배` : '-'}
                     </td>
                     <td className="px-4 py-3 text-right text-indigo-600 font-medium">
                       {store.revPasSlope ? `${store.revPasSlope > 0 ? '+' : ''}${Math.round(store.revPasSlope).toLocaleString()}원` : '-'}

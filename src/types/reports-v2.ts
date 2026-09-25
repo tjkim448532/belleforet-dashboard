@@ -28,6 +28,11 @@ export interface SynergyStoreCorrelationV2Response {
     spilloverRate: number;
     reverseSpillover: number;
     liftValue: number;
+    elasticity?: number;
+    elasticityPercent?: number;
+    swingMultiplier?: number;
+    synergyScore?: number;
+    synergyQuadrant?: 'CORE_ANCHOR' | 'HIDDEN_GEM' | 'INDEPENDENT_CASHCOW' | 'STANDALONE';
     dailyTrends: Array<{
       date: string;
       roomsSold: number;

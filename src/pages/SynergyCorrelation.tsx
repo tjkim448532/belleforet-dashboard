@@ -320,9 +320,9 @@ export default function SynergyCorrelation() {
                     <div className="flex items-center justify-center gap-1.5 group relative">
                       시너지 등급
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none">
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-52 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none">
                         상관계수 및 낙수율을 종합하여 판정한 교차 판매 시너지 강도입니다. (STRONG, MODERATE, WEAK, NONE)
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   </th>
@@ -331,9 +331,9 @@ export default function SynergyCorrelation() {
                     <div className="flex items-center justify-end gap-1.5 group relative">
                       객실 탄력도
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
-                      <div className="absolute bottom-full right-0 mb-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                      <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
                         객실 판매량이 10% 증가할 때 기대되는 매장 매출 변동폭입니다.
-                        <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute bottom-full right-4 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   </th>
@@ -341,9 +341,9 @@ export default function SynergyCorrelation() {
                     <div className="flex items-center justify-end gap-1.5 group relative">
                       주말 진폭
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
-                      <div className="absolute bottom-full right-0 mb-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                      <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
                         평일 대비 주말/공휴일 평균 매출의 팽창 배수입니다.
-                        <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute bottom-full right-4 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   </th>
@@ -351,9 +351,9 @@ export default function SynergyCorrelation() {
                     <div className="flex items-center justify-end gap-1.5 group relative">
                       RevPAS 기울기
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
-                      <div className="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                      <div className="absolute top-full right-0 mt-2 w-64 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
                         객실 1실이 추가로 판매될 때마다 발생하는 해당 매장의 기대 추가 매출액(원)을 의미합니다. (선형 회귀 기울기)
-                        <div className="absolute top-full right-6 border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute bottom-full right-6 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   </th>
@@ -361,9 +361,9 @@ export default function SynergyCorrelation() {
                     <div className="flex items-center justify-end gap-1.5 group relative">
                       상관계수
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
-                      <div className="absolute bottom-full right-0 mb-2 w-52 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                      <div className="absolute top-full right-0 mt-2 w-52 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
                         객실 판매량과 해당 매장 매출 간의 통계적 동조화 지수입니다. 1에 가까울수록 함께 움직이는 경향이 뚜렷합니다.
-                        <div className="absolute top-full right-6 border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute bottom-full right-6 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   </th>
@@ -371,9 +371,9 @@ export default function SynergyCorrelation() {
                     <div className="flex items-center justify-end gap-1.5 group relative">
                       낙수율
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
-                      <div className="absolute bottom-full right-0 mb-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
+                      <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
                         체류객의 내부 소비 전환율입니다. 객실 이용객 중 해당 부대시설을 동시에 방문하여 결제한 비율을 나타냅니다.
-                        <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute bottom-full right-4 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   </th>

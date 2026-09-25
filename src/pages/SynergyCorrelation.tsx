@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
+import { useMapping } from '../contexts/MappingContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import type { SynergyStoreCorrelationV2Response } from '../types/reports-v2';
 import { 
@@ -12,6 +13,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function SynergyCorrelation() {
+  const { getCategoryForStore } = useMapping();
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
   
   const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
@@ -71,15 +73,15 @@ export default function SynergyCorrelation() {
 
   const categories = useMemo(() => {
     if (!data?.stores) return [];
-    const cats = new Set(data.stores.map(s => s.categoryCode));
+    const cats = new Set(data.stores.map(s => getCategoryForStore(s.storeName)));
     return ['ALL', ...Array.from(cats)];
-  }, [data]);
+  }, [data, getCategoryForStore]);
 
   const filteredStores = useMemo(() => {
     if (!data?.stores) return [];
     if (selectedCategory === 'ALL') return data.stores;
-    return data.stores.filter(s => s.categoryCode === selectedCategory);
-  }, [data, selectedCategory]);
+    return data.stores.filter(s => getCategoryForStore(s.storeName) === selectedCategory);
+  }, [data, selectedCategory, getCategoryForStore]);
 
   const handleSearch = () => {
     let s = startDate;
@@ -333,7 +335,7 @@ export default function SynergyCorrelation() {
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                {cat === 'ALL' ? '전체 보기' : cat === 'TICKET' ? 'TICKET(레저)' : cat}
+                {cat === 'ALL' ? '전체 보기' : cat}
               </button>
             ))}
           </div>

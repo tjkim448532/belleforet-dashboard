@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
-import { collection, getDocs, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { DEFAULT_CATEGORIES, defaultMappings } from '../lib/defaultMappings';
 import type { StoreMapping, Category } from '../lib/defaultMappings';
@@ -149,6 +149,23 @@ export const MappingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     setMappings(prev => prev.map(m => m.category === name ? { ...m, category: '미분류' } : m));
   };
+
+  
+  // [AI Self-Healing] 파이어베이스에 남아있는 레거시 찌꺼기(식음, 연회 등 유효하지 않은 카테고리) 자동 삭제
+  useEffect(() => {
+    const cleanupJunk = async () => {
+      if (loading || categories.length === 0 || mappings.length === 0) return;
+      const junkMappings = mappings.filter(m => !categories.includes(m.category) && m.category !== '미분류' && m.id && !m.id.startsWith('local-'));
+      if (junkMappings.length > 0) {
+        console.log('[Auto-Cleanup] Found ' + junkMappings.length + ' junk mappings. Deleting...');
+        for (const m of junkMappings) {
+          await deleteDoc(doc(db, 'storeMappings', m.id as string));
+        }
+        setMappings(prev => prev.filter(m => !junkMappings.find(j => j.id === m.id)));
+      }
+    };
+    cleanupJunk();
+  }, [loading, categories, mappings]);
 
   return (
     <MappingContext.Provider value={{ mappings, categories, loading, updateMapping, getCategoryForStore, addCategory, deleteCategory }}>

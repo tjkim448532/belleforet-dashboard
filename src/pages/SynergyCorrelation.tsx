@@ -335,7 +335,7 @@ export default function SynergyCorrelation() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right text-indigo-600 font-medium">
-                      {store.revPasSlope ? `+${store.revPasSlope}` : '-'}
+                      {store.revPasSlope ? `${store.revPasSlope > 0 ? '+' : ''}${Math.round(store.revPasSlope).toLocaleString()}원` : '-'}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-600">
                       {store.correlationCoefficient != null ? store.correlationCoefficient.toFixed(2) : '-'}

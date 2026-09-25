@@ -265,11 +265,22 @@ export default function SynergyCorrelation() {
                 부대시설 매장별 시너지 지표
                 <HelpCircle size={16} className="text-slate-400" />
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs text-slate-600 bg-white p-3.5 rounded-lg border border-slate-200 shadow-sm w-full">
-                <p><strong className="text-slate-800">시너지 등급:</strong> 상관계수 및 낙수율을 종합한 교차 판매 강도 (STRONG/MODERATE/WEAK/NONE)</p>
-                <p><strong className="text-slate-800">RevPAS 기울기:</strong> 객실 1실 추가 판매 시 발생하는 해당 매장의 기대 추가 매출액(원)</p>
-                <p><strong className="text-slate-800">상관계수:</strong> 객실 판매량과 해당 매장 매출 간의 동조화 지수 (1에 가까울수록 정비례)</p>
-                <p><strong className="text-slate-800">낙수율:</strong> 객실 투숙객 중 해당 부대시설을 동시에 방문하여 결제한 비율</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs text-slate-700 bg-white p-5 rounded-xl border border-slate-200 shadow-sm w-full leading-relaxed mt-2">
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-1.5"><TrendingUp size={14} className="text-indigo-600" /> 경제학적 지표 해석</h4>
+                  <ul className="space-y-2 list-disc list-inside marker:text-slate-300 ml-1">
+                    <li><strong className="text-slate-800">RevPAS 기울기:</strong> 객실이 1개 더 찰 때마다 해당 매장 포스기(POS)에 추가로 찍히는 기대 매출액(원)입니다.</li>
+                    <li><strong className="text-slate-800">상관계수 (R²):</strong> 객실 투숙객 유입과 매장 매출 증가가 얼마나 일치하는지 보여주는 동조화 지수입니다.</li>
+                    <li><strong className="text-slate-800">주말 진폭:</strong> 평일 대비 주말과 공휴일에 매출이 얼마나 팽창하는지 보여주는 배수입니다.</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-1.5"><Sparkles size={14} className="text-emerald-600" /> 데이터 과학 및 마케팅 연계</h4>
+                  <ul className="space-y-2 list-disc list-inside marker:text-slate-300 ml-1">
+                    <li><strong className="text-slate-800">시차 보정 (Lag-1):</strong> 금요일 투숙객이 토요일 오전에 조식을 먹는 현상 등을 시스템이 수학적으로 자동 감지 및 보정하여 시너지 왜곡을 방지합니다.</li>
+                    <li><strong className="text-slate-800">재화 속성 분류:</strong> 객실 탄력도가 1.0을 초과하면 프로모션에 민감한 <span className="font-bold text-rose-600">선택/사치재</span>, 1.0 미만이면 안정적인 <span className="font-bold text-indigo-600">필수재</span>로 분류하여 타겟 마케팅에 활용합니다.</li>
+                  </ul>
+                </div>
               </div>
             </div>
             <div className="flex flex-col items-end gap-3 shrink-0 xl:self-start">
@@ -397,9 +408,16 @@ export default function SynergyCorrelation() {
                     <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
                       {store.elasticity != null ? (
                         <div className="flex flex-col items-end">
-                          <span className="text-slate-800">{store.elasticity}배</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-800">{store.elasticity}배</span>
+                            {store.elasticity > 1 ? (
+                              <span className="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded border border-rose-100 font-bold">선택/사치재</span>
+                            ) : store.elasticity > 0 ? (
+                              <span className="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100 font-bold">필수재</span>
+                            ) : null}
+                          </div>
                           {store.elasticityPercent != null && (
-                            <span className={`text-[10px] font-bold tracking-tight ${store.elasticityPercent > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            <span className={`text-[10px] font-bold tracking-tight mt-0.5 ${store.elasticityPercent > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                               {store.elasticityPercent > 0 ? '+' : ''}{store.elasticityPercent}%
                             </span>
                           )}

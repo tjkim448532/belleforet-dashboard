@@ -3,6 +3,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
 import { Store, TrendingUp, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
 import { useDate } from '../contexts/DateContext';
+import HolidayComparison from '../components/dashboard/HolidayComparison';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -211,6 +212,10 @@ export default function FacilityTrend() {
           </div>
         </div>
       </div>
+
+      
+      {/* 신규: 명절/연휴 비교 (API V6 연동) */}
+      <HolidayComparison />
 
       {/* Content Area */}
       {loading ? (

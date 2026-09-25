@@ -213,10 +213,6 @@ export default function FacilityTrend() {
         </div>
       </div>
 
-      
-      {/* 신규: 명절/연휴 비교 (API V6 연동) */}
-      <HolidayComparison />
-
       {/* Content Area */}
       {loading ? (
         <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
@@ -255,6 +251,9 @@ export default function FacilityTrend() {
           </p>
         </div>
       )}
+
+      {/* 신규: 명절/연휴 비교 (API V6 연동) - 맨 아래 배치 */}
+      <HolidayComparison />
     </div>
   );
 }

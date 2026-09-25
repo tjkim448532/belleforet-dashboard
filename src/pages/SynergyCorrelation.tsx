@@ -247,9 +247,20 @@ export default function SynergyCorrelation() {
 
       {data && data.stores && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">부대시설 매장별 시너지 지표</h2>
-            <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+          <div className="p-5 border-b border-slate-200 bg-slate-50 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+            <div className="w-full xl:w-auto">
+              <h2 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                부대시설 매장별 시너지 지표
+                <HelpCircle size={16} className="text-slate-400" />
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs text-slate-600 bg-white p-3.5 rounded-lg border border-slate-200 shadow-sm w-full">
+                <p><strong className="text-slate-800">시너지 등급:</strong> 상관계수 및 낙수율을 종합한 교차 판매 강도 (STRONG/MODERATE/WEAK/NONE)</p>
+                <p><strong className="text-slate-800">RevPAS 기울기:</strong> 객실 1실 추가 판매 시 발생하는 해당 매장의 기대 추가 매출액(원)</p>
+                <p><strong className="text-slate-800">상관계수:</strong> 객실 판매량과 해당 매장 매출 간의 동조화 지수 (1에 가까울수록 정비례)</p>
+                <p><strong className="text-slate-800">낙수율:</strong> 객실 투숙객 중 해당 부대시설을 동시에 방문하여 결제한 비율</p>
+              </div>
+            </div>
+            <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full shrink-0 xl:self-start">
               총 {data.stores.length}개 매장 분석
             </span>
           </div>

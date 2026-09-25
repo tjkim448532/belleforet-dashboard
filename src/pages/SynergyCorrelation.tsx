@@ -203,6 +203,19 @@ export default function SynergyCorrelation() {
         </div>
       )}
 
+      {startDate === endDate && !loading && !error && (
+        <div className="bg-amber-50 text-amber-700 p-4 rounded-xl border border-amber-200 mb-6 font-medium flex items-start gap-3">
+          <Zap className="shrink-0 mt-0.5" size={18} />
+          <div>
+            <strong>Econometric Guard 작동 중:</strong>
+            <p className="text-sm mt-1">
+              단일 일자(1일) 조회 시 분산(Variance)이 존재하지 않아 시너지 상관계수(Correlation) 도출이 수학적으로 불가능합니다. (모든 값이 0.00 처리됨)<br/>
+              의미 있는 인과 관계 및 시너지 지표를 확인하시려면 <strong>분석 기간을 최소 14일 이상(또는 최근 7일/1개월)</strong>으로 설정해 주십시오.
+            </p>
+          </div>
+        </div>
+      )}
+
       {data && data.meta && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
@@ -210,7 +223,7 @@ export default function SynergyCorrelation() {
               <TrendingUp size={16} className="text-indigo-500" /> 전사 리조트 매출
             </h3>
             <p className="text-3xl font-extrabold text-slate-800">
-              {data.meta.totalResortSalesFormatted}
+              {data.meta.totalResortSalesFormatted}<span className="text-base font-medium text-slate-500">원</span>
             </p>
           </div>
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
@@ -264,7 +277,7 @@ export default function SynergyCorrelation() {
                         {store.categoryCode}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-700">{store.revenueFormatted}</td>
+                    <td className="px-4 py-3 text-right font-medium text-slate-700">{store.revenueFormatted}원</td>
                     <td className="px-4 py-3 text-right text-slate-600">{store.quantityFormatted}</td>
                     <td className="px-4 py-3 text-right text-slate-600">{store.visitorCountFormatted}</td>
                     <td className="px-4 py-3 text-center">

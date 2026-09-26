@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
@@ -22,7 +22,10 @@ import {
   Sparkles,
   Layers,
   CalendarDays,
-  Briefcase
+  Briefcase,
+  Search,
+  RotateCcw,
+  Phone
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -85,6 +88,70 @@ export interface SeminarDayTypeShare {
   total: SeminarDayTypeMetric;
 }
 
+export interface RawGroupItem {
+  groupId?: string;
+  groupName?: string;
+  corporateName?: string;
+  b2bSegment?: string;
+  b2bSegmentName?: string;
+  category?: string;
+  categoryName?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  salesManager?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  stayDays?: number;
+  paxCount?: number;
+  totalRevenue?: number;
+  spendingBreakdown?: {
+    roomRevenue?: number;
+    roomsCount?: number;
+    roomTypesUsed?: string[];
+    fnbRevenue?: number;
+    golfRevenue?: number;
+    leisureRevenue?: number;
+  };
+  paymentMethod?: string;
+  notes?: string;
+}
+
+export interface GroupVisitDetail {
+  groupId: string;
+  checkIn: string;
+  checkOut: string;
+  stayDays: number;
+  roomsCount: number;
+  paxCount: number;
+  roomRevenue: number;
+  roomTypesUsed: string[];
+  contactName: string;
+  contactPhone: string;
+  salesManager: string;
+  notes: string;
+  paymentMethod: string;
+  isWeekend: boolean;
+}
+
+export interface GroupOrganizationSummary {
+  name: string;
+  corporateName: string;
+  categoryName: string;
+  visitCount: number;
+  isRepeatCustomer: boolean;
+  totalRooms: number;
+  totalPax: number;
+  totalRevenue: number;
+  roomTypesSummary: string[];
+  firstCheckIn: string;
+  lastCheckIn: string;
+  primaryContact: string;
+  primaryPhone: string;
+  salesManager: string;
+  visits: GroupVisitDetail[];
+}
+
 // 평형별 대표 투숙 정원 (인원수 환산용)
 const getRoomCapacity = (roomType: string): number => {
   if (roomType.includes('51') || roomType.includes('R51')) return 6;
@@ -119,6 +186,10 @@ export default function GroupSales() {
   
   const [channelRawData, setChannelRawData] = useState<RawChannelRoomItem[]>([]);
   const [seminarShare, setSeminarShare] = useState<SeminarDayTypeShare | null>(null);
+  const [rawGroupData, setRawGroupData] = useState<RawGroupItem[]>([]);
+  const [groupSearchKeyword, setGroupSearchKeyword] = useState<string>('');
+  const [groupFilterTab, setGroupFilterTab] = useState<'ALL' | 'REPEAT' | 'LARGE' | 'SINGLE'>('ALL');
+  const [expandedGroupNames, setExpandedGroupNames] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<boolean>(true);
   
   // 🎯 사용자의 핵심 요구사항: 세일즈본부는 '단체영업(세미나)'이 주력이므로 기본값 고정
@@ -129,6 +200,18 @@ export default function GroupSales() {
   
   // 0실/0원 항목 제외 필터
   const [hideZeroSales, setHideZeroSales] = useState<boolean>(true);
+
+  const toggleGroupExpand = (name: string) => {
+    setExpandedGroupNames(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  };
 
   const applyPreset = (preset: DatePresetType) => {
     const range = getPresetDateRange(preset);
@@ -151,8 +234,12 @@ export default function GroupSales() {
         ? `startDate=${startDate}&endDate=${endDate}`
         : `startDate=${startDate}&endDate=${startDate}`;
 
-      // 판매방식 × 평형별 세그먼트 교차 데이터 (SSOT API)
-      const channelRes = await secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null);
+      // 1. 판매방식 × 평형별 세그먼트 교차 데이터 (SSOT API)
+      // 2. 단체영업(세미나) 실제 예약 단체 명부 및 복수 방문 내역 (SSOT API)
+      const [channelRes, corporateRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null)
+      ]);
 
       if (channelRes?.data && Array.isArray(channelRes.data)) {
         setChannelRawData(channelRes.data);
@@ -167,10 +254,19 @@ export default function GroupSales() {
       } else {
         setSeminarShare(null);
       }
+
+      if (corporateRes?.groups && Array.isArray(corporateRes.groups)) {
+        setRawGroupData(corporateRes.groups);
+      } else if (corporateRes?.data?.groups && Array.isArray(corporateRes.data.groups)) {
+        setRawGroupData(corporateRes.data.groups);
+      } else {
+        setRawGroupData([]);
+      }
     } catch (err) {
-      console.error('Channel Room Sales Fetch Error:', err);
+      console.error('Channel Room / Corporate Group Sales Fetch Error:', err);
       setChannelRawData([]);
       setSeminarShare(null);
+      setRawGroupData([]);
     } finally {
       setLoading(false);
     }
@@ -382,6 +478,139 @@ export default function GroupSales() {
       }
     };
   }, [seminarShare, channelGroups, grandTotals]);
+
+  // 👥 단체영업(세미나) 예약 단체 마스터 명부 및 복수 방문 집계
+  const { organizedGroups, totalSeminarGroupsCount, repeatGroupsCount, totalBookedRoomsInGroups } = useMemo(() => {
+    const seminarRecords = rawGroupData.filter(g => 
+      g.category === 'SEMINAR' || 
+      g.categoryName?.includes('세미나') || 
+      g.groupName?.includes('세미나') ||
+      g.groupName?.includes('교육') ||
+      g.groupName?.includes('협회') ||
+      g.groupName?.includes('학회') ||
+      g.b2bSegment === 'MICE' ||
+      (g.spendingBreakdown?.roomsCount && g.spendingBreakdown.roomsCount >= 5)
+    );
+
+    const orgMap = new Map<string, GroupOrganizationSummary>();
+
+    seminarRecords.forEach(g => {
+      const name = String(g.groupName || g.corporateName || '기타 단체').trim();
+      const rooms = Number(g.spendingBreakdown?.roomsCount || 0);
+      const pax = Number(g.paxCount || 0);
+      const rev = Number(g.spendingBreakdown?.roomRevenue || g.totalRevenue || 0);
+      const checkIn = g.checkInDate || '';
+      const checkOut = g.checkOutDate || '';
+      const types = g.spendingBreakdown?.roomTypesUsed || [];
+
+      // 주말 체크 (금, 토 체크인 = 주말)
+      const dayOfWeek = checkIn ? new Date(checkIn).getDay() : -1;
+      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
+      const visit: GroupVisitDetail = {
+        groupId: g.groupId || '',
+        checkIn,
+        checkOut,
+        stayDays: Number(g.stayDays || 1),
+        roomsCount: rooms,
+        paxCount: pax,
+        roomRevenue: rev,
+        roomTypesUsed: types,
+        contactName: g.contactName || '',
+        contactPhone: g.contactPhone || '',
+        salesManager: g.salesManager || '',
+        notes: g.notes || '',
+        paymentMethod: g.paymentMethod || '후정산',
+        isWeekend
+      };
+
+      if (!orgMap.has(name)) {
+        orgMap.set(name, {
+          name,
+          corporateName: g.corporateName || name,
+          categoryName: g.categoryName || '기업 세미나/워크샵',
+          visitCount: 0,
+          isRepeatCustomer: false,
+          totalRooms: 0,
+          totalPax: 0,
+          totalRevenue: 0,
+          roomTypesSummary: [],
+          firstCheckIn: checkIn,
+          lastCheckIn: checkIn,
+          primaryContact: g.contactName || '',
+          primaryPhone: g.contactPhone || '',
+          salesManager: g.salesManager || '',
+          visits: []
+        });
+      }
+
+      const org = orgMap.get(name)!;
+      org.visitCount += 1;
+      org.totalRooms += rooms;
+      org.totalPax += pax;
+      org.totalRevenue += rev;
+      org.visits.push(visit);
+
+      if (org.visitCount > 1) {
+        org.isRepeatCustomer = true;
+      }
+
+      if (checkIn && (!org.firstCheckIn || checkIn < org.firstCheckIn)) {
+        org.firstCheckIn = checkIn;
+      }
+      if (checkIn && (!org.lastCheckIn || checkIn > org.lastCheckIn)) {
+        org.lastCheckIn = checkIn;
+      }
+
+      types.forEach(t => {
+        if (!org.roomTypesSummary.includes(t)) {
+          org.roomTypesSummary.push(t);
+        }
+      });
+    });
+
+    const list = Array.from(orgMap.values());
+    
+    // 기본 정렬: 복수 방문(단골) 우선, 그 다음 총 객실수 내림차순
+    list.sort((a, b) => {
+      if (b.isRepeatCustomer !== a.isRepeatCustomer) {
+        return b.isRepeatCustomer ? 1 : -1;
+      }
+      return b.totalRooms - a.totalRooms;
+    });
+
+    const repeats = list.filter(o => o.isRepeatCustomer).length;
+    const totalRooms = list.reduce((acc, o) => acc + o.totalRooms, 0);
+
+    return {
+      organizedGroups: list,
+      totalSeminarGroupsCount: list.length,
+      repeatGroupsCount: repeats,
+      totalBookedRoomsInGroups: totalRooms
+    };
+  }, [rawGroupData]);
+
+  // 필터링 적용된 단체 목록
+  const filteredOrganizedGroups = useMemo(() => {
+    return organizedGroups.filter(org => {
+      // 탭 필터
+      if (groupFilterTab === 'REPEAT' && !org.isRepeatCustomer) return false;
+      if (groupFilterTab === 'SINGLE' && org.isRepeatCustomer) return false;
+      if (groupFilterTab === 'LARGE' && org.totalRooms < 20) return false;
+
+      // 검색어 필터
+      if (groupSearchKeyword) {
+        const kw = groupSearchKeyword.toLowerCase();
+        const matchName = org.name.toLowerCase().includes(kw);
+        const matchContact = org.primaryContact.toLowerCase().includes(kw);
+        const matchPhone = org.primaryPhone.includes(kw);
+        const matchType = org.roomTypesSummary.some(t => t.toLowerCase().includes(kw));
+        if (!matchName && !matchContact && !matchPhone && !matchType) return false;
+      }
+
+      return true;
+    });
+  }, [organizedGroups, groupFilterTab, groupSearchKeyword]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -1231,6 +1460,300 @@ export default function GroupSales() {
           })}
         </div>
       )}
+
+      {/* 4. 👥 [NEW] 단체영업(세미나) 실제 예약 단체 마스터 명부 & 복수 방문(단골) 심층 분석 */}
+      <div className="bg-white rounded-[32px] border border-slate-200/90 shadow-xs overflow-hidden">
+        
+        {/* Section Header */}
+        <div className="p-6 lg:p-7 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-100">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  단체영업(세미나) 예약 단체 마스터 명부
+                </h3>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-2xs">
+                  총 {totalSeminarGroupsCount}개 기관 / 단체
+                </span>
+                {repeatGroupsCount > 0 && (
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <RotateCcw size={12} className="text-emerald-600" />
+                    복수 재방문 {repeatGroupsCount}개사 ({((repeatGroupsCount / (totalSeminarGroupsCount || 1)) * 100).toFixed(1)}%)
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                세미나/교육/워크샵으로 예약된 단체별 대여 객실 수, 이용 평형, 복수 방문 횟수 및 방문 일정을 통합 조회합니다.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Metrics Badge */}
+          <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200/80 self-start lg:self-auto font-financial">
+            <div className="px-3 py-1">
+              <div className="text-[11px] text-slate-400 font-medium">유치 단체수</div>
+              <div className="text-base font-extrabold text-slate-900">{totalSeminarGroupsCount}개 기관</div>
+            </div>
+            <div className="h-8 w-px bg-slate-200" />
+            <div className="px-3 py-1">
+              <div className="text-[11px] text-slate-400 font-medium">총 계약 객실</div>
+              <div className="text-base font-extrabold text-indigo-600">{totalBookedRoomsInGroups.toLocaleString()}실</div>
+            </div>
+            <div className="h-8 w-px bg-slate-200" />
+            <div className="px-3 py-1">
+              <div className="text-[11px] text-slate-400 font-medium">복수 방문 기관</div>
+              <div className="text-base font-extrabold text-emerald-600">{repeatGroupsCount}개사</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Tabs & Search Bar */}
+        <div className="p-5 bg-slate-50/70 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          
+          {/* Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setGroupFilterTab('ALL')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                groupFilterTab === 'ALL'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              전체 단체 ({totalSeminarGroupsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupFilterTab('REPEAT')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                groupFilterTab === 'REPEAT'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50'
+              }`}
+            >
+              <RotateCcw size={12} />
+              ★ 복수 방문 단체 ({repeatGroupsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupFilterTab('LARGE')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                groupFilterTab === 'LARGE'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'
+              }`}
+            >
+              대규모 (20실 이상)
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupFilterTab('SINGLE')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                groupFilterTab === 'SINGLE'
+                  ? 'bg-slate-700 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              단일 방문
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative min-w-[260px]">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={groupSearchKeyword}
+              onChange={(e) => setGroupSearchKeyword(e.target.value)}
+              placeholder="단체명, 담당자, 객실평형 검색..."
+              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-900 outline-none focus:border-brand-mint focus:ring-2 focus:ring-brand-mint/20"
+            />
+          </div>
+        </div>
+
+        {/* Master Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse font-financial">
+            <thead>
+              <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50/50">
+                <th className="py-3.5 px-6 whitespace-nowrap">단체 / 기업명</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">방문 횟수</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">총 대여 객실수</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">행사 인원수</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">이용 평형 (객실 타입)</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">방문 기간 (체크인)</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">담당자 / 연락처</th>
+                <th className="py-3.5 px-6 text-center whitespace-nowrap">차수별 상세</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm">
+              {filteredOrganizedGroups.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
+                    조회된 단체영업 예약 내역이 없습니다.
+                  </td>
+                </tr>
+              ) : (
+                filteredOrganizedGroups.map((org) => {
+                  const isExpanded = expandedGroupNames.has(org.name);
+
+                  return (
+                    <React.Fragment key={org.name}>
+                      <tr className={`hover:bg-slate-50/90 transition-colors ${org.isRepeatCustomer ? 'bg-indigo-50/30' : ''}`}>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-slate-900 text-sm">{org.name}</span>
+                            {org.isRepeatCustomer && (
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-2xs">
+                                <RotateCcw size={10} />
+                                ★ 복수 방문 ({org.visitCount}회차)
+                              </span>
+                            )}
+                            {org.totalRooms >= 30 && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                대규모
+                              </span>
+                            )}
+                          </div>
+                          {org.corporateName && org.corporateName !== org.name && (
+                            <p className="text-[11px] text-slate-400 mt-0.5">거래처: {org.corporateName}</p>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4 text-center">
+                          <span className={`inline-flex items-center justify-center font-bold px-2.5 py-1 rounded-lg text-xs ${
+                            org.visitCount > 1 
+                              ? 'bg-emerald-500 text-white font-black' 
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {org.visitCount}회
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-4 text-right">
+                          <span className="text-base font-black text-slate-900 font-financial">
+                            {org.totalRooms.toLocaleString()}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-400 ml-1">실</span>
+                        </td>
+
+                        <td className="py-4 px-4 text-right">
+                          <span className="font-bold text-slate-700 font-financial">
+                            {org.totalPax.toLocaleString()}
+                          </span>
+                          <span className="text-xs text-slate-400 ml-1">명</span>
+                        </td>
+
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
+                            {org.roomTypesSummary.length > 0 ? (
+                              org.roomTypesSummary.map((t, idx) => (
+                                <span key={idx} className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md border border-slate-200 whitespace-nowrap">
+                                  {t}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-slate-400">-</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-4 whitespace-nowrap text-xs text-slate-600">
+                          {org.firstCheckIn === org.lastCheckIn ? (
+                            <span>{org.firstCheckIn}</span>
+                          ) : (
+                            <span>{org.firstCheckIn} ~ {org.lastCheckIn}</span>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <div className="text-xs font-bold text-slate-800">{org.primaryContact || '-'}</div>
+                          {org.primaryPhone && (
+                            <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                              <Phone size={10} /> {org.primaryPhone}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-6 text-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleGroupExpand(org.name)}
+                            className="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 transition-colors flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                          >
+                            <span>{org.visits.length}차수</span>
+                            <ChevronDown size={13} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* Expanded Drilldown Timeline */}
+                      {isExpanded && (
+                        <tr className="bg-slate-50/90 border-b border-slate-200">
+                          <td colSpan={8} className="p-4 px-8">
+                            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+                              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h5 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                                  <CalendarDays size={13} className="text-indigo-600" />
+                                  <span>{org.name} - 방문 차수별 상세 내역 (총 {org.visits.length}회차)</span>
+                                </h5>
+                                <span className="text-[11px] text-slate-400">담당: {org.salesManager || 'B2B영업팀'}</span>
+                              </div>
+
+                              <div className="divide-y divide-slate-100 text-xs">
+                                {org.visits.map((v, vIdx) => (
+                                  <div key={vIdx} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                      <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-[11px]">
+                                        {vIdx + 1}차 방문
+                                      </span>
+                                      <span className="font-bold text-slate-800">
+                                        체크인: {v.checkIn} ~ 체크아웃: {v.checkOut} ({v.stayDays}박)
+                                      </span>
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                        v.isWeekend ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                                      }`}>
+                                        {v.isWeekend ? '주말(금·토)' : '주중(일~목)'}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-slate-600 font-financial flex-wrap">
+                                      <div>
+                                        <span className="text-slate-400 mr-1">대여 객실:</span>
+                                        <strong className="text-slate-900 font-black">{v.roomsCount}실</strong>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-400 mr-1">인원:</span>
+                                        <strong className="text-slate-900">{v.paxCount}명</strong>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-400 mr-1">평형:</span>
+                                        <span className="text-slate-700 font-semibold">{v.roomTypesUsed.join(', ') || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-400 mr-1">결제:</span>
+                                        <span className="text-slate-700">{v.paymentMethod}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* 5. Strategy Insight Footer */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-[24px] p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">

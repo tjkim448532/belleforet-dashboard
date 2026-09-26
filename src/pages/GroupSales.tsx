@@ -16,14 +16,12 @@ import {
   Plane, 
   PhoneCall, 
   ChevronDown, 
-  ChevronUp, 
   Table, 
   Grid, 
   Coins, 
   Sparkles,
-  PieChart as PieChartIcon
+  Layers
 } from 'lucide-react';
-import type { CorporateGroupSalesV2Response } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -99,16 +97,14 @@ const getChannelMeta = (channelName: string): { iconType: ChannelGroup['iconType
 export default function GroupSales() {
   const { startDate, endDate, setStartDate, setEndDate } = useDate();
   
-  const [data, setData] = useState<CorporateGroupSalesV2Response | null>(null);
   const [channelRawData, setChannelRawData] = useState<RawChannelRoomItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
-  // 뷰 모드: CHANNEL_FIRST(판매방식별 그룹), PIVOT_MATRIX(크로스 피벗 매트릭스), SEGMENT_FIRST(평형별 그룹)
-  const [viewMode, setViewMode] = useState<'CHANNEL_FIRST' | 'PIVOT_MATRIX' | 'SEGMENT_FIRST'>('CHANNEL_FIRST');
+  // 🎯 사용자의 핵심 요구사항: 세일즈본부는 '단체영업(세미나)'이 주력이므로 기본값 고정
+  const [selectedChannel, setSelectedChannel] = useState<string>('단체영업(세미나)');
   
-  // 펼침/접힘 상태 관리 (기본 모두 펼침)
-  const [expandedChannels, setExpandedChannels] = useState<Record<string, boolean>>({});
-  const [expandedSegments, setExpandedSegments] = useState<Record<string, boolean>>({});
+  // 뷰 모드: FOCUS_SINGLE(선택된 판매방식 집중 뷰 - 기본), PIVOT_MATRIX(크로스 피벗 매트릭스), ALL_CHANNELS(전체 판매방식 목록)
+  const [viewMode, setViewMode] = useState<'FOCUS_SINGLE' | 'PIVOT_MATRIX' | 'ALL_CHANNELS'>('FOCUS_SINGLE');
   
   // 0실/0원 항목 제외 필터
   const [hideZeroSales, setHideZeroSales] = useState<boolean>(true);
@@ -134,20 +130,8 @@ export default function GroupSales() {
         ? `startDate=${startDate}&endDate=${endDate}`
         : `startDate=${startDate}&endDate=${startDate}`;
 
-      // 1. 전체 메타 요약용 corporate-group-sales-v2
-      // 2. 판매방식 × 평형별 세그먼트 교차 데이터용 room-channel-sales
-      const [groupRes, channelRes] = await Promise.all([
-        secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales-v2?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null)
-      ]);
-
-      if (groupRes?.data && groupRes.data.success) {
-        setData(groupRes.data);
-      } else if (groupRes && groupRes.success) {
-        setData(groupRes);
-      } else {
-        setData(null);
-      }
+      // 판매방식 × 평형별 세그먼트 교차 데이터 (SSOT API)
+      const channelRes = await secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null);
 
       if (channelRes?.data && Array.isArray(channelRes.data)) {
         setChannelRawData(channelRes.data);
@@ -157,8 +141,7 @@ export default function GroupSales() {
         setChannelRawData([]);
       }
     } catch (err) {
-      console.error('Group / Channel Room Sales Fetch Error:', err);
-      setData(null);
+      console.error('Channel Room Sales Fetch Error:', err);
       setChannelRawData([]);
     } finally {
       setLoading(false);
@@ -170,13 +153,12 @@ export default function GroupSales() {
   }, [startDate, endDate]);
 
   // 🏛️ 판매방식(채널)별 × 평형별 세그먼트 정규화 및 집계
-  const { channelGroups, grandTotals, uniqueRoomTypes, segmentGroups } = useMemo(() => {
+  const { channelGroups, grandTotals, uniqueRoomTypes, availableChannels } = useMemo(() => {
     let grandRevenue = 0;
     let grandRooms = 0;
     let grandGuests = 0;
 
     const channelMap = new Map<string, RawChannelRoomItem[]>();
-    const segmentMap = new Map<string, { channelName: string; rooms: number; revenue: number; adr: number; guests: number }[]>();
     const roomTypeSet = new Set<string>();
 
     channelRawData.forEach(item => {
@@ -202,18 +184,6 @@ export default function GroupSales() {
       grandGuests += rooms * getRoomCapacity(room);
 
       roomTypeSet.add(room);
-
-      // 평형 기준 맵에도 보관
-      if (!segmentMap.has(room)) {
-        segmentMap.set(room, []);
-      }
-      segmentMap.get(room)!.push({
-        channelName: channel,
-        rooms,
-        revenue,
-        adr: Number(item.todayAdr ?? item.adr ?? (rooms > 0 ? Math.round(revenue / rooms) : 0)),
-        guests: rooms * getRoomCapacity(room)
-      });
     });
 
     // 1. 판매방식별 그룹 생성
@@ -243,7 +213,7 @@ export default function GroupSales() {
           revenue: rev,
           adr,
           guests,
-          channelSharePct: 0, // 아래에서 채널 총합 후 계산
+          channelSharePct: 0,
           grandSharePct: grandRevenue > 0 ? (rev / grandRevenue) * 100 : 0
         });
       });
@@ -286,24 +256,6 @@ export default function GroupSales() {
     // 판매방식 정렬: 매출액 기준 내림차순
     groups.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-    // 2. 평형(세그먼트) 기준 그룹 생성
-    const segGroups = Array.from(segmentMap.entries()).map(([roomType, chList]) => {
-      const totalRooms = chList.reduce((s, c) => s + c.rooms, 0);
-      const totalRev = chList.reduce((s, c) => s + c.revenue, 0);
-      const totalGuests = chList.reduce((s, c) => s + c.guests, 0);
-      return {
-        roomType,
-        totalRooms,
-        totalRevenue: totalRev,
-        totalGuests,
-        averageAdr: totalRooms > 0 ? Math.round(totalRev / totalRooms) : 0,
-        grandSharePct: grandRevenue > 0 ? (totalRev / grandRevenue) * 100 : 0,
-        channels: chList.sort((a, b) => b.revenue - a.revenue)
-      };
-    });
-
-    segGroups.sort((a, b) => b.totalRevenue - a.totalRevenue);
-
     const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => {
       const orderA = a.includes('51') ? 1 : a.includes('35') ? 2 : a.includes('16') ? 3 : 4;
       const orderB = b.includes('51') ? 1 : b.includes('35') ? 2 : b.includes('16') ? 3 : 4;
@@ -319,44 +271,28 @@ export default function GroupSales() {
         adr: grandRooms > 0 ? Math.round(grandRevenue / grandRooms) : 0
       },
       uniqueRoomTypes: sortedRoomTypes,
-      segmentGroups: segGroups
+      availableChannels: groups.map(g => g.channelName)
     };
   }, [channelRawData, hideZeroSales]);
 
-  // 채널 접기/펼치기 토글
-  const toggleChannel = (channelName: string) => {
-    setExpandedChannels(prev => ({
-      ...prev,
-      [channelName]: prev[channelName] === undefined ? false : !prev[channelName]
-    }));
-  };
+  // 🎯 현재 활성화된 채널 그룹 (기본: 단체영업(세미나))
+  const activeChannelGroup = useMemo(() => {
+    if (selectedChannel === 'ALL') return null;
+    return channelGroups.find(g => g.channelName === selectedChannel || g.channelName.includes(selectedChannel)) 
+      || channelGroups.find(g => g.channelName.includes('단체영업')) 
+      || channelGroups[0] 
+      || null;
+  }, [channelGroups, selectedChannel]);
 
-  // 평형 접기/펼치기 토글
-  const toggleSegment = (roomType: string) => {
-    setExpandedSegments(prev => ({
-      ...prev,
-      [roomType]: prev[roomType] === undefined ? false : !prev[roomType]
-    }));
-  };
+  // 상단 4대 KPI 지표 계산 (선택 채널 vs 전사)
+  const isAllMode = selectedChannel === 'ALL';
+  const displayRevenue = isAllMode ? grandTotals.revenue : (activeChannelGroup?.totalRevenue || 0);
+  const displayRooms = isAllMode ? grandTotals.rooms : (activeChannelGroup?.totalRooms || 0);
+  const displayGuests = isAllMode ? grandTotals.guests : (activeChannelGroup?.totalGuests || 0);
+  const displayAdr = isAllMode ? grandTotals.adr : (activeChannelGroup?.averageAdr || 0);
 
-  const isChannelExpanded = (channelName: string) => expandedChannels[channelName] !== false;
-  const isSegmentExpanded = (roomType: string) => expandedSegments[roomType] !== false;
-
-  const toggleAllChannels = (expand: boolean) => {
-    const newState: Record<string, boolean> = {};
-    channelGroups.forEach(g => {
-      newState[g.channelName] = expand;
-    });
-    setExpandedChannels(newState);
-  };
-
-  const summary = data?.meta?.summary;
-  const displayTotalRevenue = grandTotals.revenue > 0 ? grandTotals.revenue : (summary?.totalRevenue || 0);
-  const displayTotalRooms = grandTotals.rooms > 0 ? grandTotals.rooms : (summary?.totalRoomsSold || 0);
-  const displayTotalGuests = grandTotals.guests > 0 ? grandTotals.guests : (summary?.totalGuests || 0);
-  const displayAdr = grandTotals.adr > 0 ? grandTotals.adr : (summary?.adr || 0);
-
-  const revenueFinancial = formatFinancialKorean(displayTotalRevenue);
+  const displayRevenueFinancial = formatFinancialKorean(displayRevenue);
+  const grandRevenueFinancial = formatFinancialKorean(grandTotals.revenue);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -372,12 +308,12 @@ export default function GroupSales() {
               <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight break-keep whitespace-nowrap">
                 세일즈본부 객실 판매 실적
               </h1>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                판매방식 × 세그먼트 교차 분석
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                주력: 단체영업(세미나)
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1 break-keep">
-              판매방식(채널)별로 각 평형별(세그먼트) 판매 실적과 단가(ADR)를 정밀 분석합니다. (순매출/VAT 제외)
+              세일즈본부 핵심 주력 사업인 단체영업(세미나)을 중심으로 각 평형별 실적을 집중 분석합니다.
             </p>
           </div>
         </div>
@@ -418,126 +354,86 @@ export default function GroupSales() {
         </div>
       </div>
 
-      {/* 2. Executive Summary Cards (4-Grid with Financial Typography) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. 🎯 [CORE CONTROL] 판매방식 드롭다운 선택기 & 뷰 모드 툴바 */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         
-        {/* Card 1: Total Revenue */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <DollarSign size={16} className="text-brand-mint" /> 
-              <span>총 매출액</span>
-              <MetricExplainerTooltip presetKey="netRevenue" />
-            </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
-              순매출
-            </span>
+        {/* Left: Channel Selector Dropdown */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5 whitespace-nowrap">
+            <Building2 size={18} className="text-brand-mint" />
+            <span>판매방식 선택:</span>
+          </span>
+
+          <div className="relative inline-flex items-center">
+            <select
+              value={selectedChannel}
+              onChange={(e) => {
+                setSelectedChannel(e.target.value);
+                if (e.target.value === 'ALL') {
+                  setViewMode('PIVOT_MATRIX');
+                } else {
+                  setViewMode('FOCUS_SINGLE');
+                }
+              }}
+              className="bg-slate-50 hover:bg-slate-100 border-2 border-brand-mint text-slate-900 text-sm font-extrabold rounded-xl px-4 py-2 pr-10 outline-none shadow-2xs focus:ring-2 focus:ring-brand-mint/40 cursor-pointer appearance-none transition-colors"
+            >
+              {availableChannels.map((ch) => (
+                <option key={ch} value={ch}>
+                  {ch.includes('단체영업') || ch.includes('세미나') ? `👥 ${ch} ★ 주력 사업` : `🏢 ${ch}`}
+                </option>
+              ))}
+              <option value="ALL">📊 [전체 통합] 모든 판매방식 비교하기</option>
+            </select>
+            <ChevronDown size={16} className="text-slate-500 absolute right-3 pointer-events-none" />
           </div>
-          <div>
-            <div className="flex items-baseline gap-2 flex-wrap mb-1">
-              <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
-                {formatRevenue(displayTotalRevenue)}
-              </span>
-              <span className="text-sm font-semibold text-slate-400">원</span>
-            </div>
-            <div className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md inline-block">
-              {revenueFinancial.formatted}
-            </div>
-          </div>
+
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 cursor-pointer select-none bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={hideZeroSales}
+              onChange={(e) => setHideZeroSales(e.target.checked)}
+              className="rounded border-slate-300 text-brand-mint focus:ring-brand-mint accent-brand-mint"
+            />
+            <span>0실 항목 제외</span>
+          </label>
+
+          {selectedChannel.includes('단체영업') ? (
+            <span className="text-xs font-bold px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1.5 shadow-2xs">
+              <Sparkles size={12} className="text-indigo-600" /> 세일즈본부 핵심 주력 사업
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedChannel('단체영업(세미나)');
+                setViewMode('FOCUS_SINGLE');
+              }}
+              className="text-xs font-bold text-brand-mint hover:underline cursor-pointer flex items-center gap-1"
+            >
+              ↩ 주력(단체영업)으로 복귀
+            </button>
+          )}
         </div>
 
-        {/* Card 2: Rooms Sold */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <BedDouble size={16} className="text-brand-mint" /> 
-              <span>총 판매 객실</span>
-              <MetricExplainerTooltip presetKey="occupancy" />
-            </span>
-            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-              계약 실적
-            </span>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
-              {displayTotalRooms.toLocaleString()}
-              <span className="text-base font-semibold text-slate-400 ml-1">실</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              전체 세그먼트 합산 판매 객실
-            </p>
-          </div>
-        </div>
-
-        {/* Card 3: Total Guests */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <Users size={16} className="text-brand-mint" /> 
-              <span>총 투숙객</span>
-              <MetricExplainerTooltip presetKey="visitorCount" />
-            </span>
-            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-              정원 기준 환산
-            </span>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
-              {displayTotalGuests.toLocaleString()}
-              <span className="text-base font-semibold text-slate-400 ml-1">명</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              판매 평형별 정원 기반 투숙 인원
-            </p>
-          </div>
-        </div>
-
-        {/* Card 4: ADR */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <TrendingUp size={16} className="text-brand-mint" /> 
-              <span>평균 객단가 (ADR)</span>
-              <MetricExplainerTooltip presetKey="adr" />
-            </span>
-            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-              전사 평균
-            </span>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
-              {formatRevenue(displayAdr)}
-              <span className="text-base font-semibold text-slate-400 ml-1">원</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              총 매출액 ÷ 판매 객실 수
-            </p>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 3. View Switcher & Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* View Mode Buttons */}
+        {/* Right: View Mode Tabs */}
         <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
           <button
             type="button"
-            onClick={() => setViewMode('CHANNEL_FIRST')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === 'CHANNEL_FIRST'
+            onClick={() => setViewMode('FOCUS_SINGLE')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'FOCUS_SINGLE'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Table size={14} className="text-brand-mint" />
-            <span>판매방식별 그룹 리포트 (추천)</span>
+            <span>선택 채널 평형별 상세</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode('PIVOT_MATRIX')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               viewMode === 'PIVOT_MATRIX'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
@@ -549,237 +445,291 @@ export default function GroupSales() {
 
           <button
             type="button"
-            onClick={() => setViewMode('SEGMENT_FIRST')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === 'SEGMENT_FIRST'
+            onClick={() => setViewMode('ALL_CHANNELS')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'ALL_CHANNELS'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <PieChartIcon size={14} className="text-emerald-600" />
-            <span>평형(세그먼트) 기준 뷰</span>
+            <Layers size={14} className="text-slate-600" />
+            <span>전체 채널 목록</span>
           </button>
-        </div>
-
-        {/* Quick Tools */}
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={hideZeroSales}
-              onChange={(e) => setHideZeroSales(e.target.checked)}
-              className="rounded text-brand-mint focus:ring-brand-mint cursor-pointer"
-            />
-            <span>실적 있는 항목만 보기</span>
-          </label>
-
-          {viewMode === 'CHANNEL_FIRST' && (
-            <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
-              <button
-                type="button"
-                onClick={() => toggleAllChannels(true)}
-                className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100"
-              >
-                전체 펼치기
-              </button>
-              <span className="text-slate-300">·</span>
-              <button
-                type="button"
-                onClick={() => toggleAllChannels(false)}
-                className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100"
-              >
-                전체 접기
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* 4. Main Data Presentation Section */}
+      {/* 3. Executive Summary Cards (4-Grid: 선택 채널 중심 동적 지표) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: Total Revenue */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <DollarSign size={16} className="text-brand-mint" /> 
+              <span>{isAllMode ? '전사 총 매출액' : '선택 채널 매출액'}</span>
+              <MetricExplainerTooltip presetKey="netRevenue" />
+            </span>
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+              isAllMode ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+            }`}>
+              {isAllMode ? '전사 합산' : (activeChannelGroup?.channelName || '선택 실적')}
+            </span>
+          </div>
+          <div>
+            <div className="flex items-baseline gap-2 flex-wrap mb-1">
+              <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
+                {formatRevenue(displayRevenue)}
+              </span>
+              <span className="text-sm font-semibold text-slate-400">원</span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md">
+                {displayRevenueFinancial.formatted}
+              </span>
+              {!isAllMode && activeChannelGroup && (
+                <span className="text-slate-400 font-medium">
+                  (전사 {grandRevenueFinancial.formatted} 중 <strong className="text-slate-700 font-bold">{activeChannelGroup.revenueSharePct.toFixed(1)}%</strong> 점유)
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
-      {/* VIEW 1: 📑 판매방식(채널)별 그룹 리포트 (사용자 핵심 요청사항) */}
-      {viewMode === 'CHANNEL_FIRST' && (
-        <div className="space-y-5">
-          {channelGroups.map((group) => {
-            const isExpanded = isChannelExpanded(group.channelName);
-            const channelFinancial = formatFinancialKorean(group.totalRevenue);
+        {/* Card 2: Rooms Sold */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <BedDouble size={16} className="text-brand-mint" /> 
+              <span>{isAllMode ? '전사 판매 객실' : '선택 채널 판매 객실'}</span>
+              <MetricExplainerTooltip presetKey="occupancy" />
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              계약 실적
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
+              {displayRooms.toLocaleString()}
+              <span className="text-base font-semibold text-slate-400 ml-1">실</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              {isAllMode 
+                ? '전체 판매 객실 합계' 
+                : `전체 ${grandTotals.rooms.toLocaleString()}실 중 ${displayRooms.toLocaleString()}실`}
+            </p>
+          </div>
+        </div>
 
-            return (
-              <div 
-                key={group.channelName}
-                className="bg-white rounded-[24px] border border-slate-200/90 shadow-xs overflow-hidden transition-all duration-200 hover:border-slate-300"
-              >
-                {/* Channel Header Summary Bar */}
-                <div 
-                  onClick={() => toggleChannel(group.channelName)}
-                  className="p-5 sm:p-6 bg-slate-50/70 hover:bg-slate-50 cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 select-none transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                      {group.iconType === 'group' && <Users className="w-5 h-5 text-indigo-600" />}
-                      {group.iconType === 'corporate' && <Building2 className="w-5 h-5 text-blue-600" />}
-                      {group.iconType === 'direct' && <Globe className="w-5 h-5 text-emerald-600" />}
-                      {group.iconType === 'ota' && <Plane className="w-5 h-5 text-sky-600" />}
-                      {group.iconType === 'phone' && <PhoneCall className="w-5 h-5 text-amber-600" />}
-                      {group.iconType === 'etc' && <Coins className="w-5 h-5 text-slate-600" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base lg:text-lg font-bold text-slate-900 tracking-tight">
-                          {group.channelName}
-                        </h3>
-                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${group.badgeColor}`}>
-                          {group.items.length}개 평형
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        전사 객실 매출 기여도: <strong className="text-slate-700 font-semibold">{group.revenueSharePct.toFixed(1)}%</strong>
-                      </p>
-                    </div>
-                  </div>
+        {/* Card 3: Total Guests */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <Users size={16} className="text-brand-mint" /> 
+              <span>{isAllMode ? '전사 총 투숙객' : '선택 채널 투숙객'}</span>
+              <MetricExplainerTooltip presetKey="visitorCount" />
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              정원 기준 환산
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
+              {displayGuests.toLocaleString()}
+              <span className="text-base font-semibold text-slate-400 ml-1">명</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              판매 평형별 정원 기준 인원
+            </p>
+          </div>
+        </div>
 
-                  {/* Channel Summary Metrics Pills */}
-                  <div className="flex items-center gap-3 sm:gap-6 flex-wrap font-financial">
-                    <div className="text-right">
-                      <div className="text-[11px] text-slate-400 font-medium">판매 객실</div>
-                      <div className="text-base font-extrabold text-slate-800">
-                        {group.totalRooms.toLocaleString()}<span className="text-xs text-slate-400 font-normal ml-0.5">실</span>
-                      </div>
-                    </div>
+        {/* Card 4: ADR */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <TrendingUp size={16} className="text-brand-mint" /> 
+              <span>{isAllMode ? '전사 평균 ADR' : '선택 채널 평균 ADR'}</span>
+              <MetricExplainerTooltip presetKey="adr" />
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              평균 객단가
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
+              {formatRevenue(displayAdr)}
+              <span className="text-base font-semibold text-slate-400 ml-1">원</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              해당 채널 매출액 ÷ 판매 객실수
+            </p>
+          </div>
+        </div>
 
-                    <div className="text-right">
-                      <div className="text-[11px] text-slate-400 font-medium">채널 총매출</div>
-                      <div className="text-base lg:text-lg font-extrabold text-slate-900 flex items-center justify-end gap-1.5">
-                        <span>{formatRevenue(group.totalRevenue)}원</span>
-                        <span className="text-[11px] font-bold text-brand-mint bg-brand-mint/10 px-1.5 py-0.2 rounded hidden sm:inline">
-                          {channelFinancial.short}
-                        </span>
-                      </div>
-                    </div>
+      </div>
 
-                    <div className="text-right hidden sm:block">
-                      <div className="text-[11px] text-slate-400 font-medium">평균 ADR</div>
-                      <div className="text-base font-bold text-slate-700">
-                        {formatRevenue(group.averageAdr)}원
-                      </div>
-                    </div>
+      {/* 4. MAIN CONTENT AREA */}
 
-                    <div className="text-right pl-2 border-l border-slate-200">
-                      <div className="text-[11px] text-slate-400 font-medium">전사 비중</div>
-                      <div className="text-base font-black text-emerald-700">
-                        {group.revenueSharePct.toFixed(1)}%
-                      </div>
-                    </div>
-
-                    <div className="text-slate-400 p-1">
-                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Segment Breakdown Table inside Channel */}
-                {isExpanded && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-200/80 text-xs font-bold text-slate-600">
-                          <th className="py-3 px-6 whitespace-nowrap">평형 (세그먼트)</th>
-                          <th className="py-3 px-4 text-right whitespace-nowrap">판매 객실</th>
-                          <th className="py-3 px-4 text-right whitespace-nowrap">매출액 (순매출)</th>
-                          <th className="py-3 px-4 text-right whitespace-nowrap">예상 투숙객</th>
-                          <th className="py-3 px-4 text-right whitespace-nowrap">객단가 (ADR)</th>
-                          <th className="py-3 px-4 text-right whitespace-nowrap">채널 내 비중</th>
-                          <th className="py-3 px-6 text-right whitespace-nowrap">전사 기여도</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-financial">
-                        {group.items.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3.5 px-6 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-800 text-sm">{item.roomType}</span>
-                                {item.roomType.includes('51') && (
-                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
-                                    대형
-                                  </span>
-                                )}
-                                {item.roomType.includes('펫룸') && (
-                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/60">
-                                    반려견
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4 text-sm text-right font-medium text-slate-700 whitespace-nowrap">
-                              {item.roomsSold.toLocaleString()}실
-                            </td>
-                            <td className="py-3.5 px-4 text-sm text-right font-bold text-slate-900 whitespace-nowrap">
-                              {formatRevenue(item.revenue)}원
-                            </td>
-                            <td className="py-3.5 px-4 text-sm text-right text-slate-600 whitespace-nowrap">
-                              {item.guests > 0 ? `${item.guests.toLocaleString()}명` : '-'}
-                            </td>
-                            <td className="py-3.5 px-4 text-sm text-right font-semibold text-slate-700 whitespace-nowrap">
-                              {item.adr > 0 ? `${formatRevenue(item.adr)}원` : '-'}
-                            </td>
-                            <td className="py-3.5 px-4 text-sm text-right font-bold text-slate-800 whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <div className="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden hidden sm:block">
-                                  <div 
-                                    className="bg-brand-mint h-full rounded-full" 
-                                    style={{ width: `${Math.min(100, Math.max(0, item.channelSharePct))}%` }} 
-                                  />
-                                </div>
-                                <span>{item.channelSharePct.toFixed(1)}%</span>
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-6 text-sm text-right font-medium text-slate-500 whitespace-nowrap">
-                              {item.grandSharePct.toFixed(1)}%
-                            </td>
-                          </tr>
-                        ))}
-
-                        {/* Channel Subtotal Row */}
-                        <tr className="bg-slate-100/70 border-t-2 border-slate-200 font-bold text-slate-900">
-                          <td className="py-3.5 px-6 text-sm">
-                            <span className="text-brand-mint font-black">[{group.channelName} 소계]</span>
-                          </td>
-                          <td className="py-3.5 px-4 text-sm text-right font-black">
-                            {group.totalRooms.toLocaleString()}실
-                          </td>
-                          <td className="py-3.5 px-4 text-sm text-right font-black text-slate-900">
-                            {formatRevenue(group.totalRevenue)}원
-                          </td>
-                          <td className="py-3.5 px-4 text-sm text-right">
-                            {group.totalGuests.toLocaleString()}명
-                          </td>
-                          <td className="py-3.5 px-4 text-sm text-right text-brand-mint font-extrabold">
-                            {formatRevenue(group.averageAdr)}원
-                          </td>
-                          <td className="py-3.5 px-4 text-sm text-right">
-                            100.0%
-                          </td>
-                          <td className="py-3.5 px-6 text-sm text-right text-emerald-700 font-extrabold">
-                            {group.revenueSharePct.toFixed(1)}%
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+      {/* 🌟 1. 기본 메인 뷰: 선택된 판매방식(기본: 단체영업(세미나))의 각 평형별 실적 상세 */}
+      {viewMode === 'FOCUS_SINGLE' && activeChannelGroup && (
+        <div className="bg-white rounded-[32px] p-7 border border-slate-200/90 shadow-xs space-y-6">
+          
+          {/* Main Card Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700">
+                <Users className="w-6 h-6" />
               </div>
-            );
-          })}
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                    {activeChannelGroup.channelName} 각 평형별 실적 상세
+                  </h2>
+                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeChannelGroup.badgeColor}`}>
+                    {activeChannelGroup.items.length}개 평형 판매
+                  </span>
+                  {activeChannelGroup.channelName.includes('단체영업') && (
+                    <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-brand-mint text-white shadow-2xs">
+                      세일즈본부 핵심 주력
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  선택하신 판매방식의 각 평형(세그먼트)별 판매 실적과 단가(ADR)입니다.
+                </p>
+              </div>
+            </div>
 
-          {channelGroups.length === 0 && !loading && (
-            <div className="bg-white rounded-3xl p-16 text-center text-slate-400 border border-slate-200">
-              해당 기간의 판매방식별 객실 실적 데이터가 없습니다.
+            {/* Quick Channel Pill Switcher */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-slate-400 mr-1">다른 판매방식:</span>
+              {channelGroups.slice(0, 4).map(g => (
+                <button
+                  key={g.channelName}
+                  type="button"
+                  onClick={() => setSelectedChannel(g.channelName)}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer whitespace-nowrap ${
+                    selectedChannel === g.channelName
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-2xs font-bold'
+                      : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                  }`}
+                >
+                  {g.channelName.split('(')[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Segment Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse font-financial">
+              <thead>
+                <tr className="border-b-2 border-slate-800 text-sm font-bold text-slate-900">
+                  <th className="py-4 px-6 whitespace-nowrap">평형 (세그먼트)</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">판매 객실</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">매출액 (순매출)</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">예상 투숙객</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">객단가 (ADR)</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">
+                    {activeChannelGroup.channelName.split('(')[0]} 내 비중
+                  </th>
+                  <th className="py-4 px-6 text-right whitespace-nowrap">전사 매출 기여도</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {activeChannelGroup.items.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-extrabold text-slate-900 text-base">{item.roomType}</span>
+                        {item.roomType.includes('51') && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70">
+                            대형
+                          </span>
+                        )}
+                        {item.roomType.includes('35') && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/70">
+                            중형
+                          </span>
+                        )}
+                        {item.roomType.includes('16') && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                            스탠다드
+                          </span>
+                        )}
+                        {item.roomType.includes('펫룸') && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/70">
+                            반려견
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right font-medium text-slate-700 whitespace-nowrap">
+                      {item.roomsSold.toLocaleString()}실
+                    </td>
+                    <td className="py-4 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
+                      {formatRevenue(item.revenue)}원
+                    </td>
+                    <td className="py-4 px-4 text-right text-slate-600 whitespace-nowrap">
+                      {item.guests > 0 ? `${item.guests.toLocaleString()}명` : '-'}
+                    </td>
+                    <td className="py-4 px-4 text-right font-semibold text-slate-800 whitespace-nowrap">
+                      {item.adr > 0 ? `${formatRevenue(item.adr)}원` : '-'}
+                    </td>
+                    <td className="py-4 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden hidden sm:block">
+                          <div 
+                            className="bg-brand-mint h-full rounded-full" 
+                            style={{ width: `${Math.min(100, Math.max(0, item.channelSharePct))}%` }} 
+                          />
+                        </div>
+                        <span>{item.channelSharePct.toFixed(1)}%</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-right font-medium text-slate-500 whitespace-nowrap">
+                      {item.grandSharePct.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Subtotal Row */}
+                <tr className="bg-slate-100/90 border-t-2 border-slate-300 font-bold text-slate-900">
+                  <td className="py-4 px-6 text-sm">
+                    <span className="text-brand-mint font-black">[{activeChannelGroup.channelName} 총합계]</span>
+                  </td>
+                  <td className="py-4 px-4 text-sm text-right font-black">
+                    {activeChannelGroup.totalRooms.toLocaleString()}실
+                  </td>
+                  <td className="py-4 px-4 text-sm text-right font-black text-slate-900">
+                    {formatRevenue(activeChannelGroup.totalRevenue)}원
+                  </td>
+                  <td className="py-4 px-4 text-sm text-right font-bold">
+                    {activeChannelGroup.totalGuests.toLocaleString()}명
+                  </td>
+                  <td className="py-4 px-4 text-sm text-right text-brand-mint font-extrabold">
+                    {formatRevenue(activeChannelGroup.averageAdr)}원
+                  </td>
+                  <td className="py-4 px-4 text-sm text-right font-black">
+                    100.0%
+                  </td>
+                  <td className="py-4 px-6 text-sm text-right text-emerald-700 font-extrabold">
+                    {activeChannelGroup.revenueSharePct.toFixed(1)}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {activeChannelGroup.items.length === 0 && (
+            <div className="py-12 text-center text-slate-400">
+              해당 기간의 {activeChannelGroup.channelName} 실적 데이터가 없습니다.
             </div>
           )}
         </div>
       )}
 
-      {/* VIEW 2: 📊 크로스 피벗 매트릭스 (행=판매방식, 열=평형) */}
+      {/* 🌟 2. 크로스 피벗 매트릭스 뷰 (행=판매방식, 열=평형) */}
       {viewMode === 'PIVOT_MATRIX' && (
         <div className="bg-white rounded-[32px] p-7 border border-slate-200/90 shadow-xs space-y-4 overflow-hidden">
           <div className="flex items-center justify-between">
@@ -789,7 +739,7 @@ export default function GroupSales() {
                 판매방식 × 평형별 교차 실적 매트릭스 (Pivot)
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                행(판매 채널)과 열(객실 평형)의 교차 매출액 및 [판매실수 / ADR]을 한눈에 조망합니다.
+                모든 판매방식(행)과 평형(열)의 교차 매출액 및 [판매실수 / ADR]을 한눈에 조망합니다.
               </p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
@@ -801,7 +751,7 @@ export default function GroupSales() {
             <table className="w-full text-left border-collapse font-financial text-xs">
               <thead>
                 <tr className="bg-slate-100 border-b-2 border-slate-300 text-slate-700 font-bold">
-                  <th className="py-3.5 px-4 sticky left-0 bg-slate-100 z-10 whitespace-nowrap min-w-[150px]">
+                  <th className="py-3.5 px-4 sticky left-0 bg-slate-100 z-10 whitespace-nowrap min-w-[160px]">
                     판매방식 (채널)
                   </th>
                   {uniqueRoomTypes.map(rt => (
@@ -817,13 +767,27 @@ export default function GroupSales() {
               <tbody className="divide-y divide-slate-200">
                 {channelGroups.map(group => {
                   const itemByRoom = new Map(group.items.map(i => [i.roomType, i]));
+                  const isCurrentTarget = group.channelName.includes('단체영업');
 
                   return (
-                    <tr key={group.channelName} className="hover:bg-slate-50 transition-colors">
+                    <tr 
+                      key={group.channelName} 
+                      className={`transition-colors cursor-pointer ${
+                        isCurrentTarget ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'hover:bg-slate-50'
+                      }`}
+                      onClick={() => {
+                        setSelectedChannel(group.channelName);
+                        setViewMode('FOCUS_SINGLE');
+                      }}
+                      title="클릭하여 이 판매방식의 평형별 상세 보기"
+                    >
                       <td className="py-3 px-4 font-bold text-slate-900 sticky left-0 bg-white z-10 whitespace-nowrap border-r border-slate-200 shadow-2xs">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-brand-mint" />
+                          <span className={`w-2 h-2 rounded-full ${isCurrentTarget ? 'bg-indigo-600 ring-2 ring-indigo-200' : 'bg-brand-mint'}`} />
                           <span>{group.channelName}</span>
+                          {isCurrentTarget && (
+                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-1 rounded">주력</span>
+                          )}
                         </div>
                       </td>
 
@@ -904,112 +868,119 @@ export default function GroupSales() {
         </div>
       )}
 
-      {/* VIEW 3: 🏛️ 평형(세그먼트) 기준 뷰 (평형별 드릴다운) */}
-      {viewMode === 'SEGMENT_FIRST' && (
+      {/* 🌟 3. 전체 판매방식 아코디언 목록 뷰 */}
+      {viewMode === 'ALL_CHANNELS' && (
         <div className="space-y-4">
-          {segmentGroups.map((seg) => {
-            const isExpanded = isSegmentExpanded(seg.roomType);
-            const segFinancial = formatFinancialKorean(seg.totalRevenue);
+          {channelGroups.map((group) => {
+            const channelFinancial = formatFinancialKorean(group.totalRevenue);
+            const isTarget = group.channelName.includes('단체영업');
 
             return (
               <div 
-                key={seg.roomType}
-                className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden"
+                key={group.channelName}
+                className={`bg-white rounded-[24px] border shadow-xs overflow-hidden transition-all duration-200 ${
+                  isTarget ? 'border-indigo-300 ring-2 ring-indigo-50' : 'border-slate-200/90'
+                }`}
               >
-                <div 
-                  onClick={() => toggleSegment(seg.roomType)}
-                  className="p-5 bg-slate-50/70 hover:bg-slate-50 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 select-none transition-colors"
-                >
+                <div className="p-5 bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-white border border-slate-200 text-brand-mint font-black text-sm">
-                      {seg.roomType.replace('평', '')}P
+                    <div className="p-2 rounded-xl bg-white border border-slate-200">
+                      {group.iconType === 'group' && <Users className="w-5 h-5 text-indigo-600" />}
+                      {group.iconType === 'corporate' && <Building2 className="w-5 h-5 text-blue-600" />}
+                      {group.iconType === 'direct' && <Globe className="w-5 h-5 text-emerald-600" />}
+                      {group.iconType === 'ota' && <Plane className="w-5 h-5 text-sky-600" />}
+                      {group.iconType === 'phone' && <PhoneCall className="w-5 h-5 text-amber-600" />}
+                      {group.iconType === 'etc' && <Coins className="w-5 h-5 text-slate-600" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-base font-bold text-slate-900">{seg.roomType}</h4>
-                        <span className="text-xs text-slate-400 font-normal">({seg.channels.length}개 판매채널)</span>
+                        <h4 className="text-base font-bold text-slate-900">{group.channelName}</h4>
+                        {isTarget && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-600 text-white">주력</span>
+                        )}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${group.badgeColor}`}>
+                          {group.items.length}개 평형
+                        </span>
                       </div>
                       <p className="text-xs text-slate-400">
-                        전사 객실 매출 비중: <strong className="text-slate-700 font-semibold">{seg.grandSharePct.toFixed(1)}%</strong>
+                        전사 기여도: <strong className="text-slate-700 font-semibold">{group.revenueSharePct.toFixed(1)}%</strong>
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-5 font-financial text-right">
                     <div>
-                      <div className="text-[11px] text-slate-400 font-medium">판매 실적</div>
-                      <div className="text-sm font-extrabold text-slate-800">{seg.totalRooms.toLocaleString()}실</div>
+                      <div className="text-[11px] text-slate-400 font-medium">판매 객실</div>
+                      <div className="text-sm font-extrabold text-slate-800">{group.totalRooms.toLocaleString()}실</div>
                     </div>
                     <div>
-                      <div className="text-[11px] text-slate-400 font-medium">평형 총매출</div>
-                      <div className="text-base font-extrabold text-slate-900 flex items-center justify-end gap-1">
-                        <span>{formatRevenue(seg.totalRevenue)}원</span>
-                        <span className="text-[10px] font-bold text-brand-mint bg-brand-mint/10 px-1.5 py-0.2 rounded hidden sm:inline">
-                          {segFinancial.short}
-                        </span>
-                      </div>
+                      <div className="text-[11px] text-slate-400 font-medium">채널 총매출</div>
+                      <div className="text-base font-extrabold text-slate-900">{formatRevenue(group.totalRevenue)}원</div>
+                      <div className="text-[10px] text-slate-400 font-semibold">{channelFinancial.formatted}</div>
                     </div>
                     <div>
                       <div className="text-[11px] text-slate-400 font-medium">평균 ADR</div>
-                      <div className="text-sm font-bold text-slate-700">{formatRevenue(seg.averageAdr)}원</div>
+                      <div className="text-sm font-bold text-slate-700">{formatRevenue(group.averageAdr)}원</div>
                     </div>
-                    <div className="text-slate-400 p-1">
-                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedChannel(group.channelName);
+                        setViewMode('FOCUS_SINGLE');
+                      }}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-all"
+                    >
+                      상세 보기
+                    </button>
                   </div>
                 </div>
 
-                {isExpanded && (
-                  <div className="p-4 bg-white overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs font-financial">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-slate-500 font-bold">
-                          <th className="py-2.5 px-4">판매방식 (채널)</th>
-                          <th className="py-2.5 px-4 text-right">판매 객실</th>
-                          <th className="py-2.5 px-4 text-right">매출액</th>
-                          <th className="py-2.5 px-4 text-right">ADR</th>
-                          <th className="py-2.5 px-4 text-right">해당 평형 내 비중</th>
+                <div className="p-4 overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs font-financial">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-500 font-bold">
+                        <th className="py-2.5 px-4">평형</th>
+                        <th className="py-2.5 px-4 text-right">판매 객실</th>
+                        <th className="py-2.5 px-4 text-right">매출액</th>
+                        <th className="py-2.5 px-4 text-right">ADR</th>
+                        <th className="py-2.5 px-4 text-right">채널 내 비중</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {group.items.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="py-2 px-4 font-bold text-slate-800">{item.roomType}</td>
+                          <td className="py-2 px-4 text-right">{item.roomsSold}실</td>
+                          <td className="py-2 px-4 text-right font-bold text-slate-900">{formatRevenue(item.revenue)}원</td>
+                          <td className="py-2 px-4 text-right">{item.adr > 0 ? `${formatRevenue(item.adr)}원` : '-'}</td>
+                          <td className="py-2 px-4 text-right font-bold text-brand-mint">{item.channelSharePct.toFixed(1)}%</td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {seg.channels.map((ch, idx) => {
-                          const pct = seg.totalRevenue > 0 ? (ch.revenue / seg.totalRevenue) * 100 : 0;
-                          return (
-                            <tr key={idx} className="hover:bg-slate-50">
-                              <td className="py-2.5 px-4 font-semibold text-slate-800">{ch.channelName}</td>
-                              <td className="py-2.5 px-4 text-right">{ch.rooms}실</td>
-                              <td className="py-2.5 px-4 text-right font-bold text-slate-900">{formatRevenue(ch.revenue)}원</td>
-                              <td className="py-2.5 px-4 text-right">{ch.adr > 0 ? `${formatRevenue(ch.adr)}원` : '-'}</td>
-                              <td className="py-2.5 px-4 text-right font-bold text-brand-mint">{pct.toFixed(1)}%</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* 5. Insight & Strategy Card */}
+      {/* 5. Strategy Insight Footer */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-[24px] p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-white/10 text-brand-mint shrink-0">
             <Sparkles size={20} />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-white">경영진 세일즈 전략 의사결정 인사이트</h4>
+            <h4 className="font-bold text-sm text-white">세일즈본부 단체영업(세미나) 주력 전략 인사이트</h4>
             <p className="text-xs text-slate-300 mt-0.5">
-              단체영업(세미나)의 16평 대량 점유와 자사 홈페이지/APP의 51평 프리미엄 단가(ADR) 방어 효과를 교차 분석하여 패키지 가격 정책을 최적화하세요.
+              세미나/기업연수 등 대량 단체 고객을 위한 16평/35평 패키지 견적과 F&B 연계 시너지를 분석하여 객단가를 방어하세요.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
           <span className="text-[11px] font-semibold bg-white/10 px-3 py-1.5 rounded-lg border border-white/15 text-slate-200">
-            SSOT 교차 분석 Ver 6.0
+            세일즈본부 SSOT Ver 6.0
           </span>
         </div>
       </div>

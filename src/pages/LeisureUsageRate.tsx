@@ -6,6 +6,8 @@ import {
   ArrowUpRight, ArrowDownRight, Minus
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
+import { useDate } from '../contexts/DateContext';
+import GlobalDatePicker from '../components/GlobalDatePicker';
 import type { 
   LeisureUsageRateResponse,
   LeisureYoyMatrixResponse,
@@ -16,7 +18,6 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 
 // Distinct modern color palette for facilities
 const FACILITY_COLORS: Record<string, string> = {
-  '레저본부 전체(소계)': '#059669', // Emerald
   '놀이동산': '#3b82f6', // Blue
   '미디어아트센터': '#8b5cf6', // Violet
   '벨포레 목장': '#10b981', // Teal/Green
@@ -37,6 +38,8 @@ const DEFAULT_COLORS = [
 ];
 
 export default function LeisureUsageRate() {
+  const { startDate } = useDate();
+
   const [usageData, setUsageData] = useState<LeisureUsageRateResponse | null>(null);
   const [yoyData, setYoyData] = useState<LeisureYoyMatrixResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -45,6 +48,9 @@ export default function LeisureUsageRate() {
   // Selected Facility for YoY Matrix & Chart
   const [selectedFacility, setSelectedFacility] = useState<string>('놀이동산');
   
+  // Selected Month override for KPI Cards
+  const [selectedMonthOverride, setSelectedMonthOverride] = useState<string | null>(null);
+
   // Chart View Mode: 'YOY' (Selected Facility 24 vs 25 vs 26) | 'ALL_TIMELINE' (All Facilities Monthly Timeline)
   const [chartMode, setChartMode] = useState<'YOY' | 'ALL_TIMELINE'>('YOY');
 
@@ -97,33 +103,86 @@ export default function LeisureUsageRate() {
     fetchData();
   }, []);
 
-  // Latest month data points for KPI Cards
-  const latestMonthSummary = useMemo(() => {
-    if (!usageData?.months || usageData.months.length === 0 || !usageData.series) return null;
-    const latestMonth = usageData.months[usageData.months.length - 1];
+  // Available months list sorted descending (newest first)
+  const availableMonthsDescending = useMemo(() => {
+    if (!usageData?.months) return [];
+    return [...usageData.months].reverse();
+  }, [usageData?.months]);
 
-    const subtotalSeries = usageData.series.find((s) => s.facilityName === '레저본부 전체(소계)');
-    const subtotalPoint = subtotalSeries?.data.find((d) => d.month === latestMonth);
+  const latestAvailableMonth = useMemo(() => {
+    if (!usageData?.months || usageData.months.length === 0) return '';
+    return usageData.months[usageData.months.length - 1];
+  }, [usageData?.months]);
 
-    // Selected facility's latest point
+  // Determine active month for KPI Cards: sync with global DatePicker (startDate) or manual override
+  const activeMonth = useMemo(() => {
+    if (selectedMonthOverride && usageData?.months?.includes(selectedMonthOverride)) {
+      return selectedMonthOverride;
+    }
+    const dateMonth = startDate ? startDate.slice(0, 7) : '';
+    if (usageData?.months && usageData.months.includes(dateMonth)) {
+      return dateMonth;
+    }
+    return latestAvailableMonth;
+  }, [selectedMonthOverride, startDate, usageData?.months, latestAvailableMonth]);
+
+  // Active Month summary data points for KPI Cards (ZERO bug fix: robust roomGuests & facility extraction)
+  const activeMonthSummary = useMemo(() => {
+    if (!usageData?.series || !activeMonth) return null;
+
+    // 1. Get total room guests for activeMonth across series data
+    let roomGuests = 0;
+    for (const s of usageData.series) {
+      const pt = s.data.find((d) => d.month === activeMonth);
+      if (pt && pt.totalRoomGuests > 0) {
+        roomGuests = pt.totalRoomGuests;
+        break;
+      }
+    }
+
+    // 2. Selected facility data for activeMonth
     const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
-    const selPoint = selSeries?.data.find((d) => d.month === latestMonth);
+    const selPoint = selSeries?.data.find((d) => d.month === activeMonth);
+    const selRate = selPoint?.usageRate ?? 0;
+    const selVisitors = selPoint?.visitors ?? 0;
+
+    // 3. Find top facility for activeMonth
+    let topVenue = { name: '-', usageRate: 0, visitors: 0 };
+    for (const s of usageData.series) {
+      const pt = s.data.find((d) => d.month === activeMonth);
+      if (pt && pt.usageRate > topVenue.usageRate) {
+        topVenue = {
+          name: s.facilityName,
+          usageRate: pt.usageRate,
+          visitors: pt.visitors,
+        };
+      }
+    }
 
     return {
-      month: latestMonth,
-      subtotalUsageRate: subtotalPoint?.usageRate ?? 0,
-      totalVisitors: subtotalPoint?.visitors ?? 0,
-      totalRoomGuests: subtotalPoint?.totalRoomGuests ?? 0,
-      selectedVenueLatestRate: selPoint?.usageRate ?? 0,
-      selectedVenueLatestVisitors: selPoint?.visitors ?? 0,
+      month: activeMonth,
+      roomGuests,
+      selectedVenue: {
+        name: selectedFacility,
+        usageRate: selRate,
+        visitors: selVisitors,
+      },
+      topVenue,
     };
-  }, [usageData, selectedFacility]);
+  }, [usageData, activeMonth, selectedFacility]);
 
   // Months 1 to 12 labels
   const monthLabels = useMemo(() => [
     '1월', '2월', '3월', '4월', '5월', '6월', 
     '7월', '8월', '9월', '10월', '11월', '12월'
   ], []);
+
+  // Active month number (1~12) for row highlighting
+  const activeMonthNumber = useMemo(() => {
+    if (!activeMonth) return null;
+    const parts = activeMonth.split('-');
+    return parts.length === 2 ? parseInt(parts[1], 10) : null;
+  }, [activeMonth]);
 
   // YoY Chart Option (for selected facility: 2024 vs 2025 vs 2026 across 1~12월)
   const yoyChartOption = useMemo(() => {
@@ -394,7 +453,7 @@ export default function LeisureUsageRate() {
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-12 max-w-[1600px] mx-auto">
       
-      {/* 1. Header Banner */}
+      {/* 1. Header Banner with GlobalDatePicker */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-[32px] p-6 lg:p-10 text-white relative overflow-hidden shadow-lg">
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute right-32 -bottom-20 w-48 h-48 bg-emerald-400/20 rounded-full blur-2xl"></div>
@@ -418,10 +477,15 @@ export default function LeisureUsageRate() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+            {/* Global Date Picker Integration */}
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-1.5 border border-white/20">
+              <GlobalDatePicker showPresets={false} />
+            </div>
+
             <button
               onClick={fetchData}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0"
             >
               <RefreshCw size={15} /> 새로고침
             </button>
@@ -430,26 +494,47 @@ export default function LeisureUsageRate() {
       </div>
 
       {/* 2. Top Summary KPI Cards */}
-      {latestMonthSummary && (
+      {activeMonthSummary && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <Calendar size={14} className="text-emerald-600" />
-              <span>최신 실적 기준 월: <b className="text-emerald-700">{latestMonthSummary.month}</b></span>
+          
+          {/* Month Selector Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+            <div className="flex items-center gap-2.5">
+              <Calendar size={16} className="text-emerald-600" />
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                실적 기준 월 선택:
+              </span>
+              <select
+                value={activeMonth}
+                onChange={(e) => setSelectedMonthOverride(e.target.value)}
+                className="px-3.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {availableMonthsDescending.map((m) => (
+                  <option key={m} value={m}>
+                    {m.split('-')[0]}년 {parseInt(m.split('-')[1], 10)}월 실적 ({m})
+                  </option>
+                ))}
+              </select>
+              {activeMonth === latestAvailableMonth && (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                  최신 집계월
+                </span>
+              )}
             </div>
+
             <span className="text-xs font-medium text-slate-400">
-              * 백엔드 V6 사전 연산 (Zero Slice Summation)
+              * 상단 날짜 선택기(GlobalDatePicker) 및 기준 월 셀렉터와 실시간 연동됩니다.
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             
-            {/* Card 1: Subtotal Usage Rate */}
+            {/* Card 1: Selected Facility Usage Rate */}
             <div className="bg-white rounded-3xl p-6 border border-emerald-200/80 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-6 -mt-6"></div>
               <div className="flex items-center justify-between mb-4 relative z-10">
-                <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase whitespace-nowrap">
-                  레저본부 전체 이용률
+                <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                  [{selectedFacility}] 당월 이용률
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                   <Ticket size={20} />
@@ -457,20 +542,20 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-1.5 relative z-10 whitespace-nowrap">
                 <span className="text-3xl font-extrabold text-emerald-700 tabular-nums">
-                  {latestMonthSummary.subtotalUsageRate.toFixed(1)}
+                  {activeMonthSummary.selectedVenue.usageRate.toFixed(1)}
                 </span>
                 <span className="text-sm font-bold text-emerald-600">%</span>
               </div>
               <div className="text-xs text-slate-500 mt-2 font-medium relative z-10 whitespace-nowrap">
-                전체 숙박객 대비 총 레저 티켓 이용 배율
+                {activeMonth} 기준 숙박객 대비 이용률
               </div>
             </div>
 
-            {/* Card 2: Total Leisure Visitors */}
+            {/* Card 2: Selected Facility Visitors */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-blue-600 tracking-wider uppercase whitespace-nowrap">
-                  당월 레저 진성 이용객
+                <span className="text-xs font-bold text-blue-600 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                  [{selectedFacility}] 당월 이용객
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
                   <Users size={20} />
@@ -478,12 +563,12 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
                 <span className="text-3xl font-extrabold text-slate-900 tabular-nums">
-                  {latestMonthSummary.totalVisitors.toLocaleString()}
+                  {activeMonthSummary.selectedVenue.visitors.toLocaleString()}
                 </span>
                 <span className="text-sm font-semibold text-slate-500">명</span>
               </div>
               <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
-                검증된 방문객 합산 (is_visitor_count = 1)
+                진성 티켓 이용객 (is_visitor_count = 1)
               </div>
             </div>
 
@@ -499,33 +584,35 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
                 <span className="text-3xl font-extrabold text-indigo-700 tabular-nums">
-                  {latestMonthSummary.totalRoomGuests.toLocaleString()}
+                  {activeMonthSummary.roomGuests.toLocaleString()}
                 </span>
                 <span className="text-sm font-semibold text-indigo-500">명</span>
               </div>
               <div className="text-xs text-indigo-400 mt-2 font-medium whitespace-nowrap">
-                타입별 객실 정원 반영 (16/35/51평)
+                객실 타입별 정원(16·35·51평) 반영 기준
               </div>
             </div>
 
-            {/* Card 4: Selected Facility Status */}
+            {/* Card 4: Top Venue for that Month */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-amber-600 tracking-wider uppercase whitespace-nowrap">
-                  선택 영업장: {selectedFacility}
+                  당월 최고 이용률 영업장
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                   <TrendingUp size={20} />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <span className="text-3xl font-extrabold text-amber-600 tabular-nums">
-                  {latestMonthSummary.selectedVenueLatestRate.toFixed(1)}%
+                <span className="text-xl font-extrabold text-slate-900 truncate max-w-[140px]">
+                  {activeMonthSummary.topVenue.name}
                 </span>
-                <span className="text-xs text-slate-500 font-medium">당월 이용률</span>
+                <span className="text-2xl font-black text-amber-600 tabular-nums">
+                  {activeMonthSummary.topVenue.usageRate.toFixed(1)}%
+                </span>
               </div>
               <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
-                {latestMonthSummary.selectedVenueLatestVisitors.toLocaleString()}명 이용
+                {activeMonthSummary.topVenue.visitors.toLocaleString()}명 이용 (최고 침투율)
               </div>
             </div>
 
@@ -675,7 +762,7 @@ export default function LeisureUsageRate() {
           <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-4 px-6 text-center w-24">월 (Month)</th>
+                <th className="py-4 px-6 text-center w-28">월 (Month)</th>
                 <th className="py-4 px-6 text-center">2024년 실적</th>
                 <th className="py-4 px-6 text-center">2025년 실적</th>
                 <th className="py-4 px-6 text-center bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80">
@@ -702,14 +789,25 @@ export default function LeisureUsageRate() {
                   yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
                 }
 
+                const isCurrentActiveMonth = monthNum === activeMonthNumber;
+
                 return (
                   <tr 
                     key={monthNum}
-                    className="hover:bg-slate-50/80 transition-colors"
+                    className={`transition-colors ${
+                      isCurrentActiveMonth 
+                        ? 'bg-emerald-50/40 font-semibold' 
+                        : 'hover:bg-slate-50/80'
+                    }`}
                   >
                     {/* Month Cell */}
                     <td className="py-4 px-6 text-center font-extrabold text-slate-800 bg-slate-50/30 text-sm">
-                      {monthNum}월
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span>{monthNum}월</span>
+                        {isCurrentActiveMonth && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        )}
+                      </div>
                     </td>
 
                     {/* 2024 Column */}

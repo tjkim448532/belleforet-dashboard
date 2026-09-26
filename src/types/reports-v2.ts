@@ -214,3 +214,26 @@ export interface CustomerJourneyBundlesV2Response {
     daily_quantity_formatted: string;
   }>;
 }
+
+// ============================================================================
+// ⑧ 레저본부 영업장별 숙박객 대비 이용률 리포트 (leisure-usage-rate)
+// ============================================================================
+export interface LeisureUsageRateDataPoint {
+  month: string;
+  usageRate: number; // e.g. 142.3 (%)
+  visitors: number; // e.g. 18230 (명)
+  totalRoomGuests: number; // e.g. 12810 (명)
+}
+
+export interface LeisureUsageRateSeries {
+  facilityName: string;
+  data: LeisureUsageRateDataPoint[];
+}
+
+export interface LeisureUsageRateResponse {
+  success: boolean;
+  months: string[];
+  series: LeisureUsageRateSeries[];
+  error?: string;
+}
+

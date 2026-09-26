@@ -22,6 +22,7 @@ import ResortBusiness from './pages/ResortBusiness';
 import GolfBusiness from './pages/GolfBusiness';
 import LeisureFacility from './pages/LeisureFacility';
 import LeisureOrganization from './pages/LeisureOrganization';
+import LeisureUsageRate from './pages/LeisureUsageRate';
 import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 
@@ -79,6 +80,8 @@ export function App() {
                       <Route path="leisure" element={<LeisureFacility />} />
                       <Route path="leisure/organization" element={<LeisureOrganization />} />
                       <Route path="leisure-organization" element={<LeisureOrganization />} />
+                      <Route path="leisure/usage-rate" element={<LeisureUsageRate />} />
+                      <Route path="leisure-usage-rate" element={<LeisureUsageRate />} />
                       <Route path="target-simulator" element={<TargetSimulator />} />
                       <Route path="strategic-simulator" element={<StrategicSimulator />} />
                       <Route path="target-simulator/strategic" element={<StrategicSimulator />} />

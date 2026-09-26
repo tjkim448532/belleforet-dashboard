@@ -50,49 +50,86 @@ export default function GolfBusiness() {
 
   const normalizedChannels = useMemo(() => {
     if (!data?.channels) return [];
-    return data.channels.map((c: any) => {
-      const venueName = c.venueName || c.venue_name || '기타';
-      const productGroup = c.productGroup || c.product_group || c.ticketGroup || c.ticket_group || '일반';
-      const revenue = Number(c.revenue || c.totalRevenue || 0);
-      const revenueFormatted = c.revenueFormatted || c.revenue_formatted || Math.round(revenue).toLocaleString();
-      const quantity = Number(c.quantity || 0);
-      const quantityFormatted = c.quantityFormatted || c.quantity_formatted || quantity.toLocaleString();
-      const players = Number(c.players || c.playerCount || 0);
-      const playersFormatted = c.playersFormatted || c.players_formatted || c.playerCountFormatted || players.toLocaleString();
-      const revenueSharePct = Number(c.revenueSharePct ?? c.revenue_share_pct ?? 0);
-      
-      const isGreenFee = venueName.includes('그린피') || productGroup.includes('그린피');
-      const isCart = venueName.includes('카트') || productGroup.includes('카트');
-      
-      let displayUnit = '건 결제';
-      let displayCountFormatted = quantityFormatted;
-      if (isGreenFee) {
-        displayUnit = '명 내장';
-        displayCountFormatted = playersFormatted !== '0' ? playersFormatted : quantityFormatted;
-      } else if (isCart) {
-        displayUnit = '대 대여';
-      }
+    return data.channels
+      .map((c: any) => {
+        const venueName = c.venueName || c.venue_name || '기타';
+        const productGroup = c.productGroup || c.product_group || c.ticketGroup || c.ticket_group || '일반';
+        const revenue = Number(c.revenue || c.totalRevenue || 0);
+        const revenueFormatted = c.revenueFormatted || c.revenue_formatted || Math.round(revenue).toLocaleString();
+        const quantity = Number(c.quantity || 0);
+        const quantityFormatted = c.quantityFormatted || c.quantity_formatted || quantity.toLocaleString();
+        const players = Number(c.players || c.playerCount || 0);
+        const playersFormatted = c.playersFormatted || c.players_formatted || c.playerCountFormatted || players.toLocaleString();
+        const revenueSharePct = Number(c.revenueSharePct ?? c.revenue_share_pct ?? 0);
+        
+        const isGreenFee = venueName.includes('그린피') || productGroup.includes('그린피');
+        const isCart = venueName.includes('카트') || productGroup.includes('카트');
+        
+        let displayUnit = '건 결제';
+        let displayCountFormatted = quantityFormatted;
+        if (isGreenFee) {
+          displayUnit = '명 내장';
+          displayCountFormatted = playersFormatted !== '0' ? playersFormatted : quantityFormatted;
+        } else if (isCart) {
+          displayUnit = '대 대여';
+        }
 
-      const unitPrice = players > 0 
-        ? Math.round(revenue / players) 
-        : (quantity > 0 ? Math.round(revenue / quantity) : 0);
+        const unitPrice = players > 0 
+          ? Math.round(revenue / players) 
+          : (quantity > 0 ? Math.round(revenue / quantity) : 0);
 
-      return {
-        venueName,
-        productGroup,
-        revenue,
-        revenueFormatted,
-        quantity,
-        quantityFormatted,
-        players,
-        playersFormatted,
-        revenueSharePct,
-        displayUnit,
-        displayCountFormatted,
-        unitPrice,
-        unitPriceFormatted: unitPrice > 0 ? unitPrice.toLocaleString() : '-'
-      };
-    });
+        let displayName = venueName;
+        let description = '';
+
+        if (isGreenFee) {
+          displayName = '그린피';
+          description = '코스 라운딩 이용료';
+        } else if (isCart) {
+          displayName = '카트대여';
+          description = '골프 전동카트 대여료';
+        } else if (venueName.includes('스타트')) {
+          displayName = '클럽-스타트하우스';
+          description = '그늘집/스타트하우스 식음';
+        } else if (venueName.includes('레스토랑')) {
+          displayName = '클럽-레스토랑';
+          description = '클럽하우스 대식당 식음';
+        } else if (venueName.includes('프로샵')) {
+          displayName = '프로샵';
+          description = '골프용품 및 의류 판매';
+        } else if (venueName.includes('기타매출')) {
+          if (productGroup.includes('대여품')) {
+            displayName = '기타매출 (장비 대여)';
+            description = '골프채, 골프화 등 장비 렌탈피';
+          } else {
+            displayName = '기타매출 (부대 잡수익)';
+            description = '락커비, 홀인원 보험, 위약금 등';
+          }
+        }
+
+        return {
+          venueName,
+          displayName,
+          description,
+          productGroup,
+          revenue,
+          revenueFormatted,
+          quantity,
+          quantityFormatted,
+          players,
+          playersFormatted,
+          revenueSharePct,
+          displayUnit,
+          displayCountFormatted,
+          unitPrice,
+          unitPriceFormatted: unitPrice > 0 ? unitPrice.toLocaleString() : '-'
+        };
+      })
+      // 0원짜리 회계 장부 계정(City Ledger, Room Guest Ledger 등) 및 실적 없는 더미 항목 완전 삭제
+      .filter((c: any) => {
+        const isLedger = (c.productGroup && c.productGroup.includes('Ledger')) || (c.venueName === '골프장' && c.revenue === 0);
+        const isZero = (c.revenue === 0 && c.quantity === 0);
+        return !isLedger && !isZero;
+      });
   }, [data]);
 
   if (loading || !data) {
@@ -289,36 +326,45 @@ export default function GolfBusiness() {
               </h2>
             </div>
             <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto">
-              공식 마트 데이터 ({normalizedChannels.length}개 부문 집계)
+              공식 마트 데이터 ({normalizedChannels.length}개 유효 부문)
             </span>
           </div>
 
           {/* 채널/영업장별 카드 그리드 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {normalizedChannels.map((ch, idx) => (
               <div 
                 key={`${ch.productGroup}-${ch.venueName}-${idx}`}
-                className={`p-5 rounded-2xl border transition-all duration-200 ${
+                className={`p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
                   idx === 0 
                     ? 'bg-gradient-to-br from-emerald-50/90 to-teal-50/40 border-emerald-200 shadow-xs' 
                     : 'bg-slate-50/70 border-slate-200/80 hover:bg-white hover:shadow-xs'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                    {idx === 0 && <Award className="w-3.5 h-3.5 text-amber-500" />}
-                    {ch.venueName}
-                  </span>
-                  <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                    점유 {ch.revenueSharePct}%
-                  </span>
-                </div>
-                
-                <div className="text-2xl font-black text-slate-900 my-1">
-                  {ch.displayCountFormatted} <span className="text-xs font-normal text-slate-500">{ch.displayUnit}</span>
+                <div>
+                  <div className="flex items-start justify-between mb-1 gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                        {idx === 0 && <Award className="w-3.5 h-3.5 text-amber-500" />}
+                        {ch.displayName}
+                      </span>
+                      {ch.description && (
+                        <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                          {ch.description}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full whitespace-nowrap">
+                      점유 {ch.revenueSharePct}%
+                    </span>
+                  </div>
+                  
+                  <div className="text-2xl font-black text-slate-900 my-2">
+                    {ch.displayCountFormatted} <span className="text-xs font-normal text-slate-500">{ch.displayUnit}</span>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5 text-[11px] text-slate-600 mt-3 pt-2 border-t border-slate-200/60">
+                <div className="space-y-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200/60">
                   <div className="flex justify-between">
                     <span className="text-slate-400">상품 분류:</span>
                     <strong className="text-slate-700">{ch.productGroup}</strong>
@@ -353,9 +399,16 @@ export default function GolfBusiness() {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {normalizedChannels.map((ch, idx) => (
                   <tr key={`${ch.productGroup}-${ch.venueName}-${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-bold text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      {ch.venueName}
+                    <td className="py-3 px-4 font-bold text-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>{ch.displayName}</span>
+                      </div>
+                      {ch.description && (
+                        <div className="text-[10px] text-slate-400 font-normal ml-3.5 mt-0.5">
+                          {ch.description}
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-slate-600 font-medium">{ch.productGroup}</td>
                     <td className="py-3 px-4 text-center font-bold text-emerald-700 bg-emerald-50/30">

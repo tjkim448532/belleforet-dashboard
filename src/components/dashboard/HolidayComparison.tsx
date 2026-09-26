@@ -1,6 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { secureFetcher } from '../../lib/secureFetcher';
-import { AlertCircle, RefreshCw, Palmtree, CalendarDays, Calendar, Clock, BedDouble } from 'lucide-react';
+import { 
+  AlertCircle, 
+  RefreshCw, 
+  Palmtree, 
+  CalendarDays, 
+  Calendar, 
+  Clock, 
+  BedDouble, 
+  TrendingUp, 
+  BarChart3,
+  Layers
+} from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -31,6 +42,8 @@ export default function HolidayComparison() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [selectedHolidayId, setSelectedHolidayId] = useState<string>('추석');
+  const [viewMode, setViewMode] = useState<'TOTAL' | 'DAILY'>('TOTAL');
+  const [metricType, setMetricType] = useState<'SALES' | 'ROOMS'>('SALES');
 
   useEffect(() => {
     fetchHolidayData();
@@ -54,7 +67,7 @@ export default function HolidayComparison() {
     }
   };
 
-  // 특정 연도에서 대표 공휴일에 매칭되는 단일 블록 추출 (대체공휴일, 통합 라벨 자동 매핑)
+  // 특정 연도에서 대표 공휴일에 매칭되는 단일 블록 추출
   const getBlockForYear = (year: string, canonicalId: string) => {
     if (!data?.groupedByYear?.[year]) return null;
     const canonical = CANONICAL_HOLIDAYS.find(c => c.id === canonicalId || c.name === canonicalId);
@@ -78,15 +91,14 @@ export default function HolidayComparison() {
     return CANONICAL_HOLIDAYS.find(h => h.id === selectedHolidayId);
   }, [selectedHolidayId]);
 
-  const getChartOptions = () => {
+  // 1. 연도별 총액 비교 차트 옵션 (기존 기능 100% 유지)
+  const getTotalChartOptions = () => {
     if (!data?.groupedByYear) return {};
     
-    // Filter labels to render
     const isAll = selectedHolidayId === 'ALL';
     const targetHolidays = isAll ? CANONICAL_HOLIDAYS : (selectedCanonical ? [selectedCanonical] : []);
     const xAxisData = targetHolidays.map(h => h.name);
     
-    // Build series for each year directly from the detailed blocks (Zero-Slice Summation)
     const series = years.map(year => {
       const yearData = targetHolidays.map(h => {
         const block = getBlockForYear(year, h.id);
@@ -174,6 +186,165 @@ export default function HolidayComparison() {
     };
   };
 
+  // 2. 명절 당일/전·후일 일자별 방문 패턴 분석 데이터셋 산출
+  const dailyDistributionData = useMemo(() => {
+    if (!data?.groupedByYear || selectedHolidayId === 'ALL') return null;
+
+    const offsetsSet = new Set<number>();
+    const yearMaps: Record<string, { dDayDate: string; daysMap: Record<number, any> }> = {};
+
+    years.forEach(year => {
+      const block = getBlockForYear(year, selectedHolidayId);
+      if (!block || !block.dailyData || block.dailyData.length === 0) return;
+
+      // Find D-Day
+      let dDay = block.dailyData.find((d: any) => d.holidayName === selectedHolidayId);
+      if (!dDay) {
+        dDay = block.dailyData.find((d: any) => d.holidayName && d.holidayName.includes(selectedHolidayId));
+      }
+      if (!dDay) {
+        dDay = block.dailyData[Math.floor(block.dailyData.length / 2)];
+      }
+
+      const dDayTime = new Date(dDay.date).getTime();
+      const daysMap: Record<number, any> = {};
+
+      block.dailyData.forEach((day: any) => {
+        const dayTime = new Date(day.date).getTime();
+        const diffDays = Math.round((dayTime - dDayTime) / (1000 * 60 * 60 * 24));
+        offsetsSet.add(diffDays);
+        daysMap[diffDays] = day;
+      });
+
+      yearMaps[year] = {
+        dDayDate: dDay.date,
+        daysMap
+      };
+    });
+
+    const sortedOffsets = Array.from(offsetsSet).sort((a, b) => a - b);
+    if (sortedOffsets.length === 0) return null;
+
+    const offsetLabels = sortedOffsets.map(offset => {
+      if (offset === 0) return 'D-Day (당일 🎯)';
+      if (offset === -1) return 'D-1 (전일)';
+      if (offset < 0) return `D${offset}`;
+      if (offset === 1) return 'D+1 (익일)';
+      return `D+${offset}`;
+    });
+
+    return {
+      sortedOffsets,
+      offsetLabels,
+      yearMaps
+    };
+  }, [data, selectedHolidayId, years]);
+
+  // 3. 일자별 방문/매출 추이 라인 차트 옵션
+  const getDailyChartOptions = () => {
+    if (!dailyDistributionData) return {};
+    const { sortedOffsets, offsetLabels, yearMaps } = dailyDistributionData;
+
+    const colors = ['#3b82f6', '#84cc16', '#475569'];
+
+    const series = years.map((year, idx) => {
+      const yearInfo = yearMaps[year];
+      const seriesData = sortedOffsets.map(offset => {
+        const day = yearInfo?.daysMap?.[offset];
+        if (!day) return 0;
+        return metricType === 'SALES' ? (day.sales || 0) : (day.rooms || 0);
+      });
+
+      return {
+        name: `${year}년`,
+        type: 'line',
+        smooth: true,
+        symbolSize: 8,
+        itemStyle: { color: colors[idx % colors.length] },
+        lineStyle: { width: 3 },
+        data: seriesData,
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (params: any) => {
+            if (params.value === 0) return '';
+            return metricType === 'SALES' 
+              ? `${Math.round(params.value / 1000000)}M` 
+              : `${params.value}실`;
+          },
+          fontSize: 10,
+          color: colors[idx % colors.length]
+        }
+      };
+    });
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' },
+        formatter: (params: any) => {
+          const offsetIdx = params[0]?.dataIndex;
+          const offset = sortedOffsets[offsetIdx];
+          const offsetLabel = offsetLabels[offsetIdx];
+
+          let html = `<div class="font-bold mb-2 text-slate-800 text-sm border-b pb-1 border-slate-200">구간: ${offsetLabel}</div>`;
+          params.forEach((item: any) => {
+            const year = item.seriesName.replace('년', '');
+            const day = yearMaps[year]?.daysMap?.[offset];
+            const dateStr = day ? `${day.date} (${day.holidayName || (day.isBridge ? '징검다리' : '주말')})` : '해당일 없음';
+            const valStr = metricType === 'SALES'
+              ? new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(item.value || 0)
+              : `${item.value}실`;
+            html += `
+              <div class="my-1.5 text-xs">
+                <div class="flex items-center justify-between gap-4 font-semibold text-slate-800">
+                  <span class="flex items-center gap-1.5" style="color: ${item.color}">
+                    <span class="w-2.5 h-2.5 rounded-full inline-block" style="background: ${item.color}"></span>
+                    ${item.seriesName}
+                  </span>
+                  <span>${valStr}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 ml-4 font-medium">
+                  📅 ${dateStr}
+                </div>
+              </div>
+            `;
+          });
+          return html;
+        }
+      },
+      legend: { data: years.map(y => `${y}년`), bottom: 0 },
+      grid: { left: '3%', right: '4%', bottom: '15%', top: '12%', containLabel: true },
+      xAxis: { 
+        type: 'category', 
+        data: offsetLabels,
+        axisLabel: {
+          interval: 0,
+          fontWeight: (val: string) => val.includes('당일') ? 'bold' : 'normal',
+          color: (val: string) => val.includes('당일') ? '#dc2626' : '#64748b'
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: metricType === 'SALES' ? '매출액(원)' : '객실수(실)',
+        axisLabel: {
+          formatter: (value: number) => {
+            return metricType === 'SALES' ? `${value / 100000000}억` : `${value}실`;
+          }
+        }
+      },
+      series
+    };
+  };
+
+  const getBehaviorDescription = (offset: number) => {
+    if (offset < -1) return '🚗 연휴 초반 / 귀성 및 초기 유입';
+    if (offset === -1) return '🛍️ 명절 전일 / 차례 준비 및 전야 도착';
+    if (offset === 0) return '🎯 명절 당일 / 차례 후 오후 가족 나들이 유입';
+    if (offset === 1 || offset === 2) return '🔥 명절 익일·후반 / 본격 레저·골프·휴양 소비 피크';
+    return '🏖️ 잔여 연휴 / 귀경 및 힐링 투숙 마무리';
+  };
+
   return (
     <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mt-8 border border-amber-100 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-orange-500"></div>
@@ -193,7 +364,7 @@ export default function HolidayComparison() {
             연도별 세부 명절 및 공휴일 실적 비교
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-2">
-            대체공휴일 유무와 관계없이 동일 공휴일을 단일 마스터 키로 묶어 연도별(24·25·26년)로 정확하게 1:1 비교합니다.
+            연도별 총합 비교뿐만 아니라, 명절 당일(D-Day) 및 전·후일의 고객 방문 분포 흐름을 입체적으로 교차 분석합니다.
           </p>
         </div>
 
@@ -214,7 +385,7 @@ export default function HolidayComparison() {
         </div>
       </div>
 
-      {/* 연도별 연휴 날짜 및 일수 카드 (단일 공휴일 선택 시 즉시 표시) */}
+      {/* 연도별 연휴 날짜 및 일수 카드 (단일 공휴일 선택 시 표시) */}
       {selectedHolidayId !== 'ALL' && years.length > 0 && selectedCanonical && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
           {years.map(year => {
@@ -273,6 +444,60 @@ export default function HolidayComparison() {
         </div>
       )}
 
+      {/* 뷰 모드 전환 탭 (연도별 총합 비교 vs 명절 당일/전·후일 방문 분포) */}
+      {selectedHolidayId !== 'ALL' && dailyDistributionData && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 gap-3">
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1">
+            <button
+              onClick={() => setViewMode('TOTAL')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'TOTAL' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              연도별 총합 비교
+            </button>
+            <button
+              onClick={() => setViewMode('DAILY')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'DAILY' 
+                  ? 'bg-amber-500 text-white shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              당일/전·후일 방문 분포 분석 🎯
+            </button>
+          </div>
+
+          {viewMode === 'DAILY' && (
+            <div className="flex items-center bg-slate-50 px-2 py-1 rounded-xl border border-slate-200/80 gap-1 text-xs">
+              <span className="text-slate-400 font-medium mr-1 flex items-center gap-1">
+                <Layers className="w-3 h-3 text-slate-400" /> 지표:
+              </span>
+              <button
+                onClick={() => setMetricType('SALES')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  metricType === 'SALES' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                매출액 추이
+              </button>
+              <button
+                onClick={() => setMetricType('ROOMS')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  metricType === 'ROOMS' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                투숙 객실 추이
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center text-slate-400">
           <RefreshCw className="w-8 h-8 animate-spin mb-4 text-amber-500" />
@@ -280,10 +505,77 @@ export default function HolidayComparison() {
         </div>
       ) : data?.groupedByYear ? (
         <div className="space-y-4">
-          {/* Chart */}
+          {/* Main Chart */}
           <div className="h-[400px] w-full border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
-            <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
+            <ReactECharts 
+              option={viewMode === 'TOTAL' || !dailyDistributionData ? getTotalChartOptions() : getDailyChartOptions()} 
+              style={{ height: '100%', width: '100%' }} 
+            />
           </div>
+
+          {/* 명절 당일/전·후일 방문 분포 분석 전용 상세 테이블 */}
+          {viewMode === 'DAILY' && dailyDistributionData && (
+            <div className="mt-6 pt-4 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                <CalendarDays className="w-4 h-4 text-amber-500" />
+                명절 D-Day 기준 고객 방문 및 소비 패턴 전개표
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[800px]">
+                  <thead className="bg-slate-100/80 text-slate-700 font-bold">
+                    <tr>
+                      <th className="py-3 px-4">구간 (D-Day 기준)</th>
+                      {years.map(year => (
+                        <th key={year} className="py-3 px-4 text-center">{year}년 일자 및 실적</th>
+                      ))}
+                      <th className="py-3 px-4 text-left">방문 고객 행동 특성</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {dailyDistributionData.sortedOffsets.map((offset) => {
+                      const label = offset === 0 
+                        ? 'D-Day (명절 당일 🎯)' 
+                        : (offset === -1 ? 'D-1 (명절 전일)' : (offset < 0 ? `D${offset}` : (offset === 1 ? 'D+1 (명절 익일)' : `D+${offset}`)));
+                      
+                      return (
+                        <tr 
+                          key={offset} 
+                          className={`transition-colors ${
+                            offset === 0 ? 'bg-amber-50/60 font-semibold' : 'hover:bg-slate-50/80'
+                          }`}
+                        >
+                          <td className="py-3 px-4 font-bold text-slate-800">
+                            {label}
+                          </td>
+                          {years.map(year => {
+                            const day = dailyDistributionData.yearMaps[year]?.daysMap?.[offset];
+                            return (
+                              <td key={year} className="py-3 px-4 text-center">
+                                {day ? (
+                                  <div>
+                                    <div className="text-slate-500 font-mono text-[11px]">{day.date}</div>
+                                    <div className="font-bold text-slate-900">{day.salesFormatted}</div>
+                                    {day.rooms > 0 && (
+                                      <div className="text-[10px] text-slate-400">({day.rooms}실)</div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="py-3 px-4 text-slate-600 font-medium">
+                            {getBehaviorDescription(offset)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="py-12 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-3xl bg-slate-50">

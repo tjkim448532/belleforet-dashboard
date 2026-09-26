@@ -619,10 +619,56 @@ export default function LeisureUsageRate() {
 
       {/* 2. Top Summary KPI Cards */}
       {currentSummary && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           
-          {/* 집계 범위 선택 바 (단일월 및 선택 기간 전체 누적 지원) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+          {/* 🌟 [CORE CONTROL] 상단 영업장 선택기 & 실적 집계 범위 컨트롤 바 (사용자 요청 이미지 100% 일치) */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Left: 영업장 선택 드롭다운 (알약형 에메랄드 테두리) */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <span className="text-sm font-bold text-slate-700 whitespace-nowrap">
+                영업장 선택:
+              </span>
+              <div className="relative inline-flex items-center">
+                <select
+                  value={selectedFacility}
+                  onChange={(e) => setSelectedFacility(e.target.value)}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-white border-2 border-emerald-500 text-slate-900 font-extrabold rounded-full text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-2xs cursor-pointer pr-11 appearance-none transition-colors"
+                >
+                  {facilityList.map((fac) => (
+                    <option key={fac} value={fac}>
+                      {fac === '벨포레 목장(체험)' ? '목장체험 (벨포레 목장 체험)' : fac}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-emerald-600">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* 빠른 선택 칩 버튼들 */}
+              <div className="hidden xl:flex items-center gap-1.5 pl-3 border-l border-slate-200">
+                <span className="text-xs text-slate-400 font-medium">빠른선택:</span>
+                {['놀이동산', '벨포레 목장', '사계절썰매장', '미디어아트센터', '마운틴카트'].map((fac) => (
+                  <button
+                    key={fac}
+                    type="button"
+                    onClick={() => setSelectedFacility(fac)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      selectedFacility === fac
+                        ? 'bg-emerald-600 text-white shadow-2xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {fac}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: 실적 집계 범위 선택 */}
             <div className="flex items-center gap-2.5 flex-wrap">
               <Calendar size={16} className="text-emerald-600" />
               <span className="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -631,9 +677,8 @@ export default function LeisureUsageRate() {
               <select
                 value={selectedViewKey}
                 onChange={(e) => setSelectedViewKey(e.target.value)}
-                className="px-3.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-extrabold text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-extrabold text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 cursor-pointer outline-none transition-colors"
               >
-                {/* 기간 범위가 선택된 경우 전체 누적 옵션 우선 제공 */}
                 {isRange && selectedPeriodMonths.length > 1 && (
                   <option value="PERIOD_TOTAL">
                     ⭐ 선택 기간 전체 누적 ({startMonthStr} ~ {endMonthStr}, {selectedPeriodMonths.length}개월 합산)
@@ -650,15 +695,12 @@ export default function LeisureUsageRate() {
               </select>
 
               {isPeriodTotalMode && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                   {selectedPeriodMonths.length}개월 누적 집계
                 </span>
               )}
             </div>
 
-            <span className="text-xs font-medium text-slate-400">
-              * 글로벌 달력({startDate} ~ {endDate || startDate})과 실시간 연동되어 선택 기간의 집계를 산출합니다.
-            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">

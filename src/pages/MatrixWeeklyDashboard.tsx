@@ -129,12 +129,12 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
         </div>
 
         {/* Tab Controls */}
-        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md p-1.5 rounded-2xl w-fit shadow-md border border-white/40 mb-6">
+        <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl w-fit shadow-md border border-slate-200/60 mb-6">
           <button
             onClick={() => handleTabChange('matrix')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
               activeTab === 'matrix'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
@@ -145,7 +145,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
             onClick={() => handleTabChange('day-of-week')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
               activeTab === 'day-of-week'
-                ? 'bg-brand-mint text-white shadow-md shadow-teal-500/20'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
@@ -156,7 +156,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
             onClick={() => handleTabChange('all')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
               activeTab === 'all'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
@@ -167,7 +167,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
 
         {/* Dynamic Content Views */}
         {activeTab === 'matrix' && (
-          <div className="flex-grow min-h-[calc(100vh-350px)] bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 md:p-8">
             <V6DashboardViewer />
           </div>
         )}
@@ -179,29 +179,33 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
         )}
 
         {activeTab === 'all' && (
-          <div className="space-y-12">
+          <div className="space-y-10 pb-12">
             {/* 1. 부문별 조직 정산 현황 */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-7 bg-blue-600 rounded-full" />
-                <h2 className="text-2xl font-bold text-slate-800">1. 부문별 조직 정산 현황 (매트릭스)</h2>
-                <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-full">
-                  조직도 매트릭스
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                  <h2 className="text-xl font-bold text-slate-900">1. 부문별 조직 정산 현황 (매트릭스)</h2>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-full">
+                    V6 조직 정산 마트
+                  </span>
+                </div>
               </div>
-              <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 md:p-8">
                 <V6DashboardViewer />
               </div>
             </div>
 
             {/* 2. 요일별 매출 분석 */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-7 bg-teal-600 rounded-full" />
-                <h2 className="text-2xl font-bold text-slate-800">2. 요일별·부문별 매출 분석</h2>
-                <span className="text-xs font-semibold px-2.5 py-1 bg-teal-50 text-brand-mint border border-teal-100 rounded-full">
-                  요일 추이 & 드릴다운
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                  <h2 className="text-xl font-bold text-slate-900">2. 요일별·부문별 매출 분석</h2>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-full">
+                    요일 추이 & 드릴다운
+                  </span>
+                </div>
               </div>
               <DayOfWeekSales embedded={true} />
             </div>

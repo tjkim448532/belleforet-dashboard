@@ -6,6 +6,7 @@ import { useCoreData } from '../contexts/CoreDataContext';
 import { transformHomeData } from '../lib/dataTransformers';
 import SalesPieChart from '../components/dashboard/SalesPieChart';
 import MonthlyTrevporChart from '../components/dashboard/MonthlyTrevporChart';
+import RoomGuestsYoyTable from '../components/dashboard/RoomGuestsYoyTable';
 import { parseNum } from '../lib/dataTransformers';
 import { getPeriodHolidayComparison } from '../lib/holidayUtils';
 
@@ -976,6 +977,9 @@ export default function Home() {
               totalValue={coreData.core?.summary?.totalRevenue ?? todayGross} 
             />
           )}
+
+          {/* 🏨 벨포레 숙박객 연도별(24, 25, 26년+) 1~12월 월별 실적 매트릭스 표 */}
+          <RoomGuestsYoyTable />
 
             {/* QA & KPI 상세 가이드 Accordion */}
             <div className="lg:col-span-12 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">

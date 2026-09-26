@@ -259,4 +259,20 @@ export interface LeisureYoyMatrixResponse {
   error?: string;
 }
 
+// ============================================================================
+// ⑩ 벨포레 연도별 숙박객 수 YoY 매트릭스 (room-guests-yoy)
+// ============================================================================
+export interface RoomGuestsYoyRow {
+  month: number;
+  rowTotal?: number;
+  [year: string]: number | undefined;
+}
+
+export interface RoomGuestsYoyResponse {
+  success: boolean;
+  years: string[];
+  matrix: RoomGuestsYoyRow[];
+  error?: string;
+}
+
 

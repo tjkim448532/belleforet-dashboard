@@ -8,7 +8,11 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-export default function DayOfWeekSales() {
+export interface DayOfWeekSalesProps {
+  embedded?: boolean;
+}
+
+export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps = {}) {
   const { startDate, endDate } = useDate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +97,7 @@ export default function DayOfWeekSales() {
 
   if (error422) {
     return (
-      <div className="w-full min-h-[80vh] flex flex-col items-center justify-center p-6 bg-[#f8fafc]">
+      <div className={`w-full ${embedded ? 'py-12' : 'min-h-[80vh]'} flex flex-col items-center justify-center p-6 bg-[#f8fafc]`}>
         <div className="bg-white border-2 border-red-500/50 p-8 rounded-[32px] max-w-2xl text-center shadow-[0_20px_40px_rgb(239,68,68,0.1)]">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4 animate-bounce" />
           <h2 className="text-2xl font-bold text-red-600 mb-4 tracking-tight">데이터 정합성 오류 감지 (HTTP 422)</h2>
@@ -119,7 +123,7 @@ export default function DayOfWeekSales() {
 
   if (loading || !data) {
     return (
-      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+      <div className={`w-full ${embedded ? 'py-20' : 'h-[80vh]'} flex items-center justify-center bg-[#f8fafc]`}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-brand-mint border-t-transparent rounded-full animate-spin"></div>
           <div className="text-lg font-medium text-brand-mint animate-pulse">데이터를 불러오는 중입니다...</div>
@@ -255,48 +259,90 @@ export default function DayOfWeekSales() {
     }]
   };
 
-  return (
-    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 pt-6">
-        
+  const content = (
+    <div className={embedded ? 'w-full space-y-8' : 'w-full max-w-[1920px] mx-auto p-4 md:p-8 pt-6'}>
+      {embedded ? (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-teal-50 text-brand-mint rounded-xl">
+              <BarChart2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">요일별·부문별 매출 분석</h2>
+              <p className="text-xs text-slate-400">조직도별 요일 점유율 및 성수기/비수기 히트맵 패턴</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            {data.validationMaster?.isZeroVariance && (
+              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3.5 py-1.5 rounded-full font-bold text-xs border border-emerald-100">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Zero-Variance 검증 완료
+              </div>
+            )}
+            
+            <select 
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint text-slate-700 min-w-[200px] shadow-sm cursor-pointer"
+              value={`${activeFilter.type}|${activeFilter.value}`}
+              onChange={(e) => {
+                const [type, value] = e.target.value.split('|');
+                setActiveFilter({ type, value });
+              }}
+            >
+              <option value="ALL|">🏢 전체 리조트 통합 실적</option>
+              {filterOptions.parts.length > 0 && (
+                <optgroup label="--- 파트 (Part) ---">
+                  {filterOptions.parts.map(p => <option key={`PART|${p}`} value={`PART|${p}`}>{p}</option>)}
+                </optgroup>
+              )}
+              {filterOptions.venues.length > 0 && (
+                <optgroup label="--- 영업장 (Venue) ---">
+                  {filterOptions.venues.map(v => <option key={`VENUE|${v}`} value={`VENUE|${v}`}>{v}</option>)}
+                </optgroup>
+              )}
+            </select>
+          </div>
+        </div>
+      ) : (
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <BarChart2 className="w-8 h-8 text-brand-mint" />
             <h1 className="text-3xl font-medium tracking-tight">요일별·부문별 매출 분석</h1>
           </div>
           
-            <div className="flex items-center gap-4 flex-wrap">
-              {data.validationMaster?.isZeroVariance && (
-                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full font-bold text-sm border border-emerald-100">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Zero-Variance 검증 완료
-                </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            {data.validationMaster?.isZeroVariance && (
+              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full font-bold text-sm border border-emerald-100">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Zero-Variance 검증 완료
+              </div>
+            )}
+            
+            <select 
+              className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint text-slate-700 min-w-[200px] shadow-sm cursor-pointer"
+              value={`${activeFilter.type}|${activeFilter.value}`}
+              onChange={(e) => {
+                const [type, value] = e.target.value.split('|');
+                setActiveFilter({ type, value });
+              }}
+            >
+              <option value="ALL|">🏢 전체 리조트 통합 실적</option>
+              {filterOptions.parts.length > 0 && (
+                <optgroup label="--- 파트 (Part) ---">
+                  {filterOptions.parts.map(p => <option key={`PART|${p}`} value={`PART|${p}`}>{p}</option>)}
+                </optgroup>
               )}
-              
-              <select 
-                className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-mint text-slate-700 min-w-[200px] shadow-sm cursor-pointer"
-                value={`${activeFilter.type}|${activeFilter.value}`}
-                onChange={(e) => {
-                  const [type, value] = e.target.value.split('|');
-                  setActiveFilter({ type, value });
-                }}
-              >
-                <option value="ALL|">🏢 전체 리조트 통합 실적</option>
-                {filterOptions.parts.length > 0 && (
-                  <optgroup label="--- 파트 (Part) ---">
-                    {filterOptions.parts.map(p => <option key={`PART|${p}`} value={`PART|${p}`}>{p}</option>)}
-                  </optgroup>
-                )}
-                {filterOptions.venues.length > 0 && (
-                  <optgroup label="--- 영업장 (Venue) ---">
-                    {filterOptions.venues.map(v => <option key={`VENUE|${v}`} value={`VENUE|${v}`}>{v}</option>)}
-                  </optgroup>
-                )}
-              </select>
+              {filterOptions.venues.length > 0 && (
+                <optgroup label="--- 영업장 (Venue) ---">
+                  {filterOptions.venues.map(v => <option key={`VENUE|${v}`} value={`VENUE|${v}`}>{v}</option>)}
+                </optgroup>
+              )}
+            </select>
 
-              <GlobalDatePicker showPresets={true} />
-            </div>
+            <GlobalDatePicker showPresets={true} />
+          </div>
         </div>
+      )}
 
         {/* 상단 메인 KPI 및 3분할 휴일 요약 패널 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -548,6 +594,15 @@ export default function DayOfWeekSales() {
           </div>
 
         </div>
-      </div>
-    );
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
+      {content}
+    </div>
+  );
 }

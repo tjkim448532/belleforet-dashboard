@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  LogOut, Menu, X, LayoutDashboard, ShieldCheck, BarChart2, TrendingUp,
+  LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
   Briefcase, Target, Sparkles, Users
 } from 'lucide-react';
@@ -48,8 +48,7 @@ export default function Layout() {
 
   const menuItems = [
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
-    { name: '부문별 정산 현황', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive'] },
-    { name: '요일/부문별 매출 분석', path: '/day-of-week-sales', icon: <BarChart2 size={20} />, roles: ['admin', 'executive', 'management'] },
+    { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive', 'management'] },
     { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} />, roles: ['admin', 'executive', 'fnb', 'leisure', 'resort'] },
     { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
@@ -97,7 +96,7 @@ export default function Layout() {
               key={idx}
               to={item.path}
               className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl whitespace-nowrap ${
-                isActive && (item.path === '/' ? window.location.pathname === '/' : true)
+                (isActive || (item.path === '/matrix-weekly' && window.location.pathname === '/day-of-week-sales')) && (item.path === '/' ? window.location.pathname === '/' : true)
                   ? 'bg-brand-mint/10 text-brand-mint'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}

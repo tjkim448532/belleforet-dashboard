@@ -27,15 +27,96 @@ html {
   font-size: 16px;
 }
 
-/* Custom Shape Utility Classes for Backgrounds */
-.shape-half-circle {
-  border-radius: 50% 50% 0 0;
-}
-.shape-leaf {
-  border-radius: 50% 0 50% 0;
+/* 🏛️ Financial Number System (은행앱 고정폭 및 가독성 타이포그래피) */
+.font-financial {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.03em;
 }
 
-/* Executive Dashboard Glassmorphism Utilities */
+/* 🏛️ Institutional Trust Surface & Bento Grid */
+.bento-card {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(203, 213, 225, 0.9);
+  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+}
+
+.bento-hero-card {
+  background: linear-gradient(145deg, #0a192f 0%, #0f172a 60%, #1e293b 100%);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px -15px rgba(10, 25, 47, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.bento-hero-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(0, 174, 149, 0.18) 0%, rgba(0, 174, 149, 0) 70%);
+  pointer-events: none;
+}
+
+/* 🏛️ Toss/Fintech Delta Capsules (신뢰감 있는 지표 변화율 캡슐) */
+.badge-delta-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge-delta-down {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: #fff1f2;
+  color: #e11d48;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge-delta-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Glassmorphism Utilities */
 :root {
   --card-bg: rgba(30, 41, 59, 0.7);
   --card-border: rgba(255, 255, 255, 0.1);

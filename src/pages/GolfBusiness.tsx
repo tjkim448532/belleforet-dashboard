@@ -12,6 +12,7 @@ import {
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import type { GolfChannelAnalysisV2Response } from '../types/reports-v2';
+import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
 
 export default function GolfBusiness() {
   const [data, setData] = useState<GolfChannelAnalysisV2Response | null>(null);
@@ -154,10 +155,10 @@ export default function GolfBusiness() {
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       
-      {/* Decorative Header Background */}
-      <div className="w-full bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
-        <div className="absolute top-10 right-[15%] w-36 h-36 bg-white/10 rounded-full blur-2xl" />
-        <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
+      {/* 🏛️ Institutional Deep Slate Navy Banner with Mint Rim Light */}
+      <div className="w-full bg-gradient-to-r from-[#071322] via-[#0b1d33] to-[#0f172a] h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[32px] border-b border-white/10 shadow-lg">
+        <div className="absolute top-0 right-0 w-[500px] h-[220px] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#00ae95]/15 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute -top-12 left-1/4 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
@@ -182,33 +183,39 @@ export default function GolfBusiness() {
         {/* Overview Stats (3-Grid) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
           {/* Golf Revenue */}
-          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group border border-slate-200/90">
             <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-[#00ae95]" /> {isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}
+              <Coins className="w-4 h-4 text-[#00ae95]" /> 
+              <span>{isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}</span>
+              <MetricExplainerTooltip presetKey="netRevenue" />
             </h2>
-            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
+            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
               ₩{summary.totalGolfRevenueFormatted}
             </div>
             <p className="text-[11px] text-slate-400 mt-2">그린피 + 카트대여 + 부대시설 순매출(Net) 총합</p>
           </div>
 
           {/* Visited Players */}
-          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group border border-slate-200/90">
             <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-[#00ae95]" /> 실제 총 내장객 수
+              <Users className="w-4 h-4 text-[#00ae95]" /> 
+              <span>실제 총 내장객 수</span>
+              <MetricExplainerTooltip presetKey="visitorCount" />
             </h2>
-            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
+            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
               {summary.totalPlayersFormatted}명
             </div>
             <p className="text-[11px] text-slate-400 mt-2">총 {summary.totalTransactions.toLocaleString()} 결제/거래 건</p>
           </div>
 
           {/* Avg ARPU */}
-          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group border border-slate-200/90">
             <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-[#00ae95]" /> 1인당 객단가 (ARPU)
+              <TrendingUp className="w-4 h-4 text-[#00ae95]" /> 
+              <span>1인당 객단가 (ARPU)</span>
+              <MetricExplainerTooltip presetKey="golfRevenuePerTeam" />
             </h2>
-            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
+            <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
               ₩{summary.arpuFormatted}
             </div>
             <p className="text-[11px] text-slate-400 mt-2">내장객 1인당 평균 골프 소비액</p>

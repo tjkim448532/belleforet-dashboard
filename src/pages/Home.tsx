@@ -8,6 +8,9 @@ import SalesPieChart from '../components/dashboard/SalesPieChart';
 import MonthlyTrevporChart from '../components/dashboard/MonthlyTrevporChart';
 import { parseNum } from '../lib/dataTransformers';
 import { getPeriodHolidayComparison } from '../lib/holidayUtils';
+import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
+import { SkeletonBentoGrid } from '../components/common/SkeletonCard';
+import { formatRevenue, formatFinancialKorean } from '../utils/formatters';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
@@ -150,8 +153,26 @@ export default function Home() {
 
   if (loading || !displayData) {
     return (
-      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-xl font-medium text-brand-mint animate-pulse">벨포레 현황판을 불러오는 중입니다...</div>
+      <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
+        <div className="w-full bg-gradient-to-r from-[#071322] via-[#0b1d33] to-[#0f172a] h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[32px] border-b border-white/10" />
+        <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+            <div className="text-white">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-3xl tracking-widest bg-white text-[#00ae95] px-3 py-1 rounded-sm shadow-md">
+                  BELLE FORET
+                </span>
+                <span className="font-bold text-2xl tracking-wide ml-1">RESORT</span>
+              </div>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
+              <p className="text-sm text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
+            </div>
+            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <GlobalDatePicker />
+            </div>
+          </div>
+          <SkeletonBentoGrid />
+        </div>
       </div>
     );
   }
@@ -236,18 +257,21 @@ export default function Home() {
 
   const golfReservedTeams = displayData?.golfSummary?.reservedTeams || 0;
 
+  const todayFinancial = formatFinancialKorean(todayGross);
+  const ytdFinancial = formatFinancialKorean(ytdGross);
+  const secondaryFinancial = formatFinancialKorean(activeSecondaryRev);
+
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       
-      <div className="w-full bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
-        <div className="absolute top-10 right-[10%] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-        <div className="absolute -top-10 right-[20%] w-48 h-48 bg-white/10 rounded-full blur-xl" />
-        <div className="absolute top-20 left-[5%] w-16 h-16 bg-white/20 rounded-full blur-lg" />
+      {/* 🏛️ Institutional Deep Slate Navy Banner with Mint Rim Light */}
+      <div className="w-full bg-gradient-to-r from-[#071322] via-[#0b1d33] to-[#0f172a] h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[32px] border-b border-white/10 shadow-lg">
+        <div className="absolute top-0 right-0 w-[500px] h-[220px] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#00ae95]/15 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute -top-12 left-1/4 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
-
         {apiError && (
           <div className="bg-rose-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
             <AlertCircle size={24} />
@@ -271,270 +295,318 @@ export default function Home() {
           </div>
         </div>
 
+        {/* 🏛️ Executive Bento Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-12">
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#00ae95]/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
-              <div className="min-h-[96px] mb-2 relative z-10 flex flex-col gap-3">
-                <h2 className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5 text-[#00ae95] group-hover:animate-bounce" /> 
-                  {isRangeMode && coreData.core?.endDate ? `조회기간 (${startDate} ~ ${coreData.core.endDate})` : `조회일자 (${startDate})`}
-                  <span className="text-xs text-slate-400 font-normal hidden xl:inline">(부가세 별도)</span>
-                </h2>
-                {!isRangeMode && (weather || lastYearWeather) && (
-                  <div className="self-start text-right text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
-                    <div className="opacity-60 text-right pr-3 border-r border-slate-200">
-                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
-                      {lastYearWeather ? (
-                        <>
-                          <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
-                            {lastYearWeather.weatherDesc === '데이터없음' || lastYearWeather.description === '데이터없음' ? '☁️ 알수없음' : (
-                              <>
-                                {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
-                                {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
-                              </>
-                            )}
-                          </div>
-                          {(lastYearWeather.tempMax != null && lastYearWeather.tempMin != null && (lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0)) && (
-                            <div className="text-slate-400 text-[10px] mt-0.5">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="font-semibold text-slate-300 text-xs flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
-                      )}
+            
+            {/* 🌟 Card 1: 전사 순매출 (Hero Bento Card) */}
+            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group flex flex-col justify-between">
+              <div>
+                <div className="min-h-[88px] mb-3 relative z-10 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="w-5 h-5 text-brand-mint shrink-0" /> 
+                      <span className="text-sm font-bold text-slate-800">
+                        {isRangeMode && coreData.core?.endDate ? `선택 기간 전사 순매출` : `당일 전사 순매출`}
+                      </span>
+                      <MetricExplainerTooltip presetKey="netRevenue" />
+                      <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">VAT 제외</span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[10px] font-medium text-[#00ae95] mb-0.5">현재 날씨</div>
-                      {weather && (weather.weatherDesc || weather.description || weather.tempMax != null) ? (
-                        <>
-                          <div className="font-medium text-[#00ae95] text-base flex items-center justify-end gap-1">
-                            {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
-                              <>
-                                {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
-                                {weather.weatherDesc || weather.description || '맑음'}
-                              </>
-                            )}
-                          </div>
-                          {(weather.tempMax != null && weather.tempMin != null && (weather.tempMax !== 0 || weather.tempMin !== 0)) && (
-                            <div className="text-slate-500 text-xs mt-1">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="font-medium text-slate-400 text-sm flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
-                      )}
-                    </div>
+                    <span className="text-xs text-slate-400 font-medium font-financial">
+                      {isRangeMode && coreData.core?.endDate ? `${startDate} ~ ${coreData.core.endDate}` : startDate}
+                    </span>
                   </div>
-                )}
-              </div>
-              
-              <div className="text-2xl lg:text-3xl font-bold text-slate-900 mb-4 tracking-tight transition-all duration-300 whitespace-nowrap">
-                {formatCurrency(todayGross)}
-              </div>
-              {todayGrowth !== undefined ? (
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${todayGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                  <span className="whitespace-nowrap">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                  <span className="whitespace-nowrap">{todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(todayGrowth).toFixed(1)}%</span>
-                  {todayDiff !== undefined && (
-                    <span className="font-medium opacity-80 whitespace-nowrap">({todayDiff > 0 ? '+' : ''}{formatCurrency(todayDiff)})</span>
+
+                  {!isRangeMode && (weather || lastYearWeather) && (
+                    <div className="self-start text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
+                      <div className="opacity-60 text-right pr-3 border-r border-slate-200">
+                        <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
+                        {lastYearWeather ? (
+                          <>
+                            <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
+                              {lastYearWeather.weatherDesc === '데이터없음' || lastYearWeather.description === '데이터없음' ? '☁️ 알수없음' : (
+                                <>
+                                  {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                                  {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
+                                </>
+                              )}
+                            </div>
+                            {(lastYearWeather.tempMax != null && lastYearWeather.tempMin != null && (lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0)) && (
+                              <div className="text-slate-400 text-[10px] mt-0.5 font-financial">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="font-semibold text-slate-300 text-xs flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-medium text-[#00ae95] mb-0.5">현재 날씨</div>
+                        {weather && (weather.weatherDesc || weather.description || weather.tempMax != null) ? (
+                          <>
+                            <div className="font-medium text-[#00ae95] text-base flex items-center justify-end gap-1">
+                              {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
+                                <>
+                                  {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                                  {weather.weatherDesc || weather.description || '맑음'}
+                                </>
+                              )}
+                            </div>
+                            {(weather.tempMax != null && weather.tempMin != null && (weather.tempMax !== 0 || weather.tempMin !== 0)) && (
+                              <div className="text-slate-500 text-xs mt-1 font-financial">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="font-medium text-slate-400 text-sm flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-400 whitespace-nowrap">
-                  <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
-                </div>
-              )}
-            </div>
 
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-brand-mint/5 shape-leaf transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12" />
-              
-              {/* 1. 올해 누적 매출 (YTD) */}
-              <div className="relative z-10">
-                <div className="mb-1 flex flex-col justify-start">
-                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 flex-wrap break-keep">
-                    <Building2 className="w-5 h-5 text-brand-mint group-hover:animate-pulse shrink-0" />
-                    <span className="whitespace-nowrap">올해 누적 매출 (YTD)</span>
-                    {isRangeMode ? (
-                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                        종료일({currentEndDateStr}) 기준 연누계 ({currentEndDateStr.slice(0, 4)}-01-01 ~ {currentEndDateStr})
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-normal whitespace-nowrap">
-                        ({startDate.slice(0, 4)}-01-01 ~ {startDate})
-                      </span>
-                    )}
-                  </h2>
+                {/* 🏛️ 듀얼 표기: 원단위 숫자 + 직관적 한글(억/만원) 단위 */}
+                <div className="mb-3">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                      {formatRevenue(todayGross)}
+                    </span>
+                    <span className="text-base font-semibold text-slate-400">원</span>
+                    <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap">
+                      {todayFinancial.formatted}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2 tracking-tight whitespace-nowrap">
-                  {formatCurrency(ytdGross)}
-                </div>
-                {ytdGrowth !== undefined ? (
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${ytdGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                    <span className="whitespace-nowrap">전년 동기 대비</span>
-                    <span className="whitespace-nowrap">{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
-                    {ytdDiff !== undefined && (
-                      <span className="font-medium opacity-80 whitespace-nowrap">({ytdDiff > 0 ? '+' : ''}{formatCurrency(ytdDiff)})</span>
+              </div>
+
+              {/* 델타 변화율 캡슐 */}
+              <div>
+                {todayGrowth !== undefined && todayGrowth !== null ? (
+                  <div className={todayGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
+                    <span className="text-slate-600 font-medium">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                    <span className="font-bold">{todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(todayGrowth).toFixed(1)}%</span>
+                    {todayDiff !== undefined && (
+                      <span className="font-medium opacity-85">({todayDiff > 0 ? '+' : ''}{formatRevenue(todayDiff)}원)</span>
                     )}
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400 whitespace-nowrap">
-                    <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                  <div className="badge-delta-neutral">
+                    <span>전년 비교 데이터 산출 대기</span>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* 2. 💡 [NEW] 월별 누적 매출(단일일자) / 선택기간 객실부문 실적(기간모드) + 공휴일 일수 비교 */}
-              <div className="mt-4 pt-3.5 border-t border-slate-100 relative z-10">
-                <div className="mb-1 flex flex-col justify-start">
-                  <div className="flex items-center justify-between flex-wrap gap-1.5 mb-1">
-                    <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5 flex-wrap">
-                      <CalendarDays className="w-4 h-4 text-emerald-600" />
-                      <span>{isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출 (MTD)'}</span>
-                      {isRangeMode ? (
-                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
-                          선택기간 ({startDate} ~ {currentEndDateStr})
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-400 font-normal">
-                          ({startDate.slice(0, 7)}-01 ~ {startDate})
-                        </span>
-                      )}
-                    </h3>
+            {/* 🌟 Card 2: 누적 매출 (YTD & MTD) 및 객실 판매 */}
+            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 flex flex-col justify-between">
+              
+              {/* 1. 올해 누적 매출 (YTD) */}
+              <div>
+                <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="w-5 h-5 text-brand-mint shrink-0" />
+                    <span className="text-sm font-bold text-slate-800">올해 누적 매출 (YTD)</span>
+                    <MetricExplainerTooltip presetKey="yoyDow" />
+                  </div>
+                  {isRangeMode ? (
+                    <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg whitespace-nowrap font-financial">
+                      종료일({currentEndDateStr}) 기준
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-medium font-financial whitespace-nowrap">
+                      {startDate.slice(0, 4)}-01-01 ~ {startDate}
+                    </span>
+                  )}
+                </div>
 
-                    {/* 🎈 공휴일수 (토·일·국가지정공휴일) 비교 배지 */}
-                    <div 
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs whitespace-nowrap"
-                      title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
-                    >
-                      <span className="text-amber-800 whitespace-nowrap">🎈 공휴일(주말+공휴일):</span>
-                      <strong className="text-amber-950 font-black whitespace-nowrap">{periodHolidays.currentPeriod.totalHolidays}일</strong>
-                      <span className="text-amber-700 font-normal whitespace-nowrap">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
-                      {periodHolidays.diffHolidays !== 0 ? (
-                        <span className={`text-[10px] font-black whitespace-nowrap ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">(동일)</span>
-                      )}
-                    </div>
+                <div className="mb-2">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                      {formatRevenue(ytdGross)}
+                    </span>
+                    <span className="text-base font-semibold text-slate-400">원</span>
+                    <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap">
+                      {ytdFinancial.formatted}
+                    </span>
                   </div>
                 </div>
-                <div className="text-2xl font-semibold text-slate-800 mb-2 tracking-tight whitespace-nowrap flex items-baseline gap-2">
-                  <span>{formatCurrency(activeSecondaryRev)}</span>
-                  {isRangeMode && <span className="text-xs text-slate-400 font-normal">(객실 순매출)</span>}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
-                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${activeSecondaryGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                      <span className="whitespace-nowrap">전년 동기간 대비</span>
-                      <span className="whitespace-nowrap">{activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
-                      {activeSecondaryDiff !== undefined && (
-                        <span className="font-medium opacity-80 whitespace-nowrap">({activeSecondaryDiff > 0 ? '+' : ''}{formatCurrency(activeSecondaryDiff)})</span>
+
+                <div>
+                  {ytdGrowth !== undefined && ytdGrowth !== null ? (
+                    <div className={ytdGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
+                      <span className="text-slate-600 font-medium">전년 동기 대비</span>
+                      <span className="font-bold">{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
+                      {ytdDiff !== undefined && (
+                        <span className="font-medium opacity-85">({ytdDiff > 0 ? '+' : ''}{formatRevenue(ytdDiff)}원)</span>
                       )}
                     </div>
                   ) : (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400 whitespace-nowrap">
-                      <span>전년 비교 데이터 산출 불가 (API 연동 대기)</span>
+                    <div className="badge-delta-neutral">
+                      <span>전년 비교 데이터 산출 대기</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. 💡 월별 누적 매출(MTD) / 선택기간 객실부문 실적 + 공휴일 일수 비교 */}
+              <div className="mt-5 pt-4 border-t border-slate-100">
+                <div className="mb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-bold text-slate-700">
+                        {isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출 (MTD)'}
+                      </span>
+                      <MetricExplainerTooltip presetKey="occupancy" />
+                    </div>
+
+                    {/* 🎈 공휴일수 비교 배지 */}
+                    <div 
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
+                      title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
+                    >
+                      <span className="text-amber-800">🎈 공휴일:</span>
+                      <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
+                      <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
+                      {periodHolidays.diffHolidays !== 0 ? (
+                        <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-xl lg:text-2xl font-bold text-slate-900 font-financial tracking-tight">
+                      {formatRevenue(activeSecondaryRev)}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-400">원</span>
+                    <span className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md whitespace-nowrap">
+                      {secondaryFinancial.formatted}
+                    </span>
+                    {isRangeMode && <span className="text-[11px] text-slate-400 font-normal">(객실 순매출)</span>}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
+                    <div className={activeSecondaryGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
+                      <span className="text-slate-600 font-medium">전년 동기간 대비</span>
+                      <span className="font-bold">{activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
+                      {activeSecondaryDiff !== undefined && (
+                        <span className="font-medium opacity-85">({activeSecondaryDiff > 0 ? '+' : ''}{formatRevenue(activeSecondaryDiff)}원)</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="badge-delta-neutral">
+                      <span>전년 비교 데이터 산출 대기</span>
                     </div>
                   )}
 
-                  {/* 세부 휴일 구성 안내 (토/일/국경일) */}
                   <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
                     (토 {periodHolidays.currentPeriod.saturdays}일 · 일 {periodHolidays.currentPeriod.sundays}일
-                    {periodHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`}
-                    {periodHolidays.currentPeriod.holidaysList.length > 0 && ` [${periodHolidays.currentPeriod.holidaysList.map(h => h.name).join(', ')}]`})
+                    {periodHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`})
                   </span>
                 </div>
 
-                {/* 🛏️ [NEW] 객실 판매수 vs 전년동기간 비교 레이아웃 (단일일자: MTD / 기간모드: 선택기간 누적) */}
-                <div className="mt-3.5 pt-3 border-t border-slate-100/90">
-                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-100/90 shadow-2xs">
-                    <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                        <BedDouble className="w-4 h-4 text-emerald-600" />
-                        <span>{isRangeMode ? '선택 기간 객실 판매 비교' : '월별 누적 객실 판매'}</span>
+                {/* 🛏️ 객실 판매수 vs 전년동기간 비교 레이아웃 */}
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                      <BedDouble className="w-4 h-4 text-emerald-600" />
+                      <span>{isRangeMode ? '선택 기간 객실 판매 비교' : '월별 누적 객실 판매'}</span>
+                    </div>
+                    {activeLyRoomsSold > 0 && activeRoomsGrowth !== null ? (
+                      <div className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap font-financial ${
+                        activeRoomsGrowth >= 0 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                          : 'bg-rose-100 text-rose-800 border border-rose-200'
+                      }`}>
+                        <span>{activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
+                        <span className="font-semibold text-[10px] opacity-90">({activeRoomsDiff > 0 ? '+' : ''}{activeRoomsDiff.toLocaleString()}실)</span>
                       </div>
-                      {activeLyRoomsSold > 0 && activeRoomsGrowth !== null ? (
-                        <div className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap ${
-                          activeRoomsGrowth >= 0 
-                            ? 'bg-emerald-100/90 text-emerald-800 border border-emerald-200/60' 
-                            : 'bg-rose-100/90 text-rose-800 border border-rose-200/60'
-                        }`}>
-                          <span>{activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
-                          <span className="font-semibold text-[10px] opacity-90">({activeRoomsDiff > 0 ? '+' : ''}{activeRoomsDiff.toLocaleString()}실)</span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 불가</span>
-                      )}
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 대기</span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-0.5">
+                        <span>{isRangeMode ? '선택기간 누적' : '월별 누적'}</span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">당해</span>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-extrabold text-slate-900 tracking-tight font-financial">{activeRoomsSold.toLocaleString()}</span>
+                        <span className="text-xs font-semibold text-slate-500">실</span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* 당해 객실 판매수 */}
-                      <div className="bg-white p-2.5 rounded-xl border border-emerald-100/80 shadow-2xs">
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-0.5">
-                          <span>{isRangeMode ? '선택기간 누적 객실수' : '월별 누적 객실수'}</span>
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">당해</span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-black text-slate-900 tracking-tight">{activeRoomsSold.toLocaleString()}</span>
-                          <span className="text-xs font-semibold text-slate-500">실</span>
-                        </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-0.5">
+                        <span>전년 동기간</span>
+                        <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">전년</span>
                       </div>
-
-                      {/* 전년동기간 객실 판매수 */}
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
-                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-0.5">
-                          <span>전년동기간 객실수</span>
-                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60">전년</span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-black text-slate-600 tracking-tight">
-                            {activeLyRoomsSold > 0 ? activeLyRoomsSold.toLocaleString() : '-'}
-                          </span>
-                          <span className="text-xs font-semibold text-slate-400">실</span>
-                        </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-extrabold text-slate-600 tracking-tight font-financial">
+                          {activeLyRoomsSold > 0 ? activeLyRoomsSold.toLocaleString() : '-'}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-400">실</span>
                       </div>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
-              <div className="absolute -right-5 -bottom-5 w-24 h-24 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-150" />
+            {/* 🌟 Card 3: 통합 숙박객 수 & 레저 어트랙션 이용객 */}
+            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 flex flex-col justify-between">
               <div>
-                <div className="min-h-[44px] mb-1 relative z-10 flex flex-col justify-start">
-                  <h2 className="text-base font-semibold text-slate-500 flex items-center gap-2 whitespace-nowrap">
-                    <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse shrink-0" /> <span className="whitespace-nowrap">통합 숙박객 수</span> <span className="text-xs text-slate-400 font-normal whitespace-nowrap">(콘도 투숙객)</span>
-                  </h2>
+                <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-5 h-5 text-brand-mint shrink-0" />
+                    <span className="text-sm font-bold text-slate-800">통합 숙박객 수</span>
+                    <MetricExplainerTooltip presetKey="visitorCount" />
+                    <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
+                  </div>
                 </div>
-                <div className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2 tracking-tight relative z-10 flex items-baseline gap-2 whitespace-nowrap">
-                  <span>{new Intl.NumberFormat('ko-KR').format(roomCapActual)}</span>
-                  <span className="text-base font-semibold text-slate-500">명</span>
+
+                <div className="mb-2">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                      {new Intl.NumberFormat('ko-KR').format(roomCapActual)}
+                    </span>
+                    <span className="text-base font-semibold text-slate-500">명</span>
+                  </div>
                 </div>
 
                 {/* 과거 비교 숙박객 수 및 증감률 배지 */}
-                {roomCapLy !== undefined && roomCapLy > 0 ? (
-                  <div className={`mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 whitespace-nowrap ${roomCapGrowth !== undefined && roomCapGrowth >= 0 ? 'bg-brand-mint/10 text-brand-mint' : 'bg-red-50 text-red-500'}`}>
-                    <span className="whitespace-nowrap">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                    {roomCapGrowth !== undefined && (
-                      <span className="whitespace-nowrap">{roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%</span>
-                    )}
-                    <span className="font-medium opacity-80 whitespace-nowrap">
-                      (전년 {new Intl.NumberFormat('ko-KR').format(roomCapLy)}명{roomCapDiff !== undefined ? `, ${roomCapDiff > 0 ? '+' : ''}${new Intl.NumberFormat('ko-KR').format(roomCapDiff)}명` : ''})
-                    </span>
-                  </div>
-                ) : (
-                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 bg-slate-100 text-slate-400 whitespace-nowrap">
-                    <span>전년 비교 데이터 산출 불가</span>
-                  </div>
-                )}
+                <div className="mb-3">
+                  {roomCapLy !== undefined && roomCapLy > 0 ? (
+                    <div className={roomCapGrowth !== undefined && roomCapGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
+                      <span className="text-slate-600 font-medium">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                      {roomCapGrowth !== undefined && (
+                        <span className="font-bold">{roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%</span>
+                      )}
+                      <span className="font-medium opacity-85">
+                        (전년 {new Intl.NumberFormat('ko-KR').format(roomCapLy)}명{roomCapDiff !== undefined ? `, ${roomCapDiff > 0 ? '+' : ''}${new Intl.NumberFormat('ko-KR').format(roomCapDiff)}명` : ''})
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="badge-delta-neutral">
+                      <span>전년 비교 데이터 산출 대기</span>
+                    </div>
+                  )}
+                </div>
                 
                 {multiNight && (parseNum(multiNight.multiNightGuests) > 0 || parseNum(multiNight.multiNightRooms) > 0) && (
-                  <div className="mb-3 relative z-10 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100/90 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-xs">
+                  <div className="mb-4 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-2xs font-financial">
                     <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                      <span className="bg-brand-mint text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">연박(2박+)</span>
-                      <span className="font-bold text-slate-800">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
+                      <span className="bg-brand-mint text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">연박(2박+)</span>
+                      <span className="font-bold text-slate-900">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
                       <span className="text-slate-500 text-[11px]">
                         ({multiNight.multiNightRooms !== undefined && multiNight.multiNightRooms !== null && parseNum(multiNight.multiNightRooms) > 0 && (
                           <>
@@ -545,8 +617,8 @@ export default function Home() {
                       </span>
                     </div>
                     {multiNight.guestsGrowth !== undefined && (
-                      <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        <span className="text-slate-500 font-normal">{isRangeMode ? '전년 동기 대비' : '전년 동요일 대비'}</span>
+                      <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        <span className="text-slate-500 font-normal">{isRangeMode ? '전년 동기' : '전년 동요일'}</span>
                         <span>{multiNight.guestsGrowth >= 0 ? '▲' : '▼'}{Math.abs(multiNight.guestsGrowth).toFixed(1)}%</span>
                       </div>
                     )}
@@ -626,23 +698,27 @@ export default function Home() {
           <div className="lg:col-span-12 flex flex-col gap-6">
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
               <h2 className="text-base font-semibold text-slate-800 mb-6 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-brand-mint group-hover:rotate-12" /> 주요 지표 및 운영 현황
+                <Coins className="w-5 h-5 text-brand-mint" /> 주요 지표 및 운영 효율
               </h2>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">객실 점유율 (Occ)</div>
+                {/* 1. 객실 점유율 (Occ) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="text-xs font-bold text-slate-700">객실 점유율 (Occ)</span>
+                    <MetricExplainerTooltip presetKey="occupancy" />
+                  </div>
                   {(() => {
                     const occ = (coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
                               : (coreData.core?.summary?.occRate && Number(coreData.core.summary.occRate) > 0) ? Number(coreData.core.summary.occRate)
                               : displayData?.kpiMetrics?.totalOcc;
                     return occ !== undefined && occ !== null ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
+                        <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
                           {Number(occ).toFixed(1)}%
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium whitespace-nowrap">
-                          {isRangeMode ? '선택 기간 평균 점유율' : '(Inventory 기준 자동 산출)'}
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          {isRangeMode ? '선택 기간 평균 가동률' : '175실 재고 기준 자동 산출'}
                         </div>
                       </>
                     ) : (
@@ -653,19 +729,23 @@ export default function Home() {
                   })()}
                 </div>
                 
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">객단가 (ADR)</div>
+                {/* 2. 객단가 (ADR) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="text-xs font-bold text-slate-700">객단가 (ADR)</span>
+                    <MetricExplainerTooltip presetKey="adr" />
+                  </div>
                   {(() => {
                     const adr = (coreData.core?.summary?.totalADR && Number(coreData.core.summary.totalADR) > 0) ? Number(coreData.core.summary.totalADR)
                               : (coreData.core?.summary?.adr && Number(coreData.core.summary.adr) > 0) ? Number(coreData.core.summary.adr)
                               : displayData?.kpiMetrics?.totalADR;
                     return adr !== undefined && adr !== null && Number(adr) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
-                          {formatCurrency(adr)} <span className="text-sm font-medium text-slate-500">원</span>
+                        <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                          {formatRevenue(adr)} <span className="text-sm font-semibold text-slate-400">원</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium whitespace-nowrap">
-                          객실 총매출 ÷ 판매 객실 수
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          객실 순매출 ÷ 실제 판매 객실수
                         </div>
                       </>
                     ) : (
@@ -676,18 +756,30 @@ export default function Home() {
                   })()}
                 </div>
                 
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">객실당 매출 (RevPAR)</div>
+                {/* 3. 객실당 매출 (RevPAR) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="text-xs font-bold text-slate-700">객실당 매출 (RevPAR)</span>
+                    <MetricExplainerTooltip 
+                      customData={{
+                        title: '객실당 매출 (RevPAR)',
+                        badge: '호텔 지표',
+                        definition: '판매 여부와 무관하게 175실 전체 물리 객실 1실당 창출된 객실 순매출입니다.',
+                        formula: '객실 순매출 ÷ 전체 물리 가용 객실수 (175실 × 일수)',
+                        insight: 'OCC와 ADR의 곱으로 산출되며, 객실 부문의 순수 자산 생산성을 평가합니다.'
+                      }}
+                    />
+                  </div>
                   {(() => {
                     const revPar = (coreData.core?.summary?.revPAR && Number(coreData.core.summary.revPAR) > 0) ? Number(coreData.core.summary.revPAR)
                                  : displayData?.kpiMetrics?.revPAR;
                     return revPar !== undefined && revPar !== null && Number(revPar) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
-                          {formatCurrency(revPar)} <span className="text-sm font-medium text-slate-500">원</span>
+                        <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                          {formatRevenue(revPar)} <span className="text-sm font-semibold text-slate-400">원</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium whitespace-nowrap">
-                          객실 총매출 ÷ 전체 객실 수
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          객실 순매출 ÷ 전체 객실수 (175실)
                         </div>
                       </>
                     ) : (
@@ -698,17 +790,21 @@ export default function Home() {
                   })()}
                 </div>
                 
-                <div className="bg-[#f8fafc] p-4 rounded-xl border border-slate-200 flex flex-col justify-center text-center h-[130px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-slate-50">
-                  <div className="text-sm text-slate-700 font-medium mb-1 whitespace-nowrap">가용객실당 총매출 (TrevPAR)</div>
+                {/* 4. 가용객실당 총매출 (TrevPAR) */}
+                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="text-xs font-bold text-emerald-800">가용객실당 총매출 (TrevPAR)</span>
+                    <MetricExplainerTooltip presetKey="trevpar" />
+                  </div>
                   {(() => {
                     const trevPar = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
                     return trevPar !== undefined && trevPar !== null && Number(trevPar) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-teal-700 tracking-tight whitespace-nowrap">
-                          {formatCurrency(trevPar)} <span className="text-sm font-medium text-slate-500">원</span>
+                        <div className="text-3xl font-extrabold text-emerald-800 tracking-tight font-financial">
+                          {formatRevenue(trevPar)} <span className="text-sm font-semibold text-emerald-600">원</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-2 font-medium break-keep">
-                          물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출입니다.
+                        <div className="text-[11px] text-emerald-700 font-medium">
+                          전사 총매출 ÷ 175실 (리조트 통합 소비력)
                         </div>
                       </>
                     ) : (

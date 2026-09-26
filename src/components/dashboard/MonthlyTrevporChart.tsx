@@ -3,6 +3,7 @@ import { getClosedBusinessDate } from '../../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
 import { Building, Info, Calendar, BarChart3, TrendingUp, HelpCircle, Award, ArrowUpRight, ArrowDownRight, Filter, AlertTriangle } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
+import MetricExplainerTooltip from '../common/MetricExplainerTooltip';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -941,6 +942,7 @@ export default function MonthlyTrevporChart() {
             <div>
               <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                 가용객실당 총매출 (TrevPAR) 월별 전년 vs 올해 비교 분석
+                <MetricExplainerTooltip presetKey="trevpar" />
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
                   공식 월별 실적
                 </span>

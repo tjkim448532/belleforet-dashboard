@@ -7,8 +7,9 @@ import HolidayComparison from '../components/dashboard/HolidayComparison';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-// 하드코딩된 임시 영업장 목록 (추후 백엔드/매핑 컨텍스트에서 동적으로 가져올 수 있음)
+// 영업장 목록 ('전체' 포함)
 const FACILITIES = [
+  '전체',
   'ROOM', 'ROOM OTHER', '그린피', '기타매출', '카트대여', '클럽-레스토랑',
   '클럽-스타트하우스', '프로샵', '벨포레 리조트', 'BHC(멕시카나)', 'CU편의점',
   '남도예담', '딜라이트', '밤밤테이블', '브리스킷346', '쿠치나', '투썸플레이스',
@@ -30,14 +31,83 @@ export default function FacilityTrend() {
   const fetchFacilityTrend = async () => {
     setLoading(true);
     try {
-      // 2024-01-01부터 현재 선택된 날짜(startDate)까지의 데이터를 가져오도록 설계
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent(selectedFacility)}&endDate=${startDate}`).catch(() => null);
-      const payload = res?.data ?? res;
-      
-      if (payload && payload.monthlyData) {
-        setData(payload);
+      if (selectedFacility === '전체') {
+        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 및 /api/v6/report/room-guests-yoy)
+        const [res2024, res2025, res2026, guestsRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2024`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2025`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2026`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy`).catch(() => null),
+        ]);
+
+        const guestsMap: Record<string, number> = {};
+        if (guestsRes && Array.isArray(guestsRes.matrix)) {
+          guestsRes.matrix.forEach((row: any) => {
+            const m = String(row.month).padStart(2, '0');
+            ['2024', '2025', '2026'].forEach(y => {
+              if (row[y] !== undefined) {
+                guestsMap[`${y}-${m}`] = Math.round(Number(row[y]) || 0);
+              }
+            });
+          });
+        }
+
+        const monthlyDataMap = new Map<string, { revenue: number; visitors: number }>();
+        const appendYear = (res: any) => {
+          if (res && Array.isArray(res.data)) {
+            res.data.forEach((item: any) => {
+              const rawM = String(item.month);
+              const mKey = `${rawM.substring(0, 4)}-${rawM.substring(4, 6)}`;
+              monthlyDataMap.set(mKey, {
+                revenue: Math.round(Number(item.revenue || 0)),
+                visitors: guestsMap[mKey] || 0
+              });
+            });
+          }
+        };
+
+        appendYear(res2024);
+        appendYear(res2025);
+        appendYear(res2026);
+
+        // 2024-01부터 현재 선택된 날짜(startDate) 월까지 연속 월 배열 생성
+        const endYearMonth = startDate ? startDate.substring(0, 7) : '2026-12';
+        const [endYear, endMonth] = endYearMonth.split('-').map(Number);
+        
+        let curYear = 2024;
+        let curMonth = 1;
+        const monthlyData: { month: string; revenue: number; visitors: number }[] = [];
+
+        while (curYear < endYear || (curYear === endYear && curMonth <= endMonth)) {
+          const monthKey = `${curYear}-${String(curMonth).padStart(2, '0')}`;
+          const found = monthlyDataMap.get(monthKey) || { revenue: 0, visitors: guestsMap[monthKey] || 0 };
+          monthlyData.push({
+            month: monthKey,
+            revenue: found.revenue,
+            visitors: found.visitors
+          });
+
+          curMonth++;
+          if (curMonth > 12) {
+            curMonth = 1;
+            curYear++;
+          }
+        }
+
+        setData({
+          facility: '전체',
+          monthlyData
+        });
       } else {
-        setData(null);
+        // 개별 영업장 조회 (2024-01-01부터 현재 선택된 날짜까지)
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent(selectedFacility)}&endDate=${startDate}`).catch(() => null);
+        const payload = res?.data ?? res;
+        
+        if (payload && payload.monthlyData) {
+          setData(payload);
+        } else {
+          setData(null);
+        }
       }
     } catch (err) {
       console.error('Facility Trend Fetch Error:', err);
@@ -184,9 +254,9 @@ export default function FacilityTrend() {
               영업장별 월별 실적 추이
             </h1>
             <p className="text-sm text-slate-500 mt-2 font-medium">
-              선택한 영업장의 2024년부터 현재까지의 월별 매출 및 방문객 추이를 비교합니다.<br/>
+              선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 방문객 추이를 비교합니다.<br/>
               <span className="text-[11px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg mt-1 inline-block border border-amber-100">
-                💡 식음료(FNB) 및 연회 업장은 아이템 단위 판매이므로 진성 방문객수가 0명으로 집계됩니다.
+                💡 식음료(FNB) 및 연회 업장은 아이템 단위 판매이므로 진성 방문객수가 0명으로 집계됩니다. (전체 선택 시 리조트 객실 투숙객 기준)
               </span>
             </p>
           </div>
@@ -196,10 +266,12 @@ export default function FacilityTrend() {
             <select
               value={selectedFacility}
               onChange={(e) => setSelectedFacility(e.target.value)}
-              className="bg-white border border-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-48 p-2.5 outline-none cursor-pointer"
+              className="bg-white border border-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-52 p-2.5 outline-none cursor-pointer"
             >
               {FACILITIES.map(fac => (
-                <option key={fac} value={fac}>{fac}</option>
+                <option key={fac} value={fac}>
+                  {fac === '전체' ? '🏢 전체 (벨포레 전체매출)' : fac}
+                </option>
               ))}
             </select>
             <button 
@@ -224,7 +296,7 @@ export default function FacilityTrend() {
           {/* Chart Card */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" /> {selectedFacility} 월별 매출 추이
+              <Calendar className="w-5 h-5 text-blue-500" /> {selectedFacility === '전체' ? '벨포레 전체' : selectedFacility} 월별 매출 추이
             </h2>
             <div className="h-[400px] w-full">
               <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
@@ -234,7 +306,7 @@ export default function FacilityTrend() {
           {/* Data Table Card */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Store className="w-5 h-5 text-blue-500" /> 월별 상세 실적
+              <Store className="w-5 h-5 text-blue-500" /> 월별 상세 실적 {selectedFacility === '전체' ? '(벨포레 전체 종합)' : ''}
             </h2>
             <div className="overflow-x-auto">
               {renderPivotTable()}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BedDouble, RefreshCw, AlertCircle, HelpCircle, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { BedDouble, RefreshCw, AlertCircle, HelpCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { useDate } from '../../contexts/DateContext';
 import type { RoomGuestsYoyResponse, RoomGuestsYoyRow } from '../../types/reports-v2';
@@ -9,6 +9,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 export default function RoomGuestsYoyTable() {
   const { startDate } = useDate();
   const [data, setData] = useState<RoomGuestsYoyResponse | null>(null);
+  const [revenueMap, setRevenueMap] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,13 +17,41 @@ export default function RoomGuestsYoyTable() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy?startYear=2024`);
-      const payload: RoomGuestsYoyResponse = res?.data ?? res;
-      if (payload?.success && Array.isArray(payload.years) && Array.isArray(payload.matrix)) {
-        setData(payload);
+      // 1. Fetch Room Guests YoY Matrix & 2. Fetch Monthly Room Efficiency for Room Subtotal (ROOM + ROOM OTHER)
+      const [resYoy, resEff26, resEff25] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy?startYear=2024`),
+        secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=2026&compareYear=2025`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=2025&compareYear=2024`).catch(() => null),
+      ]);
+
+      const payloadYoy: RoomGuestsYoyResponse = resYoy?.data ?? resYoy;
+      if (payloadYoy?.success && Array.isArray(payloadYoy.years) && Array.isArray(payloadYoy.matrix)) {
+        setData(payloadYoy);
       } else {
-        setError(payload?.error || '숙박객 YoY 매트릭스 데이터를 불러오지 못했습니다.');
+        setError(payloadYoy?.error || '숙박객 YoY 매트릭스 데이터를 불러오지 못했습니다.');
       }
+
+      // Build Revenue Map by Year & Month (ROOM + ROOM OTHER Subtotal)
+      const revMap: Record<string, Record<number, number>> = { '2024': {}, '2025': {}, '2026': {} };
+      if (resEff26?.monthlyComparison) {
+        resEff26.monthlyComparison.forEach((m: any) => {
+          if (typeof m.ty?.roomRevenue === 'number' && m.ty.roomRevenue > 0) {
+            revMap['2026'][m.month] = m.ty.roomRevenue;
+          }
+          if (typeof m.ly?.roomRevenue === 'number' && m.ly.roomRevenue > 0) {
+            revMap['2025'][m.month] = m.ly.roomRevenue;
+          }
+        });
+      }
+      if (resEff25?.monthlyComparison) {
+        resEff25.monthlyComparison.forEach((m: any) => {
+          if (typeof m.ly?.roomRevenue === 'number' && m.ly.roomRevenue > 0) {
+            revMap['2024'][m.month] = m.ly.roomRevenue;
+          }
+        });
+      }
+      setRevenueMap(revMap);
+
     } catch (err: any) {
       console.error('Error fetching room guests yoy data:', err);
       setError(err?.message || 'API 호출 중 오류가 발생했습니다.');
@@ -67,14 +96,40 @@ export default function RoomGuestsYoyTable() {
     return years[years.length - 2];
   }, [years]);
 
+  // Helper to retrieve revenue for a given year & month (prioritizes backend room-guests-yoy payload if present)
+  const getRevenue = (yr: string, month: number, row: RoomGuestsYoyRow): number => {
+    const raw = row[yr] as any;
+    if (raw && typeof raw === 'object') {
+      if (typeof raw.revenue === 'number') return raw.revenue;
+      if (typeof raw.roomRevenue === 'number') return raw.roomRevenue;
+    }
+    const propName = `revenue_${yr}` as keyof RoomGuestsYoyRow;
+    if (typeof row[propName] === 'number') return row[propName] as number;
+    return revenueMap[yr]?.[month] ?? 0;
+  };
+
   // Helper to format guest count numbers (integers or .5 decimal values)
   const formatGuests = (val: number | undefined) => {
-    if (val === undefined || val === null) return '-';
-    if (val === 0) return '-';
+    if (val === undefined || val === null || val === 0) return '-';
     if (val % 1 !== 0) {
       return `${val.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}명`;
     }
     return `${val.toLocaleString('ko-KR')}명`;
+  };
+
+  const formatCurrency = (val: number) => {
+    return Math.round(val).toLocaleString('ko-KR');
+  };
+
+  const formatCompactCurrency = (amount: number) => {
+    const abs = Math.abs(amount);
+    if (abs >= 100_000_000) {
+      return `${(abs / 100_000_000).toFixed(2)}억`;
+    }
+    if (abs >= 10_000) {
+      return `${Math.round(abs / 10_000).toLocaleString()}만`;
+    }
+    return abs.toLocaleString();
   };
 
   return (
@@ -88,14 +143,14 @@ export default function RoomGuestsYoyTable() {
               <BedDouble size={18} />
             </div>
             <h3 className="text-lg lg:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
-              <span>연도별 벨포레 숙박객 추이 매트릭스</span>
+              <span>연도별 벨포레 숙박객 및 객실 소계 매출 매트릭스</span>
               <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100/80 px-2.5 py-0.5 rounded-full font-bold">
                 {years.join(' · ')}년 (1월 ~ 12월)
               </span>
             </h3>
           </div>
           <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
-            관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객(진성 투숙객 모수)의 연도별 월별 실적 비교 표입니다.
+            관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객(진성 투숙객 모수)과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
             {years.length > 0 && (
               <span className="ml-1 text-indigo-600 font-semibold">
                 (신규 연도 도래 시 컬럼이 자동 확장됩니다)
@@ -120,7 +175,7 @@ export default function RoomGuestsYoyTable() {
       {isLoading && (
         <div className="py-16 flex flex-col items-center justify-center gap-3">
           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs font-semibold text-slate-400">숙박객 정밀 매트릭스 데이터를 불러오는 중...</p>
+          <p className="text-xs font-semibold text-slate-400">숙박객 및 객실 소계 매트릭스 데이터를 불러오는 중...</p>
         </div>
       )}
 
@@ -140,7 +195,7 @@ export default function RoomGuestsYoyTable() {
       {/* 3. Matrix Table */}
       {!isLoading && !error && data && (
         <div className="overflow-x-auto rounded-2xl border border-slate-200">
-          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[850px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
                 <th className="py-4 px-6 text-center w-28">월 (Month)</th>
@@ -155,20 +210,30 @@ export default function RoomGuestsYoyTable() {
                           : ''
                       }`}
                     >
-                      <div className="flex items-center justify-center gap-1.5">
-                        <span>{yr}년 숙박객</span>
-                        {isLatest && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-600 text-white font-bold">
-                            최신
-                          </span>
-                        )}
+                      <div className="flex flex-col items-center justify-center gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span>{yr}년 실적</span>
+                          {isLatest && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-600 text-white font-bold">
+                              최신
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-normal text-slate-400">
+                          (숙박객 / 객실소계)
+                        </span>
                       </div>
                     </th>
                   );
                 })}
                 {prevYear && (
                   <th className="py-4 px-6 text-center bg-slate-50 text-slate-700">
-                    YoY 증감 ({latestYear.slice(2)}년 vs {prevYear.slice(2)}년)
+                    <div className="flex flex-col items-center justify-center gap-0.5">
+                      <span>YoY 증감 ({latestYear.slice(2)}년 vs {prevYear.slice(2)}년)</span>
+                      <span className="text-[10px] font-normal text-slate-400">
+                        (인원 증감 / 매출 증감)
+                      </span>
+                    </div>
                   </th>
                 )}
               </tr>
@@ -178,15 +243,27 @@ export default function RoomGuestsYoyTable() {
                 const monthNum = row.month;
                 const isSelectedMonth = monthNum === currentMonthNum;
 
-                // Calculate YoY Diff between latestYear and prevYear
-                let yoyDiff: number | null = null;
-                let yoyPct: number | null = null;
+                // Calculate YoY Diff between latestYear and prevYear for both Guests & Revenue
+                let yoyGuestsDiff: number | null = null;
+                let yoyGuestsPct: number | null = null;
+                let yoyRevDiff: number | null = null;
+                let yoyRevPct: number | null = null;
+
                 if (prevYear) {
-                  const latestVal = typeof row[latestYear] === 'number' ? (row[latestYear] as number) : 0;
-                  const prevVal = typeof row[prevYear] === 'number' ? (row[prevYear] as number) : 0;
-                  if (latestVal > 0 && prevVal > 0) {
-                    yoyDiff = Math.round((latestVal - prevVal) * 10) / 10;
-                    yoyPct = Math.round((yoyDiff / prevVal) * 1000) / 10;
+                  const rawLatest = row[latestYear];
+                  const rawPrev = row[prevYear];
+                  const latestGuests = typeof rawLatest === 'number' ? rawLatest : 0;
+                  const prevGuests = typeof rawPrev === 'number' ? rawPrev : 0;
+                  if (latestGuests > 0 && prevGuests > 0) {
+                    yoyGuestsDiff = Math.round((latestGuests - prevGuests) * 10) / 10;
+                    yoyGuestsPct = Math.round((yoyGuestsDiff / prevGuests) * 1000) / 10;
+                  }
+
+                  const latestRev = getRevenue(latestYear, monthNum, row);
+                  const prevRev = getRevenue(prevYear, monthNum, row);
+                  if (latestRev > 0 && prevRev > 0) {
+                    yoyRevDiff = Math.round(latestRev - prevRev);
+                    yoyRevPct = Math.round((yoyRevDiff / prevRev) * 1000) / 10;
                   }
                 }
 
@@ -213,7 +290,9 @@ export default function RoomGuestsYoyTable() {
 
                     {/* Dynamic Year Columns */}
                     {years.map((yr) => {
-                      const val = typeof row[yr] === 'number' ? (row[yr] as number) : 0;
+                      const rawVal = row[yr];
+                      const guests = typeof rawVal === 'number' ? rawVal : 0;
+                      const revenue = getRevenue(yr, monthNum, row);
                       const isLatest = yr === latestYear;
                       const isFuture = yr === currentYearStr && monthNum > currentMonthNum;
 
@@ -222,44 +301,85 @@ export default function RoomGuestsYoyTable() {
                           key={yr}
                           className={`py-4 px-6 text-center tabular-nums ${
                             isLatest
-                              ? 'bg-indigo-50/30 border-x border-indigo-100/60 font-bold text-indigo-950'
-                              : 'text-slate-700'
+                              ? 'bg-indigo-50/30 border-x border-indigo-100/60'
+                              : ''
                           }`}
                         >
-                          {val > 0 ? (
-                            <span className={`font-mono ${isLatest ? 'text-sm font-extrabold text-indigo-900' : 'font-semibold'}`}>
-                              {formatGuests(val)}
-                            </span>
-                          ) : isFuture ? (
-                            <span className="text-slate-300 font-mono text-xs">미도래</span>
-                          ) : (
-                            <span className="text-slate-300 font-mono">-</span>
-                          )}
+                          <div className="flex flex-col items-center gap-1">
+                            {/* 상단: 숙박객 수 */}
+                            <div className="flex items-center gap-1">
+                              {guests > 0 ? (
+                                <span className={`font-mono ${isLatest ? 'text-sm font-black text-indigo-950' : 'text-xs font-bold text-slate-800'}`}>
+                                  {formatGuests(guests)}
+                                </span>
+                              ) : isFuture ? (
+                                <span className="text-slate-300 font-mono text-xs">미도래</span>
+                              ) : (
+                                <span className="text-slate-300 font-mono text-xs">-</span>
+                              )}
+                            </div>
+
+                            {/* 하단: 객실 소계 매출 (ROOM + ROOM OTHER) */}
+                            {revenue > 0 ? (
+                              <div className="flex items-center gap-1">
+                                <span className={`font-mono text-[11px] px-2 py-0.5 rounded-md ${
+                                  isLatest 
+                                    ? 'text-indigo-800 bg-indigo-100/90 font-black' 
+                                    : 'text-slate-600 bg-slate-100 font-semibold'
+                                }`}>
+                                  ₩{formatCurrency(revenue)}
+                                </span>
+                              </div>
+                            ) : guests > 0 ? (
+                              <span className="text-[10px] text-slate-300 font-mono">-</span>
+                            ) : null}
+                          </div>
                         </td>
                       );
                     })}
 
-                    {/* YoY Diff Column */}
+                    {/* YoY Diff Column (인원 증감 & 매출 증감) */}
                     {prevYear && (
                       <td className="py-4 px-6 text-center">
-                        {yoyDiff !== null && yoyPct !== null ? (
-                          <div className="inline-flex items-center gap-1 font-mono text-xs font-bold">
-                            {yoyDiff > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-xl shadow-2xs">
-                                <ArrowUpRight size={13} className="stroke-[2.5]" />
-                                +{yoyDiff.toLocaleString()}명 (+{yoyPct.toFixed(1)}%)
-                              </span>
-                            ) : yoyDiff < 0 ? (
-                              <span className="inline-flex items-center gap-1 text-rose-800 bg-rose-100/80 px-2.5 py-1 rounded-xl shadow-2xs">
-                                <ArrowDownRight size={13} className="stroke-[2.5]" />
-                                {yoyDiff.toLocaleString()}명 ({yoyPct.toFixed(1)}%)
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl">
-                                <Minus size={13} />
-                                0명 (0.0%)
-                              </span>
-                            )}
+                        {yoyGuestsDiff !== null && yoyGuestsPct !== null ? (
+                          <div className="flex flex-col items-center gap-1.5 font-mono text-xs">
+                            {/* 인원 증감 */}
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-slate-400 font-sans font-bold">인원</span>
+                              {yoyGuestsDiff > 0 ? (
+                                <span className="inline-flex items-center gap-0.5 text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                  <ArrowUpRight size={12} className="stroke-[2.5]" />
+                                  +{yoyGuestsDiff.toLocaleString()}명 ({yoyGuestsPct > 0 ? `+${yoyGuestsPct.toFixed(1)}%` : `${yoyGuestsPct.toFixed(1)}%`})
+                                </span>
+                              ) : yoyGuestsDiff < 0 ? (
+                                <span className="inline-flex items-center gap-0.5 text-rose-800 bg-rose-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                  <ArrowDownRight size={12} className="stroke-[2.5]" />
+                                  {yoyGuestsDiff.toLocaleString()}명 ({yoyGuestsPct.toFixed(1)}%)
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 font-bold">0명 (0.0%)</span>
+                              )}
+                            </div>
+
+                            {/* 매출 증감 */}
+                            {yoyRevDiff !== null && yoyRevPct !== null ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-indigo-400 font-sans font-bold">매출</span>
+                                {yoyRevDiff > 0 ? (
+                                  <span className="inline-flex items-center gap-0.5 text-indigo-900 bg-indigo-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                    <ArrowUpRight size={12} className="stroke-[2.5]" />
+                                    +₩{formatCompactCurrency(yoyRevDiff)} ({yoyRevPct > 0 ? `+${yoyRevPct.toFixed(1)}%` : `${yoyRevPct.toFixed(1)}%`})
+                                  </span>
+                                ) : yoyRevDiff < 0 ? (
+                                  <span className="inline-flex items-center gap-0.5 text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                    <ArrowDownRight size={12} className="stroke-[2.5]" />
+                                    -₩{formatCompactCurrency(yoyRevDiff)} ({yoyRevPct.toFixed(1)}%)
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500 font-bold">₩0 (0.0%)</span>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
                         ) : (
                           <span className="text-slate-300 font-mono">-</span>
@@ -279,11 +399,11 @@ export default function RoomGuestsYoyTable() {
         <div className="flex items-center gap-1.5">
           <HelpCircle size={14} className="text-indigo-400 shrink-0" />
           <span>
-            <b>산출 기준:</b> 판매 객실 수(rooms_sold) × 객실 타입별 정원(16평 2.5명, 35평 4명, 51평 6명 등) 반영 공식 숙박객 수
+            <b>각 셀 표기:</b> [상단] 숙박객 수(명), [하단] 객실 소계 매출(ROOM + ROOM OTHER, 원)
           </span>
         </div>
         <span className="text-slate-400">
-          데이터 소스: V6 전용 API (/api/v6/report/room-guests-yoy)
+          데이터 소스: V6 정밀 데이터 마트 API (/api/v6/report/room-guests-yoy, /api/v6/report/monthly-room-efficiency)
         </span>
       </div>
 

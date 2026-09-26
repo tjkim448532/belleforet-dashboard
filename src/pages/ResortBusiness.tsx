@@ -11,6 +11,7 @@ import { useDate } from '../contexts/DateContext';
 import ReactECharts from 'echarts-for-react';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { transformResortData } from '../lib/dataTransformers';
+import RoomGuestsYoyTable from '../components/dashboard/RoomGuestsYoyTable';
 // 🌟 대한민국 법정 공휴일 마스터 (2025~2026)
 const KOREAN_HOLIDAYS_SET = new Set([
   // 2025
@@ -1399,6 +1400,11 @@ export default function ResortBusiness() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* 🏨 연도별 벨포레 숙박객 및 객실 소계 매출 매트릭스 */}
+          <div id="room-guests-yoy">
+            <RoomGuestsYoyTable />
           </div>
         </>
       )}

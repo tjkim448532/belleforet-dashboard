@@ -109,7 +109,7 @@ export default function MonthlyTrevporChart() {
       } catch (err: any) {
         if (isMounted) {
           console.warn('[MonthlyTrevporChart] Waiting for backend API /api/v6/report/monthly-room-efficiency:', err);
-          setError('백엔드 전용 API(/api/v6/report/monthly-room-efficiency) 연동 대기 중입니다.');
+          setError('월별 가용객실 효율 분석 데이터 집계 대기 중입니다.');
           setData(null);
         }
       } finally {
@@ -350,7 +350,7 @@ export default function MonthlyTrevporChart() {
           let result = `
             <div style="font-weight:800; font-size:14px; color:#0f172a; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
               <span>📅 ${params[0].name} TrevPAR ${isOngoingMonth ? `<span style="color:#e11d48; font-size:11px; font-weight:700;">(${monthMeta.daysAccumulated}일 누적 진행중)</span>` : ''}</span>
-              <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">가용객실 기준 (SSOT)</span>
+              <span style="font-size:11px; font-weight:600; color:#64748b; background:#f8fafc; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0;">가용객실 기준</span>
             </div>
           `;
           params.forEach(p => {
@@ -942,11 +942,11 @@ export default function MonthlyTrevporChart() {
               <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                 가용객실당 총매출 (TrevPAR) 월별 전년 vs 올해 비교 분석
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                  SSOT 완제품 바인딩 (Zero-Proxy)
+                  공식 월별 실적
                 </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                프론트엔드 임의 연산을 배제하고 백엔드가 응답한 완제품(TrevPAR) 지표 그대로를 출력합니다. 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
+                가용객실당 총매출(TrevPAR) 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
               </p>
             </div>
           </div>
@@ -1187,7 +1187,7 @@ export default function MonthlyTrevporChart() {
               💡 가용객실당 총매출 (TrevPAR: Total Revenue Per Available Room)이란?
             </div>
             <div className="text-slate-600 leading-relaxed">
-              백엔드 마트(SSOT)가 1원 단위로 정제한 공식 지표로, <strong>해당 월의 물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출</strong>입니다. 프론트엔드의 가상 연산 없이 순수 백엔드 완제품을 직결하여 무결성을 보장합니다.
+              공식 집계 지표로, <strong>해당 월의 물리적 전체 가용 객실 1실당 창출한 리조트 전체 총매출</strong>입니다. 일원화된 공식 실적 데이터를 기반으로 분석을 제공합니다.
             </div>
           </div>
         </div>
@@ -1210,9 +1210,9 @@ export default function MonthlyTrevporChart() {
           <div className="inline-flex p-3 bg-amber-50 rounded-2xl text-amber-600 border border-amber-100">
             <Info className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-slate-800">백엔드 공식 전용 API 연동 대기 중</h3>
+          <h3 className="text-base font-bold text-slate-800">월별 실적 데이터 준비 중</h3>
           <p className="text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
-            무관용 SSOT 원칙에 따라 백엔드 엔드포인트 <code>/api/v6/report/monthly-room-efficiency</code> 배포 후 100% 검증된 12개월 전수 데이터가 차트와 테이블에 자동 렌더링됩니다.
+            월별 가용객실 효율 분석 데이터가 준비되는 대로 차트와 테이블에 자동 렌더링됩니다.
           </p>
         </div>
       ) : (
@@ -1228,7 +1228,7 @@ export default function MonthlyTrevporChart() {
                       12개월 TrevPAR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
-                  <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">SSOT 실측 객실 기준</span>
+                  <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">실측 객실 기준</span>
                 </div>
                 {yoyTrendChartOptions && (
                   <ReactECharts option={yoyTrendChartOptions} style={{ height: '460px', width: '100%' }} />

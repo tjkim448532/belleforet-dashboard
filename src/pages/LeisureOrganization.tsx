@@ -111,7 +111,7 @@ export default function LeisureOrganization() {
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-12 max-w-[1600px] mx-auto">
       
       {/* 1. Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-[32px] p-8 lg:p-10 text-white relative overflow-hidden shadow-lg">
+      <div className="bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 rounded-[32px] p-8 lg:p-10 text-white relative overflow-hidden shadow-lg">
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute right-32 -bottom-20 w-48 h-48 bg-emerald-400/20 rounded-full blur-2xl"></div>
         
@@ -126,17 +126,17 @@ export default function LeisureOrganization() {
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-3 flex-wrap break-keep">
               <span className="whitespace-nowrap">{division} 조직도 및 영업장 인력 현황</span>
               <span className="text-xs bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white font-medium whitespace-nowrap">
-                4대 파트 · 12개 영업장 SSOT
+                4대 파트 · 12개 영업장
               </span>
             </h1>
-            <p className="text-emerald-100 text-sm mt-2 font-normal opacity-90 break-keep">
+            <p className="text-sm text-white/80 mt-2 break-keep">
               통합 데이터 통제 센터(Admin)와 실시간 연동된 레저본부 영업장별 책임자, 정규직 및 주중/주말 운영 투입 인력 현황입니다.
             </p>
           </div>
 
           <button
             onClick={fetchOrganizationData}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0 cursor-pointer"
           >
             <RefreshCw size={15} /> 새로고침
           </button>
@@ -149,13 +149,13 @@ export default function LeisureOrganization() {
         {/* Total Venues */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">총 관리 영업장</span>
-            <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">총 관리 영업장</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
               <Building2 size={20} />
             </div>
           </div>
           <div className="flex items-baseline gap-2 whitespace-nowrap">
-            <span className="text-3xl font-extrabold text-slate-900 tabular-nums">{summary.totalVenues}</span>
+            <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">{summary.totalVenues}</span>
             <span className="text-sm font-semibold text-slate-500">개소</span>
           </div>
           <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
@@ -166,16 +166,16 @@ export default function LeisureOrganization() {
         {/* Total Regular Headcount */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-indigo-500 tracking-wider uppercase whitespace-nowrap">정규직 총원</span>
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">정규직 총원</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
               <UserCheck size={20} />
             </div>
           </div>
           <div className="flex items-baseline gap-2 whitespace-nowrap">
-            <span className="text-3xl font-extrabold text-indigo-700 tabular-nums">{summary.totalRegularHeadcount}</span>
-            <span className="text-sm font-semibold text-indigo-500">명</span>
+            <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">{summary.totalRegularHeadcount}</span>
+            <span className="text-sm font-semibold text-slate-500">명</span>
           </div>
-          <div className="text-xs text-indigo-400 mt-2 font-medium whitespace-nowrap">
+          <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
             레저본부 소속 정규직 (책임자 포함)
           </div>
         </div>
@@ -183,16 +183,16 @@ export default function LeisureOrganization() {
         {/* Total Weekday Headcount */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-emerald-600 tracking-wider uppercase whitespace-nowrap">주중 운영 투입</span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">주중 운영 투입</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
               <Calendar size={20} />
             </div>
           </div>
           <div className="flex items-baseline gap-2 whitespace-nowrap">
-            <span className="text-3xl font-extrabold text-emerald-700 tabular-nums">{summary.totalWeekdayHeadcount}</span>
-            <span className="text-sm font-semibold text-emerald-600">명</span>
+            <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">{summary.totalWeekdayHeadcount}</span>
+            <span className="text-sm font-semibold text-slate-500">명</span>
           </div>
-          <div className="text-xs text-emerald-500 mt-2 font-medium whitespace-nowrap">
+          <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
             주중 평일 현장 배치 인원 (정규직+알바)
           </div>
         </div>
@@ -200,16 +200,16 @@ export default function LeisureOrganization() {
         {/* Total Weekend Headcount */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-amber-600 tracking-wider uppercase whitespace-nowrap">주말 집중 투입</span>
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">주말 집중 투입</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
               <Flame size={20} />
             </div>
           </div>
           <div className="flex items-baseline gap-2 whitespace-nowrap">
-            <span className="text-3xl font-extrabold text-amber-700 tabular-nums">{summary.totalWeekendHeadcount}</span>
-            <span className="text-sm font-semibold text-amber-600">명</span>
+            <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">{summary.totalWeekendHeadcount}</span>
+            <span className="text-sm font-semibold text-slate-500">명</span>
           </div>
-          <div className="text-xs text-amber-500 mt-2 font-medium whitespace-nowrap">
+          <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
             주말/공휴일 피크 투입 인원 (+{(summary.totalWeekendHeadcount - summary.totalWeekdayHeadcount)}명 증원)
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function LeisureOrganization() {
             4대 파트별 상세 조직 및 영업장 인력 현황
           </h2>
           <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-            백엔드 SSOT 실시간 동기화
+            실시간 동기화
           </span>
         </div>
 

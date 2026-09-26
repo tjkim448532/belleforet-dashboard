@@ -345,10 +345,10 @@ export default function HolidayComparison() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase tracking-wider">
-              New Feature (API V6)
+              Holiday Analysis
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-              Zero-Variance Guaranteed
+              명절 및 연휴 실적
             </span>
           </div>
           <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
@@ -569,7 +569,7 @@ export default function HolidayComparison() {
         <div className="py-12 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-3xl bg-slate-50">
           <AlertCircle className="w-10 h-10 mb-3 text-slate-300" />
           <p className="font-bold text-slate-600">연휴 데이터가 존재하지 않습니다.</p>
-          <p className="text-xs mt-1">백엔드 API 응답을 확인해주세요.</p>
+          <p className="text-xs mt-1 text-slate-400">조회 조건에 해당하는 데이터가 없습니다.</p>
         </div>
       )}
     </div>

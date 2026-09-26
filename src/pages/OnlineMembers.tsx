@@ -231,13 +231,13 @@ export default function OnlineMembers() {
       <div className="flex flex-col xl:flex-row xl:items-end justify-between mb-8 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-bold px-2 py-1 rounded-md bg-indigo-100 text-indigo-700 uppercase tracking-wider">
+            <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 uppercase tracking-wider">
               Online Members
             </span>
-            <span className="text-xs font-medium text-slate-500">SSOT Online Member Data Mart</span>
+            <span className="text-xs font-medium text-slate-500">온라인 회원 통합 데이터</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <Users className="text-indigo-500" size={32} strokeWidth={2.5} />
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+            <Users className="text-[#00ae95]" size={32} strokeWidth={2.5} />
             온라인 회원 가입 추세 분석
           </h1>
           <p className="text-slate-500 mt-2 text-sm max-w-2xl leading-relaxed">

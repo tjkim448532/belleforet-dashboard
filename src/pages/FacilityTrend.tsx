@@ -130,7 +130,7 @@ export default function FacilityTrend() {
     
     const seriesData: any[] = [];
     const legendData: string[] = [];
-    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#06b6d4'];
+    const colors = ['#94a3b8', '#00ae95', '#0f172a', '#10b981'];
     
     years.forEach((year: any, idx: number) => {
       const yearRevenue = Array(12).fill(0);
@@ -242,20 +242,20 @@ export default function FacilityTrend() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 uppercase tracking-wider">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 uppercase tracking-wider">
                 Facility Monthly Trend
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                 2024 ~ Present
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-              <TrendingUp className="text-blue-600 w-8 h-8" />
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+              <TrendingUp className="text-[#00ae95] w-8 h-8" />
               영업장별 월별 실적 추이
             </h1>
-            <p className="text-sm text-slate-500 mt-2 font-medium">
+            <p className="text-sm text-slate-500 mt-2">
               선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 방문객 추이를 비교합니다.<br/>
-              <span className="text-[11px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg mt-1 inline-block border border-amber-100">
+              <span className="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-lg mt-1 inline-block border border-slate-200">
                 💡 식음료(FNB) 및 연회 업장은 아이템 단위 판매이므로 진성 방문객수가 0명으로 집계됩니다. (전체 선택 시 리조트 객실 투숙객 기준)
               </span>
             </p>
@@ -266,7 +266,7 @@ export default function FacilityTrend() {
             <select
               value={selectedFacility}
               onChange={(e) => setSelectedFacility(e.target.value)}
-              className="bg-white border border-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-52 p-2.5 outline-none cursor-pointer"
+              className="bg-white border border-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-52 p-2.5 outline-none cursor-pointer"
             >
               {FACILITIES.map(fac => (
                 <option key={fac} value={fac}>
@@ -277,7 +277,7 @@ export default function FacilityTrend() {
             <button 
               onClick={fetchFacilityTrend}
               disabled={loading}
-              className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50"
+              className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -288,15 +288,15 @@ export default function FacilityTrend() {
       {/* Content Area */}
       {loading ? (
         <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
-          <RefreshCw className="w-10 h-10 animate-spin mb-4 text-blue-500" />
+          <RefreshCw className="w-10 h-10 animate-spin mb-4 text-[#00ae95]" />
           <p className="font-bold">데이터를 불러오는 중입니다...</p>
         </div>
       ) : data?.monthlyData?.length > 0 ? (
         <div className="space-y-6">
           {/* Chart Card */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" /> {selectedFacility === '전체' ? '벨포레 전체' : selectedFacility} 월별 매출 추이
+            <h2 className="text-lg lg:text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[#00ae95]" /> {selectedFacility === '전체' ? '벨포레 전체' : selectedFacility} 월별 매출 추이
             </h2>
             <div className="h-[400px] w-full">
               <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
@@ -316,10 +316,9 @@ export default function FacilityTrend() {
       ) : (
         <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
           <AlertCircle className="w-12 h-12 mb-4 text-slate-300" />
-          <p className="font-bold text-slate-600 text-lg mb-2">데이터가 없거나 백엔드 연동 전입니다.</p>
+          <p className="font-bold text-slate-600 text-lg mb-2">데이터가 존재하지 않습니다.</p>
           <p className="text-sm text-slate-400 text-center max-w-md">
-            <b>{selectedFacility}</b>의 2024년 이후 매출 데이터가 백엔드에서 아직 제공되지 않고 있습니다.<br/>
-            (백엔드 API: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-600">/api/v6/report/facility-monthly-trend</code>)
+            <b>{selectedFacility}</b>의 2024년 이후 집계된 매출 데이터가 없습니다.
           </p>
         </div>
       )}

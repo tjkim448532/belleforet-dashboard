@@ -104,9 +104,9 @@ export default function V6DashboardViewer() {
     fetchV6Data();
   }, [startDate, endDate, isRange]);
 
-  if (loading) return <div className="p-4 font-bold text-slate-600 flex items-center justify-center h-40">V6 0-Variance 통합 데이터 동기화 중...</div>;
-  if (error) return <div className="p-4 text-red-600 font-bold bg-red-50 rounded-lg">뷰어 렌더링 중단: {error} (데이터 무결성 오류)</div>;
-  if (!data || !data.divisions) return <div className="p-4 text-red-600 font-bold">API 응답 규격 위반 (divisions 없음)</div>;
+  if (loading) return <div className="p-4 font-semibold text-slate-600 flex items-center justify-center h-40">정산 데이터를 불러오는 중입니다...</div>;
+  if (error) return <div className="p-4 text-red-600 font-bold bg-red-50 rounded-lg">데이터를 불러오는 중 오류가 발생했습니다: {error}</div>;
+  if (!data || !data.divisions) return <div className="p-4 text-slate-500 font-bold">표시할 정산 데이터가 없습니다.</div>;
 
   return (
     <div className="w-full overflow-auto max-h-[calc(100vh-280px)] rounded-lg">

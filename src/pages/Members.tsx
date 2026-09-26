@@ -111,28 +111,28 @@ export default function Members() {
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
       
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide uppercase whitespace-nowrap">
-                VISITORS INTELLIGENCE V2
+              <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/20 tracking-wide uppercase whitespace-nowrap">
+                VISITORS INTELLIGENCE
               </span>
-              <span className="bg-emerald-500/30 text-emerald-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30 font-medium whitespace-nowrap">
-                <Calendar size={12} className="text-emerald-300 shrink-0" />
+              <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/20 font-medium whitespace-nowrap">
+                <Calendar size={12} className="text-white shrink-0" />
                 조회일: <strong className="ml-1">{startDate} {isEffectiveRange && endDate ? `~ ${endDate}` : ''}</strong>
               </span>
             </div>
             
-            <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
-              <Users className="text-brand-mint shrink-0" size={32} />
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
+              <Users className="text-white shrink-0" size={32} />
               <span className="break-keep">
-                일일 진성 방문객 분석 (SSOT)
+                일일 진성 방문객 분석
               </span>
             </h1>
-            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-3xl break-keep">
-              선택된 기간 동안의 업장별 총 방문객 및 기여액을 분석하여 진성 고객 데이터를 단일 소스(SSOT)로 제공합니다.
+            <p className="text-sm text-white/80 mt-2 font-normal max-w-3xl break-keep">
+              선택된 기간 동안의 업장별 총 방문객 및 기여액을 분석하여 일원화된 공식 고객 데이터를 제공합니다.
             </p>
           </div>
 

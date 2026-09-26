@@ -239,17 +239,17 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       
-      <div className="w-full bg-brand-mint h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
-        <div className="absolute top-10 right-[10%] w-32 h-32 bg-white/20 shape-half-circle" />
-        <div className="absolute -top-10 right-[20%] w-48 h-48 bg-white/10 shape-leaf" />
-        <div className="absolute top-20 left-[5%] w-16 h-16 bg-white/20 rounded-full" />
+      <div className="w-full bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
+        <div className="absolute top-10 right-[10%] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+        <div className="absolute -top-10 right-[20%] w-48 h-48 bg-white/10 rounded-full blur-xl" />
+        <div className="absolute top-20 left-[5%] w-16 h-16 bg-white/20 rounded-full blur-lg" />
       </div>
 
       <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
         
 
         {apiError && (
-          <div className="bg-orange-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
+          <div className="bg-rose-500 text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg animate-pulse">
             <AlertCircle size={24} />
             <span className="font-medium text-lg">{apiError}</span>
           </div>
@@ -258,13 +258,13 @@ export default function Home() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-black text-3xl tracking-widest bg-white text-brand-mint px-3 py-1 rounded-sm shadow-md">
+              <span className="font-bold text-3xl tracking-widest bg-white text-[#00ae95] px-3 py-1 rounded-sm shadow-md">
                 BELLE FORET
               </span>
-              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
+              <span className="font-bold text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-medium tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
-            <p className="text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
+            <p className="text-sm text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <GlobalDatePicker />
@@ -274,10 +274,10 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-12">
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-brand-mint/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#00ae95]/5 rounded-full transition-transform duration-500 group-hover:scale-[1.8]" />
               <div className="min-h-[96px] mb-2 relative z-10 flex flex-col gap-3">
-                <h2 className="text-base font-medium text-slate-500 flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5 text-brand-mint group-hover:animate-bounce" /> 
+                <h2 className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5 text-[#00ae95] group-hover:animate-bounce" /> 
                   {isRangeMode && coreData.core?.endDate ? `조회기간 (${startDate} ~ ${coreData.core.endDate})` : `조회일자 (${startDate})`}
                   <span className="text-xs text-slate-400 font-normal hidden xl:inline">(부가세 별도)</span>
                 </h2>
@@ -304,10 +304,10 @@ export default function Home() {
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
+                      <div className="text-[10px] font-medium text-[#00ae95] mb-0.5">현재 날씨</div>
                       {weather && (weather.weatherDesc || weather.description || weather.tempMax != null) ? (
                         <>
-                          <div className="font-medium text-brand-mint text-base flex items-center justify-end gap-1">
+                          <div className="font-medium text-[#00ae95] text-base flex items-center justify-end gap-1">
                             {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
                               <>
                                 {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
@@ -327,7 +327,7 @@ export default function Home() {
                 )}
               </div>
               
-              <div className="text-3xl font-semibold text-slate-800 mb-4 tracking-tight transition-all duration-300 whitespace-nowrap">
+              <div className="text-2xl lg:text-3xl font-bold text-slate-900 mb-4 tracking-tight transition-all duration-300 whitespace-nowrap">
                 {formatCurrency(todayGross)}
               </div>
               {todayGrowth !== undefined ? (
@@ -365,7 +365,7 @@ export default function Home() {
                     )}
                   </h2>
                 </div>
-                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight whitespace-nowrap">
+                <div className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2 tracking-tight whitespace-nowrap">
                   {formatCurrency(ytdGross)}
                 </div>
                 {ytdGrowth !== undefined ? (
@@ -508,9 +508,9 @@ export default function Home() {
                     <Users className="w-5 h-5 text-brand-mint group-hover:animate-pulse shrink-0" /> <span className="whitespace-nowrap">통합 숙박객 수</span> <span className="text-xs text-slate-400 font-normal whitespace-nowrap">(콘도 투숙객)</span>
                   </h2>
                 </div>
-                <div className="text-3xl font-semibold text-slate-800 mb-2 tracking-tight relative z-10 flex items-baseline gap-2 whitespace-nowrap">
+                <div className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2 tracking-tight relative z-10 flex items-baseline gap-2 whitespace-nowrap">
                   <span>{new Intl.NumberFormat('ko-KR').format(roomCapActual)}</span>
-                  <span className="text-lg font-medium text-slate-500">명</span>
+                  <span className="text-base font-semibold text-slate-500">명</span>
                 </div>
 
                 {/* 과거 비교 숙박객 수 및 증감률 배지 */}

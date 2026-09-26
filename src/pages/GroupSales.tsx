@@ -64,20 +64,17 @@ export default function GroupSales() {
       {/* 1. Header */}
       <div className="bg-white p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-50 text-blue-700 rounded-2xl border border-blue-100/80">
+          <div className="p-3 bg-emerald-50 text-[#00ae95] rounded-2xl border border-emerald-100">
             <Building2 className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight break-keep whitespace-nowrap">
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight break-keep whitespace-nowrap">
                 법인/단체 객실 실적
               </h1>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
-                V2
-              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1 break-keep">
-              법인 및 단체의 객실 실적을 세그먼트별로 정확히 분석합니다. (SSOT)
+            <p className="text-sm text-slate-500 mt-1 break-keep">
+              법인 및 단체의 객실 실적을 세그먼트별로 정확히 분석합니다.
             </p>
           </div>
         </div>
@@ -98,7 +95,7 @@ export default function GroupSales() {
                   type="button"
                   onClick={() => applyPreset(p.key as DatePresetType)}
                   className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    active ? 'bg-blue-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+                    active ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {p.label}
@@ -124,15 +121,15 @@ export default function GroupSales() {
         {/* Card 1: Total Revenue */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <DollarSign size={15} className="text-emerald-600" /> 총 매출액
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <DollarSign size={15} className="text-[#00ae95]" /> 총 매출액
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
               순매출
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums whitespace-nowrap">
               {summary?.totalRevenueFormatted || '0'}원
             </div>
           </div>
@@ -141,12 +138,12 @@ export default function GroupSales() {
         {/* Card 2: Rooms Sold */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <BedDouble size={15} className="text-blue-600" /> 판매 객실
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <BedDouble size={15} className="text-[#00ae95]" /> 판매 객실
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums whitespace-nowrap">
               {summary?.totalRoomsSoldFormatted || '0'}
               <span className="text-sm font-semibold text-slate-500 ml-1">실</span>
             </div>
@@ -156,12 +153,12 @@ export default function GroupSales() {
         {/* Card 3: Total Guests */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <Users size={15} className="text-purple-600" /> 총 투숙객
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <Users size={15} className="text-[#00ae95]" /> 총 투숙객
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums whitespace-nowrap">
               {summary?.totalGuestsFormatted || '0'}
               <span className="text-sm font-semibold text-slate-500 ml-1">명</span>
             </div>
@@ -171,12 +168,12 @@ export default function GroupSales() {
         {/* Card 4: ADR */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-              <TrendingUp size={15} className="text-amber-600" /> ADR (객단가)
+            <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+              <TrendingUp size={15} className="text-[#00ae95]" /> ADR (객단가)
             </span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums whitespace-nowrap">
               {summary?.adrFormatted || '0'}원
             </div>
           </div>

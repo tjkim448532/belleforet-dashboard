@@ -149,7 +149,7 @@ export default function LeisureFacility() {
       <div className="p-8">
         <div className="bg-slate-50 text-slate-500 p-6 rounded-2xl flex items-center gap-3">
           <AlertCircle size={24} />
-          <p className="font-medium">레저 영업장 데이터가 없습니다. (혹은 백엔드 데이터 집계 전입니다)</p>
+          <p className="font-medium">조회된 레저 영업장 데이터가 없습니다.</p>
         </div>
       </div>
     );

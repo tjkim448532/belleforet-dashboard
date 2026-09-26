@@ -460,10 +460,10 @@ export default function ResortBusiness() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Hotel className="w-6 h-6 text-emerald-500 shrink-0" />
-            <h1 className="text-2xl font-medium text-slate-800 tracking-tight break-keep whitespace-nowrap">리조트사업본부 경영 현황</h1>
+            <Hotel className="w-6 h-6 text-[#00ae95] shrink-0" />
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight break-keep whitespace-nowrap">리조트사업본부 경영 현황</h1>
           </div>
-          <p className="text-slate-400 text-xs mt-1 break-keep">객실 실적, 채널별 ADR 및 175실 기준 실운영 점유율 분석 대시보드</p>
+          <p className="text-sm text-slate-500 mt-1 break-keep">객실 실적, 채널별 ADR 및 175실 기준 실운영 점유율 분석 대시보드</p>
         </div>
         <GlobalDatePicker />
       </div>
@@ -482,23 +482,23 @@ export default function ResortBusiness() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Total Revenue */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
-                <Coins className="w-5 h-5 text-emerald-500" /> 객실 총 매출
+              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
+                <Coins className="w-5 h-5 text-[#00ae95]" /> 객실 총 매출
               </h2>
-              <div className="text-3xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
+              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap">
                 {formatCurrency(lodgingStats.revenue)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
               {(lodgingStats.weekdayRevenue !== undefined || lodgingStats.weekendRevenue !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                   <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayRevenue)}</strong>원</span>
                   <span className="text-slate-300">|</span>
-                  <span className="text-slate-500">휴일전일 <strong className="text-indigo-600">{formatCurrency(lodgingStats.weekendRevenue)}</strong>원</span>
+                  <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRevenue)}</strong>원</span>
                 </div>
               )}
               {lodgingStats.lyRevenue !== undefined && lodgingStats.lyRevenue > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                    (lodgingStats.revenueGrowth || 0) > 0 ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+                    (lodgingStats.revenueGrowth || 0) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
                   }`}>
                     {(lodgingStats.revenueGrowth || 0) > 0 ? '▲' : '▼'} {Math.abs(lodgingStats.revenueGrowth || 0).toFixed(1)}%
                   </span>
@@ -510,23 +510,23 @@ export default function ResortBusiness() {
 
             {/* 판매 건수 (계약) */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
-                <CalendarDays className="w-5 h-5 text-emerald-500" /> 판매 건수 (계약)
+              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
+                <CalendarDays className="w-5 h-5 text-[#00ae95]" /> 판매 건수 (계약)
               </h2>
-              <div className="text-3xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
+              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap">
                 {formatCurrency(lodgingStats.roomsSold)}건
               </div>
               {(lodgingStats.weekdayRoomsSold !== undefined || lodgingStats.weekendRoomsSold !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                   <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayRoomsSold)}</strong>건</span>
                   <span className="text-slate-300">|</span>
-                  <span className="text-slate-500">휴일전일 <strong className="text-indigo-600">{formatCurrency(lodgingStats.weekendRoomsSold)}</strong>건</span>
+                  <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRoomsSold)}</strong>건</span>
                 </div>
               )}
               {lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                    lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+                    lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
                   }`}>
                     {lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? '▲' : '▼'} {Math.abs(((lodgingStats.roomsSold - lodgingStats.lyRoomsSold) / lodgingStats.lyRoomsSold) * 100).toFixed(1)}%
                   </span>
@@ -537,37 +537,37 @@ export default function ResortBusiness() {
             </div>
 
             {/* 실운영 점유실 (물리) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/20">
-              <h2 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2 whitespace-nowrap">
-                <KeyRound className="w-5 h-5 text-emerald-600" /> 실운영 점유실 (물리)
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
+                <KeyRound className="w-5 h-5 text-[#00ae95]" /> 실운영 점유실 (물리)
               </h2>
-              <div className="text-3xl font-bold text-emerald-700 tracking-tight flex items-baseline gap-2 whitespace-nowrap">
+              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap">
                 <span>{totalPhysicalOccupied.toLocaleString()}실</span>
-                <span className="text-xs text-emerald-600 font-semibold">({totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span>
+                <span className="text-xs text-[#00ae95] font-semibold">({totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span>
               </div>
               {(lodgingStats.weekdayOcc !== undefined || lodgingStats.weekendOcc !== undefined) && (
-                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-white/50 px-2 py-1 rounded-md border border-emerald-100">
-                  <span className="text-slate-500">주중 점유 <strong className="text-emerald-700">{lodgingStats.weekdayOcc}%</strong></span>
-                  <span className="text-emerald-200">|</span>
-                  <span className="text-slate-500">휴일전일 점유 <strong className="text-indigo-600">{lodgingStats.weekendOcc}%</strong></span>
+                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                  <span className="text-slate-500">주중 점유 <strong className="text-slate-700">{lodgingStats.weekdayOcc}%</strong></span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-500">휴일전일 점유 <strong className="text-[#00ae95]">{lodgingStats.weekendOcc}%</strong></span>
                 </div>
               )}
-              <p className="text-[11px] text-slate-500 mt-2 break-keep">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
+              <p className="text-[11px] text-slate-400 mt-2 break-keep">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
             </div>
 
             {/* Overall ADR */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-              <h2 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
-                <Coins className="w-5 h-5 text-emerald-500" /> 객실 평균 단가 (ADR)
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2 whitespace-nowrap">
+                <Coins className="w-5 h-5 text-[#00ae95]" /> 객실 평균 단가 (ADR)
               </h2>
-              <div className="text-3xl font-bold text-emerald-600 tracking-tight whitespace-nowrap">
+              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap">
                 {formatCurrency(lodgingStats.adr)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
               {(lodgingStats.weekdayAdr !== undefined || lodgingStats.weekendAdr !== undefined) && (
-                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-emerald-50/50 px-2 py-1 rounded-md border border-emerald-100">
-                  <span className="text-slate-500">주중 <strong className="text-emerald-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</span>
-                  <span className="text-emerald-200">|</span>
-                  <span className="text-slate-500">휴일전일 <strong className="text-indigo-600">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</span>
+                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                  <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</span>
                 </div>
               )}
               <p className="text-[11px] text-slate-400 mt-2 break-keep">총 객실 매출 ÷ 판매 건수(계약)</p>
@@ -577,7 +577,7 @@ export default function ResortBusiness() {
           {/* Room Occupancy Status Card */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
-              <h2 className="text-base font-medium text-slate-800 flex items-center gap-2">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
                 🏨 평형별 객실 실시간 가동률 (Occupancy Status)
               </h2>
               <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full font-medium">

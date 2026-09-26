@@ -92,7 +92,7 @@ export default function LeisureUsageRate() {
       console.error('Error fetching leisure usage data:', err);
       setError(
         err?.message || 
-        '백엔드 API 호출 중 오류가 발생했습니다. 백엔드 상태를 확인해주세요.'
+        '데이터 호출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
       );
     } finally {
       setIsLoading(false);
@@ -578,7 +578,7 @@ export default function LeisureUsageRate() {
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-12 max-w-[1600px] mx-auto">
       
       {/* 1. Header Banner with GlobalDatePicker */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-[32px] p-6 lg:p-10 text-white relative overflow-hidden shadow-lg">
+      <div className="bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 rounded-[32px] p-6 lg:p-10 text-white relative overflow-hidden shadow-lg">
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute right-32 -bottom-20 w-48 h-48 bg-emerald-400/20 rounded-full blur-2xl"></div>
         
@@ -596,7 +596,7 @@ export default function LeisureUsageRate() {
                 24 · 25 · 26 연도별 YoY 정밀 매트릭스
               </span>
             </h1>
-            <p className="text-emerald-100 text-sm mt-2 font-normal opacity-90 break-keep max-w-3xl leading-relaxed">
+            <p className="text-sm text-white/80 mt-2 break-keep max-w-3xl leading-relaxed">
               관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객 대비 각 놀이시설 이용객(진성 방문객)의 월별 이용률(%)을 연도별로 비교합니다. (※ 단, '벨포레 목장(체험)'은 전체 숙박객이 아닌 '목장 입장객'을 기준으로 실질 체험 전환율을 산출합니다.)
             </p>
           </div>
@@ -609,7 +609,7 @@ export default function LeisureUsageRate() {
 
             <button
               onClick={fetchData}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0 cursor-pointer"
             >
               <RefreshCw size={15} /> 새로고침
             </button>
@@ -667,18 +667,18 @@ export default function LeisureUsageRate() {
             <div className="bg-white rounded-3xl p-6 border border-emerald-200/80 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-6 -mt-6"></div>
               <div className="flex items-center justify-between mb-4 relative z-10">
-                <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
                   [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {selectedFacility === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
                 </span>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
                   <Ticket size={20} />
                 </div>
               </div>
               <div className="flex items-baseline gap-1.5 relative z-10 whitespace-nowrap">
-                <span className="text-3xl font-extrabold text-emerald-700 tabular-nums">
+                <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">
                   {currentSummary.selectedVenue.usageRate.toFixed(1)}
                 </span>
-                <span className="text-sm font-bold text-emerald-600">%</span>
+                <span className="text-sm font-bold text-[#00ae95]">%</span>
               </div>
               <div className="text-xs text-slate-500 mt-2 font-medium relative z-10 whitespace-nowrap truncate">
                 {currentSummary.label}
@@ -688,15 +688,15 @@ export default function LeisureUsageRate() {
             {/* Card 2: Selected Facility Visitors */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-blue-600 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
                   [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
                 </span>
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
                   <Users size={20} />
                 </div>
               </div>
               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                <span className="text-3xl font-extrabold text-slate-900 tabular-nums">
+                <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">
                   {currentSummary.selectedVenue.visitors.toLocaleString()}
                 </span>
                 <span className="text-sm font-semibold text-slate-500">명</span>
@@ -709,22 +709,22 @@ export default function LeisureUsageRate() {
             {/* Card 3: Total Room Guests or Farm Visitors (Denominator) */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase whitespace-nowrap">
+                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
                   {selectedFacility === '벨포레 목장(체험)'
                     ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
                     : (isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)')}
                 </span>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
                   <Building2 size={20} />
                 </div>
               </div>
               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                <span className="text-3xl font-extrabold text-indigo-700 tabular-nums">
+                <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">
                   {currentSummary.roomGuests.toLocaleString()}
                 </span>
-                <span className="text-sm font-semibold text-indigo-500">명</span>
+                <span className="text-sm font-semibold text-slate-500">명</span>
               </div>
-              <div className="text-xs text-indigo-400 mt-2 font-medium whitespace-nowrap">
+              <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
                 {selectedFacility === '벨포레 목장(체험)'
                   ? '목장 입장객 대비 실질 체험 전환율 산출 기준'
                   : '관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등) 반영'}
@@ -734,18 +734,18 @@ export default function LeisureUsageRate() {
             {/* Card 4: Top Venue for that Period/Month */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-amber-600 tracking-wider uppercase whitespace-nowrap">
+                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
                   {isPeriodTotalMode ? '기간 최고 이용률 영업장' : '당월 최고 이용률 영업장'}
                 </span>
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
                   <TrendingUp size={20} />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <span className="text-xl font-extrabold text-slate-900 truncate max-w-[140px]">
+                <span className="text-xl font-bold text-slate-900 truncate max-w-[140px]">
                   {currentSummary.topVenue.name}
                 </span>
-                <span className="text-2xl font-black text-amber-600 tabular-nums">
+                <span className="text-2xl lg:text-3xl font-bold text-[#00ae95] tabular-nums">
                   {currentSummary.topVenue.usageRate.toFixed(1)}%
                 </span>
               </div>
@@ -1137,7 +1137,7 @@ export default function LeisureUsageRate() {
             </span>
           </div>
           <span className="text-slate-400">
-            데이터 소스: V6 정밀 데이터 마트 피벗 엔진 (/api/v6/report/leisure-yoy-matrix)
+            데이터 소스: 리조트 공식 집계 데이터
           </span>
         </div>
 

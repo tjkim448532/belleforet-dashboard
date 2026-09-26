@@ -1,28 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-brand-mint: #00AE95; /* Pantone 3275C / RGB 00ae95 */
-  --color-brand-dark: #454545; /* Dark background from guide */
-  --font-sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-brand-mint: #00AE95; /* Pantone 3275C / RGB 00ae95 - Primary Brand Color */
+  --color-brand-dark: #0F172A; /* Slate 900 - Primary Dark Text/Heading */
+  --color-brand-muted: #64748B; /* Slate 500 - Subtext/Muted */
+  --color-brand-accent: #10B981; /* Emerald 500 - Positive/Growth Accent */
+  --font-sans: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after, input, button, select, textarea {
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
 
 body {
   margin: 0;
-  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #f8fafc;
-  color: #1e293b;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {
   color-scheme: light;
-  font-size: 17px; /* 기본 16px에서 17px로 상향 조정 (모든 텍스트 및 레이아웃 요소 약간 확대) */
-}
-
-.font-emphatic {
-  font-family: 'Black Han Sans', sans-serif;
-  font-weight: 400;
+  font-size: 16px;
 }
 
 /* Custom Shape Utility Classes for Backgrounds */
@@ -66,8 +68,47 @@ html {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  background: linear-gradient(135deg, #00ae95 0%, #0284c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* 4-Color & Typography Standard Hierarchy Classes */
+.page-title {
+  font-size: 1.75rem; /* 28px */
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+}
+
+.page-subtitle {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.section-title {
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.metric-value {
+  font-size: 1.875rem; /* 30px */
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+.metric-label {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.125rem;
+  font-weight: 600;
+  color: #64748b;
 }

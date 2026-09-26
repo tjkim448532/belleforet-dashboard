@@ -155,7 +155,7 @@ export default function GolfBusiness() {
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
       
       {/* Decorative Header Background */}
-      <div className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
+      <div className="w-full bg-gradient-to-r from-emerald-800 via-[#00ae95] to-slate-900 h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[40px]">
         <div className="absolute top-10 right-[15%] w-36 h-36 bg-white/10 rounded-full blur-2xl" />
         <div className="absolute -top-12 left-[10%] w-44 h-44 bg-white/10 rounded-full blur-xl" />
       </div>
@@ -166,13 +166,13 @@ export default function GolfBusiness() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div className="text-white">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-black text-3xl tracking-widest bg-white text-emerald-600 px-3 py-1 rounded-sm shadow-md">
+              <span className="font-bold text-3xl tracking-widest bg-white text-[#00ae95] px-3 py-1 rounded-sm shadow-md">
                 BELLE FORET
               </span>
-              <span className="font-black text-2xl tracking-wide ml-1">RESORT</span>
+              <span className="font-bold text-2xl tracking-wide ml-1">RESORT</span>
             </div>
-            <h1 className="text-3xl font-medium tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
-            <p className="text-white/80 mt-1">골프 부문별 영업장 실적 및 실질 수익성 종합 리포트입니다. (순매출/부가세 별도)</p>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
+            <p className="text-sm text-white/80 mt-1">골프 부문별 영업장 실적 및 실질 수익성 종합 리포트입니다. (순매출/부가세 별도)</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <GlobalDatePicker />
@@ -183,10 +183,10 @@ export default function GolfBusiness() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
           {/* Golf Revenue */}
           <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
-            <h2 className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-emerald-500" /> {isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}
+            <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
+              <Coins className="w-4 h-4 text-[#00ae95]" /> {isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}
             </h2>
-            <div className="text-2xl font-black text-slate-800 tracking-tight">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
               ₩{summary.totalGolfRevenueFormatted}
             </div>
             <p className="text-[11px] text-slate-400 mt-2">그린피 + 카트대여 + 부대시설 순매출(Net) 총합</p>
@@ -194,10 +194,10 @@ export default function GolfBusiness() {
 
           {/* Visited Players */}
           <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
-            <h2 className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-emerald-500" /> 실제 총 내장객 수
+            <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-[#00ae95]" /> 실제 총 내장객 수
             </h2>
-            <div className="text-2xl font-black text-slate-800 tracking-tight">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
               {summary.totalPlayersFormatted}명
             </div>
             <p className="text-[11px] text-slate-400 mt-2">총 {summary.totalTransactions.toLocaleString()} 결제/거래 건</p>
@@ -205,10 +205,10 @@ export default function GolfBusiness() {
 
           {/* Avg ARPU */}
           <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
-            <h2 className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-teal-600" /> 1인당 객단가 (ARPU)
+            <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
+              <TrendingUp className="w-4 h-4 text-[#00ae95]" /> 1인당 객단가 (ARPU)
             </h2>
-            <div className="text-2xl font-black text-teal-700 tracking-tight">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
               ₩{summary.arpuFormatted}
             </div>
             <p className="text-[11px] text-slate-400 mt-2">내장객 1인당 평균 골프 소비액</p>
@@ -220,14 +220,14 @@ export default function GolfBusiness() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
                   경영 전략 의사결정 지표
                 </span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  100% 팩트 데이터 기반 (V6 SSOT)
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                  공식 실적 데이터 기반
                 </span>
               </div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
                 📈 골프 경영 핵심 분석 및 수익 구조 진단
               </h2>
               <p className="text-xs text-slate-500 mt-1">

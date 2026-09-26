@@ -213,7 +213,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
         barWidth: '55%',
         itemStyle: { 
           borderRadius: [6, 6, 0, 0], 
-          color: '#3b82f6'
+          color: '#00ae95'
         },
         data: dayOfWeekSummary.map((d: any) => d.totalRevenue)
       }
@@ -242,7 +242,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       position: 'top',
       formatter: (params: any) => {
         const val = params.data;
-        return `<div class="font-bold text-slate-800">${months[val[1]]} ${daysLabels[val[0]]}요일</div><div class="text-blue-600 font-semibold">매출: ${val[3]}</div>`;
+        return `<div class="font-bold text-slate-800">${months[val[1]]} ${daysLabels[val[0]]}요일</div><div class="text-emerald-600 font-semibold">매출: ${val[3]}</div>`;
       }
     },
     grid: { top: '5%', right: '4%', bottom: '22%', left: '8%' },
@@ -257,7 +257,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       bottom: 0,
       itemWidth: 14,
       dimension: 2,
-      inRange: { color: ['#f8fafc', '#dbeafe', '#60a5fa', '#2563eb', '#1e40af'] }
+      inRange: { color: ['#f8fafc', '#ccfbf1', '#5eead4', '#0d9488', '#115e59'] }
     },
     series: [{
       name: '매출',
@@ -275,7 +275,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       {embedded ? (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white rounded-2xl p-4 md:p-5 border border-slate-200/80 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
               <BarChart2 className="w-5 h-5" />
             </div>
             <div>
@@ -285,13 +285,6 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           </div>
           
           <div className="flex items-center gap-3 flex-wrap">
-            {data.validationMaster?.isZeroVariance && (
-              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full font-bold text-xs border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Zero-Variance 검증 완료
-              </div>
-            )}
-            
             <select 
               className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 min-w-[200px] shadow-xs cursor-pointer"
               value={`${activeFilter.type}|${activeFilter.value}`}
@@ -322,13 +315,6 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           </div>
           
           <div className="flex items-center gap-4 flex-wrap">
-            {data.validationMaster?.isZeroVariance && (
-              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full font-bold text-sm border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Zero-Variance 검증 완료
-              </div>
-            )}
-            
             <select 
               className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 min-w-[200px] shadow-xs cursor-pointer"
               value={`${activeFilter.type}|${activeFilter.value}`}
@@ -357,16 +343,16 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
 
       {/* 상단 메인 KPI 및 3분할 휴일 요약 패널 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-        <div className="bg-gradient-to-br from-blue-700 via-indigo-700 to-slate-800 rounded-2xl p-6 shadow-sm text-white flex flex-col justify-between border border-indigo-900/20">
+        <div className="bg-gradient-to-br from-emerald-800 via-[#00ae95] to-slate-900 rounded-2xl p-6 shadow-sm text-white flex flex-col justify-between border border-emerald-900/20">
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-2 font-medium text-white/90 text-sm">
-              <TrendingUp className="w-4 h-4 text-blue-200" /> 종합 매출
+              <TrendingUp className="w-4 h-4 text-emerald-200" /> 종합 매출
             </div>
             <div className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold text-white">
               전년비 {summary.growthRateFormatted}
             </div>
           </div>
-          <div className="text-3xl font-black tracking-tight mb-2">
+          <div className="text-2xl lg:text-3xl font-bold tracking-tight mb-2">
             {summary.totalRevenueFormatted}
           </div>
           <div className="text-xs text-white/70">
@@ -374,8 +360,8 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           </div>
         </div>
         {[
-          { title: '순수 평일 일평균', data: summary.weekday, icon: <CalendarDays className="w-4 h-4 text-blue-600" /> },
-          { title: '순수 주말 일평균', data: summary.weekend, icon: <Activity className="w-4 h-4 text-indigo-600" /> },
+          { title: '순수 평일 일평균', data: summary.weekday, icon: <CalendarDays className="w-4 h-4 text-emerald-600" /> },
+          { title: '순수 주말 일평균', data: summary.weekend, icon: <Activity className="w-4 h-4 text-emerald-600" /> },
           { title: '주중 공휴일 일평균', data: summary.publicHoliday, icon: <MapIcon className="w-4 h-4 text-rose-500" /> },
         ].map((item, idx) => (
           <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between hover:border-slate-300 transition-all">
@@ -383,12 +369,12 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
               <div className="p-1.5 bg-slate-50 rounded-lg">{item.icon}</div>
               {item.title}
             </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight mb-2">
+            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-2">
               {item.data?.dailyAvgFormatted || '0'}
             </div>
             <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
               <span className="text-slate-400 font-medium">총 {item.data?.daysCount || 0}일</span>
-              <span className="font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+              <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
                 {item.data?.sharePctFormatted || '0.0%'}
               </span>
             </div>
@@ -400,8 +386,8 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 overflow-hidden">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">요일별 실적 종합 비교표</h2>
+            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
+            <h2 className="text-lg lg:text-xl font-bold text-slate-900">요일별 실적 종합 비교표</h2>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full">
             누적 요일 실적
@@ -415,26 +401,26 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                 <th className="px-4 py-3.5 text-right">매출액 (Share)</th>
                 <th className="px-4 py-3.5 text-right">전년 동기간 매출액</th>
                 <th className="px-4 py-3.5 text-right">증감률</th>
-                <th className="px-4 py-3.5 text-right bg-blue-50/30">일평균 매출</th>
-                <th className="px-4 py-3.5 text-right bg-blue-50/30">누적 일수</th>
+                <th className="px-4 py-3.5 text-right bg-emerald-50/30">일평균 매출</th>
+                <th className="px-4 py-3.5 text-right bg-emerald-50/30">누적 일수</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {dayOfWeekSummary.map((d: any, idx: number) => (
-                <tr key={idx} className="hover:bg-blue-50/20 transition-colors">
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3.5 font-bold text-slate-800">{d.dayName}</td>
                   <td className="px-4 py-3.5 text-right">
                     <div className="font-bold text-slate-900">{d.totalRevenueFormatted}</div>
-                    <div className="text-xs text-blue-600 font-semibold">{d.sharePctFormatted}</div>
+                    <div className="text-xs text-emerald-600 font-semibold">{d.sharePctFormatted}</div>
                   </td>
                   <td className="px-4 py-3.5 text-right text-slate-500">{d.lyRevenueFormatted}</td>
                   <td className="px-4 py-3.5 text-right">
-                    <span className={`font-bold ${Number(d.growthRate) > 0 ? 'text-red-500' : Number(d.growthRate) < 0 ? 'text-blue-500' : 'text-slate-400'}`}>
+                    <span className={`font-bold ${Number(d.growthRate) > 0 ? 'text-emerald-600' : Number(d.growthRate) < 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                       {Number(d.growthRate) > 0 ? '▲' : Number(d.growthRate) < 0 ? '▼' : '-'} {Math.abs(Number(d.growthRate))}%
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-right bg-blue-50/20 font-bold text-slate-800">{d.dailyAvgRevenueFormatted}</td>
-                  <td className="px-4 py-3.5 text-right bg-blue-50/20 text-slate-500">{d.daysCount}일</td>
+                  <td className="px-4 py-3.5 text-right bg-emerald-50/20 font-bold text-slate-800">{d.dailyAvgRevenueFormatted}</td>
+                  <td className="px-4 py-3.5 text-right bg-emerald-50/20 text-slate-500">{d.daysCount}일</td>
                 </tr>
               ))}
             </tbody>
@@ -446,8 +432,8 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">본부별 종합 점유율</h2>
+            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
+            <h2 className="text-lg lg:text-xl font-bold text-slate-900">본부별 종합 점유율</h2>
           </div>
           <div className="h-[300px]">
             <ReactECharts option={getPieOptions('', totalPieData, '{b}\n{c}%')} style={{ height: '100%', width: '100%' }} />
@@ -455,8 +441,8 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
         </div>
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-1.5 h-5 bg-indigo-600 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">레저/콘텐츠 영업장별 비중</h2>
+            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
+            <h2 className="text-lg lg:text-xl font-bold text-slate-900">레저/콘텐츠 영업장별 비중</h2>
           </div>
           <div className="h-[300px]">
             <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
@@ -469,7 +455,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+              <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
               <h2 className="text-lg font-bold text-slate-900">요일별 전체 매출 흐름</h2>
             </div>
             <p className="text-xs text-slate-400 mb-4 ml-4">요일별 총매출 집계 및 부서별 점유율 칩</p>
@@ -488,11 +474,11 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                   onClick={() => setSelectedDay(isSelected ? null : idx)}
                   className={`flex flex-col items-center px-1.5 py-2.5 rounded-xl border transition-all cursor-pointer group relative w-full ${
                     isSelected 
-                      ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-xs' 
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-xs' 
                       : 'bg-slate-50/80 border-slate-200/80 hover:bg-slate-100 text-slate-700'
                   }`}
                 >
-                  <span className={`text-xs font-bold mb-1.5 whitespace-nowrap ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>
+                  <span className={`text-xs font-bold mb-1.5 whitespace-nowrap ${isSelected ? 'text-emerald-700' : 'text-slate-800'}`}>
                     {d.dayShort} ({d.daysCount}일)
                   </span>
                   <div className="flex flex-col gap-1 items-center w-full">
@@ -501,7 +487,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                         key={sIdx} 
                         className={`text-[11px] font-semibold px-1 py-0.5 border rounded leading-none whitespace-nowrap ${
                           isSelected 
-                            ? 'text-blue-700 bg-white border-blue-200' 
+                            ? 'text-emerald-700 bg-white border-emerald-200' 
                             : 'text-slate-500 bg-white border-slate-200'
                         }`}
                       >
@@ -517,17 +503,17 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
         
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-1.5 h-5 bg-indigo-600 rounded-full" />
+            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
             <h2 className="text-lg font-bold text-slate-900">월 × 요일 매트릭스 (Heatmap)</h2>
           </div>
           
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3.5 mb-5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+          <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3.5 mb-5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
             <p className="text-xs text-slate-800 font-bold mb-1 flex items-center gap-1.5">
               <span>💡</span> 1년 중 어느 달, 무슨 요일에 매출이 가장 많이 발생할까요?
             </p>
             <p className="text-[11px] text-slate-500 leading-relaxed break-keep">
-              각 셀의 <strong>매출이 높을수록 짙은 파란색</strong>으로 표시되는 매출 패턴 지도입니다. 
+              각 셀의 <strong>매출이 높을수록 짙은 민트/청록색</strong>으로 표시되는 매출 패턴 지도입니다. 
               성수기 주말과 비수기 평일 구간을 직관적으로 파악할 수 있습니다.
             </p>
           </div>
@@ -541,11 +527,11 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 overflow-hidden">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
             <h2 className="text-lg font-bold text-slate-900">8대 부서 상세 계층 드릴다운</h2>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-full">
-            Zero-Computation Table
+          <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full">
+            부서별 상세 현황
           </span>
         </div>
         
@@ -565,16 +551,16 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                 return (
                   <React.Fragment key={org.orgDivision}>
                     <tr 
-                      className="border-b border-slate-200 bg-slate-50/60 hover:bg-blue-50/40 cursor-pointer select-none transition-colors"
+                      className="border-b border-slate-200 bg-slate-50/60 hover:bg-emerald-50/40 cursor-pointer select-none transition-colors"
                       onClick={() => toggleOrg(org.orgDivision)}
                     >
                       <td className="px-4 py-3.5 font-bold text-slate-900 flex items-center gap-2">
-                        {isOrgExpanded ? <ChevronDown size={17} className="text-blue-600" /> : <ChevronRight size={17} className="text-slate-400" />}
+                        {isOrgExpanded ? <ChevronDown size={17} className="text-emerald-600" /> : <ChevronRight size={17} className="text-slate-400" />}
                         {org.orgDivision}
                       </td>
                       <td className="px-4 py-3.5 text-slate-400">-</td>
-                      <td className="px-4 py-3.5 text-right font-black text-blue-700 text-base">{org.revenueFormatted}</td>
-                      <td className="px-4 py-3.5 text-right font-black text-slate-800">{org.sharePctFormatted}</td>
+                      <td className="px-4 py-3.5 text-right font-bold text-slate-900 text-base">{org.revenueFormatted}</td>
+                      <td className="px-4 py-3.5 text-right font-bold text-slate-800">{org.sharePctFormatted}</td>
                     </tr>
 
                     {isOrgExpanded && (org.parts || []).map((part: any) => {
@@ -587,7 +573,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                             onClick={() => togglePart(org.orgDivision, part.partName)}
                           >
                             <td className="px-4 py-3 font-semibold text-slate-800 pl-8 flex items-center gap-2">
-                              {isPartExpanded ? <ChevronDown size={15} className="text-blue-500" /> : <ChevronRight size={15} className="text-slate-400" />}
+                              {isPartExpanded ? <ChevronDown size={15} className="text-emerald-500" /> : <ChevronRight size={15} className="text-slate-400" />}
                               {part.partName}
                             </td>
                             <td className="px-4 py-3 text-slate-400">-</td>

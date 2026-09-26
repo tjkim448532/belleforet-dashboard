@@ -78,7 +78,7 @@ export default function RoomGuestsYoyTable() {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 p-6 lg:p-8 shadow-xs space-y-6">
+    <div className="col-span-1 lg:col-span-12 w-full bg-white rounded-[32px] border border-slate-200/80 p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
       
       {/* 1. Header & Title Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">

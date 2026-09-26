@@ -38,7 +38,7 @@ const DEFAULT_COLORS = [
 ];
 
 export default function LeisureUsageRate() {
-  const { startDate } = useDate();
+  const { startDate, endDate, isRange } = useDate();
 
   const [usageData, setUsageData] = useState<LeisureUsageRateResponse | null>(null);
   const [yoyData, setYoyData] = useState<LeisureYoyMatrixResponse | null>(null);
@@ -48,8 +48,8 @@ export default function LeisureUsageRate() {
   // Selected Facility for YoY Matrix & Chart
   const [selectedFacility, setSelectedFacility] = useState<string>('놀이동산');
   
-  // Selected Month override for KPI Cards
-  const [selectedMonthOverride, setSelectedMonthOverride] = useState<string | null>(null);
+  // Selected View Key: 'PERIOD_TOTAL' or specific month 'YYYY-MM'
+  const [selectedViewKey, setSelectedViewKey] = useState<string>('PERIOD_TOTAL');
 
   // Chart View Mode: 'YOY' (Selected Facility 24 vs 25 vs 26) | 'ALL_TIMELINE' (All Facilities Monthly Timeline)
   const [chartMode, setChartMode] = useState<'YOY' | 'ALL_TIMELINE'>('YOY');
@@ -64,7 +64,7 @@ export default function LeisureUsageRate() {
     try {
       const [resUsage, resYoy] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/leisure-usage-rate`),
-        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix`),
+        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=2026`),
       ]);
 
       const payloadUsage: LeisureUsageRateResponse = resUsage?.data ?? resUsage;
@@ -103,6 +103,16 @@ export default function LeisureUsageRate() {
     fetchData();
   }, []);
 
+  // When date range changes via GlobalDatePicker, reset selectedViewKey to PERIOD_TOTAL if range mode, or matching month
+  useEffect(() => {
+    if (isRange) {
+      setSelectedViewKey('PERIOD_TOTAL');
+    } else {
+      const m = startDate ? startDate.slice(0, 7) : '';
+      setSelectedViewKey(m);
+    }
+  }, [startDate, endDate, isRange]);
+
   // Available months list sorted descending (newest first)
   const availableMonthsDescending = useMemo(() => {
     if (!usageData?.months) return [];
@@ -114,75 +124,149 @@ export default function LeisureUsageRate() {
     return usageData.months[usageData.months.length - 1];
   }, [usageData?.months]);
 
-  // Determine active month for KPI Cards: sync with global DatePicker (startDate) or manual override
-  const activeMonth = useMemo(() => {
-    if (selectedMonthOverride && usageData?.months?.includes(selectedMonthOverride)) {
-      return selectedMonthOverride;
+  // Compute selected period string range
+  const startMonthStr = useMemo(() => {
+    return startDate ? startDate.slice(0, 7) : '2026-01';
+  }, [startDate]);
+
+  const endMonthStr = useMemo(() => {
+    if (isRange && endDate) return endDate.slice(0, 7);
+    return startMonthStr;
+  }, [isRange, endDate, startMonthStr]);
+
+  // All months in usageData that fall into [startMonthStr, endMonthStr]
+  const selectedPeriodMonths = useMemo(() => {
+    if (!usageData?.months) return [];
+    if (!isRange) {
+      return usageData.months.includes(startMonthStr) ? [startMonthStr] : [latestAvailableMonth];
     }
-    const dateMonth = startDate ? startDate.slice(0, 7) : '';
-    if (usageData?.months && usageData.months.includes(dateMonth)) {
-      return dateMonth;
+    const filtered = usageData.months.filter((m) => m >= startMonthStr && m <= endMonthStr);
+    return filtered.length > 0 ? filtered : [latestAvailableMonth];
+  }, [usageData?.months, isRange, startMonthStr, endMonthStr, latestAvailableMonth]);
+
+  // Month numbers (1~12) within selected period
+  const selectedPeriodMonthNumbers = useMemo(() => {
+    return new Set(selectedPeriodMonths.map((m) => parseInt(m.split('-')[1], 10)));
+  }, [selectedPeriodMonths]);
+
+  // Determine current active display mode: either 'PERIOD_TOTAL' or specific 'YYYY-MM'
+  const isPeriodTotalMode = useMemo(() => {
+    if (selectedViewKey === 'PERIOD_TOTAL' && isRange && selectedPeriodMonths.length > 1) {
+      return true;
+    }
+    return false;
+  }, [selectedViewKey, isRange, selectedPeriodMonths.length]);
+
+  const activeSingleMonth = useMemo(() => {
+    if (selectedViewKey !== 'PERIOD_TOTAL' && usageData?.months?.includes(selectedViewKey)) {
+      return selectedViewKey;
+    }
+    // Default to the latest month of the selected period
+    if (selectedPeriodMonths.length > 0) {
+      return selectedPeriodMonths[selectedPeriodMonths.length - 1];
     }
     return latestAvailableMonth;
-  }, [selectedMonthOverride, startDate, usageData?.months, latestAvailableMonth]);
+  }, [selectedViewKey, usageData?.months, selectedPeriodMonths, latestAvailableMonth]);
 
-  // Active Month summary data points for KPI Cards (ZERO bug fix: robust roomGuests & facility extraction)
-  const activeMonthSummary = useMemo(() => {
-    if (!usageData?.series || !activeMonth) return null;
+  // KPI Summary Card Metrics (Zero bug fix & supports Period Cumulative as well as Single Month)
+  const currentSummary = useMemo(() => {
+    if (!usageData?.series) return null;
 
-    // 1. Get total room guests for activeMonth across series data
-    let roomGuests = 0;
-    for (const s of usageData.series) {
-      const pt = s.data.find((d) => d.month === activeMonth);
-      if (pt && pt.totalRoomGuests > 0) {
-        roomGuests = pt.totalRoomGuests;
-        break;
+    if (isPeriodTotalMode) {
+      // 1. Calculate Period Cumulative across selectedPeriodMonths
+      let periodRoomGuests = 0;
+      for (const m of selectedPeriodMonths) {
+        for (const s of usageData.series) {
+          const pt = s.data.find((d) => d.month === m);
+          if (pt && pt.totalRoomGuests > 0) {
+            periodRoomGuests += pt.totalRoomGuests;
+            break;
+          }
+        }
       }
-    }
 
-    // 2. Selected facility data for activeMonth
-    const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
-    const selPoint = selSeries?.data.find((d) => d.month === activeMonth);
-    const selRate = selPoint?.usageRate ?? 0;
-    const selVisitors = selPoint?.visitors ?? 0;
-
-    // 3. Find top facility for activeMonth
-    let topVenue = { name: '-', usageRate: 0, visitors: 0 };
-    for (const s of usageData.series) {
-      const pt = s.data.find((d) => d.month === activeMonth);
-      if (pt && pt.usageRate > topVenue.usageRate) {
-        topVenue = {
-          name: s.facilityName,
-          usageRate: pt.usageRate,
-          visitors: pt.visitors,
-        };
+      // Selected venue period visitors & usage rate
+      const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
+      let selVisitors = 0;
+      for (const m of selectedPeriodMonths) {
+        const pt = selSeries?.data.find((d) => d.month === m);
+        if (pt) selVisitors += pt.visitors;
       }
-    }
+      const selRate = periodRoomGuests > 0 ? Math.round((selVisitors / periodRoomGuests) * 1000) / 10 : 0;
 
-    return {
-      month: activeMonth,
-      roomGuests,
-      selectedVenue: {
-        name: selectedFacility,
-        usageRate: selRate,
-        visitors: selVisitors,
-      },
-      topVenue,
-    };
-  }, [usageData, activeMonth, selectedFacility]);
+      // Top venue across selected period
+      let topVenue = { name: '-', visitors: 0, usageRate: 0 };
+      for (const s of usageData.series) {
+        let vTotal = 0;
+        for (const m of selectedPeriodMonths) {
+          const pt = s.data.find((d) => d.month === m);
+          if (pt) vTotal += pt.visitors;
+        }
+        const rate = periodRoomGuests > 0 ? Math.round((vTotal / periodRoomGuests) * 1000) / 10 : 0;
+        if (rate > topVenue.usageRate) {
+          topVenue = { name: s.facilityName, visitors: vTotal, usageRate: rate };
+        }
+      }
+
+      return {
+        isPeriod: true,
+        label: `${startMonthStr} ~ ${endMonthStr} (${selectedPeriodMonths.length}개월 누적)`,
+        roomGuests: periodRoomGuests,
+        selectedVenue: {
+          name: selectedFacility,
+          usageRate: selRate,
+          visitors: selVisitors,
+        },
+        topVenue,
+      };
+    } else {
+      // 2. Single Month Metrics
+      const m = activeSingleMonth;
+      let roomGuests = 0;
+      for (const s of usageData.series) {
+        const pt = s.data.find((d) => d.month === m);
+        if (pt && pt.totalRoomGuests > 0) {
+          roomGuests = pt.totalRoomGuests;
+          break;
+        }
+      }
+
+      const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
+      const selPoint = selSeries?.data.find((d) => d.month === m);
+      const selRate = selPoint?.usageRate ?? 0;
+      const selVisitors = selPoint?.visitors ?? 0;
+
+      let topVenue = { name: '-', usageRate: 0, visitors: 0 };
+      for (const s of usageData.series) {
+        const pt = s.data.find((d) => d.month === m);
+        if (pt && pt.usageRate > topVenue.usageRate) {
+          topVenue = {
+            name: s.facilityName,
+            usageRate: pt.usageRate,
+            visitors: pt.visitors,
+          };
+        }
+      }
+
+      return {
+        isPeriod: false,
+        label: `${m} 기준 실적`,
+        roomGuests,
+        selectedVenue: {
+          name: selectedFacility,
+          usageRate: selRate,
+          visitors: selVisitors,
+        },
+        topVenue,
+      };
+    }
+  }, [usageData, isPeriodTotalMode, selectedPeriodMonths, selectedFacility, startMonthStr, endMonthStr, activeSingleMonth]);
 
   // Months 1 to 12 labels
   const monthLabels = useMemo(() => [
     '1월', '2월', '3월', '4월', '5월', '6월', 
     '7월', '8월', '9월', '10월', '11월', '12월'
   ], []);
-
-  // Active month number (1~12) for row highlighting
-  const activeMonthNumber = useMemo(() => {
-    if (!activeMonth) return null;
-    const parts = activeMonth.split('-');
-    return parts.length === 2 ? parseInt(parts[1], 10) : null;
-  }, [activeMonth]);
 
   // YoY Chart Option (for selected facility: 2024 vs 2025 vs 2026 across 1~12월)
   const yoyChartOption = useMemo(() => {
@@ -410,6 +494,46 @@ export default function LeisureUsageRate() {
     };
   }, [usageData, timelineFilteredMonths, selectedFacilities]);
 
+  // Cumulative numbers for the selected period across 2024, 2025, 2026 in the matrix table
+  const periodCumulative = useMemo(() => {
+    if (!yoyData?.pivotData || !yoyData.pivotData[selectedFacility]) return null;
+
+    const rows = yoyData.pivotData[selectedFacility];
+    const targetRows = rows.filter((r) => selectedPeriodMonthNumbers.has(r.month));
+
+    const result: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {
+      '2024': { visitors: 0, roomGuests: 0, usageRate: 0 },
+      '2025': { visitors: 0, roomGuests: 0, usageRate: 0 },
+      '2026': { visitors: 0, roomGuests: 0, usageRate: 0 },
+    };
+
+    ['2024', '2025', '2026'].forEach((yr) => {
+      let v = 0;
+      let g = 0;
+      targetRows.forEach((r) => {
+        const item = r[yr] as LeisureYoyYearData | undefined;
+        if (item) {
+          v += item.visitors;
+          g += item.roomGuests;
+        }
+      });
+      const usageRate = g > 0 ? Math.round((v / g) * 1000) / 10 : 0;
+      result[yr] = { visitors: v, roomGuests: g, usageRate };
+    });
+
+    return result;
+  }, [yoyData, selectedFacility, selectedPeriodMonthNumbers]);
+
+  const periodYoYDiff = useMemo(() => {
+    if (!periodCumulative) return null;
+    const c26 = periodCumulative['2026'];
+    const c25 = periodCumulative['2025'];
+    if (c26.roomGuests > 0 && c25.roomGuests > 0) {
+      return Math.round((c26.usageRate - c25.usageRate) * 10) / 10;
+    }
+    return null;
+  }, [periodCumulative]);
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#f8fafc]">
@@ -494,36 +618,46 @@ export default function LeisureUsageRate() {
       </div>
 
       {/* 2. Top Summary KPI Cards */}
-      {activeMonthSummary && (
+      {currentSummary && (
         <div className="space-y-3">
           
-          {/* Month Selector Bar */}
+          {/* 집계 범위 선택 바 (단일월 및 선택 기간 전체 누적 지원) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <Calendar size={16} className="text-emerald-600" />
               <span className="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                실적 기준 월 선택:
+                실적 집계 범위:
               </span>
               <select
-                value={activeMonth}
-                onChange={(e) => setSelectedMonthOverride(e.target.value)}
-                className="px-3.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                value={selectedViewKey}
+                onChange={(e) => setSelectedViewKey(e.target.value)}
+                className="px-3.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-extrabold text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
-                {availableMonthsDescending.map((m) => (
-                  <option key={m} value={m}>
-                    {m.split('-')[0]}년 {parseInt(m.split('-')[1], 10)}월 실적 ({m})
+                {/* 기간 범위가 선택된 경우 전체 누적 옵션 우선 제공 */}
+                {isRange && selectedPeriodMonths.length > 1 && (
+                  <option value="PERIOD_TOTAL">
+                    ⭐ 선택 기간 전체 누적 ({startMonthStr} ~ {endMonthStr}, {selectedPeriodMonths.length}개월 합산)
                   </option>
-                ))}
+                )}
+                {availableMonthsDescending.map((m) => {
+                  const isWithin = selectedPeriodMonths.includes(m);
+                  return (
+                    <option key={m} value={m}>
+                      {m.split('-')[0]}년 {parseInt(m.split('-')[1], 10)}월 실적 ({m}) {isWithin && isRange ? '• 선택구간' : ''}
+                    </option>
+                  );
+                })}
               </select>
-              {activeMonth === latestAvailableMonth && (
+
+              {isPeriodTotalMode && (
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                  최신 집계월
+                  {selectedPeriodMonths.length}개월 누적 집계
                 </span>
               )}
             </div>
 
             <span className="text-xs font-medium text-slate-400">
-              * 상단 날짜 선택기(GlobalDatePicker) 및 기준 월 셀렉터와 실시간 연동됩니다.
+              * 글로벌 달력({startDate} ~ {endDate || startDate})과 실시간 연동되어 선택 기간의 집계를 산출합니다.
             </span>
           </div>
 
@@ -534,7 +668,7 @@ export default function LeisureUsageRate() {
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-6 -mt-6"></div>
               <div className="flex items-center justify-between mb-4 relative z-10">
                 <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                  [{selectedFacility}] 당월 이용률
+                  [{selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률'}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                   <Ticket size={20} />
@@ -542,12 +676,12 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-1.5 relative z-10 whitespace-nowrap">
                 <span className="text-3xl font-extrabold text-emerald-700 tabular-nums">
-                  {activeMonthSummary.selectedVenue.usageRate.toFixed(1)}
+                  {currentSummary.selectedVenue.usageRate.toFixed(1)}
                 </span>
                 <span className="text-sm font-bold text-emerald-600">%</span>
               </div>
-              <div className="text-xs text-slate-500 mt-2 font-medium relative z-10 whitespace-nowrap">
-                {activeMonth} 기준 숙박객 대비 이용률
+              <div className="text-xs text-slate-500 mt-2 font-medium relative z-10 whitespace-nowrap truncate">
+                {currentSummary.label}
               </div>
             </div>
 
@@ -555,7 +689,7 @@ export default function LeisureUsageRate() {
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-blue-600 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                  [{selectedFacility}] 당월 이용객
+                  [{selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
                   <Users size={20} />
@@ -563,7 +697,7 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
                 <span className="text-3xl font-extrabold text-slate-900 tabular-nums">
-                  {activeMonthSummary.selectedVenue.visitors.toLocaleString()}
+                  {currentSummary.selectedVenue.visitors.toLocaleString()}
                 </span>
                 <span className="text-sm font-semibold text-slate-500">명</span>
               </div>
@@ -576,7 +710,7 @@ export default function LeisureUsageRate() {
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase whitespace-nowrap">
-                  당월 리조트 총 숙박객 (분모)
+                  {isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)'}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <Building2 size={20} />
@@ -584,7 +718,7 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
                 <span className="text-3xl font-extrabold text-indigo-700 tabular-nums">
-                  {activeMonthSummary.roomGuests.toLocaleString()}
+                  {currentSummary.roomGuests.toLocaleString()}
                 </span>
                 <span className="text-sm font-semibold text-indigo-500">명</span>
               </div>
@@ -593,11 +727,11 @@ export default function LeisureUsageRate() {
               </div>
             </div>
 
-            {/* Card 4: Top Venue for that Month */}
+            {/* Card 4: Top Venue for that Period/Month */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-amber-600 tracking-wider uppercase whitespace-nowrap">
-                  당월 최고 이용률 영업장
+                  {isPeriodTotalMode ? '기간 최고 이용률 영업장' : '당월 최고 이용률 영업장'}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                   <TrendingUp size={20} />
@@ -605,14 +739,14 @@ export default function LeisureUsageRate() {
               </div>
               <div className="flex items-baseline gap-2 whitespace-nowrap">
                 <span className="text-xl font-extrabold text-slate-900 truncate max-w-[140px]">
-                  {activeMonthSummary.topVenue.name}
+                  {currentSummary.topVenue.name}
                 </span>
                 <span className="text-2xl font-black text-amber-600 tabular-nums">
-                  {activeMonthSummary.topVenue.usageRate.toFixed(1)}%
+                  {currentSummary.topVenue.usageRate.toFixed(1)}%
                 </span>
               </div>
               <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
-                {activeMonthSummary.topVenue.visitors.toLocaleString()}명 이용 (최고 침투율)
+                {currentSummary.topVenue.visitors.toLocaleString()}명 이용 (침투율 1위)
               </div>
             </div>
 
@@ -706,7 +840,12 @@ export default function LeisureUsageRate() {
               연도별 영업장 이용률 정밀 매트릭스
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              드롭다운에서 원하는 영업장을 선택하면 1월부터 12월까지의 연도별(24년, 25년, 26년) 이용률과 YoY 증감이 즉시 표출됩니다.
+              드롭다운에서 원하는 영업장을 선택하면 1월부터 12월까지의 연도별(24년, 25년, 26년) 이용률과 YoY 증감이 표출됩니다.
+              {isRange && selectedPeriodMonths.length > 1 && (
+                <span className="ml-2 font-bold text-emerald-700">
+                  (조회 기간: {startMonthStr} ~ {endMonthStr} 형광 표시)
+                </span>
+              )}
             </p>
           </div>
 
@@ -762,7 +901,7 @@ export default function LeisureUsageRate() {
           <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-4 px-6 text-center w-28">월 (Month)</th>
+                <th className="py-4 px-6 text-center w-32">월 (Month)</th>
                 <th className="py-4 px-6 text-center">2024년 실적</th>
                 <th className="py-4 px-6 text-center">2025년 실적</th>
                 <th className="py-4 px-6 text-center bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80">
@@ -789,23 +928,26 @@ export default function LeisureUsageRate() {
                   yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
                 }
 
-                const isCurrentActiveMonth = monthNum === activeMonthNumber;
+                // Check if this month is in the selected period (e.g. 1월~9월)
+                const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
 
                 return (
                   <tr 
                     key={monthNum}
                     className={`transition-colors ${
-                      isCurrentActiveMonth 
+                      isMonthInSelectedRange 
                         ? 'bg-emerald-50/40 font-semibold' 
-                        : 'hover:bg-slate-50/80'
+                        : 'hover:bg-slate-50/80 opacity-75'
                     }`}
                   >
                     {/* Month Cell */}
                     <td className="py-4 px-6 text-center font-extrabold text-slate-800 bg-slate-50/30 text-sm">
                       <div className="flex items-center justify-center gap-1.5">
                         <span>{monthNum}월</span>
-                        {isCurrentActiveMonth && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        {isMonthInSelectedRange && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            조회구간
+                          </span>
                         )}
                       </div>
                     </td>
@@ -887,6 +1029,77 @@ export default function LeisureUsageRate() {
                   </tr>
                 );
               })}
+
+              {/* ⭐ 선택 기간 누적 합산 요약 행 (기간 범위 선택 시 출력) */}
+              {periodCumulative && selectedPeriodMonthNumbers.size > 1 && (
+                <tr className="bg-emerald-100/70 border-t-2 border-emerald-300 font-bold text-xs text-emerald-950">
+                  <td className="py-4 px-6 text-center font-black text-sm bg-emerald-200/50">
+                    <div>선택 구간 누적</div>
+                    <div className="text-[11px] font-semibold text-emerald-800">
+                      ({startMonthStr.slice(5)}월 ~ {endMonthStr.slice(5)}월)
+                    </div>
+                  </td>
+
+                  {/* 2024 Period Cumulative */}
+                  <td className="py-4 px-6 text-center">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="font-mono text-sm font-black text-slate-800">
+                        {periodCumulative['2024'].usageRate.toFixed(1)}%
+                      </span>
+                      <span className="text-[11px] text-slate-600 tabular-nums">
+                        {periodCumulative['2024'].visitors.toLocaleString()}명 / {periodCumulative['2024'].roomGuests.toLocaleString()}명
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* 2025 Period Cumulative */}
+                  <td className="py-4 px-6 text-center">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="font-mono text-sm font-black text-blue-900">
+                        {periodCumulative['2025'].usageRate.toFixed(1)}%
+                      </span>
+                      <span className="text-[11px] text-blue-700 tabular-nums">
+                        {periodCumulative['2025'].visitors.toLocaleString()}명 / {periodCumulative['2025'].roomGuests.toLocaleString()}명
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* 2026 Period Cumulative */}
+                  <td className="py-4 px-6 text-center bg-emerald-200/70 border-x border-emerald-300">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="font-mono text-base font-black text-emerald-950">
+                        {periodCumulative['2026'].usageRate.toFixed(1)}%
+                      </span>
+                      <span className="text-[11px] text-emerald-900 font-bold tabular-nums">
+                        {periodCumulative['2026'].visitors.toLocaleString()}명 / {periodCumulative['2026'].roomGuests.toLocaleString()}명
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Period YoY Diff */}
+                  <td className="py-4 px-6 text-center">
+                    {periodYoYDiff !== null ? (
+                      <div className="inline-flex items-center gap-1 font-mono font-black text-xs">
+                        {periodYoYDiff > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-900 bg-white/90 px-3 py-1.5 rounded-xl shadow-xs border border-emerald-200">
+                            <ArrowUpRight size={15} className="stroke-[3]" />
+                            +{periodYoYDiff.toFixed(1)}%p
+                          </span>
+                        ) : periodYoYDiff < 0 ? (
+                          <span className="inline-flex items-center gap-1 text-rose-900 bg-white/90 px-3 py-1.5 rounded-xl shadow-xs border border-rose-200">
+                            <ArrowDownRight size={15} className="stroke-[3]" />
+                            {periodYoYDiff.toFixed(1)}%p
+                          </span>
+                        ) : (
+                          <span className="text-slate-700 bg-white px-3 py-1.5 rounded-xl">0.0%p</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-mono">-</span>
+                    )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

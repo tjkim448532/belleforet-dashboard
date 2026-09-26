@@ -237,3 +237,26 @@ export interface LeisureUsageRateResponse {
   error?: string;
 }
 
+// ============================================================================
+// ⑨ 레저본부 연도별 영업장 이용률 정밀 매트릭스 (leisure-yoy-matrix)
+// ============================================================================
+export interface LeisureYoyYearData {
+  usageRate: number;
+  visitors: number;
+  roomGuests: number;
+}
+
+export interface LeisureYoyRow {
+  month: number;
+  [year: string]: LeisureYoyYearData | number;
+}
+
+export interface LeisureYoyMatrixResponse {
+  success: boolean;
+  facilities: string[];
+  years: string[];
+  pivotData: Record<string, LeisureYoyRow[]>;
+  error?: string;
+}
+
+

@@ -2,11 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { 
   Ticket, Users, Building2, TrendingUp, Calendar, 
-  RefreshCw, AlertCircle, Layers, ChevronRight, BarChart3, HelpCircle
+  RefreshCw, AlertCircle, Layers, BarChart3, HelpCircle,
+  ArrowUpRight, ArrowDownRight, Minus
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import type { 
-  LeisureUsageRateResponse 
+  LeisureUsageRateResponse,
+  LeisureYoyMatrixResponse,
+  LeisureYoyYearData
 } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -34,37 +37,56 @@ const DEFAULT_COLORS = [
 ];
 
 export default function LeisureUsageRate() {
-  const [data, setData] = useState<LeisureUsageRateResponse | null>(null);
+  const [usageData, setUsageData] = useState<LeisureUsageRateResponse | null>(null);
+  const [yoyData, setYoyData] = useState<LeisureYoyMatrixResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
-  const [selectedYear, setSelectedYear] = useState<string>('ALL'); // 'ALL' | '2026' | '2025' | '2024'
-  const [selectedFacilities, setSelectedFacilities] = useState<Set<string>>(new Set());
-  const [tableSortDesc, setTableSortDesc] = useState<boolean>(true); // true = newest month first
-  const [searchFilter, setSearchFilter] = useState<string>('');
+  // Selected Facility for YoY Matrix & Chart
+  const [selectedFacility, setSelectedFacility] = useState<string>('놀이동산');
+  
+  // Chart View Mode: 'YOY' (Selected Facility 24 vs 25 vs 26) | 'ALL_TIMELINE' (All Facilities Monthly Timeline)
+  const [chartMode, setChartMode] = useState<'YOY' | 'ALL_TIMELINE'>('YOY');
 
-  const fetchUsageRateData = async () => {
+  // Timeline Chart State
+  const [selectedYear, setSelectedYear] = useState<string>('ALL');
+  const [selectedFacilities, setSelectedFacilities] = useState<Set<string>>(new Set());
+
+  const fetchData = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-usage-rate`);
-      const payload: LeisureUsageRateResponse = res?.data ?? res;
-      
-      if (payload && payload.success && Array.isArray(payload.series)) {
-        setData(payload);
-        // Initially select '레저본부 전체(소계)' and top 4 facilities
+      const [resUsage, resYoy] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/leisure-usage-rate`),
+        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix`),
+      ]);
+
+      const payloadUsage: LeisureUsageRateResponse = resUsage?.data ?? resUsage;
+      const payloadYoy: LeisureYoyMatrixResponse = resYoy?.data ?? resYoy;
+
+      if (payloadUsage?.success && payloadYoy?.success) {
+        setUsageData(payloadUsage);
+        setYoyData(payloadYoy);
+
+        // Set default facility if available
+        if (payloadYoy.facilities && payloadYoy.facilities.length > 0) {
+          if (!payloadYoy.facilities.includes(selectedFacility)) {
+            setSelectedFacility(payloadYoy.facilities[0]);
+          }
+        }
+
+        // Initially select top 4 facilities for timeline view
         const initialSelected = new Set<string>();
-        payload.series.slice(0, 5).forEach((s) => initialSelected.add(s.facilityName));
+        payloadUsage.series?.slice(0, 5).forEach((s) => initialSelected.add(s.facilityName));
         setSelectedFacilities(initialSelected);
       } else {
-        setError(payload?.error || '레저본부 이용률 데이터를 불러오지 못했습니다.');
+        setError(payloadUsage?.error || payloadYoy?.error || '레저본부 이용률 데이터를 불러오지 못했습니다.');
       }
     } catch (err: any) {
-      console.error('Error fetching leisure usage rate:', err);
+      console.error('Error fetching leisure usage data:', err);
       setError(
         err?.message || 
-        '백엔드 API(/api/v6/report/leisure-usage-rate) 호출 중 오류가 발생했습니다. 백엔드 배포 상태를 확인해주세요.'
+        '백엔드 API 호출 중 오류가 발생했습니다. 백엔드 상태를 확인해주세요.'
       );
     } finally {
       setIsLoading(false);
@@ -72,95 +94,183 @@ export default function LeisureUsageRate() {
   };
 
   useEffect(() => {
-    fetchUsageRateData();
+    fetchData();
   }, []);
-
-  // Filter months by selected year
-  const filteredMonths = useMemo(() => {
-    if (!data?.months) return [];
-    if (selectedYear === 'ALL') return data.months;
-    return data.months.filter((m) => m.startsWith(selectedYear));
-  }, [data?.months, selectedYear]);
-
-  // Available facilities
-  const allFacilities = useMemo(() => {
-    if (!data?.series) return [];
-    return data.series.map((s) => s.facilityName);
-  }, [data?.series]);
 
   // Latest month data points for KPI Cards
   const latestMonthSummary = useMemo(() => {
-    if (!data?.months || data.months.length === 0 || !data.series) return null;
-    const latestMonth = data.months[data.months.length - 1];
+    if (!usageData?.months || usageData.months.length === 0 || !usageData.series) return null;
+    const latestMonth = usageData.months[usageData.months.length - 1];
 
-    const subtotalSeries = data.series.find((s) => s.facilityName === '레저본부 전체(소계)');
+    const subtotalSeries = usageData.series.find((s) => s.facilityName === '레저본부 전체(소계)');
     const subtotalPoint = subtotalSeries?.data.find((d) => d.month === latestMonth);
 
-    // Find top facility (excluding subtotal)
-    let topFacility = { name: '-', rate: 0, visitors: 0 };
-    data.series.forEach((s) => {
-      if (s.facilityName === '레저본부 전체(소계)') return;
-      const pt = s.data.find((d) => d.month === latestMonth);
-      if (pt && pt.usageRate > topFacility.rate) {
-        topFacility = { name: s.facilityName, rate: pt.usageRate, visitors: pt.visitors };
-      }
-    });
+    // Selected facility's latest point
+    const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
+    const selPoint = selSeries?.data.find((d) => d.month === latestMonth);
 
     return {
       month: latestMonth,
       subtotalUsageRate: subtotalPoint?.usageRate ?? 0,
       totalVisitors: subtotalPoint?.visitors ?? 0,
       totalRoomGuests: subtotalPoint?.totalRoomGuests ?? 0,
-      topFacility,
+      selectedVenueLatestRate: selPoint?.usageRate ?? 0,
+      selectedVenueLatestVisitors: selPoint?.visitors ?? 0,
     };
-  }, [data]);
+  }, [usageData, selectedFacility]);
 
-  // Toggle facility in chart
-  const toggleFacility = (facilityName: string) => {
-    setSelectedFacilities((prev) => {
-      const next = new Set(prev);
-      if (next.has(facilityName)) {
-        next.delete(facilityName);
-      } else {
-        next.add(facilityName);
-      }
-      return next;
+  // Months 1 to 12 labels
+  const monthLabels = useMemo(() => [
+    '1월', '2월', '3월', '4월', '5월', '6월', 
+    '7월', '8월', '9월', '10월', '11월', '12월'
+  ], []);
+
+  // YoY Chart Option (for selected facility: 2024 vs 2025 vs 2026 across 1~12월)
+  const yoyChartOption = useMemo(() => {
+    if (!yoyData?.pivotData || !yoyData.pivotData[selectedFacility]) return {};
+
+    const rows = yoyData.pivotData[selectedFacility];
+    const years = yoyData.years || ['2024', '2025', '2026'];
+
+    const colors: Record<string, string> = {
+      '2024': '#94a3b8', // Slate
+      '2025': '#3b82f6', // Blue
+      '2026': '#10b981', // Emerald
+    };
+
+    const series = years.map((yr) => {
+      const dataPoints = rows.map((r) => {
+        const item = r[yr] as LeisureYoyYearData | undefined;
+        // Don't show line drop to 0 for unarrived future months in 2026
+        if (yr === '2026' && item && item.roomGuests === 0 && item.visitors === 0) {
+          return null;
+        }
+        return {
+          value: item ? item.usageRate : 0,
+          visitors: item?.visitors || 0,
+          roomGuests: item?.roomGuests || 0,
+        };
+      });
+
+      const isCurrentYear = yr === '2026';
+
+      return {
+        name: `${yr}년`,
+        type: 'line',
+        smooth: true,
+        showSymbol: true,
+        symbolSize: isCurrentYear ? 8 : 6,
+        lineStyle: {
+          width: isCurrentYear ? 3.5 : 2,
+          type: yr === '2024' ? 'dashed' : 'solid',
+          color: colors[yr] || '#64748b',
+        },
+        itemStyle: {
+          color: colors[yr] || '#64748b',
+        },
+        connectNulls: false,
+        emphasis: {
+          focus: 'series',
+          lineStyle: {
+            width: isCurrentYear ? 4.5 : 3,
+          },
+        },
+        data: dataPoints,
+      };
     });
-  };
 
-  const selectAllFacilities = () => {
-    if (!data?.series) return;
-    setSelectedFacilities(new Set(data.series.map((s) => s.facilityName)));
-  };
+    return {
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        borderColor: '#334155',
+        textStyle: { color: '#f8fafc', fontSize: 12 },
+        formatter: (params: any[]) => {
+          if (!params || params.length === 0) return '';
+          const monthLabel = params[0].axisValue;
+          let html = `<div style="font-weight: bold; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.15); color: #38bdf8;">
+            🎡 ${selectedFacility} · ${monthLabel} 연도별 비교
+          </div>`;
 
-  const selectSubtotalOnly = () => {
-    setSelectedFacilities(new Set(['레저본부 전체(소계)']));
-  };
+          params.forEach((item) => {
+            if (item.value === null || item.value === undefined) return;
+            const is26 = item.seriesName.includes('2026');
+            const usageVal = Number(item.data?.value || 0).toFixed(1);
+            const visitorsVal = Number(item.data?.visitors || 0).toLocaleString();
+            const roomGuestsVal = Number(item.data?.roomGuests || 0).toLocaleString();
 
-  const selectTopVenues = () => {
-    if (!data?.series) return;
-    const top = new Set<string>(['레저본부 전체(소계)']);
-    data.series.slice(1, 5).forEach((s) => top.add(s.facilityName));
-    setSelectedFacilities(top);
-  };
+            html += `
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 4px; font-size: 11.5px; ${is26 ? 'font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 2px 4px; border-radius: 4px;' : ''}">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${item.color};"></span>
+                  ${item.seriesName}
+                </span>
+                <span style="text-align: right;">
+                  <b style="font-size: 12px; font-family: monospace;">${usageVal}%</b>
+                  <span style="opacity: 0.75; margin-left: 6px; font-size: 10.5px;">(${visitorsVal}명 / ${roomGuestsVal}명)</span>
+                </span>
+              </div>
+            `;
+          });
+          return html;
+        },
+      },
+      legend: {
+        data: years.map((y) => `${y}년`),
+        top: 0,
+        right: '2%',
+        textStyle: { color: '#64748b', fontWeight: 'bold', fontSize: 12 },
+      },
+      grid: {
+        top: 35,
+        left: '2%',
+        right: '3%',
+        bottom: '8%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: monthLabels,
+        axisLine: { lineStyle: { color: '#cbd5e1' } },
+        axisLabel: { color: '#64748b', fontSize: 12, fontWeight: 500 },
+      },
+      yAxis: {
+        type: 'value',
+        name: '이용률 (%)',
+        nameTextStyle: { color: '#94a3b8', fontSize: 11 },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+        axisLabel: {
+          color: '#64748b',
+          fontSize: 11,
+          formatter: '{value}%',
+        },
+      },
+      series,
+    };
+  }, [yoyData, selectedFacility, monthLabels]);
 
-  // ECharts Configuration
-  const chartOption = useMemo(() => {
-    if (!data || filteredMonths.length === 0) return {};
+  // Overall Timeline Chart Option
+  const timelineFilteredMonths = useMemo(() => {
+    if (!usageData?.months) return [];
+    if (selectedYear === 'ALL') return usageData.months;
+    return usageData.months.filter((m) => m.startsWith(selectedYear));
+  }, [usageData?.months, selectedYear]);
+
+  const timelineChartOption = useMemo(() => {
+    if (!usageData || timelineFilteredMonths.length === 0) return {};
 
     const seriesList: any[] = [];
     let colorIdx = 0;
 
-    data.series.forEach((s) => {
+    usageData.series.forEach((s) => {
       if (!selectedFacilities.has(s.facilityName)) return;
 
       const isSubtotal = s.facilityName === '레저본부 전체(소계)';
       const color = FACILITY_COLORS[s.facilityName] || DEFAULT_COLORS[colorIdx % DEFAULT_COLORS.length];
       if (!FACILITY_COLORS[s.facilityName]) colorIdx++;
 
-      // Map values matching filteredMonths
       const dataMap = new Map(s.data.map((d) => [d.month, d]));
-      const seriesValues = filteredMonths.map((m) => {
+      const seriesValues = timelineFilteredMonths.map((m) => {
         const point = dataMap.get(m);
         return {
           value: point ? point.usageRate : 0,
@@ -177,17 +287,13 @@ export default function LeisureUsageRate() {
         symbolSize: isSubtotal ? 8 : 6,
         lineStyle: {
           width: isSubtotal ? 4 : 2,
-          type: isSubtotal ? 'solid' : 'solid',
+          type: 'solid',
           color: color,
         },
-        itemStyle: {
-          color: color,
-        },
+        itemStyle: { color: color },
         emphasis: {
           focus: 'series',
-          lineStyle: {
-            width: isSubtotal ? 5 : 3.5,
-          },
+          lineStyle: { width: isSubtotal ? 5 : 3.5 },
         },
         data: seriesValues,
       });
@@ -199,51 +305,17 @@ export default function LeisureUsageRate() {
         backgroundColor: 'rgba(15, 23, 42, 0.95)',
         borderColor: '#334155',
         textStyle: { color: '#f8fafc', fontSize: 12 },
-        formatter: (params: any[]) => {
-          if (!params || params.length === 0) return '';
-          const monthLabel = params[0].axisValue;
-          let html = `<div style="font-weight: bold; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.15); color: #38bdf8;">
-            📅 ${monthLabel} 이용률 현황
-          </div>`;
-
-          // Sort params descending by usageRate
-          const sortedParams = [...params].sort((a, b) => (b.data?.value || 0) - (a.data?.value || 0));
-
-          sortedParams.forEach((item) => {
-            const isSub = item.seriesName === '레저본부 전체(소계)';
-            const usageVal = Number(item.data?.value || 0).toFixed(1);
-            const visitorsVal = Number(item.data?.visitors || 0).toLocaleString();
-            const roomGuestsVal = Number(item.data?.roomGuests || 0).toLocaleString();
-
-            html += `
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 4px; font-size: 11.5px; ${isSub ? 'font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 2px 4px; border-radius: 4px;' : ''}">
-                <span style="display: flex; align-items: center; gap: 6px;">
-                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${item.color};"></span>
-                  ${item.seriesName}
-                </span>
-                <span style="text-align: right;">
-                  <b style="font-size: 12px; font-family: monospace;">${usageVal}%</b>
-                  <span style="opacity: 0.75; margin-left: 6px; font-size: 10.5px;">(${visitorsVal}명 / ${roomGuestsVal}명)</span>
-                </span>
-              </div>
-            `;
-          });
-          return html;
-        },
-      },
-      legend: {
-        show: false, // We use custom interactive chips above
       },
       grid: {
         top: 25,
         left: '2%',
         right: '3%',
-        bottom: filteredMonths.length > 12 ? '15%' : '8%',
+        bottom: timelineFilteredMonths.length > 12 ? '15%' : '8%',
         containLabel: true,
       },
       xAxis: {
         type: 'category',
-        data: filteredMonths,
+        data: timelineFilteredMonths,
         axisLine: { lineStyle: { color: '#cbd5e1' } },
         axisLabel: { 
           color: '#64748b', 
@@ -259,13 +331,9 @@ export default function LeisureUsageRate() {
         name: '이용률 (%)',
         nameTextStyle: { color: '#94a3b8', fontSize: 11 },
         splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
-        axisLabel: {
-          color: '#64748b',
-          fontSize: 11,
-          formatter: '{value}%',
-        },
+        axisLabel: { color: '#64748b', fontSize: 11, formatter: '{value}%' },
       },
-      dataZoom: filteredMonths.length > 12 ? [
+      dataZoom: timelineFilteredMonths.length > 12 ? [
         {
           type: 'slider',
           show: true,
@@ -281,54 +349,37 @@ export default function LeisureUsageRate() {
       ] : [],
       series: seriesList,
     };
-  }, [data, filteredMonths, selectedFacilities]);
-
-  // Display months for the table (can sort newest first or oldest first)
-  const displayMonths = useMemo(() => {
-    const list = [...filteredMonths];
-    return tableSortDesc ? list.reverse() : list;
-  }, [filteredMonths, tableSortDesc]);
-
-  // Filtered series for the table
-  const tableSeries = useMemo(() => {
-    if (!data?.series) return [];
-    let list = data.series;
-    if (searchFilter.trim()) {
-      const q = searchFilter.trim().toLowerCase();
-      list = list.filter((s) => s.facilityName.toLowerCase().includes(q));
-    }
-    return list;
-  }, [data?.series, searchFilter]);
+  }, [usageData, timelineFilteredMonths, selectedFacilities]);
 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#f8fafc]">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
-          <p className="text-sm font-medium text-slate-500">레저본부 영업장별 이용률 데이터를 집계 중...</p>
+          <p className="text-sm font-medium text-slate-500">레저본부 영업장별 이용률 매트릭스를 불러오는 중...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !data) {
+  if (error || !yoyData || !yoyData.pivotData) {
     return (
       <div className="p-6 lg:p-10 max-w-7xl mx-auto">
         <div className="bg-rose-50 border border-rose-200 text-rose-700 p-8 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
           <div className="flex items-start gap-4">
             <AlertCircle className="w-8 h-8 text-rose-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-bold text-lg text-rose-900">데이터 로드 실패 또는 백엔드 배포 대기</h3>
+              <h3 className="font-bold text-lg text-rose-900">데이터 로드 실패</h3>
               <p className="text-sm text-rose-600 mt-1 max-w-2xl leading-relaxed">
                 {error || 'API 응답이 없습니다.'}
               </p>
               <div className="mt-3 text-xs bg-rose-100/70 text-rose-800 px-3 py-2 rounded-xl inline-block font-mono">
-                Endpoint: GET /api/v6/report/leisure-usage-rate
+                Endpoint: GET /api/v6/report/leisure-yoy-matrix
               </div>
             </div>
           </div>
           <button
-            onClick={fetchUsageRateData}
+            onClick={fetchData}
             className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-all shadow-sm shrink-0"
           >
             <RefreshCw size={16} /> 다시 시도
@@ -337,6 +388,8 @@ export default function LeisureUsageRate() {
       </div>
     );
   }
+
+  const currentPivotRows = yoyData.pivotData[selectedFacility] || [];
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-12 max-w-[1600px] mx-auto">
@@ -355,19 +408,19 @@ export default function LeisureUsageRate() {
               </span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-3 flex-wrap break-keep">
-              <span className="whitespace-nowrap">레저본부 영업장별 숙박객 대비 이용률 월별 비교</span>
+              <span className="whitespace-nowrap">레저본부 영업장별 숙박객 대비 이용률 비교</span>
               <span className="text-xs bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white font-medium whitespace-nowrap">
-                정밀 숙박객수 모수 기반 V6
+                24 · 25 · 26 연도별 YoY 정밀 매트릭스
               </span>
             </h1>
             <p className="text-emerald-100 text-sm mt-2 font-normal opacity-90 break-keep max-w-3xl leading-relaxed">
-              전체 숙박객(16평×4명, 35평×5명, 51평×6명 정원 기준) 대비 각 놀이시설 이용객(진성 방문객 is_visitor_count = 1)의 월별 이용률(%)을 다각도로 분석합니다.
+              전체 숙박객(16평×4명, 35평×5명, 51평×6명 정원 기준) 대비 각 놀이시설 이용객(진성 방문객 is_visitor_count = 1)의 월별 이용률(%)을 연도별로 정밀 비교 분석합니다.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={fetchUsageRateData}
+              onClick={fetchData}
               className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs lg:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all border border-white/20 shadow-xs whitespace-nowrap shrink-0"
             >
               <RefreshCw size={15} /> 새로고침
@@ -376,7 +429,7 @@ export default function LeisureUsageRate() {
         </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards (Latest Month Reference) */}
+      {/* 2. Top Summary KPI Cards */}
       {latestMonthSummary && (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
@@ -385,7 +438,7 @@ export default function LeisureUsageRate() {
               <span>최신 실적 기준 월: <b className="text-emerald-700">{latestMonthSummary.month}</b></span>
             </div>
             <span className="text-xs font-medium text-slate-400">
-              * 백엔드 사전 집계(Zero Slice Summation) 수치
+              * 백엔드 V6 사전 연산 (Zero Slice Summation)
             </span>
           </div>
 
@@ -455,26 +508,24 @@ export default function LeisureUsageRate() {
               </div>
             </div>
 
-            {/* Card 4: Top Venue */}
+            {/* Card 4: Selected Facility Status */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-amber-600 tracking-wider uppercase whitespace-nowrap">
-                  당월 최고 이용률 영업장
+                  선택 영업장: {selectedFacility}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                   <TrendingUp size={20} />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <span className="text-xl font-extrabold text-slate-900 truncate max-w-[150px]">
-                  {latestMonthSummary.topFacility.name}
+                <span className="text-3xl font-extrabold text-amber-600 tabular-nums">
+                  {latestMonthSummary.selectedVenueLatestRate.toFixed(1)}%
                 </span>
-                <span className="text-2xl font-black text-amber-600 tabular-nums">
-                  {latestMonthSummary.topFacility.rate.toFixed(1)}%
-                </span>
+                <span className="text-xs text-slate-500 font-medium">당월 이용률</span>
               </div>
               <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
-                {latestMonthSummary.topFacility.visitors.toLocaleString()}명 이용
+                {latestMonthSummary.selectedVenueLatestVisitors.toLocaleString()}명 이용
               </div>
             </div>
 
@@ -482,7 +533,7 @@ export default function LeisureUsageRate() {
         </div>
       )}
 
-      {/* 3. Interactive Multi-Line Chart Section */}
+      {/* 3. Interactive Chart Section */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 lg:p-8 shadow-xs space-y-6">
         
         {/* Chart Header & Controls */}
@@ -490,251 +541,251 @@ export default function LeisureUsageRate() {
           <div>
             <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-emerald-600" />
-              영업장별 월별 이용률 추이 곡선
+              {chartMode === 'YOY' 
+                ? `[${selectedFacility}] 연도별(24·25·26) 월별 이용률 비교 추이`
+                : '레저본부 전 영업장 시계열 추이'}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              선택한 영업장의 월별 이용률(%)을 한눈에 비교할 수 있습니다. 마우스를 올리면 상세 인원수가 표시됩니다.
+              {chartMode === 'YOY' 
+                ? '동일 월(1~12월) 기준 2024년, 2025년, 2026년 이용률(%)을 직접 비교합니다.'
+                : '월별 전체 시계열 상에서 영업장별 침투율을 비교합니다.'}
             </p>
           </div>
 
-          {/* Year Filter Buttons */}
-          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl self-start md:self-auto">
-            {['ALL', '2026', '2025', '2024'].map((year) => (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs">
               <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                  selectedYear === year
+                onClick={() => setChartMode('YOY')}
+                className={`px-3 py-1.5 font-bold rounded-lg transition-all ${
+                  chartMode === 'YOY'
                     ? 'bg-white text-emerald-700 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                {year === 'ALL' ? '전체 (2024~2026)' : `${year}년`}
+                연도별(YoY) 비교
               </button>
-            ))}
+              <button
+                onClick={() => setChartMode('ALL_TIMELINE')}
+                className={`px-3 py-1.5 font-bold rounded-lg transition-all ${
+                  chartMode === 'ALL_TIMELINE'
+                    ? 'bg-white text-emerald-700 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                전체 시계열 추이
+              </button>
+            </div>
+
+            {chartMode === 'ALL_TIMELINE' && (
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
+                {['ALL', '2026', '2025', '2024'].map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => setSelectedYear(year)}
+                    className={`px-2.5 py-1 font-bold rounded-lg transition-all ${
+                      selectedYear === year
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {year === 'ALL' ? '전체' : `${year}년`}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Facility Selector Chips */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              차트 표시 영업장 선택 ({selectedFacilities.size}/{allFacilities.length})
-            </span>
-            <div className="flex items-center gap-2 text-xs">
-              <button
-                onClick={selectTopVenues}
-                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
-              >
-                주요 TOP 4
-              </button>
-              <button
-                onClick={selectSubtotalOnly}
-                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
-              >
-                소계만 보기
-              </button>
-              <button
-                onClick={selectAllFacilities}
-                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
-              >
-                전체 선택
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            {allFacilities.map((name) => {
-              const isSelected = selectedFacilities.has(name);
-              const isSubtotal = name === '레저본부 전체(소계)';
-              const color = FACILITY_COLORS[name] || '#64748b';
-
-              return (
-                <button
-                  key={name}
-                  onClick={() => toggleFacility(name)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                    isSelected
-                      ? isSubtotal
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                        : 'bg-white text-slate-800 border-slate-300 shadow-xs ring-1 ring-slate-200'
-                      : 'bg-slate-50 text-slate-400 border-slate-200/60 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: isSelected ? (isSubtotal ? '#fff' : color) : '#cbd5e1' }}
-                  />
-                  <span>{name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ECharts Container */}
-        <div className="w-full h-[400px] lg:h-[460px] pt-2">
-          {selectedFacilities.size === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2">
-              <AlertCircle size={28} />
-              <p className="text-sm font-medium">상단에서 표시할 영업장을 선택해주세요.</p>
-            </div>
-          ) : (
-            <ReactECharts 
-              option={chartOption} 
-              style={{ height: '100%', width: '100%' }} 
-              notMerge={true} 
-            />
-          )}
+        {/* ECharts Chart Container */}
+        <div className="w-full h-[380px] lg:h-[420px]">
+          <ReactECharts 
+            option={chartMode === 'YOY' ? yoyChartOption : timelineChartOption} 
+            style={{ height: '100%', width: '100%' }} 
+            notMerge={true} 
+          />
         </div>
 
       </div>
 
-      {/* 4. Monthly Usage Rate Matrix Table */}
+      {/* 4. ⭐ 연도별 영업장 이용률 정밀 매트릭스 (1월~12월 행 × 2024, 2025, 2026 열) */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         
-        {/* Table Header Controls */}
-        <div className="p-6 lg:p-8 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Table Header: Dropdown & Title */}
+        <div className="p-6 lg:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
           <div>
             <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
               <Layers className="w-5 h-5 text-emerald-600" />
-              월별 영업장 이용률 정밀 매트릭스
+              연도별 영업장 이용률 정밀 매트릭스
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              각 셀은 [이용률 %]와 하단에 [시설 이용객 수]를 표시합니다.
+              드롭다운에서 원하는 영업장을 선택하면 1월부터 12월까지의 연도별(24년, 25년, 26년) 이용률과 YoY 증감이 즉시 표출됩니다.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="영업장 검색..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="px-3.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
-
-            {/* Sort Toggle (Newest first vs Oldest first) */}
-            <button
-              onClick={() => setTableSortDesc(!tableSortDesc)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
-            >
-              <span>{tableSortDesc ? '최신월 순서' : '과거월 순서'}</span>
-              <ChevronRight size={13} className={`transform transition-transform ${tableSortDesc ? 'rotate-90' : '-rotate-90'}`} />
-            </button>
+          {/* Facility Dropdown Selector */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+              영업장 선택:
+            </span>
+            <div className="relative">
+              <select
+                value={selectedFacility}
+                onChange={(e) => setSelectedFacility(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2.5 bg-white border-2 border-emerald-500/80 text-emerald-900 font-bold rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs cursor-pointer pr-10 appearance-none"
+              >
+                {yoyData.facilities.map((fac) => (
+                  <option key={fac} value={fac}>
+                    {fac}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-700">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Scrollable Pivot Table */}
+        {/* Quick Facility Chips */}
+        <div className="px-6 lg:px-8 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-slate-400 mr-1">빠른 선택:</span>
+          {['놀이동산', '벨포레 목장', '마운틴카트', '사계절썰매장', '미디어아트센터', '마리나 클럽'].map((fac) => {
+            const isSelected = selectedFacility === fac;
+            return (
+              <button
+                key={fac}
+                onClick={() => setSelectedFacility(fac)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                  isSelected
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                }`}
+              >
+                {fac}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Matrix Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3.5 px-6 sticky left-0 bg-slate-50/95 backdrop-blur-md z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                  영업장명
+              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <th className="py-4 px-6 text-center w-24">월 (Month)</th>
+                <th className="py-4 px-6 text-center">2024년 실적</th>
+                <th className="py-4 px-6 text-center">2025년 실적</th>
+                <th className="py-4 px-6 text-center bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80">
+                  2026년 실적 (최신)
                 </th>
-                {displayMonths.map((m) => (
-                  <th key={m} className="py-3.5 px-4 text-center">
-                    <span className="font-bold text-slate-700">{m}</span>
-                  </th>
-                ))}
+                <th className="py-4 px-6 text-center">YoY 증감 (26년 vs 25년)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              
-              {/* Row: Reference Denominator (Total Room Guests) */}
-              <tr className="bg-indigo-50/60 font-semibold border-b-2 border-indigo-100">
-                <td className="py-3 px-6 sticky left-0 bg-indigo-50/95 backdrop-blur-md z-10 text-indigo-900 font-bold shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center gap-2">
-                    <Building2 size={14} className="text-indigo-600" />
-                    <span>전체 숙박객 (분모)</span>
-                  </div>
-                </td>
-                {displayMonths.map((m) => {
-                  // Find subtotal point to get totalRoomGuests
-                  const sub = data.series.find((s) => s.facilityName === '레저본부 전체(소계)');
-                  const pt = sub?.data.find((d) => d.month === m);
-                  const guests = pt?.totalRoomGuests || 0;
-                  return (
-                    <td key={m} className="py-3 px-4 text-center text-indigo-700 font-mono">
-                      {guests.toLocaleString()}명
-                    </td>
-                  );
-                })}
-              </tr>
+              {currentPivotRows.map((row) => {
+                const monthNum = row.month;
+                const d24 = row['2024'] as LeisureYoyYearData | undefined;
+                const d25 = row['2025'] as LeisureYoyYearData | undefined;
+                const d26 = row['2026'] as LeisureYoyYearData | undefined;
 
-              {/* Rows: Facilities */}
-              {tableSeries.map((s) => {
-                const isSubtotal = s.facilityName === '레저본부 전체(소계)';
-                const dataMap = new Map(s.data.map((d) => [d.month, d]));
+                // 2026 data validity
+                const has26Data = d26 && (d26.roomGuests > 0 || d26.visitors > 0);
+                const has25Data = d25 && (d25.roomGuests > 0 || d25.visitors > 0);
+                const has24Data = d24 && (d24.roomGuests > 0 || d24.visitors > 0);
+
+                // Calculate YoY diff between 2026 and 2025
+                let yoyDiff: number | null = null;
+                if (has26Data && has25Data && d26 && d25) {
+                  yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+                }
 
                 return (
-                  <tr
-                    key={s.facilityName}
-                    className={`transition-colors hover:bg-slate-50/80 ${
-                      isSubtotal ? 'bg-emerald-50/50 font-bold border-b-2 border-emerald-200' : ''
-                    }`}
+                  <tr 
+                    key={monthNum}
+                    className="hover:bg-slate-50/80 transition-colors"
                   >
-                    {/* Sticky Facility Name Column */}
-                    <td
-                      className={`py-3.5 px-6 sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)] ${
-                        isSubtotal
-                          ? 'bg-emerald-50/95 backdrop-blur-md text-emerald-900 font-extrabold text-sm'
-                          : 'bg-white/95 backdrop-blur-md text-slate-800 font-semibold'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isSubtotal ? (
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
-                        ) : (
-                          <span
-                            className="w-2 h-2 rounded-full inline-block"
-                            style={{ backgroundColor: FACILITY_COLORS[s.facilityName] || '#94a3b8' }}
-                          ></span>
-                        )}
-                        <span>{s.facilityName}</span>
-                      </div>
+                    {/* Month Cell */}
+                    <td className="py-4 px-6 text-center font-extrabold text-slate-800 bg-slate-50/30 text-sm">
+                      {monthNum}월
                     </td>
 
-                    {/* Month Data Cells */}
-                    {displayMonths.map((m) => {
-                      const pt = dataMap.get(m);
-                      const rate = pt ? pt.usageRate : 0;
-                      const visitors = pt ? pt.visitors : 0;
+                    {/* 2024 Column */}
+                    <td className="py-4 px-6 text-center">
+                      {has24Data && d24 ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="font-mono text-sm font-bold text-slate-700">
+                            {d24.usageRate.toFixed(1)}%
+                          </span>
+                          <span className="text-[11px] text-slate-400 tabular-nums">
+                            {d24.visitors.toLocaleString()}명 / {d24.roomGuests.toLocaleString()}명
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 font-mono">-</span>
+                      )}
+                    </td>
 
-                      return (
-                        <td
-                          key={m}
-                          className={`py-3.5 px-4 text-center ${
-                            isSubtotal ? 'text-emerald-900 font-bold' : 'text-slate-700'
-                          }`}
-                        >
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span
-                              className={`tabular-nums font-mono text-xs ${
-                                isSubtotal
-                                  ? 'text-emerald-700 font-extrabold text-[13px]'
-                                  : rate >= 30
-                                  ? 'text-amber-700 font-bold'
-                                  : rate >= 15
-                                  ? 'text-blue-700 font-semibold'
-                                  : 'text-slate-700'
-                              }`}
-                            >
-                              {rate > 0 ? `${rate.toFixed(1)}%` : '-'}
+                    {/* 2025 Column */}
+                    <td className="py-4 px-6 text-center">
+                      {has25Data && d25 ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="font-mono text-sm font-bold text-blue-700">
+                            {d25.usageRate.toFixed(1)}%
+                          </span>
+                          <span className="text-[11px] text-slate-400 tabular-nums">
+                            {d25.visitors.toLocaleString()}명 / {d25.roomGuests.toLocaleString()}명
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 font-mono">-</span>
+                      )}
+                    </td>
+
+                    {/* 2026 Column (Highlighted) */}
+                    <td className="py-4 px-6 text-center bg-emerald-50/30 border-x border-emerald-100/60">
+                      {has26Data && d26 ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="font-mono text-base font-extrabold text-emerald-700">
+                            {d26.usageRate.toFixed(1)}%
+                          </span>
+                          <span className="text-[11px] text-emerald-600 font-medium tabular-nums">
+                            {d26.visitors.toLocaleString()}명 / {d26.roomGuests.toLocaleString()}명
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 font-mono text-xs">미도래</span>
+                      )}
+                    </td>
+
+                    {/* YoY Diff (26 vs 25) Column */}
+                    <td className="py-4 px-6 text-center">
+                      {yoyDiff !== null ? (
+                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold font-mono">
+                          {yoyDiff > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-xl">
+                              <ArrowUpRight size={14} className="stroke-[2.5]" />
+                              +{yoyDiff.toFixed(1)}%p
                             </span>
-                            {visitors > 0 ? (
-                              <span className="text-[10px] text-slate-400 tabular-nums">
-                                {visitors.toLocaleString()}명
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-300">-</span>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
+                          ) : yoyDiff < 0 ? (
+                            <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded-xl">
+                              <ArrowDownRight size={14} className="stroke-[2.5]" />
+                              {yoyDiff.toFixed(1)}%p
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl">
+                              <Minus size={14} />
+                              0.0%p
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 font-mono">-</span>
+                      )}
+                    </td>
+
                   </tr>
                 );
               })}
@@ -743,15 +794,15 @@ export default function LeisureUsageRate() {
         </div>
 
         {/* Footer Note */}
-        <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-500 gap-2">
           <div className="flex items-center gap-1.5">
             <HelpCircle size={14} className="text-slate-400" />
             <span>
-              * 이용률 수식: <b>(영업장 월별 이용객 수 / 월별 전체 숙박객 수) × 100</b>
+              각 셀 표기: <b>[이용률 %]</b> 상단, <b>(시설 이용객수 / 전체 객실정원 숙박객수)</b> 하단
             </span>
           </div>
           <span className="text-slate-400">
-            소계 및 집계값은 백엔드 V6 엔진에서 사전 연산되어 내려옵니다.
+            데이터 소스: V6 정밀 데이터 마트 피벗 엔진 (/api/v6/report/leisure-yoy-matrix)
           </span>
         </div>
 

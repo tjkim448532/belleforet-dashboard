@@ -337,14 +337,6 @@ export default function HolidayComparison() {
     };
   };
 
-  const getBehaviorDescription = (offset: number) => {
-    if (offset < -1) return '🚗 연휴 초반 / 귀성 및 초기 유입';
-    if (offset === -1) return '🛍️ 명절 전일 / 차례 준비 및 전야 도착';
-    if (offset === 0) return '🎯 명절 당일 / 차례 후 오후 가족 나들이 유입';
-    if (offset === 1 || offset === 2) return '🔥 명절 익일·후반 / 본격 레저·골프·휴양 소비 피크';
-    return '🏖️ 잔여 연휴 / 귀경 및 힐링 투숙 마무리';
-  };
-
   return (
     <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mt-8 border border-amber-100 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-orange-500"></div>
@@ -518,17 +510,16 @@ export default function HolidayComparison() {
             <div className="mt-6 pt-4 border-t border-slate-100">
               <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
                 <CalendarDays className="w-4 h-4 text-amber-500" />
-                명절 D-Day 기준 고객 방문 및 소비 패턴 전개표
+                명절 D-Day 기준 연도별 일별 실적 비교표
               </h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[800px]">
+                <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[600px]">
                   <thead className="bg-slate-100/80 text-slate-700 font-bold">
                     <tr>
                       <th className="py-3 px-4">구간 (D-Day 기준)</th>
                       {years.map(year => (
                         <th key={year} className="py-3 px-4 text-center">{year}년 일자 및 실적</th>
                       ))}
-                      <th className="py-3 px-4 text-left">방문 고객 행동 특성</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -565,9 +556,6 @@ export default function HolidayComparison() {
                               </td>
                             );
                           })}
-                          <td className="py-3 px-4 text-slate-600 font-medium">
-                            {getBehaviorDescription(offset)}
-                          </td>
                         </tr>
                       );
                     })}

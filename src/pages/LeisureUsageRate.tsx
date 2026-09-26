@@ -124,6 +124,15 @@ export default function LeisureUsageRate() {
     return usageData.months[usageData.months.length - 1];
   }, [usageData?.months]);
 
+  // List of facilities from YoY response ensuring '벨포레 목장(체험)' is always included if present
+  const facilityList = useMemo(() => {
+    const list = yoyData?.facilities ? [...yoyData.facilities] : [];
+    if (!list.includes('벨포레 목장(체험)') && yoyData?.pivotData?.['벨포레 목장(체험)']) {
+      list.push('벨포레 목장(체험)');
+    }
+    return list;
+  }, [yoyData]);
+
   // Compute selected period string range
   const startMonthStr = useMemo(() => {
     return startDate ? startDate.slice(0, 7) : '2026-01';
@@ -174,35 +183,32 @@ export default function LeisureUsageRate() {
 
     if (isPeriodTotalMode) {
       // 1. Calculate Period Cumulative across selectedPeriodMonths
-      let periodRoomGuests = 0;
-      for (const m of selectedPeriodMonths) {
-        for (const s of usageData.series) {
-          const pt = s.data.find((d) => d.month === m);
-          if (pt && pt.totalRoomGuests > 0) {
-            periodRoomGuests += pt.totalRoomGuests;
-            break;
-          }
-        }
-      }
-
-      // Selected venue period visitors & usage rate
       const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
       let selVisitors = 0;
+      let selDenominator = 0;
       for (const m of selectedPeriodMonths) {
         const pt = selSeries?.data.find((d) => d.month === m);
-        if (pt) selVisitors += pt.visitors;
+        if (pt) {
+          selVisitors += pt.visitors;
+          selDenominator += pt.totalRoomGuests;
+        }
       }
-      const selRate = periodRoomGuests > 0 ? Math.round((selVisitors / periodRoomGuests) * 1000) / 10 : 0;
+      const selRate = selDenominator > 0 ? Math.round((selVisitors / selDenominator) * 1000) / 10 : 0;
 
-      // Top venue across selected period
+      // Top venue across selected period (exclude ranch experience conversion rate from general resort penetration ranking)
       let topVenue = { name: '-', visitors: 0, usageRate: 0 };
       for (const s of usageData.series) {
+        if (s.facilityName === '벨포레 목장(체험)') continue;
         let vTotal = 0;
+        let dTotal = 0;
         for (const m of selectedPeriodMonths) {
           const pt = s.data.find((d) => d.month === m);
-          if (pt) vTotal += pt.visitors;
+          if (pt) {
+            vTotal += pt.visitors;
+            dTotal += pt.totalRoomGuests;
+          }
         }
-        const rate = periodRoomGuests > 0 ? Math.round((vTotal / periodRoomGuests) * 1000) / 10 : 0;
+        const rate = dTotal > 0 ? Math.round((vTotal / dTotal) * 1000) / 10 : 0;
         if (rate > topVenue.usageRate) {
           topVenue = { name: s.facilityName, visitors: vTotal, usageRate: rate };
         }
@@ -211,7 +217,7 @@ export default function LeisureUsageRate() {
       return {
         isPeriod: true,
         label: `${startMonthStr} ~ ${endMonthStr} (${selectedPeriodMonths.length}개월 누적)`,
-        roomGuests: periodRoomGuests,
+        roomGuests: selDenominator,
         selectedVenue: {
           name: selectedFacility,
           usageRate: selRate,
@@ -222,22 +228,15 @@ export default function LeisureUsageRate() {
     } else {
       // 2. Single Month Metrics
       const m = activeSingleMonth;
-      let roomGuests = 0;
-      for (const s of usageData.series) {
-        const pt = s.data.find((d) => d.month === m);
-        if (pt && pt.totalRoomGuests > 0) {
-          roomGuests = pt.totalRoomGuests;
-          break;
-        }
-      }
-
       const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
       const selPoint = selSeries?.data.find((d) => d.month === m);
       const selRate = selPoint?.usageRate ?? 0;
       const selVisitors = selPoint?.visitors ?? 0;
+      const roomGuests = selPoint?.totalRoomGuests ?? 0;
 
       let topVenue = { name: '-', usageRate: 0, visitors: 0 };
       for (const s of usageData.series) {
+        if (s.facilityName === '벨포레 목장(체험)') continue;
         const pt = s.data.find((d) => d.month === m);
         if (pt && pt.usageRate > topVenue.usageRate) {
           topVenue = {
@@ -332,7 +331,8 @@ export default function LeisureUsageRate() {
           if (!params || params.length === 0) return '';
           const monthLabel = params[0].axisValue;
           let html = `<div style="font-weight: bold; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.15); color: #38bdf8;">
-            🎡 ${selectedFacility} · ${monthLabel} 연도별 비교
+            🎡 ${selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility} · ${monthLabel} 연도별 비교
+            ${selectedFacility === '벨포레 목장(체험)' ? '<span style="font-size: 10px; color: #a7f3d0; margin-left: 6px;">(목장입장객 대비 체험전환율)</span>' : ''}
           </div>`;
 
           params.forEach((item) => {
@@ -597,7 +597,7 @@ export default function LeisureUsageRate() {
               </span>
             </h1>
             <p className="text-emerald-100 text-sm mt-2 font-normal opacity-90 break-keep max-w-3xl leading-relaxed">
-              전체 숙박객(16평×4명, 35평×5명, 51평×6명 정원 기준) 대비 각 놀이시설 이용객(진성 방문객 is_visitor_count = 1)의 월별 이용률(%)을 연도별로 정밀 비교 분석합니다.
+              관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객 대비 각 놀이시설 이용객(진성 방문객)의 월별 이용률(%)을 연도별로 비교합니다. (※ 단, '벨포레 목장(체험)'은 전체 숙박객이 아닌 '목장 입장객'을 기준으로 실질 체험 전환율을 산출합니다.)
             </p>
           </div>
 
@@ -668,7 +668,7 @@ export default function LeisureUsageRate() {
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-6 -mt-6"></div>
               <div className="flex items-center justify-between mb-4 relative z-10">
                 <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                  [{selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률'}
+                  [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {selectedFacility === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                   <Ticket size={20} />
@@ -689,7 +689,7 @@ export default function LeisureUsageRate() {
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-blue-600 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                  [{selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
+                  [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
                   <Users size={20} />
@@ -706,11 +706,13 @@ export default function LeisureUsageRate() {
               </div>
             </div>
 
-            {/* Card 3: Total Room Guests (Denominator) */}
+            {/* Card 3: Total Room Guests or Farm Visitors (Denominator) */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase whitespace-nowrap">
-                  {isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)'}
+                  {selectedFacility === '벨포레 목장(체험)'
+                    ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
+                    : (isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)')}
                 </span>
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <Building2 size={20} />
@@ -723,7 +725,9 @@ export default function LeisureUsageRate() {
                 <span className="text-sm font-semibold text-indigo-500">명</span>
               </div>
               <div className="text-xs text-indigo-400 mt-2 font-medium whitespace-nowrap">
-                객실 타입별 정원(16·35·51평) 반영 기준
+                {selectedFacility === '벨포레 목장(체험)'
+                  ? '목장 입장객 대비 실질 체험 전환율 산출 기준'
+                  : '관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등) 반영'}
               </div>
             </div>
 
@@ -763,7 +767,7 @@ export default function LeisureUsageRate() {
             <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-emerald-600" />
               {chartMode === 'YOY' 
-                ? `[${selectedFacility}] 연도별(24·25·26) 월별 이용률 비교 추이`
+                ? `[${selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] 연도별(24·25·26) 월별 ${selectedFacility === '벨포레 목장(체험)' ? '체험 전환율' : '이용률'} 비교 추이`
                 : '레저본부 전 영업장 시계열 추이'}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -860,9 +864,9 @@ export default function LeisureUsageRate() {
                 onChange={(e) => setSelectedFacility(e.target.value)}
                 className="w-full sm:w-auto px-4 py-2.5 bg-white border-2 border-emerald-500/80 text-emerald-900 font-bold rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs cursor-pointer pr-10 appearance-none"
               >
-                {yoyData.facilities.map((fac) => (
+                {facilityList.map((fac) => (
                   <option key={fac} value={fac}>
-                    {fac}
+                    {fac === '벨포레 목장(체험)' ? '목장체험 (벨포레 목장 체험)' : fac}
                   </option>
                 ))}
               </select>
@@ -878,19 +882,34 @@ export default function LeisureUsageRate() {
         {/* Quick Facility Chips */}
         <div className="px-6 lg:px-8 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 mr-1">빠른 선택:</span>
-          {['놀이동산', '벨포레 목장', '마운틴카트', '사계절썰매장', '미디어아트센터', '마리나 클럽'].map((fac) => {
-            const isSelected = selectedFacility === fac;
+          {[
+            { key: '놀이동산', label: '놀이동산' },
+            { key: '벨포레 목장', label: '벨포레 목장' },
+            { key: '벨포레 목장(체험)', label: '목장체험' },
+            { key: '마운틴카트', label: '마운틴카트' },
+            { key: '사계절썰매장', label: '사계절썰매장' },
+            { key: '미디어아트센터', label: '미디어아트센터' },
+            { key: '마리나 클럽', label: '마리나 클럽' },
+          ].map(({ key, label }) => {
+            const isSelected = selectedFacility === key;
             return (
               <button
-                key={fac}
-                onClick={() => setSelectedFacility(fac)}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                key={key}
+                onClick={() => setSelectedFacility(key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                 }`}
               >
-                {fac}
+                <span>{label}</span>
+                {key === '벨포레 목장(체험)' && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                    isSelected ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    체험
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1110,6 +1129,11 @@ export default function LeisureUsageRate() {
             <HelpCircle size={14} className="text-slate-400" />
             <span>
               각 셀 표기: <b>[이용률 %]</b> 상단, <b>(시설 이용객수 / 전체 객실정원 숙박객수)</b> 하단
+              {selectedFacility === '벨포레 목장(체험)' && (
+                <span className="text-emerald-700 ml-1.5 font-bold">
+                  (※ '목장체험'은 전체 숙박객이 아닌 '목장 입장객'을 분모로 한 실질 체험 전환율입니다)
+                </span>
+              )}
             </span>
           </div>
           <span className="text-slate-400">

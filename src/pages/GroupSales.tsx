@@ -620,11 +620,13 @@ export default function GroupSales() {
       }
       if (venueSearchKeyword) {
         const kw = venueSearchKeyword.toLowerCase();
-        const matchName = b.corporateName?.toLowerCase().includes(kw);
-        const matchVenue = b.venueName?.toLowerCase().includes(kw);
-        const matchManager = b.salesManager?.toLowerCase().includes(kw);
-        const matchPackage = b.packageType?.toLowerCase().includes(kw);
-        if (!matchName && !matchVenue && !matchManager && !matchPackage) return false;
+        const matchClient = (b.clientName || b.corporateName || '')?.toLowerCase().includes(kw);
+        const matchEvent = (b.eventName || '')?.toLowerCase().includes(kw);
+        const matchResNo = (b.reservationNo || b.eventId || '')?.toLowerCase().includes(kw);
+        const matchVenue = (b.venueName || '')?.toLowerCase().includes(kw);
+        const matchManager = (b.salesManager || '')?.toLowerCase().includes(kw);
+        const matchPackage = (b.packageType || '')?.toLowerCase().includes(kw);
+        if (!matchClient && !matchEvent && !matchResNo && !matchVenue && !matchManager && !matchPackage) return false;
       }
       return true;
     });
@@ -2286,28 +2288,35 @@ export default function GroupSales() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-financial">
-                      {venuePerformanceData.monthlyTrends.map((trend) => (
-                        <tr key={trend.yearMonth} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">
-                            {trend.yearMonth}
-                          </td>
-                          {uniqueVenueNames.map(vName => (
-                            <td key={vName} className="py-3 px-4 text-center whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded font-bold ${
-                                (trend.venueBreakdown?.[vName] || 0) > 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-400'
-                              }`}>
-                                {trend.venueBreakdown?.[vName] !== undefined ? `${trend.venueBreakdown[vName]}건` : '-'}
-                              </span>
+                      {venuePerformanceData.monthlyTrends.map((trend) => {
+                        const venueCounts = trend.venues || trend.venueBreakdown || {};
+                        const totalB = trend.totalBookings ?? trend.totalCount ?? 0;
+                        return (
+                          <tr key={trend.yearMonth} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">
+                              {trend.yearMonth}
                             </td>
-                          ))}
-                          <td className="py-3 px-4 text-center font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
-                            {trend.totalCount.toLocaleString()}건
-                          </td>
-                          <td className="py-3 px-4 text-right font-extrabold text-slate-800 bg-indigo-50/30 whitespace-nowrap">
-                            {formatRevenue(trend.totalRevenue)}원
-                          </td>
-                        </tr>
-                      ))}
+                            {uniqueVenueNames.map(vName => {
+                              const cnt = venueCounts[vName];
+                              return (
+                                <td key={vName} className="py-3 px-4 text-center whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 rounded font-bold ${
+                                    cnt && cnt > 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-400'
+                                  }`}>
+                                    {cnt !== undefined ? `${cnt}건` : '-'}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                            <td className="py-3 px-4 text-center font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                              {totalB.toLocaleString()}건
+                            </td>
+                            <td className="py-3 px-4 text-right font-extrabold text-slate-800 bg-indigo-50/30 whitespace-nowrap">
+                              {trend.totalRevenue !== undefined ? `${formatRevenue(trend.totalRevenue)}원` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2347,8 +2356,8 @@ export default function GroupSales() {
                         type="text"
                         value={venueSearchKeyword}
                         onChange={(e) => setVenueSearchKeyword(e.target.value)}
-                        placeholder="단체명 / 담당자 검색..."
-                        className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 w-44"
+                        placeholder="기업명 / 행사명 / 담당자 검색..."
+                        className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 w-52"
                       />
                     </div>
                   </div>
@@ -2360,10 +2369,10 @@ export default function GroupSales() {
                       <tr>
                         <th className="py-3 px-4 whitespace-nowrap">행사 일자</th>
                         <th className="py-3 px-4 whitespace-nowrap">이용 장소</th>
-                        <th className="py-3 px-4 whitespace-nowrap">이용 단체명 (기업/기관)</th>
+                        <th className="py-3 px-4 whitespace-nowrap">이용 단체명 (행사명)</th>
                         <th className="py-3 px-4 text-center whitespace-nowrap">참석 인원</th>
                         <th className="py-3 px-4 text-right whitespace-nowrap">대관료 (원)</th>
-                        <th className="py-3 px-4 text-center whitespace-nowrap">패키지 구분</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">예약 번호</th>
                         <th className="py-3 px-4 whitespace-nowrap">영업 담당자</th>
                         <th className="py-3 px-4 whitespace-nowrap">비고</th>
                       </tr>
@@ -2377,17 +2386,24 @@ export default function GroupSales() {
                         </tr>
                       ) : (
                         filteredVenueBookings.map((b, idx) => (
-                          <tr key={b.eventId || idx} className="hover:bg-slate-50/80 transition-colors">
+                          <tr key={b.reservationNo || b.eventId || idx} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
-                              {b.bookingDate}
+                              {b.eventDate || b.bookingDate}
                             </td>
                             <td className="py-3 px-4 whitespace-nowrap">
                               <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[11px]">
                                 {b.venueName}
                               </span>
                             </td>
-                            <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
-                              {b.corporateName}
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <div className="font-bold text-slate-900">
+                                {b.clientName || b.corporateName || '-'}
+                              </div>
+                              {b.eventName && (
+                                <div className="text-[11px] text-slate-500 font-normal">
+                                  {b.eventName}
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-center whitespace-nowrap">
                               {b.paxCount ? `${b.paxCount.toLocaleString()}명` : '-'}
@@ -2396,8 +2412,8 @@ export default function GroupSales() {
                               {b.rentalPrice !== undefined ? `${formatRevenue(b.rentalPrice)}원` : '-'}
                             </td>
                             <td className="py-3 px-4 text-center whitespace-nowrap">
-                              <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                                {b.packageType || '단독 대관'}
+                              <span className="text-[10px] font-mono font-medium text-indigo-600 bg-indigo-50/60 px-2 py-0.5 rounded border border-indigo-100">
+                                {b.reservationNo || b.eventId || '-'}
                               </span>
                             </td>
                             <td className="py-3 px-4 text-slate-600 whitespace-nowrap">

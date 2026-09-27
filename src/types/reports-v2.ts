@@ -293,18 +293,24 @@ export interface SalesVenueItem {
 
 export interface SalesVenueMonthlyTrend {
   yearMonth: string;
-  year: number;
-  month: number;
-  totalCount: number;
-  totalRevenue: number;
-  venueBreakdown: Record<string, number>;
+  year?: number;
+  month?: number;
+  totalBookings?: number;
+  totalCount?: number;
+  totalRevenue?: number;
+  venues?: Record<string, number>;
+  venueBreakdown?: Record<string, number>;
 }
 
 export interface SalesVenueGroupBooking {
-  eventId: string;
-  bookingDate: string;
+  eventDate?: string;
+  bookingDate?: string;
+  reservationNo?: string;
+  eventId?: string;
   venueName: string;
-  corporateName: string;
+  clientName?: string;
+  corporateName?: string;
+  eventName?: string;
   paxCount?: number;
   rentalPrice?: number;
   packageType?: string;
@@ -316,7 +322,7 @@ export interface SalesVenuePerformanceSummary {
   totalVenuesCount: number;
   totalEventsCount: number;
   totalRentalRevenue: number;
-  averageRentalPrice: number;
+  averageRentalPrice?: number;
   mostBookedVenue: string;
   lyTotalEventsCount?: number;
   lyTotalRentalRevenue?: number;

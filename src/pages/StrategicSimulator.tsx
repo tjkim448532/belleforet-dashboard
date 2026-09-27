@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
-  Flame, RotateCcw, PieChart, CheckCircle2, Clock
+  RotateCcw, PieChart, CheckCircle2, Clock
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
@@ -187,10 +187,6 @@ export default function StrategicSimulator() {
     OTHER: 1.0
   });
 
-  // Feature 3: Capture Rate & Day-Trip Simulation Parameters
-  const [dayTripTargetCount, setDayTripTargetCount] = useState<number>(300); // 일일 외래객 유치 목표
-  const [dayTripAvgSpend, setDayTripAvgSpend] = useState<number>(25000); // 당일객 1인당 소비액
-  const [spendPerCapIncrease, setSpendPerCapIncrease] = useState<number>(5000); // 투숙객 인당 객단가 증가 목표
 
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
   const [apiData, setApiData] = useState<{ summary: ApiSummary; categories: ApiCategory[] } | null>(null);
@@ -907,180 +903,108 @@ export default function StrategicSimulator() {
         />
       )}
 
-      {/* 5. 🎛️ Feature 1 & 3: Strategic Multipliers & Capture Rate Controller Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left: Strategic Multipliers Sliders per Division */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-indigo-600" />
-                부문별 전략 승수 (β_f) 세부 조절 슬라이더
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                경영진이 부서별 가중치를 조절하면 Zero-Sum 공식에 의해 전사 총목표를 보존하며 타 부문과 상호 재분배됩니다.
-              </p>
-            </div>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+      {/* 5. 🎛️ 부문별 전략 승수 (β_f) 세부 조절 슬라이더 */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
+          <div>
+            <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+              <Sliders className="w-5 h-5 text-indigo-600" />
+              부문별 전략 승수 (β_f) 세부 조절 슬라이더
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              경영진이 부서별 가중치를 조절하면 Zero-Sum 공식에 의해 전사 총목표를 보존하며 타 부문과 상호 재분배됩니다.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => {
+                setStrategicMultipliers({
+                  ROOM: 1.0,
+                  GOLF: 1.0,
+                  FNB: 1.0,
+                  TICKET: 1.0,
+                  MOTO: 1.0,
+                  BANQUET: 1.0,
+                  OTHER: 1.0
+                });
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+              title="모든 승수를 1.00x 기본값으로 초기화합니다"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              승수 초기화
+            </button>
+            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-100">
               Zero-Sum Active
             </span>
           </div>
-
-          <div className="space-y-3.5">
-            {['GOLF', 'ROOM', 'FNB', 'TICKET', 'MOTO', 'BANQUET', 'PARKING'].map(divKey => {
-              const meta = DIVISION_META[divKey] || DIVISION_META.OTHER;
-              const val = strategicMultipliers[divKey] ?? 1.0;
-              const isNonGolf = !input.includeGolf && divKey === 'GOLF';
-              if (isNonGolf) return null;
-
-              return (
-                <div key={divKey} className="flex items-center justify-between gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2.5 w-44">
-                    <span className="text-xl">{meta.icon}</span>
-                    <div>
-                      <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                        <span>{meta.code}</span>
-                        <span className="text-[10px] font-normal text-slate-500">({meta.name})</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 flex items-center gap-3">
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="1.5"
-                      step="0.05"
-                      value={val}
-                      onChange={(e) => handleMultiplierChange(divKey, Number(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                    />
-                    <span className="text-xs font-black tabular-nums w-12 text-right text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                      {val.toFixed(2)}x
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleMultiplierChange(divKey, 1.2)}
-                      className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer ${
-                        val === 1.2 ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      육성 (+20%)
-                    </button>
-                    <button
-                      onClick={() => handleMultiplierChange(divKey, 0.8)}
-                      className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer ${
-                        val === 0.8 ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      축소 (-20%)
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
-        {/* Right: Customer Journey & Capture Rate Simulation Panel (Dynamic Period Days) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <Flame className="w-5 h-5 text-amber-500" />
-                고객 여정 & Capture Rate 연립 시뮬레이터
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              콘도 100% 가동률 도달 시, 투숙객 머릿수 증가가 한계에 봉착하므로 <strong>외래 당일객(+Q)</strong> 및 <strong>인당 객단가(+P)</strong> 전략으로 부대시설 목표를 견인합니다.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {['GOLF', 'ROOM', 'FNB', 'TICKET', 'MOTO', 'BANQUET'].map(divKey => {
+            const meta = DIVISION_META[divKey] || DIVISION_META.OTHER;
+            const val = strategicMultipliers[divKey] ?? 1.0;
+            const isNonGolf = !input.includeGolf && divKey === 'GOLF';
+            if (isNonGolf) return null;
 
-            <div className="space-y-4 mt-4">
-              {/* Day-trip visitors slider */}
-              <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold text-amber-900">
-                  <span>🚗 외래 당일객 (Day-trip +Q) 유치 목표</span>
-                  <span className="text-amber-700 text-sm font-black tabular-nums">일 +{dayTripTargetCount}명</span>
+            return (
+              <div key={divKey} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100 hover:border-slate-200 transition-colors">
+                <div className="flex items-center gap-2.5 w-full sm:w-40 shrink-0">
+                  <span className="text-xl">{meta.icon}</span>
+                  <div>
+                    <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                      <span>{meta.code}</span>
+                      <span className="text-[10px] font-normal text-slate-500">({meta.name})</span>
+                    </div>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1000"
-                  step="50"
-                  value={dayTripTargetCount}
-                  onChange={(e) => setDayTripTargetCount(Number(e.target.value))}
-                  className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                />
 
-                <div className="flex items-center justify-between text-xs font-bold text-amber-900 pt-1">
-                  <span>🎟️ 당일객 1인당 평균 소비액 (+P)</span>
-                  <span className="text-amber-700 text-xs font-black tabular-nums">₩{formatCurrency(dayTripAvgSpend)}원/인</span>
+                <div className="flex-1 flex items-center gap-2.5 w-full">
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="1.5"
+                    step="0.05"
+                    value={val}
+                    onChange={(e) => handleMultiplierChange(divKey, Number(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  />
+                  <span className="text-xs font-black tabular-nums w-12 text-right text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 shrink-0">
+                    {val.toFixed(2)}x
+                  </span>
                 </div>
-                <input
-                  type="range"
-                  min="10000"
-                  max="50000"
-                  step="1000"
-                  value={dayTripAvgSpend}
-                  onChange={(e) => setDayTripAvgSpend(Number(e.target.value))}
-                  className="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                />
 
-                <div className="text-[11px] text-amber-800 flex items-center justify-between font-medium pt-1 border-t border-amber-200/50">
-                  <span>{simulationResult.selectedMonthLabel} 예상 부대시설 매출 기여:</span>
-                  <b className="font-black tabular-nums">+₩{formatCurrency(dayTripTargetCount * dayTripAvgSpend * simulationResult.periodDays)}원</b>
+                <div className="flex items-center gap-1 self-end sm:self-auto shrink-0">
+                  <button
+                    onClick={() => handleMultiplierChange(divKey, 1.2)}
+                    className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                      val === 1.2 ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    육성 (+20%)
+                  </button>
+                  <button
+                    onClick={() => handleMultiplierChange(divKey, 0.8)}
+                    className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                      val === 0.8 ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    축소 (-20%)
+                  </button>
+                  <button
+                    onClick={() => handleMultiplierChange(divKey, 1.0)}
+                    className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                      val === 1.0 ? 'bg-slate-700 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-100 hover:text-slate-600'
+                    }`}
+                    title="1.00x 기본값"
+                  >
+                    1.0x
+                  </button>
                 </div>
               </div>
-
-              {/* Spend per Cap slider */}
-              <div className="p-3.5 rounded-2xl bg-teal-50/50 border border-teal-100 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-teal-900">
-                  <span>💳 투숙객 인당 객단가 (Spend per Cap +P) 상승</span>
-                  <span className="text-teal-700 text-sm font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease)}원/인</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="20000"
-                  step="1000"
-                  value={spendPerCapIncrease}
-                  onChange={(e) => setSpendPerCapIncrease(Number(e.target.value))}
-                  className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                />
-              {(() => {
-                const rawCap = Number(apiData?.summary?.totalRoomCap || 0);
-                const dailyCap = (rawCap > 175 && (simulationResult.periodDays || 1) > 1)
-                  ? Math.min(175, Math.round(rawCap / simulationResult.periodDays))
-                  : (rawCap > 0 && rawCap <= 175 ? rawCap : 175);
-                return (
-                  <>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400">일일 객단가 견인액:</span>
-                      <b className="text-rose-400">+{formatCurrency(spendPerCapIncrease * dailyCap * 3.5)}원</b>
-                    </div>
-                    <div className="flex items-center justify-between text-sm bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
-                      <span className="text-rose-200 font-medium">
-                        {simulationResult.selectedMonthLabel} 추가 F&B/레저 매출 창출:
-                      </span>
-                      <div className="flex flex-col items-end gap-1">
-                        <b className="font-black tabular-nums">+₩{formatCurrency(spendPerCapIncrease * dailyCap * 3.5 * simulationResult.periodDays)}원</b>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
-            💡 <strong>시너지 사슬:</strong> 객실 포화 시 레저/식음은 외래객 유치 및 패키지 번들링을 통해 전사 매출을 추가 확장합니다.
-          </div>
+            );
+          })}
         </div>
-
       </div>
 
       {/* 5. 📊 ECharts 부문별 목표 비중 도넛 차트 */}

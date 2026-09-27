@@ -83,8 +83,9 @@ export default function AdminCapacity() {
         shopCode: item.shopCode,
         shopName: item.shopName,
         categoryCode: item.category,
-        seatingCapacity: Math.round((item.maxDailyUnits || 0) / 2),
-        dailyTurnoverRate: 2.0,
+        maxDailyCapacityUnits: item.maxDailyUnits || 0,
+        seatingCapacity: item.maxDailyUnits || 0,
+        dailyTurnoverRate: 1.0,
         unitName: item.unitName || '명',
         baseUnitPrice: item.baseUnitPrice || 0,
         allowSpillover: item.allowSpillover ?? true

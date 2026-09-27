@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { SimulationProvider } from './contexts/SimulationContext';
 import { MappingProvider } from './contexts/MappingContext';
 import { DateProvider } from './contexts/DateContext';
 import { CoreDataProvider } from './contexts/CoreDataContext';
@@ -12,7 +11,6 @@ import AdminLayout from './components/AdminLayout';
 import SleepModeModal from './components/SleepModeModal';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import Simulator from './pages/Simulator';
 import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
 import AdminDaolRules from './pages/AdminDaolRules';
@@ -64,61 +62,58 @@ export function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <SimulationProvider>
-          <MappingProvider>
-            <DateProvider>
-              <CoreDataProvider>
-                <BrowserRouter>
-                  <SleepModeModal />
-                  <Routes>
-                  <Route path="/login" element={<Login />} />
-                    
-                    <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                      <Route index element={<Home />} />
-                      <Route path="resort-business" element={<ResortBusiness />} />
-                      <Route path="resort/room-guests-yoy" element={<ResortRoomGuestsYoy />} />
-                      <Route path="resort-room-guests-yoy" element={<ResortRoomGuestsYoy />} />
-                      <Route path="golf-business" element={<GolfBusiness />} />
-                      <Route path="golf/channel-intelligence" element={<GolfChannelIntelligence />} />
-                      <Route path="golf-channel-intelligence" element={<GolfChannelIntelligence />} />
-                      <Route path="group-sales" element={<GroupSales />} />
-                      <Route path="leisure" element={<LeisureFacility />} />
-                      <Route path="leisure/organization" element={<LeisureOrganization />} />
-                      <Route path="leisure-organization" element={<LeisureOrganization />} />
-                      <Route path="leisure/usage-rate" element={<LeisureUsageRate />} />
-                      <Route path="leisure-usage-rate" element={<LeisureUsageRate />} />
-                      <Route path="target-simulator" element={<TargetSimulator />} />
-                      <Route path="strategic-simulator" element={<StrategicSimulator />} />
-                      <Route path="target-simulator/strategic" element={<StrategicSimulator />} />
+        <MappingProvider>
+          <DateProvider>
+            <CoreDataProvider>
+              <BrowserRouter>
+                <SleepModeModal />
+                <Routes>
+                <Route path="/login" element={<Login />} />
+                  
+                  <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                    <Route index element={<Home />} />
+                    <Route path="resort-business" element={<ResortBusiness />} />
+                    <Route path="resort/room-guests-yoy" element={<ResortRoomGuestsYoy />} />
+                    <Route path="resort-room-guests-yoy" element={<ResortRoomGuestsYoy />} />
+                    <Route path="golf-business" element={<GolfBusiness />} />
+                    <Route path="golf/channel-intelligence" element={<GolfChannelIntelligence />} />
+                    <Route path="golf-channel-intelligence" element={<GolfChannelIntelligence />} />
+                    <Route path="group-sales" element={<GroupSales />} />
+                    <Route path="leisure" element={<LeisureFacility />} />
+                    <Route path="leisure/organization" element={<LeisureOrganization />} />
+                    <Route path="leisure-organization" element={<LeisureOrganization />} />
+                    <Route path="leisure/usage-rate" element={<LeisureUsageRate />} />
+                    <Route path="leisure-usage-rate" element={<LeisureUsageRate />} />
+                    <Route path="target-simulator" element={<TargetSimulator />} />
+                    <Route path="strategic-simulator" element={<StrategicSimulator />} />
+                    <Route path="target-simulator/strategic" element={<StrategicSimulator />} />
 
-                    <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
-                    <Route path="day-of-week-sales" element={<MatrixWeeklyDashboard defaultTab="day-of-week" />} />
-                    <Route path="facility-trend" element={<FacilityTrend />} />
-                    <Route path="members" element={<Members />} />
-                    <Route path="etl-status" element={<DataSyncStatus />} />
-                    <Route path="synergy" element={<Synergy />} />
-                    <Route path="synergy/correlation" element={<SynergyCorrelation />} />
-                    <Route path="synergy-correlation" element={<SynergyCorrelation />} />
-                    <Route path="online-members" element={<OnlineMembers />} />
-                  </Route>
+                  <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
+                  <Route path="day-of-week-sales" element={<MatrixWeeklyDashboard defaultTab="day-of-week" />} />
+                  <Route path="facility-trend" element={<FacilityTrend />} />
+                  <Route path="members" element={<Members />} />
+                  <Route path="etl-status" element={<DataSyncStatus />} />
+                  <Route path="synergy" element={<Synergy />} />
+                  <Route path="synergy/correlation" element={<SynergyCorrelation />} />
+                  <Route path="synergy-correlation" element={<SynergyCorrelation />} />
+                  <Route path="online-members" element={<OnlineMembers />} />
+                </Route>
 
-                  <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                    <Route path="capacity" element={<AdminCapacity />} />
-                    <Route path="simulator" element={<Simulator />} />
-                    <Route path="daol-rules" element={<AdminDaolRules />} />
-                    <Route path="logs" element={<AdminLogs />} />
-                    <Route path="mapping" element={<AdminMapping />} />
-                    <Route path="roles" element={<AdminRoles />} />
-                    <Route index element={<Navigate to="capacity" replace />} />
-                  </Route>
+                <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                  <Route path="capacity" element={<AdminCapacity />} />
+                  <Route path="daol-rules" element={<AdminDaolRules />} />
+                  <Route path="logs" element={<AdminLogs />} />
+                  <Route path="mapping" element={<AdminMapping />} />
+                  <Route path="roles" element={<AdminRoles />} />
+                  <Route index element={<Navigate to="capacity" replace />} />
+                </Route>
 
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </BrowserRouter>
-              </CoreDataProvider>
-            </DateProvider>
-          </MappingProvider>
-        </SimulationProvider>
+                <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </CoreDataProvider>
+          </DateProvider>
+        </MappingProvider>
       </ThemeProvider>
     </AuthProvider>
   );

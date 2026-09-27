@@ -390,8 +390,8 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0), weekdayRevenue: parseNum(payload.summary?.weekdayRoomRev ?? 0), weekendRevenue: parseNum(payload.summary?.weekendRoomRev ?? 0), weekdayRoomsSold: parseNum(payload.summary?.weekdayRoomsCount ?? 0), weekendRoomsSold: parseNum(payload.summary?.weekendRoomsCount ?? 0), weekdayAdr: parseNum(payload.summary?.weekdayADR ?? 0), weekendAdr: parseNum(payload.summary?.weekendADR ?? 0), weekdayOcc: parseNum(payload.summary?.weekdayOcc ?? 0), weekendOcc: parseNum(payload.summary?.weekendOcc ?? 0)
   };
 
-  const connecting51Sold = parseNum(roomOccupancyMap['51평']?.sold ?? 0);
-  const standardRoomsSold = Math.max(0, summaryRoomsSold - connecting51Sold);
+  const connectingPhysicalRooms = parseNum(payload.summary?.connectingPhysicalRooms || 0);
+  const standardPhysicalRooms = parseNum(payload.summary?.standardPhysicalRooms || summaryRoomsSold);
 
   return {
     success: payload.success || true,
@@ -400,9 +400,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
     summary: {
       ...payload.summary,
-      connectingPhysicalRooms: parseNum(payload.summary?.connectingPhysicalRooms) || connecting51Sold,
-      standardPhysicalRooms: parseNum(payload.summary?.standardPhysicalRooms) || standardRoomsSold,
-      totalPhysicalKeysSold: parseNum(payload.summary?.totalPhysicalKeysSold) || summaryRoomsSold
+      connectingPhysicalRooms,
+      standardPhysicalRooms,
+      totalPhysicalKeysSold: parseNum(payload.summary?.totalPhysicalKeysSold || (connectingPhysicalRooms + standardPhysicalRooms))
     },
     roomOccupancyMap,
     channelAdrData,

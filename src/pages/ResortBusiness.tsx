@@ -71,20 +71,24 @@ function calculateCohort(rows: any[]): CohortAnalysisResult | null {
 
   const agg = (sub: any[]): CohortMetrics => {
     const days = sub.length;
+    if (days === 0) {
+      return { days: 0, rooms: 0, multiRooms: 0, multiRatio: 0, fnbRevPAS: 0, leisureRevPAS: 0, totalRevPAS: 0, totalSales: 0 };
+    }
     const rooms = sub.reduce((s, r) => s + Number(r.roomsSold || 0), 0);
     const multiRooms = sub.reduce((s, r) => s + Number(r.multiNightRooms || 0), 0);
-    const fnb = sub.reduce((s, r) => s + Number((r.fnbRevPAS || 0) * (r.roomsSold || 0)), 0);
-    const leisure = sub.reduce((s, r) => s + Number((r.leisureRevPAS || 0) * (r.roomsSold || 0)), 0);
-    const total = fnb + leisure;
+    const fnbRevPAS = Math.round(sub.reduce((s, r) => s + Number(r.fnbRevPAS || 0), 0) / days);
+    const leisureRevPAS = Math.round(sub.reduce((s, r) => s + Number(r.leisureRevPAS || 0), 0) / days);
+    const totalRevPAS = fnbRevPAS + leisureRevPAS;
+    const totalSales = sub.reduce((s, r) => s + Number(r.totalSynergySales || 0), 0);
     return {
       days,
       rooms,
       multiRooms,
       multiRatio: rooms > 0 ? Number(((multiRooms / rooms) * 100).toFixed(1)) : 0,
-      fnbRevPAS: rooms > 0 ? Math.round(fnb / rooms) : 0,
-      leisureRevPAS: rooms > 0 ? Math.round(leisure / rooms) : 0,
-      totalRevPAS: rooms > 0 ? Math.round(total / rooms) : 0,
-      totalSales: total
+      fnbRevPAS,
+      leisureRevPAS,
+      totalRevPAS,
+      totalSales
     };
   };
 
@@ -338,16 +342,8 @@ export default function ResortBusiness() {
   })();
 
   const summary = data?.summary || {};
-  const connectingPhysicalRooms = Number(
-    summary.connectingPhysicalRooms ||
-    data?.roomOccupancyMap?.['51평']?.sold ||
-    roomOccupancyData.find(r => r.isConnectedType || r.roomSize?.includes('51평'))?.sold ||
-    0
-  );
-  const standardPhysicalRooms = Number(
-    summary.standardPhysicalRooms ||
-    Math.max(0, lodgingStats.roomsSold - connectingPhysicalRooms)
-  );
+  const connectingPhysicalRooms = Number(summary.connectingPhysicalRooms || 0);
+  const standardPhysicalRooms = Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
   const totalPhysicalOccupied = Number(
     summary.totalPhysicalKeysSold ||
     (standardPhysicalRooms + connectingPhysicalRooms)
@@ -1139,35 +1135,24 @@ export default function ResortBusiness() {
 
               {/* 4. 활성 환경 실측 부대소비 파급력 (RevPAS) 지표 카드 3종 */}
               {(() => {
-                const cohort = analytics?.cohort;
                 const isMultiDay = Boolean(isRange && losSummary);
                 const latestLos = losTrendData && losTrendData.length > 0 ? losTrendData[losTrendData.length - 1] : null;
 
-                const activeRooms = cohort 
-                  ? (cohort.lowLos.rooms + cohort.highLos.rooms) 
-                  : (isMultiDay ? (losSummary?.grandTotalRooms || 0) : (latestLos?.roomsSold || 0));
+                const activeRooms = isMultiDay ? (losSummary?.grandTotalRooms || 0) : (latestLos?.roomsSold || 0);
 
-                const activeMultiRooms = cohort 
-                  ? (cohort.lowLos.multiRooms + cohort.highLos.multiRooms) 
-                  : (isMultiDay ? (losSummary?.grandTotalMultiNightRooms || 0) : (latestLos?.multiNightRooms || 0));
+                const activeMultiRooms = isMultiDay ? (losSummary?.grandTotalMultiNightRooms || 0) : (latestLos?.multiNightRooms || 0);
 
                 const multiRatio = activeRooms > 0 
                   ? Number(((activeMultiRooms / activeRooms) * 100).toFixed(1)) 
-                  : '0.0';
+                  : (isMultiDay ? (losSummary?.avgMultiNightRatio || '0.0') : '0.0');
 
-                const liveFnb = cohort && activeRooms > 0 
-                  ? Math.round((cohort.lowLos.fnbRevPAS * cohort.lowLos.rooms + cohort.highLos.fnbRevPAS * cohort.highLos.rooms) / activeRooms)
-                  : Math.round(isMultiDay ? (losSummary?.avgFnbRevPAS || 0) : (latestLos?.fnbRevPAS || 0));
+                const liveFnb = Math.round(isMultiDay ? (losSummary?.avgFnbRevPAS || 0) : (latestLos?.fnbRevPAS || 0));
 
-                const liveLeisure = cohort && activeRooms > 0 
-                  ? Math.round((cohort.lowLos.leisureRevPAS * cohort.lowLos.rooms + cohort.highLos.leisureRevPAS * cohort.highLos.rooms) / activeRooms)
-                  : Math.round(isMultiDay ? (losSummary?.avgLeisureRevPAS || 0) : (latestLos?.leisureRevPAS || 0));
+                const liveLeisure = Math.round(isMultiDay ? (losSummary?.avgLeisureRevPAS || 0) : (latestLos?.leisureRevPAS || 0));
 
                 const liveTotal = liveFnb + liveLeisure;
 
-                const totalSynergySales = cohort 
-                  ? (cohort.lowLos.totalSales + cohort.highLos.totalSales) 
-                  : (isMultiDay ? (losSummary?.grandTotalSynergySales || 0) : (latestLos?.totalSynergySales || 0));
+                const totalSynergySales = isMultiDay ? (losSummary?.grandTotalSynergySales || 0) : (latestLos?.totalSynergySales || 0);
 
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

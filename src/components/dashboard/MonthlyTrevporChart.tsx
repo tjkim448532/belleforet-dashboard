@@ -269,9 +269,16 @@ export default function MonthlyTrevporChart() {
       }
     });
 
-    const avgTyTrevpar = totalTyAvailRooms > 0 ? Math.round(totalTyRevenue / totalTyAvailRooms) : ((data as any)?.summary?.avgTyTrevpar ?? 0);
-    const avgLyTrevpar = totalLyAvailRooms > 0 ? Math.round(totalLyRevenue / totalLyAvailRooms) : ((data as any)?.summary?.avgLyTrevpar ?? 0);
-    const yoyGrowth = (data as any)?.summary?.growthRate ?? null;
+    // [Pure Consumer SSOT] 백엔드 ytdSummary 공인 완제품 필드 우선 바인딩 (클라이언트 사칙연산 제거)
+    const avgTyTrevpar = metricMode === 'TOTAL'
+      ? ((data as any)?.ytdSummary?.ty?.trevparTotal ?? (data as any)?.summary?.avgTyTrevpar ?? null)
+      : ((data as any)?.ytdSummary?.ty?.trevparWithoutGolf ?? (data as any)?.summary?.avgTyTrevparWithoutGolf ?? null);
+    const avgLyTrevpar = metricMode === 'TOTAL'
+      ? ((data as any)?.ytdSummary?.ly?.trevparTotal ?? (data as any)?.summary?.avgLyTrevpar ?? null)
+      : ((data as any)?.ytdSummary?.ly?.trevparWithoutGolf ?? (data as any)?.summary?.avgLyTrevparWithoutGolf ?? null);
+    const yoyGrowth = metricMode === 'TOTAL'
+      ? ((data as any)?.ytdSummary?.growthTotalRate ?? (data as any)?.summary?.growthRate ?? null)
+      : ((data as any)?.ytdSummary?.growthWithoutGolfRate ?? (data as any)?.summary?.growthWithoutGolfRate ?? null);
 
     let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
     if (periodMode === 'CLOSED_ONLY') {

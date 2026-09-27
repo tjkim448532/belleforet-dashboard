@@ -492,5 +492,117 @@ const reverseSpillover = totalRoomSales > 0
 2. `roomSummaryByType`의 모든 객실 타입에 `adr` 정수 필드가 포함되어 있을 것.
 3. 배포 완료 후 `GET /api/v6/dashboard/revenue-summary?startDate=2026-09-01&endDate=2026-09-30` 테스트 완료 결과를 공유해 주시기 바랍니다.
 
+---
 
+# 7. [긴급 API 보강] 가짜 판명으로 비어있는 자리 및 이상 수치 전수 정상화 요청 (2026-09-27)
 
+프론트엔드 에이전트의 자의적 계산 및 가짜 숫자 전면 박멸(Fail-Stop) 조치 이후, 백엔드 API에서 필드가 누락되었거나 모수가 왜곡되어 **화면에서 비어있거나(`-`) 비정상적인 수치가 도출되는 6대 핵심 영역**을 실사 검증하여 공식 요청합니다.
+
+프론트엔드는 어떠한 나눗셈이나 추론도 하지 않고 **백엔드가 내려주는 완제품 필드만을 1:1 Direct 바인딩**할 준비가 완료되어 있습니다.
+
+---
+
+### [요청 1] `/api/v6/dashboard/revenue-summary` `summary` 객체 내 MTD 객실 판매량 지표 탑재
+* **현상 및 근거**:
+  * 메인 대시보드(`Home.tsx`)의 MTD 객실 판매 카드에서 전년 동기 판매량(`lyMtdRooms`)과 증감률(`mtdRoomsGrowth`)이 `null`로 떨어져 `-`로 표출됨.
+  * 실사 결과: `summary` 객체에 `totalRevenue`, `mtdRevenue`, `mtdGrowth`, `totalRooms`는 있으나, **`mtdRooms`, `mtdRoomsLy`, `mtdRoomsGrowth`, `mtdRoomsDiff` 필드가 누락**되어 있음.
+  * 최상위 `lodgingStats`에는 `roomsSold(2,368)`, `lyRoomsSold(2,575)`, `roomsGrowth(-8.0)`가 정상 탑재되어 있으므로, 이를 `summary` 객체에도 표준 규격으로 일치시켜 주십시오.
+* **요청 필드 (`summary` 내부)**:
+  ```json
+  {
+    "summary": {
+      "mtdRooms": 2368,
+      "mtdRoomsLy": 2575,
+      "mtdRoomsGrowth": -8.0,
+      "mtdRoomsDiff": -207
+    }
+  }
+  ```
+
+---
+
+### [요청 2] `/api/v6/report/monthly-room-efficiency` TrevPAR/TrevPOR 전년비 증감률 완제품 필드 탑재
+* **현상 및 근거**:
+  * 월별 객실 효율 차트(`MonthlyTrevporChart.tsx`)에서 클라이언트 증감률 계산(`((ty - ly) / ly) * 100`)을 전면 제거함에 따라, 백엔드가 증감률을 내려주지 않아 차트 툴팁 및 상단 카드 증감률이 `-`로 비어있음.
+  * 실사 결과: `monthlyComparison[i]`에 총매출 증감률(`growthTotalRate: -0.9`)만 있고, **TrevPAR 증감률(`trevparGrowthRate`)과 TrevPOR 증감률(`trevporGrowthRate`)이 `undefined`** 상태임.
+  * 또한 상단 요약 키가 프론트엔드 기대 규격(`summary`)과 달리 `ytdSummary`로 반환되고 있음.
+* **요청 필드 (`monthlyComparison[i]` 및 최상위 `summary`)**:
+  ```json
+  {
+    "summary": {
+      "ytdPeriodLabel": "1~9월 누적",
+      "growthTotalRate": 6.9,
+      "growthWithoutGolfRate": 16.8,
+      "avgTyTrevpar": 406428,
+      "avgLyTrevpar": 380365
+    },
+    "monthlyComparison": [
+      {
+        "month": 1,
+        "trevparGrowthRate": -0.9,
+        "trevporGrowthRate": -8.9,
+        "trevparWithoutGolfGrowthRate": 9.1,
+        "trevporWithoutGolfGrowthRate": 0.4
+      }
+    ]
+  }
+  ```
+
+---
+
+### [요청 3] `/api/v6/dashboard/revenue-summary` 평형별 판매 점유 비중(`salesShareRatio`) 탑재
+* **현상 및 근거**:
+  * 객실 대시보드(`ResortBusiness.tsx`) 평형별 현황 카드 우측 상단의 "전체 판매 중 비중"이 클라이언트 나눗셈 수식(`((r.roomsSold / lodgingStats.roomsSold) * 100)`)으로 남아있음.
+  * `roomSummaryByType`의 각 평형 객체에 ADR과 고정 가동률은 완벽히 탑재되었으나, 전체 객실 중 해당 평형의 판매 비중이 누락됨.
+* **요청 필드 (`roomSummaryByType` 내부)**:
+  ```json
+  [
+    {
+      "roomType": "16평",
+      "roomsSold": 882,
+      "salesShareRatio": 37.2
+    },
+    {
+      "roomType": "35평",
+      "roomsSold": 746,
+      "salesShareRatio": 31.5
+    },
+    {
+      "roomType": "51평",
+      "roomsSold": 740,
+      "salesShareRatio": 31.3
+    }
+  ]
+  ```
+
+---
+
+### [요청 4] `/api/v6/report/corporate-group-sales` 단체 골프/레저 부대매출 연동 및 재방문 지표 탑재
+* **현상 및 근거**:
+  * 단체 영업 분석(`GroupSales.tsx`)에서 단체 고객의 부대매출 중 골프와 레저가 **무조건 `0원`**으로 집계됨 (`golfRevenue: 0`, `leisureRevenue: 0`).
+  * 단체 행사 객실 고객이 골프장 및 루지/모토아레나를 이용했으나, 단체 예약 번호(Master Folio / Group ID)와 골프/레저 POS 매출이 데이터 마트에서 매핑되지 않아 누락됨.
+  * 또한 복수 재방문 기업 수와 재방문율 지표가 누락되어 있음.
+* **요청 조치**:
+  1. `mat_v6_corporate_group_sales` 적재 시 골프/레저 원천 전표의 단체 거래처 매핑 연동.
+  2. `summary` 객체 내에 `repeatGroupsCount`, `repeatGroupRate` 완제품 필드 탑재.
+  ```json
+  {
+    "summary": {
+      "totalGroups": 300,
+      "golfRevenue": 12500000,
+      "leisureRevenue": 4800000,
+      "repeatGroupsCount": 42,
+      "repeatGroupRate": 14.0
+    }
+  }
+  ```
+
+---
+
+### [요청 5] `/api/v6/report/business-plan` 가용 객실 모수 정상화 및 SSOT 조직 명칭 정규화
+* **현상 및 근거**:
+  * 목표 시뮬레이터에서 9월 30일 구간 조회 시 `availableRooms`가 `175실`로 하드코딩되어, 월간 TrevPAR가 **13,380,497원**(목표 23.4억 / 175실)이라는 비정상적인 수치로 튀어 나옴. (정상 모수는 30일 × 175실 = 5,250실).
+  * 또한 `categoryName`이 대표님 공식 SSOT 명칭인 `리조트사업본부`가 아닌 구형 `콘도` 문자열로 반환되어 프론트엔드 명칭 헌법과 충돌함.
+* **요청 조치**:
+  1. `summary.availableRooms`를 기간 누적 물리 객실수(30일 = `5250`)로 정규화하고, `monthlyTrevPar` 산식을 `grandTarget2026 / 5250`(= 446,017원)으로 정상화.
+  2. `categoryName`을 공식 조직 명칭인 **`리조트사업본부`**로 100% 정규화.

@@ -345,7 +345,7 @@ export default function StrategicSimulator() {
       const targetRev = Math.round(targetGrandTotal * normalizedWeight);
 
       const facilitiesWithTarget: ApiFacility[] = (cat.facilities || []).map((fac) => {
-        const facShare = (fac.actual2025 / (cat.totalActual2025 || 1)) || (1 / Math.max(1, cat.facilities.length));
+        const facShare = cat.totalActual2025 > 0 ? (fac.actual2025 / cat.totalActual2025) : 0;
         const facTarget = Math.round(targetRev * facShare);
 
         return {

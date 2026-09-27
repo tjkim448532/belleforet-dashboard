@@ -177,9 +177,9 @@ export default function ResortBusiness() {
       
       // Fail-Stop: 백엔드가 내려준 정원(g.cap)이 없으면 g.sold로 대체하지 않고 결함을 그대로 노출
       const effectiveCap = g.cap;
-      const rate = g.occupancyRate ?? (effectiveCap > 0 ? Math.round((g.sold / effectiveCap) * 100) : 0);
-      const cappedRate = Math.min(rate, 100);
-      const displayRate = effectiveCap > 0 ? `${rate}%` : '0% (모수누락)';
+      const rate = g.occupancyRate ?? null;
+      const cappedRate = rate !== null ? Math.min(rate, 100) : 0;
+      const displayRate = rate !== null ? `${rate}%` : '-';
 
       result.push({
         roomSize: key,
@@ -189,7 +189,7 @@ export default function ResortBusiness() {
         rawRate: rate,
         displayRate,
         revenue: g.rev,
-        adr: Number((g as any).adr ?? 0),
+        adr: (g as any).adr !== null && (g as any).adr !== undefined ? Number((g as any).adr) : null,
         isConnectedType: key === '51평',
         dynamicCapacity: (g as any).dynamicCapacity,
         dynamicOccupancyRate: (g as any).dynamicOccupancyRate
@@ -399,7 +399,7 @@ export default function ResortBusiness() {
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap font-financial">
                 <span>{totalPhysicalOccupied.toLocaleString()}실</span>
-                <span className="text-xs text-[#00ae95] font-semibold">({lodgingStats.physicalOccRate !== undefined ? lodgingStats.physicalOccRate + '%' : (totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) + '%' : '0.0%')})</span>
+                <span className="text-xs text-[#00ae95] font-semibold">({lodgingStats.physicalOccRate !== undefined ? lodgingStats.physicalOccRate + '%' : '-'})</span>
               </div>
               {(lodgingStats.weekdayOcc !== undefined || lodgingStats.weekendOcc !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
@@ -471,7 +471,7 @@ export default function ResortBusiness() {
                     <div className="flex flex-col items-center mt-4 space-y-1 text-center">
                       <span className="text-xs font-semibold text-slate-600">{row.sold}건 / {row.capacity}실</span>
                       <span className="text-[10px] text-slate-400">매출: {formatCurrency(row.revenue)}</span>
-                      <span className="text-[10px] text-emerald-600 font-bold">ADR: {formatCurrency(row.adr)}</span>
+                      <span className="text-[10px] text-emerald-600 font-bold">ADR: {row.adr !== null && row.adr !== undefined ? formatCurrency(row.adr) + '원' : '-'}</span>
                     </div>
                   </div>
                 ))}
@@ -511,7 +511,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{lodgingStats.standardOccRate !== undefined ? lodgingStats.standardOccRate + '%' : (totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '0.0%')}</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats.standardOccRate !== undefined ? lodgingStats.standardOccRate + '%' : '-'}</div>
                   </div>
                 </div>
 
@@ -525,7 +525,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats.connectingOccRate !== undefined ? lodgingStats.connectingOccRate + '%' : '-'}</div>
                   </div>
                 </div>
 
@@ -539,7 +539,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-slate-700">{remainingRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((remainingRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats.remainingOccRate !== undefined ? lodgingStats.remainingOccRate + '%' : '-'}</div>
                   </div>
                 </div>
               </div>
@@ -775,9 +775,9 @@ export default function ResortBusiness() {
 
                 const activeMultiRooms = isMultiDay ? (losSummary?.grandTotalMultiNightRooms || 0) : (latestLos?.multiNightRooms || 0);
 
-                const multiRatio = activeRooms > 0 
-                  ? Number(((activeMultiRooms / activeRooms) * 100).toFixed(1)) 
-                  : (isMultiDay ? (losSummary?.avgMultiNightRatio || '0.0') : '0.0');
+                const multiRatio = isMultiDay 
+                  ? (losSummary?.avgMultiNightRatio ?? '-') 
+                  : (latestLos?.multiNightRatio ?? '-');
 
                 const liveFnb = Math.round(isMultiDay ? (losSummary?.avgFnbRevPAS || 0) : (latestLos?.fnbRevPAS || 0));
 

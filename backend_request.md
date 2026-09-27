@@ -422,13 +422,20 @@ const reverseSpillover = totalRoomSales > 0
 
 ---
 
-## 6. [기존 API 보강] `/api/v6/dashboard/revenue-summary`의 `roomSummaryByType`에 `adr` 필드 추가 요청
+## 6. [긴급 API 보강] `/api/v6/dashboard/revenue-summary` 평형별 모수 왜곡 정상화 및 ADR 완제품 필드 추가 요청
 
-### 배경 및 결함 분석
-* `/api/v6/dashboard/revenue-summary` 응답의 `roomSummaryByType` 배열 객체 내에 `adr` 필드가 누락(`undefined`)되어 프론트엔드 대시보드(리조트 비즈니스 평형별 카드)에 ADR이 전부 `0원`으로 출력되는 결함이 발생하고 있습니다.
-* 이미 매출(`revenue`)과 판매 건수(`roomsSold`)가 집계되어 있으므로, 백엔드에서 `adr: Math.round(revenue / roomsSold)`를 공식 필드로 산출하여 응답 객체에 포함해 주시기 바랍니다.
+### 1) 배경 및 결함 분석
+1. **51평 가동률 100% 모수 왜곡 (분모가 분자를 따라가는 자멸적 버그)**:
+   - 51평(커넥티드 룸)의 기본 `capacity`와 `rate`에 '동적 조립 가능 재고(dynamicCapacity)'가 기본값으로 매핑되어 있습니다.
+   - 16평과 35평이 많이 팔려 조립 잔여 재고가 0실이 되면, 백엔드가 `dynamicCapacity = 740 + 0 = 740실`로 분모를 줄여버려 `740건 / 740실 = 100%`라는 비현실적인 가짜 100%가 노출됩니다.
+   - 경영진 가동률 지표의 단일 진실 공급원(SSOT)은 벨포레 물리 객실 기준이어야 하므로, 51평의 기본 `capacity`와 `rate`는 **`fixedCapacity(1,080실)`** 및 **`fixedOccupancyRate(69%)`**로 확정되어야 합니다.
+2. **ADR 필드 누락 버그**:
+   - `roomSummaryByType` 배열 객체 내에 `adr` 필드가 아예 누락(`undefined`)되어 프론트엔드 대시보드에 ADR이 전부 `0원` 또는 `-`로 출력됩니다.
+   - 백엔드에서 `adr: Math.round(revenue / roomsSold)`를 공식 필드로 산출하여 응답 객체에 탑재해야 합니다.
+3. **물리 점유율 지표 완제품 제공**:
+   - `lodgingStats`에 `physicalOccRate`(실운영 물리 점유율), `standardOccRate`(일반 점유율), `connectingOccRate`(커넥팅 점유율)를 공식 완제품 필드로 내려주어 프론트엔드가 자체 나눗셈을 하지 않도록 해야 합니다.
 
-### 기대하는 응답 스펙 (JSON)
+### 2) 기대하는 응답 스펙 (JSON)
 ```json
 "roomSummaryByType": [
   {
@@ -436,11 +443,11 @@ const reverseSpillover = totalRoomSales > 0
     "roomsSold": 882,
     "revenue": 86326576,
     "capacity": 1020,
-    "fixedCapacity": 1020,
-    "dynamicCapacity": 1020,
     "rate": 86,
-    "dynamicOccupancyRate": 86,
+    "fixedCapacity": 1020,
     "fixedOccupancyRate": 86,
+    "dynamicCapacity": 1020,
+    "dynamicOccupancyRate": 86,
     "adr": 97876
   },
   {
@@ -448,26 +455,42 @@ const reverseSpillover = totalRoomSales > 0
     "roomsSold": 746,
     "revenue": 131731876,
     "capacity": 1020,
-    "fixedCapacity": 1020,
-    "dynamicCapacity": 1020,
     "rate": 73,
-    "dynamicOccupancyRate": 73,
+    "fixedCapacity": 1020,
     "fixedOccupancyRate": 73,
+    "dynamicCapacity": 1020,
+    "dynamicOccupancyRate": 73,
     "adr": 176584
   },
   {
     "roomType": "51평",
     "roomsSold": 740,
     "revenue": 192112966,
-    "capacity": 740,
+    "capacity": 1080,
+    "rate": 69,
     "fixedCapacity": 1080,
-    "dynamicCapacity": 740,
-    "rate": 100,
-    "dynamicOccupancyRate": 100,
     "fixedOccupancyRate": 69,
+    "dynamicCapacity": 740,
+    "dynamicOccupancyRate": 100,
     "adr": 259612
   }
-]
+],
+"lodgingStats": {
+  "revenue": 414342964,
+  "roomsSold": 2368,
+  "totalCapacity": 5250,
+  "adr": 174976,
+  "physicalOccRate": 45.1,
+  "standardOccRate": 30.9,
+  "connectingOccRate": 14.2,
+  "remainingOccRate": 54.9
+}
 ```
+
+### 3) 완료 기준 (Acceptance Criteria)
+1. 51평의 기본 `capacity`가 조립 잔여량에 따라 줄어들지 않고 고정 물리 객실(일 36실 × 일수)을 유지할 것.
+2. `roomSummaryByType`의 모든 객실 타입에 `adr` 정수 필드가 포함되어 있을 것.
+3. 배포 완료 후 `GET /api/v6/dashboard/revenue-summary?startDate=2026-09-01&endDate=2026-09-30` 테스트 완료 결과를 공유해 주시기 바랍니다.
+
 
 

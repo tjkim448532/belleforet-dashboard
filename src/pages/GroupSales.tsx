@@ -1414,7 +1414,7 @@ export default function GroupSales() {
                 {repeatGroupsCount > 0 && (
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                     <RotateCcw size={12} className="text-emerald-600" />
-                    복수 재방문 {repeatGroupsCount}개사 ({((repeatGroupsCount / (totalSeminarGroupsCount || 1)) * 100).toFixed(1)}%)
+                    복수 재방문 {repeatGroupsCount}개사
                   </span>
                 )}
               </div>

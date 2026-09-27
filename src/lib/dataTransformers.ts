@@ -168,7 +168,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   const mtdRoomsSold = parseNum(c.summary?.mtdRooms || roomSub?.mtdVisitors || roomCat?.mtdVisitors || roomSub?.mtdRooms || 0);
   const lyMtdRoomsSold = parseNum(c.summary?.mtdRoomsLy || c.summary?.lyMtdRooms || roomSub?.mtdLyVisitors || roomCat?.mtdLyVisitors || roomSub?.lyMtdVisitors || 0);
   const mtdRoomsDiff = mtdRoomsSold - lyMtdRoomsSold;
-  const mtdRoomsGrowth = lyMtdRoomsSold > 0 ? Number((((mtdRoomsSold - lyMtdRoomsSold) / lyMtdRoomsSold) * 100).toFixed(1)) : null;
+  const mtdRoomsGrowth = c.summary?.mtdRoomsGrowth ?? roomSub?.growthRate ?? null;
 
   return {
     success: true,
@@ -306,10 +306,10 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       // 고정 물리 인벤토리 기준(fixedCapacity) 우선 바인딩하여 동적 모수 수렴 왜곡 방지
       const fixedCap = parseNum(item.fixedCapacity || item.capacity || item.totalRooms || 0);
       const cap = fixedCap > 0 ? fixedCap : (roomOccupancyMap[typeName]?.cap ?? 0);
-      const occupancyRate = parseNum(item.fixedOccupancyRate ?? item.rate ?? 0);
+      const occupancyRate = item.fixedOccupancyRate !== undefined && item.fixedOccupancyRate !== null ? parseNum(item.fixedOccupancyRate) : (item.rate !== undefined && item.rate !== null ? parseNum(item.rate) : undefined);
       const dynamicCapacity = parseNum(item.dynamicCapacity || item.capacity || 0);
       const dynamicOccupancyRate = parseNum(item.dynamicOccupancyRate ?? item.rate ?? 0);
-      const adr = parseNum(item.adr || (sold > 0 && rev > 0 ? Math.round(rev / sold) : 0));
+      const adr = item.adr !== undefined && item.adr !== null ? parseNum(item.adr) : undefined;
 
       roomOccupancyMap[typeName] = {
         sold,

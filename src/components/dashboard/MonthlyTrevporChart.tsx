@@ -271,7 +271,7 @@ export default function MonthlyTrevporChart() {
 
     const avgTyTrevpar = totalTyAvailRooms > 0 ? Math.round(totalTyRevenue / totalTyAvailRooms) : ((data as any)?.summary?.avgTyTrevpar ?? 0);
     const avgLyTrevpar = totalLyAvailRooms > 0 ? Math.round(totalLyRevenue / totalLyAvailRooms) : ((data as any)?.summary?.avgLyTrevpar ?? 0);
-    const yoyGrowth = (data as any)?.summary?.growthRate ?? (avgLyTrevpar > 0 ? Number((((avgTyTrevpar - avgLyTrevpar) / avgLyTrevpar) * 100).toFixed(1)) : 0);
+    const yoyGrowth = (data as any)?.summary?.growthRate ?? null;
 
     let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
     if (periodMode === 'CLOSED_ONLY') {
@@ -319,13 +319,7 @@ export default function MonthlyTrevporChart() {
       tyValues.push(tyVal);
 
       const backendGrowthRate = metricMode === 'TOTAL' ? item.growthTotalRate : item.growthWithoutGolfRate;
-      if (backendGrowthRate !== undefined && backendGrowthRate !== null) {
-        growthRates.push(backendGrowthRate);
-      } else if (tyVal !== null && lyVal !== null && lyVal > 0) {
-        growthRates.push(Number((((tyVal - lyVal) / lyVal) * 100).toFixed(1)));
-      } else {
-        growthRates.push(null);
-      }
+      growthRates.push(backendGrowthRate ?? null);
     });
 
     const maxVal = Math.max(...lyValues, ...tyValues.filter((v): v is number => v !== null), 100000);

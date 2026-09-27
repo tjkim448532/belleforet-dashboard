@@ -162,6 +162,18 @@ files.forEach(filePath => {
         code: codeOnly
       });
     }
+
+    // 9. 클라이언트 사칙연산 지표 합성 및 나눗셈 폴백 검사 (Rule 9: Fail-Stop)
+    // 금지: ADR, 점유율, 증감률, 연박비율 등을 클라이언트에서 나눗셈 폴백으로 합성(|| Math.round(... / ...), || ((... / ...) * 100), || (1 / ...))
+    const clientSynthesisMatch = codeOnly.match(/\|\|\s*Math\.round\([^)]*\/[^)]*\)|\|\|\s*\(\([^)]*\/[^)]*\)\s*\*\s*100\)|\|\|\s*\(1\s*\/\s*Math\.max|item\.adr\s*\|\|\s*Math\.round/);
+    if (clientSynthesisMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Client-Side Metric Synthesis / Division Fallback (클라이언트 지표 사칙연산/나눗셈 폴백 금지 - Fail-Stop 위반)',
+        code: codeOnly
+      });
+    }
   });
 });
 

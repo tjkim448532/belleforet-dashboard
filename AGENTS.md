@@ -34,6 +34,15 @@
 - 모든 API의 응답 키워드는 `camelCase`로 정규화되어 반환됩니다. (DB 컬럼명인 snake_case 혼용 금지)
 - 매출 데이터는 이미 DB 레벨에서 완벽히 소수점이 제거된 순수 정수(Integer)로 전달됩니다. 프론트에서는 별도의 `Math.round()` 처리를 하지 말고, `toLocaleString()` 등을 이용해 `#,##0` 형태의 천 단위 콤마(,) 서식만 입힙니다.
 
+### 6. 클라이언트 사칙연산 지표 합성 및 폴백 전면 금지 (Fail-Stop 원칙)
+- 백엔드가 객실단가(ADR), 점유율(Occupancy), 증감률(Growth Rate), 연박률(Multi-night Ratio) 등의 지표를 응답에 포함하지 않았거나 null일 때, 프론트엔드 단에서 `|| Math.round(rev / sold)`, `|| ((sold / cap) * 100)`, `|| ((ty - ly) / ly) * 100` 등의 나눗셈/사칙연산 폴백 수식을 작성하는 행위를 **가짜 숫자(Fake Numbers) 날조 및 결함 은폐(Fail-Silent)**로 규정하고 영구 금지합니다.
+- 지표 필드가 없거나 null이면 **무조건 null 또는 '-'로 표출(Fail Loudly / Fail-Stop)**하여 결함을 노출해야 합니다.
+- 결함이 노출되면 프론트엔드 코드를 땜질하지 말고, 공식 문서(`backend_request.md`)를 통해 백엔드 데이터 마트에서 완성된 지표로 제공하도록 요청하십시오.
+
+### 7. 복합 객실(조립형 커넥팅룸) 모수 왜곡 금지 (Fixed Capacity SSOT)
+- 51평형 등 조립형 커넥팅 객실은 단독 판매(16평, 35평) 소진 시 조립 잔여 재고가 0이 되어, 동적 분모(`dynamicCapacity = sold + remaining`)가 판매량과 같아져 '100% 매진'으로 왜곡되는 치명적 함정(Dynamic Capacity Trap)이 존재합니다.
+- 대시보드의 객실 점유율 및 모수 기준은 반드시 물리 고정 객실수(`fixedCapacity: 1,080실`)와 공식 고정 점유율(`fixedOccupancyRate: 69%`)을 단일 진실 공급원(SSOT)으로 삼아야 합니다.
+
 💡 **요약**: 프론트엔드는 백엔드가 조리해서 내어준 '완제품(JSON)'을 어떠한 가공이나 덧셈 없이 있는 그대로 접시(UI)에 예쁘게 담아내는 역할(Pure Consumer)에만 집중합니다. 데이터 조작(Data Manipulation) 코드가 프론트엔드 레포지토리에서 발견될 경우 즉각 롤백(Reject) 처리됩니다.
 
 ---
@@ -67,14 +76,14 @@
 - **조치 사항**: 백엔드 API 응답이 없거나 구조가 다르면 화면이 하얗게 비어 있거나 에러가 나도록 **그대로 방치**해야 합니다. 이는 데이터 파이프라인 무결성을 강제하기 위한 조치입니다. 문제가 발생하면 "프론트엔드 코드는 정상이니 백엔드 배포를 진행하라"고 명확히 보고하고, 어떠한 형태의 프론트엔드 우회/임시 조치도 "영원히(Forever)" 거절하십시오.
 
 
-## ?? Belleforet Data Platform API & UI ������ ���� ������ (V6.0 SSOT)
+## 📖 Belleforet Data Platform API & UI 엔드포인트 통합 가이드라인 (V6.0 SSOT)
 
-### [API 1] ��ú��� ���� ��� (���� ���� �� �ֻ�� ��ǥ��)
+### [API 1] 대시보드 메인 요약 (전역 상태 및 최상단 지표용)
 - GET /api/v6/dashboard/revenue-summary
 
-### [API 2] ���Ϻ� ��Ʈ���� (ǥ/ĭ�ݺ��� ��������)
+### [API 2] 요일별 매트릭스 (표/칸반보드 렌더링용)
 - GET /api/v6/dashboard/matrix-weekly
 
-### [API 3] �ű� V6 ���� ���� ��ú��� (Zero-Variance ���뺻)
+### [API 3] 신규 V6 골프 실적 대시보드 (Zero-Variance 완제품)
 - GET /api/v6/dashboard/golf-sales
-- Description: V6 ��Ʈ ��(vw_mart_golf_sales_dashboard)�� ���� ��ȸ�Ͽ�, ���� ����� ������ ���ܵ� ���� ���� �������� �����մϴ�.
+- Description: V6 마트 뷰(vw_mart_golf_sales_dashboard)를 직접 조회하여, 골프 정산과 회계가 일치된 단일 진실 공급원을 제공합니다.

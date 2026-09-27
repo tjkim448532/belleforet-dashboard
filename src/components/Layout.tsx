@@ -11,6 +11,7 @@ export default function Layout() {
   const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [golfOpen, setGolfOpen] = useState(true);
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(true);
@@ -50,7 +51,6 @@ export default function Layout() {
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
     { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive', 'management'] },
     { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} />, roles: ['admin', 'executive', 'fnb', 'leisure', 'resort'] },
-    { name: '골프사업본부', path: '/golf-business', icon: <Flag size={20} />, roles: ['admin', 'executive', 'leisure'] },
     { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
   ];
 
@@ -111,6 +111,50 @@ export default function Layout() {
               {item.name}
             </NavLink>
           ))}
+
+          {/* 골프사업본부 Accordion */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
+            <div className="mt-2">
+              <button
+                onClick={() => setGolfOpen(!golfOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
+              >
+                <div className="flex items-center gap-3">
+                  <Flag size={20} />
+                  골프사업본부
+                </div>
+                {golfOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+              
+              {golfOpen && (
+                <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                  <NavLink
+                    to="/golf-business"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={() => { 
+                      if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                    }}
+                  >
+                    경영 현황 대시보드
+                  </NavLink>
+                  <NavLink
+                    to="/golf/channel-intelligence"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-between gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={() => { 
+                      if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
+                    }}
+                  >
+                    <span>채널 & 예약 인텔리전스</span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">NEW</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 1. 리조트사업본부 Accordion (위치 상향) */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'resort') && (

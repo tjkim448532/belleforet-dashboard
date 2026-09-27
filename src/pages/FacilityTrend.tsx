@@ -20,7 +20,7 @@ const FACILITIES = [
 
 export default function FacilityTrend() {
   const { startDate } = useDate();
-  const [selectedFacility, setSelectedFacility] = useState<string>('브리스킷346');
+  const [selectedFacility, setSelectedFacility] = useState<string>('전체');
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<any>(null);
 
@@ -131,6 +131,7 @@ export default function FacilityTrend() {
     const seriesData: any[] = [];
     const legendData: string[] = [];
     const colors = ['#94a3b8', '#00ae95', '#0f172a', '#10b981'];
+    const visitorLabel = selectedFacility === '전체' ? '객실 투숙객' : '방문객';
     
     years.forEach((year: any, idx: number) => {
       const yearRevenue = Array(12).fill(0);
@@ -154,9 +155,9 @@ export default function FacilityTrend() {
         itemStyle: { color: color, borderRadius: [4, 4, 0, 0] }
       });
       
-      legendData.push(`${year}년 방문객`);
+      legendData.push(`${year}년 ${visitorLabel}`);
       seriesData.push({
-        name: `${year}년 방문객`,
+        name: `${year}년 ${visitorLabel}`,
         type: 'line',
         yAxisIndex: 1,
         data: yearVisitors,
@@ -166,13 +167,42 @@ export default function FacilityTrend() {
     });
 
     return {
-      tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' },
+        formatter: (params: any) => {
+          if (!Array.isArray(params) || params.length === 0) return '';
+          let result = `<div style="font-weight:700;margin-bottom:6px;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:4px;">${params[0].axisValue} 실적</div>`;
+          params.forEach((item: any) => {
+            if (item.value !== undefined && item.value !== null) {
+              const isRev = item.seriesName.includes('매출');
+              const formattedVal = isRev 
+                ? `₩${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}`
+                : `${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}명`;
+              result += `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;padding:3px 0;">
+                  <span style="display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${item.color};"></span>
+                    <span style="color:#64748b;">${item.seriesName}</span>
+                  </span>
+                  <span style="font-weight:700;color:#0f172a;">${formattedVal}</span>
+                </div>
+              `;
+            }
+          });
+          return result;
+        }
+      },
       legend: { data: legendData, bottom: 0, type: 'scroll' },
       grid: { left: '3%', right: '3%', bottom: '15%', containLabel: true },
       xAxis: [{ type: 'category', data: months, axisPointer: { type: 'shadow' } }],
       yAxis: [
         { type: 'value', name: '매출액', axisLabel: { formatter: '{value}' } },
-        { type: 'value', name: '방문객수', axisLabel: { formatter: '{value}' } }
+        { 
+          type: 'value', 
+          name: selectedFacility === '전체' ? '객실 투숙객(명)' : '방문객수(명)', 
+          axisLabel: { formatter: '{value}' } 
+        }
       ],
       series: seriesData
     };
@@ -209,7 +239,9 @@ export default function FacilityTrend() {
             {years.map((year: any, idx) => (
               <Fragment key={year}>
                 <th className="px-4 py-2 text-right border-b border-slate-200">매출액</th>
-                <th className={`px-4 py-2 text-right border-b border-slate-200 ${idx === years.length - 1 ? '' : 'border-r'}`}>방문객</th>
+                <th className={`px-4 py-2 text-right border-b border-slate-200 ${idx === years.length - 1 ? '' : 'border-r'}`}>
+                  {selectedFacility === '전체' ? '객실 투숙객' : '방문객'}
+                </th>
               </Fragment>
             ))}
           </tr>
@@ -254,7 +286,7 @@ export default function FacilityTrend() {
               영업장별 월별 실적 추이
             </h1>
             <p className="text-sm text-slate-500 mt-2">
-              선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 방문객 추이를 비교합니다.<br/>
+              선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 {selectedFacility === '전체' ? '객실 투숙객' : '방문객'} 추이를 비교합니다.<br/>
               <span className="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-lg mt-1 inline-block border border-slate-200">
                 💡 식음료(FNB) 및 연회 업장은 아이템 단위 판매이므로 진성 방문객수가 0명으로 집계됩니다. (전체 선택 시 리조트 객실 투숙객 기준)
               </span>

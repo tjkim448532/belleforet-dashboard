@@ -164,8 +164,8 @@ export default function StrategicSimulator() {
     includeGolf: true
   });
 
-  // Feature 4: Baseline Selection Mode (직전년도 vs 다년도 가중이동평균 WMA)
-  const [baselineMode, setBaselineMode] = useState<'SINGLE_YEAR' | 'WMA_3YEAR'>('SINGLE_YEAR');
+  // Feature 4: Baseline Selection Mode (직전년도 vs 2개년 가중이동평균 WMA)
+  const [baselineMode, setBaselineMode] = useState<'SINGLE_YEAR' | 'WMA_2YEAR'>('SINGLE_YEAR');
 
   // Feature 1: Strategic Multipliers (전략 승수 β_f, 기본값 1.0)
   const [strategicMultipliers, setStrategicMultipliers] = useState<Record<string, number>>({
@@ -231,7 +231,7 @@ export default function StrategicSimulator() {
   // Feature 4: Real Multi-Year Weighted Moving Average (WMA) Baseline Engine (No fake 2023 numbers)
   const wmaBaselineData = useMemo(() => {
     const isAnnual = input.selectedMonth === 'ANNUAL';
-    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
+    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 1;
     
     const y2025 = MULTI_YEAR_SEASONALITY_DATA[2025];
     const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024];
@@ -249,7 +249,7 @@ export default function StrategicSimulator() {
     const singleYearRevenue = rev2025;
 
     return {
-      activeBaselineRevenue: baselineMode === 'WMA_3YEAR' ? wmaTotalRevenue : singleYearRevenue,
+      activeBaselineRevenue: baselineMode === 'WMA_2YEAR' ? wmaTotalRevenue : singleYearRevenue,
       wmaTotalRevenue,
       singleYearRevenue,
       smoothingDelta: wmaTotalRevenue - singleYearRevenue,
@@ -612,15 +612,15 @@ export default function StrategicSimulator() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setBaselineMode(prev => prev === 'SINGLE_YEAR' ? 'WMA_3YEAR' : 'SINGLE_YEAR')}
+              onClick={() => setBaselineMode(prev => prev === 'SINGLE_YEAR' ? 'WMA_2YEAR' : 'SINGLE_YEAR')}
               className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex items-center gap-2 shadow-xs cursor-pointer ${
-                baselineMode === 'WMA_3YEAR'
+                baselineMode === 'WMA_2YEAR'
                   ? 'bg-teal-500 text-slate-950 border-teal-300 font-black'
                   : 'bg-white/10 text-white hover:bg-white/20 border-white/15'
               }`}
             >
               <CloudRain size={16} />
-              {baselineMode === 'WMA_3YEAR' ? '🌧️ 2개년 WMA 기상보정 가동중' : '📊 직전 1개년 실적 기준선'}
+              {baselineMode === 'WMA_2YEAR' ? '🌧️ 2개년 WMA 기상보정 가동중' : '📊 직전 1개년 실적 기준선'}
             </button>
           </div>
         </div>
@@ -677,7 +677,7 @@ export default function StrategicSimulator() {
           <div className="flex items-center justify-between text-xs font-bold text-slate-300">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-teal-400" />
-              시뮬레이션 대상 월 선택 ({baselineMode === 'WMA_3YEAR' ? '2개년 가중이동평균(2025: 60%, 2024: 40%) 기상정규화 비중 대입' : `${input.baseYear}년 실측 비중 대입`})
+              시뮬레이션 대상 월 선택 ({baselineMode === 'WMA_2YEAR' ? '2개년 가중이동평균(2025: 60%, 2024: 40%) 기상정규화 비중 대입' : `${input.baseYear}년 실측 비중 대입`})
             </span>
             <span className="text-teal-300 font-extrabold">
               현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
@@ -717,7 +717,7 @@ export default function StrategicSimulator() {
                 🚀 {input.targetYear}년 전사 연간 목표 성장률 설정
               </span>
               <span className="text-[11px] text-slate-300 font-medium">
-                {baselineMode === 'WMA_3YEAR' ? '2개년 WMA 베이스라인 대비' : `${input.baseYear}년 실측 실적 기준선 대비`}
+                {baselineMode === 'WMA_2YEAR' ? '2개년 WMA 베이스라인 대비' : `${input.baseYear}년 실측 실적 기준선 대비`}
               </span>
             </div>
 
@@ -843,10 +843,10 @@ export default function StrategicSimulator() {
             기준선 산출 방식
           </div>
           <div className="text-lg font-black text-slate-900 truncate">
-            {baselineMode === 'WMA_3YEAR' ? '🌧️ 2개년 WMA 가중평균' : `📊 ${input.baseYear}년 실측 단독`}
+            {baselineMode === 'WMA_2YEAR' ? '🌧️ 2개년 WMA 가중평균' : `📊 ${input.baseYear}년 실측 단독`}
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            {baselineMode === 'WMA_3YEAR' ? `스무딩: ${wmaBaselineData.smoothingRate > 0 ? '+' : ''}${wmaBaselineData.smoothingRate}%` : '작년 단일 실적 기준'}
+            {baselineMode === 'WMA_2YEAR' ? `스무딩: ${wmaBaselineData.smoothingRate > 0 ? '+' : ''}${wmaBaselineData.smoothingRate}%` : '작년 단일 실적 기준'}
           </div>
         </div>
 

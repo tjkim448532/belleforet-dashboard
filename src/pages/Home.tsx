@@ -911,7 +911,7 @@ export default function Home() {
                         <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                           {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
                             const maxPrice = coreData.core.summary.golfRankedChannels[0]?.avgGreenFee ?? 0;
-                            const pct = maxPrice > 0 ? Math.min(100, Math.max(10, Math.round((item.avgGreenFee / maxPrice) * 100))) : 0;
+                            const pct = maxPrice > 0 ? Math.min(100, Math.max(0, Math.round((item.avgGreenFee / maxPrice) * 100))) : 0;
                             return (
                               <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-emerald-200 transition-all">
                                 <div className="flex items-center gap-1.5 min-w-[120px] truncate">
@@ -1011,18 +1011,10 @@ export default function Home() {
                         <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                           {coreData.core.summary.golfLowToHighChannels.map((item: any, idx: number) => {
                             const maxPrice = coreData.core.summary.golfRankedChannels?.[0]?.avgGreenFee || 1;
-                            const pct = Math.min(100, Math.max(10, Math.round((item.avgGreenFee / maxPrice) * 100)));
+                            const pct = Math.min(100, Math.max(0, Math.round((item.avgGreenFee / maxPrice) * 100)));
                             
-                            // 실속 채널별 주요 이용 시간대 안내
-                            const timeHint = item.name.includes('스마트스코어') ? '1부 새벽 (06:00~08:30)' :
-                              item.name.includes('전화') ? '1부/2부 잔여 타임' :
-                              item.name.includes('미골프') || item.name.includes('오너골프') ? '1부 새벽 / 3부 야간' :
-                              item.name.includes('골프몬') ? '3부 야간 (16:30~18:30)' :
-                              item.name.includes('골프락') ? '1부 오전 / 2부' :
-                              item.name.includes('자사') ? '1부·2부·3부 전시간' :
-                              item.name.includes('골팡') ? '2부 낮 타임' :
-                              item.name.includes('카카오') ? '2부 프라임 타임' :
-                              item.name.includes('패키지') ? '1박2일 숙박 연계' : '프라임 타임';
+                            // 실속 채널별 이용 시간대 안내 (백엔드 SSOT 제공 시에만 표시)
+                            const timeHint = item.timeRange || item.timeSlot || null;
 
                             return (
                               <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-teal-200 transition-all">
@@ -1036,7 +1028,9 @@ export default function Home() {
                                   </span>
                                   <div className="truncate">
                                     <span className="font-semibold text-slate-800 truncate block" title={item.name}>{item.name}</span>
-                                    <span className="text-[10px] text-teal-700 font-medium block truncate">🕒 {timeHint}</span>
+                                    {timeHint && (
+                                      <span className="text-[10px] text-teal-700 font-medium block truncate">🕒 {timeHint}</span>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="flex-1 mx-2 hidden sm:block">

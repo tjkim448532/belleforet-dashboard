@@ -151,6 +151,17 @@ files.forEach(filePath => {
         code: codeOnly
       });
     }
+
+    // 8. 가짜 키워드 휴리스틱, 탑승인원 배수 추정, 하드코딩된 시간대 안내 검사 (Rule 8)
+    const heuristicMatch = codeOnly.match(/name\.includes\(['"]2인승['"]\)\s*\?\s*2|confidence:\s*85|selectedMonth\s*===?\s*['"]number['"]\s*\?\s*[^:]+:\s*7\b|name\.includes\(['"](?:스마트스코어|골프몬|골프락)['"]\)\s*\?\s*['"][1-3]부/);
+    if (heuristicMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Fake Keyword Heuristics / Passenger Multipliers / Guess Time Hints (가짜 키워드 추론/탑승인원 배수/티타임 임의추측 금지)',
+        code: codeOnly
+      });
+    }
   });
 });
 

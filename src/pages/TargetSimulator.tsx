@@ -520,7 +520,7 @@ export default function TargetSimulator() {
   const dailyTargetStats = useMemo(() => {
     const isAnnual = input.selectedMonth === 'ANNUAL';
     const targetYear = input.targetYear || 2026;
-    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
+    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 1;
     
     // 한국 주요 공휴일 목록 (2025/2026/2027)
     const holidays = new Set([

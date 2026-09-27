@@ -33,7 +33,7 @@ const getAiRecommendation = (productName: string): { segment: string; confidence
   if (/홈페이지|앱|APP|자사|직접|예약실|전화|자사몰|DIRECT|ROOM ONLY/i.test(name)) {
     return { segment: '자사채널', confidence: 90 };
   }
-  return { segment: 'OTA', confidence: 85 }; // Default fallback for room rate codes
+  return { segment: '미분류', confidence: 0 }; // 미분류 보존 (자가 수동 배정 필수)
 };
 
 export default function AdminMapping() {
@@ -105,27 +105,38 @@ export default function AdminMapping() {
     }
   };
 
+  // 유효한 AI 스마트 추천 항목 (미분류 제외 및 확신도 90% 이상)
+  const validAiRecommendations = useMemo(() => {
+    return unmappedItems
+      .map(item => ({ item, rec: getAiRecommendation(item.productName) }))
+      .filter(({ rec }) => rec.segment !== '미분류' && rec.confidence >= 90);
+  }, [unmappedItems]);
+
   // 1-Click AI Recommendation Bulk Confirm Handler
   const handleBulkConfirmAiRecommendations = async () => {
-    if (unmappedItems.length === 0) return;
-    if (!window.confirm(`총 ${unmappedItems.length}개의 미분류 요금제를 AI 스마트 추천 세그먼트로 일괄 승인 배정하시겠습니까?\n\n이 작업은 백엔드 DB 매핑 테이블을 일괄 업데이트합니다.`)) {
+    if (validAiRecommendations.length === 0) {
+      alert('AI 스마트 추천으로 자동 분류 가능한 항목이 없습니다. 수동으로 배정해 주세요.');
+      return;
+    }
+
+    const unclassifiableCount = unmappedItems.length - validAiRecommendations.length;
+    const confirmMessage = unclassifiableCount > 0
+      ? `총 ${unmappedItems.length}개의 미분류 요금제 중 명확히 분류 가능한 ${validAiRecommendations.length}개 항목만 일괄 승인 배정하시겠습니까?\n\n(추천 근거가 없는 ${unclassifiableCount}개 항목은 안전하게 '미분류'로 보존됩니다.)`
+      : `총 ${validAiRecommendations.length}개의 요금제를 AI 스마트 추천 세그먼트로 일괄 승인 배정하시겠습니까?`;
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     setBulkSaving(true);
-    setBulkProgress({ current: 0, total: unmappedItems.length });
+    setBulkProgress({ current: 0, total: validAiRecommendations.length });
     const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
     try {
-      const updates = unmappedItems.map(item => {
-        const rec = getAiRecommendation(item.productName);
-        return {
-          productName: item.productName,
-          subGroupName: rec.segment
-        };
-      });
-
-      setBulkProgress({ current: Math.floor(unmappedItems.length / 2), total: unmappedItems.length });
+      const updates = validAiRecommendations.map(({ item, rec }) => ({
+        productName: item.productName,
+        subGroupName: rec.segment
+      }));
 
       await secureFetcher(`${API_BASE}/api/v6/admin/mapping/facility-groups?mode=ROOM_SEGMENT`, {
         method: 'POST',
@@ -136,7 +147,7 @@ export default function AdminMapping() {
         })
       });
       
-      setBulkProgress({ current: unmappedItems.length, total: unmappedItems.length });
+      setBulkProgress({ current: validAiRecommendations.length, total: validAiRecommendations.length });
       await fetchRoomSegmentMapping();
     } catch (err) {
       console.error('Failed bulk confirmation:', err);
@@ -155,7 +166,7 @@ export default function AdminMapping() {
 
     unmappedItems.forEach(item => {
       const rec = getAiRecommendation(item.productName);
-      if (cols[rec.segment]) {
+      if (rec.segment !== '미분류' && cols[rec.segment]) {
         cols[rec.segment].push(item);
       } else {
         cols['UNMAPPED'].push(item);
@@ -164,6 +175,14 @@ export default function AdminMapping() {
 
     return cols;
   }, [unmappedItems, bins]);
+
+  const allKanbanBins = useMemo(() => {
+    const list = [...bins];
+    if (kanbanColumns['UNMAPPED'] && kanbanColumns['UNMAPPED'].length > 0 && !list.includes('UNMAPPED')) {
+      list.push('UNMAPPED');
+    }
+    return list;
+  }, [bins, kanbanColumns]);
 
   if (loading) {
     return (
@@ -264,11 +283,11 @@ export default function AdminMapping() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleBulkConfirmAiRecommendations}
-                  disabled={unmappedItems.length === 0 || bulkSaving}
+                  disabled={validAiRecommendations.length === 0 || bulkSaving}
                   className="px-4 py-2.5 bg-brand-mint hover:bg-emerald-400 text-slate-900 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Zap size={16} className="text-slate-900 fill-slate-900" />
-                  {bulkSaving ? `승인 처리 중 (${bulkProgress?.current}/${bulkProgress?.total})...` : `AI 추천 ${unmappedItems.length}개 1클릭 일괄 승인`}
+                  {bulkSaving ? `승인 처리 중 (${bulkProgress?.current}/${bulkProgress?.total})...` : validAiRecommendations.length > 0 ? `AI 추천 ${validAiRecommendations.length}개 1클릭 일괄 승인` : `자동 분류 가능한 AI 추천 항목 없음`}
                 </button>
                 <button
                   onClick={fetchRoomSegmentMapping}
@@ -326,17 +345,25 @@ export default function AdminMapping() {
           {/* VIEW MODE 1: SMART KANBAN BOARD */}
           {viewMode === 'KANBAN' && (
             <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 overflow-x-auto pb-4">
-              {bins.map((bin) => {
+              {allKanbanBins.map((bin) => {
+                const isUnmappedBin = bin === 'UNMAPPED';
                 const columnItems = kanbanColumns[bin] || [];
 
                 return (
-                  <div key={bin} className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col justify-between min-w-[200px] min-h-[420px]">
+                  <div key={bin} className={`rounded-2xl p-4 border flex flex-col justify-between min-w-[200px] min-h-[420px] ${
+                    isUnmappedBin ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'
+                  }`}>
                     <div>
                       <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-                        <span className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
-                          <Hotel size={16} className="text-emerald-600" /> {bin}
+                        <span className={`font-extrabold text-sm flex items-center gap-1.5 ${
+                          isUnmappedBin ? 'text-amber-800' : 'text-slate-800'
+                        }`}>
+                          {isUnmappedBin ? <AlertCircle size={16} className="text-amber-600" /> : <Hotel size={16} className="text-emerald-600" />}
+                          {isUnmappedBin ? '미분류 대기' : bin}
                         </span>
-                        <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          isUnmappedBin ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
                           {columnItems.length}
                         </span>
                       </div>
@@ -357,25 +384,47 @@ export default function AdminMapping() {
                                   {item.sourceName || 'raw_객실_정산'}
                                 </div>
 
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                                  <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium border border-emerald-100 flex items-center gap-0.5">
-                                    <Sparkles size={10} /> AI 추천: {rec.segment}
-                                  </span>
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-1">
+                                  {rec.segment !== '미분류' ? (
+                                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium border border-emerald-100 flex items-center gap-0.5 truncate">
+                                      <Sparkles size={10} /> AI: {rec.segment}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium border border-amber-200 flex items-center gap-0.5 truncate">
+                                      <AlertCircle size={10} /> 수동 배정
+                                    </span>
+                                  )}
 
-                                  <button
-                                    onClick={() => handleRoomSegmentSave(item, bin)}
-                                    disabled={isSaving}
-                                    className="px-2 py-1 bg-slate-800 hover:bg-emerald-600 text-white rounded text-[10px] font-bold transition-all shadow-xs"
-                                  >
-                                    {isSaving ? '저장...' : '승인'}
-                                  </button>
+                                  {!isUnmappedBin ? (
+                                    <button
+                                      onClick={() => handleRoomSegmentSave(item, bin)}
+                                      disabled={isSaving}
+                                      className="px-2 py-1 bg-slate-800 hover:bg-emerald-600 text-white rounded text-[10px] font-bold transition-all shadow-xs shrink-0"
+                                    >
+                                      {isSaving ? '저장...' : '승인'}
+                                    </button>
+                                  ) : (
+                                    <select
+                                      onChange={(e) => {
+                                        if (e.target.value) handleRoomSegmentSave(item, e.target.value);
+                                      }}
+                                      disabled={isSaving}
+                                      className="bg-white border border-slate-300 text-slate-700 text-[10px] rounded p-1 font-semibold max-w-[90px]"
+                                      defaultValue=""
+                                    >
+                                      <option value="" disabled>배정...</option>
+                                      {bins.filter(b => b !== 'UNMAPPED').map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                      ))}
+                                    </select>
+                                  )}
                                 </div>
                               </div>
                             );
                           })
                         ) : (
                           <div className="text-center py-10 text-xs text-slate-400 font-medium">
-                            추천 항목 없음
+                            {isUnmappedBin ? '미분류 항목 없음' : '추천 항목 없음'}
                           </div>
                         )}
                       </div>
@@ -425,31 +474,40 @@ export default function AdminMapping() {
                               {item.productName}
                             </td>
                             <td className="px-6 py-3.5 text-center">
-                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
-                                <Sparkles size={12} /> {rec.segment} ({rec.confidence}%)
-                              </span>
+                              {rec.segment !== '미분류' && rec.confidence >= 90 ? (
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
+                                  <Sparkles size={12} /> {rec.segment} ({rec.confidence}%)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200">
+                                  <AlertCircle size={12} /> 추천 없음 (수동 지정)
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-3.5 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <select
-                                  defaultValue={rec.segment}
+                                  defaultValue={rec.segment !== '미분류' ? rec.segment : ''}
                                   onChange={(e) => {
                                     if (e.target.value) handleRoomSegmentSave(item, e.target.value);
                                   }}
                                   disabled={isSaving}
                                   className="bg-white border border-slate-300 text-slate-700 text-xs rounded-lg focus:ring-emerald-500 focus:border-emerald-500 p-2 font-semibold"
                                 >
-                                  {bins.map(bin => (
+                                  <option value="" disabled>세그먼트 선택...</option>
+                                  {bins.filter(b => b !== 'UNMAPPED').map(bin => (
                                     <option key={bin} value={bin}>{bin}</option>
                                   ))}
                                 </select>
-                                <button
-                                  onClick={() => handleRoomSegmentSave(item, rec.segment)}
-                                  disabled={isSaving}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs"
-                                >
-                                  {isSaving ? '저장 중...' : '승인'}
-                                </button>
+                                {rec.segment !== '미분류' && (
+                                  <button
+                                    onClick={() => handleRoomSegmentSave(item, rec.segment)}
+                                    disabled={isSaving}
+                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs"
+                                  >
+                                    {isSaving ? '저장 중...' : '승인'}
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>

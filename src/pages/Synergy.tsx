@@ -795,7 +795,7 @@ export default function Synergy() {
                       <div className="w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden mt-3">
                         <div 
                           className={`h-full bg-gradient-to-r ${meta.barColor} rounded-full transition-all duration-500`}
-                          style={{ width: `${Math.min(100, Math.max(3, Number(item.sharePct)))}%` }}
+                          style={{ width: `${Math.min(100, Math.max(0, Number(item.sharePct)))}%` }}
                         />
                       </div>
                     </div>

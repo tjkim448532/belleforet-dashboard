@@ -43,8 +43,8 @@ export function runTargetSimulation(
 
   const yearMeta = MULTI_YEAR_SEASONALITY_DATA[baseYear] || MULTI_YEAR_SEASONALITY_DATA[2025];
   const isAnnual = input.selectedMonth === 'ANNUAL';
-  const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 7;
-  const monthMeta = yearMeta.months[monthNum] || yearMeta.months[7];
+  const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 1;
+  const monthMeta = yearMeta.months[monthNum] || yearMeta.months[1] || Object.values(yearMeta.months)[0];
 
   const periodDays = isAnnual ? 365 : monthMeta.days;
   const selectedMonthLabel = isAnnual ? '연간 종합 (1~12월)' : `${monthNum}월 실측 계절성`;

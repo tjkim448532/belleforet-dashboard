@@ -3407,12 +3407,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 1547727,
             "shareRatio": 0.0005
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 1314545,
-            "shareRatio": 0.0005
-          },
+          
           {
             "venueName": "디노 시네마",
             "categoryCode": "TICKET",
@@ -3604,12 +3599,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 4518182,
             "shareRatio": 0.0018
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 4358182,
-            "shareRatio": 0.0017
-          },
+          
           {
             "venueName": "벨포레 목장(체험)",
             "categoryCode": "TICKET",
@@ -3825,12 +3815,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 5651815,
             "shareRatio": 0.002
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 5375455,
-            "shareRatio": 0.0019
-          },
+          
           {
             "venueName": "벼루재촌",
             "categoryCode": "FNB",
@@ -4034,12 +4019,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 3570909,
             "shareRatio": 0.0016
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 3160909,
-            "shareRatio": 0.0014
-          },
+          
           {
             "venueName": "원더풀",
             "categoryCode": "TICKET",
@@ -4243,12 +4223,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 8135974,
             "shareRatio": 0.0027
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 6392727,
-            "shareRatio": 0.0022
-          },
+          
           {
             "venueName": "미디어-뮤지엄카페",
             "categoryCode": "TICKET",
@@ -4452,12 +4427,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 5863616,
             "shareRatio": 0.0021
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 3815455,
-            "shareRatio": 0.0014
-          },
+          
           {
             "venueName": "미디어-뮤지엄카페",
             "categoryCode": "TICKET",
@@ -4661,12 +4631,7 @@ export const MULTI_YEAR_SEASONALITY_DATA: Record<number, YearSeasonalityMeta> = 
             "netRevenue": 3023727,
             "shareRatio": 0.0021
           },
-          {
-            "venueName": "주차관제",
-            "categoryCode": "PARKING",
-            "netRevenue": 1898182,
-            "shareRatio": 0.0013
-          },
+          
           {
             "venueName": "미디어-기프트샵",
             "categoryCode": "TICKET",

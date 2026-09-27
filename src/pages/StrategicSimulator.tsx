@@ -23,8 +23,6 @@ const DIVISION_META: Record<string, { code: string; name: string; color: string;
   LEISURE: { code: 'TICKET', name: '레저본부', color: '#EAB308', icon: '🎢' },
   MOTO: { code: 'MOTO', name: '모토아레나', color: '#E11D48', icon: '🏎️' },
   BANQUET: { code: 'BANQUET', name: '세일즈본부', color: '#0891B2', icon: '🏛️' },
-  PARKING: { code: 'PARKING', name: '주차관제', color: '#0284C7', icon: '🅿️' },
-  GOODS: { code: 'GOODS', name: '벨포레굿즈', color: '#64748B', icon: '🛍️' },
   OTHER: { code: 'OTHER', name: '독립/기타', color: '#475569', icon: '📦' }
 };
 
@@ -50,8 +48,7 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const getCategoryIcon = (name: string, code?: string) => {
-  if (code === 'GOODS' || name?.includes('굿즈') || name?.toUpperCase().includes('GOODS')) return '🎁';
+const getCategoryIcon = (name: string, _code?: string) => {
   if (!name) return '📂';
   if (name.includes('골프')) return '⛳';
   if (name.includes('콘도') || name.includes('객실')) return '🏨';
@@ -60,15 +57,10 @@ const getCategoryIcon = (name: string, code?: string) => {
   if (name.includes('모토')) return '🏎️';
   if (name.includes('대관') || name.includes('연회') || name.includes('세일즈')) return '🏛️';
   if (name.includes('목장')) return '🐎';
-  if (name.includes('주차')) return '🅿️';
   return '📂';
 };
 
 const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: string; teamName?: string }) => {
-  // Bible v4.2 독립 카테고리 규정: 벨포레굿즈는 단독 소계/카테고리명으로 표출하여 FNB와 중복 방지
-  if (cat.categoryCode === 'GOODS') {
-    return '벨포레굿즈';
-  }
   if (cat.categoryCode === 'FNB') {
     return cat.teamName || '콘텐츠기획본부';
   }

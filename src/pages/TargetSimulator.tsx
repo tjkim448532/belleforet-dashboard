@@ -35,8 +35,7 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const getCategoryIcon = (name: string, code?: string) => {
-  if (code === 'GOODS' || name?.includes('굿즈') || name?.toUpperCase().includes('GOODS')) return '🎁';
+const getCategoryIcon = (name: string, _code?: string) => {
   if (!name) return '📂';
   if (name.includes('골프')) return '⛳';
   if (name.includes('콘도') || name.includes('객실')) return '🏨';
@@ -45,15 +44,10 @@ const getCategoryIcon = (name: string, code?: string) => {
   if (name.includes('모토')) return '🏎️';
   if (name.includes('대관') || name.includes('연회') || name.includes('세일즈')) return '🏛️';
   if (name.includes('목장')) return '🐎';
-  if (name.includes('주차')) return '🅿️';
   return '📂';
 };
 
 const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: string; teamName?: string }) => {
-  // Bible v4.2 독립 카테고리 규정: 벨포레굿즈는 팀명(콘텐츠기획본부) 대신 단독 카테고리명 '벨포레굿즈'로 표출하여 FNB와 중복 혼선 방지
-  if (cat.categoryCode === 'GOODS') {
-    return '벨포레굿즈';
-  }
   // 식음 FNB는 공식 조직명인 콘텐츠기획본부
   if (cat.categoryCode === 'FNB') {
     return cat.teamName || '콘텐츠기획본부';
@@ -63,7 +57,6 @@ const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: stri
 
 const getPartIcon = (partName: string) => {
   if (!partName) return '📂';
-  if (partName.includes('굿즈')) return '🎁';
   if (partName.includes('목장')) return '🐎';
   if (partName.includes('미디어')) return '🎨';
   if (partName.includes('액티비티') || partName.includes('썰매') || partName.includes('마운틴')) return '🛷';
@@ -73,7 +66,6 @@ const getPartIcon = (partName: string) => {
   if (partName.includes('모토') || partName.includes('서킷')) return '🏎️';
   if (partName.includes('대관') || partName.includes('연회') || partName.includes('세일즈')) return '🏛️';
   if (partName.includes('놀이동산')) return '🎪';
-  if (partName.includes('주차')) return '🅿️';
   return '📂';
 };
 

@@ -841,7 +841,7 @@ export default function Home() {
                         <span className="text-slate-400 font-normal">{isRangeMode ? '선택 기간 합산' : '금일 실적'}</span>
                       </div>
                       <div className="text-3xl font-black text-emerald-600 tracking-tight tabular-nums whitespace-nowrap">
-                        ₩{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)} <span className="text-sm font-normal text-slate-500">/인</span>
+                        {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원 <span className="text-sm font-normal text-slate-500">/인</span>
                       </div>
                     </div>
 
@@ -854,7 +854,7 @@ export default function Home() {
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
-                            ? `₩${formatCurrency(displayData.golfSummary.directAvgGreenFee)}`
+                            ? `${formatRevenue(displayData.golfSummary.directAvgGreenFee)}원`
                             : (coreData.summary?.isGolfChannelsLoading ? (
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
@@ -871,7 +871,7 @@ export default function Home() {
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
-                            ? `₩${formatCurrency(displayData.golfSummary.otaAvgGreenFee)}`
+                            ? `${formatRevenue(displayData.golfSummary.otaAvgGreenFee)}원`
                             : (coreData.summary?.isGolfChannelsLoading ? (
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
@@ -888,7 +888,7 @@ export default function Home() {
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
                           {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
-                            ? `₩${formatCurrency(displayData.golfSummary.memberAvgGreenFee)}`
+                            ? `${formatRevenue(displayData.golfSummary.memberAvgGreenFee)}원`
                             : (coreData.summary?.isGolfChannelsLoading ? (
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
@@ -933,7 +933,7 @@ export default function Home() {
                                   </div>
                                 </div>
                                 <div className="text-right whitespace-nowrap shrink-0">
-                                  <span className="font-black text-slate-900">₩{formatCurrency(item.avgGreenFee)}</span>
+                                  <span className="font-black text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
                                   <span className="text-[10px] text-slate-400 ml-1.5">({item.players}명)</span>
                                 </div>
                               </div>
@@ -1042,7 +1042,7 @@ export default function Home() {
                                   </div>
                                 </div>
                                 <div className="text-right whitespace-nowrap shrink-0">
-                                  <span className="font-black text-slate-900">₩{formatCurrency(item.avgGreenFee)}</span>
+                                  <span className="font-black text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
                                   <span className="text-[10px] text-slate-400 ml-1.5">({item.players}명)</span>
                                 </div>
                               </div>
@@ -1153,7 +1153,7 @@ export default function Home() {
                   <ul className="space-y-2 text-slate-600 text-xs">
                     <li className="flex flex-col">
                       <span className="font-bold text-slate-800 text-sm">
-                        • 1인당 전체 평균 그린피: ₩{formatCurrency(displayData.golfSummary?.avgGreenFee || 0)}원
+                        • 1인당 전체 평균 그린피: {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원
                       </span>
                       <span className="text-slate-500 mt-0.5 tabular-nums">
                         = {formatCurrency((displayData.golfSummary?.avgGreenFee || 0) * (displayData.golfSummary?.visitedPlayers || 0))}원 (그린피 총매출) ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)

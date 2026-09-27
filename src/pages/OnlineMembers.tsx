@@ -615,14 +615,16 @@ export default function OnlineMembers() {
                           </td>
                         );
                       })}
-                      {/* YTD Total */}
-                      <td className="px-4 py-3.5 bg-emerald-50/50 font-black text-emerald-700 sticky right-0 font-mono text-sm">
-                        {formatCurrency(
-                          trends.monthly
-                            .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
-                            .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0)
+                      {/* Cur YTD Total */}
+                      <td className="px-4 py-3.5 bg-emerald-50/50 font-black text-emerald-950 sticky right-0 font-mono text-sm">
+                        {summary.periodJoinedMembers !== undefined ? (
+                          <>
+                            {formatCurrency(summary.periodJoinedMembers)}
+                            <span className="text-[11px] text-emerald-600/70 ml-0.5 font-sans font-medium">명</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-300">-</span>
                         )}
-                        <span className="text-[11px] text-emerald-600/70 ml-0.5 font-sans font-medium">명</span>
                       </td>
                     </tr>
 
@@ -648,12 +650,14 @@ export default function OnlineMembers() {
                       })}
                       {/* Ly YTD Total */}
                       <td className="px-4 py-3.5 bg-slate-50/80 font-bold text-slate-600 sticky right-0 font-mono text-sm">
-                        {formatCurrency(
-                          trends.monthly
-                            .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
-                            .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0)
+                        {summary.lyPeriodJoinedMembers !== undefined ? (
+                          <>
+                            {formatCurrency(summary.lyPeriodJoinedMembers)}
+                            <span className="text-[11px] text-slate-400 ml-0.5 font-sans font-medium">명</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-300">-</span>
                         )}
-                        <span className="text-[11px] text-slate-400 ml-0.5 font-sans font-medium">명</span>
                       </td>
                     </tr>
 
@@ -682,13 +686,10 @@ export default function OnlineMembers() {
                       })}
                       {/* YTD Total Diff */}
                       {(() => {
-                        const curTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
-                          .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0);
-                        const lyTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
-                          .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0);
-                        const diffTotal = curTotal - lyTotal;
+                        if (summary.periodJoinedMembers === undefined || summary.lyPeriodJoinedMembers === undefined) {
+                          return <td className="px-4 py-3 font-black sticky right-0 font-mono text-xs text-slate-300">-</td>;
+                        }
+                        const diffTotal = Number(summary.periodJoinedMembers) - Number(summary.lyPeriodJoinedMembers);
                         return (
                           <td className={`px-4 py-3 font-black sticky right-0 font-mono text-xs ${
                             diffTotal >= 0 ? 'text-rose-600 bg-rose-50/40' : 'text-blue-600 bg-blue-50/40'
@@ -731,12 +732,11 @@ export default function OnlineMembers() {
                       })}
                       {/* YTD Total Growth Rate */}
                       {(() => {
-                        const curTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
-                          .reduce((acc: number, cur: any) => acc + (cur.joined || 0), 0);
-                        const lyTotal = trends.monthly
-                          .filter((m: any) => Number(m.month.slice(5)) <= currentMonthNum)
-                          .reduce((acc: number, cur: any) => acc + (cur.lyJoined || 0), 0);
+                        if (summary.periodJoinedMembers === undefined || !summary.lyPeriodJoinedMembers) {
+                          return <td className="px-4 py-3 sticky right-0 bg-slate-50 font-mono text-xs text-slate-300">-</td>;
+                        }
+                        const curTotal = Number(summary.periodJoinedMembers);
+                        const lyTotal = Number(summary.lyPeriodJoinedMembers);
                         const rateTotal = lyTotal > 0 ? Number((((curTotal - lyTotal) / lyTotal) * 100).toFixed(1)) : 0;
                         return (
                           <td className="px-4 py-3 sticky right-0 bg-slate-50">

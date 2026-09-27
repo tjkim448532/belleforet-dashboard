@@ -193,24 +193,25 @@ export default function LeisureUsageRate() {
           selDenominator += pt.totalRoomGuests;
         }
       }
-      const selRate = selDenominator > 0 ? Math.round((selVisitors / selDenominator) * 1000) / 10 : 0;
+      const validRates = selectedPeriodMonths
+        .map((m) => selSeries?.data.find((d) => d.month === m)?.usageRate)
+        .filter((r): r is number => r !== undefined && r > 0);
+      const selRate = validRates.length > 0 ? Math.round((validRates.reduce((a, b) => a + b, 0) / validRates.length) * 10) / 10 : 0;
 
-      // Top venue across selected period (exclude ranch experience conversion rate from general resort penetration ranking)
+      // Top venue across selected period (전 영업장 공식 실측치 공정 평가)
       let topVenue = { name: '-', visitors: 0, usageRate: 0 };
       for (const s of usageData.series) {
-        if (s.facilityName === '벨포레 목장(체험)') continue;
         let vTotal = 0;
-        let dTotal = 0;
+        const rates = selectedPeriodMonths
+          .map((m) => s.data.find((d) => d.month === m)?.usageRate)
+          .filter((r): r is number => r !== undefined && r > 0);
+        const avgRate = rates.length > 0 ? Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 10) / 10 : 0;
         for (const m of selectedPeriodMonths) {
           const pt = s.data.find((d) => d.month === m);
-          if (pt) {
-            vTotal += pt.visitors;
-            dTotal += pt.totalRoomGuests;
-          }
+          if (pt) vTotal += pt.visitors;
         }
-        const rate = dTotal > 0 ? Math.round((vTotal / dTotal) * 1000) / 10 : 0;
-        if (rate > topVenue.usageRate) {
-          topVenue = { name: s.facilityName, visitors: vTotal, usageRate: rate };
+        if (avgRate > topVenue.usageRate) {
+          topVenue = { name: s.facilityName, visitors: vTotal, usageRate: avgRate };
         }
       }
 
@@ -236,7 +237,6 @@ export default function LeisureUsageRate() {
 
       let topVenue = { name: '-', usageRate: 0, visitors: 0 };
       for (const s of usageData.series) {
-        if (s.facilityName === '벨포레 목장(체험)') continue;
         const pt = s.data.find((d) => d.month === m);
         if (pt && pt.usageRate > topVenue.usageRate) {
           topVenue = {
@@ -510,14 +510,18 @@ export default function LeisureUsageRate() {
     ['2024', '2025', '2026'].forEach((yr) => {
       let v = 0;
       let g = 0;
+      const validRates: number[] = [];
       targetRows.forEach((r) => {
         const item = r[yr] as LeisureYoyYearData | undefined;
         if (item) {
           v += item.visitors;
           g += item.roomGuests;
+          if (item.usageRate > 0) validRates.push(item.usageRate);
         }
       });
-      const usageRate = g > 0 ? Math.round((v / g) * 1000) / 10 : 0;
+      const usageRate = validRates.length > 0 
+        ? Math.round((validRates.reduce((a, b) => a + b, 0) / validRates.length) * 10) / 10 
+        : 0;
       result[yr] = { visitors: v, roomGuests: g, usageRate };
     });
 

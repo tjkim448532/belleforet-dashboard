@@ -53,22 +53,8 @@ export default function LeisureFacility() {
         if (payload?.topItems && Array.isArray(payload.topItems) && payload.topItems.length > 0) {
           const filtered = payload.topItems
             .filter((item: any) => {
-              const fac = String(item.facilityName || item.shopName || '');
               const cat = String(item.categoryCode || '');
-              const name = String(item.itemName || item.name || '');
-              
-              // Rigorous exclusion of Moto Arena circuit/cart items
-              const isMoto = 
-                fac.includes('모토아레나') || 
-                name.includes('모토') || 
-                cat === 'MOTO' ||
-                name.includes('1인승') ||
-                name.includes('2인승') ||
-                name.includes('레저카트') ||
-                name.includes('레이싱카트') ||
-                name.includes('카트스쿨');
-
-              return !isMoto;
+              return cat !== 'MOTO';
             })
             // 총액수(sales) 기준 내림차순 정렬
             .sort((a: any, b: any) => parseNumber(b.sales || b.totalSales || 0) - parseNumber(a.sales || a.totalSales || 0))
@@ -103,8 +89,7 @@ export default function LeisureFacility() {
     }
 
     const ticketFacilities = core.salesByFacility.filter((item: any) => 
-      item.categoryCode === 'TICKET' && 
-      !String(item.shopName || item.facilityName || '').includes('모토아레나')
+      item.categoryCode === 'TICKET'
     );
 
     // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory

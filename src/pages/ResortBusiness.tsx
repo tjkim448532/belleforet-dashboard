@@ -482,11 +482,11 @@ export default function ResortBusiness() {
           {/* Main KPI Cards Grid: 용어 표기 명확 분리 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Total Revenue */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <Coins className="w-5 h-5 text-[#00ae95]" /> 
                 <span>객실 총 매출</span>
-                <MetricExplainerTooltip presetKey="netRevenue" />
+                <MetricExplainerTooltip presetKey="netRevenue" align="left" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
                 {formatCurrency(lodgingStats.revenue)} <span className="text-base text-slate-400 font-normal">원</span>
@@ -512,11 +512,11 @@ export default function ResortBusiness() {
             </div>
 
             {/* 판매 건수 (계약) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <CalendarDays className="w-5 h-5 text-[#00ae95]" /> 
                 <span>판매 건수 (계약)</span>
-                <MetricExplainerTooltip presetKey="occupancy" />
+                <MetricExplainerTooltip presetKey="occupancy" align="center" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
                 {formatCurrency(lodgingStats.roomsSold)}건
@@ -542,11 +542,11 @@ export default function ResortBusiness() {
             </div>
 
             {/* 실운영 점유실 (물리) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <KeyRound className="w-5 h-5 text-[#00ae95]" /> 
                 <span>실운영 점유실 (물리)</span>
-                <MetricExplainerTooltip presetKey="connectingRoom" />
+                <MetricExplainerTooltip presetKey="connectingRoom" align="center" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap font-financial">
                 <span>{totalPhysicalOccupied.toLocaleString()}실</span>
@@ -563,11 +563,11 @@ export default function ResortBusiness() {
             </div>
 
             {/* Overall ADR */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-slate-100">
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <Coins className="w-5 h-5 text-[#00ae95]" /> 
                 <span>객실 평균 단가 (ADR)</span>
-                <MetricExplainerTooltip presetKey="adr" />
+                <MetricExplainerTooltip presetKey="adr" align="right" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
                 {formatCurrency(lodgingStats.adr)} <span className="text-base text-slate-400 font-normal">원</span>

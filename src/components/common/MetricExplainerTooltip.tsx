@@ -9,7 +9,8 @@ export type MetricPresetKey =
   | 'adr' 
   | 'yoyDow' 
   | 'occupancy' 
-  | 'golfRevenuePerTeam';
+  | 'golfRevenuePerTeam'
+  | 'arpu';
 
 interface MetricExplainerData {
   title: string;
@@ -75,6 +76,13 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
     definition: '예약된 골프 1팀(4인 기준)이 그린피, 카트비, F&B 그늘집 등에서 발생시킨 평균 매출액입니다.',
     formula: '골프장 총 순매출 ÷ 완주/정산 팀 수',
     insight: '예약 팀 수의 물리적 한계(티타임 간격) 내에서 F&B 패키지나 프리미엄 카트 옵션을 통한 부가가치 창출력을 평가합니다.'
+  },
+  arpu: {
+    title: '1인당 객단가 (ARPU)',
+    badge: '골프 수익성 지표',
+    definition: '골프장을 방문한 실제 내장객 1인이 그린피, 카트비, 식음료(그늘집/레스토랑), 프로샵 등에서 지출한 평균 소비 금액입니다.',
+    formula: '골프 총 순매출액 ÷ 실제 총 내장객 수 (명)',
+    insight: '단순 내장객 수 증가를 넘어, 고부가가치 내장객 유치 및 부대시설(식음료, 용품) 소비 시너지를 정밀하게 진단하는 핵심 수익성 지표입니다.'
   }
 };
 
@@ -82,6 +90,7 @@ interface MetricExplainerTooltipProps {
   presetKey?: MetricPresetKey;
   customData?: MetricExplainerData;
   position?: 'top' | 'bottom' | 'left' | 'right';
+  align?: 'left' | 'center' | 'right';
   className?: string;
   iconSize?: number;
 }
@@ -90,6 +99,7 @@ export default function MetricExplainerTooltip({
   presetKey,
   customData,
   position = 'bottom',
+  align = 'center',
   className = '',
   iconSize = 15
 }: MetricExplainerTooltipProps) {
@@ -122,19 +132,23 @@ export default function MetricExplainerTooltip({
 
   if (!data) return null;
 
-  // 위치 스타일 계산
+  // 위치 및 정렬 스타일 계산
   const getPositionClasses = () => {
-    switch (position) {
-      case 'top':
-        return 'bottom-full left-1/2 -translate-x-1/2 mb-2';
-      case 'left':
-        return 'right-full top-1/2 -translate-y-1/2 mr-2';
-      case 'right':
-        return 'left-full top-1/2 -translate-y-1/2 ml-2';
-      case 'bottom':
-      default:
-        return 'top-full left-1/2 -translate-x-1/2 mt-2';
+    if (position === 'top') {
+      if (align === 'right') return 'bottom-full right-0 mb-2';
+      if (align === 'left') return 'bottom-full left-0 mb-2';
+      return 'bottom-full left-1/2 -translate-x-1/2 mb-2';
     }
+    if (position === 'left') {
+      return 'right-full top-1/2 -translate-y-1/2 mr-2';
+    }
+    if (position === 'right') {
+      return 'left-full top-1/2 -translate-y-1/2 ml-2';
+    }
+    // bottom (default)
+    if (align === 'right') return 'top-full right-0 mt-2';
+    if (align === 'left') return 'top-full left-0 mt-2';
+    return 'top-full left-1/2 -translate-x-1/2 mt-2';
   };
 
   return (
@@ -155,7 +169,7 @@ export default function MetricExplainerTooltip({
 
       {isOpen && (
         <div
-          className={`absolute z-50 w-80 sm:w-96 p-4 bg-white rounded-2xl border border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.18)] text-slate-800 text-left animate-in fade-in zoom-in-95 duration-150 ${getPositionClasses()}`}
+          className={`absolute z-50 w-[calc(100vw-32px)] max-w-sm sm:max-w-md sm:w-96 max-h-[85vh] overflow-y-auto p-4 bg-white rounded-2xl border border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.18)] text-slate-800 text-left animate-in fade-in zoom-in-95 duration-150 ${getPositionClasses()}`}
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={() => setIsOpen(false)}
         >

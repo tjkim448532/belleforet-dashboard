@@ -183,11 +183,11 @@ export default function GolfBusiness() {
         {/* Overview Stats (3-Grid) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
           {/* Golf Revenue */}
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group border border-slate-200/90">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group border border-slate-200/90">
             <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
               <Coins className="w-4 h-4 text-[#00ae95]" /> 
               <span>{isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}</span>
-              <MetricExplainerTooltip presetKey="netRevenue" />
+              <MetricExplainerTooltip presetKey="netRevenue" align="left" />
             </h2>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
               ₩{summary.totalGolfRevenueFormatted}
@@ -196,11 +196,11 @@ export default function GolfBusiness() {
           </div>
 
           {/* Visited Players */}
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group border border-slate-200/90">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group border border-slate-200/90">
             <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
               <Users className="w-4 h-4 text-[#00ae95]" /> 
               <span>실제 총 내장객 수</span>
-              <MetricExplainerTooltip presetKey="visitorCount" />
+              <MetricExplainerTooltip presetKey="visitorCount" align="center" />
             </h2>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
               {summary.totalPlayersFormatted}명
@@ -209,11 +209,11 @@ export default function GolfBusiness() {
           </div>
 
           {/* Avg ARPU */}
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group border border-slate-200/90">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group border border-slate-200/90">
             <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-[#00ae95]" /> 
               <span>1인당 객단가 (ARPU)</span>
-              <MetricExplainerTooltip presetKey="golfRevenuePerTeam" />
+              <MetricExplainerTooltip presetKey="arpu" align="right" />
             </h2>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
               ₩{summary.arpuFormatted}

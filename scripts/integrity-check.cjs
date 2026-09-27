@@ -140,6 +140,17 @@ files.forEach(filePath => {
         code: codeOnly
       });
     }
+
+    // 7. 가짜 주중/주말 캘린더 안분 및 왜곡 폴백 검사 (weekdayRatio, totalGolfRev / visitedPlayers, >과반 점유< 등)
+    const calendarProxyMatch = codeOnly.match(/weekdayRatio\s*=|totalGolfRev\s*\/\s*visitedPlayers|>과반 점유</);
+    if (calendarProxyMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Synthetic Proxy Ratio / Fake Green Fee / Mockup Label (가짜 캘린더 안분/단가 왜곡/목업 라벨 금지)',
+        code: codeOnly
+      });
+    }
   });
 });
 

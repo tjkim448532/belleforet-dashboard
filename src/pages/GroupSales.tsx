@@ -469,20 +469,12 @@ export default function GroupSales() {
       }
     });
 
-    if (semWeekdayRooms + semWeekendRooms === 0 && semRooms > 0) {
-      const weekdayRatio = weekdayDays / totalDays;
-      semWeekdayRooms = Math.round(semRooms * weekdayRatio);
-      semWeekendRooms = semRooms - semWeekdayRooms;
-      semWeekdayRev = Math.round(semRev * weekdayRatio);
-      semWeekendRev = semRev - semWeekdayRev;
-    }
-
-    const weekdayRatio = totalDays > 0 ? (weekdayDays / totalDays) : 0;
-    const totWeekdayRooms = totRooms > 0 ? Math.round(totRooms * weekdayRatio) : 0;
-    const totWeekendRooms = totRooms - totWeekdayRooms;
-    const totWeekdayRev = totRev > 0 ? Math.round(totRev * weekdayRatio) : 0;
-    const totWeekendRev = totRev - totWeekdayRev;
-
+    // [Zero-Proxy 원칙] 백엔드 seminarShare 미수신 시 임의의 캘린더 날짜 비율(5/7 등) 안분을 엄격히 금지함
+    // rawGroupData에서 수집된 실제 주중/주말 체크인 실측치만 반영하며, 부재 시 0으로 안전하게 귀결
+    const totWeekdayRooms = semWeekdayRooms;
+    const totWeekendRooms = semWeekendRooms;
+    const totWeekdayRev = semWeekdayRev;
+    const totWeekendRev = semWeekendRev;
     return {
       weekday: {
         label: '주중 (일~목 체크인)',
@@ -810,7 +802,7 @@ export default function GroupSales() {
                 <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
                   {seminarDayTypeStats.weekday.sharePct.toFixed(1)}%
                 </span>
-                <span className="text-xs text-indigo-300 font-semibold">과반 점유</span>
+                <span className="text-xs text-indigo-300 font-semibold">{seminarDayTypeStats.weekday.sharePct >= 50 ? '과반 점유' : '주중 점유'}</span>
               </div>
 
               {/* Progress Gauge Bar */}

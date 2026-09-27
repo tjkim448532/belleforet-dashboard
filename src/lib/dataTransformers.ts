@@ -108,13 +108,9 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   }
 
   let totalRoomRev = 0;
-  let totalGolfRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
     const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryCode === '콘도' || x.categoryName === '콘도');
     if (roomCat) totalRoomRev = parseNum(roomCat.totalSales || roomCat.todayActual || 0);
-
-    const golfCat = c.salesByCategory.find((x: any) => x.categoryCode === 'GOLF' || x.categoryCode === '골프' || x.categoryName === '골프');
-    if (golfCat) totalGolfRev = parseNum(golfCat.totalSales || golfCat.todayActual || 0);
   }
   
   const totalResortRevGross = parseNum(c.summary?.totalRevenue || 0);
@@ -221,10 +217,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
           ? parseNum(c.summary.totalGolfPendingTeams) 
           : Math.max(0, reserved - visited - canceled),
         visitedPlayers: visitedPlayers,
-        avgGreenFee: parseNum(
-          c.summary?.golfAvgGreenFee ?? 
-          (visitedPlayers > 0 ? Math.round(totalGolfRev / visitedPlayers) : 0)
-        ),
+        avgGreenFee: parseNum(c.summary?.golfAvgGreenFee || 0),
         ly_avgGreenFee: 0,
         directAvgGreenFee: parseNum(c.summary?.golfDirectAvgGreenFee || 0),
         otaAvgGreenFee: parseNum(c.summary?.golfOtaAvgGreenFee || 0),

@@ -59,7 +59,7 @@ export default function MonthlyDynamicRebalancer({
     const list: MonthMeta[] = [];
     for (let m = 1; m <= 12; m++) {
       const baseRev = monthRevs[m] > 0 ? monthRevs[m] : Math.round(annualBaseRevenue / 12);
-      const intensity = maxMonthRev > 0 ? Number((baseRev / maxMonthRev).toFixed(2)) : 0.5;
+      const intensity = maxMonthRev > 0 ? Number((baseRev / maxMonthRev).toFixed(2)) : 0;
       const headroom = Number(Math.max(0.02, 1.0 - intensity).toFixed(2));
       const isPeak = intensity >= 0.85;
 
@@ -477,7 +477,7 @@ export default function MonthlyDynamicRebalancer({
                   </span>
                 ) : meta.isPeak ? (
                   <span className="text-indigo-600 font-semibold">
-                    성수기 (가동률 ~{Math.round(meta.estimatedOcc * 100)}%)
+                    성수기 (매출 강도 ~{Math.round(meta.estimatedOcc * 100)}%)
                   </span>
                 ) : (
                   <span className="text-teal-700 font-semibold flex items-center gap-1">

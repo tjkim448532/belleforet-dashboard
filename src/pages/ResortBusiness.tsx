@@ -352,12 +352,8 @@ export default function ResortBusiness() {
     summary.totalPhysicalKeysSold ||
     (standardPhysicalRooms + connectingPhysicalRooms)
   );
-  // 절대 0이 될 수 없도록 최소 175실(1일치) 하한선 강제 (0 나눗셈 원천 차단)
-  const totalBaseRooms = Math.max(
-    175,
-    Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || (175 * safeRangeDays))
-  );
-  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
+  const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || 0);
+  const remainingRooms = totalBaseRooms > 0 ? Math.max(0, totalBaseRooms - totalPhysicalOccupied) : 0;
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];

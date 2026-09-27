@@ -129,6 +129,17 @@ files.forEach(filePath => {
         code: codeOnly
       });
     }
+
+    // 6. 가짜 단가 및 객실 인벤토리/정원 프록시 승수 검사 (baseUnitPrice: 20000, * 4 정원 곱셈 등)
+    const proxyMultiplierMatch = codeOnly.match(/(?:totalRoomsSold|summaryRoomsSold)\s*\*\s*4|175\s*\*\s*(?:safeDays|days|safeRangeDays)|baseUnitPrice\s*:\s*[1-9]\d+/);
+    if (proxyMultiplierMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Synthetic Capacity / Unit Price Estimation (가짜 정원/단가/객실 승수 금지)',
+        code: codeOnly
+      });
+    }
   });
 });
 

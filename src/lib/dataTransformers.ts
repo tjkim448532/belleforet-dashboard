@@ -123,10 +123,10 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   
   const isRange = Boolean(c.isRangeQuery || (c.startDate && c.endDate && c.startDate !== c.endDate));
   const safeDays = isRange ? Math.max(1, c.resortSummary?.days || c.days || (Array.isArray(c.dailyTrends) ? c.dailyTrends.length : 1)) : 1;
-  // [SSOT Pure Consumer] 백엔드가 내려준 완성된 가용 객실 총수 우선 수용 (없을 시 safeDays fallback)
-  const physicalRoomInventory = parseNum(c.summary?.availableRooms || c.summary?.totalPhysicalKeys || (175 * safeDays));
-  // [Pax Decoupling] 투숙객 인원 정원 SSOT (판매객실 × 4인 정원)
-  const totalGuestCapacity = parseNum(c.summary?.totalRoomCap || (totalRoomsSold * 4));
+  // [SSOT Pure Consumer] 백엔드가 내려준 완성된 가용 객실 총수 우선 수용
+  const physicalRoomInventory = parseNum(c.summary?.availableRooms || c.summary?.totalPhysicalKeys || 0);
+  // [Pax Decoupling] 투숙객 인원 정원 SSOT
+  const totalGuestCapacity = parseNum(c.summary?.totalRoomCap || 0);
 
   // [SSOT 무관용 원칙] 백엔드가 사전 산출한 ADR, RevPAR, TrevPAR 우선 바인딩
   const backendADR = parseNum(c.summary?.totalADR || c.summary?.adr || 0);
@@ -364,10 +364,10 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   }
   
   const summaryRoomsSold = parseNum(payload.summary?.totalRooms || 0);
-  // 객실 인벤토리 모수 (175 * days)
-  const physicalRoomCap = parseNum(payload.summary?.availableRooms || payload.summary?.totalPhysicalKeys || (175 * days));
-  // 투숙객 인원 모수 (Guests / Pax)
-  const guestCap = parseNum(payload.summary?.totalRoomCap || (summaryRoomsSold * 4));
+  // 객실 인벤토리 모수 SSOT
+  const physicalRoomCap = parseNum(payload.summary?.availableRooms || payload.summary?.totalPhysicalKeys || 0);
+  // 투숙객 인원 모수 (Guests / Pax) SSOT
+  const guestCap = parseNum(payload.summary?.totalRoomCap || 0);
 
   let lyRevenue = 0;
   let lyRoomsSold = 0;

@@ -353,20 +353,20 @@ export default function GolfChannelIntelligence() {
         }
       },
       legend: { data: ['내장객 수 (명)', '1인당 실현 평균 그린피 (원)'], top: 0 },
-      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+      grid: { left: '3%', right: '4%', top: '12%', bottom: '70px', containLabel: true },
       xAxis: [{
         type: 'category',
         data: channelNames,
-        axisLabel: { interval: 0, rotate: 28, fontSize: 11, color: '#475569' }
+        axisLabel: { interval: 0, rotate: 32, fontSize: 11, color: '#475569', overflow: 'break' }
       }],
       yAxis: [
         { type: 'value', name: '내장객 수 (명)', axisLabel: { formatter: '{value}명' } },
         { 
           type: 'value', 
           name: '평균 그린피 (원)', 
-          min: 100000,
-          max: 180000,
-          axisLabel: { formatter: '₩{value}' },
+          min: (val: any) => Math.max(0, Math.floor((val.min * 0.9) / 10000) * 10000),
+          max: (val: any) => Math.ceil((val.max * 1.1) / 10000) * 10000,
+          axisLabel: { formatter: (val: number) => `₩${(val / 10000).toFixed(0)}만` },
           splitLine: { show: false }
         }
       ],
@@ -403,18 +403,44 @@ export default function GolfChannelIntelligence() {
     return {
       tooltip: {
         trigger: 'item',
-        formatter: '{b}: <strong>{c}팀</strong> ({d}%)'
+        formatter: (params: any) => `
+          <strong>${params.name}</strong><br/>
+          팀 수: <strong>${params.value.toLocaleString()}팀</strong> (${params.percent}%)
+        `
       },
-      legend: { bottom: '0', left: 'center' },
+      legend: {
+        bottom: 0,
+        left: 'center',
+        itemGap: 14,
+        textStyle: { fontSize: 11, color: '#475569' }
+      },
       series: [
         {
           name: '팀 구성 인원',
           type: 'pie',
-          radius: ['45%', '70%'],
-          avoidLabelOverlap: false,
+          radius: ['38%', '60%'],
+          center: ['50%', '42%'],
+          avoidLabelOverlap: true,
           itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
-          label: { show: true, formatter: '{b}\n({d}%)', fontSize: 11 },
-          emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+          label: {
+            show: true,
+            position: 'outside',
+            formatter: (params: any) => `${params.name}\n${params.percent}% (${params.value.toLocaleString()}팀)`,
+            fontSize: 11,
+            lineHeight: 15,
+            color: '#1e293b'
+          },
+          labelLayout: {
+            moveOverlap: 'shiftY'
+          },
+          labelLine: {
+            length: 12,
+            length2: 10,
+            smooth: true
+          },
+          emphasis: {
+            label: { show: true, fontSize: 12, fontWeight: 'bold' }
+          },
           data: [
             { value: data.teamSize.size4.teams, name: '4인 정상 플레이', itemStyle: { color: '#00ae95' } },
             { value: data.teamSize.size3.teams, name: '3인 플레이 (공실)', itemStyle: { color: '#f43f5e' } },
@@ -439,15 +465,23 @@ export default function GolfChannelIntelligence() {
           const item = list[params[0].dataIndex];
           return `
             <strong>${item.channelName}</strong><br/>
-            조인 예약 팀수: <strong>${item.teams}팀</strong> (${item.sharePct}%)<br/>
-            조인 내장객수: <strong>${item.players}명</strong><br/>
+            조인 예약 팀수: <strong>${item.teams.toLocaleString()}팀</strong> (${item.sharePct}%)<br/>
+            조인 내장객수: <strong>${item.players.toLocaleString()}명</strong><br/>
             평균 결제 그린피: <strong>₩${formatCurrency(item.avgGreenFee)}</strong>
           `;
         }
       },
-      grid: { left: '3%', right: '12%', top: '5%', bottom: '5%', containLabel: true },
-      xAxis: { type: 'value', axisLabel: { formatter: '{value}팀' } },
-      yAxis: { type: 'category', data: list.map(i => i.channelName), axisLabel: { fontWeight: 'bold' } },
+      grid: { left: '3%', right: '22%', top: '6%', bottom: '6%', containLabel: true },
+      xAxis: {
+        type: 'value',
+        max: (value: any) => Math.ceil(value.max * 1.15),
+        axisLabel: { formatter: '{value}팀' }
+      },
+      yAxis: {
+        type: 'category',
+        data: list.map(i => i.channelName),
+        axisLabel: { fontWeight: 'bold', color: '#334155' }
+      },
       series: [
         {
           name: '조인 팀 수',
@@ -460,8 +494,12 @@ export default function GolfChannelIntelligence() {
           label: {
             show: true,
             position: 'right',
-            formatter: '{c}팀 ({@[2]}%)',
+            formatter: (params: any) => {
+              const item = list[params.dataIndex];
+              return `${item.teams.toLocaleString()}팀 (${item.sharePct}%)`;
+            },
             fontSize: 11,
+            fontWeight: 'bold',
             color: '#1e293b'
           }
         }
@@ -476,25 +514,49 @@ export default function GolfChannelIntelligence() {
     return {
       tooltip: {
         trigger: 'item',
-        formatter: '{b}: <strong>{c}팀</strong> ({d}%)'
+        formatter: (params: any) => `
+          <strong>${params.name}</strong><br/>
+          팀 수: <strong>${params.value.toLocaleString()}팀</strong> (${params.percent}%)
+        `
       },
-      legend: { bottom: '0', left: 'center' },
+      legend: {
+        bottom: 0,
+        left: 'center',
+        itemGap: 12,
+        textStyle: { fontSize: 11, color: '#475569' }
+      },
       series: [
         {
           name: '회원 동반 팀 구조',
           type: 'pie',
-          radius: '65%',
-          center: ['50%', '45%'],
-          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          radius: ['38%', '58%'],
+          center: ['50%', '42%'],
+          avoidLabelOverlap: true,
+          itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
           data: [
-            { value: data.memberSynergy.pureNonMember.teams, name: '순수 비회원 4인 팀', itemStyle: { color: '#94a3b8' } },
-            { value: data.memberSynergy.member1Non3.teams, name: '회원 1명 + 비회원 3명 (핵심 앵커)', itemStyle: { color: '#00ae95' } },
-            { value: data.memberSynergy.member2Non2.teams, name: '회원 2명 + 비회원 2명', itemStyle: { color: '#0284c7' } },
+            { value: data.memberSynergy.pureNonMember.teams, name: '순수 비회원 (4인)', itemStyle: { color: '#94a3b8' } },
+            { value: data.memberSynergy.member1Non3.teams, name: '회원 1명 + 동반 3명', itemStyle: { color: '#00ae95' } },
+            { value: data.memberSynergy.member2Non2.teams, name: '회원 2명 + 동반 2명', itemStyle: { color: '#0284c7' } },
             { value: data.memberSynergy.member3to4.teams, name: '회원 3~4인 팀', itemStyle: { color: '#6366f1' } }
           ],
           label: {
-            formatter: '{b}\n{d}% ({c}팀)',
-            fontSize: 11
+            show: true,
+            position: 'outside',
+            formatter: (params: any) => `${params.name}\n${params.percent}% (${params.value.toLocaleString()}팀)`,
+            fontSize: 11,
+            lineHeight: 15,
+            color: '#1e293b'
+          },
+          labelLayout: {
+            moveOverlap: 'shiftY'
+          },
+          labelLine: {
+            length: 12,
+            length2: 10,
+            smooth: true
+          },
+          emphasis: {
+            label: { show: true, fontSize: 12, fontWeight: 'bold' }
           }
         }
       ]
@@ -524,18 +586,18 @@ export default function GolfChannelIntelligence() {
           `;
         }
       },
-      grid: { left: '3%', right: '5%', bottom: '15%', top: '5%', containLabel: true },
+      grid: { left: '3%', right: '4%', top: '6%', bottom: '65px', containLabel: true },
       xAxis: {
         type: 'category',
         data: timeSlots,
         splitArea: { show: true },
-        axisLabel: { fontWeight: 'bold' }
+        axisLabel: { fontWeight: 'bold', color: '#334155' }
       },
       yAxis: {
         type: 'category',
         data: days,
         splitArea: { show: true },
-        axisLabel: { fontWeight: 'bold' }
+        axisLabel: { fontWeight: 'bold', color: '#334155' }
       },
       visualMap: {
         min: 60,
@@ -543,7 +605,12 @@ export default function GolfChannelIntelligence() {
         calculable: true,
         orient: 'horizontal',
         left: 'center',
-        bottom: '0%',
+        bottom: 2,
+        itemWidth: 14,
+        itemHeight: 140,
+        text: ['100%', '60%'],
+        textGap: 8,
+        textStyle: { fontSize: 10, color: '#64748b', fontWeight: 'bold' },
         inRange: {
           color: ['#e0f2fe', '#38bdf8', '#0284c7', '#0369a1', '#075985']
         }
@@ -555,7 +622,9 @@ export default function GolfChannelIntelligence() {
           data: heatmapData,
           label: {
             show: true,
-            formatter: (p: any) => `${p.value[2]}%`
+            formatter: (p: any) => `${p.value[2]}%`,
+            color: '#0f172a',
+            fontWeight: '600'
           },
           emphasis: {
             itemStyle: {
@@ -610,19 +679,19 @@ export default function GolfChannelIntelligence() {
       },
       legend: {
         data: ['24년 팀수', '25년 팀수', '26년 팀수', '24년 평균 그린피', '25년 평균 그린피', '26년 평균 그린피'],
-        bottom: 0,
+        bottom: 2,
         type: 'scroll'
       },
-      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+      grid: { left: '3%', right: '4%', top: '12%', bottom: '60px', containLabel: true },
       xAxis: [{ type: 'category', data: months, axisPointer: { type: 'shadow' } }],
       yAxis: [
         { type: 'value', name: '이용 팀 수', axisLabel: { formatter: '{value}팀' } },
         { 
           type: 'value', 
           name: '평균 그린피 (원)', 
-          min: 100000, 
-          max: 180000,
-          axisLabel: { formatter: '₩{value}' },
+          min: (val: any) => Math.max(0, Math.floor((val.min * 0.9) / 10000) * 10000),
+          max: (val: any) => Math.ceil((val.max * 1.1) / 10000) * 10000,
+          axisLabel: { formatter: (val: number) => `₩${(val / 10000).toFixed(0)}만` },
           splitLine: { show: false }
         }
       ],
@@ -875,25 +944,25 @@ export default function GolfChannelIntelligence() {
                   ②-A. 팀 구성(1~4인) 분포 & 3인 공실 손실
                 </h3>
               </div>
-              <span className="text-xs text-slate-400">총 13,266팀</span>
+              <span className="text-xs text-slate-400">총 {data.summary.totalTeams.toLocaleString()}팀</span>
             </div>
 
-            <div className="h-[260px] w-full">
+            <div className="h-[300px] w-full">
               <ReactECharts option={getTeamSizeDonutOption()} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 mt-4 space-y-2 text-xs text-slate-600">
             <div className="flex justify-between font-bold text-slate-800">
-              <span>• 3인 플레이 발생 누적:</span>
-              <span className="text-rose-600">{data.summary.threePlayerTeamsCount}팀 (517명분 공실)</span>
+              <span>• 3인 플레이 발생:</span>
+              <span className="text-rose-600">{data.summary.threePlayerTeamsCount.toLocaleString()}팀 ({data.summary.threePlayerTeamsCount.toLocaleString()}명분 공실)</span>
             </div>
             <div className="flex justify-between">
               <span>• 놓친 그린피 + 카트비 총액:</span>
               <strong className="text-slate-900">₩{formatCurrency(data.summary.threePlayerLostRevenue)}원</strong>
             </div>
             <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
-              💡 4인 정상 플레이가 94.0%로 절대적이나, 3인 플레이가 517팀 발생했습니다. 비수기 조인 시스템을 가동하여 50%만 충원해도 연간 약 5천만 원의 순이익이 즉시 개선됩니다.
+              💡 4인 정상 플레이가 {(data.teamSize.size4.teams / Math.max(1, data.summary.totalTeams) * 100).toFixed(1)}%로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동하여 50%만 충원해도 약 {formatCurrency(Math.round(data.summary.threePlayerLostRevenue * 0.5))}원의 순이익이 즉시 개선됩니다.
             </div>
           </div>
         </div>
@@ -911,15 +980,15 @@ export default function GolfChannelIntelligence() {
                 </h3>
               </div>
               <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg">
-                조인 총 {data.summary.joinTeamsCount}팀
+                조인 총 {data.summary.joinTeamsCount.toLocaleString()}팀
               </span>
             </div>
 
             <p className="text-xs text-slate-500 mb-3">
-              조인(1인 230팀, 2인 51팀) 고객들이 어느 플랫폼을 통해 예약하는지 분석하여 조인 상품 집중 배치 타겟을 도출합니다.
+              조인(1인 {data.teamSize.size1.teams.toLocaleString()}팀, 2인 {data.teamSize.size2.teams.toLocaleString()}팀) 고객들이 어느 플랫폼을 통해 예약하는지 분석하여 조인 상품 집중 배치 타겟을 도출합니다.
             </p>
 
-            <div className="h-[250px] w-full">
+            <div className="h-[300px] w-full">
               <ReactECharts option={getJoinChannelOption()} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
@@ -927,14 +996,14 @@ export default function GolfChannelIntelligence() {
           <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100 mt-4 text-xs text-blue-900 space-y-1.5">
             <div className="flex justify-between font-bold">
               <span>🎯 조인 주력 채널 1위:</span>
-              <span>카카오VX (42.0%, 118팀)</span>
+              <span>{data.teamSize.joinRanking[0] ? `${data.teamSize.joinRanking[0].channelName} (${data.teamSize.joinRanking[0].sharePct}%, ${data.teamSize.joinRanking[0].teams.toLocaleString()}팀)` : '-'}</span>
             </div>
             <div className="flex justify-between font-medium">
               <span>🎯 조인 주력 채널 2위:</span>
-              <span>골프존 (26.3%, 74팀)</span>
+              <span>{data.teamSize.joinRanking[1] ? `${data.teamSize.joinRanking[1].channelName} (${data.teamSize.joinRanking[1].sharePct}%, ${data.teamSize.joinRanking[1].teams.toLocaleString()}팀)` : '-'}</span>
             </div>
             <p className="text-[11px] text-blue-800/80 pt-1 border-t border-blue-200/50">
-              👉 조인 활성화 전용 프로모션은 카카오VX와 골프존 모바일 앱에 집중 투입할 때 가장 높은 공실 충원 전환율을 기대할 수 있습니다.
+              👉 조인 활성화 전용 프로모션은 상위 주요 모바일 앱에 집중 투입할 때 가장 높은 공실 충원 전환율을 기대할 수 있습니다.
             </p>
           </div>
         </div>
@@ -956,14 +1025,14 @@ export default function GolfChannelIntelligence() {
                   ③ [회원 레버리지] 팀 내 회원 동반 구조 & 앵커 효과
                 </h3>
               </div>
-              <span className="text-xs text-slate-400">앵커 매출 ₩4.2억</span>
+              <span className="text-xs text-slate-400">앵커 매출 ₩{formatCurrency(data.memberSynergy.totalAnchorRevenue)}</span>
             </div>
 
             <p className="text-xs text-slate-500 mb-2">
               회원 1명이 혼자 치지 않고 비회원 동반자 3명을 유치해 오는 화폐 가치를 실측했습니다.
             </p>
 
-            <div className="h-[270px] w-full">
+            <div className="h-[310px] w-full">
               <ReactECharts option={getMemberSynergyOption()} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
@@ -971,7 +1040,7 @@ export default function GolfChannelIntelligence() {
           <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-100 mt-4 text-xs text-teal-950 space-y-2">
             <div className="flex justify-between">
               <span>• 회원 1명 + 비회원 3명 동반 팀:</span>
-              <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 (28.9%)</strong>
+              <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.summary.totalTeams > 0 ? (data.memberSynergy.member1Non3.teams / data.summary.totalTeams * 100).toFixed(1) : '0'}%)</strong>
             </div>
             <div className="flex justify-between">
               <span>• 회원이 견인한 순수 비회원 그린피 매출:</span>
@@ -1002,7 +1071,7 @@ export default function GolfChannelIntelligence() {
               골프장 수익 극대화를 위해 프라임 타임(주말 1부)과 잔여 타임(새벽 얼리/레이트)의 수율을 진단합니다.
             </p>
 
-            <div className="h-[270px] w-full">
+            <div className="h-[310px] w-full">
               <ReactECharts option={getTimeSlotHeatmapOption()} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>

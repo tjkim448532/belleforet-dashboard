@@ -384,7 +384,7 @@ export default function ResortBusiness() {
           name: '객실 실운영 점유 현황 (175실 기준)',
           type: 'pie',
           radius: ['45%', '72%'],
-          avoidLabelOverlap: false,
+          avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 8,
             borderColor: '#fff',

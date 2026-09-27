@@ -25,8 +25,14 @@ import {
   Briefcase,
   Search,
   RotateCcw,
-  Phone
+  Phone,
+  MapPin,
+  AlertCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle2
 } from 'lucide-react';
+import type { SalesVenuePerformanceResponse } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -83,6 +89,22 @@ export interface SeminarDayTypeMetric {
   seminarRevenue: number;
   revenueSharePct: number;
   averageAdr: number;
+  ly?: {
+    daysCount?: number;
+    totalRooms: number;
+    seminarRooms: number;
+    sharePct: number;
+    totalRevenue: number;
+    seminarRevenue: number;
+    revenueSharePct: number;
+    averageAdr: number;
+  };
+  growth?: {
+    seminarRoomsDiff?: number;
+    sharePctDiff?: number;
+    revenueGrowthRate?: number;
+    adrGrowthRate?: number;
+  };
 }
 
 export interface SeminarDayTypeShare {
@@ -195,6 +217,12 @@ export default function GroupSales() {
   // 0실/0원 항목 제외 필터
   const [hideZeroSales, setHideZeroSales] = useState<boolean>(true);
 
+  // 🏛️ [NEW] 장소별(Venue) 판매 현황 및 평균가격 상태
+  const [venuePerformanceData, setVenuePerformanceData] = useState<SalesVenuePerformanceResponse | null>(null);
+  const [venueLoading, setVenueLoading] = useState<boolean>(true);
+  const [selectedVenueFilter, setSelectedVenueFilter] = useState<string>('ALL');
+  const [venueSearchKeyword, setVenueSearchKeyword] = useState<string>('');
+
   const toggleGroupExpand = (name: string) => {
     setExpandedGroupNames(prev => {
       const next = new Set(prev);
@@ -223,6 +251,7 @@ export default function GroupSales() {
 
   const fetchSalesData = async () => {
     setLoading(true);
+    setVenueLoading(true);
     try {
       const queryParams = endDate
         ? `startDate=${startDate}&endDate=${endDate}`
@@ -230,9 +259,11 @@ export default function GroupSales() {
 
       // 1. 판매방식 × 평형별 세그먼트 교차 데이터 (SSOT API)
       // 2. 단체영업(세미나) 실제 예약 단체 명부 및 복수 방문 내역 (SSOT API)
-      const [channelRes, corporateRes] = await Promise.all([
+      // 3. [NEW] 세일즈본부 연회/세미나실 장소별(Venue) 판매 분석 및 단체 명부 (SSOT API)
+      const [channelRes, corporateRes, venueRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/sales-venue-performance?${queryParams}`).catch(() => null)
       ]);
 
       if (channelRes?.data && Array.isArray(channelRes.data)) {
@@ -256,13 +287,22 @@ export default function GroupSales() {
       } else {
         setRawGroupData([]);
       }
+
+      // 장소별 판매 실적 데이터 연동 (백엔드 완제품 파싱)
+      if (venueRes && (venueRes.venues || venueRes.summary || venueRes.monthlyTrends)) {
+        setVenuePerformanceData(venueRes);
+      } else {
+        setVenuePerformanceData(null);
+      }
     } catch (err) {
-      console.error('Channel Room / Corporate Group Sales Fetch Error:', err);
+      console.error('Channel Room / Corporate Group Sales / Venue Fetch Error:', err);
       setChannelRawData([]);
       setSeminarShare(null);
       setRawGroupData([]);
+      setVenuePerformanceData(null);
     } finally {
       setLoading(false);
+      setVenueLoading(false);
     }
   };
 
@@ -567,6 +607,34 @@ export default function GroupSales() {
     });
   }, [organizedGroups, groupFilterTab, groupSearchKeyword]);
 
+  // 🏛️ [NEW] 장소별 판매 실적 필터링 및 고유 장소명 추출 메모
+  const { filteredVenueBookings, uniqueVenueNames } = useMemo(() => {
+    const rawVenues = venuePerformanceData?.venues || [];
+    const rawBookings = venuePerformanceData?.groupBookings || [];
+
+    const venueNames = Array.from(new Set(rawVenues.map(v => v.venueName))).filter(Boolean);
+
+    const filtered = rawBookings.filter(b => {
+      if (selectedVenueFilter !== 'ALL' && b.venueName !== selectedVenueFilter) {
+        return false;
+      }
+      if (venueSearchKeyword) {
+        const kw = venueSearchKeyword.toLowerCase();
+        const matchName = b.corporateName?.toLowerCase().includes(kw);
+        const matchVenue = b.venueName?.toLowerCase().includes(kw);
+        const matchManager = b.salesManager?.toLowerCase().includes(kw);
+        const matchPackage = b.packageType?.toLowerCase().includes(kw);
+        if (!matchName && !matchVenue && !matchManager && !matchPackage) return false;
+      }
+      return true;
+    });
+
+    return {
+      filteredVenueBookings: filtered,
+      uniqueVenueNames: venueNames
+    };
+  }, [venuePerformanceData, selectedVenueFilter, venueSearchKeyword]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       
@@ -627,7 +695,7 @@ export default function GroupSales() {
         </div>
       </div>
 
-      {/* 🌟 2. [NEW] 전체 객실 대비 단체영업(세미나) 점유율 분석 (통합 / 주중 / 주말 3단 벤토 패널) */}
+      {/* 🌟 2. [NEW] 전체 객실 대비 단체영업(세미나) 점유율 분석 (통합 / 주중 / 주말 3단 벤토 패널 with YoY 비교) */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-6 lg:p-7 rounded-[28px] border border-slate-700/60 shadow-md text-white">
         
         {/* Title Header */}
@@ -644,9 +712,13 @@ export default function GroupSales() {
                 <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   호텔 요금 기준 (일~목 주중 / 금·토 주말)
                 </span>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-mint/20 text-brand-mint border border-brand-mint/30 flex items-center gap-1">
+                  <TrendingUp size={12} />
+                  작년 동기(YoY) 비교 모드
+                </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                리조트 전체 객실 중 세일즈본부 단체 세미나가 점유하는 비중을 주중과 주말로 분리 비교합니다.
+                리조트 전체 객실 중 세일즈본부 단체 세미나가 점유하는 비중을 주중·주말별 및 작년 동기(YoY)와 비교 분석합니다.
               </p>
             </div>
           </div>
@@ -657,7 +729,7 @@ export default function GroupSales() {
           </div>
         </div>
 
-        {/* 3-Column Bento Grid: 통합 / 주중 / 주말 */}
+        {/* 3-Column Bento Grid: 통합 / 주중 / 주말 (with YoY Comparison) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           {/* 1. 통합 (Total) */}
@@ -668,15 +740,41 @@ export default function GroupSales() {
                   <Building2 size={15} className="text-brand-mint" />
                   <span>통합 전체 점유율</span>
                 </span>
-                <span className="text-[11px] font-semibold text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded">
-                  {seminarDayTypeStats.total.daysCount}일간 합산
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-semibold text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded">
+                    {seminarDayTypeStats.total.daysCount}일간 합산
+                  </span>
+                  {seminarDayTypeStats.total.growth?.sharePctDiff !== undefined ? (
+                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                      seminarDayTypeStats.total.growth.sharePctDiff >= 0 
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                    }`}>
+                      {seminarDayTypeStats.total.growth.sharePctDiff >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                      {seminarDayTypeStats.total.growth.sharePctDiff > 0 ? '+' : ''}{seminarDayTypeStats.total.growth.sharePctDiff.toFixed(1)}%p YoY
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="백엔드 완제품 연동 대기 (backend_request.md 요청 6)">
+                      YoY 대기
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
-                  {seminarDayTypeStats.total.sharePct.toFixed(1)}%
-                </span>
-                <span className="text-xs text-brand-mint font-semibold">객실 점유</span>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
+                    {seminarDayTypeStats.total.sharePct.toFixed(1)}%
+                  </span>
+                  <span className="text-xs text-brand-mint font-semibold">당해 점유</span>
+                </div>
+                {seminarDayTypeStats.total.ly && (
+                  <div className="text-right text-xs text-slate-400">
+                    <span className="text-[10px] block text-slate-400">작년 동기</span>
+                    <strong className="text-slate-300 font-extrabold font-financial">
+                      {seminarDayTypeStats.total.ly.sharePct.toFixed(1)}%
+                    </strong>
+                  </div>
+                )}
               </div>
 
               {/* Progress Gauge Bar */}
@@ -687,22 +785,88 @@ export default function GroupSales() {
                 />
               </div>
 
-              <div className="text-xs text-slate-300 font-medium">
-                전체 <strong className="text-white font-bold">{seminarDayTypeStats.total.totalRooms.toLocaleString()}실</strong> 중{' '}
-                <strong className="text-brand-mint font-bold">{seminarDayTypeStats.total.seminarRooms.toLocaleString()}실</strong> 세미나 계약
+              {/* Rooms Comparison Block */}
+              <div className="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700/50 text-xs space-y-1">
+                <div className="text-slate-300 font-medium flex items-center justify-between">
+                  <span>당해 실적:</span>
+                  <span>
+                    전체 <strong className="text-white font-bold">{seminarDayTypeStats.total.totalRooms.toLocaleString()}실</strong> 중{' '}
+                    <strong className="text-brand-mint font-bold">{seminarDayTypeStats.total.seminarRooms.toLocaleString()}실</strong> 계약
+                  </span>
+                </div>
+                {seminarDayTypeStats.total.ly ? (
+                  <div className="text-slate-400 text-[11px] flex items-center justify-between pt-1 border-t border-slate-800">
+                    <span>작년 동기 실적:</span>
+                    <span>
+                      세미나 <strong className="text-slate-200">{seminarDayTypeStats.total.ly.seminarRooms.toLocaleString()}실</strong>{' '}
+                      {seminarDayTypeStats.total.growth?.seminarRoomsDiff !== undefined && (
+                        <span className={`font-bold ml-1 ${
+                          seminarDayTypeStats.total.growth.seminarRoomsDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.total.growth.seminarRoomsDiff > 0 ? '+' : ''}{seminarDayTypeStats.total.growth.seminarRoomsDiff.toLocaleString()}실)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-slate-400 text-[11px] pt-1 border-t border-slate-800 flex items-center justify-between">
+                    <span>전년 동기 비교:</span>
+                    <span className="text-slate-400">백엔드 마트 연동 대기 (요청 6)</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-financial">
-              <div>
-                <span className="text-slate-400 block text-[11px]">세미나 매출 (점유율)</span>
-                <span className="font-extrabold text-slate-200">
-                  {formatRevenue(seminarDayTypeStats.total.seminarRevenue)}원 ({seminarDayTypeStats.total.revenueSharePct.toFixed(1)}%)
-                </span>
+            {/* Financial Details (Revenue & ADR with YoY) */}
+            <div className="pt-3 border-t border-slate-700/60 space-y-2 text-xs font-financial">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">세미나 매출 (점유율)</span>
+                  <span className="font-extrabold text-slate-200">
+                    {formatRevenue(seminarDayTypeStats.total.seminarRevenue)}원 ({seminarDayTypeStats.total.revenueSharePct.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">전년 동기 매출 (증감률)</span>
+                  {seminarDayTypeStats.total.ly ? (
+                    <span className="font-bold text-slate-300">
+                      {formatRevenue(seminarDayTypeStats.total.ly.seminarRevenue)}원{' '}
+                      {seminarDayTypeStats.total.growth?.revenueGrowthRate !== undefined && (
+                        <span className={`text-[11px] font-extrabold ${
+                          seminarDayTypeStats.total.growth.revenueGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.total.growth.revenueGrowthRate > 0 ? '+' : ''}{seminarDayTypeStats.total.growth.revenueGrowthRate.toFixed(1)}%)
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-slate-400 block text-[11px]">세미나 평균 ADR</span>
-                <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.total.averageAdr)}원</span>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">세미나 평균 ADR</span>
+                  <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.total.averageAdr)}원</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">전년 ADR (증감률)</span>
+                  {seminarDayTypeStats.total.ly ? (
+                    <span className="font-bold text-slate-300">
+                      {formatRevenue(seminarDayTypeStats.total.ly.averageAdr)}원{' '}
+                      {seminarDayTypeStats.total.growth?.adrGrowthRate !== undefined && (
+                        <span className={`text-[11px] font-extrabold ${
+                          seminarDayTypeStats.total.growth.adrGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.total.growth.adrGrowthRate > 0 ? '+' : ''}{seminarDayTypeStats.total.growth.adrGrowthRate.toFixed(1)}%)
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -716,15 +880,41 @@ export default function GroupSales() {
                   <Briefcase size={15} className="text-indigo-400" />
                   <span>주중 (일~목 체크인)</span>
                 </span>
-                <span className="text-[11px] font-extrabold text-white bg-indigo-600 px-2 py-0.5 rounded shadow-2xs">
-                  ★ 핵심 주력
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-extrabold text-white bg-indigo-600 px-2 py-0.5 rounded shadow-2xs">
+                    ★ 핵심 주력
+                  </span>
+                  {seminarDayTypeStats.weekday.growth?.sharePctDiff !== undefined ? (
+                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                      seminarDayTypeStats.weekday.growth.sharePctDiff >= 0 
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                    }`}>
+                      {seminarDayTypeStats.weekday.growth.sharePctDiff >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                      {seminarDayTypeStats.weekday.growth.sharePctDiff > 0 ? '+' : ''}{seminarDayTypeStats.weekday.growth.sharePctDiff.toFixed(1)}%p YoY
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="백엔드 완제품 연동 대기 (backend_request.md 요청 6)">
+                      YoY 대기
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
-                  {seminarDayTypeStats.weekday.sharePct.toFixed(1)}%
-                </span>
-                <span className="text-xs text-indigo-300 font-semibold">{seminarDayTypeStats.weekday.sharePct >= 50 ? '과반 점유' : '주중 점유'}</span>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
+                    {seminarDayTypeStats.weekday.sharePct.toFixed(1)}%
+                  </span>
+                  <span className="text-xs text-indigo-300 font-semibold">{seminarDayTypeStats.weekday.sharePct >= 50 ? '과반 점유' : '주중 점유'}</span>
+                </div>
+                {seminarDayTypeStats.weekday.ly && (
+                  <div className="text-right text-xs text-slate-400">
+                    <span className="text-[10px] block text-slate-400">작년 동기</span>
+                    <strong className="text-indigo-200 font-extrabold font-financial">
+                      {seminarDayTypeStats.weekday.ly.sharePct.toFixed(1)}%
+                    </strong>
+                  </div>
+                )}
               </div>
 
               {/* Progress Gauge Bar */}
@@ -735,22 +925,88 @@ export default function GroupSales() {
                 />
               </div>
 
-              <div className="text-xs text-indigo-100 font-medium">
-                주중 <strong className="text-white font-bold">{seminarDayTypeStats.weekday.totalRooms.toLocaleString()}실</strong> 중{' '}
-                <strong className="text-indigo-300 font-bold">{seminarDayTypeStats.weekday.seminarRooms.toLocaleString()}실</strong> 세미나 독점
+              {/* Rooms Comparison Block */}
+              <div className="bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/30 text-xs space-y-1">
+                <div className="text-indigo-100 font-medium flex items-center justify-between">
+                  <span>당해 실적:</span>
+                  <span>
+                    주중 <strong className="text-white font-bold">{seminarDayTypeStats.weekday.totalRooms.toLocaleString()}실</strong> 중{' '}
+                    <strong className="text-indigo-300 font-bold">{seminarDayTypeStats.weekday.seminarRooms.toLocaleString()}실</strong> 독점
+                  </span>
+                </div>
+                {seminarDayTypeStats.weekday.ly ? (
+                  <div className="text-indigo-200/80 text-[11px] flex items-center justify-between pt-1 border-t border-indigo-900/50">
+                    <span>작년 동기 실적:</span>
+                    <span>
+                      세미나 <strong className="text-slate-100">{seminarDayTypeStats.weekday.ly.seminarRooms.toLocaleString()}실</strong>{' '}
+                      {seminarDayTypeStats.weekday.growth?.seminarRoomsDiff !== undefined && (
+                        <span className={`font-bold ml-1 ${
+                          seminarDayTypeStats.weekday.growth.seminarRoomsDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.weekday.growth.seminarRoomsDiff > 0 ? '+' : ''}{seminarDayTypeStats.weekday.growth.seminarRoomsDiff.toLocaleString()}실)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-slate-400 text-[11px] pt-1 border-t border-indigo-900/50 flex items-center justify-between">
+                    <span>전년 동기 비교:</span>
+                    <span className="text-slate-400">백엔드 마트 연동 대기 (요청 6)</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-indigo-800/60 flex items-center justify-between text-xs font-financial">
-              <div>
-                <span className="text-slate-400 block text-[11px]">주중 세미나 매출</span>
-                <span className="font-extrabold text-slate-200">
-                  {formatRevenue(seminarDayTypeStats.weekday.seminarRevenue)}원 ({seminarDayTypeStats.weekday.revenueSharePct.toFixed(1)}%)
-                </span>
+            {/* Financial Details (Revenue & ADR with YoY) */}
+            <div className="pt-3 border-t border-indigo-800/60 space-y-2 text-xs font-financial">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">주중 세미나 매출</span>
+                  <span className="font-extrabold text-slate-200">
+                    {formatRevenue(seminarDayTypeStats.weekday.seminarRevenue)}원 ({seminarDayTypeStats.weekday.revenueSharePct.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">전년 주중 매출 (증감률)</span>
+                  {seminarDayTypeStats.weekday.ly ? (
+                    <span className="font-bold text-slate-300">
+                      {formatRevenue(seminarDayTypeStats.weekday.ly.seminarRevenue)}원{' '}
+                      {seminarDayTypeStats.weekday.growth?.revenueGrowthRate !== undefined && (
+                        <span className={`text-[11px] font-extrabold ${
+                          seminarDayTypeStats.weekday.growth.revenueGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.weekday.growth.revenueGrowthRate > 0 ? '+' : ''}{seminarDayTypeStats.weekday.growth.revenueGrowthRate.toFixed(1)}%)
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-slate-400 block text-[11px]">주중 평균 ADR</span>
-                <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.weekday.averageAdr)}원</span>
+
+              <div className="flex items-center justify-between pt-1 border-t border-indigo-900/50">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">주중 평균 ADR</span>
+                  <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.weekday.averageAdr)}원</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">전년 ADR (증감률)</span>
+                  {seminarDayTypeStats.weekday.ly ? (
+                    <span className="font-bold text-slate-300">
+                      {formatRevenue(seminarDayTypeStats.weekday.ly.averageAdr)}원{' '}
+                      {seminarDayTypeStats.weekday.growth?.adrGrowthRate !== undefined && (
+                        <span className={`text-[11px] font-extrabold ${
+                          seminarDayTypeStats.weekday.growth.adrGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.weekday.growth.adrGrowthRate > 0 ? '+' : ''}{seminarDayTypeStats.weekday.growth.adrGrowthRate.toFixed(1)}%)
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -763,15 +1019,41 @@ export default function GroupSales() {
                   <Sparkles size={15} className="text-amber-400" />
                   <span>주말 (금·토 체크인)</span>
                 </span>
-                <span className="text-[11px] font-semibold text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded">
-                  개별/관광 배정
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-semibold text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded">
+                    개별/관광 배정
+                  </span>
+                  {seminarDayTypeStats.weekend.growth?.sharePctDiff !== undefined ? (
+                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                      seminarDayTypeStats.weekend.growth.sharePctDiff >= 0 
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                    }`}>
+                      {seminarDayTypeStats.weekend.growth.sharePctDiff >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                      {seminarDayTypeStats.weekend.growth.sharePctDiff > 0 ? '+' : ''}{seminarDayTypeStats.weekend.growth.sharePctDiff.toFixed(1)}%p YoY
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="백엔드 완제품 연동 대기 (backend_request.md 요청 6)">
+                      YoY 대기
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
-                  {seminarDayTypeStats.weekend.sharePct.toFixed(1)}%
-                </span>
-                <span className="text-xs text-amber-300 font-semibold">객실 점유</span>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl lg:text-4xl font-black font-financial tracking-tight text-white">
+                    {seminarDayTypeStats.weekend.sharePct.toFixed(1)}%
+                  </span>
+                  <span className="text-xs text-amber-300 font-semibold">당해 점유</span>
+                </div>
+                {seminarDayTypeStats.weekend.ly && (
+                  <div className="text-right text-xs text-slate-400">
+                    <span className="text-[10px] block text-slate-400">작년 동기</span>
+                    <strong className="text-amber-200 font-extrabold font-financial">
+                      {seminarDayTypeStats.weekend.ly.sharePct.toFixed(1)}%
+                    </strong>
+                  </div>
+                )}
               </div>
 
               {/* Progress Gauge Bar */}
@@ -782,22 +1064,88 @@ export default function GroupSales() {
                 />
               </div>
 
-              <div className="text-xs text-slate-300 font-medium">
-                주말 <strong className="text-white font-bold">{seminarDayTypeStats.weekend.totalRooms.toLocaleString()}실</strong> 중{' '}
-                <strong className="text-amber-300 font-bold">{seminarDayTypeStats.weekend.seminarRooms.toLocaleString()}실</strong> 세미나 배정
+              {/* Rooms Comparison Block */}
+              <div className="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700/50 text-xs space-y-1">
+                <div className="text-slate-300 font-medium flex items-center justify-between">
+                  <span>당해 실적:</span>
+                  <span>
+                    주말 <strong className="text-white font-bold">{seminarDayTypeStats.weekend.totalRooms.toLocaleString()}실</strong> 중{' '}
+                    <strong className="text-amber-300 font-bold">{seminarDayTypeStats.weekend.seminarRooms.toLocaleString()}실</strong> 배정
+                  </span>
+                </div>
+                {seminarDayTypeStats.weekend.ly ? (
+                  <div className="text-slate-400 text-[11px] flex items-center justify-between pt-1 border-t border-slate-800">
+                    <span>작년 동기 실적:</span>
+                    <span>
+                      세미나 <strong className="text-slate-200">{seminarDayTypeStats.weekend.ly.seminarRooms.toLocaleString()}실</strong>{' '}
+                      {seminarDayTypeStats.weekend.growth?.seminarRoomsDiff !== undefined && (
+                        <span className={`font-bold ml-1 ${
+                          seminarDayTypeStats.weekend.growth.seminarRoomsDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.weekend.growth.seminarRoomsDiff > 0 ? '+' : ''}{seminarDayTypeStats.weekend.growth.seminarRoomsDiff.toLocaleString()}실)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-slate-400 text-[11px] pt-1 border-t border-slate-800 flex items-center justify-between">
+                    <span>전년 동기 비교:</span>
+                    <span className="text-slate-400">백엔드 마트 연동 대기 (요청 6)</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-financial">
-              <div>
-                <span className="text-slate-400 block text-[11px]">주말 세미나 매출</span>
-                <span className="font-extrabold text-slate-200">
-                  {formatRevenue(seminarDayTypeStats.weekend.seminarRevenue)}원 ({seminarDayTypeStats.weekend.revenueSharePct.toFixed(1)}%)
-                </span>
+            {/* Financial Details (Revenue & ADR with YoY) */}
+            <div className="pt-3 border-t border-slate-700/60 space-y-2 text-xs font-financial">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">주말 세미나 매출</span>
+                  <span className="font-extrabold text-slate-200">
+                    {formatRevenue(seminarDayTypeStats.weekend.seminarRevenue)}원 ({seminarDayTypeStats.weekend.revenueSharePct.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">전년 주말 매출 (증감률)</span>
+                  {seminarDayTypeStats.weekend.ly ? (
+                    <span className="font-bold text-slate-300">
+                      {formatRevenue(seminarDayTypeStats.weekend.ly.seminarRevenue)}원{' '}
+                      {seminarDayTypeStats.weekend.growth?.revenueGrowthRate !== undefined && (
+                        <span className={`text-[11px] font-extrabold ${
+                          seminarDayTypeStats.weekend.growth.revenueGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.weekend.growth.revenueGrowthRate > 0 ? '+' : ''}{seminarDayTypeStats.weekend.growth.revenueGrowthRate.toFixed(1)}%)
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-slate-400 block text-[11px]">주말 평균 ADR</span>
-                <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.weekend.averageAdr)}원</span>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">주말 평균 ADR</span>
+                  <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.weekend.averageAdr)}원</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">전년 ADR (증감률)</span>
+                  {seminarDayTypeStats.weekend.ly ? (
+                    <span className="font-bold text-slate-300">
+                      {formatRevenue(seminarDayTypeStats.weekend.ly.averageAdr)}원{' '}
+                      {seminarDayTypeStats.weekend.growth?.adrGrowthRate !== undefined && (
+                        <span className={`text-[11px] font-extrabold ${
+                          seminarDayTypeStats.weekend.growth.adrGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                          ({seminarDayTypeStats.weekend.growth.adrGrowthRate > 0 ? '+' : ''}{seminarDayTypeStats.weekend.growth.adrGrowthRate.toFixed(1)}%)
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1688,7 +2036,390 @@ export default function GroupSales() {
         </div>
       </div>
 
-      {/* 5. Strategy Insight Footer */}
+      {/* 5. 🏛️ [NEW] 세일즈본부 연회/세미나실 장소별(Venue) 판매 현황 & 평균 가격 분석 */}
+      <div className="bg-white rounded-[32px] p-6 lg:p-8 border border-slate-200/90 shadow-xs space-y-6">
+        
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-200">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  연회/세미나실 장소별(Venue) 판매 현황 & 평균 가격 분석
+                </h3>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  세미나A · 세미나B · 벨포레홀 · 그랜드볼룸
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                세미나 및 대관 장소별 판매 실적, 건당 평균 가격(대관료 단가), 연도별/월별 판매 건수 추이 및 이용 단체 명부를 분석합니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+              SSOT 연회 대관 원장 연동
+            </span>
+          </div>
+        </div>
+
+        {/* 🚨 FAIL-STOP & BACKEND AWAITING BANNER or DATA DISPLAY */}
+        {venueLoading ? (
+          <div className="py-12 flex flex-col items-center justify-center space-y-3">
+            <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+            <p className="text-sm font-bold text-slate-600">장소별 대관 판매 실적 데이터를 불러오는 중입니다...</p>
+          </div>
+        ) : !venuePerformanceData || !venuePerformanceData.venues || venuePerformanceData.venues.length === 0 ? (
+          /* Fail-Stop Banner: No Mocking Principle */
+          <div className="space-y-6">
+            <div className="bg-amber-50/80 border-2 border-amber-300/80 rounded-2xl p-6 text-amber-900 shadow-xs flex flex-col md:flex-row items-start gap-4">
+              <div className="p-2.5 bg-amber-200/60 rounded-xl text-amber-800 shrink-0">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-extrabold text-base text-amber-950">
+                    [백엔드 ETL 마트 연동 대기] 연회/세미나실 장소별 대관 판매 현황 및 평균가격 API
+                  </h4>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-200 text-amber-900 border border-amber-300">
+                    Fail-Stop 모드 가동 중
+                  </span>
+                </div>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  대표님/경영진의 <strong>'절대 가짜 숫자 날조 금지(Zero Fake Numbers)'</strong> 헌법에 따라, 백엔드 데이터 마트에서 공식 산출된 완제품이 도착하기 전까지 임의의 더미/Mock 데이터를 화면에 표시하지 않습니다.<br />
+                  현재 백엔드 개발팀에 <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">GET /api/v6/report/sales-venue-performance</code> 신설 요청(backend_request.md [요청 7])이 전달되었으며, 원천 PMS 연회 예약 원장 매핑이 완료되는 즉시 실시간 데이터가 자동 표출됩니다.
+                </p>
+                <div className="pt-2 text-xs font-semibold text-amber-700 flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-amber-600" />
+                  <span>요청 스펙: 장소별(세미나A, 세미나B, 벨포레홀 등) 판매건수, 총매출, 건당 평균가격, 연도별×월별 추이, 이용 단체명 명부</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Skeleton Placeholders for Venue Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 opacity-40 select-none pointer-events-none">
+              {['세미나A', '세미나B', '벨포레홀', '그랜드볼룸'].map((vName, idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                    <span>{vName}</span>
+                    <span className="bg-slate-200 px-2 py-0.5 rounded text-[10px]">대관 분석</span>
+                  </div>
+                  <div className="text-2xl font-black text-slate-300 font-financial">- 건</div>
+                  <div className="pt-2 border-t border-slate-200 text-xs text-slate-400 flex justify-between">
+                    <span>평균 대관 가격</span>
+                    <span className="font-bold">- 원</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Live Data Render: 100% Pure Consumer from Backend Mart */
+          <div className="space-y-6">
+            {/* Top 4 KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-semibold text-slate-500 block">총 대관/이용 건수</span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl font-black text-slate-900 font-financial">
+                    {venuePerformanceData.summary.totalEventsCount?.toLocaleString() || 0}건
+                  </span>
+                  {venuePerformanceData.summary.eventsGrowthRate !== undefined && (
+                    <span className={`text-xs font-bold ${
+                      venuePerformanceData.summary.eventsGrowthRate >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                    }`}>
+                      {venuePerformanceData.summary.eventsGrowthRate > 0 ? '+' : ''}{venuePerformanceData.summary.eventsGrowthRate.toFixed(1)}% YoY
+                    </span>
+                  )}
+                </div>
+                {venuePerformanceData.summary.lyTotalEventsCount !== undefined && (
+                  <span className="text-[11px] text-slate-400 block mt-1">
+                    작년 동기: {venuePerformanceData.summary.lyTotalEventsCount.toLocaleString()}건
+                  </span>
+                )}
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-semibold text-slate-500 block">대관 총매출 (순매출)</span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl font-black text-indigo-700 font-financial">
+                    {formatRevenue(venuePerformanceData.summary.totalRentalRevenue)}원
+                  </span>
+                  {venuePerformanceData.summary.revenueGrowthRate !== undefined && (
+                    <span className={`text-xs font-bold ${
+                      venuePerformanceData.summary.revenueGrowthRate >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                    }`}>
+                      {venuePerformanceData.summary.revenueGrowthRate > 0 ? '+' : ''}{venuePerformanceData.summary.revenueGrowthRate.toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+                {venuePerformanceData.summary.lyTotalRentalRevenue !== undefined && (
+                  <span className="text-[11px] text-slate-400 block mt-1">
+                    작년 동기: {formatRevenue(venuePerformanceData.summary.lyTotalRentalRevenue)}원
+                  </span>
+                )}
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-semibold text-slate-500 block">건당 평균 대관 가격</span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl font-black text-slate-900 font-financial">
+                    {formatRevenue(venuePerformanceData.summary.averageRentalPrice)}원
+                  </span>
+                  <span className="text-xs text-indigo-600 font-semibold">/ 건</span>
+                </div>
+                <span className="text-[11px] text-slate-400 block mt-1">
+                  전체 대관료 합산의 산술평균
+                </span>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-semibold text-slate-500 block">최다 대관 장소</span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl font-black text-brand-mint font-financial">
+                    {venuePerformanceData.summary.mostBookedVenue || '-'}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400 block mt-1">
+                  운영 장소 총 {venuePerformanceData.summary.totalVenuesCount || venuePerformanceData.venues.length}개소
+                </span>
+              </div>
+            </div>
+
+            {/* Part 1: 장소별 판매현황 & 평균가격 카드 그리드 */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+                <MapPin size={16} className="text-indigo-600" />
+                <span>장소별 판매 실적 & 평균 대관 가격 현황</span>
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {venuePerformanceData.venues.map((v) => (
+                  <div key={v.venueId || v.venueName} className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-indigo-300 shadow-2xs transition-all space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-base text-slate-900 flex items-center gap-1.5">
+                        <Building2 size={16} className="text-indigo-600" />
+                        <span>{v.venueName}</span>
+                      </span>
+                      {v.capacity && (
+                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                          수용 {v.capacity}석
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="flex items-baseline justify-between">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-black text-slate-900 font-financial">
+                            {v.bookedCount.toLocaleString()}건
+                          </span>
+                          {v.sharePct !== undefined && (
+                            <span className="text-xs font-bold text-indigo-600">
+                              ({v.sharePct.toFixed(1)}%)
+                            </span>
+                          )}
+                        </div>
+                        {v.growthRate !== undefined && (
+                          <span className={`text-[11px] font-bold ${
+                            v.growthRate >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            {v.growthRate > 0 ? '+' : ''}{v.growthRate.toFixed(1)}% YoY
+                          </span>
+                        )}
+                      </div>
+                      {v.lyBookedCount !== undefined && (
+                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                          작년 동기: {v.lyBookedCount.toLocaleString()}건
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 space-y-1.5 text-xs font-financial">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">건당 평균 가격</span>
+                        <strong className="text-indigo-700 font-extrabold text-sm">
+                          {formatRevenue(v.averagePrice)}원
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">대관 총매출</span>
+                        <span className="text-slate-800 font-bold">
+                          {formatRevenue(v.totalRevenue)}원
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Part 2: 연도별 × 월별 장소별 판매 건수 추이 피벗 매트릭스 */}
+            {venuePerformanceData.monthlyTrends && venuePerformanceData.monthlyTrends.length > 0 && (
+              <div className="space-y-3 pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <CalendarDays size={16} className="text-indigo-600" />
+                    <span>연도별 · 월별 장소 판매 건수 추이 매트릭스</span>
+                  </h4>
+                  <span className="text-xs text-slate-400">월별 각 장소의 판매 건수를 교차 비교합니다.</span>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                      <tr>
+                        <th className="py-3 px-4 whitespace-nowrap">조회 월 (Year-Month)</th>
+                        {uniqueVenueNames.map(vName => (
+                          <th key={vName} className="py-3 px-4 text-center whitespace-nowrap">{vName}</th>
+                        ))}
+                        <th className="py-3 px-4 text-center bg-indigo-50/50 text-indigo-900 font-extrabold whitespace-nowrap">
+                          월간 총 대관 건수
+                        </th>
+                        <th className="py-3 px-4 text-right bg-indigo-50/50 text-indigo-900 font-extrabold whitespace-nowrap">
+                          월간 대관 총매출
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-financial">
+                      {venuePerformanceData.monthlyTrends.map((trend) => (
+                        <tr key={trend.yearMonth} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">
+                            {trend.yearMonth}
+                          </td>
+                          {uniqueVenueNames.map(vName => (
+                            <td key={vName} className="py-3 px-4 text-center whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded font-bold ${
+                                (trend.venueBreakdown?.[vName] || 0) > 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-400'
+                              }`}>
+                                {trend.venueBreakdown?.[vName] !== undefined ? `${trend.venueBreakdown[vName]}건` : '-'}
+                              </span>
+                            </td>
+                          ))}
+                          <td className="py-3 px-4 text-center font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                            {trend.totalCount.toLocaleString()}건
+                          </td>
+                          <td className="py-3 px-4 text-right font-extrabold text-slate-800 bg-indigo-50/30 whitespace-nowrap">
+                            {formatRevenue(trend.totalRevenue)}원
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Part 3: 장소별 이용 단체(기업명/기관명) 상세 명부 */}
+            {venuePerformanceData.groupBookings && (
+              <div className="space-y-4 pt-4 border-t border-slate-200">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+                      <Users size={16} className="text-indigo-600" />
+                      <span>장소별 이용 단체(기업명/기관명) 상세 명부</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      세미나실 및 연회장을 이용한 실제 기업/기관명과 행사 내역을 확인합니다.
+                    </p>
+                  </div>
+
+                  {/* Filters: Venue Filter & Search */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select
+                      value={selectedVenueFilter}
+                      onChange={(e) => setSelectedVenueFilter(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      <option value="ALL">🏛️ 전체 장소 보기</option>
+                      {uniqueVenueNames.map(vName => (
+                        <option key={vName} value={vName}>📍 {vName}</option>
+                      ))}
+                    </select>
+
+                    <div className="relative">
+                      <Search size={14} className="text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={venueSearchKeyword}
+                        onChange={(e) => setVenueSearchKeyword(e.target.value)}
+                        placeholder="단체명 / 담당자 검색..."
+                        className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 w-44"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                      <tr>
+                        <th className="py-3 px-4 whitespace-nowrap">행사 일자</th>
+                        <th className="py-3 px-4 whitespace-nowrap">이용 장소</th>
+                        <th className="py-3 px-4 whitespace-nowrap">이용 단체명 (기업/기관)</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">참석 인원</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">대관료 (원)</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">패키지 구분</th>
+                        <th className="py-3 px-4 whitespace-nowrap">영업 담당자</th>
+                        <th className="py-3 px-4 whitespace-nowrap">비고</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-financial">
+                      {filteredVenueBookings.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-8 text-center text-xs text-slate-400">
+                            해당 조건에 일치하는 장소 이용 단체 내역이 없습니다.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredVenueBookings.map((b, idx) => (
+                          <tr key={b.eventId || idx} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
+                              {b.bookingDate}
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[11px]">
+                                {b.venueName}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                              {b.corporateName}
+                            </td>
+                            <td className="py-3 px-4 text-center whitespace-nowrap">
+                              {b.paxCount ? `${b.paxCount.toLocaleString()}명` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right font-extrabold text-slate-900 whitespace-nowrap">
+                              {b.rentalPrice !== undefined ? `${formatRevenue(b.rentalPrice)}원` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-center whitespace-nowrap">
+                              <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                                {b.packageType || '단독 대관'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                              {b.salesManager || '-'}
+                            </td>
+                            <td className="py-3 px-4 text-slate-400 text-[11px] truncate max-w-xs">
+                              {b.remarks || '-'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+
+      {/* 6. Strategy Insight Footer */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-[24px] p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-white/10 text-brand-mint shrink-0">

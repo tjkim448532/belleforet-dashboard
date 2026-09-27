@@ -606,3 +606,246 @@ const reverseSpillover = totalRoomSales > 0
 * **요청 조치**:
   1. `summary.availableRooms`를 기간 누적 물리 객실수(30일 = `5250`)로 정규화하고, `monthlyTrevPar` 산식을 `grandTarget2026 / 5250`(= 446,017원)으로 정상화.
   2. `categoryName`을 공식 조직 명칭인 **`리조트사업본부`**로 100% 정규화.
+
+---
+
+# 🚨 [2026-09-28 긴급 하달] 세일즈본부 세미나 전년동기(YoY) 비교 및 장소별(Venue) 판매 분석 API 신설 요청
+
+> **"세일즈 본부페이지에 주중 주말 판매객실중 점유율중 기간을 선택해서 보여줄 때는 작년 같은 기간과 비교 가능하게 해줘. 추가로 하단에 장소별 판매현황과 평균가격도 알고 싶어. 세미나A, 벨포레홀과 같이 연도별 월별로 몇 개가 팔렸는지도, 가능하다면 단체이름까지도. 무엇보다도 절대로 너가 가짜로 숫자를 넣거나 지어넣으면 안 돼. 필요한 data는 백엔드에게 요청하는 작성문을 만들어."** (대표님/이사님 지시 사항)
+
+프론트엔드는 위 절대 지침 및 'Pure Consumer(순수 소비자)' 원칙에 따라, 클라이언트 단에서 임의로 작년 기간 데이터를 다중 호출하거나 나눗셈/증감률을 직접 계산하지 않고, 또한 장소별 판매 현황에 가짜(Mock) 데이터를 일절 생성하지 않습니다. 
+이에 따라 백엔드 데이터 엔지니어링 및 API 개발팀에 아래 두 가지 핵심 API 보강 및 신설을 정식 요청합니다.
+
+---
+
+### [요청 6] `/api/v6/report/room-channel-sales` 세미나 주중/주말 점유율 전년동기(YoY) 및 증감률 완제품 탑재
+* **현상 및 필요성**:
+  * 현재 대시보드 세일즈본부 상단 3-Column Bento 카드(`전체 판매 객실 대비 단체영업(세미나) 점유율 분석`)에서 조회 기간 선택 시, 당해 연도 실적(`weekday`, `weekend`, `total`)만 단독 반환되고 있습니다.
+  * 경영진 및 영업본부장이 임의 기간(예: 2026-01-01 ~ 2026-06-30)을 선택했을 때, **작년 동일 기간(2025-01-01 ~ 2025-06-30)**과의 객실 수, 점유율, 매출, ADR 증감 추이를 즉시 비교 분석할 수 있도록 전년 완제품 데이터가 필수적입니다.
+* **통제 기준**:
+  * 프론트엔드가 작년 날짜를 계산하여 API를 2회 호출(`startDate=2025-01-01...`)하는 행위는 **다중 호출 금지 헌법**에 위배됩니다.
+  * 백엔드 API 라우트(`room-channel-sales`) 내부에서 DB 조회 시 작년 동일 요일/동일 날짜 구간을 함께 질의하여, `seminarShare` 객체 내에 `ly`(전년 실적) 및 `growth`(증감률 완제품) 필드를 포함해 주십시오.
+
+* **요청 응답 스펙 (`seminarShare` 확장)**:
+```json
+{
+  "seminarShare": {
+    "total": {
+      "label": "통합 (전체)",
+      "daysCount": 181,
+      "totalRooms": 26800,
+      "seminarRooms": 3216,
+      "sharePct": 12.0,
+      "totalRevenue": 4824000000,
+      "seminarRevenue": 514560000,
+      "revenueSharePct": 10.7,
+      "averageAdr": 160000,
+      "ly": {
+        "daysCount": 181,
+        "totalRooms": 24500,
+        "seminarRooms": 2695,
+        "sharePct": 11.0,
+        "totalRevenue": 4165000000,
+        "seminarRevenue": 404250000,
+        "revenueSharePct": 9.7,
+        "averageAdr": 150000
+      },
+      "growth": {
+        "seminarRoomsDiff": 521,
+        "sharePctDiff": 1.0,
+        "revenueGrowthRate": 27.3,
+        "adrGrowthRate": 6.7
+      }
+    },
+    "weekday": {
+      "label": "주중 (일~목 체크인)",
+      "daysCount": 130,
+      "totalRooms": 15600,
+      "seminarRooms": 2808,
+      "sharePct": 18.0,
+      "totalRevenue": 2496000000,
+      "seminarRevenue": 421200000,
+      "revenueSharePct": 16.9,
+      "averageAdr": 150000,
+      "ly": {
+        "daysCount": 130,
+        "totalRooms": 14300,
+        "seminarRooms": 2288,
+        "sharePct": 16.0,
+        "totalRevenue": 2145000000,
+        "seminarRevenue": 320320000,
+        "revenueSharePct": 14.9,
+        "averageAdr": 140000
+      },
+      "growth": {
+        "seminarRoomsDiff": 520,
+        "sharePctDiff": 2.0,
+        "revenueGrowthRate": 31.5,
+        "adrGrowthRate": 7.1
+      }
+    },
+    "weekend": {
+      "label": "주말 (금·토 체크인)",
+      "daysCount": 51,
+      "totalRooms": 11200,
+      "seminarRooms": 408,
+      "sharePct": 3.6,
+      "totalRevenue": 2328000000,
+      "seminarRevenue": 93360000,
+      "revenueSharePct": 4.0,
+      "averageAdr": 228823,
+      "ly": {
+        "daysCount": 51,
+        "totalRooms": 10200,
+        "seminarRooms": 407,
+        "sharePct": 4.0,
+        "totalRevenue": 2020000000,
+        "seminarRevenue": 83930000,
+        "revenueSharePct": 4.2,
+        "averageAdr": 206216
+      },
+      "growth": {
+        "seminarRoomsDiff": 1,
+        "sharePctDiff": -0.4,
+        "revenueGrowthRate": 11.2,
+        "adrGrowthRate": 11.0
+      }
+    }
+  }
+}
+```
+
+---
+
+### [요청 7] [신규 API 신설] 세일즈본부 연회/세미나실 장소별(Venue) 판매 분석 및 단체 명부 API
+* **엔드포인트**: `GET /api/v6/report/sales-venue-performance?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (단일일자: `date=YYYY-MM-DD`)
+* **배경 및 필요성**:
+  * 세일즈본부의 핵심 매출 축인 연회장/세미나실(세미나A, 세미나B, 벨포레홀, 그랜드볼룸 등)에 대한 장소별 가동 현황, 건당 평균 대관 가격(대관료 단가), 연도별/월별 판매 건수 추이, 그리고 실제 대관을 진행한 기업/기관 단체명의 가시성이 전혀 없는 상태입니다.
+  * 원천 데이터베이스의 PMS 연회 예약 원장(`raw_연회_예약` 또는 POS 대관료 매출 계정)에 장소 코드, 이용 단체명, 대관료, 행사일자가 명확히 존재하므로, 이를 골드 마트 또는 집계 뷰(`mat_v6_sales_venue_performance` 등)로 정제하여 완제품 API로 제공해 주셔야 합니다.
+
+* **요청 응답 규격 (100% camelCase)**:
+```json
+{
+  "success": true,
+  "summary": {
+    "totalVenuesCount": 5,
+    "totalEventsCount": 142,
+    "totalRentalRevenue": 184500000,
+    "averageRentalPrice": 1299295,
+    "mostBookedVenue": "세미나A",
+    "lyTotalEventsCount": 118,
+    "lyTotalRentalRevenue": 141600000,
+    "eventsGrowthRate": 20.3,
+    "revenueGrowthRate": 30.3
+  },
+  "venues": [
+    {
+      "venueId": "VN_SEM_A",
+      "venueName": "세미나A",
+      "capacity": 80,
+      "bookedCount": 54,
+      "totalRevenue": 54000000,
+      "averagePrice": 1000000,
+      "sharePct": 38.0,
+      "lyBookedCount": 42,
+      "lyRevenue": 42000000,
+      "growthRate": 28.6
+    },
+    {
+      "venueId": "VN_SEM_B",
+      "venueName": "세미나B",
+      "capacity": 50,
+      "bookedCount": 41,
+      "totalRevenue": 32800000,
+      "averagePrice": 800000,
+      "sharePct": 28.9,
+      "lyBookedCount": 35,
+      "lyRevenue": 28000000,
+      "growthRate": 17.1
+    },
+    {
+      "venueId": "VN_BEL_HALL",
+      "venueName": "벨포레홀",
+      "capacity": 250,
+      "bookedCount": 28,
+      "totalRevenue": 70000000,
+      "averagePrice": 2500000,
+      "sharePct": 19.7,
+      "lyBookedCount": 24,
+      "lyRevenue": 55200000,
+      "growthRate": 16.7
+    },
+    {
+      "venueId": "VN_GRAND_BL",
+      "venueName": "그랜드볼룸",
+      "capacity": 400,
+      "bookedCount": 19,
+      "totalRevenue": 27700000,
+      "averagePrice": 1457895,
+      "sharePct": 13.4,
+      "lyBookedCount": 17,
+      "lyRevenue": 16400000,
+      "growthRate": 11.8
+    }
+  ],
+  "monthlyTrends": [
+    {
+      "yearMonth": "2026-01",
+      "year": 2026,
+      "month": 1,
+      "totalCount": 18,
+      "totalRevenue": 23400000,
+      "venueBreakdown": {
+        "세미나A": 7,
+        "세미나B": 5,
+        "벨포레홀": 4,
+        "그랜드볼룸": 2
+      }
+    },
+    {
+      "yearMonth": "2026-02",
+      "year": 2026,
+      "month": 2,
+      "totalCount": 22,
+      "totalRevenue": 28600000,
+      "venueBreakdown": {
+        "세미나A": 9,
+        "세미나B": 6,
+        "벨포레홀": 4,
+        "그랜드볼룸": 3
+      }
+    }
+  ],
+  "groupBookings": [
+    {
+      "eventId": "EVT_20260315_01",
+      "bookingDate": "2026-03-15",
+      "venueName": "벨포레홀",
+      "corporateName": "삼성SDI 기술연구소",
+      "paxCount": 180,
+      "rentalPrice": 2500000,
+      "packageType": "세미나+객실패키지",
+      "salesManager": "김영업 과장",
+      "remarks": "전일 대관 및 F&B 만찬 연계"
+    },
+    {
+      "eventId": "EVT_20260318_02",
+      "bookingDate": "2026-03-18",
+      "venueName": "세미나A",
+      "corporateName": "LG에너지솔루션 오창공장",
+      "paxCount": 65,
+      "rentalPrice": 1000000,
+      "packageType": "단독 대관",
+      "salesManager": "이세일즈 차장",
+      "remarks": "프로젝터 및 음향 장비 셋팅"
+    }
+  ]
+}
+```
+
+* **원천 데이터 매핑 가이드 (DBA & 백엔드 엔지니어링)**:
+  1. `raw_연회_행사_v6` 또는 `raw_pms_banquet_folio`에서 `행사장소코드`(`room_code`/`venue_name`)와 `이용단체명`(`group_name`/`company_name`), `대관료`(`rental_fee`/`net_amount`)를 추출.
+  2. `dim_facility_team_mapping`의 표준 장소명(`standard_venue_name`: 벨포레홀, 세미나A, 세미나B, 그랜드볼룸 등)으로 그룹핑.
+  3. 모든 매출은 1원 단위까지 부가세 제외 순매출(Net Revenue) 기준으로 마트 집계.
+  4. 프론트엔드는 본 API가 프로덕션에 배포될 때까지 임의의 더미 데이터를 생성하지 않고, 대기 배너와 스켈레톤 상태를 유지합니다.
+

@@ -275,4 +275,63 @@ export interface RoomGuestsYoyResponse {
   error?: string;
 }
 
+// ============================================================================
+// ⑪ 세일즈본부 연회/세미나실 장소별(Venue) 판매 분석 및 단체 명부 V6
+// ============================================================================
+export interface SalesVenueItem {
+  venueId: string;
+  venueName: string;
+  capacity?: number;
+  bookedCount: number;
+  totalRevenue: number;
+  averagePrice: number;
+  sharePct?: number;
+  lyBookedCount?: number;
+  lyRevenue?: number;
+  growthRate?: number;
+}
+
+export interface SalesVenueMonthlyTrend {
+  yearMonth: string;
+  year: number;
+  month: number;
+  totalCount: number;
+  totalRevenue: number;
+  venueBreakdown: Record<string, number>;
+}
+
+export interface SalesVenueGroupBooking {
+  eventId: string;
+  bookingDate: string;
+  venueName: string;
+  corporateName: string;
+  paxCount?: number;
+  rentalPrice?: number;
+  packageType?: string;
+  salesManager?: string;
+  remarks?: string;
+}
+
+export interface SalesVenuePerformanceSummary {
+  totalVenuesCount: number;
+  totalEventsCount: number;
+  totalRentalRevenue: number;
+  averageRentalPrice: number;
+  mostBookedVenue: string;
+  lyTotalEventsCount?: number;
+  lyTotalRentalRevenue?: number;
+  eventsGrowthRate?: number;
+  revenueGrowthRate?: number;
+}
+
+export interface SalesVenuePerformanceResponse {
+  success: boolean;
+  summary: SalesVenuePerformanceSummary;
+  venues: SalesVenueItem[];
+  monthlyTrends: SalesVenueMonthlyTrend[];
+  groupBookings: SalesVenueGroupBooking[];
+  error?: string;
+}
+
+
 

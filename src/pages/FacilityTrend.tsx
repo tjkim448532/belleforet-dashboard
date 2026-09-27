@@ -19,7 +19,7 @@ const FACILITIES = [
 ];
 
 export default function FacilityTrend() {
-  const { startDate } = useDate();
+  const { startDate, endDate } = useDate();
   const [selectedFacility, setSelectedFacility] = useState<string>('전체');
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<any>(null);
@@ -96,7 +96,7 @@ export default function FacilityTrend() {
         });
       } else {
         // 개별 영업장 조회 (2024-01-01부터 현재 선택된 날짜까지)
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent(selectedFacility)}&endDate=${startDate}`).catch(() => null);
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent(selectedFacility)}&endDate=${endDate || startDate}`).catch(() => null);
         const payload = res?.data ?? res;
         
         if (payload && payload.monthlyData) {
@@ -115,7 +115,7 @@ export default function FacilityTrend() {
 
   useEffect(() => {
     fetchFacilityTrend();
-  }, [selectedFacility, startDate]);
+  }, [selectedFacility, startDate, endDate]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('ko-KR').format(Math.round(val || 0));

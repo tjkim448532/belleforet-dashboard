@@ -144,7 +144,7 @@ export default function GolfChannelIntelligence() {
       // Parallel fetch: 1) Golf channel intelligence SSOT, 2) Facility monthly trend (그린피)
       const [res, trendRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${startDate || '2026-09-26'}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${endDate || startDate || '2026-09-26'}`).catch(() => null)
       ]);
 
       // Process Monthly YoY from real DB facility-monthly-trend
@@ -1354,9 +1354,20 @@ export default function GolfChannelIntelligence() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {data.monthlyYoy.map((row) => (
+              {data.monthlyYoy.map((row) => {
+                const isCurrentMtd = row.y2026.teams > 0 && !data.monthlyYoy.some(m => m.month > row.month && m.y2026.teams > 0);
+                return (
                 <tr key={row.month} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3 px-4 font-bold text-slate-800 text-center bg-slate-50/40">{row.monthName}</td>
+                  <td className="py-3 px-4 font-bold text-slate-800 text-center bg-slate-50/40">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span>{row.monthName}</span>
+                      {isCurrentMtd && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-extrabold" title="당월 누적 진행 중 실적 (MTD)">
+                          진행중
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   
                   {/* 2024년 */}
                   <td className="py-3 px-3 text-right border-l border-slate-100 text-slate-600">
@@ -1382,7 +1393,16 @@ export default function GolfChannelIntelligence() {
 
                   {/* 2026년 */}
                   <td className="py-3 px-3 text-right border-l border-slate-100 font-extrabold text-emerald-700 bg-emerald-50/10">
-                    {row.y2026.teams > 0 ? `${row.y2026.teams.toLocaleString()}팀` : '-'}
+                    {row.y2026.teams > 0 ? (
+                      <span className="inline-flex items-center justify-end gap-1">
+                        {`${row.y2026.teams.toLocaleString()}팀`}
+                        {isCurrentMtd && (
+                          <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                            MTD
+                          </span>
+                        )}
+                      </span>
+                    ) : '-'}
                   </td>
                   <td className="py-3 px-3 text-right font-bold text-emerald-800 bg-emerald-50/10">
                     {row.y2026.avgGreenFee > 0 ? `₩${formatCurrency(row.y2026.avgGreenFee)}` : '-'}
@@ -1391,7 +1411,7 @@ export default function GolfChannelIntelligence() {
                     {row.y2026.revenue > 0 ? `₩${formatCurrency(row.y2026.revenue)}` : '-'}
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>

@@ -75,11 +75,28 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
       show: false
     },
     series: [
+      // 3D Isometric Base Extrusion Layer (하단 입체 그림자 원근 베벨 베이스)
+      {
+        name: '매출 비중 베이스',
+        type: 'pie',
+        radius: ['52%', '78%'],
+        center: ['50%', '52%'],
+        silent: true,
+        label: { show: false },
+        itemStyle: {
+          color: 'rgba(15, 23, 42, 0.08)',
+          shadowBlur: 16,
+          shadowOffsetY: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.15)'
+        },
+        data: chartData.map(d => ({ value: d.value, name: d.name }))
+      },
+      // 3D Isometric Top Donut Surface (상단 입체 도넛 서피스)
       {
         name: '매출 비중',
         type: 'pie',
-        radius: ['58%', '82%'],
-        center: ['50%', '50%'],
+        radius: ['52%', '78%'],
+        center: ['50%', '48%'],
         avoidLabelOverlap: false,
         label: {
           show: false
@@ -93,7 +110,21 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
             fontSize: 13,
             fontWeight: 'bold',
             color: '#0f172a'
+          },
+          itemStyle: {
+            shadowBlur: 22,
+            shadowOffsetY: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.3)'
           }
+        },
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#ffffff',
+          borderWidth: 2,
+          shadowBlur: 12,
+          shadowOffsetX: 0,
+          shadowOffsetY: 6,
+          shadowColor: 'rgba(0, 0, 0, 0.18)'
         },
         data: chartData
       }
@@ -112,7 +143,7 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
               사업 부문별 총매출 기여 비중
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              전체 총매출(₩{formatCurrency(resolvedTotal)}원)에 대한 각 사업 부문의 실질 기여도입니다.
+              전체 총매출({formatCurrency(resolvedTotal)}원)에 대한 각 사업 부문의 실질 기여도입니다.
             </p>
           </div>
         </div>
@@ -129,7 +160,7 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Sales</span>
             <span className="text-lg font-black text-slate-900 tracking-tight mt-0.5">
-              ₩{formatCurrency(resolvedTotal)}
+              {formatCurrency(resolvedTotal)}원
             </span>
           </div>
         </div>
@@ -160,7 +191,7 @@ export default function SalesPieChart({ data, totalValue }: SalesPieChartProps) 
               </div>
 
               <div className="text-right text-sm font-black text-slate-900 tabular-nums">
-                ₩{formatCurrency(item.value)} <span className="text-[11px] font-normal text-slate-400">원</span>
+                {formatCurrency(item.value)} <span className="text-[11px] font-normal text-slate-400">원</span>
               </div>
             </div>
           ))}

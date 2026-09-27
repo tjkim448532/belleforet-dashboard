@@ -894,14 +894,14 @@ export default function Synergy() {
                           : (item.channelName || item.segmentName || '채널')}
                       </td>
                       <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">
-                        {rooms > 0 ? `${rooms.toLocaleString()}실` : (item.channelName?.includes('부대') ? '부대 정산' : '0실')}
+                        {`${rooms.toLocaleString()}실`}
                       </td>
                       <td className="py-4 px-6 text-right font-extrabold tabular-nums whitespace-nowrap">{formatCurrency(rev)}원</td>
                       <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">
                         {adr > 0 ? `${formatCurrency(adr)}원` : '-'}
                       </td>
                       <td className={`py-4 px-6 text-right font-medium tabular-nums whitespace-nowrap ${isGrand ? 'text-slate-200' : 'text-slate-500'}`}>
-                        {mtdRooms > 0 ? `${mtdRooms.toLocaleString()}실` : (item.channelName?.includes('부대') ? '부대 정산' : '0실')}
+                        {`${mtdRooms.toLocaleString()}실`}
                       </td>
                       <td className={`py-4 px-6 text-right font-bold tabular-nums whitespace-nowrap ${isGrand ? 'text-emerald-400' : 'text-slate-600'}`}>{formatCurrency(mtdRev)}원</td>
                     </tr>

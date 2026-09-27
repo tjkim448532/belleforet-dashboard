@@ -878,17 +878,17 @@ export default function ResortBusiness() {
                                 </span>
                               </div>
                               <div className="text-xl font-extrabold text-slate-900 my-1">
-                                ₩{formatCurrency(analytics.cohort.lowLos.totalRevPAS)}
+                                {formatCurrency(analytics.cohort.lowLos.totalRevPAS)}원
                                 <span className="text-xs font-normal text-slate-500"> / 1실</span>
                               </div>
                               <div className="text-[11px] text-slate-500 space-y-0.5 pt-2 border-t border-slate-100">
                                 <div className="flex justify-between">
                                   <span>🍽️ 식음:</span>
-                                  <span className="font-semibold text-slate-700">₩{formatCurrency(analytics.cohort.lowLos.fnbRevPAS)}</span>
+                                  <span className="font-semibold text-slate-700">{formatCurrency(analytics.cohort.lowLos.fnbRevPAS)}원</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>🎢 레저:</span>
-                                  <span className="font-semibold text-slate-700">₩{formatCurrency(analytics.cohort.lowLos.leisureRevPAS)}</span>
+                                  <span className="font-semibold text-slate-700">{formatCurrency(analytics.cohort.lowLos.leisureRevPAS)}원</span>
                                 </div>
                                 <div className="flex justify-between text-slate-600 pt-0.5 font-bold">
                                   <span>판매 객실:</span>
@@ -906,17 +906,17 @@ export default function ResortBusiness() {
                                 </span>
                               </div>
                               <div className="text-xl font-extrabold text-emerald-900 my-1">
-                                ₩{formatCurrency(analytics.cohort.highLos.totalRevPAS)}
+                                {formatCurrency(analytics.cohort.highLos.totalRevPAS)}원
                                 <span className="text-xs font-normal text-emerald-700"> / 1실</span>
                               </div>
                               <div className="text-[11px] text-emerald-900/80 space-y-0.5 pt-2 border-t border-emerald-200/60">
                                 <div className="flex justify-between">
                                   <span>🍽️ 식음:</span>
-                                  <span className="font-semibold text-emerald-950">₩{formatCurrency(analytics.cohort.highLos.fnbRevPAS)}</span>
+                                  <span className="font-semibold text-emerald-950">{formatCurrency(analytics.cohort.highLos.fnbRevPAS)}원</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>🎢 레저:</span>
-                                  <span className="font-semibold text-emerald-950">₩{formatCurrency(analytics.cohort.highLos.leisureRevPAS)}</span>
+                                  <span className="font-semibold text-emerald-950">{formatCurrency(analytics.cohort.highLos.leisureRevPAS)}원</span>
                                 </div>
                                 <div className="flex justify-between text-emerald-900 pt-0.5 font-bold">
                                   <span>판매 객실:</span>
@@ -942,17 +942,17 @@ export default function ResortBusiness() {
                                 <span>실측 1실 객단가 격차 (Δ):</span>
                               </span>
                               <span className={analytics.cohort.delta.diffRevPAS >= 0 ? 'text-emerald-800 font-black' : 'text-slate-700'}>
-                                {analytics.cohort.delta.diffRevPAS >= 0 ? '+' : ''}₩{formatCurrency(analytics.cohort.delta.diffRevPAS)} / 1실
+                                {analytics.cohort.delta.diffRevPAS >= 0 ? '+' : ''}{formatCurrency(analytics.cohort.delta.diffRevPAS)}원 / 1실
                                 <span className="ml-1 text-xs">
                                   ({analytics.cohort.delta.growthPct >= 0 ? '+' : ''}{analytics.cohort.delta.growthPct}%)
                                 </span>
                               </span>
                             </div>
                             <div className="text-[11px] mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-semibold text-slate-700">
-                              <span>🍽️ 식음 {analytics.cohort.delta.diffFnbRevPAS >= 0 ? '+' : ''}₩{formatCurrency(analytics.cohort.delta.diffFnbRevPAS)}</span>
+                              <span>🍽️ 식음 {analytics.cohort.delta.diffFnbRevPAS >= 0 ? '+' : ''}{formatCurrency(analytics.cohort.delta.diffFnbRevPAS)}원</span>
                               <span>•</span>
                               <span className={analytics.cohort.delta.leisureGrowthPct > 20 ? 'text-emerald-800 font-bold' : ''}>
-                                🎢 레저 {analytics.cohort.delta.diffLeisureRevPAS >= 0 ? '+' : ''}₩{formatCurrency(analytics.cohort.delta.diffLeisureRevPAS)}
+                                🎢 레저 {analytics.cohort.delta.diffLeisureRevPAS >= 0 ? '+' : ''}{formatCurrency(analytics.cohort.delta.diffLeisureRevPAS)}원
                                 {' '}({analytics.cohort.delta.leisureGrowthPct >= 0 ? '+' : ''}{analytics.cohort.delta.leisureGrowthPct}% {analytics.cohort.delta.leisureGrowthPct > 30 ? '폭증🔥' : ''})
                               </span>
                             </div>
@@ -996,7 +996,7 @@ export default function ResortBusiness() {
                                 </span>
                               </div>
                               <div className="text-xl font-extrabold text-slate-900 my-1">
-                                ₩{formatCurrency(analytics.ols.singleRoomDailyRev)}
+                                {formatCurrency(analytics.ols.singleRoomDailyRev)}원
                                 <span className="text-xs font-normal text-slate-500"> / 팀</span>
                               </div>
                               <div className="text-[11px] text-slate-500 space-y-0.5 pt-2 border-t border-slate-100">
@@ -1015,13 +1015,13 @@ export default function ResortBusiness() {
                                 </span>
                               </div>
                               <div className="text-xl font-extrabold text-indigo-900 my-1">
-                                ₩{formatCurrency(analytics.ols.multiRoomTotalRev)}
+                                {formatCurrency(analytics.ols.multiRoomTotalRev)}원
                                 <span className="text-xs font-normal text-indigo-700"> / 팀</span>
                               </div>
                               <div className="text-[11px] text-indigo-900/80 space-y-0.5 pt-2 border-t border-indigo-200/60">
                                 <div className="flex justify-between">
                                   <span>1일당 기여액:</span>
-                                  <span className="font-semibold text-indigo-950">₩{formatCurrency(analytics.ols.multiRoomDailyRev)}</span>
+                                  <span className="font-semibold text-indigo-950">{formatCurrency(analytics.ols.multiRoomDailyRev)}원</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>체류 기간 계수:</span>
@@ -1048,7 +1048,7 @@ export default function ResortBusiness() {
                                 <span>체류 전 기간 순기여 증분 (Δ):</span>
                               </span>
                               <span className={analytics.ols.deltaContribution >= 0 ? 'text-indigo-800 font-black' : 'text-slate-700'}>
-                                {analytics.ols.deltaContribution >= 0 ? '+' : ''}₩{formatCurrency(analytics.ols.deltaContribution)} / 팀
+                                {analytics.ols.deltaContribution >= 0 ? '+' : ''}{formatCurrency(analytics.ols.deltaContribution)}원 / 팀
                                 <span className="ml-1 text-xs">
                                   ({analytics.ols.growthPct >= 0 ? '+' : ''}{analytics.ols.growthPct}%)
                                 </span>
@@ -1181,7 +1181,7 @@ export default function ResortBusiness() {
                           </span>
                         </div>
                         <div className="text-2xl font-extrabold text-slate-900 my-2">
-                          ₩{formatCurrency(liveFnb)} <span className="text-xs font-normal text-slate-500">/ 1실</span>
+                          {formatCurrency(liveFnb)}원 <span className="text-xs font-normal text-slate-500">/ 1실</span>
                         </div>
                         <div className="space-y-1 text-xs text-slate-600 pt-2 border-t border-amber-200/60">
                           <div className="flex justify-between">
@@ -1209,7 +1209,7 @@ export default function ResortBusiness() {
                           </span>
                         </div>
                         <div className="text-2xl font-extrabold text-slate-900 my-2">
-                          ₩{formatCurrency(liveLeisure)} <span className="text-xs font-normal text-slate-500">/ 1실</span>
+                          {formatCurrency(liveLeisure)}원 <span className="text-xs font-normal text-slate-500">/ 1실</span>
                         </div>
                         <div className="space-y-1 text-xs text-slate-600 pt-2 border-t border-emerald-200/60">
                           <div className="flex justify-between">
@@ -1237,12 +1237,12 @@ export default function ResortBusiness() {
                           </span>
                         </div>
                         <div className="text-2xl font-extrabold text-indigo-700 my-2">
-                          ₩{formatCurrency(liveTotal)} <span className="text-xs font-normal text-indigo-500">/ 1실</span>
+                          {formatCurrency(liveTotal)}원 <span className="text-xs font-normal text-indigo-500">/ 1실</span>
                         </div>
                         <div className="space-y-1 text-xs text-indigo-950 pt-2 border-t border-indigo-200/60">
                           <div className="flex justify-between">
                             <span>• 부대시설 실측 총매출:</span>
-                            <span className="font-semibold text-indigo-900">₩{formatCurrency(totalSynergySales)}</span>
+                            <span className="font-semibold text-indigo-900">{formatCurrency(totalSynergySales)}원</span>
                           </div>
                           <div className="flex justify-between font-bold text-emerald-700">
                             <span>• 판매 객실 모수:</span>

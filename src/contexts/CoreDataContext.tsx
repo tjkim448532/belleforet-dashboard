@@ -65,16 +65,10 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         const payload = (res?.summary ? res : res?.data) || res || {};
 
         const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false) => {
-          const directCh = channels.find((c: any) => c.channelCode === 'DIRECT_WEB' || c.channelName?.includes('자사'));
-          
-          // OTA 대행사 + 카카오골프 가중 평균 그린피 산출
-          const otaAgencies = channels.filter((c: any) => c.channelCode === 'OTA_AGENCY' || c.channelCode === 'KAKAO_GOLF' || c.channelName?.includes('OTA') || c.channelName?.includes('카카오'));
-          const otaPlayers = otaAgencies.reduce((acc: number, c: any) => acc + (Number(c.visitedPlayers) || 0), 0);
-          const otaRev = otaAgencies.reduce((acc: number, c: any) => acc + (Number(c.greenFeeRevenue) || 0), 0);
-          const combinedOtaAvg = otaPlayers > 0 ? Math.round(otaRev / otaPlayers) : (otaAgencies[0]?.avgGreenFeePerPlayer || 0);
-
-          const memberCh = channels.find((c: any) => c.channelCode === 'MEMBER' || c.channelName?.includes('회원'));
-          const memberAvg = Number(gs.golfMemberAvgGreenFee || memberCh?.avgGreenFeePerPlayer || payloadSummary?.golfMemberAvgGreenFee || 0);
+          // 100% SSOT Direct Binding: 프론트엔드 임의 키워드 필터링 및 reduce 클라이언트 합산 전면 철거
+          const directAvg = Number(payloadSummary?.golfDirectAvgGreenFee || gs.golfDirectAvgGreenFee || 0);
+          const otaAvg = Number(payloadSummary?.golfOtaAvgGreenFee || gs.golfOtaAvgGreenFee || 0);
+          const memberAvg = Number(payloadSummary?.golfMemberAvgGreenFee || gs.golfMemberAvgGreenFee || 0);
 
           return {
             ...payloadSummary,
@@ -89,9 +83,9 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             totalGolfPendingTeams: Number(payloadSummary?.totalGolfPendingTeams || gs.totalPendingTeams || 0),
             totalGolfVisitors: Number(payloadSummary?.totalGolfVisitors || gs.totalGolfVisitors || gs.totalPlayers || 0),
             // 골프 채널별 평균 그린피 및 전체 순수 평균 그린피 (카트비/프로샵 혼입 방지)
-            golfAvgGreenFee: Number(gs.avgGreenFeePerPlayer || payloadSummary?.golfAvgGreenFee || 0),
-            golfDirectAvgGreenFee: Number(directCh?.avgGreenFeePerPlayer || payloadSummary?.golfDirectAvgGreenFee || 0),
-            golfOtaAvgGreenFee: Number(combinedOtaAvg || payloadSummary?.golfOtaAvgGreenFee || 0),
+            golfAvgGreenFee: Number(payloadSummary?.golfAvgGreenFee || gs.avgGreenFeePerPlayer || 0),
+            golfDirectAvgGreenFee: directAvg,
+            golfOtaAvgGreenFee: otaAvg,
             golfMemberAvgGreenFee: memberAvg,
             isGolfChannelsLoading: !isGolfLoaded,
             golfRankedChannels: channels.length > 0 ? channels.map((ch: any) => ({

@@ -327,7 +327,7 @@ export default function RoomGuestsYoyTable() {
                                     ? 'text-indigo-800 bg-indigo-100/90 font-black' 
                                     : 'text-slate-600 bg-slate-100 font-semibold'
                                 }`}>
-                                  ₩{formatCurrency(revenue)}
+                                  {formatCurrency(revenue)}원
                                 </span>
                               </div>
                             ) : guests > 0 ? (
@@ -368,15 +368,15 @@ export default function RoomGuestsYoyTable() {
                                 {yoyRevDiff > 0 ? (
                                   <span className="inline-flex items-center gap-0.5 text-indigo-900 bg-indigo-100/90 px-2 py-0.5 rounded-lg font-bold">
                                     <ArrowUpRight size={12} className="stroke-[2.5]" />
-                                    +₩{formatCompactCurrency(yoyRevDiff)} ({yoyRevPct > 0 ? `+${yoyRevPct.toFixed(1)}%` : `${yoyRevPct.toFixed(1)}%`})
+                                    +{formatCompactCurrency(yoyRevDiff)}원 ({yoyRevPct > 0 ? `+${yoyRevPct.toFixed(1)}%` : `${yoyRevPct.toFixed(1)}%`})
                                   </span>
                                 ) : yoyRevDiff < 0 ? (
                                   <span className="inline-flex items-center gap-0.5 text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-lg font-bold">
                                     <ArrowDownRight size={12} className="stroke-[2.5]" />
-                                    -₩{formatCompactCurrency(yoyRevDiff)} ({yoyRevPct.toFixed(1)}%)
+                                    -{formatCompactCurrency(yoyRevDiff)}원 ({yoyRevPct.toFixed(1)}%)
                                   </span>
                                 ) : (
-                                  <span className="text-slate-500 font-bold">₩0 (0.0%)</span>
+                                  <span className="text-slate-500 font-bold">0원 (0.0%)</span>
                                 )}
                               </div>
                             ) : null}

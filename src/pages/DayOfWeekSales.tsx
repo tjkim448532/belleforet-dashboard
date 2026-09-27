@@ -137,29 +137,66 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
   // 1. Unified Executive Color Palette for Charts
   const CHART_PALETTE = ['#3b82f6', '#6366f1', '#8b5cf6', '#0ea5e9', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#64748b'];
 
-  // 2. Pie Options
+  // 2. 3D Beveled Pie Options (전체 및 레저 부문 3D 원근 입체 파이 차트)
   const getPieOptions = (title: string, pieData: any[], formatter: string) => ({
     title: { text: title, left: 'center', textStyle: { color: '#334155', fontSize: 15, fontWeight: 'bold' } },
-    tooltip: { trigger: 'item' },
+    tooltip: { 
+      trigger: 'item',
+      backgroundColor: '#ffffff',
+      borderColor: '#e2e8f0',
+      borderWidth: 1,
+      padding: [8, 12],
+      textStyle: { color: '#0f172a', fontWeight: 'bold' }
+    },
     color: CHART_PALETTE,
     series: [
+      // 3D Extrusion Base Shadow Layer (하단 입체 그림자 베이스)
       {
+        name: `${title || '비중'} 베이스`,
         type: 'pie',
-        radius: ['32%', '72%'],
+        radius: ['30%', '70%'],
+        center: ['50%', '53%'],
+        silent: true,
+        label: { show: false },
+        itemStyle: {
+          color: 'rgba(15, 23, 42, 0.08)',
+          shadowBlur: 16,
+          shadowOffsetY: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.15)'
+        },
+        data: pieData.map((d: any) => ({ value: d.value, name: d.name }))
+      },
+      // 3D Top Surface Layer (상단 입체 서피스 레이어)
+      {
+        name: title || '비중',
+        type: 'pie',
+        radius: ['30%', '70%'],
+        center: ['50%', '49%'],
         roseType: 'area',
         itemStyle: {
-          borderRadius: 6,
+          borderRadius: 8,
           borderColor: '#fff',
           borderWidth: 2,
-          shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.1)',
+          shadowBlur: 12,
+          shadowOffsetX: 0,
+          shadowOffsetY: 6,
+          shadowColor: 'rgba(0, 0, 0, 0.2)'
         },
         label: {
           show: true,
           formatter: formatter,
-          color: '#475569',
+          color: '#334155',
           fontWeight: 'bold',
           fontSize: 12
+        },
+        emphasis: {
+          scale: true,
+          scaleSize: 8,
+          itemStyle: {
+            shadowBlur: 20,
+            shadowOffsetY: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.35)'
+          }
         },
         data: pieData
       }

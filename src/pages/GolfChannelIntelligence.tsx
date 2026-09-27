@@ -156,7 +156,7 @@ export default function GolfChannelIntelligence() {
           const item = monthlyList.find((d: any) => d.month === `${y}-${mStr}`);
           const rev = Number(item?.revenue || 0);
           const visitors = Number(item?.visitors || 0);
-          const teams = visitors > 0 ? Math.round(visitors / 4) : 0;
+          const teams = Number(item?.teams || 0);
           const avgGreenFee = visitors > 0 ? Math.round(rev / visitors) : 0;
           return { teams, avgGreenFee, revenue: rev };
         };
@@ -274,7 +274,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <div style="display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:2px 0;">
               <span style="color:#64748b;">평균 그린피:</span>
-              <strong style="color:#d97706;font-size:13px;">₩${formatCurrency(target.avgGreenFee)}</strong>
+              <strong style="color:#d97706;font-size:13px;">${formatCurrency(target.avgGreenFee)}원</strong>
             </div>
             <div style="display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:2px 0;">
               <span style="color:#64748b;">할인율:</span>
@@ -282,7 +282,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <div style="display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:2px 0;">
               <span style="color:#64748b;">총 그린피 매출:</span>
-              <strong style="color:#2563eb;">₩${formatCurrency(target.revenue)}</strong>
+              <strong style="color:#2563eb;">${formatCurrency(target.revenue)}원</strong>
             </div>
           `;
         }
@@ -301,7 +301,7 @@ export default function GolfChannelIntelligence() {
           name: '평균 그린피 (원)', 
           min: (val: any) => Math.max(0, Math.floor((val.min * 0.9) / 10000) * 10000),
           max: (val: any) => Math.ceil((val.max * 1.1) / 10000) * 10000,
-          axisLabel: { formatter: (val: number) => `₩${(val / 10000).toFixed(0)}만` },
+          axisLabel: { formatter: (val: number) => `${(val / 10000).toFixed(0)}만` },
           splitLine: { show: false }
         }
       ],
@@ -337,7 +337,7 @@ export default function GolfChannelIntelligence() {
             show: true,
             position: 'top',
             distance: 8,
-            formatter: (p: any) => `₩${(p.value / 10000).toFixed(1)}만`,
+            formatter: (p: any) => `${(p.value / 10000).toFixed(1)}만`,
             fontSize: 10,
             fontWeight: 'bold',
             color: '#b45309',
@@ -424,7 +424,7 @@ export default function GolfChannelIntelligence() {
             <strong>${item.channelName}</strong><br/>
             조인 예약 팀수: <strong>${item.teams.toLocaleString()}팀</strong> (${item.sharePct}%)<br/>
             조인 내장객수: <strong>${item.players.toLocaleString()}명</strong><br/>
-            평균 결제 그린피: <strong>₩${formatCurrency(item.avgGreenFee)}</strong>
+            평균 결제 그린피: <strong>${formatCurrency(item.avgGreenFee)}원</strong>
           `;
         }
       },
@@ -453,7 +453,7 @@ export default function GolfChannelIntelligence() {
             position: 'right',
             formatter: (params: any) => {
               const item = list[params.dataIndex];
-              return `${item.teams.toLocaleString()}팀 (${item.sharePct}%) · ₩${(item.avgGreenFee / 10000).toFixed(1)}만`;
+              return `${item.teams.toLocaleString()}팀 (${item.sharePct}%) · ${(item.avgGreenFee / 10000).toFixed(1)}만원`;
             },
             fontSize: 11,
             fontWeight: 'bold',
@@ -553,7 +553,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:16px;color:#fbbf24;padding:2px 0;">
               <span>평균 그린피:</span>
-              <strong style="color:#ffffff;">₩${formatCurrency(val[3])}</strong>
+              <strong style="color:#ffffff;">${formatCurrency(val[3])}원</strong>
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:16px;color:#94a3b8;padding:2px 0;">
               <span>완주 팀수:</span>
@@ -688,15 +688,15 @@ export default function GolfChannelIntelligence() {
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#64748b;">
               <span>2024년:</span>
-              <strong style="color:#0f172a;">${row.y2024.teams > 0 ? `${row.y2024.teams.toLocaleString()}팀 (₩${formatCurrency(row.y2024.avgGreenFee)})` : '-'}</strong>
+              <strong style="color:#0f172a;">${row.y2024.teams > 0 ? `${row.y2024.teams.toLocaleString()}팀 (${formatCurrency(row.y2024.avgGreenFee)}원)` : '-'}</strong>
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#0284c7;">
               <span>2025년:</span>
-              <strong>${row.y2025.teams.toLocaleString()}팀 (₩${formatCurrency(row.y2025.avgGreenFee)})</strong>
+              <strong>${row.y2025.teams.toLocaleString()}팀 (${formatCurrency(row.y2025.avgGreenFee)}원)</strong>
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#00ae95;">
               <span>2026년:</span>
-              <strong>${row.y2026.teams > 0 ? `${row.y2026.teams.toLocaleString()}팀 (₩${formatCurrency(row.y2026.avgGreenFee)})` : '집계 대기'}</strong>
+              <strong>${row.y2026.teams > 0 ? `${row.y2026.teams.toLocaleString()}팀 (${formatCurrency(row.y2026.avgGreenFee)}원)` : '집계 대기'}</strong>
             </div>
           `;
         }
@@ -715,7 +715,7 @@ export default function GolfChannelIntelligence() {
           name: '평균 그린피 (원)', 
           min: (val: any) => Math.max(0, Math.floor((val.min * 0.9) / 10000) * 10000),
           max: (val: any) => Math.ceil((val.max * 1.1) / 10000) * 10000,
-          axisLabel: { formatter: (val: number) => `₩${(val / 10000).toFixed(0)}만` },
+          axisLabel: { formatter: (val: number) => `${(val / 10000).toFixed(0)}만` },
           splitLine: { show: false }
         }
       ],
@@ -881,18 +881,18 @@ export default function GolfChannelIntelligence() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-slate-900 tracking-tight font-financial">
-              ₩{formatCurrency(data.summary.averageGreenFee)}
+              {formatCurrency(data.summary.averageGreenFee)}원
             </div>
             <div className="text-xs text-emerald-600 font-bold mt-1">
-              {viewScope === 'FULL_ASSET' ? '전수 누적 그린피' : isRangeMode ? '기간 그린피 순매출' : '당일 그린피 순매출'} ₩{formatCurrency(data.summary.totalGreenFeeRevenue)}
+              {viewScope === 'FULL_ASSET' ? '전수 누적 그린피' : isRangeMode ? '기간 그린피 순매출' : '당일 그린피 순매출'} {formatCurrency(data.summary.totalGreenFeeRevenue)}원
             </div>
           </div>
           <div className="text-[11px] text-slate-500 border-t border-slate-100 pt-2 flex items-center justify-between">
-            <span>직영 <strong>₩{formatCurrency(directAvg)}</strong></span>
+            <span>직영 <strong>{formatCurrency(directAvg)}원</strong></span>
             <span className="text-slate-300">|</span>
-            <span>OTA <strong>₩{formatCurrency(otaAvg)}</strong></span>
+            <span>OTA <strong>{formatCurrency(otaAvg)}원</strong></span>
             <span className={diffAvg >= 0 ? "text-emerald-700 font-bold" : "text-rose-600 font-bold"}>
-              ({diffAvg >= 0 ? `+₩${formatCurrency(diffAvg)}` : `-₩${formatCurrency(Math.abs(diffAvg))}`})
+              ({diffAvg >= 0 ? `+${formatCurrency(diffAvg)}원` : `-${formatCurrency(Math.abs(diffAvg))}원`})
             </span>
           </div>
         </div>
@@ -910,14 +910,14 @@ export default function GolfChannelIntelligence() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-rose-600 tracking-tight font-financial">
-              ₩{formatCurrency(data.summary.threePlayerLostRevenue)}
+              {formatCurrency(data.summary.threePlayerLostRevenue)}원
             </div>
             <div className="text-xs text-rose-700 mt-1 font-medium">
               3인 플레이 <strong>{data.summary.threePlayerTeamsCount}팀</strong> 대상 1인분 공실
             </div>
           </div>
           <p className="text-[11px] text-rose-900/70 border-t border-rose-100 pt-2">
-            💡 조인 시스템 50% 전환 시 +₩{formatCurrency(Math.round(data.summary.threePlayerLostRevenue * 0.5))} 즉시 회수
+            💡 조인 시스템 50% 전환 시 +{formatCurrency(Math.round(data.summary.threePlayerLostRevenue * 0.5))}원 즉시 회수
           </p>
         </div>
 
@@ -934,7 +934,7 @@ export default function GolfChannelIntelligence() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-teal-700 tracking-tight font-financial">
-              ₩{formatCurrency(data.summary.memberAnchorRevenue)}
+              {formatCurrency(data.summary.memberAnchorRevenue)}원
             </div>
             <div className="text-xs text-teal-800 mt-1 font-medium">
               회원이 데려온 비회원 총 그린피 기여액
@@ -1017,9 +1017,9 @@ export default function GolfChannelIntelligence() {
               </h4>
             </div>
             <div className="text-xs text-slate-500 flex items-center gap-3">
-              <span>직영 최고: <strong className="text-emerald-700 font-bold">₩{formatCurrency(Math.max(...data.channels.filter(c => c.channelType === 'DIRECT').map(c => c.avgGreenFee), 0))}</strong></span>
+              <span>직영 최고: <strong className="text-emerald-700 font-bold">{formatCurrency(Math.max(...data.channels.filter(c => c.channelType === 'DIRECT').map(c => c.avgGreenFee), 0))}원</strong></span>
               <span className="text-slate-300">|</span>
-              <span>OTA 최고: <strong className="text-blue-700 font-bold">₩{formatCurrency(Math.max(...data.channels.filter(c => c.channelType === 'OTA').map(c => c.avgGreenFee), 0))}</strong></span>
+              <span>OTA 최고: <strong className="text-blue-700 font-bold">{formatCurrency(Math.max(...data.channels.filter(c => c.channelType === 'OTA').map(c => c.avgGreenFee), 0))}원</strong></span>
             </div>
           </div>
 
@@ -1051,7 +1051,7 @@ export default function GolfChannelIntelligence() {
                   {ch.channelName}
                 </div>
                 <div className="text-base font-black text-amber-600 tracking-tight font-financial">
-                  ₩{formatCurrency(ch.avgGreenFee)}
+                  {formatCurrency(ch.avgGreenFee)}원
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1 border-t border-slate-200/40 pt-1">
                   <span className={ch.discountRate > 15 ? 'text-rose-600 font-medium' : 'text-slate-500'}>
@@ -1095,7 +1095,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <div className="flex justify-between">
               <span>• 놓친 그린피 + 카트비 총액:</span>
-              <strong className="text-slate-900">₩{formatCurrency(data.summary.threePlayerLostRevenue)}원</strong>
+              <strong className="text-slate-900">{formatCurrency(data.summary.threePlayerLostRevenue)}원</strong>
             </div>
             <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
               💡 4인 정상 플레이가 {(data.teamSize.size4.teams / Math.max(1, data.summary.totalTeams) * 100).toFixed(1)}%로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동하여 50%만 충원해도 약 {formatCurrency(Math.round(data.summary.threePlayerLostRevenue * 0.5))}원의 순이익이 즉시 개선됩니다.
@@ -1144,7 +1144,7 @@ export default function GolfChannelIntelligence() {
               <span>🎯 조인 주력 채널 1위:</span>
               <span>
                 {data.teamSize.joinRanking.find(r => r.teams > 0)
-                  ? `${data.teamSize.joinRanking.find(r => r.teams > 0)?.channelName} (${data.teamSize.joinRanking.find(r => r.teams > 0)?.sharePct}%, ${data.teamSize.joinRanking.find(r => r.teams > 0)?.teams.toLocaleString()}팀 · 평단가 ₩${formatCurrency(data.teamSize.joinRanking.find(r => r.teams > 0)?.avgGreenFee || 0)})` 
+                  ? `${data.teamSize.joinRanking.find(r => r.teams > 0)?.channelName} (${data.teamSize.joinRanking.find(r => r.teams > 0)?.sharePct}%, ${data.teamSize.joinRanking.find(r => r.teams > 0)?.teams.toLocaleString()}팀 · 평단가 ${formatCurrency(data.teamSize.joinRanking.find(r => r.teams > 0)?.avgGreenFee || 0)}원)` 
                   : '조인 예약 없음'}
               </span>
             </div>
@@ -1152,7 +1152,7 @@ export default function GolfChannelIntelligence() {
               <div className="flex justify-between font-medium">
                 <span>🎯 조인 주력 채널 2위:</span>
                 <span>
-                  {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.channelName} ({data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.sharePct}%, {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.teams.toLocaleString()}팀 · 평단가 ₩{formatCurrency(data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.avgGreenFee || 0)})
+                  {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.channelName} ({data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.sharePct}%, {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.teams.toLocaleString()}팀 · 평단가 {formatCurrency(data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.avgGreenFee || 0)}원)
                 </span>
               </div>
             )}
@@ -1179,7 +1179,7 @@ export default function GolfChannelIntelligence() {
                   ③ [회원 레버리지] 팀 내 회원 동반 구조 & 앵커 효과
                 </h3>
               </div>
-              <span className="text-xs text-slate-400">앵커 매출 ₩{formatCurrency(data.memberSynergy.totalAnchorRevenue)}</span>
+              <span className="text-xs text-slate-400">앵커 매출 {formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</span>
             </div>
 
             <p className="text-xs text-slate-500 mb-2">
@@ -1193,7 +1193,7 @@ export default function GolfChannelIntelligence() {
                 <div className="h-full w-full flex flex-col items-center justify-center bg-teal-50/30 rounded-2xl border border-dashed border-teal-200 p-6 text-center">
                   <Coins className="w-10 h-10 text-teal-300 mb-2" />
                   <p className="text-sm font-bold text-teal-900">회원 동반 앵커 견인 실측 매출</p>
-                  <p className="text-xl font-black text-teal-700 mt-1 font-financial">₩{formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</p>
+                  <p className="text-xl font-black text-teal-700 mt-1 font-financial">{formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</p>
                   <p className="text-xs text-teal-600 mt-2 max-w-sm">
                     회원 1명이 비회원 동반자를 견인하여 발생한 순수 실측 그린피 매출입니다.
                   </p>
@@ -1205,24 +1205,24 @@ export default function GolfChannelIntelligence() {
           <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-100 mt-4 text-xs text-teal-950 space-y-2">
             <div className="flex justify-between">
               <span>• 회원이 견인한 순수 비회원 그린피 매출:</span>
-              <strong className="text-teal-700 font-extrabold">₩{formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</strong>
+              <strong className="text-teal-700 font-extrabold">{formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</strong>
             </div>
             {data.memberSynergy.member1Non3.teams > 0 && (
               <div className="flex justify-between">
                 <span>• 회원 1명 + 비회원 3명 동반 팀:</span>
-                <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.memberSynergy.member1Non3.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.member1Non3.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · ₩{formatCurrency(data.memberSynergy.member1Non3.nonMemberRevenue)}</strong>
+                <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.memberSynergy.member1Non3.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.member1Non3.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · {formatCurrency(data.memberSynergy.member1Non3.nonMemberRevenue)}원</strong>
               </div>
             )}
             {data.memberSynergy.member2Non2.teams > 0 && (
               <div className="flex justify-between">
                 <span>• 회원 2명 + 비회원 2명 동반 팀:</span>
-                <strong>{data.memberSynergy.member2Non2.teams.toLocaleString()}팀 ({data.memberSynergy.member2Non2.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.member2Non2.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · ₩{formatCurrency(data.memberSynergy.member2Non2.nonMemberRevenue)}</strong>
+                <strong>{data.memberSynergy.member2Non2.teams.toLocaleString()}팀 ({data.memberSynergy.member2Non2.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.member2Non2.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · {formatCurrency(data.memberSynergy.member2Non2.nonMemberRevenue)}원</strong>
               </div>
             )}
             {data.memberSynergy.pureNonMember.teams > 0 && (
               <div className="flex justify-between text-slate-600">
                 <span>• 순수 비회원 (4인) 팀:</span>
-                <span>{data.memberSynergy.pureNonMember.teams.toLocaleString()}팀 ({data.memberSynergy.pureNonMember.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.pureNonMember.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · ₩{formatCurrency(data.memberSynergy.pureNonMember.revenue)}</span>
+                <span>{data.memberSynergy.pureNonMember.teams.toLocaleString()}팀 ({data.memberSynergy.pureNonMember.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.pureNonMember.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · {formatCurrency(data.memberSynergy.pureNonMember.revenue)}원</span>
               </div>
             )}
             <p className="text-[11px] text-teal-900/80 pt-1.5 border-t border-teal-200/50 leading-relaxed">
@@ -1269,13 +1269,13 @@ export default function GolfChannelIntelligence() {
             <div className="flex justify-between">
               <span>• 최고 가동 시간대:</span>
               <strong className="text-indigo-600">
-                {bestSlot ? `${bestSlot.dayOfWeek}요일 ${bestSlot.timeSlot} (가동률 ${bestSlot.occupancy.toFixed(1)}%, 실현 그린피 ₩${formatCurrency(bestSlot.avgGreenFee)}, ${(bestSlot as any).teams || 0}팀)` : '-'}
+                {bestSlot ? `${bestSlot.dayOfWeek}요일 ${bestSlot.timeSlot} (가동률 ${bestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(bestSlot.avgGreenFee)}원, ${(bestSlot as any).teams || 0}팀)` : '-'}
               </strong>
             </div>
             <div className="flex justify-between">
               <span>• 잔여 공실 시간대:</span>
               <strong className="text-slate-600">
-                {lowestSlot ? `${lowestSlot.dayOfWeek}요일 ${lowestSlot.timeSlot} (가동률 ${lowestSlot.occupancy.toFixed(1)}%, 실현 그린피 ₩${formatCurrency(lowestSlot.avgGreenFee)}, ${(lowestSlot as any).teams || 0}팀)` : '-'}
+                {lowestSlot ? `${lowestSlot.dayOfWeek}요일 ${lowestSlot.timeSlot} (가동률 ${lowestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(lowestSlot.avgGreenFee)}원, ${(lowestSlot as any).teams || 0}팀)` : '-'}
               </strong>
             </div>
             <p className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200 leading-relaxed">
@@ -1374,10 +1374,10 @@ export default function GolfChannelIntelligence() {
                     {row.y2024.teams > 0 ? `${row.y2024.teams.toLocaleString()}팀` : '-'}
                   </td>
                   <td className="py-3 px-3 text-right text-slate-600">
-                    {row.y2024.avgGreenFee > 0 ? `₩${formatCurrency(row.y2024.avgGreenFee)}` : '-'}
+                    {row.y2024.avgGreenFee > 0 ? `${formatCurrency(row.y2024.avgGreenFee)}원` : '-'}
                   </td>
                   <td className="py-3 px-3 text-right text-slate-600">
-                    {row.y2024.revenue > 0 ? `₩${formatCurrency(row.y2024.revenue)}` : '-'}
+                    {row.y2024.revenue > 0 ? `${formatCurrency(row.y2024.revenue)}원` : '-'}
                   </td>
 
                   {/* 2025년 */}
@@ -1385,10 +1385,10 @@ export default function GolfChannelIntelligence() {
                     {row.y2025.teams.toLocaleString()}팀
                   </td>
                   <td className="py-3 px-3 text-right text-blue-800 bg-blue-50/10">
-                    ₩{formatCurrency(row.y2025.avgGreenFee)}
+                    {formatCurrency(row.y2025.avgGreenFee)}원
                   </td>
                   <td className="py-3 px-3 text-right text-blue-900 bg-blue-50/10">
-                    ₩{formatCurrency(row.y2025.revenue)}
+                    {formatCurrency(row.y2025.revenue)}원
                   </td>
 
                   {/* 2026년 */}
@@ -1405,10 +1405,10 @@ export default function GolfChannelIntelligence() {
                     ) : '-'}
                   </td>
                   <td className="py-3 px-3 text-right font-bold text-emerald-800 bg-emerald-50/10">
-                    {row.y2026.avgGreenFee > 0 ? `₩${formatCurrency(row.y2026.avgGreenFee)}` : '-'}
+                    {row.y2026.avgGreenFee > 0 ? `${formatCurrency(row.y2026.avgGreenFee)}원` : '-'}
                   </td>
                   <td className="py-3 px-3 text-right font-bold text-emerald-900 bg-emerald-50/10">
-                    {row.y2026.revenue > 0 ? `₩${formatCurrency(row.y2026.revenue)}` : '-'}
+                    {row.y2026.revenue > 0 ? `${formatCurrency(row.y2026.revenue)}원` : '-'}
                   </td>
                 </tr>
               );})}
@@ -1519,7 +1519,7 @@ export default function GolfChannelIntelligence() {
                     {ch.players.toLocaleString()}명
                   </td>
                   <td className="py-3.5 px-4 text-right font-financial font-black text-amber-700 bg-amber-50/30 text-sm">
-                    ₩{formatCurrency(ch.avgGreenFee)}
+                    {formatCurrency(ch.avgGreenFee)}원
                   </td>
                   <td className="py-3.5 px-3 text-center font-bold">
                     <span className={ch.discountRate > 15 ? 'text-rose-600' : 'text-emerald-700'}>
@@ -1527,7 +1527,7 @@ export default function GolfChannelIntelligence() {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right font-financial font-extrabold text-slate-900">
-                    ₩{formatCurrency(ch.revenue)}
+                    {formatCurrency(ch.revenue)}원
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-slate-700">
                     {ch.sharePct}%

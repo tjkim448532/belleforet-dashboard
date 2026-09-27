@@ -273,7 +273,7 @@ export default function AdminDaolRules() {
                         <div key={i} className="flex justify-between items-center bg-slate-100 px-3 py-1.5 rounded text-slate-700">
                           <span>{a.target_name}</span>
                           <span className="font-mono text-slate-500">
-                            {rule.rule_type === 'DISTRIBUTION' ? `${(a.ratio * 100).toFixed(1)}%` : `₩${a.ratio.toLocaleString()}`}
+                            {rule.rule_type === 'DISTRIBUTION' ? `${(a.ratio * 100).toFixed(1)}%` : `${a.ratio.toLocaleString()}원`}
                           </span>
                         </div>
                       ))}

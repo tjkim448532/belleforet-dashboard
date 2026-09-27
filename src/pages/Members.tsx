@@ -185,11 +185,11 @@ export default function Members() {
             ) : apiError ? (
               <span className="text-xl text-red-500 font-bold">-</span>
             ) : (
-              <>₩{summary?.totalResortSalesFormatted || '0'}</>
+              <>{summary?.totalResortSalesFormatted || '0'}원</>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-2 truncate">
-            방문객 1인당 소비: <strong>₩{summary?.spendPerVisitorFormatted || '0'}원</strong>
+            방문객 1인당 소비: <strong>{summary?.spendPerVisitorFormatted || '0'}원</strong>
           </p>
         </div>
 
@@ -278,7 +278,7 @@ export default function Members() {
                       {Number(venue.visitor_share_pct ?? (venue as any).visitorSharePct ?? 0).toFixed(2)}%
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-slate-800 whitespace-nowrap">
-                      ₩{(venue.revenue_formatted || (venue as any).revenueFormatted || Number(venue.revenue || 0).toLocaleString())}
+                      {(venue.revenue_formatted || (venue as any).revenueFormatted || Number(venue.revenue || 0).toLocaleString())}원
                     </td>
                   </tr>
                 ))

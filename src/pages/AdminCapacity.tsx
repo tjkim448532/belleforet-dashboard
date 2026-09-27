@@ -352,13 +352,14 @@ export default function AdminCapacity() {
                   {/* Base Unit Price */}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1">
-                      <span className="text-slate-400 font-semibold">₩</span>
+                      
                       <input
                         type="number"
                         value={item.baseUnitPrice}
                         onChange={(e) => handleFieldChange(item.id, 'baseUnitPrice', Number(e.target.value))}
                         className="w-28 px-2.5 py-1 rounded-lg border border-slate-200 font-black text-slate-900 text-right tabular-nums focus:outline-indigo-500"
                       />
+                      <span className="text-slate-400 font-semibold text-xs">원</span>
                     </div>
                   </td>
 

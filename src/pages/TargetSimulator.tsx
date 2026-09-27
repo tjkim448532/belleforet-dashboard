@@ -487,14 +487,14 @@ export default function TargetSimulator() {
           ? `+${paceDiff}%p 초과 달성 중 (순항 🚀)` 
           : `${paceDiff}%p 지연`;
         badgeColor = paceDiff >= 0 ? 'text-teal-600' : 'text-amber-600';
-        statusText = `${input.selectedMonth}월 1일~${currentStatus.latestClosedDay}일 MTD 누적: ₩${(act / 100000000).toFixed(2)}억원 (경과율 ${currentStatus.elapsedRate}% 대비 ${paceText})`;
+        statusText = `${input.selectedMonth}월 1일~${currentStatus.latestClosedDay}일 MTD 누적: ${(act / 100000000).toFixed(2)}억원 (경과율 ${currentStatus.elapsedRate}% 대비 ${paceText})`;
       } else if (currentStatus.isYTD) {
         const paceDiff = Number((rate - currentStatus.elapsedRate).toFixed(1));
         badgeColor = paceDiff >= 0 ? 'text-teal-600' : 'text-amber-600';
-        statusText = `1월 1일~${currentStatus.currentBizMonth}월 ${currentStatus.latestClosedDay}일 YTD 실적: ₩${(act / 100000000).toFixed(2)}억원 (경과율 ${currentStatus.elapsedRate}%)`;
+        statusText = `1월 1일~${currentStatus.currentBizMonth}월 ${currentStatus.latestClosedDay}일 YTD 실적: ${(act / 100000000).toFixed(2)}억원 (경과율 ${currentStatus.elapsedRate}%)`;
       } else {
         badgeColor = rate >= 80 ? 'text-teal-600' : 'text-amber-600';
-        statusText = `${input.selectedMonth === 'ANNUAL' ? '연간 종합' : `${input.selectedMonth}월`} 최종 마감 실적: ₩${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`;
+        statusText = `${input.selectedMonth === 'ANNUAL' ? '연간 종합' : `${input.selectedMonth}월`} 최종 마감 실적: ${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`;
       }
 
       return {
@@ -561,38 +561,21 @@ export default function TargetSimulator() {
       }
     }
 
-    // If backend API provided daily target stats directly, prioritize backend SSOT
-    if (apiData?.summary?.weekdayDailyTarget && apiData?.summary?.preHolidayDailyTarget) {
-      const wDays = apiData.summary.weekdayDays ?? weekdayDays;
-      const pHolDays = apiData.summary.preHolidayDays ?? preHolidayDays;
-      return {
-        weekdayDays: wDays,
-        preHolidayDays: pHolDays,
-        totalDays: wDays + pHolDays,
-        weekdayDailyTarget: apiData.summary.weekdayDailyTarget,
-        preHolidayDailyTarget: apiData.summary.preHolidayDailyTarget,
-        overallDailyAvg: apiData.summary.overallDailyAvg || apiData.summary.dailyTargetRevenue || 0,
-        ratio: 1.55
-      };
-    }
-
-    // 벨포레 실측 휴일전야 대 주중 매출 배수 (SSOT 기준치 1.55배)
-    const ratio = 1.55;
-    const targetTotal = summaryGrandTarget2026 || 1;
-
-    // W * weekdayDays + (r * W) * preHolidayDays = targetTotal
-    const weekdayDailyTarget = Math.round(targetTotal / (weekdayDays + ratio * preHolidayDays));
-    const preHolidayDailyTarget = Math.round(weekdayDailyTarget * ratio);
-    const overallDailyAvg = Math.round(targetTotal / (weekdayDays + preHolidayDays));
+    // 100% SSOT Direct Binding: 백엔드가 제공하는 일일 목표 통계 직접 사용 (프론트 임의 승수/안분 전면 철거)
+    const wDays = apiData?.summary?.weekdayDays ?? weekdayDays;
+    const pHolDays = apiData?.summary?.preHolidayDays ?? preHolidayDays;
+    const weekdayDailyTarget = apiData?.summary?.weekdayDailyTarget || 0;
+    const preHolidayDailyTarget = apiData?.summary?.preHolidayDailyTarget || 0;
+    const overallDailyAvg = apiData?.summary?.overallDailyAvg || apiData?.summary?.dailyTargetRevenue || 0;
 
     return {
-      weekdayDays,
-      preHolidayDays,
-      totalDays: weekdayDays + preHolidayDays,
+      weekdayDays: wDays,
+      preHolidayDays: pHolDays,
+      totalDays: wDays + pHolDays,
       weekdayDailyTarget,
       preHolidayDailyTarget,
       overallDailyAvg,
-      ratio
+      ratio: weekdayDailyTarget > 0 ? Number((preHolidayDailyTarget / weekdayDailyTarget).toFixed(2)) : 0
     };
   }, [input.selectedMonth, input.targetYear, summaryGrandTarget2026, apiData]);
 
@@ -609,7 +592,7 @@ export default function TargetSimulator() {
     return {
       tooltip: {
         trigger: 'item',
-        formatter: '{b}: ₩{c}원 ({d}%)'
+        formatter: (params: any) => `${params.name}: ${Number(params.value || 0).toLocaleString()}원 (${params.percent}%)`
       },
       legend: {
         bottom: 0,
@@ -843,7 +826,7 @@ export default function TargetSimulator() {
                     목표 {input.includeGolf ? '전사 Total' : '순수 리조트 Resort'} {input.selectedMonth === 'ANNUAL' ? '일평균' : '일일'} TrevPAR
                   </div>
                   <div className="text-2xl font-black text-white tabular-nums mt-0.5">
-                    {(apiData?.summary?.dailyTrevPAR ?? 0) > 0 ? `₩${formatCurrency(apiData!.summary!.dailyTrevPAR)}` : '-'}
+                    {(apiData?.summary?.dailyTrevPAR ?? 0) > 0 ? `${formatCurrency(apiData!.summary!.dailyTrevPAR)}원` : '-'}
                     <span className="text-xs font-normal text-slate-300 ml-1">/실·일</span>
                   </div>
                   <div className="text-[11px] text-teal-300 font-bold mt-1">
@@ -860,7 +843,7 @@ export default function TargetSimulator() {
                     <span className="text-xs font-normal text-slate-300 ml-1">억원</span>
                   </div>
                   <div className="text-[11px] text-amber-300 font-bold mt-1">
-                    {input.baseYear}년 ₩{(summaryGrandTotal2025 / 100000000).toFixed(2)}억 대비 +{((summaryGrandTarget2026 - summaryGrandTotal2025) / 100000000).toFixed(2)}억
+                    {input.baseYear}년 {(summaryGrandTotal2025 / 100000000).toFixed(2)}억 대비 +{((summaryGrandTarget2026 - summaryGrandTotal2025) / 100000000).toFixed(2)}억
                   </div>
                 </div>
               </div>
@@ -894,7 +877,7 @@ export default function TargetSimulator() {
             {input.targetYear}년 목표 {input.includeGolf ? '전사 Total' : '순수 리조트 Resort'} TrevPAR
           </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
-            {(apiData?.summary?.dailyTrevPAR ?? 0) > 0 ? `₩${formatCurrency(apiData!.summary!.dailyTrevPAR)}` : '-'} <span className="text-sm font-normal text-slate-500">/실·일</span>
+            {(apiData?.summary?.dailyTrevPAR ?? 0) > 0 ? `${formatCurrency(apiData!.summary!.dailyTrevPAR)}원` : '-'} <span className="text-sm font-normal text-slate-500">/실·일</span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
             백엔드 연동 데이터 기준
@@ -1010,23 +993,23 @@ export default function TargetSimulator() {
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-xs text-slate-500">{input.targetYear}년 목표:</span>
-                      <span className="text-lg font-black text-slate-900 tabular-nums">
-                        ₩{formatCurrency(cat.totalTarget2026)} <span className="text-xs font-normal text-slate-400">원</span>
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-400">{input.baseYear}년 실적:</span>
-                      <span className="text-slate-600 font-semibold tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
-                    </div>
-                    {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-emerald-700 font-bold">{input.targetYear}년 실적:</span>
-                        <span className="text-emerald-700 font-black tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs text-slate-500">{input.targetYear}년 목표:</span>
+                        <span className="text-lg font-black text-slate-900 tabular-nums">
+                          {formatCurrency(cat.totalTarget2026)} <span className="text-xs font-normal text-slate-400">원</span>
+                        </span>
                       </div>
-                    )}
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400">{input.baseYear}년 실적:</span>
+                        <span className="text-slate-600 font-semibold tabular-nums">{formatCurrency(cat.totalActual2025)}원</span>
+                      </div>
+                      {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-emerald-700 font-bold">{input.targetYear}년 실적:</span>
+                          <span className="text-emerald-700 font-black tabular-nums">{formatCurrency(cat.totalActual2026)}원</span>
+                        </div>
+                      )}
                     {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
                       <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-100 font-semibold">
                         <span className="text-slate-500">실제 달성률:</span>
@@ -1179,14 +1162,14 @@ export default function TargetSimulator() {
                         비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
                       </div>
                       <div className="text-slate-500 whitespace-nowrap">
-                        {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
+                        {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">{formatCurrency(cat.totalActual2025)}원</span>
                       </div>
                       <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 whitespace-nowrap">
-                        {input.targetYear} 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
+                        {input.targetYear} 목표: <span className="font-black text-indigo-700 tabular-nums">{formatCurrency(cat.totalTarget2026)}원</span>
                       </div>
                       {cat.totalActual2026 !== undefined && cat.totalActual2026 > 0 && (
                         <div className="text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 whitespace-nowrap">
-                          {input.targetYear} 실적{currentStatus.isCurrentMonth ? ` (${currentStatus.currentBizMonth}/1~${currentStatus.latestClosedDay}일 MTD)` : ''}: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(cat.totalActual2026)}원</span>
+                          {input.targetYear} 실적{currentStatus.isCurrentMonth ? ` (${currentStatus.currentBizMonth}/1~${currentStatus.latestClosedDay}일 MTD)` : ''}: <span className="font-black text-emerald-700 tabular-nums">{formatCurrency(cat.totalActual2026)}원</span>
                         </div>
                       )}
                       {cat.achievementRate !== undefined && cat.achievementRate > 0 && (
@@ -1249,14 +1232,14 @@ export default function TargetSimulator() {
                                   파트 비중: <span className="font-bold text-slate-800">{part.totalWeight}%</span>
                                 </div>
                                 <div className="text-slate-500 whitespace-nowrap">
-                                  {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">₩{formatCurrency(part.totalActual2025)}원</span>
+                                  {input.baseYear} 실적: <span className="font-semibold text-slate-700 tabular-nums">{formatCurrency(part.totalActual2025)}원</span>
                                 </div>
                                 <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 whitespace-nowrap">
-                                  {input.targetYear} 목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
+                                  {input.targetYear} 목표: <span className="font-black text-teal-700 tabular-nums">{formatCurrency(part.totalTarget2026)}원</span>
                                 </div>
                                 {part.totalActual2026 > 0 && (
                                   <div className="text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200 whitespace-nowrap">
-                                    {input.targetYear} 실적{currentStatus.isCurrentMonth ? ` (${currentStatus.currentBizMonth}/1~${currentStatus.latestClosedDay}일 MTD)` : ''}: <span className="font-black text-emerald-700 tabular-nums">₩{formatCurrency(part.totalActual2026)}원</span>
+                                    {input.targetYear} 실적{currentStatus.isCurrentMonth ? ` (${currentStatus.currentBizMonth}/1~${currentStatus.latestClosedDay}일 MTD)` : ''}: <span className="font-black text-emerald-700 tabular-nums">{formatCurrency(part.totalActual2026)}원</span>
                                   </div>
                                 )}
                                 {part.achievementRate > 0 && (
@@ -1303,7 +1286,7 @@ export default function TargetSimulator() {
                                           <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
                                             <span className="whitespace-nowrap">{fac.facilityName}</span>
                                             {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="성수기 집중 매출 강도 및 ADR(객단가) 전략을 통해 매출 목표를 달성합니다.">
                                                 ADR 레버리지 권장
                                               </span>
                                             ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
@@ -1317,13 +1300,13 @@ export default function TargetSimulator() {
                                           {fac.weight}%
                                         </td>
                                         <td className="py-2.5 px-4 text-right tabular-nums text-slate-600 whitespace-nowrap">
-                                          ₩{formatCurrency(fac.actual2025)}원
+                                          {formatCurrency(fac.actual2025)}원
                                         </td>
                                         <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm whitespace-nowrap">
-                                          ₩{formatCurrency(fac.target2026)}원
+                                          {formatCurrency(fac.target2026)}원
                                         </td>
                                         <td className="py-2.5 px-4 text-right tabular-nums text-emerald-800 font-bold whitespace-nowrap">
-                                          {fac.actual2026 && fac.actual2026 > 0 ? `₩${formatCurrency(fac.actual2026)}원` : '-'}
+                                          {fac.actual2026 && fac.actual2026 > 0 ? `${formatCurrency(fac.actual2026)}원` : '-'}
                                         </td>
                                         <td className="py-2.5 px-4 text-center whitespace-nowrap">
                                           {fac.achievementRate && fac.achievementRate > 0 ? (

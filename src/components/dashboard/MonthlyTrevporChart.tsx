@@ -423,7 +423,7 @@ export default function MonthlyTrevporChart() {
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: {
-            formatter: (value: number) => `₩${Math.round(value / 10000)}만`,
+            formatter: (value: number) => `${Math.round(value / 10000)}만`,
             color: '#64748b',
             fontWeight: 600,
             fontSize: 12
@@ -479,7 +479,7 @@ export default function MonthlyTrevporChart() {
             show: true,
             position: 'top',
             distance: 6,
-            formatter: (p: any) => p.value > 0 ? `₩${Math.round(p.value / 10000)}만` : '',
+            formatter: (p: any) => p.value > 0 ? `${Math.round(p.value / 10000)}만` : '',
             color: '#0f172a',
             fontWeight: 800,
             fontSize: 12,
@@ -1129,7 +1129,7 @@ export default function MonthlyTrevporChart() {
               2026년 평균 TrevPAR ({kpiHighlights.periodLabel})
             </div>
             <div className="text-xl font-black text-slate-900 tabular-nums">
-              ₩{formatCurrency(kpiHighlights.avgTyTrevpar)} <span className="text-xs font-normal text-slate-400">/실·월</span>
+              {formatCurrency(kpiHighlights.avgTyTrevpar)}원 <span className="text-xs font-normal text-slate-400">/실·월</span>
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
               {kpiHighlights.closedCount}개 월 누적 월평균 실적
@@ -1145,7 +1145,7 @@ export default function MonthlyTrevporChart() {
               {kpiHighlights.yoyGrowth > 0 ? '+' : ''}{kpiHighlights.yoyGrowth}%
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              2025년 동기간(₩{formatCurrency(kpiHighlights.avgLyTrevpar)}원) 대비
+              2025년 동기간({formatCurrency(kpiHighlights.avgLyTrevpar)}원) 대비
             </div>
           </div>
 
@@ -1153,7 +1153,7 @@ export default function MonthlyTrevporChart() {
             <div className="text-[11px] font-bold text-slate-500 mb-1">최고 실적 달성 월</div>
             <div className="text-xl font-black text-indigo-900 tabular-nums flex items-center gap-1.5">
               <Award className="w-5 h-5 text-amber-500" />
-              {kpiHighlights.maxMonthName} (₩{formatCurrency(kpiHighlights.maxTrevpar)}원)
+              {kpiHighlights.maxMonthName} ({formatCurrency(kpiHighlights.maxTrevpar)}원)
             </div>
             <div className="text-[11px] text-slate-500 mt-1">객실당 생산성 최고 피크 기록</div>
           </div>

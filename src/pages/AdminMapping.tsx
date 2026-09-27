@@ -11,29 +11,10 @@ interface RoomSegmentItem {
   subGroupName: string;
 }
 
-// AI Smart Recommendation Rule Matcher
-const getAiRecommendation = (productName: string): { segment: string; confidence: number } => {
-  const name = String(productName || '').toUpperCase();
-
-  if (/MICE|연수|행사|학회|단체|세미나|컨벤션|워크숍|GROUP/i.test(name)) {
-    return { segment: 'MICE', confidence: 95 };
-  }
-  if (/휴양소|복지몰|공제회|임직원|삼성|LG|SK|현대|CJ|포스코|한화|롯데|기업|법인/i.test(name)) {
-    return { segment: '법인', confidence: 95 };
-  }
-  if (/회원|분양|지분|무기명|기명|MEMBERSHIP|MEMBER/i.test(name)) {
-    return { segment: '분양회원', confidence: 95 };
-  }
-  if (/PKG|PACKAGE|패키지|스탬프투어|조식|포함/i.test(name)) {
-    return { segment: '패키지', confidence: 95 };
-  }
-  if (/OTA|야놀자|여기어때|네이버|아고다|인터파크|티몬|쿠팡|TRIP|BOOKING|EXPEDIA|YANOLJA|DAILY|플엠|플레이스엠|호텔스토리|컴퍼니합|부킹엔진/i.test(name)) {
-    return { segment: 'OTA', confidence: 99 };
-  }
-  if (/홈페이지|앱|APP|자사|직접|예약실|전화|자사몰|DIRECT|ROOM ONLY/i.test(name)) {
-    return { segment: '자사채널', confidence: 90 };
-  }
-  return { segment: '미분류', confidence: 0 }; // 미분류 보존 (자가 수동 배정 필수)
+// AI Smart Recommendation: SSOT 무결성 원칙 준수 (프론트엔드 임의 정규표현식 및 가짜 신뢰도 생성 전면 철거)
+// 오타/매핑 추론은 데이터 엔지니어링의 영역이며, 프론트엔드는 임의 매핑을 배제하고 관리자가 직접 검토/배정하도록 보존함
+const getAiRecommendation = (_productName: string): { segment: string; confidence: number } => {
+  return { segment: '미분류', confidence: 0 };
 };
 
 export default function AdminMapping() {

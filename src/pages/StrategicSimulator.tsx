@@ -154,11 +154,11 @@ export default function StrategicSimulator() {
   const [input, setInput] = useState<SimulationTargetInput>({
     baseYear: 2025,
     targetYear: 2026,
-    selectedMonth: 7, // 기본값: 7월
-    period: 'M07',
+    selectedMonth: 1, // 기본값: 1월
+    period: 'M01',
     metricInputMode: 'GROWTH_RATE',
     targetTrevpar: 0,
-    targetGrowthRate: 15.0, // 기본값: +15.0%
+    targetGrowthRate: 0.0, // 기본값: 0.0%
     targetTotalRevenue: 0,
     strategyMode: 'BALANCED',
     includeGolf: true
@@ -411,7 +411,7 @@ export default function StrategicSimulator() {
         revenue: act,
         rate,
         displayRate: `${rate}%`,
-        statusText: `${input.targetYear}년 ${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ₩${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`,
+        statusText: `${input.targetYear}년 ${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`,
         isUpcoming: false
       };
     }
@@ -553,7 +553,7 @@ export default function StrategicSimulator() {
     return {
       tooltip: {
         trigger: 'item',
-        formatter: '{b}: ₩{c}원 ({d}%)'
+        formatter: (params: any) => `${params.name}: ${Number(params.value || 0).toLocaleString()}원 (${params.percent}%)`
       },
       legend: {
         bottom: 0,
@@ -830,7 +830,7 @@ export default function StrategicSimulator() {
             목표 {input.includeGolf ? '전사 Total' : '순수 리조트'} TrevPAR
           </div>
           <div className="text-2xl font-black text-teal-800 tabular-nums">
-            ₩{formatCurrency(apiData?.summary?.totalRoomCap ? Math.round(grandTargetTotal / apiData.summary.totalRoomCap) : 0)} <span className="text-sm font-normal text-slate-500">/실</span>
+            {formatCurrency(apiData?.summary?.totalRoomCap ? Math.round(grandTargetTotal / apiData.summary.totalRoomCap) : 0)}원 <span className="text-sm font-normal text-slate-500">/실</span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
             백엔드 제공 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준
@@ -865,7 +865,7 @@ export default function StrategicSimulator() {
             <span>{actualExecutionStats.displayRate}</span>
           </div>
           <div className="text-xs text-slate-500 mt-1 truncate" title={actualExecutionStats.statusText}>
-            {actualExecutionStats.revenue > 0 ? `실적: ₩${(actualExecutionStats.revenue / 100000000).toFixed(2)}억원` : actualExecutionStats.statusText}
+            {actualExecutionStats.revenue > 0 ? `실적: ${(actualExecutionStats.revenue / 100000000).toFixed(2)}억원` : actualExecutionStats.statusText}
           </div>
         </div>
 
@@ -1078,15 +1078,15 @@ export default function StrategicSimulator() {
                       전략 비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
                     </div>
                     <div className="text-slate-600 whitespace-nowrap">
-                      {input.baseYear}년 실적: <span className="font-extrabold text-slate-700 tabular-nums">₩{formatCurrency(cat.totalActual2025)}원</span>
+                      {input.baseYear}년 실적: <span className="font-extrabold text-slate-700 tabular-nums">{formatCurrency(cat.totalActual2025)}원</span>
                     </div>
                     <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 whitespace-nowrap">
-                      {input.targetYear}년 목표: <span className="font-black text-indigo-700 tabular-nums">₩{formatCurrency(cat.totalTarget2026)}원</span>
+                      {input.targetYear}년 목표: <span className="font-black text-indigo-700 tabular-nums">{formatCurrency(cat.totalTarget2026)}원</span>
                     </div>
                     <div className={`px-3 py-1 rounded-lg border font-bold tabular-nums whitespace-nowrap ${
                       catDiff >= 0 ? 'text-teal-900 bg-teal-50 border-teal-200' : 'text-rose-900 bg-rose-50 border-rose-200'
                     }`}>
-                      증감: {catDiff >= 0 ? '+' : ''}₩{formatCurrency(catDiff)}원
+                      증감: {catDiff >= 0 ? '+' : ''}{formatCurrency(catDiff)}원
                     </div>
                   </div>
                 </div>
@@ -1124,15 +1124,15 @@ export default function StrategicSimulator() {
 
                             <div className="flex flex-wrap items-center gap-3.5 text-xs font-semibold">
                               <div className="text-slate-600 whitespace-nowrap">
-                                {input.baseYear}년: <span className="font-bold text-slate-700 tabular-nums">₩{formatCurrency(part.totalActual2025)}원</span>
+                                {input.baseYear}년: <span className="font-bold text-slate-700 tabular-nums">{formatCurrency(part.totalActual2025)}원</span>
                               </div>
                               <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 whitespace-nowrap">
-                                목표: <span className="font-black text-teal-700 tabular-nums">₩{formatCurrency(part.totalTarget2026)}원</span>
+                                목표: <span className="font-black text-teal-700 tabular-nums">{formatCurrency(part.totalTarget2026)}원</span>
                               </div>
                               <div className={`px-2.5 py-0.5 rounded-md border font-bold tabular-nums whitespace-nowrap ${
                                 partDiff >= 0 ? 'text-teal-800 bg-teal-50 border-teal-100' : 'text-rose-800 bg-rose-50 border-rose-100'
                               }`}>
-                                증감: {partDiff >= 0 ? '+' : ''}₩{formatCurrency(partDiff)}원
+                                증감: {partDiff >= 0 ? '+' : ''}{formatCurrency(partDiff)}원
                               </div>
                             </div>
                           </div>
@@ -1163,7 +1163,7 @@ export default function StrategicSimulator() {
                                           <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
                                             <span className="whitespace-nowrap">{fac.facilityName}</span>
                                             {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="가동률 100% 한계에 도달하는 성수기는 ADR(객단가) 상승 전략을 통해 매출 목표를 달성합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="성수기 집중 매출 강도 및 ADR(객단가) 전략을 통해 매출 목표를 달성합니다.">
                                                 ADR 레버리지 권장
                                               </span>
                                             ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
@@ -1177,15 +1177,15 @@ export default function StrategicSimulator() {
                                           {fac.weight}%
                                         </td>
                                         <td className="py-2.5 px-4 text-right tabular-nums text-slate-600 whitespace-nowrap">
-                                          ₩{formatCurrency(fac.actual2025)}원
+                                          {formatCurrency(fac.actual2025)}원
                                         </td>
                                         <td className="py-2.5 px-4 text-right tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-sm whitespace-nowrap">
-                                          ₩{formatCurrency(fac.target2026)}원
+                                          {formatCurrency(fac.target2026)}원
                                         </td>
                                         <td className={`py-2.5 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
                                           facDiff >= 0 ? 'text-teal-700 bg-teal-50/20' : 'text-rose-700 bg-rose-50/20'
                                         }`}>
-                                          {facDiff >= 0 ? '+' : ''}₩{formatCurrency(facDiff)}원
+                                          {facDiff >= 0 ? '+' : ''}{formatCurrency(facDiff)}원
                                         </td>
                                       </tr>
                                     );

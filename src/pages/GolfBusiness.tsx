@@ -190,7 +190,7 @@ export default function GolfBusiness() {
               <MetricExplainerTooltip presetKey="netRevenue" align="left" />
             </h2>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-              ₩{summary.totalGolfRevenueFormatted}
+              {summary.totalGolfRevenueFormatted}원
             </div>
             <p className="text-[11px] text-slate-400 mt-2">그린피 + 카트대여 + 부대시설 순매출(Net) 총합</p>
           </div>
@@ -216,7 +216,7 @@ export default function GolfBusiness() {
               <MetricExplainerTooltip presetKey="arpu" align="right" />
             </h2>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-              ₩{summary.arpuFormatted}
+              {summary.arpuFormatted}원
             </div>
             <p className="text-[11px] text-slate-400 mt-2">내장객 1인당 평균 골프 소비액</p>
           </div>
@@ -260,16 +260,16 @@ export default function GolfBusiness() {
                   </span>
                 </div>
                 <div className="text-2xl font-black text-emerald-900 my-1">
-                  ₩{greenFeeItem?.revenueFormatted || '0'} <span className="text-xs font-normal text-slate-500">({greenFeeItem?.playersFormatted || '0'}명 내장)</span>
+                  {greenFeeItem?.revenueFormatted || '0'}원 <span className="text-xs font-normal text-slate-500">({greenFeeItem?.playersFormatted || '0'}명 내장)</span>
                 </div>
                 <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-emerald-200/60">
                   <div className="flex justify-between">
                     <span>• 그린피 순매출 (점유율):</span>
-                    <strong>₩{greenFeeItem?.revenueFormatted || '0'} ({greenFeeItem?.revenueSharePct || 0}%)</strong>
+                    <strong>{greenFeeItem?.revenueFormatted || '0'}원 ({greenFeeItem?.revenueSharePct || 0}%)</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>• 카트대여 순매출 (점유율):</span>
-                    <strong className="text-slate-900">₩{cartFeeItem?.revenueFormatted || '0'} ({cartFeeItem?.revenueSharePct || 0}%)</strong>
+                    <strong className="text-slate-900">{cartFeeItem?.revenueFormatted || '0'}원 ({cartFeeItem?.revenueSharePct || 0}%)</strong>
                   </div>
                 </div>
               </div>
@@ -290,21 +290,21 @@ export default function GolfBusiness() {
                   </span>
                 </div>
                 <div className="text-2xl font-black text-slate-900 my-1">
-                  ₩{((startHouseItem?.revenue || 0) + (restaurantItem?.revenue || 0) + (proShopItem?.revenue || 0)).toLocaleString()}
+                  {((startHouseItem?.revenue || 0) + (restaurantItem?.revenue || 0) + (proShopItem?.revenue || 0)).toLocaleString()}원
                   <span className="text-xs font-normal text-slate-500"> (총 {((startHouseItem?.quantity || 0) + (restaurantItem?.quantity || 0) + (proShopItem?.quantity || 0)).toLocaleString()}건)</span>
                 </div>
                 <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-slate-200">
                   <div className="flex justify-between">
                     <span>• 스타트하우스 식음:</span>
-                    <strong>₩{startHouseItem?.revenueFormatted || '0'} ({startHouseItem?.revenueSharePct || 0}%)</strong>
+                    <strong>{startHouseItem?.revenueFormatted || '0'}원 ({startHouseItem?.revenueSharePct || 0}%)</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>• 클럽 레스토랑 식음:</span>
-                    <strong>₩{restaurantItem?.revenueFormatted || '0'} ({restaurantItem?.revenueSharePct || 0}%)</strong>
+                    <strong>{restaurantItem?.revenueFormatted || '0'}원 ({restaurantItem?.revenueSharePct || 0}%)</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>• 프로샵 용품 매출:</span>
-                    <strong>₩{proShopItem?.revenueFormatted || '0'} ({proShopItem?.revenueSharePct || 0}%)</strong>
+                    <strong>{proShopItem?.revenueFormatted || '0'}원 ({proShopItem?.revenueSharePct || 0}%)</strong>
                   </div>
                 </div>
               </div>
@@ -378,11 +378,11 @@ export default function GolfBusiness() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">평균 단가:</span>
-                    <strong>₩{ch.unitPriceFormatted}</strong>
+                    <strong>{ch.unitPriceFormatted}원</strong>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-slate-200/40 text-emerald-900 font-black">
                     <span>순매출:</span>
-                    <span>₩{ch.revenueFormatted}</span>
+                    <span>{ch.revenueFormatted}원</span>
                   </div>
                 </div>
               </div>
@@ -428,10 +428,10 @@ export default function GolfBusiness() {
                       {ch.quantityFormatted}건
                     </td>
                     <td className="py-3 px-4 text-right font-medium text-slate-800">
-                      ₩{ch.unitPriceFormatted}
+                      {ch.unitPriceFormatted}원
                     </td>
                     <td className="py-3 px-4 text-right font-black text-slate-900">
-                      ₩{ch.revenueFormatted}
+                      {ch.revenueFormatted}원
                     </td>
                   </tr>
                 ))}

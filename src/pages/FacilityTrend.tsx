@@ -177,7 +177,7 @@ export default function FacilityTrend() {
             if (item.value !== undefined && item.value !== null) {
               const isRev = item.seriesName.includes('매출');
               const formattedVal = isRev 
-                ? `₩${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}`
+                ? `${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}원`
                 : `${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}명`;
               result += `
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;padding:3px 0;">
@@ -253,7 +253,7 @@ export default function FacilityTrend() {
               {row.data.map((col: any, cIdx) => (
                 <Fragment key={col.year as string}>
                   <td className={`px-4 py-4 text-right font-black ${col.revenue > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
-                    {col.revenue > 0 ? `₩${formatCurrency(col.revenue)}` : '-'}
+                    {col.revenue > 0 ? `${formatCurrency(col.revenue)}원` : '-'}
                   </td>
                   <td className={`px-4 py-4 text-right font-medium ${col.visitors > 0 ? 'text-emerald-600' : 'text-slate-400'} ${cIdx === years.length - 1 ? '' : 'border-r border-slate-100'}`}>
                     {col.visitors > 0 ? `${formatCurrency(col.visitors)}명` : '-'}

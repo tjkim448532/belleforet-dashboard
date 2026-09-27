@@ -8,7 +8,10 @@ import {
   AlertCircle,
   RefreshCw,
   Layers,
-  Sparkles
+  Sparkles,
+  Clock,
+  Coins,
+  Users
 } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
@@ -85,98 +88,34 @@ export interface GolfIntelligenceData {
 // ----------------------------------------------------------------------
 // 실측 DB 기반 완성형 기본 데이터셋 (Zero-Variance SSOT Fallback)
 // ----------------------------------------------------------------------
-const INITIAL_INTELLIGENCE_DATA: GolfIntelligenceData = {
+const EMPTY_INTELLIGENCE_DATA: GolfIntelligenceData = {
   summary: {
-    totalTeams: 13932,
-    totalPlayers: 54883,
-    totalGreenFeeRevenue: 2870388850,
-    averageGreenFee: 52300,
-    threePlayerTeamsCount: 517,
-    threePlayerLostRevenue: 41250000,
-    joinTeamsCount: 281, // 1인(230팀) + 2인(51팀)
-    memberAnchorRevenue: 154800000
+    totalTeams: 0,
+    totalPlayers: 0,
+    totalGreenFeeRevenue: 0,
+    averageGreenFee: 0,
+    threePlayerTeamsCount: 0,
+    threePlayerLostRevenue: 0,
+    joinTeamsCount: 0,
+    memberAnchorRevenue: 0
   },
-  channels: [
-    { channelName: '골프존', channelType: 'OTA', teams: 767, players: 3281, revenue: 225579508, avgGreenFee: 68753, discountRate: 15.2, sharePct: 6.0 },
-    { channelName: '전화/예약실', channelType: 'DIRECT', teams: 1496, players: 6072, revenue: 384248759, avgGreenFee: 63282, discountRate: 21.9, sharePct: 11.1 },
-    { channelName: '스마트스코어', channelType: 'OTA', teams: 279, players: 1163, revenue: 72979928, avgGreenFee: 62751, discountRate: 22.5, sharePct: 2.1 },
-    { channelName: '카카오VX', channelType: 'OTA', teams: 892, players: 3553, revenue: 206400771, avgGreenFee: 58092, discountRate: 28.3, sharePct: 6.5 },
-    { channelName: '자사 홈페이지/APP', channelType: 'DIRECT', teams: 2768, players: 11324, revenue: 608135910, avgGreenFee: 53703, discountRate: 33.7, sharePct: 20.6 },
-    { channelName: '기타 제휴/동호회', channelType: 'OFFLINE', teams: 1312, players: 5252, revenue: 271208510, avgGreenFee: 51639, discountRate: 36.2, sharePct: 9.6 },
-    { channelName: '히든골프', channelType: 'OTA', teams: 2072, players: 8332, revenue: 394292416, avgGreenFee: 47323, discountRate: 41.6, sharePct: 15.2 },
-    { channelName: '골프락', channelType: 'OTA', teams: 3126, players: 12679, revenue: 578499348, avgGreenFee: 45627, discountRate: 43.7, sharePct: 23.1 },
-    { channelName: '티업엔조이', channelType: 'OTA', teams: 792, players: 3227, revenue: 129043700, avgGreenFee: 39989, discountRate: 50.6, sharePct: 5.9 }
-  ],
+  channels: [],
   teamSize: {
-    size1: { teams: 230, ratio: 1.7 },
-    size2: { teams: 51, ratio: 0.4 },
-    size3: { teams: 517, ratio: 3.9, lostRevenue: 41250000 },
-    size4: { teams: 12468, ratio: 94.0 },
-    joinRanking: [
-      { channelName: '카카오VX', teams: 118, players: 142, sharePct: 42.0, avgGreenFee: 58000 },
-      { channelName: '골프존', teams: 74, players: 88, sharePct: 26.3, avgGreenFee: 68000 },
-      { channelName: '자사 홈페이지/APP', teams: 45, players: 52, sharePct: 16.0, avgGreenFee: 53000 },
-      { channelName: '스마트스코어', teams: 28, players: 33, sharePct: 10.0, avgGreenFee: 62000 },
-      { channelName: '기타 제휴사', teams: 16, players: 18, sharePct: 5.7, avgGreenFee: 51000 }
-    ]
+    size1: { teams: 0, ratio: 0 },
+    size2: { teams: 0, ratio: 0 },
+    size3: { teams: 0, ratio: 0, lostRevenue: 0 },
+    size4: { teams: 0, ratio: 0 },
+    joinRanking: []
   },
   memberSynergy: {
-    pureNonMember: { teams: 7820, ratio: 59.0, revenue: 1693529000 },
-    member1Non3: { teams: 3840, ratio: 28.9, nonMemberRevenue: 154800000 },
-    member2Non2: { teams: 1100, ratio: 8.3, nonMemberRevenue: 57700000 },
-    member3to4: { teams: 506, ratio: 3.8, revenue: 79800000 },
-    totalAnchorRevenue: 154800000
+    pureNonMember: { teams: 0, ratio: 0, revenue: 0 },
+    member1Non3: { teams: 0, ratio: 0, nonMemberRevenue: 0 },
+    member2Non2: { teams: 0, ratio: 0, nonMemberRevenue: 0 },
+    member3to4: { teams: 0, ratio: 0, revenue: 0 },
+    totalAnchorRevenue: 0
   },
-  timeSlotYield: [
-    { dayOfWeek: '월', timeSlot: '06~08 (얼리)', dayIndex: 0, timeSlotIndex: 0, occupancy: 72.4, avgGreenFee: 42000 },
-    { dayOfWeek: '월', timeSlot: '08~11 (1부)', dayIndex: 0, timeSlotIndex: 1, occupancy: 88.6, avgGreenFee: 51000 },
-    { dayOfWeek: '월', timeSlot: '11~14 (2부)', dayIndex: 0, timeSlotIndex: 2, occupancy: 84.2, avgGreenFee: 49000 },
-    { dayOfWeek: '월', timeSlot: '14~ (레이트)', dayIndex: 0, timeSlotIndex: 3, occupancy: 65.0, avgGreenFee: 40000 },
-
-    { dayOfWeek: '화', timeSlot: '06~08 (얼리)', dayIndex: 1, timeSlotIndex: 0, occupancy: 74.0, avgGreenFee: 42000 },
-    { dayOfWeek: '화', timeSlot: '08~11 (1부)', dayIndex: 1, timeSlotIndex: 1, occupancy: 90.1, avgGreenFee: 51000 },
-    { dayOfWeek: '화', timeSlot: '11~14 (2부)', dayIndex: 1, timeSlotIndex: 2, occupancy: 85.5, avgGreenFee: 50000 },
-    { dayOfWeek: '화', timeSlot: '14~ (레이트)', dayIndex: 1, timeSlotIndex: 3, occupancy: 68.2, avgGreenFee: 41000 },
-
-    { dayOfWeek: '수', timeSlot: '06~08 (얼리)', dayIndex: 2, timeSlotIndex: 0, occupancy: 78.5, avgGreenFee: 43000 },
-    { dayOfWeek: '수', timeSlot: '08~11 (1부)', dayIndex: 2, timeSlotIndex: 1, occupancy: 92.4, avgGreenFee: 52000 },
-    { dayOfWeek: '수', timeSlot: '11~14 (2부)', dayIndex: 2, timeSlotIndex: 2, occupancy: 88.0, avgGreenFee: 51000 },
-    { dayOfWeek: '수', timeSlot: '14~ (레이트)', dayIndex: 2, timeSlotIndex: 3, occupancy: 71.5, avgGreenFee: 42000 },
-
-    { dayOfWeek: '목', timeSlot: '06~08 (얼리)', dayIndex: 3, timeSlotIndex: 0, occupancy: 81.2, avgGreenFee: 44000 },
-    { dayOfWeek: '목', timeSlot: '08~11 (1부)', dayIndex: 3, timeSlotIndex: 1, occupancy: 93.8, avgGreenFee: 53000 },
-    { dayOfWeek: '목', timeSlot: '11~14 (2부)', dayIndex: 3, timeSlotIndex: 2, occupancy: 89.4, avgGreenFee: 51000 },
-    { dayOfWeek: '목', timeSlot: '14~ (레이트)', dayIndex: 3, timeSlotIndex: 3, occupancy: 74.0, avgGreenFee: 43000 },
-
-    { dayOfWeek: '금', timeSlot: '06~08 (얼리)', dayIndex: 4, timeSlotIndex: 0, occupancy: 89.0, avgGreenFee: 48000 },
-    { dayOfWeek: '금', timeSlot: '08~11 (1부)', dayIndex: 4, timeSlotIndex: 1, occupancy: 97.5, avgGreenFee: 59000 },
-    { dayOfWeek: '금', timeSlot: '11~14 (2부)', dayIndex: 4, timeSlotIndex: 2, occupancy: 95.2, avgGreenFee: 58000 },
-    { dayOfWeek: '금', timeSlot: '14~ (레이트)', dayIndex: 4, timeSlotIndex: 3, occupancy: 82.5, avgGreenFee: 49000 },
-
-    { dayOfWeek: '토', timeSlot: '06~08 (얼리)', dayIndex: 5, timeSlotIndex: 0, occupancy: 96.5, avgGreenFee: 61000 },
-    { dayOfWeek: '토', timeSlot: '08~11 (1부)', dayIndex: 5, timeSlotIndex: 1, occupancy: 99.8, avgGreenFee: 67000 },
-    { dayOfWeek: '토', timeSlot: '11~14 (2부)', dayIndex: 5, timeSlotIndex: 2, occupancy: 99.2, avgGreenFee: 66000 },
-    { dayOfWeek: '토', timeSlot: '14~ (레이트)', dayIndex: 5, timeSlotIndex: 3, occupancy: 91.0, avgGreenFee: 56000 },
-
-    { dayOfWeek: '일', timeSlot: '06~08 (얼리)', dayIndex: 6, timeSlotIndex: 0, occupancy: 94.0, avgGreenFee: 60000 },
-    { dayOfWeek: '일', timeSlot: '08~11 (1부)', dayIndex: 6, timeSlotIndex: 1, occupancy: 99.0, avgGreenFee: 66000 },
-    { dayOfWeek: '일', timeSlot: '11~14 (2부)', dayIndex: 6, timeSlotIndex: 2, occupancy: 96.8, avgGreenFee: 64000 },
-    { dayOfWeek: '일', timeSlot: '14~ (레이트)', dayIndex: 6, timeSlotIndex: 3, occupancy: 86.4, avgGreenFee: 53000 }
-  ],
-  monthlyYoy: [
-    { month: 1, monthName: '1월', y2024: { teams: 0, avgGreenFee: 0, revenue: 0 }, y2025: { teams: 585, avgGreenFee: 30010, revenue: 66351270 }, y2026: { teams: 285, avgGreenFee: 24770, revenue: 27568742 } },
-    { month: 2, monthName: '2월', y2024: { teams: 0, avgGreenFee: 0, revenue: 0 }, y2025: { teams: 317, avgGreenFee: 44185, revenue: 55231142 }, y2026: { teams: 755, avgGreenFee: 36147, revenue: 105766351 } },
-    { month: 3, monthName: '3월', y2024: { teams: 0, avgGreenFee: 0, revenue: 0 }, y2025: { teams: 1894, avgGreenFee: 54594, revenue: 412236573 }, y2026: { teams: 1918, avgGreenFee: 43327, revenue: 329069593 } },
-    { month: 4, monthName: '4월', y2024: { teams: 1165, avgGreenFee: 75407, revenue: 349513209 }, y2025: { teams: 2662, avgGreenFee: 57736, revenue: 612576926 }, y2026: { teams: 2673, avgGreenFee: 50784, revenue: 536179316 } },
-    { month: 5, monthName: '5월', y2024: { teams: 2612, avgGreenFee: 85177, revenue: 883541220 }, y2025: { teams: 3159, avgGreenFee: 66272, revenue: 834694587 }, y2026: { teams: 3141, avgGreenFee: 60473, revenue: 756517667 } },
-    { month: 6, monthName: '6월', y2024: { teams: 2563, avgGreenFee: 87076, revenue: 887130303 }, y2025: { teams: 3051, avgGreenFee: 66178, revenue: 804531789 }, y2026: { teams: 3064, avgGreenFee: 56948, revenue: 692486181 } },
-    { month: 7, monthName: '7월', y2024: { teams: 2165, avgGreenFee: 55765, revenue: 480084410 }, y2025: { teams: 2823, avgGreenFee: 45205, revenue: 503904410 }, y2026: { teams: 2295, avgGreenFee: 46715, revenue: 423661790 } },
-    { month: 8, monthName: '8월', y2024: { teams: 3044, avgGreenFee: 50577, revenue: 610863164 }, y2025: { teams: 3030, avgGreenFee: 42585, revenue: 505189892 }, y2026: { teams: 2526, avgGreenFee: 41648, revenue: 410900394 } },
-    { month: 9, monthName: '9월', y2024: { teams: 2913, avgGreenFee: 61027, revenue: 708223834 }, y2025: { teams: 2713, avgGreenFee: 48181, revenue: 518191558 }, y2026: { teams: 2517, avgGreenFee: 50642, revenue: 500239211 } },
-    { month: 10, monthName: '10월', y2024: { teams: 3173, avgGreenFee: 76409, revenue: 964505107 }, y2025: { teams: 3127, avgGreenFee: 57721, revenue: 718863554 }, y2026: { teams: 0, avgGreenFee: 0, revenue: 0 } },
-    { month: 11, monthName: '11월', y2024: { teams: 2365, avgGreenFee: 79325, revenue: 745101923 }, y2025: { teams: 2443, avgGreenFee: 66057, revenue: 642210382 }, y2026: { teams: 0, avgGreenFee: 0, revenue: 0 } },
-    { month: 12, monthName: '12월', y2024: { teams: 885, avgGreenFee: 42577, revenue: 149234068 }, y2025: { teams: 711, avgGreenFee: 35888, revenue: 100343961 }, y2026: { teams: 0, avgGreenFee: 0, revenue: 0 } }
-  ]
+  timeSlotYield: [],
+  monthlyYoy: []
 };
 
 export default function GolfChannelIntelligence() {
@@ -184,7 +123,7 @@ export default function GolfChannelIntelligence() {
   const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
   const [viewScope, setViewScope] = useState<'SELECTED_DATE' | 'FULL_ASSET'>('SELECTED_DATE');
   const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<GolfIntelligenceData>(INITIAL_INTELLIGENCE_DATA);
+  const [data, setData] = useState<GolfIntelligenceData>(EMPTY_INTELLIGENCE_DATA);
   const [selectedYoyYear, setSelectedYoyYear] = useState<string>('2026');
   const [channelSortBy, setChannelSortBy] = useState<'AVG_GREEN_FEE' | 'PLAYERS'>('AVG_GREEN_FEE');
   const [tableSortKey, setTableSortKey] = useState<'avgGreenFee' | 'revenue' | 'players' | 'teams'>('avgGreenFee');
@@ -197,18 +136,43 @@ export default function GolfChannelIntelligence() {
   const fetchIntelligenceData = async () => {
     setLoading(true);
     try {
+      const queryParams = new URLSearchParams();
       if (viewScope === 'FULL_ASSET') {
-        setData(INITIAL_INTELLIGENCE_DATA);
-        setLoading(false);
-        return;
+        queryParams.append('startDate', '2026-01-01');
+        queryParams.append('endDate', endDate || startDate || '2026-09-26');
+      } else {
+        if (startDate) queryParams.append('startDate', startDate);
+        if (endDate) queryParams.append('endDate', endDate);
       }
 
-      // 1. Check if the dedicated golf-channel-intelligence API exists on backend
-      const queryParams = new URLSearchParams();
-      if (startDate) queryParams.append('startDate', startDate);
-      if (endDate) queryParams.append('endDate', endDate);
+      // Parallel fetch: 1) Golf channel intelligence SSOT, 2) Facility monthly trend (그린피)
+      const [res, trendRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${startDate || '2026-09-26'}`).catch(() => null)
+      ]);
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null);
+      // Process Monthly YoY from real DB facility-monthly-trend
+      const monthlyList = Array.isArray(trendRes?.data?.monthlyData) ? trendRes.data.monthlyData : [];
+      const realMonthlyYoy = Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        const mStr = String(m).padStart(2, '0');
+        const findYearData = (y: string) => {
+          const item = monthlyList.find((d: any) => d.month === `${y}-${mStr}`);
+          const rev = Number(item?.revenue || 0);
+          const visitors = Number(item?.visitors || 0);
+          const teams = visitors > 0 ? Math.round(visitors / 4) : 0;
+          const avgGreenFee = visitors > 0 ? Math.round(rev / visitors) : 0;
+          return { teams, avgGreenFee, revenue: rev };
+        };
+        return {
+          month: m,
+          monthName: `${m}월`,
+          y2024: findYearData('2024'),
+          y2025: findYearData('2025'),
+          y2026: findYearData('2026')
+        };
+      });
+
       if (res && res.success && (res.channels || res.data?.channels)) {
         const payload = res.data || res;
         const liveSummary = payload.summary || {};
@@ -223,13 +187,7 @@ export default function GolfChannelIntelligence() {
         const joinTeamsCount = Number(liveSummary.joinTeamsCount || 0);
         const memberAnchorRevenue = Number(liveSummary.memberAnchorRevenue || 0);
 
-        const member1Non3Teams = Math.round(totalTeams * 0.289);
-
-        const scaledJoinRanking = INITIAL_INTELLIGENCE_DATA.teamSize.joinRanking.map(j => ({
-          ...j,
-          teams: joinTeamsCount > 0 ? Math.round((j.sharePct / 100) * joinTeamsCount) : 0,
-          players: joinTeamsCount > 0 ? Math.round((j.sharePct / 100) * joinTeamsCount * 1.2) : 0
-        }));
+        const normalFourTeams = Math.max(0, totalTeams - threePlayerTeamsCount - joinTeamsCount);
 
         setData({
           summary: {
@@ -244,121 +202,33 @@ export default function GolfChannelIntelligence() {
           },
           channels: liveChannels,
           teamSize: payload.teamSize || {
-            size1: { teams: Math.max(0, Math.round(totalTeams * 0.017)), ratio: 1.7 },
-            size2: { teams: Math.max(0, Math.round(totalTeams * 0.004)), ratio: 0.4 },
+            size1: { teams: joinTeamsCount, ratio: totalTeams > 0 ? Number(((joinTeamsCount / totalTeams) * 100).toFixed(1)) : 0 },
+            size2: { teams: 0, ratio: 0 },
             size3: { teams: threePlayerTeamsCount, ratio: totalTeams > 0 ? Number(((threePlayerTeamsCount / totalTeams) * 100).toFixed(1)) : 0, lostRevenue: threePlayerLostRevenue },
-            size4: { teams: Math.max(0, totalTeams - threePlayerTeamsCount - joinTeamsCount), ratio: totalTeams > 0 ? Number((((totalTeams - threePlayerTeamsCount - joinTeamsCount) / totalTeams) * 100).toFixed(1)) : 0 },
-            joinRanking: scaledJoinRanking
+            size4: { teams: normalFourTeams, ratio: totalTeams > 0 ? Number(((normalFourTeams / totalTeams) * 100).toFixed(1)) : 0 },
+            joinRanking: Array.isArray(payload.joinRanking) ? payload.joinRanking : []
           },
           memberSynergy: payload.memberSynergy || {
-            pureNonMember: { teams: Math.round(totalTeams * 0.59), ratio: 59.0, revenue: Math.round(totalGreenFeeRevenue * 0.59) },
-            member1Non3: { teams: member1Non3Teams, ratio: 28.9, nonMemberRevenue: Math.round(memberAnchorRevenue * 0.73) },
-            member2Non2: { teams: Math.round(totalTeams * 0.083), ratio: 8.3, nonMemberRevenue: Math.round(memberAnchorRevenue * 0.27) },
-            member3to4: { teams: Math.round(totalTeams * 0.038), ratio: 3.8, revenue: Math.round(totalGreenFeeRevenue * 0.038) },
+            pureNonMember: { teams: 0, ratio: 0, revenue: 0 },
+            member1Non3: { teams: 0, ratio: 0, nonMemberRevenue: memberAnchorRevenue },
+            member2Non2: { teams: 0, ratio: 0, nonMemberRevenue: 0 },
+            member3to4: { teams: 0, ratio: 0, revenue: 0 },
             totalAnchorRevenue: memberAnchorRevenue
           },
-          timeSlotYield: payload.timeSlotYield || INITIAL_INTELLIGENCE_DATA.timeSlotYield,
-          monthlyYoy: payload.monthlyYoy || INITIAL_INTELLIGENCE_DATA.monthlyYoy
+          timeSlotYield: Array.isArray(payload.timeSlotYield) ? payload.timeSlotYield : [],
+          monthlyYoy: realMonthlyYoy
         });
         setLoading(false);
         return;
       }
 
-      // 2. Dynamic Live Adapter using the official golf V2 mart API:
-      // /api/v6/report/golf-channel-teetime-analysis-v2
-      const liveParams = isRangeMode
-        ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-        : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
-
-      const liveRes = await secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${liveParams}`).catch(() => null);
-      const payload = liveRes?.data ?? liveRes;
-
-      if (payload && (payload.meta?.summary || payload.channels)) {
-        const liveSummary = payload.meta?.summary || {};
-        const channelsList = Array.isArray(payload.channels) ? payload.channels : [];
-        
-        const greenFeeItem = channelsList.find((c: any) => (c.venue_name || c.venueName || '').includes('그린피'));
-        const cartItem = channelsList.find((c: any) => (c.venue_name || c.venueName || '').includes('카트'));
-
-        const totalPlayers = Number(liveSummary.totalPlayers || greenFeeItem?.players || 0);
-        const totalTeams = Number(cartItem?.quantity || (totalPlayers > 0 ? Math.round(totalPlayers / 4) : 0));
-        const totalGreenFeeRevenue = Number(greenFeeItem?.revenue || liveSummary.totalGolfRevenue || 0);
-        const averageGreenFee = totalPlayers > 0 ? Math.round(totalGreenFeeRevenue / totalPlayers) : 0;
-
-        const cartFeePerPerson = cartItem?.quantity > 0 && cartItem?.revenue > 0 
-          ? Math.round(Number(cartItem.revenue) / Number(cartItem.quantity) / 4) 
-          : 0;
-
-        // 3인 플레이 (전체 팀의 약 3.9%)
-        const threePlayerTeamsCount = Math.round(totalTeams * 0.039);
-        const threePlayerLostRevenue = threePlayerTeamsCount * (averageGreenFee + cartFeePerPerson);
-
-        // 조인 팀 (1~2인, 약 2.1%)
-        const joinTeamsCount = Math.round(totalTeams * 0.021);
-
-        // 회원 앵커 효과 (회원 1명 + 비회원 3인 팀 약 28.9%)
-        const member1Non3Teams = Math.round(totalTeams * 0.289);
-        const memberAnchorRevenue = Math.round(member1Non3Teams * 3 * averageGreenFee);
-
-        // 채널별 분배: 주요 거래처에 총 teams와 players, revenue를 비율대로 정확히 정규화 및 단가 스케일링
-        const baseAvg = INITIAL_INTELLIGENCE_DATA.summary.averageGreenFee > 0 ? INITIAL_INTELLIGENCE_DATA.summary.averageGreenFee : 1;
-        const scaleFactor = averageGreenFee > 0 ? (averageGreenFee / baseAvg) : 1;
-        const scaledChannels = INITIAL_INTELLIGENCE_DATA.channels.map(ch => {
-          const chTeams = totalTeams > 0 ? Math.round((ch.sharePct / 100) * totalTeams) : 0;
-          const chPlayers = Math.round(chTeams * 3.93);
-          const chAvgGreenFee = Math.round(ch.avgGreenFee * scaleFactor);
-          const chRevenue = Math.round(chPlayers * chAvgGreenFee);
-          return {
-            ...ch,
-            teams: chTeams,
-            players: chPlayers,
-            avgGreenFee: chAvgGreenFee,
-            revenue: chRevenue
-          };
-        });
-
-        // 조인 랭킹 분배
-        const scaledJoinRanking = INITIAL_INTELLIGENCE_DATA.teamSize.joinRanking.map(j => ({
-          ...j,
-          teams: joinTeamsCount > 0 ? Math.round((j.sharePct / 100) * joinTeamsCount) : 0,
-          players: joinTeamsCount > 0 ? Math.round((j.sharePct / 100) * joinTeamsCount * 1.2) : 0
-        }));
-
-        setData({
-          summary: {
-            totalTeams,
-            totalPlayers,
-            totalGreenFeeRevenue,
-            averageGreenFee,
-            threePlayerTeamsCount,
-            threePlayerLostRevenue,
-            joinTeamsCount,
-            memberAnchorRevenue
-          },
-          channels: scaledChannels,
-          teamSize: {
-            size1: { teams: Math.max(1, Math.round(totalTeams * 0.017)), ratio: 1.7 },
-            size2: { teams: Math.max(1, Math.round(totalTeams * 0.004)), ratio: 0.4 },
-            size3: { teams: threePlayerTeamsCount, ratio: 3.9, lostRevenue: threePlayerLostRevenue },
-            size4: { teams: Math.max(1, totalTeams - threePlayerTeamsCount - Math.round(totalTeams * 0.021)), ratio: 94.0 },
-            joinRanking: scaledJoinRanking
-          },
-          memberSynergy: {
-            pureNonMember: { teams: Math.round(totalTeams * 0.59), ratio: 59.0, revenue: Math.round(totalGreenFeeRevenue * 0.59) },
-            member1Non3: { teams: member1Non3Teams, ratio: 28.9, nonMemberRevenue: Math.round(memberAnchorRevenue * 0.73) },
-            member2Non2: { teams: Math.round(totalTeams * 0.083), ratio: 8.3, nonMemberRevenue: Math.round(memberAnchorRevenue * 0.27) },
-            member3to4: { teams: Math.round(totalTeams * 0.038), ratio: 3.8, revenue: Math.round(totalGreenFeeRevenue * 0.038) },
-            totalAnchorRevenue: memberAnchorRevenue
-          },
-          timeSlotYield: INITIAL_INTELLIGENCE_DATA.timeSlotYield,
-          monthlyYoy: INITIAL_INTELLIGENCE_DATA.monthlyYoy
-        });
-      } else {
-        setData(INITIAL_INTELLIGENCE_DATA);
-      }
+      setData({
+        ...EMPTY_INTELLIGENCE_DATA,
+        monthlyYoy: realMonthlyYoy
+      });
     } catch (err) {
       console.error('Golf Channel Intelligence Fetch Error:', err);
-      setData(INITIAL_INTELLIGENCE_DATA);
+      setData(EMPTY_INTELLIGENCE_DATA);
     } finally {
       setLoading(false);
     }
@@ -1179,7 +1049,17 @@ export default function GolfChannelIntelligence() {
             </p>
 
             <div className="h-[300px] w-full">
-              <ReactECharts option={getJoinChannelOption()} style={{ height: '100%', width: '100%' }} />
+              {data.teamSize.joinRanking && data.teamSize.joinRanking.length > 0 ? (
+                <ReactECharts option={getJoinChannelOption()} style={{ height: '100%', width: '100%' }} />
+              ) : (
+                <div className="h-full w-full flex flex-col items-center justify-center bg-blue-50/30 rounded-2xl border border-dashed border-blue-200 p-6 text-center">
+                  <Users className="w-10 h-10 text-blue-300 mb-2" />
+                  <p className="text-sm font-bold text-blue-900">조인 팀 실측 총 {data.summary.joinTeamsCount.toLocaleString()}팀</p>
+                  <p className="text-xs text-blue-600 mt-1 max-w-sm">
+                    1~2인 조인 고객의 상세 예약 플랫폼(OTA/직영)별 랭킹은 예약 원천 분할 마트 배포 시 실시간 표시됩니다.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1231,21 +1111,34 @@ export default function GolfChannelIntelligence() {
             </p>
 
             <div className="h-[310px] w-full">
-              <ReactECharts option={getMemberSynergyOption()} style={{ height: '100%', width: '100%' }} />
+              {data.memberSynergy.member1Non3.teams > 0 || data.memberSynergy.pureNonMember.teams > 0 ? (
+                <ReactECharts option={getMemberSynergyOption()} style={{ height: '100%', width: '100%' }} />
+              ) : (
+                <div className="h-full w-full flex flex-col items-center justify-center bg-teal-50/30 rounded-2xl border border-dashed border-teal-200 p-6 text-center">
+                  <Coins className="w-10 h-10 text-teal-300 mb-2" />
+                  <p className="text-sm font-bold text-teal-900">회원 동반 앵커 견인 실측 매출</p>
+                  <p className="text-xl font-black text-teal-700 mt-1 font-financial">₩{formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</p>
+                  <p className="text-xs text-teal-600 mt-2 max-w-sm">
+                    회원 1명이 비회원 동반자를 견인하여 발생한 순수 실측 그린피 매출입니다. (상세 팀 분할 통계 마트 배포 대기 중)
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-100 mt-4 text-xs text-teal-950 space-y-2">
             <div className="flex justify-between">
-              <span>• 회원 1명 + 비회원 3명 동반 팀:</span>
-              <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.summary.totalTeams > 0 ? (data.memberSynergy.member1Non3.teams / data.summary.totalTeams * 100).toFixed(1) : '0'}%)</strong>
-            </div>
-            <div className="flex justify-between">
               <span>• 회원이 견인한 순수 비회원 그린피 매출:</span>
               <strong className="text-teal-700 font-extrabold">₩{formatCurrency(data.memberSynergy.totalAnchorRevenue)}원</strong>
             </div>
+            {data.memberSynergy.member1Non3.teams > 0 && (
+              <div className="flex justify-between">
+                <span>• 회원 1명 + 비회원 3명 동반 팀:</span>
+                <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.summary.totalTeams > 0 ? (data.memberSynergy.member1Non3.teams / data.summary.totalTeams * 100).toFixed(1) : '0'}%)</strong>
+              </div>
+            )}
             <p className="text-[11px] text-teal-900/80 pt-1.5 border-t border-teal-200/50 leading-relaxed">
-              💡 회원 1명은 단순 1인이 아닌 **연간 2.6명의 비회원을 추가 유치하는 영업 앵커** 역할을 수행하고 있습니다.
+              💡 회원 1명은 단순 1인이 아닌 비회원을 추가 유치하는 영업 앵커 역할을 수행하고 있습니다.
             </p>
           </div>
         </div>
@@ -1270,7 +1163,17 @@ export default function GolfChannelIntelligence() {
             </p>
 
             <div className="h-[310px] w-full">
-              <ReactECharts option={getTimeSlotHeatmapOption()} style={{ height: '100%', width: '100%' }} />
+              {data.timeSlotYield.length > 0 ? (
+                <ReactECharts option={getTimeSlotHeatmapOption()} style={{ height: '100%', width: '100%' }} />
+              ) : (
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-6 text-center">
+                  <Clock className="w-10 h-10 text-slate-300 mb-2" />
+                  <p className="text-sm font-bold text-slate-700">시간대별(티타임) 가동률 마트 집계 준비 중</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                    가짜 숫자를 배제하는 원칙(Zero-Hallucination)에 따라, 백엔드 골프 티타임 원천 로그 마트 배포 시 실시간 바인딩됩니다.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

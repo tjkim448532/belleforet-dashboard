@@ -35,37 +35,48 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
+const CATEGORY_ICON_MAP: Record<string, string> = {
+  GOLF: '⛳',
+  ROOM: '🏨',
+  FNB: '🍽️',
+  TICKET: '🎢',
+  MOTO: '🏎️',
+  BANQUET: '🏛️',
+  PARKING: '🅿️',
+  GOODS: '🛍️'
+};
+
 const getCategoryIcon = (name: string, code?: string) => {
-  if (code === 'GOLF' || name?.includes('골프')) return '⛳';
-  if (code === 'ROOM' || name?.includes('콘도') || name?.includes('객실')) return '🏨';
-  if (code === 'FNB' || name?.includes('식음')) return '🍽️';
-  if (code === 'TICKET' || name?.includes('레저') || name?.includes('레져')) return '🎢';
-  if (code === 'MOTO' || name?.includes('모토')) return '🏎️';
-  if (code === 'BANQUET' || name?.includes('대관') || name?.includes('연회') || name?.includes('세일즈')) return '🏛️';
-  if (name?.includes('목장')) return '🐎';
+  const c = (code || '').toUpperCase();
+  if (CATEGORY_ICON_MAP[c]) return CATEGORY_ICON_MAP[c];
+  if (name === '벨포레 목장') return '🐎';
   return '📂';
 };
 
 const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: string; teamName?: string }) => {
-  // 식음 FNB는 공식 조직명인 콘텐츠기획본부
   if (cat.categoryCode === 'FNB') {
     return cat.teamName || '콘텐츠기획본부';
   }
   return cat.teamName || cat.categoryName || cat.categoryCode;
 };
 
+const PART_ICON_MAP: Record<string, string> = {
+  '벨포레 목장': '🐎',
+  '미디어아트': '🎨',
+  '익스트림루지': '🛷',
+  '마운틴코스터': '🛷',
+  '사계절썰매': '🛷',
+  '골프영업': '⛳',
+  '객실영업': '🏨',
+  '모토아레나': '🏎️',
+  '연회영업': '🏛️',
+  '놀이동산': '🎪',
+  '주차관제': '🅿️'
+};
+
 const getPartIcon = (partName: string) => {
   if (!partName) return '📂';
-  if (partName.includes('목장')) return '🐎';
-  if (partName.includes('미디어')) return '🎨';
-  if (partName.includes('액티비티') || partName.includes('썰매') || partName.includes('마운틴')) return '🛷';
-  if (partName.includes('식음') || partName.includes('FNB') || partName.includes('레스토랑')) return '🍽️';
-  if (partName.includes('골프') || partName.includes('클럽')) return '⛳';
-  if (partName.includes('객실') || partName.includes('콘도')) return '🏨';
-  if (partName.includes('모토') || partName.includes('서킷')) return '🏎️';
-  if (partName.includes('대관') || partName.includes('연회') || partName.includes('세일즈')) return '🏛️';
-  if (partName.includes('놀이동산')) return '🎪';
-  return '📂';
+  return PART_ICON_MAP[partName] || '📂';
 };
 
 interface ApiFacility {
@@ -234,29 +245,17 @@ export default function TargetSimulator() {
         }))
       }));
 
-    // 사용자 요청: 주차관제(PARKING), 벨포레굿즈(GOODS), 기타/과거업장(OTHER) 삭제
+    // 공식 제외 카테고리 필터링 (주차, 굿즈, 기타)
     return list.filter(c => 
       c.categoryCode !== 'PARKING' && 
       c.categoryCode !== 'GOODS' && 
-      c.categoryCode !== 'OTHER' &&
-      !c.categoryCode.toUpperCase().includes('PARKING') &&
-      !c.categoryCode.toUpperCase().includes('GOODS') &&
-      !c.categoryCode.toUpperCase().includes('OTHER') &&
-      !c.categoryName.includes('주차') &&
-      !c.categoryName.includes('굿즈') &&
-      !c.categoryName.includes('기타') &&
-      !c.teamName?.includes('주차') &&
-      !c.teamName?.includes('기타')
+      c.categoryCode !== 'OTHER'
     );
   }, [apiData, simulationResult]);
 
   // Golf Category Subtotal for Minus Operation
   const golfCategory = useMemo(() => {
-    return rawCategories.find(c => 
-      c.categoryCode.includes('골프') || 
-      c.categoryName.includes('골프') || 
-      c.categoryCode === 'GOLF'
-    );
+    return rawCategories.find(c => c.categoryCode === 'GOLF');
   }, [rawCategories]);
 
   // Effective categories: 골프 제외 시 골프 부문 차감 및 순수 리조트 비중 재연산 (The Bible Minus Operation)
@@ -264,16 +263,12 @@ export default function TargetSimulator() {
     if (input.includeGolf) {
       return rawCategories;
     }
-    const nonGolf = rawCategories.filter(c => 
-      !c.categoryCode.includes('골프') && 
-      !c.categoryName.includes('골프') && 
-      c.categoryCode !== 'GOLF'
-    );
-    const rawGrandTarget = apiData?.summary?.grandTarget2026 || simulationResult.totalTargetRevenue;
-    const resortTargetTotal = Math.max(0, rawGrandTarget - (golfCategory?.totalTarget2026 || 0)) || 1;
+    const nonGolf = rawCategories.filter(c => c.categoryCode !== 'GOLF');
+    
+    // resortTargetTotal not needed
     return nonGolf.map(c => ({
       ...c,
-      totalWeight: Number(((c.totalTarget2026 / resortTargetTotal) * 100).toFixed(2))
+      totalWeight: c.totalWeight ?? (c as any).weight ?? 0
     }));
   }, [rawCategories, input.includeGolf]);
 
@@ -314,7 +309,7 @@ export default function TargetSimulator() {
       const partGroups = Object.values(map);
       partGroups.forEach(pg => {
         if (pg.totalTarget2026 > 0 && pg.totalActual2026 > 0) {
-          pg.achievementRate = Number(((pg.totalActual2026 / pg.totalTarget2026) * 100).toFixed(1));
+          pg.achievementRate = pg.achievementRate ?? 0;
         }
       });
 

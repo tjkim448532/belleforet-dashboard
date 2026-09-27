@@ -199,9 +199,9 @@ export default function GolfChannelIntelligence() {
           channels: liveChannels,
           teamSize: payload.teamSize || {
             size1: { teams: 0, ratio: 0 },
-            size2: { teams: joinTeamsCount, ratio: totalTeams > 0 ? Number(((joinTeamsCount / totalTeams) * 100).toFixed(1)) : 0 },
-            size3: { teams: threePlayerTeamsCount, ratio: totalTeams > 0 ? Number(((threePlayerTeamsCount / totalTeams) * 100).toFixed(1)) : 0, lostRevenue: threePlayerLostRevenue },
-            size4: { teams: normalFourTeams, ratio: totalTeams > 0 ? Number(((normalFourTeams / totalTeams) * 100).toFixed(1)) : 0 },
+            size2: { teams: joinTeamsCount, ratio: 0 },
+            size3: { teams: threePlayerTeamsCount, ratio: 0, lostRevenue: threePlayerLostRevenue },
+            size4: { teams: normalFourTeams, ratio: 0 },
             joinRanking: joinRankingList
           },
           memberSynergy: payload.memberSynergy || {
@@ -427,7 +427,7 @@ export default function GolfChannelIntelligence() {
       grid: { left: '3%', right: '28%', top: '6%', bottom: '6%', containLabel: true },
       xAxis: {
         type: 'value',
-        max: (value: any) => Math.max(1, Math.ceil(value.max * 1.15)),
+        max: (value: any) => Math.max(1, Math.ceil(value.max)),
         axisLabel: { formatter: '{value}팀' }
       },
       yAxis: {
@@ -848,7 +848,7 @@ export default function GolfChannelIntelligence() {
               <span className="text-base font-normal text-slate-400 ml-1">팀</span>
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              내장객 <strong className="text-slate-800">{data.summary.totalPlayers.toLocaleString()}명</strong> (팀당 평균 {(data.summary.totalPlayers / Math.max(1, data.summary.totalTeams)).toFixed(2)}명)
+              내장객 <strong className="text-slate-800">{data.summary.totalPlayers.toLocaleString()}명</strong> {(data.summary as any).avgPlayersPerTeam ? `(팀당 평균 ${(data.summary as any).avgPlayersPerTeam}명)` : ''}
             </div>
           </div>
           <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
@@ -1087,7 +1087,7 @@ export default function GolfChannelIntelligence() {
               <strong className="text-slate-900">{formatCurrency(data.summary.threePlayerLostRevenue)}원</strong>
             </div>
             <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
-              💡 4인 플레이가 {(data.teamSize.size4.teams / Math.max(1, data.summary.totalTeams) * 100).toFixed(1)}%로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동할 경우 최대 {formatCurrency(data.summary.threePlayerLostRevenue)}원의 공실 손실을 회수할 수 있습니다.
+              💡 4인 플레이가 {data.teamSize.size4.ratio !== undefined ? `${data.teamSize.size4.ratio}%` : '-'}로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동할 경우 최대 {formatCurrency(data.summary.threePlayerLostRevenue)}원의 공실 손실을 회수할 수 있습니다.
             </div>
           </div>
         </div>
@@ -1141,7 +1141,7 @@ export default function GolfChannelIntelligence() {
               <div className="flex justify-between font-medium">
                 <span>🎯 조인 주력 채널 2위:</span>
                 <span>
-                  {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.channelName} ({data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.sharePct}%, {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.teams.toLocaleString()}팀 · 평단가 {formatCurrency(data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.avgGreenFee || 0)}원)
+                  {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.channelName} ({data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.sharePct}%, {data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.teams.toLocaleString()}팀 · 평단가 ${formatCurrency(data.teamSize.joinRanking.filter(r => r.teams > 0)[1]?.avgGreenFee || 0)}원)
                 </span>
               </div>
             )}
@@ -1199,19 +1199,19 @@ export default function GolfChannelIntelligence() {
             {data.memberSynergy.member1Non3.teams > 0 && (
               <div className="flex justify-between">
                 <span>• 회원 1명 + 비회원 3명 동반 팀:</span>
-                <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.memberSynergy.member1Non3.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.member1Non3.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · {formatCurrency(data.memberSynergy.member1Non3.nonMemberRevenue)}원</strong>
+                <strong>{data.memberSynergy.member1Non3.teams.toLocaleString()}팀 ({data.memberSynergy.member1Non3.ratio !== undefined ? `${data.memberSynergy.member1Non3.ratio}%` : '-'}) · {formatCurrency(data.memberSynergy.member1Non3.nonMemberRevenue)}원</strong>
               </div>
             )}
             {data.memberSynergy.member2Non2.teams > 0 && (
               <div className="flex justify-between">
                 <span>• 회원 2명 + 비회원 2명 동반 팀:</span>
-                <strong>{data.memberSynergy.member2Non2.teams.toLocaleString()}팀 ({data.memberSynergy.member2Non2.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.member2Non2.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · {formatCurrency(data.memberSynergy.member2Non2.nonMemberRevenue)}원</strong>
+                <strong>{data.memberSynergy.member2Non2.teams.toLocaleString()}팀 ({data.memberSynergy.member2Non2.ratio !== undefined ? `${data.memberSynergy.member2Non2.ratio}%` : '-'}) · {formatCurrency(data.memberSynergy.member2Non2.nonMemberRevenue)}원</strong>
               </div>
             )}
             {data.memberSynergy.pureNonMember.teams > 0 && (
               <div className="flex justify-between text-slate-600">
                 <span>• 순수 비회원 (4인) 팀:</span>
-                <span>{data.memberSynergy.pureNonMember.teams.toLocaleString()}팀 ({data.memberSynergy.pureNonMember.ratio || (data.summary.totalTeams > 0 ? (data.memberSynergy.pureNonMember.teams / data.summary.totalTeams * 100).toFixed(1) : '0')}%) · {formatCurrency(data.memberSynergy.pureNonMember.revenue)}원</span>
+                <span>{data.memberSynergy.pureNonMember.teams.toLocaleString()}팀 ({data.memberSynergy.pureNonMember.ratio !== undefined ? `${data.memberSynergy.pureNonMember.ratio}%` : '-'}) · {formatCurrency(data.memberSynergy.pureNonMember.revenue)}원</span>
               </div>
             )}
             <p className="text-[11px] text-teal-900/80 pt-1.5 border-t border-teal-200/50 leading-relaxed">

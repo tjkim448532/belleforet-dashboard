@@ -89,9 +89,9 @@ export default function GolfBusiness() {
           unitPriceFormatted: unitPrice > 0 ? unitPrice.toLocaleString() : '-'
         };
       })
-      // 0원짜리 회계 장부 계정(City Ledger, Room Guest Ledger 등) 및 실적 없는 더미 항목 완전 삭제
+      // 0원짜리 실적 없는 더미 항목 및 원장 계정 필터링
       .filter((c: any) => {
-        const isLedger = (c.productGroup && c.productGroup.includes('Ledger')) || (c.venueName === '골프장' && c.revenue === 0);
+        const isLedger = c.isLedger === true || c.accountType === 'LEDGER';
         const isZero = (c.revenue === 0 && c.quantity === 0);
         return !isLedger && !isZero;
       });
@@ -107,14 +107,14 @@ export default function GolfBusiness() {
 
   const { summary } = data.meta;
 
-  const greenFeeItem = normalizedChannels.find(c => c.venueName.includes('그린피') || c.productGroup.includes('그린피'));
-  const cartFeeItem = normalizedChannels.find(c => c.venueName.includes('카트') || c.productGroup.includes('카트'));
-  const startHouseItem = normalizedChannels.find(c => c.venueName.includes('스타트'));
-  const restaurantItem = normalizedChannels.find(c => c.venueName.includes('레스토랑'));
-  const proShopItem = normalizedChannels.find(c => c.venueName.includes('프로샵'));
+  const greenFeeItem = normalizedChannels.find(c => c.venueName === '그린피' || c.productGroup === '그린피' || c.productGroup === 'GREEN_FEE');
+  const cartFeeItem = normalizedChannels.find(c => c.venueName === '골프카트' || c.venueName === '카트' || c.productGroup === 'CART_FEE');
+  const startHouseItem = normalizedChannels.find(c => c.venueName === '스타트하우스' || c.productGroup === 'START_HOUSE');
+  const restaurantItem = normalizedChannels.find(c => c.venueName === '클럽하우스 레스토랑' || c.productGroup === 'RESTAURANT');
+  const proShopItem = normalizedChannels.find(c => c.venueName === '골프 프로샵' || c.venueName === '프로샵' || c.productGroup === 'PRO_SHOP');
 
-  const courseCoreRatio = ((greenFeeItem?.revenueSharePct || 0) + (cartFeeItem?.revenueSharePct || 0)).toFixed(1);
-  const amenityRatio = (100 - Number(courseCoreRatio)).toFixed(1);
+  const courseCoreRatio = (summary as any).courseCoreRatio ?? Number(((greenFeeItem?.revenueSharePct || 0) + (cartFeeItem?.revenueSharePct || 0)).toFixed(1));
+  const amenityRatio = (summary as any).amenityRatio ?? (Number(courseCoreRatio) > 0 ? (100 - Number(courseCoreRatio)).toFixed(1) : 0);
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">

@@ -125,7 +125,7 @@ export default function Home() {
 
 
   if (apiError && !loading) {
-    const isSleep = (coreData.error || '').includes('심야 절전 운영') || (coreData.error || '').includes('수면');
+    const isSleep = Boolean((coreData as any)?.isSleepMode || (coreData as any)?.status === 503);
     if (isSleep) {
       return (
         <div className="w-full h-[80vh] flex flex-col items-center justify-center bg-slate-900/5 text-slate-600 gap-3">
@@ -201,13 +201,13 @@ export default function Home() {
 
   const mtdRoomsGrowth = displayData?.mtd?.roomsGrowth !== undefined 
     ? displayData.mtd.roomsGrowth 
-    : (lyMtdRoomsSold > 0 ? Number((((mtdRoomsSold - lyMtdRoomsSold) / lyMtdRoomsSold) * 100).toFixed(1)) : null);
+    : null;
 
   // [기간 모드 지능형 동적 바인딩] 선택 기간 모드 시 선택 기간 전체 실적 바인딩, 단일 일자 시 MTD 당월 실적 바인딩
   const rangeRoomsSold = parseNum(coreData.core?.summary?.totalRooms || roomSub?.todayVisitors || roomSub?.visitors || 0);
   const rangeLyRoomsSold = parseNum(roomSub?.todayLyVisitors || roomSub?.lyVisitors || coreData.core?.summary?.totalRoomsLy || 0);
   const rangeRoomsDiff = rangeRoomsSold - rangeLyRoomsSold;
-  const rangeRoomsGrowth = rangeLyRoomsSold > 0 ? Number((((rangeRoomsSold - rangeLyRoomsSold) / rangeLyRoomsSold) * 100).toFixed(1)) : null;
+  const rangeRoomsGrowth = coreData.core?.summary?.roomsGrowth ?? roomSub?.growthRate ?? null;
 
   const activeRoomsSold = isRangeMode ? rangeRoomsSold : mtdRoomsSold;
   const activeLyRoomsSold = isRangeMode ? rangeLyRoomsSold : lyMtdRoomsSold;
@@ -220,7 +220,7 @@ export default function Home() {
   const rangeRoomRevDiff = rangeRoomRev - rangeLyRoomRev;
   const rangeRoomRevGrowth = roomSub?.todayGrowth !== undefined 
     ? Number(roomSub.todayGrowth) 
-    : (rangeLyRoomRev > 0 ? Number((((rangeRoomRev - rangeLyRoomRev) / rangeLyRoomRev) * 100).toFixed(1)) : null);
+    : null;
 
   const activeSecondaryRev = isRangeMode ? rangeRoomRev : mtdGross;
   const activeSecondaryDiff = isRangeMode ? rangeRoomRevDiff : mtdDiff;
@@ -376,7 +376,7 @@ export default function Home() {
                 {todayGrowth !== undefined && todayGrowth !== null ? (
                   <div className={todayGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
                     <span className="text-slate-600 font-medium">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                    <span className="font-bold">{todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(todayGrowth).toFixed(1)}%</span>
+                    <span className="font-bold">{todayGrowth !== undefined && todayGrowth !== null ? (todayGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(todayGrowth).toFixed(1) + '%' : '-'}</span>
                     {todayDiff !== undefined && (
                       <span className="font-medium opacity-85">({todayDiff > 0 ? '+' : ''}{formatRevenue(todayDiff)}원)</span>
                     )}
@@ -427,7 +427,7 @@ export default function Home() {
                   {ytdGrowth !== undefined && ytdGrowth !== null ? (
                     <div className={ytdGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
                       <span className="text-slate-600 font-medium">전년 동기 대비</span>
-                      <span className="font-bold">{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
+                      <span className="font-bold">{ytdGrowth !== undefined && ytdGrowth !== null ? (ytdGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(ytdGrowth).toFixed(1) + '%' : '-'}</span>
                       {ytdDiff !== undefined && (
                         <span className="font-medium opacity-85">({ytdDiff > 0 ? '+' : ''}{formatRevenue(ytdDiff)}원)</span>
                       )}

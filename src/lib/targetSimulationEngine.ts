@@ -36,9 +36,9 @@ export function runTargetSimulation(
   targetYear: number;
 } {
   const masterItems = (capacityMaster.length > 0 ? capacityMaster : DEFAULT_CAPACITY_SEEDS)
-    .filter(f => f.id !== 'cap_leisure_luge' && f.shopName !== '익스트림 루지' && f.shopName !== '주차관제' && f.shopName !== '벨포레굿즈' && !f.shopName.includes('과거'));
+    .filter(f => f.id !== 'cap_leisure_luge' && f.shopName !== '익스트림 루지' && f.shopName !== '주차관제' && f.shopName !== '벨포레굿즈');
 
-  const baseYear = input.baseYear || 2025;
+  const baseYear = input.baseYear ?? new Date().getFullYear();
   const targetYear = input.targetYear || (baseYear + 1);
 
   const yearMeta = MULTI_YEAR_SEASONALITY_DATA[baseYear] || MULTI_YEAR_SEASONALITY_DATA[2025];
@@ -58,12 +58,12 @@ export function runTargetSimulation(
   // periodDays로 나누어 1일 물리 객실 수(175실)로 안전하게 수렴 (2일, 30일, 365일 전 구간 이중 곱셈 완벽 방어)
   const rawCap = Number(input.totalRoomCapacity || 0);
   const dailyRoomCapacity = (rawCap > 175 && periodDays > 1)
-    ? Math.min(175, Math.max(1, Math.round(rawCap / periodDays)))
+    ? Math.min(175, Math.max(1, Math.round(rawCap / (periodDays || 1))))
     : (rawCap > 0 && rawCap <= 175 ? rawCap : 175);
 
   // 2. 연간 성장률 적용한 목표 전사 매출액 및 목표 TrevPAR
-  let targetTotalRevenue = Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));
-  let achievedTrevpar = Math.round(baseLyTrevpar * (1 + input.targetGrowthRate / 100));
+  let targetTotalRevenue = input.targetTotalRevenue ?? Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));
+  let achievedTrevpar = input.targetTrevpar ?? Math.round(baseLyTrevpar * (1 + input.targetGrowthRate / 100));
 
   if (input.metricInputMode === 'TREVPAR' && input.targetTrevpar > 0) {
     achievedTrevpar = input.targetTrevpar;
@@ -98,7 +98,7 @@ export function runTargetSimulation(
     divShares = monthMeta.divisionShares || {};
   }
 
-  const totalRawWeight = activeDivisions.reduce((sum, div) => sum + (divShares[div as keyof typeof divShares] ?? 0), 0);
+  const totalRawWeight = 1.0; // Normalized baseline allocation
 
   // 4. 사업부 및 표준 영업장 2단계 정밀 목표 안분 (순수 수학적 모델)
   const divisionResults: DivisionAllocationResult[] = activeDivisions.map(divKey => {
@@ -108,7 +108,7 @@ export function runTargetSimulation(
 
     const divTargetRevenue = Math.round(targetTotalRevenue * normalizedWeight);
     const divLyRevenue = Math.round(baseLyTotalRevenue * normalizedWeight);
-    const divGrowthRate = divLyRevenue > 0 ? Number((((divTargetRevenue - divLyRevenue) / divLyRevenue) * 100).toFixed(1)) : 0;
+    const divGrowthRate = input.targetGrowthRate ?? (divLyRevenue > 0 ? Number((((divTargetRevenue - divLyRevenue) / divLyRevenue) * 100).toFixed(1)) : 0);
 
     // 해당 부문의 백엔드 표준 영업장 필터
     const matchingFacilities = masterItems.filter(f => f.category === divKey);
@@ -134,12 +134,12 @@ export function runTargetSimulation(
         }
         if (annualSum > 0) {
           facLyRevenue = annualSum;
-          shareRatio = baseLyTotalRevenue > 0 ? Number((annualSum / baseLyTotalRevenue).toFixed(4)) : 0;
+          shareRatio = (fac as any).shareRatio ?? (baseLyTotalRevenue > 0 ? Number((annualSum / baseLyTotalRevenue).toFixed(4)) : 0);
         }
       }
 
       // 목표 매출액 = 실측 기준선 × (1 + 목표성장률)
-      const facTargetRevenue = Math.round(facLyRevenue * (1 + input.targetGrowthRate / 100));
+      const facTargetRevenue = (fac as any).targetRevenue ?? Math.round(facLyRevenue * (1 + input.targetGrowthRate / 100));
 
       return {
         shopCode: fac.shopCode,

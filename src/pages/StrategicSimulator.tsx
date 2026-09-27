@@ -48,14 +48,21 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
+const CATEGORY_ICON_MAP: Record<string, string> = {
+  GOLF: '⛳',
+  ROOM: '🏨',
+  FNB: '🍽️',
+  TICKET: '🎢',
+  MOTO: '🏎️',
+  BANQUET: '🏛️',
+  PARKING: '🅿️',
+  GOODS: '🛍️'
+};
+
 const getCategoryIcon = (name: string, code?: string) => {
-  if (code === 'GOLF' || name?.includes('골프')) return '⛳';
-  if (code === 'ROOM' || name?.includes('콘도') || name?.includes('객실')) return '🏨';
-  if (code === 'FNB' || name?.includes('식음')) return '🍽️';
-  if (code === 'TICKET' || name?.includes('레저') || name?.includes('레져')) return '🎢';
-  if (code === 'MOTO' || name?.includes('모토')) return '🏎️';
-  if (code === 'BANQUET' || name?.includes('대관') || name?.includes('연회') || name?.includes('세일즈')) return '🏛️';
-  if (name?.includes('목장')) return '🐎';
+  const c = (code || '').toUpperCase();
+  if (CATEGORY_ICON_MAP[c]) return CATEGORY_ICON_MAP[c];
+  if (name === '벨포레 목장') return '🐎';
   return '📂';
 };
 
@@ -66,19 +73,23 @@ const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: stri
   return cat.teamName || cat.categoryName || cat.categoryCode;
 };
 
+const PART_ICON_MAP: Record<string, string> = {
+  '벨포레 목장': '🐎',
+  '미디어아트': '🎨',
+  '익스트림루지': '🛷',
+  '마운틴코스터': '🛷',
+  '사계절썰매': '🛷',
+  '골프영업': '⛳',
+  '객실영업': '🏨',
+  '모토아레나': '🏎️',
+  '연회영업': '🏛️',
+  '놀이동산': '🎪',
+  '주차관제': '🅿️'
+};
+
 const getPartIcon = (partName: string) => {
   if (!partName) return '📂';
-  if (partName.includes('목장')) return '🐎';
-  if (partName.includes('미디어')) return '🎨';
-  if (partName.includes('액티비티') || partName.includes('썰매') || partName.includes('마운틴')) return '🛷';
-  if (partName.includes('식음') || partName.includes('FNB') || partName.includes('레스토랑')) return '🍽️';
-  if (partName.includes('골프') || partName.includes('클럽')) return '⛳';
-  if (partName.includes('객실') || partName.includes('콘도')) return '🏨';
-  if (partName.includes('모토') || partName.includes('서킷')) return '🏎️';
-  if (partName.includes('대관') || partName.includes('연회') || partName.includes('세일즈')) return '🏛️';
-  if (partName.includes('놀이동산')) return '🎪';
-  if (partName.includes('주차')) return '🅿️';
-  return '📂';
+  return PART_ICON_MAP[partName] || '📂';
 };
 
 interface ApiFacility {
@@ -244,20 +255,20 @@ export default function StrategicSimulator() {
       ? (y2024?.annual?.totalRevenue || 0)
       : (y2024?.months?.[monthNum]?.totalRevenue || 0);
 
-    // 2-Year Real SSOT Weighted Average (2025: 60%, 2024: 40%) without fake 2023 proxy
-    const wmaTotalRevenue = Math.round((rev2025 * 0.60) + (rev2024 * 0.40));
+    // Real SSOT Baseline Revenue
+    const baselineRevenue = rev2025 > 0 ? rev2025 : rev2024;
     const singleYearRevenue = rev2025;
 
     return {
-      activeBaselineRevenue: baselineMode === 'WMA_2YEAR' ? wmaTotalRevenue : singleYearRevenue,
-      wmaTotalRevenue,
+      activeBaselineRevenue: baselineRevenue,
+      wmaTotalRevenue: baselineRevenue,
       singleYearRevenue,
-      smoothingDelta: wmaTotalRevenue - singleYearRevenue,
-      smoothingRate: Number((((wmaTotalRevenue - singleYearRevenue) / singleYearRevenue) * 100).toFixed(1))
+      smoothingDelta: 0,
+      smoothingRate: 0
     };
   }, [input.selectedMonth, baselineMode]);
 
-  // Base raw categories from API or Simulation Engine (주차관제, 벨포레굿즈, 기타/과거업장 영구 제외)
+  // Base raw categories from API or Simulation Engine
   const rawCategories: ApiCategory[] = useMemo(() => {
     const list: ApiCategory[] = (apiData?.categories && apiData.categories.length > 0)
       ? apiData.categories
@@ -286,38 +297,26 @@ export default function StrategicSimulator() {
         }))
       }));
 
-    // 사용자 요청: 주차관제(PARKING), 벨포레굿즈(GOODS), 기타/과거업장(OTHER) 삭제
+    // 공식 제외 카테고리 필터링 (주차, 굿즈, 기타)
     return list.filter(c => 
       c.categoryCode !== 'PARKING' && 
       c.categoryCode !== 'GOODS' && 
-      c.categoryCode !== 'OTHER' &&
-      !c.categoryCode.toUpperCase().includes('PARKING') &&
-      !c.categoryCode.toUpperCase().includes('GOODS') &&
-      !c.categoryCode.toUpperCase().includes('OTHER') &&
-      !c.categoryName.includes('주차') &&
-      !c.categoryName.includes('굿즈') &&
-      !c.categoryName.includes('기타') &&
-      !c.teamName?.includes('주차') &&
-      !c.teamName?.includes('기타')
+      c.categoryCode !== 'OTHER'
     );
   }, [apiData, simulationResult]);
 
   // Grand totals
   const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
-  const rawGrandTarget2026 = Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100));
+  const rawGrandTarget2026 = simulationResult.totalTargetRevenue ?? Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100));
 
   // Feature 1: Strategic Multiplier Zero-Sum Rebalancing Algorithm (w'_f = (w_f * β_f) / Σ(w_j * β_j))
   const effectiveCategories: ApiCategory[] = useMemo(() => {
     let sourceCats = rawCategories;
     if (!input.includeGolf) {
-      sourceCats = rawCategories.filter(c => 
-        !c.categoryCode.includes('골프') && 
-        !c.categoryName.includes('골프') && 
-        c.categoryCode !== 'GOLF'
-      );
+      sourceCats = rawCategories.filter(c => c.categoryCode !== 'GOLF');
     }
 
-    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF' || c.categoryName.includes('골프'));
+    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF');
     const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
     const totalBaseRev = input.includeGolf ? rawGrandTotal2025 : Math.max(0, rawGrandTotal2025 - golfActual2025);
     const targetGrandTotal = input.includeGolf ? rawGrandTarget2026 : Math.round(rawGrandTarget2026 * (totalBaseRev / (rawGrandTotal2025 || 1)));
@@ -325,13 +324,7 @@ export default function StrategicSimulator() {
     // 1. Calculate raw weighted scores with β_f
     const scoredCats = sourceCats.map(cat => {
       const catCode = cat.categoryCode.toUpperCase();
-      let multiplier = strategicMultipliers[catCode] ?? 1.0;
-      if (catCode.includes('ROOM') || catCode.includes('콘도')) multiplier = strategicMultipliers.ROOM ?? 1.0;
-      else if (catCode.includes('GOLF')) multiplier = strategicMultipliers.GOLF ?? 1.0;
-      else if (catCode.includes('FNB') || catCode.includes('식음')) multiplier = strategicMultipliers.FNB ?? 1.0;
-      else if (catCode.includes('TICKET') || catCode.includes('LEISURE') || catCode.includes('레저')) multiplier = strategicMultipliers.TICKET ?? 1.0;
-      else if (catCode.includes('MOTO')) multiplier = strategicMultipliers.MOTO ?? 1.0;
-      else if (catCode.includes('BANQUET') || catCode.includes('대관')) multiplier = strategicMultipliers.BANQUET ?? 1.0;
+      const multiplier = strategicMultipliers[catCode] ?? 1.0;
 
       const baseWeight = (cat.totalActual2025 / totalBaseRev);
       const strategicWeightRaw = baseWeight * multiplier;
@@ -394,7 +387,7 @@ export default function StrategicSimulator() {
 
   const grandTargetTotal = useMemo(() => {
     const rawTarget = Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100));
-    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF' || c.categoryName.includes('골프'));
+    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF');
     const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
     const rawGrandTotal = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
     const totalBaseRev = input.includeGolf ? rawGrandTotal : Math.max(0, rawGrandTotal - golfActual2025);

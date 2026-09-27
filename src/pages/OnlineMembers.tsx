@@ -329,13 +329,13 @@ export default function OnlineMembers() {
                 <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
                   <TrendingUp size={16} className="text-amber-500 shrink-0" /> 전년 동기 가입자
                 </span>
-                {summary.lyPeriodJoinedMembers > 0 && summary.periodJoinedMembers !== undefined ? (
+                {summary.joinedGrowthRate !== undefined ? (
                   <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
-                    summary.periodJoinedMembers >= summary.lyPeriodJoinedMembers 
+                    summary.joinedGrowthRate >= 0 
                       ? 'text-rose-700 bg-rose-50 border-rose-100' 
                       : 'text-blue-700 bg-blue-50 border-blue-100'
                   }`}>
-                    {summary.periodJoinedMembers >= summary.lyPeriodJoinedMembers ? '▲' : '▼'} {Math.abs(Math.round(((summary.periodJoinedMembers - summary.lyPeriodJoinedMembers) / summary.lyPeriodJoinedMembers) * 100))}%
+                    {summary.joinedGrowthRate >= 0 ? '▲' : '▼'} {Math.abs(summary.joinedGrowthRate)}%
                   </span>
                 ) : (
                   <span className="text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200/60 whitespace-nowrap">
@@ -417,7 +417,9 @@ export default function OnlineMembers() {
                 <div className="text-slate-400 text-[11px] font-medium">반복·중복 거래</div>
                 <div className="text-base font-extrabold text-amber-400 mt-0.5 font-mono">
                   {formatCurrency(summary.duplicateTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
-                  <span className="text-[10px] text-amber-300/80 ml-1 font-sans">(-{(((summary.duplicateTransactions || 0) / (summary.totalTransactions || 1)) * 100).toFixed(1)}%)</span>
+                  {summary.duplicateRate !== undefined && (
+                    <span className="text-[10px] text-amber-300/80 ml-1 font-sans">(-{summary.duplicateRate}%)</span>
+                  )}
                 </div>
               </div>
 
@@ -441,7 +443,9 @@ export default function OnlineMembers() {
                 <div className="text-slate-400 text-[11px] font-medium">2회 이상 재구매</div>
                 <div className="text-base font-extrabold text-cyan-400 mt-0.5 font-mono">
                   {formatCurrency(summary.repeatBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-cyan-300/80 ml-1 font-sans">({(((summary.repeatBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
+                  {summary.repeatBuyerRate !== undefined && (
+                    <span className="text-[10px] text-cyan-300/80 ml-1 font-sans">({summary.repeatBuyerRate}%)</span>
+                  )}
                 </div>
               </div>
 
@@ -457,7 +461,9 @@ export default function OnlineMembers() {
                 <div className="text-slate-400 text-[11px] font-medium">단발성 1회 이용</div>
                 <div className="text-base font-extrabold text-rose-300 mt-0.5 font-mono">
                   {formatCurrency(summary.oneTimeBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-rose-300/80 ml-1 font-sans">({(((summary.oneTimeBuyers || 0) / (summary.totalActiveMembers || 1)) * 100).toFixed(1)}%)</span>
+                  {summary.oneTimeRate !== undefined && (
+                    <span className="text-[10px] text-rose-300/80 ml-1 font-sans">({summary.oneTimeRate}%)</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -505,7 +511,7 @@ export default function OnlineMembers() {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="text-xs font-bold text-slate-600 mb-1">단일 채널 의존도 (이탈 위험군)</div>
                     <div className="text-xl font-bold text-slate-500 flex items-baseline gap-1">
-                      {((100 - (channelBreakdown.multiChannelRatio || 0))).toFixed(1)}<span className="text-sm">%</span>
+                      {channelBreakdown.singleChannelRatio ?? '-'}<span className="text-sm">%</span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
                       리조트에 방문하여 1가지 시설(예: 콘도만)만 이용하고 떠나는 고객 비중입니다.
@@ -712,41 +718,41 @@ export default function OnlineMembers() {
                         if (!isPastOrCurrent) {
                           return <td key={i} className="px-2 py-3 text-slate-300 font-mono">-</td>;
                         }
-                        const curVal = item?.joined ?? 0;
-                        const lyVal = item?.lyJoined ?? 0;
-                        const diff = curVal - lyVal;
-                        const rate = lyVal > 0 ? Number(((diff / lyVal) * 100).toFixed(1)) : (curVal > 0 ? 100 : 0);
+                        const rate = item?.growthRate ?? item?.growth_rate ?? null;
                         return (
                           <td key={i} className="px-2 py-3">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold font-mono ${
-                              rate > 0 
-                                ? 'bg-rose-50 text-rose-600 border border-rose-100' 
-                                : rate < 0 
-                                ? 'bg-blue-50 text-blue-600 border border-blue-100' 
-                                : 'bg-slate-100 text-slate-500'
-                            }`}>
-                              {rate > 0 ? `▲ ${rate}%` : rate < 0 ? `▼ ${Math.abs(rate)}%` : '0.0%'}
-                            </span>
+                            {rate !== null ? (
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold font-mono ${
+                                rate > 0 
+                                  ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                                  : rate < 0 
+                                  ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {rate > 0 ? `▲ ${rate}%` : rate < 0 ? `▼ ${Math.abs(rate)}%` : '0.0%'}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 font-mono">-</span>
+                            )}
                           </td>
                         );
                       })}
                       {/* YTD Total Growth Rate */}
                       {(() => {
-                        if (summary.periodJoinedMembers === undefined || !summary.lyPeriodJoinedMembers) {
-                          return <td className="px-4 py-3 sticky right-0 bg-slate-50 font-mono text-xs text-slate-300">-</td>;
-                        }
-                        const curTotal = Number(summary.periodJoinedMembers);
-                        const lyTotal = Number(summary.lyPeriodJoinedMembers);
-                        const rateTotal = lyTotal > 0 ? Number((((curTotal - lyTotal) / lyTotal) * 100).toFixed(1)) : 0;
+                        const rateTotal = summary.joinedGrowthRate ?? summary.growthRate ?? null;
                         return (
                           <td className="px-4 py-3 sticky right-0 bg-slate-50">
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-black font-mono ${
-                              rateTotal >= 0 
-                                ? 'bg-rose-100 text-rose-700 border border-rose-200' 
-                                : 'bg-blue-100 text-blue-700 border border-blue-200'
-                            }`}>
-                              {rateTotal >= 0 ? `▲ ${rateTotal}%` : `▼ ${Math.abs(rateTotal)}%`}
-                            </span>
+                            {rateTotal !== null ? (
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-black font-mono ${
+                                rateTotal >= 0 
+                                  ? 'bg-rose-100 text-rose-700 border border-rose-200' 
+                                  : 'bg-blue-100 text-blue-700 border border-blue-200'
+                              }`}>
+                                {rateTotal >= 0 ? `▲ ${rateTotal}%` : `▼ ${Math.abs(rateTotal)}%`}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 font-mono">-</span>
+                            )}
                           </td>
                         );
                       })()}

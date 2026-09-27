@@ -158,23 +158,21 @@ export interface GroupOrganizationSummary {
 
 
 // 채널별 시각적 아이콘 & 테마 색상 매핑
+const CHANNEL_META_MAP: Record<string, { iconType: ChannelGroup['iconType']; badgeColor: string; label: string }> = {
+  '단체영업': { iconType: 'group', badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: '단체영업' },
+  '세미나': { iconType: 'group', badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: '단체영업' },
+  '기업영업': { iconType: 'corporate', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200', label: '기업영업' },
+  '휴양소': { iconType: 'corporate', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200', label: '기업영업' },
+  '자사채널': { iconType: 'direct', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: '자사 채널' },
+  '홈페이지': { iconType: 'direct', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: '자사 채널' },
+  '온라인여행사': { iconType: 'ota', badgeColor: 'bg-sky-50 text-sky-700 border-sky-200', label: '온라인 여행사' },
+  'OTA': { iconType: 'ota', badgeColor: 'bg-sky-50 text-sky-700 border-sky-200', label: '온라인 여행사' },
+  '전화예약': { iconType: 'phone', badgeColor: 'bg-amber-50 text-amber-800 border-amber-200', label: '전화/예약실' },
+  '전화/메신저': { iconType: 'phone', badgeColor: 'bg-amber-50 text-amber-800 border-amber-200', label: '전화/예약실' },
+};
+
 const getChannelMeta = (channelName: string): { iconType: ChannelGroup['iconType']; badgeColor: string; label: string } => {
-  if (channelName.includes('세미나') || channelName.includes('단체영업')) {
-    return { iconType: 'group', badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: '단체영업' };
-  }
-  if (channelName.includes('휴양소') || channelName.includes('기업영업')) {
-    return { iconType: 'corporate', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200', label: '기업영업' };
-  }
-  if (channelName.includes('홈페이지') || channelName.includes('APP') || channelName.includes('자사')) {
-    return { iconType: 'direct', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: '자사 채널' };
-  }
-  if (channelName.includes('여행사') || channelName.includes('OTA')) {
-    return { iconType: 'ota', badgeColor: 'bg-sky-50 text-sky-700 border-sky-200', label: '온라인 여행사' };
-  }
-  if (channelName.includes('전화') || channelName.includes('예약실') || channelName.includes('메신저')) {
-    return { iconType: 'phone', badgeColor: 'bg-amber-50 text-amber-800 border-amber-200', label: '전화/예약실' };
-  }
-  return { iconType: 'etc', badgeColor: 'bg-slate-100 text-slate-700 border-slate-200', label: '부대/기타' };
+  return CHANNEL_META_MAP[channelName] || { iconType: 'etc', badgeColor: 'bg-slate-100 text-slate-700 border-slate-200', label: channelName };
 };
 
 export default function GroupSales() {
@@ -343,20 +341,8 @@ export default function GroupSales() {
         si.channelSharePct = chRev > 0 ? (si.revenue / chRev) * 100 : 0;
       });
 
-      // 평형 정렬 (51평 -> 35평 -> 16평 -> R51 -> 펫룸 -> 기타)
-      const rankOrder = (name: string) => {
-        if (name.includes('51') && !name.includes('펫') && !name.includes('R')) return 1;
-        if (name.includes('35') && !name.includes('펫')) return 2;
-        if (name.includes('16') && !name.includes('펫')) return 3;
-        if (name.includes('R51')) return 4;
-        if (name.includes('펫룸 51')) return 5;
-        if (name.includes('펫룸 35')) return 6;
-        if (name.includes('펫룸 16')) return 7;
-        if (name.includes('부대') || name.includes('위약금')) return 9;
-        return 8;
-      };
-
-      segItems.sort((a, b) => rankOrder(a.roomType) - rankOrder(b.roomType) || b.revenue - a.revenue);
+      // 평형 정렬: 매출액 내림차순 및 명칭 정렬
+      segItems.sort((a, b) => b.revenue - a.revenue || a.roomType.localeCompare(b.roomType));
 
       const meta = getChannelMeta(chName);
 
@@ -376,11 +362,7 @@ export default function GroupSales() {
     // 판매방식 정렬: 매출액 기준 내림차순
     groups.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-    const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => {
-      const orderA = a.includes('51') ? 1 : a.includes('35') ? 2 : a.includes('16') ? 3 : 4;
-      const orderB = b.includes('51') ? 1 : b.includes('35') ? 2 : b.includes('16') ? 3 : 4;
-      return orderA - orderB;
-    });
+    const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => a.localeCompare(b));
 
     return {
       channelGroups: groups,
@@ -395,11 +377,11 @@ export default function GroupSales() {
     };
   }, [channelRawData, hideZeroSales]);
 
-  // 🎯 현재 활성화된 채널 그룹 (기본: 단체영업(세미나))
+  // 🎯 현재 활성화된 채널 그룹 (기본: 단체영업)
   const activeChannelGroup = useMemo(() => {
     if (selectedChannel === 'ALL') return null;
-    return channelGroups.find(g => g.channelName === selectedChannel || g.channelName.includes(selectedChannel)) 
-      || channelGroups.find(g => g.channelName.includes('단체영업')) 
+    return channelGroups.find(g => g.channelName === selectedChannel) 
+      || channelGroups.find(g => g.channelName === '단체영업' || g.channelName === '세미나') 
       || channelGroups[0] 
       || null;
   }, [channelGroups, selectedChannel]);
@@ -420,93 +402,42 @@ export default function GroupSales() {
       return seminarShare;
     }
 
-    // 백엔드 세미나 요약 미수신 시, 실측 channelGroups 및 rawGroupData 기반 동적 집계 (Zero-Fake Data)
-    const seminarGroup = channelGroups.find(g => g.channelName.includes('단체영업') || g.channelName.includes('세미나'));
-    const semRooms = seminarGroup?.totalRooms || 0;
-    const semRev = seminarGroup?.totalRevenue || 0;
-    const totRooms = grandTotals.rooms || 0;
-    const totRev = grandTotals.revenue || 0;
-
-    let weekdayDays = 0;
-    let weekendDays = 0;
-    if (startDate) {
-      const start = new Date(startDate);
-      const end = endDate ? new Date(endDate) : new Date(startDate);
-      const cur = new Date(start);
-      while (cur <= end) {
-        const day = cur.getDay();
-        if (day === 5 || day === 6) {
-          weekendDays++;
-        } else {
-          weekdayDays++;
-        }
-        cur.setDate(cur.getDate() + 1);
-      }
-    }
-    const totalDays = weekdayDays + weekendDays || 1;
-
-    let semWeekdayRooms = 0;
-    let semWeekendRooms = 0;
-    let semWeekdayRev = 0;
-    let semWeekendRev = 0;
-
-    rawGroupData.forEach(g => {
-      const rooms = Number(g.spendingBreakdown?.roomsCount || 0);
-      const rev = Number(g.spendingBreakdown?.roomRevenue || g.totalRevenue || 0);
-      const checkIn = g.checkInDate || '';
-      const dayOfWeek = checkIn ? new Date(checkIn).getDay() : -1;
-      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-      if (isWeekend) {
-        semWeekendRooms += rooms;
-        semWeekendRev += rev;
-      } else {
-        semWeekdayRooms += rooms;
-        semWeekdayRev += rev;
-      }
-    });
-
-    // [Zero-Proxy 원칙] 백엔드 seminarShare 미수신 시 임의의 캘린더 날짜 비율(5/7 등) 안분을 엄격히 금지함
-    // rawGroupData에서 수집된 실제 주중/주말 체크인 실측치만 반영하며, 부재 시 0으로 안전하게 귀결
-    const totWeekdayRooms = semWeekdayRooms;
-    const totWeekendRooms = semWeekendRooms;
-    const totWeekdayRev = semWeekdayRev;
-    const totWeekendRev = semWeekendRev;
     return {
       weekday: {
         label: '주중 (일~목 체크인)',
-        daysCount: weekdayDays,
-        totalRooms: totWeekdayRooms,
-        seminarRooms: semWeekdayRooms,
-        sharePct: totWeekdayRooms > 0 ? Number(((semWeekdayRooms / totWeekdayRooms) * 100).toFixed(1)) : 0,
-        totalRevenue: totWeekdayRev,
-        seminarRevenue: semWeekdayRev,
-        revenueSharePct: totWeekdayRev > 0 ? Number(((semWeekdayRev / totWeekdayRev) * 100).toFixed(1)) : 0,
+        daysCount: 0,
+        totalRooms: 0,
+        seminarRooms: 0,
+        sharePct: 0,
+        totalRevenue: 0,
+        seminarRevenue: 0,
+        revenueSharePct: 0,
         averageAdr: 0
       },
       weekend: {
         label: '주말 (금·토 체크인)',
-        daysCount: weekendDays,
-        totalRooms: totWeekendRooms,
-        seminarRooms: semWeekendRooms,
-        sharePct: totWeekendRooms > 0 ? Number(((semWeekendRooms / totWeekendRooms) * 100).toFixed(1)) : 0,
-        totalRevenue: totWeekendRev,
-        seminarRevenue: semWeekendRev,
-        revenueSharePct: totWeekendRev > 0 ? Number(((semWeekendRev / totWeekendRev) * 100).toFixed(1)) : 0,
+        daysCount: 0,
+        totalRooms: 0,
+        seminarRooms: 0,
+        sharePct: 0,
+        totalRevenue: 0,
+        seminarRevenue: 0,
+        revenueSharePct: 0,
         averageAdr: 0
       },
       total: {
         label: '통합 (전체)',
-        daysCount: totalDays,
-        totalRooms: totRooms,
-        seminarRooms: semRooms,
-        sharePct: totRooms > 0 ? Number(((semRooms / totRooms) * 100).toFixed(1)) : 0,
-        totalRevenue: totRev,
-        seminarRevenue: semRev,
-        revenueSharePct: totRev > 0 ? Number(((semRev / totRev) * 100).toFixed(1)) : 0,
+        daysCount: 0,
+        totalRooms: grandTotals.rooms || 0,
+        seminarRooms: 0,
+        sharePct: 0,
+        totalRevenue: grandTotals.revenue || 0,
+        seminarRevenue: 0,
+        revenueSharePct: 0,
         averageAdr: 0
       }
     };
-  }, [seminarShare, channelGroups, grandTotals, rawGroupData, startDate, endDate]);
+  }, [seminarShare, grandTotals]);
 
   // 👥 단체영업(세미나) 예약 단체 마스터 명부 및 복수 방문 집계
   const { organizedGroups, totalSeminarGroupsCount, repeatGroupsCount, totalBookedRoomsInGroups } = useMemo(() => {
@@ -899,7 +830,7 @@ export default function GroupSales() {
             >
               {availableChannels.map((ch) => (
                 <option key={ch} value={ch}>
-                  {ch.includes('단체영업') || ch.includes('세미나') ? `👥 ${ch} ★ 주력 사업` : `🏢 ${ch}`}
+                  {ch === '단체영업' || ch === '세미나' || ch === '단체영업(세미나)' ? `👥 ${ch} ★ 주력 사업` : `🏢 ${ch}`}
                 </option>
               ))}
               <option value="ALL">📊 [전체 통합] 모든 판매방식 비교하기</option>
@@ -917,7 +848,7 @@ export default function GroupSales() {
             <span>0실 항목 제외</span>
           </label>
 
-          {selectedChannel.includes('단체영업') ? (
+          {selectedChannel === '단체영업' || selectedChannel === '세미나' || selectedChannel === '단체영업(세미나)' ? (
             <span className="text-xs font-bold px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1.5 shadow-2xs">
               <Sparkles size={12} className="text-indigo-600" /> 세일즈본부 핵심 주력 사업
             </span>
@@ -1108,7 +1039,7 @@ export default function GroupSales() {
                   <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeChannelGroup.badgeColor}`}>
                     {activeChannelGroup.items.length}개 평형 판매
                   </span>
-                  {activeChannelGroup.channelName.includes('단체영업') && (
+                  {(activeChannelGroup.channelName === '단체영업' || activeChannelGroup.channelName === '세미나' || activeChannelGroup.channelName === '단체영업(세미나)') && (
                     <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-brand-mint text-white shadow-2xs">
                       세일즈본부 핵심 주력
                     </span>
@@ -1162,26 +1093,6 @@ export default function GroupSales() {
                     <td className="py-4 px-6 whitespace-nowrap">
                       <div className="flex items-center gap-2.5">
                         <span className="font-extrabold text-slate-900 text-base">{item.roomType}</span>
-                        {item.roomType.includes('51') && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70">
-                            대형
-                          </span>
-                        )}
-                        {item.roomType.includes('35') && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/70">
-                            중형
-                          </span>
-                        )}
-                        {item.roomType.includes('16') && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                            스탠다드
-                          </span>
-                        )}
-                        {item.roomType.includes('펫룸') && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/70">
-                            반려견
-                          </span>
-                        )}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right font-medium text-slate-700 whitespace-nowrap">
@@ -1287,7 +1198,7 @@ export default function GroupSales() {
               <tbody className="divide-y divide-slate-200">
                 {channelGroups.map(group => {
                   const itemByRoom = new Map(group.items.map(i => [i.roomType, i]));
-                  const isCurrentTarget = group.channelName.includes('단체영업');
+                  const isCurrentTarget = group.channelName === '단체영업' || group.channelName === '세미나' || group.channelName === '단체영업(세미나)';
 
                   return (
                     <tr 
@@ -1391,7 +1302,7 @@ export default function GroupSales() {
         <div className="space-y-4">
           {channelGroups.map((group) => {
             const channelFinancial = formatFinancialKorean(group.totalRevenue);
-            const isTarget = group.channelName.includes('단체영업');
+            const isTarget = group.channelName === '단체영업' || group.channelName === '세미나' || group.channelName === '단체영업(세미나)';
 
             return (
               <div 

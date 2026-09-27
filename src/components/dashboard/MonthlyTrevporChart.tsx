@@ -269,9 +269,9 @@ export default function MonthlyTrevporChart() {
       }
     });
 
-    const avgTyTrevpar = totalTyAvailRooms > 0 ? Math.round(totalTyRevenue / totalTyAvailRooms) : 0;
-    const avgLyTrevpar = totalLyAvailRooms > 0 ? Math.round(totalLyRevenue / totalLyAvailRooms) : 0;
-    const yoyGrowth = avgLyTrevpar > 0 ? Number((((avgTyTrevpar - avgLyTrevpar) / avgLyTrevpar) * 100).toFixed(1)) : 0;
+    const avgTyTrevpar = totalTyAvailRooms > 0 ? Math.round(totalTyRevenue / totalTyAvailRooms) : ((data as any)?.summary?.avgTyTrevpar ?? 0);
+    const avgLyTrevpar = totalLyAvailRooms > 0 ? Math.round(totalLyRevenue / totalLyAvailRooms) : ((data as any)?.summary?.avgLyTrevpar ?? 0);
+    const yoyGrowth = (data as any)?.summary?.growthRate ?? (avgLyTrevpar > 0 ? Number((((avgTyTrevpar - avgLyTrevpar) / avgLyTrevpar) * 100).toFixed(1)) : 0);
 
     let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
     if (periodMode === 'CLOSED_ONLY') {
@@ -318,9 +318,11 @@ export default function MonthlyTrevporChart() {
       lyValues.push(lyVal || 0);
       tyValues.push(tyVal);
 
-      if (tyVal !== null && lyVal !== null && lyVal > 0) {
-        const rate = Number((((tyVal - lyVal) / lyVal) * 100).toFixed(1));
-        growthRates.push(rate);
+      const backendGrowthRate = metricMode === 'TOTAL' ? item.growthTotalRate : item.growthWithoutGolfRate;
+      if (backendGrowthRate !== undefined && backendGrowthRate !== null) {
+        growthRates.push(backendGrowthRate);
+      } else if (tyVal !== null && lyVal !== null && lyVal > 0) {
+        growthRates.push(Number((((tyVal - lyVal) / lyVal) * 100).toFixed(1)));
       } else {
         growthRates.push(null);
       }
@@ -356,7 +358,7 @@ export default function MonthlyTrevporChart() {
           `;
           params.forEach(p => {
             if (p.value !== null && p.value !== undefined) {
-              const isRate = p.seriesName.includes('증감률');
+              const isRate = p.seriesType === 'line' || p.seriesIndex === 2;
               const valStr = isRate
                 ? `${p.value > 0 ? '+' : ''}${p.value}%` 
                 : `${new Intl.NumberFormat('ko-KR').format(p.value)} 원 /실`;

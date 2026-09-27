@@ -177,7 +177,7 @@ export default function ResortBusiness() {
       
       // Fail-Stop: 백엔드가 내려준 정원(g.cap)이 없으면 g.sold로 대체하지 않고 결함을 그대로 노출
       const effectiveCap = g.cap;
-      const rate = effectiveCap > 0 ? Math.round((g.sold / effectiveCap) * 100) : 0;
+      const rate = g.occupancyRate ?? (effectiveCap > 0 ? Math.round((g.sold / effectiveCap) * 100) : 0);
       const cappedRate = Math.min(rate, 100);
       const displayRate = effectiveCap > 0 ? `${rate}%` : '0% (모수누락)';
 
@@ -380,7 +380,7 @@ export default function ResortBusiness() {
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
                     lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
                   }`}>
-                    {lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? '▲' : '▼'} {Math.abs(((lodgingStats.roomsSold - lodgingStats.lyRoomsSold) / lodgingStats.lyRoomsSold) * 100).toFixed(1)}%
+                    {lodgingStats.roomsGrowth !== undefined ? (lodgingStats.roomsGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(lodgingStats.roomsGrowth).toFixed(1) + '%' : '-'}
                   </span>
                   <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(lodgingStats.lyRoomsSold)}건</span>
                 </div>
@@ -397,7 +397,7 @@ export default function ResortBusiness() {
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap font-financial">
                 <span>{totalPhysicalOccupied.toLocaleString()}실</span>
-                <span className="text-xs text-[#00ae95] font-semibold">({totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) : '0.0'}%)</span>
+                <span className="text-xs text-[#00ae95] font-semibold">({lodgingStats.physicalOccRate !== undefined ? lodgingStats.physicalOccRate + '%' : (totalBaseRooms > 0 ? ((totalPhysicalOccupied / totalBaseRooms) * 100).toFixed(1) + '%' : '0.0%')})</span>
               </div>
               {(lodgingStats.weekdayOcc !== undefined || lodgingStats.weekendOcc !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
@@ -502,7 +502,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) : '0.0'}%</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats.standardOccRate !== undefined ? lodgingStats.standardOccRate + '%' : (totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '0.0%')}</div>
                   </div>
                 </div>
 

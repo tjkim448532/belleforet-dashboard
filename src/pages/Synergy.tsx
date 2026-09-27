@@ -25,72 +25,20 @@ const formatCurrency = (val: any) => {
   return new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
-const getChannelMeta = (name: string, rank: number) => {
-  let icon: typeof Globe;
-  let iconColor: string;
-  let iconBg: string;
-  let borderHover: string;
-  let barColor: string;
-  let badgeStyle: string;
+const CHANNEL_THEMES = [
+  { icon: Globe, iconColor: 'text-blue-600', iconBg: 'bg-blue-50', borderHover: 'hover:border-blue-300', barColor: 'from-blue-500 to-sky-400', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-200/60' },
+  { icon: Smartphone, iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50', borderHover: 'hover:border-emerald-300', barColor: 'from-emerald-500 to-teal-400', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200/60' },
+  { icon: Landmark, iconColor: 'text-indigo-600', iconBg: 'bg-indigo-50', borderHover: 'hover:border-indigo-300', barColor: 'from-indigo-500 to-violet-400', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-200/60' },
+  { icon: PhoneCall, iconColor: 'text-purple-600', iconBg: 'bg-purple-50', borderHover: 'hover:border-purple-300', barColor: 'from-purple-500 to-fuchsia-400', badgeStyle: 'bg-purple-50 text-purple-700 border-purple-200/60' },
+  { icon: Users, iconColor: 'text-amber-600', iconBg: 'bg-amber-50', borderHover: 'hover:border-amber-300', barColor: 'from-amber-500 to-orange-400', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-200/60' },
+  { icon: CreditCard, iconColor: 'text-teal-600', iconBg: 'bg-teal-50', borderHover: 'hover:border-teal-300', barColor: 'from-teal-500 to-emerald-400', badgeStyle: 'bg-teal-50 text-teal-700 border-teal-200/60' },
+  { icon: Sparkles, iconColor: 'text-rose-600', iconBg: 'bg-rose-50', borderHover: 'hover:border-rose-300', barColor: 'from-rose-500 to-pink-400', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-200/60' },
+  { icon: Layers, iconColor: 'text-slate-600', iconBg: 'bg-slate-100', borderHover: 'hover:border-slate-300', barColor: 'from-slate-500 to-slate-400', badgeStyle: 'bg-slate-100 text-slate-700 border-slate-200/60' },
+];
 
-  if (name.includes('온라인') || name.includes('OTA')) {
-    icon = Globe;
-    iconColor = 'text-blue-600';
-    iconBg = 'bg-blue-50';
-    borderHover = 'hover:border-blue-300';
-    barColor = 'from-blue-500 to-sky-400';
-    badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200/60';
-  } else if (name.includes('홈페이지') || name.includes('APP') || name.includes('자사')) {
-    icon = Smartphone;
-    iconColor = 'text-emerald-600';
-    iconBg = 'bg-emerald-50';
-    borderHover = 'hover:border-emerald-300';
-    barColor = 'from-emerald-500 to-teal-400';
-    badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
-  } else if (name.includes('기업') || name.includes('휴양소')) {
-    icon = Landmark;
-    iconColor = 'text-indigo-600';
-    iconBg = 'bg-indigo-50';
-    borderHover = 'hover:border-indigo-300';
-    barColor = 'from-indigo-500 to-violet-400';
-    badgeStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200/60';
-  } else if (name.includes('전화') || name.includes('메신저') || name.includes('예약실')) {
-    icon = PhoneCall;
-    iconColor = 'text-purple-600';
-    iconBg = 'bg-purple-50';
-    borderHover = 'hover:border-purple-300';
-    barColor = 'from-purple-500 to-fuchsia-400';
-    badgeStyle = 'bg-purple-50 text-purple-700 border-purple-200/60';
-  } else if (name.includes('단체') || name.includes('세미나') || name.includes('연회')) {
-    icon = Users;
-    iconColor = 'text-amber-600';
-    iconBg = 'bg-amber-50';
-    borderHover = 'hover:border-amber-300';
-    barColor = 'from-amber-500 to-orange-400';
-    badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200/60';
-  } else if (name.includes('정산원장') || name.includes('원장')) {
-    icon = CreditCard;
-    iconColor = 'text-teal-600';
-    iconBg = 'bg-teal-50';
-    borderHover = 'hover:border-teal-300';
-    barColor = 'from-teal-500 to-emerald-400';
-    badgeStyle = 'bg-teal-50 text-teal-700 border-teal-200/60';
-  } else if (name.includes('부대') || name.includes('기타')) {
-    icon = Sparkles;
-    iconColor = 'text-rose-600';
-    iconBg = 'bg-rose-50';
-    borderHover = 'hover:border-rose-300';
-    barColor = 'from-rose-500 to-pink-400';
-    badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200/60';
-  } else {
-    icon = Layers;
-    iconColor = 'text-slate-600';
-    iconBg = 'bg-slate-100';
-    borderHover = 'hover:border-slate-300';
-    barColor = 'from-slate-500 to-slate-400';
-    badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200/60';
-  }
-
+const getChannelMeta = (_name: string, rank: number) => {
+  const safeRank = Math.max(1, rank);
+  const theme = CHANNEL_THEMES[(safeRank - 1) % CHANNEL_THEMES.length] || CHANNEL_THEMES[0];
   const rankBadge = rank === 1 
     ? 'bg-amber-500 text-white shadow-xs font-black' 
     : rank === 2 
@@ -99,7 +47,7 @@ const getChannelMeta = (name: string, rank: number) => {
     ? 'bg-amber-800 text-white font-bold' 
     : 'bg-slate-100 text-slate-600 font-semibold';
 
-  return { icon, iconColor, iconBg, borderHover, barColor, badgeStyle, rankBadge };
+  return { ...theme, rankBadge };
 };
 
 interface RoomChannelSalesItem {

@@ -126,11 +126,7 @@ export default function LeisureUsageRate() {
 
   // List of facilities from YoY response ensuring '벨포레 목장(체험)' is always included if present
   const facilityList = useMemo(() => {
-    const list = yoyData?.facilities ? [...yoyData.facilities] : [];
-    if (!list.includes('벨포레 목장(체험)') && yoyData?.pivotData?.['벨포레 목장(체험)']) {
-      list.push('벨포레 목장(체험)');
-    }
-    return list;
+    return yoyData?.facilities ? [...yoyData.facilities] : [];
   }, [yoyData]);
 
   // Compute selected period string range
@@ -193,23 +189,21 @@ export default function LeisureUsageRate() {
           selDenominator += pt.totalRoomGuests;
         }
       }
-      const validRates = selectedPeriodMonths
-        .map((m) => selSeries?.data.find((d) => d.month === m)?.usageRate)
-        .filter((r): r is number => r !== undefined && r > 0);
-      const selRate = validRates.length > 0 ? Math.round((validRates.reduce((a, b) => a + b, 0) / validRates.length) * 10) / 10 : 0;
+      const selRate = selDenominator > 0 ? Math.round((selVisitors / selDenominator) * 1000) / 10 : 0;
 
       // Top venue across selected period (전 영업장 공식 실측치 공정 평가)
       let topVenue = { name: '-', visitors: 0, usageRate: 0 };
       for (const s of usageData.series) {
         let vTotal = 0;
-        const rates = selectedPeriodMonths
-          .map((m) => s.data.find((d) => d.month === m)?.usageRate)
-          .filter((r): r is number => r !== undefined && r > 0);
-        const avgRate = rates.length > 0 ? Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 10) / 10 : 0;
+        let dTotal = 0;
         for (const m of selectedPeriodMonths) {
           const pt = s.data.find((d) => d.month === m);
-          if (pt) vTotal += pt.visitors;
+          if (pt) {
+            vTotal += pt.visitors;
+            dTotal += pt.totalRoomGuests;
+          }
         }
+        const avgRate = dTotal > 0 ? Math.round((vTotal / dTotal) * 1000) / 10 : 0;
         if (avgRate > topVenue.usageRate) {
           topVenue = { name: s.facilityName, visitors: vTotal, usageRate: avgRate };
         }

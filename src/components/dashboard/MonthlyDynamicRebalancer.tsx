@@ -58,8 +58,8 @@ export default function MonthlyDynamicRebalancer({
 
     const list: MonthMeta[] = [];
     for (let m = 1; m <= 12; m++) {
-      const baseRev = monthRevs[m] > 0 ? monthRevs[m] : Math.round(annualBaseRevenue / 12);
-      const intensity = maxMonthRev > 0 ? Number((baseRev / maxMonthRev).toFixed(2)) : 0;
+      const baseRev = monthRevs[m] || 0;
+      const intensity = maxMonthRev > 0 ? Number((baseRev / maxMonthRev).toFixed(2)) : 0.0;
       const headroom = Number(Math.max(0.02, 1.0 - intensity).toFixed(2));
       const isPeak = intensity >= 0.85;
 
@@ -114,7 +114,7 @@ export default function MonthlyDynamicRebalancer({
     monthlyMetaList.forEach(m => {
       if (lockedMonths[m.month]) {
         const rate = growthRates[m.month] ?? annualGrowthRate;
-        const tgt = Math.round(m.baseRevenue * (1 + rate / 100));
+        const tgt = (m as any).targetRevenue ?? Math.round(m.baseRevenue * (1 + rate / 100));
         targets[m.month] = tgt;
         sumFixed += tgt;
       } else {
@@ -130,10 +130,12 @@ export default function MonthlyDynamicRebalancer({
     }
 
     // Proportional weight for unlocked months: BaseRevenue * Headroom
-    const totalUnlockedWeight = unlockedMonths.reduce((sum, mNum) => {
-      const meta = monthlyMetaList.find(m => m.month === mNum)!;
-      return sum + (meta.baseRevenue * meta.headroom);
-    }, 0) || 1;
+    let totalUnlockedWeight = 0;
+    for (const mNum of unlockedMonths) {
+      const meta = monthlyMetaList.find(m => m.month === mNum);
+      if (meta) totalUnlockedWeight += (meta.baseRevenue * meta.headroom);
+    }
+    if (totalUnlockedWeight === 0) totalUnlockedWeight = 1;
 
     unlockedMonths.forEach(mNum => {
       const meta = monthlyMetaList.find(m => m.month === mNum)!;
@@ -143,7 +145,10 @@ export default function MonthlyDynamicRebalancer({
     });
 
     // Largest Remainder Method: 0-Variance Alignment with Annual Target
-    const currentTotal = Object.values(targets).reduce((s, v) => s + v, 0);
+    let currentTotal = 0;
+    for (const val of Object.values(targets)) {
+      currentTotal += (val || 0);
+    }
     const diff = annualTargetRevenue - currentTotal;
 
     if (diff !== 0 && unlockedMonths.length > 0) {
@@ -167,7 +172,8 @@ export default function MonthlyDynamicRebalancer({
     setGrowthRates(prev => {
       const updated = { ...prev, [editMonth]: newRate };
       
-      const targetForEdit = Math.round((monthlyMetaList.find(m => m.month === editMonth)?.baseRevenue || 1) * (1 + newRate / 100));
+      const editMeta = monthlyMetaList.find(m => m.month === editMonth);
+      const targetForEdit = editMeta ? Math.round(editMeta.baseRevenue * (1 + newRate / 100)) : 0;
       
       let sumFixed = targetForEdit;
       const otherUnlocked: number[] = [];
@@ -176,7 +182,8 @@ export default function MonthlyDynamicRebalancer({
         if (m.month === editMonth) return;
         if (lockedMonths[m.month]) {
           const r = updated[m.month] ?? annualGrowthRate;
-          sumFixed += Math.round(m.baseRevenue * (1 + r / 100));
+          const fixedVal = Math.round(m.baseRevenue * (1 + r / 100));
+          sumFixed += fixedVal;
         } else {
           otherUnlocked.push(m.month);
         }
@@ -185,16 +192,20 @@ export default function MonthlyDynamicRebalancer({
       const remainTarget = annualTargetRevenue - sumFixed;
 
       if (otherUnlocked.length > 0) {
-        const totalWeight = otherUnlocked.reduce((s, mNum) => {
-          const meta = monthlyMetaList.find(m => m.month === mNum)!;
-          return s + (meta.baseRevenue * meta.headroom);
-        }, 0) || 1;
+        let totalWeight = 0;
+        for (const mNum of otherUnlocked) {
+          const meta = monthlyMetaList.find(m => m.month === mNum);
+          if (meta) totalWeight += (meta.baseRevenue * meta.headroom);
+        }
+        if (totalWeight === 0) totalWeight = 1;
 
         otherUnlocked.forEach(mNum => {
           const meta = monthlyMetaList.find(m => m.month === mNum)!;
           const weight = (meta.baseRevenue * meta.headroom) / totalWeight;
           const allocatedTarget = remainTarget * weight;
-          const computedRate = Number((((allocatedTarget - meta.baseRevenue) / meta.baseRevenue) * 100).toFixed(1));
+          const computedRate = meta.baseRevenue > 0
+            ? Math.round(((allocatedTarget - meta.baseRevenue) / meta.baseRevenue) * 1000) / 10
+            : 0;
           updated[mNum] = computedRate;
         });
       }

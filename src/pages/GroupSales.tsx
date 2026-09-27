@@ -424,60 +424,101 @@ export default function GroupSales() {
       return seminarShare;
     }
 
-    // 백엔드 미배포 시 안전한 기본 기준치(프로덕션 DB 실측치 기반)
+    // 백엔드 세미나 요약 미수신 시, 실측 channelGroups 및 rawGroupData 기반 동적 집계 (Zero-Fake Data)
     const seminarGroup = channelGroups.find(g => g.channelName.includes('단체영업') || g.channelName.includes('세미나'));
-    const semRooms = seminarGroup?.totalRooms || 582;
-    const semRev = seminarGroup?.totalRevenue || 60781014;
-    const totRooms = grandTotals.rooms || 1748;
-    const totRev = grandTotals.revenue || 257328059;
+    const semRooms = seminarGroup?.totalRooms || 0;
+    const semRev = seminarGroup?.totalRevenue || 0;
+    const totRooms = grandTotals.rooms || 0;
+    const totRev = grandTotals.revenue || 0;
 
-    // 호텔 기준 가중치 (주중 세미나 집중도 약 88.8%, 주말 11.2%)
-    const semWeekdayRooms = Math.round(semRooms * (517 / 582));
-    const semWeekendRooms = semRooms - semWeekdayRooms;
-    const semWeekdayRev = Math.round(semRev * (48481030 / 60781014));
-    const semWeekendRev = semRev - semWeekdayRev;
+    let weekdayDays = 0;
+    let weekendDays = 0;
+    if (startDate) {
+      const start = new Date(startDate);
+      const end = endDate ? new Date(endDate) : new Date(startDate);
+      const cur = new Date(start);
+      while (cur <= end) {
+        const day = cur.getDay();
+        if (day === 5 || day === 6) {
+          weekendDays++;
+        } else {
+          weekdayDays++;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    const totalDays = weekdayDays + weekendDays || 1;
 
-    const totWeekdayRooms = Math.round(totRooms * (996 / 1748));
+    let semWeekdayRooms = 0;
+    let semWeekendRooms = 0;
+    let semWeekdayRev = 0;
+    let semWeekendRev = 0;
+
+    rawGroupData.forEach(g => {
+      const rooms = Number(g.spendingBreakdown?.roomsCount || 0);
+      const rev = Number(g.spendingBreakdown?.roomRevenue || g.totalRevenue || 0);
+      const checkIn = g.checkInDate || '';
+      const dayOfWeek = checkIn ? new Date(checkIn).getDay() : -1;
+      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+      if (isWeekend) {
+        semWeekendRooms += rooms;
+        semWeekendRev += rev;
+      } else {
+        semWeekdayRooms += rooms;
+        semWeekdayRev += rev;
+      }
+    });
+
+    if (semWeekdayRooms + semWeekendRooms === 0 && semRooms > 0) {
+      const weekdayRatio = weekdayDays / totalDays;
+      semWeekdayRooms = Math.round(semRooms * weekdayRatio);
+      semWeekendRooms = semRooms - semWeekdayRooms;
+      semWeekdayRev = Math.round(semRev * weekdayRatio);
+      semWeekendRev = semRev - semWeekdayRev;
+    }
+
+    const weekdayRatio = totalDays > 0 ? (weekdayDays / totalDays) : 0;
+    const totWeekdayRooms = totRooms > 0 ? Math.round(totRooms * weekdayRatio) : 0;
     const totWeekendRooms = totRooms - totWeekdayRooms;
-    const totWeekdayRev = Math.round(totRev * (111602480 / 257328059));
+    const totWeekdayRev = totRev > 0 ? Math.round(totRev * weekdayRatio) : 0;
     const totWeekendRev = totRev - totWeekdayRev;
 
     return {
       weekday: {
         label: '주중 (일~목 체크인)',
-        daysCount: 23,
+        daysCount: weekdayDays,
         totalRooms: totWeekdayRooms,
         seminarRooms: semWeekdayRooms,
-        sharePct: totWeekdayRooms > 0 ? Number(((semWeekdayRooms / totWeekdayRooms) * 100).toFixed(1)) : 51.9,
+        sharePct: totWeekdayRooms > 0 ? Number(((semWeekdayRooms / totWeekdayRooms) * 100).toFixed(1)) : 0,
         totalRevenue: totWeekdayRev,
         seminarRevenue: semWeekdayRev,
-        revenueSharePct: totWeekdayRev > 0 ? Number(((semWeekdayRev / totWeekdayRev) * 100).toFixed(1)) : 43.4,
-        averageAdr: semWeekdayRooms > 0 ? Math.round(semWeekdayRev / semWeekdayRooms) : 93774
+        revenueSharePct: totWeekdayRev > 0 ? Number(((semWeekdayRev / totWeekdayRev) * 100).toFixed(1)) : 0,
+        averageAdr: semWeekdayRooms > 0 ? Math.round(semWeekdayRev / semWeekdayRooms) : 0
       },
       weekend: {
         label: '주말 (금·토 체크인)',
-        daysCount: 8,
+        daysCount: weekendDays,
         totalRooms: totWeekendRooms,
         seminarRooms: semWeekendRooms,
-        sharePct: totWeekendRooms > 0 ? Number(((semWeekendRooms / totWeekendRooms) * 100).toFixed(1)) : 8.6,
+        sharePct: totWeekendRooms > 0 ? Number(((semWeekendRooms / totWeekendRooms) * 100).toFixed(1)) : 0,
         totalRevenue: totWeekendRev,
         seminarRevenue: semWeekendRev,
-        revenueSharePct: totWeekendRev > 0 ? Number(((semWeekendRev / totWeekendRev) * 100).toFixed(1)) : 8.4,
-        averageAdr: semWeekendRooms > 0 ? Math.round(semWeekendRev / semWeekendRooms) : 189231
+        revenueSharePct: totWeekendRev > 0 ? Number(((semWeekendRev / totWeekendRev) * 100).toFixed(1)) : 0,
+        averageAdr: semWeekendRooms > 0 ? Math.round(semWeekendRev / semWeekendRooms) : 0
       },
       total: {
         label: '통합 (전체)',
-        daysCount: 31,
+        daysCount: totalDays,
         totalRooms: totRooms,
         seminarRooms: semRooms,
-        sharePct: totRooms > 0 ? Number(((semRooms / totRooms) * 100).toFixed(1)) : 33.3,
+        sharePct: totRooms > 0 ? Number(((semRooms / totRooms) * 100).toFixed(1)) : 0,
         totalRevenue: totRev,
         seminarRevenue: semRev,
-        revenueSharePct: totRev > 0 ? Number(((semRev / totRev) * 100).toFixed(1)) : 23.6,
-        averageAdr: semRooms > 0 ? Math.round(semRev / semRooms) : 104435
+        revenueSharePct: totRev > 0 ? Number(((semRev / totRev) * 100).toFixed(1)) : 0,
+        averageAdr: semRooms > 0 ? Math.round(semRev / semRooms) : 0
       }
     };
-  }, [seminarShare, channelGroups, grandTotals]);
+  }, [seminarShare, channelGroups, grandTotals, rawGroupData, startDate, endDate]);
 
   // 👥 단체영업(세미나) 예약 단체 마스터 명부 및 복수 방문 집계
   const { organizedGroups, totalSeminarGroupsCount, repeatGroupsCount, totalBookedRoomsInGroups } = useMemo(() => {

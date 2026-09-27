@@ -233,27 +233,27 @@ export default function GolfChannelIntelligence() {
         const greenFeeItem = channelsList.find((c: any) => (c.venue_name || c.venueName || '').includes('그린피'));
         const cartItem = channelsList.find((c: any) => (c.venue_name || c.venueName || '').includes('카트'));
 
-        const totalPlayers = Number(liveSummary.totalPlayers || greenFeeItem?.players || 482);
-        const totalTeams = Number(cartItem?.quantity || Math.round(totalPlayers / 4) || 121);
-        const totalGreenFeeRevenue = Number(greenFeeItem?.revenue || liveSummary.totalGolfRevenue || 32158613);
-        const averageGreenFee = totalPlayers > 0 ? Math.round(totalGreenFeeRevenue / totalPlayers) : 52300;
+        const totalPlayers = Number(liveSummary.totalPlayers || greenFeeItem?.players || 0);
+        const totalTeams = Number(cartItem?.quantity || (totalPlayers > 0 ? Math.round(totalPlayers / 4) : 0));
+        const totalGreenFeeRevenue = Number(greenFeeItem?.revenue || liveSummary.totalGolfRevenue || 0);
+        const averageGreenFee = totalPlayers > 0 ? Math.round(totalGreenFeeRevenue / totalPlayers) : 0;
 
         // 3인 플레이 (전체 팀의 약 3.9%)
-        const threePlayerTeamsCount = Math.max(isRangeMode ? 10 : 1, Math.round(totalTeams * 0.039));
+        const threePlayerTeamsCount = Math.round(totalTeams * 0.039);
         const threePlayerLostRevenue = threePlayerTeamsCount * (averageGreenFee + 27500);
 
         // 조인 팀 (1~2인, 약 2.1%)
-        const joinTeamsCount = Math.max(isRangeMode ? 5 : 1, Math.round(totalTeams * 0.021));
+        const joinTeamsCount = Math.round(totalTeams * 0.021);
 
         // 회원 앵커 효과 (회원 1명 + 비회원 3인 팀 약 28.9%)
-        const member1Non3Teams = Math.max(1, Math.round(totalTeams * 0.289));
+        const member1Non3Teams = Math.round(totalTeams * 0.289);
         const memberAnchorRevenue = Math.round(member1Non3Teams * 3 * averageGreenFee);
 
         // 채널별 분배: 주요 거래처에 총 teams와 players, revenue를 비율대로 정확히 정규화 및 단가 스케일링
-        const baseAvg = INITIAL_INTELLIGENCE_DATA.summary.averageGreenFee || 52300;
+        const baseAvg = INITIAL_INTELLIGENCE_DATA.summary.averageGreenFee > 0 ? INITIAL_INTELLIGENCE_DATA.summary.averageGreenFee : 1;
         const scaleFactor = averageGreenFee > 0 ? (averageGreenFee / baseAvg) : 1;
         const scaledChannels = INITIAL_INTELLIGENCE_DATA.channels.map(ch => {
-          const chTeams = Math.max(ch.teams > 0 ? 1 : 0, Math.round((ch.sharePct / 100) * totalTeams));
+          const chTeams = totalTeams > 0 ? Math.round((ch.sharePct / 100) * totalTeams) : 0;
           const chPlayers = Math.round(chTeams * 3.93);
           const chAvgGreenFee = Math.round(ch.avgGreenFee * scaleFactor);
           const chRevenue = Math.round(chPlayers * chAvgGreenFee);
@@ -269,8 +269,8 @@ export default function GolfChannelIntelligence() {
         // 조인 랭킹 분배
         const scaledJoinRanking = INITIAL_INTELLIGENCE_DATA.teamSize.joinRanking.map(j => ({
           ...j,
-          teams: Math.max(1, Math.round((j.sharePct / 100) * joinTeamsCount)),
-          players: Math.max(1, Math.round((j.sharePct / 100) * joinTeamsCount * 1.2))
+          teams: joinTeamsCount > 0 ? Math.round((j.sharePct / 100) * joinTeamsCount) : 0,
+          players: joinTeamsCount > 0 ? Math.round((j.sharePct / 100) * joinTeamsCount * 1.2) : 0
         }));
 
         setData({
@@ -748,6 +748,10 @@ export default function GolfChannelIntelligence() {
   const otaAvg = otaPlayers > 0 ? Math.round(otaRevenue / otaPlayers) : 0;
   const diffAvg = directAvg - otaAvg;
 
+  const validSlots = data.timeSlotYield.filter(s => s.occupancy > 0);
+  const bestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => b.occupancy - a.occupancy)[0] : null;
+  const lowestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => a.occupancy - b.occupancy)[0] : null;
+
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
       
@@ -1222,11 +1226,15 @@ export default function GolfChannelIntelligence() {
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mt-4 text-xs text-slate-700 space-y-1.5">
             <div className="flex justify-between">
               <span>• 최고 가동 시간대:</span>
-              <strong className="text-indigo-600">토/일 08~11시 (가동률 99.8%, 그린피 ₩185,000)</strong>
+              <strong className="text-indigo-600">
+                {bestSlot ? `${bestSlot.dayOfWeek}요일 ${bestSlot.timeSlot} (가동률 ${bestSlot.occupancy.toFixed(1)}%, 실현 그린피 ₩${formatCurrency(bestSlot.avgGreenFee)})` : '-'}
+              </strong>
             </div>
             <div className="flex justify-between">
               <span>• 잔여 공실 시간대:</span>
-              <strong className="text-slate-600">월/화 14시 이후 레이트 (가동률 65.0%, 그린피 ₩110,000)</strong>
+              <strong className="text-slate-600">
+                {lowestSlot ? `${lowestSlot.dayOfWeek}요일 ${lowestSlot.timeSlot} (가동률 ${lowestSlot.occupancy.toFixed(1)}%, 실현 그린피 ₩${formatCurrency(lowestSlot.avgGreenFee)})` : '-'}
+              </strong>
             </div>
             <p className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200 leading-relaxed">
               👉 평일 레이트 슬롯은 OTA 타임어택 특가로 공실을 밀어내고, 주말 1·2부는 최고가를 유지하는 다이내믹 가격 정책을 제언합니다.

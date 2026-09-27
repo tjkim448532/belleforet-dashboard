@@ -250,7 +250,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
     yAxis: { type: 'category', data: months, splitArea: { show: true } },
     visualMap: {
       min: 0,
-      max: maxRevenue || 100,
+      max: Math.max(1, maxRevenue),
       calculable: true,
       orient: 'horizontal',
       left: 'center',

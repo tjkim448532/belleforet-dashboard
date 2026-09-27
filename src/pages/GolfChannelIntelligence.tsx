@@ -184,9 +184,6 @@ export default function GolfChannelIntelligence() {
         const memberAnchorRevenue = Number(liveSummary.memberAnchorRevenue || 0);
 
         const joinRankingList = Array.isArray(payload.joinRanking) ? payload.joinRanking : [];
-        const totalJoinPlayers = joinRankingList.reduce((sum: number, j: any) => sum + Number(j.players || 0), 0);
-        const size2Teams = Math.max(0, Math.min(joinTeamsCount, totalJoinPlayers - joinTeamsCount));
-        const size1Teams = Math.max(0, joinTeamsCount - size2Teams);
         const normalFourTeams = Math.max(0, totalTeams - threePlayerTeamsCount - joinTeamsCount);
 
         setData({
@@ -202,8 +199,8 @@ export default function GolfChannelIntelligence() {
           },
           channels: liveChannels,
           teamSize: payload.teamSize || {
-            size1: { teams: size1Teams, ratio: totalTeams > 0 ? Number(((size1Teams / totalTeams) * 100).toFixed(1)) : 0 },
-            size2: { teams: size2Teams, ratio: totalTeams > 0 ? Number(((size2Teams / totalTeams) * 100).toFixed(1)) : 0 },
+            size1: { teams: 0, ratio: 0 },
+            size2: { teams: joinTeamsCount, ratio: totalTeams > 0 ? Number(((joinTeamsCount / totalTeams) * 100).toFixed(1)) : 0 },
             size3: { teams: threePlayerTeamsCount, ratio: totalTeams > 0 ? Number(((threePlayerTeamsCount / totalTeams) * 100).toFixed(1)) : 0, lostRevenue: threePlayerLostRevenue },
             size4: { teams: normalFourTeams, ratio: totalTeams > 0 ? Number(((normalFourTeams / totalTeams) * 100).toFixed(1)) : 0 },
             joinRanking: joinRankingList
@@ -745,9 +742,7 @@ export default function GolfChannelIntelligence() {
   const bestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => b.occupancy - a.occupancy)[0] : null;
   const lowestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => a.occupancy - b.occupancy)[0] : null;
 
-  const totalSynergyMembers = (data.memberSynergy.member1Non3.teams * 1) + (data.memberSynergy.member2Non2.teams * 2);
-  const totalSynergyNonMembers = (data.memberSynergy.member1Non3.teams * 3) + (data.memberSynergy.member2Non2.teams * 2);
-  const avgNonMembersPerMember = totalSynergyMembers > 0 ? (totalSynergyNonMembers / totalSynergyMembers).toFixed(1) : '0';
+  const memberSynergyTeams = data.memberSynergy.member1Non3.teams + data.memberSynergy.member2Non2.teams;
 
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -917,7 +912,7 @@ export default function GolfChannelIntelligence() {
             </div>
           </div>
           <p className="text-[11px] text-rose-900/70 border-t border-rose-100 pt-2">
-            💡 조인 시스템 50% 전환 시 +{formatCurrency(Math.round(data.summary.threePlayerLostRevenue * 0.5))}원 즉시 회수
+            💡 3인 플레이 1인분 공실 손실 회수 가능액: {formatCurrency(data.summary.threePlayerLostRevenue)}원
           </p>
         </div>
 
@@ -941,7 +936,7 @@ export default function GolfChannelIntelligence() {
             </div>
           </div>
           <p className="text-[11px] text-teal-950/70 border-t border-teal-100 pt-2">
-            회원 1명이 평균 {avgNonMembersPerMember}명의 비회원 풀그린피 유치
+            회원 동반 팀 합계: {memberSynergyTeams.toLocaleString()}팀 (1회원 3비회원 / 2회원 2비회원)
           </p>
         </div>
 
@@ -1098,7 +1093,7 @@ export default function GolfChannelIntelligence() {
               <strong className="text-slate-900">{formatCurrency(data.summary.threePlayerLostRevenue)}원</strong>
             </div>
             <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
-              💡 4인 정상 플레이가 {(data.teamSize.size4.teams / Math.max(1, data.summary.totalTeams) * 100).toFixed(1)}%로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동하여 50%만 충원해도 약 {formatCurrency(Math.round(data.summary.threePlayerLostRevenue * 0.5))}원의 순이익이 즉시 개선됩니다.
+              💡 4인 플레이가 {(data.teamSize.size4.teams / Math.max(1, data.summary.totalTeams) * 100).toFixed(1)}%로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동할 경우 최대 {formatCurrency(data.summary.threePlayerLostRevenue)}원의 공실 손실을 회수할 수 있습니다.
             </div>
           </div>
         </div>

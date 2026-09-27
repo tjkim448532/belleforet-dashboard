@@ -162,9 +162,9 @@ function calculateOls(rows: any[]): OlsAnalysisResult | null {
 
   const singleRoomDailyRev = Math.round(beta[1]);
   const multiRoomDailyRev = Math.round(beta[2]);
-  const multiRoomTotalRev = Math.round(beta[2] * 2);
-  const deltaContribution = multiRoomTotalRev - singleRoomDailyRev;
-  const growthPct = singleRoomDailyRev > 0 ? Number((((multiRoomTotalRev / singleRoomDailyRev) - 1) * 100).toFixed(1)) : 0;
+  const multiRoomTotalRev = multiRoomDailyRev;
+  const deltaContribution = multiRoomDailyRev - singleRoomDailyRev;
+  const growthPct = singleRoomDailyRev > 0 ? Number((((multiRoomDailyRev / singleRoomDailyRev) - 1) * 100).toFixed(1)) : 0;
 
   return {
     sampleDays: n,
@@ -1009,23 +1009,23 @@ export default function ResortBusiness() {
                             {/* 연박 1팀 (2박 3일 체류) */}
                             <div className="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-200 shadow-2xs">
                               <div className="text-xs font-bold text-indigo-800 mb-1 flex items-center justify-between">
-                                <span>연박 1팀 (2박 3일 체류)</span>
+                                <span>연박 1팀 (일평균 기여액)</span>
                                 <span className="text-[10px] text-indigo-800 bg-indigo-200/80 px-1.5 py-0.5 rounded font-bold">
-                                  2박 누적
+                                  β₂ 계수
                                 </span>
                               </div>
                               <div className="text-xl font-extrabold text-indigo-900 my-1">
-                                {formatCurrency(analytics.ols.multiRoomTotalRev)}원
-                                <span className="text-xs font-normal text-indigo-700"> / 팀</span>
+                                {formatCurrency(analytics.ols.multiRoomDailyRev)}원
+                                <span className="text-xs font-normal text-indigo-700"> / 팀·일</span>
                               </div>
                               <div className="text-[11px] text-indigo-900/80 space-y-0.5 pt-2 border-t border-indigo-200/60">
                                 <div className="flex justify-between">
-                                  <span>1일당 기여액:</span>
-                                  <span className="font-semibold text-indigo-950">{formatCurrency(analytics.ols.multiRoomDailyRev)}원</span>
+                                  <span>단박 대비 1일 증분:</span>
+                                  <span className="font-semibold text-indigo-950">{analytics.ols.deltaContribution >= 0 ? '+' : ''}{formatCurrency(analytics.ols.deltaContribution)}원</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span>체류 기간 계수:</span>
-                                  <span className="font-semibold text-indigo-950">× 2박 누적</span>
+                                  <span>분석 기준:</span>
+                                  <span className="font-semibold text-indigo-950">1일 한계 기여액</span>
                                 </div>
                                 <div className="text-indigo-900 pt-0.5 font-bold">• 리조트 체류 종일 소비 시너지</div>
                               </div>
@@ -1048,7 +1048,7 @@ export default function ResortBusiness() {
                                 <span>체류 전 기간 순기여 증분 (Δ):</span>
                               </span>
                               <span className={analytics.ols.deltaContribution >= 0 ? 'text-indigo-800 font-black' : 'text-slate-700'}>
-                                {analytics.ols.deltaContribution >= 0 ? '+' : ''}{formatCurrency(analytics.ols.deltaContribution)}원 / 팀
+                                {analytics.ols.deltaContribution >= 0 ? '+' : ''}{formatCurrency(analytics.ols.deltaContribution)}원 / 팀·일
                                 <span className="ml-1 text-xs">
                                   ({analytics.ols.growthPct >= 0 ? '+' : ''}{analytics.ols.growthPct}%)
                                 </span>
@@ -1057,7 +1057,7 @@ export default function ResortBusiness() {
                             <div className="text-[11px] mt-1.5 text-slate-700">
                               {analytics.ols.deltaContribution >= 0 ? (
                                 <span>
-                                  💡 연박 1팀 유치 시 1박 고객 대비 리조트 부대시설에 <b>+약 {formatCurrency(Math.round(analytics.ols.deltaContribution / 10000))}만 원</b>의 순매출을 추가 창출합니다.
+                                  💡 연박 1팀 유치 시 1박 고객 대비 리조트 부대시설에 1일당 <b>+{formatCurrency(analytics.ols.deltaContribution)}원</b>의 한계 순매출을 추가 창출합니다.
                                 </span>
                               ) : (
                                 <span>

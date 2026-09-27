@@ -214,35 +214,52 @@ export default function TargetSimulator() {
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
 
-  // Raw categories from API or Simulation Engine
+  // Raw categories from API or Simulation Engine (주차관제, 벨포레굿즈, 기타/과거업장 영구 제외)
   const rawCategories: ApiCategory[] = useMemo(() => {
+    let list: ApiCategory[] = [];
     if (apiData?.categories && apiData.categories.length > 0) {
-      return apiData.categories;
-    }
-    return simulationResult.divisionResults.map((div) => ({
-      categoryCode: div.category,
-      categoryName: div.categoryLabel,
-      teamName: div.categoryLabel,
-      facilityCount: div.facilities.length,
-      totalActual2025: div.lyRevenue,
-      totalWeight: div.targetShare,
-      totalTarget2026: div.targetRevenue,
-      totalActual2026: 0,
-      achievementRate: 0,
-      facilities: div.facilities.map((f, fIdx) => ({
-        no: fIdx + 1,
+      list = apiData.categories;
+    } else {
+      list = simulationResult.divisionResults.map((div) => ({
         categoryCode: div.category,
         categoryName: div.categoryLabel,
         teamName: div.categoryLabel,
-        partName: f.category,
-        facilityName: f.shopName,
-        weight: Number((f.shareRatio * 100).toFixed(2)),
-        actual2025: f.lyRevenue,
-        target2026: f.targetRevenue,
-        actual2026: 0,
-        achievementRate: 0
-      }))
-    }));
+        facilityCount: div.facilities.length,
+        totalActual2025: div.lyRevenue,
+        totalWeight: div.targetShare,
+        totalTarget2026: div.targetRevenue,
+        totalActual2026: 0,
+        achievementRate: 0,
+        facilities: div.facilities.map((f, fIdx) => ({
+          no: fIdx + 1,
+          categoryCode: div.category,
+          categoryName: div.categoryLabel,
+          teamName: div.categoryLabel,
+          partName: f.category,
+          facilityName: f.shopName,
+          weight: Number((f.shareRatio * 100).toFixed(2)),
+          actual2025: f.lyRevenue,
+          target2026: f.targetRevenue,
+          actual2026: 0,
+          achievementRate: 0
+        }))
+      }));
+    }
+
+    // 사용자 요청: 주차관제(PARKING), 벨포레굿즈(GOODS), 기타/과거업장(OTHER) 삭제
+    return list.filter(c => 
+      c.categoryCode !== 'PARKING' && 
+      c.categoryCode !== 'GOODS' && 
+      c.categoryCode !== 'OTHER' &&
+      !c.categoryCode.toUpperCase().includes('PARKING') &&
+      !c.categoryCode.toUpperCase().includes('GOODS') &&
+      !c.categoryCode.toUpperCase().includes('OTHER') &&
+      !c.categoryName.includes('주차') &&
+      !c.categoryName.includes('굿즈') &&
+      !c.categoryName.includes('기타') &&
+      !c.teamName?.includes('주차') &&
+      !c.teamName?.includes('기타')
+    );
   }, [apiData, simulationResult]);
 
   // Golf Category Subtotal for Minus Operation

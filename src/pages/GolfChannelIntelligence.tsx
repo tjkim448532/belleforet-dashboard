@@ -523,6 +523,8 @@ export default function GolfChannelIntelligence() {
   // --------------------------------------------------------------------
   // Chart 5: 티업 시간대별 가동률 & 그린피 2D 히트맵
   // --------------------------------------------------------------------
+  // Chart 4: 티업 시간대별 수율 관리 2D 히트맵 (시간대 × 요일)
+  // --------------------------------------------------------------------
   const getTimeSlotHeatmapOption = () => {
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     const timeSlots = ['06~08 (얼리)', '08~11 (1부)', '11~14 (2부)', '14~ (레이트)'];
@@ -534,54 +536,80 @@ export default function GolfChannelIntelligence() {
     return {
       tooltip: {
         position: 'top',
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: [10, 14],
+        textStyle: { color: '#ffffff' },
         formatter: (params: any) => {
           const val = params.value;
           return `
-            <div style="font-weight:700;margin-bottom:4px;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:3px;">
-              ${days[val[1]]}요일 ${timeSlots[val[0]]}
+            <div style="font-weight:700;margin-bottom:6px;color:#ffffff;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:4px;font-size:13px;">
+              ${days[val[1]]}요일 · ${timeSlots[val[0]]}
             </div>
-            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#00ae95;padding:1px 0;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;gap:16px;color:#38bdf8;padding:2px 0;">
               <span>티타임 가동률:</span>
-              <strong>${val[2]}%</strong>
+              <strong style="color:#ffffff;">${val[2]}%</strong>
             </div>
-            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#d97706;padding:1px 0;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;gap:16px;color:#fbbf24;padding:2px 0;">
               <span>평균 그린피:</span>
-              <strong>₩${formatCurrency(val[3])}</strong>
+              <strong style="color:#ffffff;">₩${formatCurrency(val[3])}</strong>
             </div>
-            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#64748b;padding:1px 0;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;gap:16px;color:#94a3b8;padding:2px 0;">
               <span>완주 팀수:</span>
-              <strong>${(val[4] || 0).toLocaleString()}팀</strong>
+              <strong style="color:#ffffff;">${(val[4] || 0).toLocaleString()}팀</strong>
             </div>
           `;
         }
       },
-      grid: { left: '3%', right: '4%', top: '6%', bottom: '65px', containLabel: true },
+      grid: { left: '3%', right: '4%', top: '4%', bottom: '50px', containLabel: true },
       xAxis: {
         type: 'category',
         data: timeSlots,
-        splitArea: { show: true },
-        axisLabel: { fontWeight: 'bold', color: '#334155' }
+        splitArea: { show: false },
+        splitLine: { show: false },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { fontWeight: 'bold', color: '#1e293b', fontSize: 12, margin: 12 }
       },
       yAxis: {
         type: 'category',
         data: days,
-        splitArea: { show: true },
-        axisLabel: { fontWeight: 'bold', color: '#334155' }
+        inverse: true, // 월요일이 맨 위, 일요일이 맨 아래 (자연스러운 캘린더 읽기 순서)
+        splitArea: { show: false },
+        splitLine: { show: false },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { 
+          fontWeight: 'bold', 
+          fontSize: 13,
+          margin: 12,
+          formatter: (value: string) => {
+            if (value === '일') return '{sun|일}';
+            if (value === '토') return '{sat|토}';
+            return `{weekday|${value}}`;
+          },
+          rich: {
+            sun: { color: '#ef4444', fontWeight: 'bold', fontSize: 13 },
+            sat: { color: '#2563eb', fontWeight: 'bold', fontSize: 13 },
+            weekday: { color: '#334155', fontWeight: 'bold', fontSize: 13 }
+          }
+        }
       },
       visualMap: {
         min: 0,
         max: 100,
-        calculable: true,
+        calculable: false,
         orient: 'horizontal',
         left: 'center',
-        bottom: 2,
-        itemWidth: 14,
-        itemHeight: 140,
+        bottom: 0,
+        itemWidth: 16,
+        itemHeight: 180,
         text: ['100%', '0%'],
-        textGap: 8,
-        textStyle: { fontSize: 10, color: '#64748b', fontWeight: 'bold' },
+        textGap: 10,
+        textStyle: { fontSize: 11, color: '#64748b', fontWeight: 'bold' },
         inRange: {
-          color: ['#f8fafc', '#bae6fd', '#38bdf8', '#0284c7', '#0369a1']
+          color: ['#f0fdf4', '#bae6fd', '#38bdf8', '#0284c7', '#1e40af', '#0f172a']
         }
       },
       series: [
@@ -589,16 +617,43 @@ export default function GolfChannelIntelligence() {
           name: '가동률 (%)',
           type: 'heatmap',
           data: heatmapData,
+          itemStyle: {
+            borderWidth: 4,
+            borderColor: '#ffffff',
+            borderRadius: 8
+          },
           label: {
             show: true,
-            formatter: (p: any) => p.value[2] > 0 ? `${p.value[2]}%` : '-',
-            color: '#0f172a',
-            fontWeight: '600'
+            formatter: (p: any) => {
+              const val = p.value[2];
+              if (!val || val === 0) return '{empty|-}';
+              return val >= 60 ? `{light|${val}%}` : `{dark|${val}%}`;
+            },
+            rich: {
+              light: {
+                color: '#ffffff',
+                fontWeight: 'bold',
+                fontSize: 13,
+                textShadowColor: 'rgba(0, 0, 0, 0.45)',
+                textShadowBlur: 3
+              },
+              dark: {
+                color: '#0f172a',
+                fontWeight: 'bold',
+                fontSize: 13
+              },
+              empty: {
+                color: '#94a3b8',
+                fontSize: 12
+              }
+            }
           },
           emphasis: {
             itemStyle: {
-              shadowBlur: 10,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
+              shadowBlur: 12,
+              shadowColor: 'rgba(0, 0, 0, 0.25)',
+              borderColor: '#0284c7',
+              borderWidth: 2
             }
           }
         }
@@ -1195,7 +1250,7 @@ export default function GolfChannelIntelligence() {
               골프장 수익 극대화를 위해 프라임 타임(주말 1부)과 잔여 타임(새벽 얼리/레이트)의 수율을 진단합니다.
             </p>
 
-            <div className="h-[310px] w-full">
+            <div className="h-[370px] w-full">
               {data.timeSlotYield.length > 0 && data.timeSlotYield.some(s => s.occupancy > 0) ? (
                 <ReactECharts option={getTimeSlotHeatmapOption()} style={{ height: '100%', width: '100%' }} />
               ) : (

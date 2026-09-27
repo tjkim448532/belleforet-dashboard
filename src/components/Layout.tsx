@@ -141,15 +141,14 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/golf/channel-intelligence"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-between gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                       isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                     }`}
                     onClick={() => { 
                       if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                     }}
                   >
-                    <span>채널&예약</span>
-                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">NEW</span>
+                    채널&예약
                   </NavLink>
                 </div>
               )}

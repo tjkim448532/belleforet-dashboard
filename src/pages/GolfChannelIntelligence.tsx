@@ -726,7 +726,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
               <Flag className="text-[#00ae95] w-8 h-8" />
-              골프 채널 & 예약 인텔리전스 ⛳
+              골프 채널&예약 ⛳
             </h1>
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
               15개 상세 판매 채널의 실현 단가, 3인 플레이 공실 손실액, 회원 앵커 효과, 그리고 2024~2026 연도별 추이를 정밀 분석합니다.

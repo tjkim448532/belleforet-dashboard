@@ -148,7 +148,7 @@ export default function Layout() {
                       if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
                     }}
                   >
-                    <span>채널 & 예약 인텔리전스</span>
+                    <span>채널&예약</span>
                     <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">NEW</span>
                   </NavLink>
                 </div>

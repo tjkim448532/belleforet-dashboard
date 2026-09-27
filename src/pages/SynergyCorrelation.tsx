@@ -403,7 +403,7 @@ export default function SynergyCorrelation() {
                       낙수율
                       <HelpCircle size={14} className="text-slate-400 cursor-help" />
                       <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 text-white text-[11px] font-normal p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-10 pointer-events-none text-left">
-                        체류객의 내부 소비 전환율입니다. 객실 이용객 중 해당 부대시설을 동시에 방문하여 결제한 비율을 나타냅니다.
+                        객실 판매 증가에 따른 매장의 통계적 추정 연동 매출 비율입니다. 결정계수(R²) 가중치가 결합되어 상관관계 신뢰도에 비례하여 산출됩니다.
                         <div className="absolute bottom-full right-4 border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>

@@ -18,7 +18,6 @@ const DIVISION_META: Record<string, { color: string; icon: string; label: string
   TICKET: { color: '#EAB308', icon: '🎢', label: 'TICKET', teamName: '레저본부' },
   MOTO: { color: '#E11D48', icon: '🏎️', label: 'MOTO', teamName: '모토아레나' },
   BANQUET: { color: '#0891B2', icon: '🏛️', label: 'BANQUET', teamName: '세일즈본부' },
-  PARKING: { color: '#0284C7', icon: '🅿️', label: 'PARKING', teamName: '주차관제' },
   OTHER: { color: '#64748B', icon: '📦', label: 'OTHER', teamName: '독립/기타' }
 };
 
@@ -37,7 +36,7 @@ export function runTargetSimulation(
   targetYear: number;
 } {
   const masterItems = (capacityMaster.length > 0 ? capacityMaster : DEFAULT_CAPACITY_SEEDS)
-    .filter(f => f.id !== 'cap_leisure_luge' && f.shopName !== '익스트림 루지');
+    .filter(f => f.id !== 'cap_leisure_luge' && f.shopName !== '익스트림 루지' && f.shopName !== '주차관제' && f.shopName !== '벨포레굿즈' && !f.shopName.includes('과거'));
 
   const baseYear = input.baseYear || 2025;
   const targetYear = input.targetYear || (baseYear + 1);

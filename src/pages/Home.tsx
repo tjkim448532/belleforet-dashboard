@@ -52,14 +52,18 @@ export default function Home() {
     coreData.core.salesByCategory.forEach((cat: any) => {
       const code = String(cat.categoryCode || cat.categoryName || 'ETC').trim();
       let displayName = cat.categoryName || cat.categoryCode || '기타';
+
+      // 사용자 요청: 주차관제, 벨포레굿즈, 기타과거업장 영구 제외
+      if (code === 'PARKING' || code === 'GOODS' || displayName.includes('주차') || displayName.includes('굿즈') || displayName.includes('과거')) {
+        return;
+      }
+
       if (code === 'ETC' || displayName === 'ETC') {
         displayName = '임대업장(CU/투썸/BHC)';
       } else if (code === 'OTHER') {
         displayName = '기타부대(잡수익)';
       } else if (code === 'MOTO') {
         displayName = '모토아레나';
-      } else if (code === 'GOODS') {
-        displayName = '벨포레굿즈';
       } else if (code === 'PROMOTION') {
         displayName = '기획전';
       }

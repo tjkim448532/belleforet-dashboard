@@ -302,21 +302,7 @@ export const DEFAULT_CAPACITY_SEEDS: FacilityCapacityItem[] = [
     "spilloverPriority": 20,
     "notes": "백엔드 표준 영업장: 핏스탑"
   },
-  {
-    "id": "cap_std_21",
-    "shopCode": "SHOP_STD_021",
-    "shopName": "주차관제",
-    "category": "OTHER",
-    "categoryLabel": "기타(주차)",
-    "maxDailyUnits": 1500,
-    "unitName": "대",
-    "baseUnitPrice": 3000,
-    "allowPriceLeverage": true,
-    "maxPriceHikeRate": 20,
-    "allowSpillover": true,
-    "spilloverPriority": 21,
-    "notes": "백엔드 표준 영업장: 주차관제"
-  },
+
   {
     "id": "cap_std_22",
     "shopCode": "SHOP_STD_022",

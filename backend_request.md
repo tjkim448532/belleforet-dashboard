@@ -420,3 +420,54 @@ const reverseSpillover = totalRoomSales > 0
 2. **변별력 확보**: 객실 탄력도가 1.0배를 초과하는 매장들이 일괄 100%로 뭉개지지 않고, 실제 상관관계 강도에 따라 차등 분산되어 의사결정 가치를 제공할 것.
 3. 배포 완료 후 `GET /api/v6/report/synergy-store-correlation-v2`의 JSON 응답 검증 결과를 공유해 주시기 바랍니다.
 
+---
+
+## 6. [기존 API 보강] `/api/v6/dashboard/revenue-summary`의 `roomSummaryByType`에 `adr` 필드 추가 요청
+
+### 배경 및 결함 분석
+* `/api/v6/dashboard/revenue-summary` 응답의 `roomSummaryByType` 배열 객체 내에 `adr` 필드가 누락(`undefined`)되어 프론트엔드 대시보드(리조트 비즈니스 평형별 카드)에 ADR이 전부 `0원`으로 출력되는 결함이 발생하고 있습니다.
+* 이미 매출(`revenue`)과 판매 건수(`roomsSold`)가 집계되어 있으므로, 백엔드에서 `adr: Math.round(revenue / roomsSold)`를 공식 필드로 산출하여 응답 객체에 포함해 주시기 바랍니다.
+
+### 기대하는 응답 스펙 (JSON)
+```json
+"roomSummaryByType": [
+  {
+    "roomType": "16평",
+    "roomsSold": 882,
+    "revenue": 86326576,
+    "capacity": 1020,
+    "fixedCapacity": 1020,
+    "dynamicCapacity": 1020,
+    "rate": 86,
+    "dynamicOccupancyRate": 86,
+    "fixedOccupancyRate": 86,
+    "adr": 97876
+  },
+  {
+    "roomType": "35평",
+    "roomsSold": 746,
+    "revenue": 131731876,
+    "capacity": 1020,
+    "fixedCapacity": 1020,
+    "dynamicCapacity": 1020,
+    "rate": 73,
+    "dynamicOccupancyRate": 73,
+    "fixedOccupancyRate": 73,
+    "adr": 176584
+  },
+  {
+    "roomType": "51평",
+    "roomsSold": 740,
+    "revenue": 192112966,
+    "capacity": 740,
+    "fixedCapacity": 1080,
+    "dynamicCapacity": 740,
+    "rate": 100,
+    "dynamicOccupancyRate": 100,
+    "fixedOccupancyRate": 69,
+    "adr": 259612
+  }
+]
+```
+
+

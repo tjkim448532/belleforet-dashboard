@@ -190,7 +190,9 @@ export default function ResortBusiness() {
         displayRate,
         revenue: g.rev,
         adr: Number((g as any).adr ?? 0),
-        isConnectedType: key === '51평'
+        isConnectedType: key === '51평',
+        dynamicCapacity: (g as any).dynamicCapacity,
+        dynamicOccupancyRate: (g as any).dynamicOccupancyRate
       });
     }
 
@@ -447,9 +449,16 @@ export default function ResortBusiness() {
                     <div className="flex flex-col items-center mb-3">
                       <span className="text-sm font-bold text-slate-700">{row.roomSize}</span>
                       {row.isConnectedType && (
-                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full mt-1">
-                          🔗 전용+커넥티드
-                        </span>
+                        <div className="flex flex-col items-center gap-1 mt-1">
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                            🔗 전용+커넥티드
+                          </span>
+                          {row.dynamicOccupancyRate === 100 && (
+                            <span className="text-[9px] bg-amber-50 text-amber-700 font-medium px-1.5 py-0.5 rounded border border-amber-200">
+                              조립 잔여 소진 (동적 100%)
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="relative w-20 h-20 flex items-center justify-center">

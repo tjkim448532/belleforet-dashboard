@@ -237,7 +237,17 @@ export interface TransformedResortData {
   date?: string;
   ytd: { actual: number; ly_actual: number };
   today: { actual: number; ly_actual: number };
-  roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }>;
+  roomOccupancyMap: Record<string, {
+    sold: number;
+    cap: number;
+    rev: number;
+    adr?: number;
+    occupancyRate?: number;
+    fixedCapacity?: number;
+    dynamicCapacity?: number;
+    dynamicOccupancyRate?: number;
+    isVirtual?: boolean;
+  }>;
   channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }>;
   marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
   rateAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
@@ -269,7 +279,17 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; adr?: number; isVirtual?: boolean }> = {};
+  const roomOccupancyMap: Record<string, {
+    sold: number;
+    cap: number;
+    rev: number;
+    adr?: number;
+    occupancyRate?: number;
+    fixedCapacity?: number;
+    dynamicCapacity?: number;
+    dynamicOccupancyRate?: number;
+    isVirtual?: boolean;
+  }> = {};
   if (masterCapacities && Object.keys(masterCapacities).length > 0) {
     Object.entries(masterCapacities).forEach(([k, v]) => {
       roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
@@ -283,12 +303,24 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       const typeName = item.roomType || '미분류';
       const sold = parseNum(item.roomsSold || 0);
       const rev = parseNum(item.totalSales || item.revenue || 0);
-      const cap = item.capacity || item.totalRooms 
-        ? parseNum(item.capacity || item.totalRooms) 
-        : (roomOccupancyMap[typeName]?.cap ?? 0);
-      const adr = parseNum(item.adr || 0);
+      // 고정 물리 인벤토리 기준(fixedCapacity) 우선 바인딩하여 동적 모수 수렴 왜곡 방지
+      const fixedCap = parseNum(item.fixedCapacity || item.capacity || item.totalRooms || 0);
+      const cap = fixedCap > 0 ? fixedCap : (roomOccupancyMap[typeName]?.cap ?? 0);
+      const occupancyRate = parseNum(item.fixedOccupancyRate ?? item.rate ?? 0);
+      const dynamicCapacity = parseNum(item.dynamicCapacity || item.capacity || 0);
+      const dynamicOccupancyRate = parseNum(item.dynamicOccupancyRate ?? item.rate ?? 0);
+      const adr = parseNum(item.adr || (sold > 0 && rev > 0 ? Math.round(rev / sold) : 0));
 
-      roomOccupancyMap[typeName] = { sold, rev, cap, adr };
+      roomOccupancyMap[typeName] = {
+        sold,
+        rev,
+        cap,
+        adr,
+        occupancyRate,
+        fixedCapacity: cap,
+        dynamicCapacity,
+        dynamicOccupancyRate
+      };
     });
   }
 

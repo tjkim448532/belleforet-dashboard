@@ -50,7 +50,8 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const getCategoryIcon = (name: string) => {
+const getCategoryIcon = (name: string, code?: string) => {
+  if (code === 'GOODS' || name?.includes('굿즈') || name?.toUpperCase().includes('GOODS')) return '🎁';
   if (!name) return '📂';
   if (name.includes('골프')) return '⛳';
   if (name.includes('콘도') || name.includes('객실')) return '🏨';
@@ -61,6 +62,17 @@ const getCategoryIcon = (name: string) => {
   if (name.includes('목장')) return '🐎';
   if (name.includes('주차')) return '🅿️';
   return '📂';
+};
+
+const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: string; teamName?: string }) => {
+  // Bible v4.2 독립 카테고리 규정: 벨포레굿즈는 단독 소계/카테고리명으로 표출하여 FNB와 중복 방지
+  if (cat.categoryCode === 'GOODS') {
+    return '벨포레굿즈';
+  }
+  if (cat.categoryCode === 'FNB') {
+    return cat.teamName || '콘텐츠기획본부';
+  }
+  return cat.teamName || cat.categoryName || cat.categoryCode;
 };
 
 const getPartIcon = (partName: string) => {
@@ -471,7 +483,7 @@ export default function StrategicSimulator() {
     effectiveCategories.forEach(c => {
       list.push({ 
         id: c.categoryCode, 
-        label: `${getCategoryIcon(c.categoryName)} ${c.teamName || c.categoryName}` 
+        label: `${getCategoryIcon(c.categoryName, c.categoryCode)} ${getCategoryDisplayName(c)}` 
       });
     });
     return list;
@@ -1100,9 +1112,8 @@ export default function StrategicSimulator() {
         <div className="space-y-4">
           {filteredCategories.map((cat) => {
             const isCatOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
-            const catIcon = getCategoryIcon(cat.categoryName);
+            const catIcon = getCategoryIcon(cat.categoryName, cat.categoryCode);
             const partGroups = getCategoryParts(cat);
-            const meta = DIVISION_META[cat.categoryCode] || DIVISION_META.OTHER;
             const catDiff = cat.totalTarget2026 - cat.totalActual2025;
 
             return (
@@ -1129,7 +1140,7 @@ export default function StrategicSimulator() {
                     <div className="flex items-center gap-2.5">
                       <span className="text-2xl">{catIcon}</span>
                       <span className="text-xl font-black text-slate-900">
-                        {cat.teamName || meta.name || cat.categoryName}
+                        {getCategoryDisplayName(cat)}
                       </span>
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                         {cat.categoryCode}

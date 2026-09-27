@@ -35,7 +35,8 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const getCategoryIcon = (name: string) => {
+const getCategoryIcon = (name: string, code?: string) => {
+  if (code === 'GOODS' || name?.includes('굿즈') || name?.toUpperCase().includes('GOODS')) return '🎁';
   if (!name) return '📂';
   if (name.includes('골프')) return '⛳';
   if (name.includes('콘도') || name.includes('객실')) return '🏨';
@@ -48,8 +49,21 @@ const getCategoryIcon = (name: string) => {
   return '📂';
 };
 
+const getCategoryDisplayName = (cat: { categoryCode: string; categoryName?: string; teamName?: string }) => {
+  // Bible v4.2 독립 카테고리 규정: 벨포레굿즈는 팀명(콘텐츠기획본부) 대신 단독 카테고리명 '벨포레굿즈'로 표출하여 FNB와 중복 혼선 방지
+  if (cat.categoryCode === 'GOODS') {
+    return '벨포레굿즈';
+  }
+  // 식음 FNB는 공식 조직명인 콘텐츠기획본부
+  if (cat.categoryCode === 'FNB') {
+    return cat.teamName || '콘텐츠기획본부';
+  }
+  return cat.teamName || cat.categoryName || cat.categoryCode;
+};
+
 const getPartIcon = (partName: string) => {
   if (!partName) return '📂';
+  if (partName.includes('굿즈')) return '🎁';
   if (partName.includes('목장')) return '🐎';
   if (partName.includes('미디어')) return '🎨';
   if (partName.includes('액티비티') || partName.includes('썰매') || partName.includes('마운틴')) return '🛷';
@@ -309,7 +323,7 @@ export default function TargetSimulator() {
     effectiveCategories.forEach(c => {
       list.push({ 
         id: c.categoryCode, 
-        label: `${getCategoryIcon(c.categoryName)} ${c.teamName || c.categoryName}` 
+        label: `${getCategoryIcon(c.categoryName, c.categoryCode)} ${getCategoryDisplayName(c)}` 
       });
     });
     return list;
@@ -581,7 +595,7 @@ export default function TargetSimulator() {
   const categoryPieOptions = useMemo(() => {
     const data = effectiveCategories.map(c => {
       return {
-        name: c.categoryName,
+        name: getCategoryDisplayName(c),
         value: c.totalTarget2026,
         itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
       };
@@ -972,7 +986,7 @@ export default function TargetSimulator() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {effectiveCategories.map(cat => {
-              const icon = getCategoryIcon(cat.categoryName);
+              const icon = getCategoryIcon(cat.categoryName, cat.categoryCode);
               return (
                 <div 
                   key={cat.categoryCode}
@@ -981,7 +995,7 @@ export default function TargetSimulator() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{icon}</span>
-                      <span className="font-black text-slate-900">{cat.teamName || cat.categoryName}</span>
+                      <span className="font-black text-slate-900">{getCategoryDisplayName(cat)}</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                         {cat.categoryCode}
                       </span>
@@ -1116,7 +1130,7 @@ export default function TargetSimulator() {
           <div className="space-y-4">
             {filteredCategories.map((cat) => {
               const isCatOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
-              const catIcon = getCategoryIcon(cat.categoryName);
+              const catIcon = getCategoryIcon(cat.categoryName, cat.categoryCode);
               const partGroups = getCategoryParts(cat);
 
               return (
@@ -1143,7 +1157,7 @@ export default function TargetSimulator() {
                       <div className="flex items-center gap-2.5">
                         <span className="text-2xl">{catIcon}</span>
                         <span className="text-lg font-black text-slate-900">
-                          {cat.teamName || cat.categoryName}
+                          {getCategoryDisplayName(cat)}
                         </span>
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                           {cat.categoryCode}

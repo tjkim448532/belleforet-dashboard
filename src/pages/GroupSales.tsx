@@ -320,7 +320,7 @@ export default function GroupSales() {
         const rType = String(raw.roomType || raw.room_type || '기타').trim();
         const rooms = Number(raw.todayRooms ?? raw.mtdRooms ?? 0);
         const rev = Number(raw.todayRevenue ?? raw.mtdRevenue ?? 0);
-        const adr = Number(raw.todayAdr ?? raw.adr ?? (rooms > 0 ? Math.round(rev / rooms) : 0));
+        const adr = Number(raw.todayAdr ?? raw.adr ?? 0);
         const guests = Number(raw.todayGuests ?? raw.guests ?? raw.mtdGuests ?? 0);
 
         chRooms += rooms;
@@ -367,7 +367,7 @@ export default function GroupSales() {
         totalRooms: chRooms,
         totalRevenue: chRev,
         totalGuests: chGuests,
-        averageAdr: chRooms > 0 ? Math.round(chRev / chRooms) : 0,
+        averageAdr: Number(items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal)?.adr ?? 0),
         revenueSharePct: grandRevenue > 0 ? (chRev / grandRevenue) * 100 : 0,
         items: segItems
       });
@@ -388,7 +388,7 @@ export default function GroupSales() {
         revenue: grandRevenue,
         rooms: grandRooms,
         guests: grandGuests,
-        adr: grandRooms > 0 ? Math.round(grandRevenue / grandRooms) : 0
+        adr: Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
       },
       uniqueRoomTypes: sortedRoomTypes,
       availableChannels: groups.map(g => g.channelName)
@@ -481,7 +481,7 @@ export default function GroupSales() {
         totalRevenue: totWeekdayRev,
         seminarRevenue: semWeekdayRev,
         revenueSharePct: totWeekdayRev > 0 ? Number(((semWeekdayRev / totWeekdayRev) * 100).toFixed(1)) : 0,
-        averageAdr: semWeekdayRooms > 0 ? Math.round(semWeekdayRev / semWeekdayRooms) : 0
+        averageAdr: 0
       },
       weekend: {
         label: '주말 (금·토 체크인)',
@@ -492,7 +492,7 @@ export default function GroupSales() {
         totalRevenue: totWeekendRev,
         seminarRevenue: semWeekendRev,
         revenueSharePct: totWeekendRev > 0 ? Number(((semWeekendRev / totWeekendRev) * 100).toFixed(1)) : 0,
-        averageAdr: semWeekendRooms > 0 ? Math.round(semWeekendRev / semWeekendRooms) : 0
+        averageAdr: 0
       },
       total: {
         label: '통합 (전체)',
@@ -503,7 +503,7 @@ export default function GroupSales() {
         totalRevenue: totRev,
         seminarRevenue: semRev,
         revenueSharePct: totRev > 0 ? Number(((semRev / totRev) * 100).toFixed(1)) : 0,
-        averageAdr: semRooms > 0 ? Math.round(semRev / semRooms) : 0
+        averageAdr: 0
       }
     };
   }, [seminarShare, channelGroups, grandTotals, rawGroupData, startDate, endDate]);
@@ -512,11 +512,6 @@ export default function GroupSales() {
   const { organizedGroups, totalSeminarGroupsCount, repeatGroupsCount, totalBookedRoomsInGroups } = useMemo(() => {
     const seminarRecords = rawGroupData.filter(g => 
       g.category === 'SEMINAR' || 
-      g.categoryName?.includes('세미나') || 
-      g.groupName?.includes('세미나') ||
-      g.groupName?.includes('교육') ||
-      g.groupName?.includes('협회') ||
-      g.groupName?.includes('학회') ||
       g.b2bSegment === 'MICE' ||
       (g.spendingBreakdown?.roomsCount && g.spendingBreakdown.roomsCount >= 5)
     );
@@ -1364,15 +1359,13 @@ export default function GroupSales() {
                       const item = g.items.find(i => i.roomType === rt);
                       return sum + (item?.revenue || 0);
                     }, 0);
-                    const colAdr = colRooms > 0 ? Math.round(colRev / colRooms) : 0;
-
                     return (
                       <td key={rt} className="py-3.5 px-3 text-right">
                         <div className="font-black text-slate-900">
                           {formatRevenue(colRev)}
                         </div>
                         <div className="text-[10px] text-slate-600 font-bold">
-                          {colRooms}실 {colAdr > 0 && `· ${formatRevenue(colAdr)}`}
+                          {colRooms}실
                         </div>
                       </td>
                     );

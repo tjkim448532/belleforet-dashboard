@@ -269,7 +269,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (diff > 0) days = diff;
   }
 
-  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; isVirtual?: boolean }> = {};
+  const roomOccupancyMap: Record<string, { sold: number; cap: number; rev: number; adr?: number; isVirtual?: boolean }> = {};
   if (masterCapacities && Object.keys(masterCapacities).length > 0) {
     Object.entries(masterCapacities).forEach(([k, v]) => {
       roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
@@ -286,8 +286,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       const cap = item.capacity || item.totalRooms 
         ? parseNum(item.capacity || item.totalRooms) 
         : (roomOccupancyMap[typeName]?.cap ?? 0);
+      const adr = parseNum(item.adr || 0);
 
-      roomOccupancyMap[typeName] = { sold, rev, cap };
+      roomOccupancyMap[typeName] = { sold, rev, cap, adr };
     });
   }
 

@@ -63,49 +63,13 @@ export default function GolfBusiness() {
         const playersFormatted = c.playersFormatted || c.players_formatted || c.playerCountFormatted || players.toLocaleString();
         const revenueSharePct = Number(c.revenueSharePct ?? c.revenue_share_pct ?? 0);
         
-        const isGreenFee = venueName.includes('그린피') || productGroup.includes('그린피');
-        const isCart = venueName.includes('카트') || productGroup.includes('카트');
-        
-        let displayUnit = '건 결제';
-        let displayCountFormatted = quantityFormatted;
-        if (isGreenFee) {
-          displayUnit = '명 내장';
-          displayCountFormatted = playersFormatted !== '0' ? playersFormatted : quantityFormatted;
-        } else if (isCart) {
-          displayUnit = '대 대여';
-        }
+        const displayUnit = c.displayUnit || (players > 0 ? '명 내장' : '건 결제');
+        const displayCountFormatted = players > 0 ? (playersFormatted !== '0' ? playersFormatted : quantityFormatted) : quantityFormatted;
 
-        const unitPrice = players > 0 
-          ? Math.round(revenue / players) 
-          : (quantity > 0 ? Math.round(revenue / quantity) : 0);
+        const unitPrice = Number(c.unitPrice ?? c.unit_price ?? 0);
 
-        let displayName = venueName;
-        let description = '';
-
-        if (isGreenFee) {
-          displayName = '그린피';
-          description = '코스 라운딩 이용료';
-        } else if (isCart) {
-          displayName = '카트대여';
-          description = '골프 전동카트 대여료';
-        } else if (venueName.includes('스타트')) {
-          displayName = '클럽-스타트하우스';
-          description = '그늘집/스타트하우스 식음';
-        } else if (venueName.includes('레스토랑')) {
-          displayName = '클럽-레스토랑';
-          description = '클럽하우스 대식당 식음';
-        } else if (venueName.includes('프로샵')) {
-          displayName = '프로샵';
-          description = '골프용품 및 의류 판매';
-        } else if (venueName.includes('기타매출')) {
-          if (productGroup.includes('대여품')) {
-            displayName = '기타매출 (장비 대여)';
-            description = '골프채, 골프화 등 장비 렌탈피';
-          } else {
-            displayName = '기타매출 (부대 잡수익)';
-            description = '락커비, 홀인원 보험, 위약금 등';
-          }
-        }
+        const displayName = c.displayName || venueName;
+        const description = c.description || '';
 
         return {
           venueName,

@@ -155,9 +155,8 @@ export default function GolfChannelIntelligence() {
         const findYearData = (y: string) => {
           const item = monthlyList.find((d: any) => d.month === `${y}-${mStr}`);
           const rev = Number(item?.revenue || 0);
-          const visitors = Number(item?.visitors || 0);
           const teams = Number(item?.teams || 0);
-          const avgGreenFee = visitors > 0 ? Math.round(rev / visitors) : 0;
+          const avgGreenFee = Number(item?.avgGreenFee ?? item?.averageGreenFee ?? 0);
           return { teams, avgGreenFee, revenue: rev };
         };
         return {
@@ -176,7 +175,7 @@ export default function GolfChannelIntelligence() {
         const totalTeams = Number(liveSummary.totalTeams || 0);
         const totalPlayers = Number(liveSummary.totalPlayers || 0);
         const totalGreenFeeRevenue = Number(liveSummary.totalGreenFeeRevenue || liveSummary.revenue || 0);
-        const averageGreenFee = Number(liveSummary.averageGreenFee || (totalPlayers > 0 ? Math.round(totalGreenFeeRevenue / totalPlayers) : 0));
+        const averageGreenFee = Number(liveSummary.averageGreenFee ?? 0);
 
         const threePlayerTeamsCount = Number(liveSummary.threePlayerTeamsCount || 0);
         const threePlayerLostRevenue = Number(liveSummary.threePlayerLostRevenue || 0);
@@ -727,16 +726,9 @@ export default function GolfChannelIntelligence() {
     };
   };
 
-  const directChannels = data.channels.filter(c => c.channelType === 'DIRECT');
-  const otaChannels = data.channels.filter(c => c.channelType === 'OTA');
-  const directPlayers = directChannels.reduce((sum, c) => sum + c.players, 0);
-  const directRevenue = directChannels.reduce((sum, c) => sum + c.revenue, 0);
-  const directAvg = directPlayers > 0 ? Math.round(directRevenue / directPlayers) : 0;
-
-  const otaPlayers = otaChannels.reduce((sum, c) => sum + c.players, 0);
-  const otaRevenue = otaChannels.reduce((sum, c) => sum + c.revenue, 0);
-  const otaAvg = otaPlayers > 0 ? Math.round(otaRevenue / otaPlayers) : 0;
-  const diffAvg = directAvg - otaAvg;
+  const directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
+  const otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
+  const diffAvg = (directAvg > 0 && otaAvg > 0) ? directAvg - otaAvg : 0;
 
   const validSlots = data.timeSlotYield.filter(s => s.occupancy > 0);
   const bestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => b.occupancy - a.occupancy)[0] : null;
@@ -883,12 +875,14 @@ export default function GolfChannelIntelligence() {
             </div>
           </div>
           <div className="text-[11px] text-slate-500 border-t border-slate-100 pt-2 flex items-center justify-between">
-            <span>직영 <strong>{formatCurrency(directAvg)}원</strong></span>
+            <span>직영 <strong>{directAvg > 0 ? `${formatCurrency(directAvg)}원` : '-'}</strong></span>
             <span className="text-slate-300">|</span>
-            <span>OTA <strong>{formatCurrency(otaAvg)}원</strong></span>
-            <span className={diffAvg >= 0 ? "text-emerald-700 font-bold" : "text-rose-600 font-bold"}>
-              ({diffAvg >= 0 ? `+${formatCurrency(diffAvg)}원` : `-${formatCurrency(Math.abs(diffAvg))}원`})
-            </span>
+            <span>OTA <strong>{otaAvg > 0 ? `${formatCurrency(otaAvg)}원` : '-'}</strong></span>
+            {(directAvg > 0 && otaAvg > 0) && (
+              <span className={diffAvg >= 0 ? "text-emerald-700 font-bold" : "text-rose-600 font-bold"}>
+                ({diffAvg >= 0 ? `+${formatCurrency(diffAvg)}원` : `-${formatCurrency(Math.abs(diffAvg))}원`})
+              </span>
+            )}
           </div>
         </div>
 

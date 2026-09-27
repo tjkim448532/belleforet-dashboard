@@ -333,7 +333,7 @@ export default function ResortBusiness() {
         rawRate: rate,
         displayRate,
         revenue: g.rev,
-        adr: g.sold > 0 ? Math.round(g.rev / g.sold) : 0,
+        adr: Number((g as any).adr ?? 0),
         isConnectedType: key === '51평'
       });
     }

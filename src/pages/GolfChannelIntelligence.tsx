@@ -188,6 +188,9 @@ export default function GolfChannelIntelligence() {
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<GolfIntelligenceData>(INITIAL_INTELLIGENCE_DATA);
   const [selectedYoyYear, setSelectedYoyYear] = useState<string>('2026');
+  const [channelSortBy, setChannelSortBy] = useState<'AVG_GREEN_FEE' | 'PLAYERS'>('AVG_GREEN_FEE');
+  const [tableSortKey, setTableSortKey] = useState<'avgGreenFee' | 'revenue' | 'players' | 'teams'>('avgGreenFee');
+  const [tableSortDesc, setTableSortDesc] = useState<boolean>(true);
 
   useEffect(() => {
     fetchIntelligenceData();
@@ -316,7 +319,12 @@ export default function GolfChannelIntelligence() {
   // Chart 1: [수익성 평가] 채널별 예약 기여도 vs 실현 평균 그린피 매트릭스
   // --------------------------------------------------------------------
   const getChannelProfitabilityOption = () => {
-    const sorted = [...data.channels].sort((a, b) => b.players - a.players);
+    const sorted = [...data.channels].sort((a, b) => {
+      if (channelSortBy === 'AVG_GREEN_FEE') {
+        return b.avgGreenFee - a.avgGreenFee;
+      }
+      return b.players - a.players;
+    });
     const channelNames = sorted.map(c => c.channelName);
     const playersData = sorted.map(c => c.players);
     const greenFeeData = sorted.map(c => c.avgGreenFee);
@@ -339,7 +347,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <div style="display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:2px 0;">
               <span style="color:#64748b;">평균 그린피:</span>
-              <strong style="color:#00ae95;">₩${formatCurrency(target.avgGreenFee)}</strong>
+              <strong style="color:#d97706;font-size:13px;">₩${formatCurrency(target.avgGreenFee)}</strong>
             </div>
             <div style="display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:2px 0;">
               <span style="color:#64748b;">할인율:</span>
@@ -381,6 +389,13 @@ export default function GolfChannelIntelligence() {
               return ch.channelType === 'DIRECT' ? '#00ae95' : '#64748b';
             },
             borderRadius: [4, 4, 0, 0]
+          },
+          label: {
+            show: true,
+            position: 'top',
+            formatter: (p: any) => `${p.value.toLocaleString()}명`,
+            fontSize: 10,
+            color: '#64748b'
           }
         },
         {
@@ -390,7 +405,21 @@ export default function GolfChannelIntelligence() {
           data: greenFeeData,
           symbolSize: 8,
           itemStyle: { color: '#f59e0b' },
-          lineStyle: { width: 3, color: '#f59e0b' }
+          lineStyle: { width: 3, color: '#f59e0b' },
+          label: {
+            show: true,
+            position: 'top',
+            distance: 8,
+            formatter: (p: any) => `₩${(p.value / 10000).toFixed(1)}만`,
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: '#b45309',
+            backgroundColor: '#fffbeb',
+            borderColor: '#fde68a',
+            borderWidth: 1,
+            padding: [2, 5],
+            borderRadius: 4
+          }
         }
       ]
     };
@@ -471,7 +500,7 @@ export default function GolfChannelIntelligence() {
           `;
         }
       },
-      grid: { left: '3%', right: '22%', top: '6%', bottom: '6%', containLabel: true },
+      grid: { left: '3%', right: '28%', top: '6%', bottom: '6%', containLabel: true },
       xAxis: {
         type: 'value',
         max: (value: any) => Math.ceil(value.max * 1.15),
@@ -496,7 +525,7 @@ export default function GolfChannelIntelligence() {
             position: 'right',
             formatter: (params: any) => {
               const item = list[params.dataIndex];
-              return `${item.teams.toLocaleString()}팀 (${item.sharePct}%)`;
+              return `${item.teams.toLocaleString()}팀 (${item.sharePct}%) · ₩${(item.avgGreenFee / 10000).toFixed(1)}만`;
             },
             fontSize: 11,
             fontWeight: 'bold',
@@ -844,9 +873,12 @@ export default function GolfChannelIntelligence() {
               {viewScope === 'FULL_ASSET' ? '전수 누적 그린피' : isRangeMode ? '기간 그린피 순매출' : '당일 그린피 순매출'} ₩{formatCurrency(data.summary.totalGreenFeeRevenue)}
             </div>
           </div>
-          <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
-            {viewScope === 'FULL_ASSET' ? '전체 직영 vs OTA 가중평균' : `${startDate} 정산 기준 1인당 평균 단가`}
-          </p>
+          <div className="text-[11px] text-slate-500 border-t border-slate-100 pt-2 flex items-center justify-between">
+            <span>직영 <strong>₩158,000</strong></span>
+            <span className="text-slate-300">|</span>
+            <span>OTA <strong>₩136,800</strong></span>
+            <span className="text-emerald-700 font-bold">(+₩21,200)</span>
+          </div>
         </div>
 
         {/* Card 3: 3인 플레이 공실 기회손실 */}
@@ -901,7 +933,7 @@ export default function GolfChannelIntelligence() {
 
       {/* 🌟 Section 1: [수익성 평가] 채널별 예약 기여도 vs 실현 평균 그린피 매트릭스 */}
       <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-2">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
@@ -918,14 +950,102 @@ export default function GolfChannelIntelligence() {
               어느 채널이 제값(풀그린피)을 받고 팔아주는 효자 채널인지, 어디가 수수료와 덤핑으로 단가를 갉아먹는지 즉시 판별합니다.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-2 rounded-xl">
-            <span className="w-3 h-3 rounded-full bg-[#00ae95] inline-block" /> 직영 채널
-            <span className="w-3 h-3 rounded-full bg-[#64748b] inline-block ml-2" /> OTA 제휴사
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-100 p-1 rounded-2xl">
+              <span className="pl-2 text-slate-600">정렬:</span>
+              <button
+                type="button"
+                onClick={() => setChannelSortBy('AVG_GREEN_FEE')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  channelSortBy === 'AVG_GREEN_FEE'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                💵 평균 그린피 높은 순
+              </button>
+              <button
+                type="button"
+                onClick={() => setChannelSortBy('PLAYERS')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  channelSortBy === 'PLAYERS'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                👥 내장객 많은 순
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200/60">
+              <span className="w-3 h-3 rounded-full bg-[#00ae95] inline-block" /> 직영 채널
+              <span className="w-3 h-3 rounded-full bg-[#64748b] inline-block ml-2" /> OTA 제휴사
+            </div>
           </div>
         </div>
 
-        <div className="h-[420px] w-full">
+        <div className="h-[430px] w-full">
           <ReactECharts option={getChannelProfitabilityOption()} style={{ height: '100%', width: '100%' }} />
+        </div>
+
+        {/* 🌟 15대 채널별 실현 평균 그린피 랭킹 현황판 */}
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md">
+                GREEN FEE RANKING
+              </span>
+              <h4 className="text-sm font-bold text-slate-900">
+                15대 판매 채널별 실현 평균 그린피 순위 (1인 기준 실현 순단가)
+              </h4>
+            </div>
+            <div className="text-xs text-slate-500 flex items-center gap-3">
+              <span>직영 최고: <strong className="text-emerald-700 font-bold">₩{formatCurrency(Math.max(...data.channels.filter(c => c.channelType === 'DIRECT').map(c => c.avgGreenFee), 0))}</strong></span>
+              <span className="text-slate-300">|</span>
+              <span>OTA 최고: <strong className="text-blue-700 font-bold">₩{formatCurrency(Math.max(...data.channels.filter(c => c.channelType === 'OTA').map(c => c.avgGreenFee), 0))}</strong></span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {[...data.channels].sort((a, b) => b.avgGreenFee - a.avgGreenFee).map((ch, idx) => (
+              <div
+                key={ch.channelName}
+                className={`p-3.5 rounded-2xl border transition-all ${
+                  ch.channelType === 'DIRECT'
+                    ? 'bg-gradient-to-br from-emerald-50/50 to-white border-emerald-200 shadow-xs'
+                    : 'bg-slate-50/70 border-slate-200/80 hover:bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 mb-1.5">
+                  <span className={`text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center ${
+                    idx < 3 ? 'bg-amber-500 text-white font-black' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                    ch.channelType === 'DIRECT'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {ch.channelType === 'DIRECT' ? '직영' : 'OTA'}
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-slate-800 truncate mb-1" title={ch.channelName}>
+                  {ch.channelName}
+                </div>
+                <div className="text-base font-black text-amber-600 tracking-tight font-financial">
+                  ₩{formatCurrency(ch.avgGreenFee)}
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1 border-t border-slate-200/40 pt-1">
+                  <span className={ch.discountRate > 15 ? 'text-rose-600 font-medium' : 'text-slate-500'}>
+                    할인 {ch.discountRate}%
+                  </span>
+                  <span className="font-semibold text-slate-700">{ch.players.toLocaleString()}명</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -996,11 +1116,19 @@ export default function GolfChannelIntelligence() {
           <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100 mt-4 text-xs text-blue-900 space-y-1.5">
             <div className="flex justify-between font-bold">
               <span>🎯 조인 주력 채널 1위:</span>
-              <span>{data.teamSize.joinRanking[0] ? `${data.teamSize.joinRanking[0].channelName} (${data.teamSize.joinRanking[0].sharePct}%, ${data.teamSize.joinRanking[0].teams.toLocaleString()}팀)` : '-'}</span>
+              <span>
+                {data.teamSize.joinRanking[0] 
+                  ? `${data.teamSize.joinRanking[0].channelName} (${data.teamSize.joinRanking[0].sharePct}%, ${data.teamSize.joinRanking[0].teams.toLocaleString()}팀 · 평단가 ₩${formatCurrency(data.teamSize.joinRanking[0].avgGreenFee)})` 
+                  : '-'}
+              </span>
             </div>
             <div className="flex justify-between font-medium">
               <span>🎯 조인 주력 채널 2위:</span>
-              <span>{data.teamSize.joinRanking[1] ? `${data.teamSize.joinRanking[1].channelName} (${data.teamSize.joinRanking[1].sharePct}%, ${data.teamSize.joinRanking[1].teams.toLocaleString()}팀)` : '-'}</span>
+              <span>
+                {data.teamSize.joinRanking[1] 
+                  ? `${data.teamSize.joinRanking[1].channelName} (${data.teamSize.joinRanking[1].sharePct}%, ${data.teamSize.joinRanking[1].teams.toLocaleString()}팀 · 평단가 ₩${formatCurrency(data.teamSize.joinRanking[1].avgGreenFee)})` 
+                  : '-'}
+              </span>
             </div>
             <p className="text-[11px] text-blue-800/80 pt-1 border-t border-blue-200/50">
               👉 조인 활성화 전용 프로모션은 상위 주요 모바일 앱에 집중 투입할 때 가장 높은 공실 충원 전환율을 기대할 수 있습니다.
@@ -1206,10 +1334,26 @@ export default function GolfChannelIntelligence() {
 
       {/* 🌟 Section 6: 거래처별 상세 피벗 테이블 */}
       <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-indigo-600" />
-          ⑥ 판매 채널별 종합 실적 상세 명세서 (15대 거래처)
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                정밀 명세서
+              </span>
+              <span className="text-xs font-semibold text-slate-400">
+                15대 판매 거래처 전수 분석
+              </span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-indigo-600" />
+              ⑥ 판매 채널별 종합 실적 상세 명세서 (1인당 평균 그린피 순)
+            </h2>
+          </div>
+
+          <div className="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60">
+            💡 헤더 컬럼을 클릭하면 해당 항목 기준(평균 그린피, 매출 등)으로 즉시 정렬됩니다.
+          </div>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
@@ -1217,18 +1361,59 @@ export default function GolfChannelIntelligence() {
               <tr className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
                 <th className="py-3.5 px-4 rounded-tl-xl">판매 채널명</th>
                 <th className="py-3.5 px-3 text-center">채널 구분</th>
-                <th className="py-3.5 px-4 text-right">예약 팀 수</th>
-                <th className="py-3.5 px-4 text-right">내장객 수</th>
-                <th className="py-3.5 px-4 text-right">1인당 평균 그린피</th>
+                <th 
+                  onClick={() => {
+                    if (tableSortKey === 'teams') setTableSortDesc(!tableSortDesc);
+                    else { setTableSortKey('teams'); setTableSortDesc(true); }
+                  }}
+                  className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 select-none"
+                >
+                  예약 팀 수 {tableSortKey === 'teams' ? (tableSortDesc ? '▼' : '▲') : '↕'}
+                </th>
+                <th 
+                  onClick={() => {
+                    if (tableSortKey === 'players') setTableSortDesc(!tableSortDesc);
+                    else { setTableSortKey('players'); setTableSortDesc(true); }
+                  }}
+                  className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 select-none"
+                >
+                  내장객 수 {tableSortKey === 'players' ? (tableSortDesc ? '▼' : '▲') : '↕'}
+                </th>
+                <th 
+                  onClick={() => {
+                    if (tableSortKey === 'avgGreenFee') setTableSortDesc(!tableSortDesc);
+                    else { setTableSortKey('avgGreenFee'); setTableSortDesc(true); }
+                  }}
+                  className="py-3.5 px-4 text-right cursor-pointer select-none text-amber-900 bg-amber-100/60 font-black"
+                  title="클릭하여 평균 그린피 순 정렬"
+                >
+                  1인당 평균 그린피 {tableSortKey === 'avgGreenFee' ? (tableSortDesc ? '▼' : '▲') : '↕'}
+                </th>
                 <th className="py-3.5 px-3 text-center">할인율</th>
-                <th className="py-3.5 px-4 text-right">총 그린피 매출액</th>
+                <th 
+                  onClick={() => {
+                    if (tableSortKey === 'revenue') setTableSortDesc(!tableSortDesc);
+                    else { setTableSortKey('revenue'); setTableSortDesc(true); }
+                  }}
+                  className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 select-none"
+                >
+                  총 그린피 매출액 {tableSortKey === 'revenue' ? (tableSortDesc ? '▼' : '▲') : '↕'}
+                </th>
                 <th className="py-3.5 px-4 text-right rounded-tr-xl">매출 점유율</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {data.channels.map((ch, idx) => (
+              {[...data.channels].sort((a, b) => {
+                let diff = 0;
+                if (tableSortKey === 'avgGreenFee') diff = b.avgGreenFee - a.avgGreenFee;
+                else if (tableSortKey === 'revenue') diff = b.revenue - a.revenue;
+                else if (tableSortKey === 'players') diff = b.players - a.players;
+                else if (tableSortKey === 'teams') diff = b.teams - a.teams;
+                return tableSortDesc ? diff : -diff;
+              }).map((ch, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-slate-800">
+                    <span className="text-[10px] text-slate-400 font-normal mr-2">#{idx + 1}</span>
                     {ch.channelName}
                   </td>
                   <td className="py-3.5 px-3 text-center">
@@ -1248,7 +1433,7 @@ export default function GolfChannelIntelligence() {
                   <td className="py-3.5 px-4 text-right font-financial font-bold text-slate-900">
                     {ch.players.toLocaleString()}명
                   </td>
-                  <td className="py-3.5 px-4 text-right font-financial font-bold text-emerald-600">
+                  <td className="py-3.5 px-4 text-right font-financial font-black text-amber-700 bg-amber-50/30 text-sm">
                     ₩{formatCurrency(ch.avgGreenFee)}
                   </td>
                   <td className="py-3.5 px-3 text-center font-bold">

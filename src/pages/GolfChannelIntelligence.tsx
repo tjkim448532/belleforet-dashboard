@@ -129,10 +129,6 @@ export default function GolfChannelIntelligence() {
   const [tableSortKey, setTableSortKey] = useState<'avgGreenFee' | 'revenue' | 'players' | 'teams'>('avgGreenFee');
   const [tableSortDesc, setTableSortDesc] = useState<boolean>(true);
 
-  useEffect(() => {
-    fetchIntelligenceData();
-  }, [startDate, endDate, isRangeMode, viewScope]);
-
   const fetchIntelligenceData = async () => {
     setLoading(true);
     try {
@@ -237,6 +233,10 @@ export default function GolfChannelIntelligence() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchIntelligenceData();
+  }, [startDate, endDate, isRangeMode, viewScope]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('ko-KR').format(Math.round(val || 0));

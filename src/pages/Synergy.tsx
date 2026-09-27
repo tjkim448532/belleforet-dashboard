@@ -26,12 +26,12 @@ const formatCurrency = (val: any) => {
 };
 
 const getChannelMeta = (name: string, rank: number) => {
-  let icon = Globe;
-  let iconColor = 'text-blue-600';
-  let iconBg = 'bg-blue-50';
-  let borderHover = 'hover:border-blue-300';
-  let barColor = 'from-blue-500 to-sky-400';
-  let badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200/60';
+  let icon: typeof Globe;
+  let iconColor: string;
+  let iconBg: string;
+  let borderHover: string;
+  let barColor: string;
+  let badgeStyle: string;
 
   if (name.includes('온라인') || name.includes('OTA')) {
     icon = Globe;
@@ -382,7 +382,7 @@ export default function Synergy() {
 
       const mapped = subtotalRows
         .map(item => {
-          let cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
+          const cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
           const rooms = parseNum(isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0));
           const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
           const shareRatio = totalRoomRev > 0 ? revenue / totalRoomRev : 0;

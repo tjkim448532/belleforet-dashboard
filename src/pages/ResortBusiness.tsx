@@ -117,8 +117,8 @@ function calculateOls(rows: any[]): OlsAnalysisResult | null {
   const n = rows ? rows.length : 0;
   if (n < 4) return null;
   const k = 3; // Intercept, singleRooms, multiRooms
-  let X: number[][] = [];
-  let Y: number[] = [];
+  const X: number[][] = [];
+  const Y: number[] = [];
   for (const r of rows) {
     const rooms = Number(r.roomsSold || 0);
     const multi = Number(r.multiNightRooms || 0);
@@ -128,7 +128,7 @@ function calculateOls(rows: any[]): OlsAnalysisResult | null {
     Y.push(rev);
   }
 
-  let XtX = Array.from({ length: k }, () => Array(k).fill(0));
+  const XtX = Array.from({ length: k }, () => Array(k).fill(0));
   for (let i = 0; i < k; i++) {
     for (let j = 0; j < k; j++) {
       let sum = 0;
@@ -136,24 +136,24 @@ function calculateOls(rows: any[]): OlsAnalysisResult | null {
       XtX[i][j] = sum;
     }
   }
-  let XtY = Array(k).fill(0);
+  const XtY = Array(k).fill(0);
   for (let i = 0; i < k; i++) {
     let sum = 0;
     for (let p = 0; p < n; p++) sum += X[p][i] * Y[p];
     XtY[i] = sum;
   }
-  let A = XtX.map((row, i) => [...row, XtY[i]]);
+  const A = XtX.map((row, i) => [...row, XtY[i]]);
   for (let i = 0; i < k; i++) {
     let maxRow = i;
     for (let r = i + 1; r < k; r++) if (Math.abs(A[r][i]) > Math.abs(A[maxRow][i])) maxRow = r;
-    let temp = A[i]; A[i] = A[maxRow]; A[maxRow] = temp;
+    const temp = A[i]; A[i] = A[maxRow]; A[maxRow] = temp;
     if (Math.abs(A[i][i]) < 1e-12) return null;
     for (let r = i + 1; r < k; r++) {
-      let factor = A[r][i] / A[i][i];
+      const factor = A[r][i] / A[i][i];
       for (let col = i; col <= k; col++) A[r][col] -= factor * A[i][col];
     }
   }
-  let beta = Array(k).fill(0);
+  const beta = Array(k).fill(0);
   for (let i = k - 1; i >= 0; i--) {
     let sum = A[i][k];
     for (let c = i + 1; c < k; c++) sum -= A[i][c] * beta[c];

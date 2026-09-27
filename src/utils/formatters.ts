@@ -42,7 +42,7 @@ export const formatFinancialKorean = (amount: number | null | undefined): Financ
 
   const prefix = isNegative ? '-' : '';
 
-  let formatted = '';
+  let formatted: string;
   if (eok > 0) {
     if (man > 0) {
       formatted = `${prefix}${eok}억 ${new Intl.NumberFormat('ko-KR').format(man)}만 원`;
@@ -61,7 +61,7 @@ export const formatFinancialKorean = (amount: number | null | undefined): Financ
   }
 
   // 짧은 축약 표기
-  let short = '';
+  let short: string;
   if (abs >= 100000000) {
     short = `${prefix}${(abs / 100000000).toFixed(1)}억`;
   } else if (abs >= 10000) {

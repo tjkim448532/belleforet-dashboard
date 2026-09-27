@@ -143,8 +143,8 @@ export default function MonthlyDynamicRebalancer({
     });
 
     // Largest Remainder Method: 0-Variance Alignment with Annual Target
-    let currentTotal = Object.values(targets).reduce((s, v) => s + v, 0);
-    let diff = annualTargetRevenue - currentTotal;
+    const currentTotal = Object.values(targets).reduce((s, v) => s + v, 0);
+    const diff = annualTargetRevenue - currentTotal;
 
     if (diff !== 0 && unlockedMonths.length > 0) {
       // Add remainder to the unlocked month with largest target

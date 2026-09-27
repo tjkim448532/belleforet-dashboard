@@ -24,10 +24,6 @@ export default function FacilityTrend() {
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<any>(null);
 
-  useEffect(() => {
-    fetchFacilityTrend();
-  }, [selectedFacility, startDate]);
-
   const fetchFacilityTrend = async () => {
     setLoading(true);
     try {
@@ -116,6 +112,10 @@ export default function FacilityTrend() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchFacilityTrend();
+  }, [selectedFacility, startDate]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('ko-KR').format(Math.round(val || 0));

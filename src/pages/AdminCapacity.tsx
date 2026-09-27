@@ -17,10 +17,6 @@ export default function AdminCapacity() {
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
 
-  useEffect(() => {
-    loadCapacityMaster();
-  }, []);
-
   const loadCapacityMaster = async () => {
     setLoading(true);
     try {
@@ -64,6 +60,10 @@ export default function AdminCapacity() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadCapacityMaster();
+  }, []);
 
   const handleFieldChange = (id: string, field: keyof FacilityCapacityItem, value: any) => {
     setItems(prev => prev.map(item => {

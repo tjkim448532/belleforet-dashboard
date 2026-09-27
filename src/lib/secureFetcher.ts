@@ -119,7 +119,7 @@ const sanitizePayloadNumbers = (node: any) => {
 
 
 export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) => {
-  let url = rawUrl;
+  const url = rawUrl;
   if (url.includes('/api/v5/')) { throw new Error('[Zero-Proxy] V5 구버전 API 호출이 감지되었습니다. V6 엔드포인트로 즉시 교체하십시오.'); }
 
   const isV6Api = url.includes('/api/v6/') ;
@@ -145,7 +145,7 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
     });
   } catch (err: any) {
     if (err.name === 'AbortError') {
-      throw new Error('API 응답 시간이 초과되었습니다 (120초). 백엔드 서버 상태를 확인해주세요.');
+      throw new Error('API 응답 시간이 초과되었습니다 (120초). 백엔드 서버 상태를 확인해주세요.', { cause: err });
     }
     throw err;
   } finally {

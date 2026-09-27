@@ -114,7 +114,7 @@ export default function Home() {
       hasLoaded = true;
     }
 
-    let total = 0;
+    let total: number;
     if (coreData.core?.summary?.motoGuestMemberVisitors !== undefined && coreData.core?.summary?.motoGuestMemberVisitors !== null) {
       total = parseNum(coreData.core.summary.motoGuestMemberVisitors);
     } else if (hasLoaded) {

@@ -48,15 +48,14 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const getCategoryIcon = (name: string, _code?: string) => {
-  if (!name) return '📂';
-  if (name.includes('골프')) return '⛳';
-  if (name.includes('콘도') || name.includes('객실')) return '🏨';
-  if (name.includes('식음')) return '🍽️';
-  if (name.includes('레저') || name.includes('레져')) return '🎢';
-  if (name.includes('모토')) return '🏎️';
-  if (name.includes('대관') || name.includes('연회') || name.includes('세일즈')) return '🏛️';
-  if (name.includes('목장')) return '🐎';
+const getCategoryIcon = (name: string, code?: string) => {
+  if (code === 'GOLF' || name?.includes('골프')) return '⛳';
+  if (code === 'ROOM' || name?.includes('콘도') || name?.includes('객실')) return '🏨';
+  if (code === 'FNB' || name?.includes('식음')) return '🍽️';
+  if (code === 'TICKET' || name?.includes('레저') || name?.includes('레져')) return '🎢';
+  if (code === 'MOTO' || name?.includes('모토')) return '🏎️';
+  if (code === 'BANQUET' || name?.includes('대관') || name?.includes('연회') || name?.includes('세일즈')) return '🏛️';
+  if (name?.includes('목장')) return '🐎';
   return '📂';
 };
 
@@ -237,20 +236,13 @@ export default function StrategicSimulator() {
     const y2025 = MULTI_YEAR_SEASONALITY_DATA[2025];
     const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024];
 
-    let rev2025 = 0;
-    let rev2024 = 0;
+    const rev2025 = isAnnual
+      ? (y2025?.annual?.totalRevenue || 0)
+      : (y2025?.months?.[monthNum]?.totalRevenue || 0);
 
-    if (isAnnual) {
-      rev2025 = y2025?.annual?.totalRevenue || 0;
-    } else {
-      rev2025 = y2025?.months?.[monthNum]?.totalRevenue || 0;
-    }
-
-    if (isAnnual) {
-      rev2024 = y2024?.annual?.totalRevenue || 0;
-    } else {
-      rev2024 = y2024?.months?.[monthNum]?.totalRevenue || 0;
-    }
+    const rev2024 = isAnnual
+      ? (y2024?.annual?.totalRevenue || 0)
+      : (y2024?.months?.[monthNum]?.totalRevenue || 0);
 
     // 2-Year Real SSOT Weighted Average (2025: 60%, 2024: 40%) without fake 2023 proxy
     const wmaTotalRevenue = Math.round((rev2025 * 0.60) + (rev2024 * 0.40));
@@ -267,11 +259,9 @@ export default function StrategicSimulator() {
 
   // Base raw categories from API or Simulation Engine (주차관제, 벨포레굿즈, 기타/과거업장 영구 제외)
   const rawCategories: ApiCategory[] = useMemo(() => {
-    let list: ApiCategory[] = [];
-    if (apiData?.categories && apiData.categories.length > 0) {
-      list = apiData.categories;
-    } else {
-      list = simulationResult.divisionResults.map((div) => ({
+    const list: ApiCategory[] = (apiData?.categories && apiData.categories.length > 0)
+      ? apiData.categories
+      : simulationResult.divisionResults.map((div) => ({
         categoryCode: div.category,
         categoryName: div.category,
         teamName: DIVISION_META[div.category]?.name || div.categoryLabel,
@@ -295,7 +285,6 @@ export default function StrategicSimulator() {
           achievementRate: 0
         }))
       }));
-    }
 
     // 사용자 요청: 주차관제(PARKING), 벨포레굿즈(GOODS), 기타/과거업장(OTHER) 삭제
     return list.filter(c => 

@@ -45,10 +45,6 @@ export default function HolidayComparison() {
   const [viewMode, setViewMode] = useState<'TOTAL' | 'DAILY'>('TOTAL');
   const [metricType, setMetricType] = useState<'SALES' | 'ROOMS'>('SALES');
 
-  useEffect(() => {
-    fetchHolidayData();
-  }, []);
-
   const fetchHolidayData = async () => {
     setLoading(true);
     try {
@@ -66,6 +62,10 @@ export default function HolidayComparison() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchHolidayData();
+  }, []);
 
   // 특정 연도에서 대표 공휴일에 매칭되는 단일 블록 추출
   const getBlockForYear = (year: string, canonicalId: string) => {

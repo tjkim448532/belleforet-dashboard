@@ -35,15 +35,14 @@ const MONTH_NAMES = [
   { id: 12, label: '12월', shortLabel: '12월', season: '연말/겨울' }
 ];
 
-const getCategoryIcon = (name: string, _code?: string) => {
-  if (!name) return '📂';
-  if (name.includes('골프')) return '⛳';
-  if (name.includes('콘도') || name.includes('객실')) return '🏨';
-  if (name.includes('식음')) return '🍽️';
-  if (name.includes('레저') || name.includes('레져')) return '🎢';
-  if (name.includes('모토')) return '🏎️';
-  if (name.includes('대관') || name.includes('연회') || name.includes('세일즈')) return '🏛️';
-  if (name.includes('목장')) return '🐎';
+const getCategoryIcon = (name: string, code?: string) => {
+  if (code === 'GOLF' || name?.includes('골프')) return '⛳';
+  if (code === 'ROOM' || name?.includes('콘도') || name?.includes('객실')) return '🏨';
+  if (code === 'FNB' || name?.includes('식음')) return '🍽️';
+  if (code === 'TICKET' || name?.includes('레저') || name?.includes('레져')) return '🎢';
+  if (code === 'MOTO' || name?.includes('모토')) return '🏎️';
+  if (code === 'BANQUET' || name?.includes('대관') || name?.includes('연회') || name?.includes('세일즈')) return '🏛️';
+  if (name?.includes('목장')) return '🐎';
   return '📂';
 };
 
@@ -208,11 +207,9 @@ export default function TargetSimulator() {
 
   // Raw categories from API or Simulation Engine (주차관제, 벨포레굿즈, 기타/과거업장 영구 제외)
   const rawCategories: ApiCategory[] = useMemo(() => {
-    let list: ApiCategory[] = [];
-    if (apiData?.categories && apiData.categories.length > 0) {
-      list = apiData.categories;
-    } else {
-      list = simulationResult.divisionResults.map((div) => ({
+    const list: ApiCategory[] = (apiData?.categories && apiData.categories.length > 0)
+      ? apiData.categories
+      : simulationResult.divisionResults.map((div) => ({
         categoryCode: div.category,
         categoryName: div.categoryLabel,
         teamName: div.categoryLabel,
@@ -236,7 +233,6 @@ export default function TargetSimulator() {
           achievementRate: 0
         }))
       }));
-    }
 
     // 사용자 요청: 주차관제(PARKING), 벨포레굿즈(GOODS), 기타/과거업장(OTHER) 삭제
     return list.filter(c => 
@@ -440,8 +436,8 @@ export default function TargetSimulator() {
     const isPast = input.targetYear < currentBizYear || (isCurrentYear && !isAnnual && typeof input.selectedMonth === 'number' && input.selectedMonth < currentBizMonth);
     const isFuture = input.targetYear > currentBizYear || (isCurrentYear && !isAnnual && typeof input.selectedMonth === 'number' && input.selectedMonth > currentBizMonth);
 
-    let daysElapsed = 0;
-    let totalDays = 30;
+    let daysElapsed: number;
+    let totalDays: number;
     if (isCurrentMonth) {
       daysElapsed = latestClosedDay;
       const monthInt = Number(input.selectedMonth);
@@ -482,8 +478,8 @@ export default function TargetSimulator() {
       const act = summaryGrandActual2026;
       const rate = summaryGrandTarget2026 > 0 ? Number(((act / summaryGrandTarget2026) * 100).toFixed(1)) : 0;
       
-      let badgeColor = 'text-indigo-600';
-      let statusText = '';
+      let badgeColor: string;
+      let statusText: string;
 
       if (currentStatus.isCurrentMonth) {
         const paceDiff = Number((rate - currentStatus.elapsedRate).toFixed(1));

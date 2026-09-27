@@ -238,9 +238,13 @@ export default function GolfChannelIntelligence() {
         const totalGreenFeeRevenue = Number(greenFeeItem?.revenue || liveSummary.totalGolfRevenue || 0);
         const averageGreenFee = totalPlayers > 0 ? Math.round(totalGreenFeeRevenue / totalPlayers) : 0;
 
+        const cartFeePerPerson = cartItem?.quantity > 0 && cartItem?.revenue > 0 
+          ? Math.round(Number(cartItem.revenue) / Number(cartItem.quantity) / 4) 
+          : 0;
+
         // 3인 플레이 (전체 팀의 약 3.9%)
         const threePlayerTeamsCount = Math.round(totalTeams * 0.039);
-        const threePlayerLostRevenue = threePlayerTeamsCount * (averageGreenFee + 27500);
+        const threePlayerLostRevenue = threePlayerTeamsCount * (averageGreenFee + cartFeePerPerson);
 
         // 조인 팀 (1~2인, 약 2.1%)
         const joinTeamsCount = Math.round(totalTeams * 0.021);

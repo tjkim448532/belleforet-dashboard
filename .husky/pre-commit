@@ -1,0 +1,14 @@
+#!/bin/sh
+# 🚨 Git Pre-Commit Hook: 데이터 무결성 검증 (Zero Fake Numbers Check)
+echo "🛡️  [Pre-Commit Hook] Git Commit 전 데이터 무결성(가짜 숫자/임의 폴백) 전수 감사를 실행합니다..."
+
+node scripts/integrity-check.cjs
+
+if [ $? -ne 0 ]; then
+  echo "❌ [Pre-Commit Blocked] 가짜 숫자 또는 임의 폴백이 감지되어 커밋이 물리적으로 거부되었습니다!"
+  echo "👉 코드를 수정하여 모든 임의의 상수를 0 또는 실시간 API 데이터로 변경하십시오."
+  exit 1
+fi
+
+echo "✅ [Pre-Commit Passed] 무결성 검증 통과! 커밋을 진행합니다."
+exit 0

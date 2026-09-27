@@ -21,7 +21,7 @@ export default function AdminRoles() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
 
-  const FAKE_TEST_EMAILS = [
+  const PURGE_DEV_ACCOUNTS = [
     'ceo@bsbelleforet.com',
     'fnb@bsbelleforet.com',
     'leisure@bsbelleforet.com',
@@ -38,7 +38,7 @@ export default function AdminRoles() {
 
       querySnapshot.forEach((docSnap) => {
         const email = docSnap.id;
-        if (!FAKE_TEST_EMAILS.includes(email)) {
+        if (!PURGE_DEV_ACCOUNTS.includes(email)) {
           fetchedRoles.push({ email, role: docSnap.data().role, name: docSnap.data().name || '' });
           emailSet.add(email.toLowerCase());
         }
@@ -49,7 +49,7 @@ export default function AdminRoles() {
         const logSnap = await getDocs(collection(db, 'loginLogs'));
         logSnap.forEach((docSnap) => {
           const email = docSnap.data().email;
-          if (email && email.includes('@') && !FAKE_TEST_EMAILS.includes(email) && !emailSet.has(email.toLowerCase())) {
+          if (email && email.includes('@') && !PURGE_DEV_ACCOUNTS.includes(email) && !emailSet.has(email.toLowerCase())) {
             emailSet.add(email.toLowerCase());
             const nameFromEmail = email.split('@')[0];
             fetchedRoles.push({ email, role: 'guest', name: nameFromEmail });
@@ -264,7 +264,7 @@ export default function AdminRoles() {
     setSaving(true);
     try {
       const batch = writeBatch(db);
-      FAKE_TEST_EMAILS.forEach(email => {
+      PURGE_DEV_ACCOUNTS.forEach(email => {
         batch.delete(doc(db, 'userRoles', email));
       });
       await batch.commit();

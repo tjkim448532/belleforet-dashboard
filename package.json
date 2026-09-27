@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "check:integrity": "node scripts/integrity-check.cjs",
+    "build": "node scripts/integrity-check.cjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

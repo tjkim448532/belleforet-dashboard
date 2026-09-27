@@ -46,6 +46,9 @@ interface RawChannelRoomItem {
   ytdRooms?: number | string;
   ytdRevenue?: number | string;
   ytdAdr?: number | string;
+  todayGuests?: number | string;
+  guests?: number | string;
+  mtdGuests?: number | string;
 }
 
 interface SegmentItem {
@@ -152,14 +155,7 @@ export interface GroupOrganizationSummary {
   visits: GroupVisitDetail[];
 }
 
-// 평형별 대표 투숙 정원 (인원수 환산용)
-const getRoomCapacity = (roomType: string): number => {
-  if (roomType.includes('51') || roomType.includes('R51')) return 6;
-  if (roomType.includes('35')) return 4;
-  if (roomType.includes('16')) return 2;
-  if (roomType.includes('부대') || roomType.includes('기타')) return 0;
-  return 2;
-};
+
 
 // 채널별 시각적 아이콘 & 테마 색상 매핑
 const getChannelMeta = (channelName: string): { iconType: ChannelGroup['iconType']; badgeColor: string; label: string } => {
@@ -305,7 +301,7 @@ export default function GroupSales() {
 
       grandRevenue += revenue;
       grandRooms += rooms;
-      grandGuests += rooms * getRoomCapacity(room);
+      grandGuests += Number(item.todayGuests ?? item.guests ?? item.mtdGuests ?? 0);
 
       roomTypeSet.add(room);
     });
@@ -325,7 +321,7 @@ export default function GroupSales() {
         const rooms = Number(raw.todayRooms ?? raw.mtdRooms ?? 0);
         const rev = Number(raw.todayRevenue ?? raw.mtdRevenue ?? 0);
         const adr = Number(raw.todayAdr ?? raw.adr ?? (rooms > 0 ? Math.round(rev / rooms) : 0));
-        const guests = rooms * getRoomCapacity(rType);
+        const guests = Number(raw.todayGuests ?? raw.guests ?? raw.mtdGuests ?? 0);
 
         chRooms += rooms;
         chRev += rev;
@@ -1058,7 +1054,7 @@ export default function GroupSales() {
               <MetricExplainerTooltip presetKey="visitorCount" />
             </span>
             <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-              정원 기준 환산
+              실측 투숙객
             </span>
           </div>
           <div>
@@ -1067,7 +1063,7 @@ export default function GroupSales() {
               <span className="text-base font-semibold text-slate-400 ml-1">명</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              판매 평형별 정원 기준 인원
+              {displayGuests > 0 ? 'PMS 실측 투숙객 수' : '백엔드 PMS 실측 연동 기준'}
             </p>
           </div>
         </div>

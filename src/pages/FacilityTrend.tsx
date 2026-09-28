@@ -134,14 +134,14 @@ export default function FacilityTrend() {
     const visitorLabel = selectedFacility === '전체' ? '객실 투숙객' : '방문객';
     
     years.forEach((year: any, idx: number) => {
-      const yearRevenue = Array(12).fill(0);
-      const yearVisitors = Array(12).fill(0);
+      const yearRevenue: (number | null)[] = Array(12).fill(null);
+      const yearVisitors: (number | null)[] = Array(12).fill(null);
       
       data.monthlyData.forEach((d: any) => {
         if (d.month.startsWith(year)) {
           const monthIdx = parseInt(d.month.substring(5, 7), 10) - 1;
-          yearRevenue[monthIdx] = d.revenue || 0;
-          yearVisitors[monthIdx] = d.visitors || 0;
+          yearRevenue[monthIdx] = d.revenue !== undefined && d.revenue !== null ? d.revenue : null;
+          yearVisitors[monthIdx] = d.visitors !== undefined && d.visitors !== null ? d.visitors : null;
         }
       });
       

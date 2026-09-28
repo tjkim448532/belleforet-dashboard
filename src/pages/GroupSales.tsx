@@ -203,6 +203,7 @@ export default function GroupSales() {
   const [channelRawData, setChannelRawData] = useState<RawChannelRoomItem[]>([]);
   const [seminarShare, setSeminarShare] = useState<SeminarDayTypeShare | null>(null);
   const [rawGroupData, setRawGroupData] = useState<RawGroupItem[]>([]);
+  const [corporateSummary, setCorporateSummary] = useState<any>(null);
   const [groupSearchKeyword, setGroupSearchKeyword] = useState<string>('');
   const [groupFilterTab, setGroupFilterTab] = useState<'ALL' | 'REPEAT' | 'LARGE' | 'SINGLE'>('ALL');
   const [expandedGroupNames, setExpandedGroupNames] = useState<Set<string>>(new Set());
@@ -288,6 +289,14 @@ export default function GroupSales() {
         setRawGroupData([]);
       }
 
+      if (corporateRes?.summary) {
+        setCorporateSummary(corporateRes.summary);
+      } else if (corporateRes?.data?.summary) {
+        setCorporateSummary(corporateRes.data.summary);
+      } else {
+        setCorporateSummary(null);
+      }
+
       // 장소별 판매 실적 데이터 연동 (백엔드 완제품 파싱)
       if (venueRes && (venueRes.venues || venueRes.summary || venueRes.monthlyTrends)) {
         setVenuePerformanceData(venueRes);
@@ -299,6 +308,7 @@ export default function GroupSales() {
       setChannelRawData([]);
       setSeminarShare(null);
       setRawGroupData([]);
+      setCorporateSummary(null);
       setVenuePerformanceData(null);
     } finally {
       setLoading(false);
@@ -386,14 +396,19 @@ export default function GroupSales() {
 
       const meta = getChannelMeta(chName);
 
+      const isSeminar = chName.includes('단체') || chName.includes('세미나');
+      const seminarAdr = isSeminar && seminarShare?.total?.averageAdr ? seminarShare.total.averageAdr : 0;
+      const subtotalAdr = Number(items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal)?.adr ?? 0);
+      const groupGuests = isSeminar && corporateSummary?.totalPax ? Number(corporateSummary.totalPax) : chGuests;
+
       groups.push({
         channelName: chName,
         iconType: meta.iconType,
         badgeColor: meta.badgeColor,
         totalRooms: chRooms,
         totalRevenue: chRev,
-        totalGuests: chGuests,
-        averageAdr: Number(items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal)?.adr ?? 0),
+        totalGuests: groupGuests,
+        averageAdr: seminarAdr || subtotalAdr,
         revenueSharePct: grandRevenue > 0 ? (chRev / grandRevenue) * 100 : 0,
         items: segItems
       });
@@ -409,13 +424,13 @@ export default function GroupSales() {
       grandTotals: {
         revenue: grandRevenue,
         rooms: grandRooms,
-        guests: grandGuests,
+        guests: grandGuests > 0 ? grandGuests : Number(corporateSummary?.totalPax ?? 0),
         adr: Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
       },
       uniqueRoomTypes: sortedRoomTypes,
       availableChannels: groups.map(g => g.channelName)
     };
-  }, [channelRawData, hideZeroSales]);
+  }, [channelRawData, hideZeroSales, seminarShare, corporateSummary]);
 
   // 🎯 현재 활성화된 채널 그룹 (기본: 단체영업)
   const activeChannelGroup = useMemo(() => {
@@ -425,16 +440,6 @@ export default function GroupSales() {
       || channelGroups[0] 
       || null;
   }, [channelGroups, selectedChannel]);
-
-  // 상단 4대 KPI 지표 계산 (선택 채널 vs 전사)
-  const isAllMode = selectedChannel === 'ALL';
-  const displayRevenue = isAllMode ? grandTotals.revenue : (activeChannelGroup?.totalRevenue || 0);
-  const displayRooms = isAllMode ? grandTotals.rooms : (activeChannelGroup?.totalRooms || 0);
-  const displayGuests = isAllMode ? grandTotals.guests : (activeChannelGroup?.totalGuests || 0);
-  const displayAdr = isAllMode ? grandTotals.adr : (activeChannelGroup?.averageAdr || 0);
-
-  const displayRevenueFinancial = formatFinancialKorean(displayRevenue);
-  const grandRevenueFinancial = formatFinancialKorean(grandTotals.revenue);
 
   // 🏛️ 단체영업(세미나)의 주중/주말/통합 비중 산출 (호텔 요금제 기준: 일~목 주중, 금/토 주말)
   const seminarDayTypeStats = useMemo<SeminarDayTypeShare>(() => {
@@ -478,6 +483,31 @@ export default function GroupSales() {
       }
     };
   }, [seminarShare, grandTotals]);
+
+  // 상단 4대 KPI 지표 계산 (선택 채널 vs 전사)
+  const isAllMode = selectedChannel === 'ALL';
+  const isCurrentSeminar = !isAllMode && Boolean(
+    activeChannelGroup?.channelName?.includes('단체') || 
+    activeChannelGroup?.channelName?.includes('세미나') || 
+    selectedChannel?.includes('단체') || 
+    selectedChannel?.includes('세미나')
+  );
+
+  const displayRevenue = isAllMode ? grandTotals.revenue : (activeChannelGroup?.totalRevenue || 0);
+  const displayRooms = isAllMode ? grandTotals.rooms : (activeChannelGroup?.totalRooms || 0);
+  const displayGuests = isAllMode 
+    ? (grandTotals.guests > 0 ? grandTotals.guests : Number(corporateSummary?.totalPax || 0))
+    : (isCurrentSeminar && corporateSummary?.totalPax 
+        ? Number(corporateSummary.totalPax) 
+        : (activeChannelGroup?.totalGuests || 0));
+  const displayAdr = isAllMode 
+    ? grandTotals.adr 
+    : (isCurrentSeminar && seminarDayTypeStats.total.averageAdr > 0 
+        ? seminarDayTypeStats.total.averageAdr 
+        : (activeChannelGroup?.averageAdr || 0));
+
+  const displayRevenueFinancial = formatFinancialKorean(displayRevenue);
+  const grandRevenueFinancial = formatFinancialKorean(grandTotals.revenue);
 
   // 👥 단체영업(세미나) 예약 단체 마스터 명부 및 복수 방문 집계
   const { organizedGroups, totalSeminarGroupsCount, repeatGroupsCount, totalBookedRoomsInGroups } = useMemo(() => {
@@ -1339,7 +1369,11 @@ export default function GroupSales() {
               <span className="text-base font-semibold text-slate-400 ml-1">명</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              {displayGuests > 0 ? 'PMS 실측 투숙객 수' : '백엔드 PMS 실측 연동 기준'}
+              {displayGuests > 0 
+                ? (isCurrentSeminar && corporateSummary?.mice?.totalPax 
+                    ? `PMS 실측 투숙객 (MICE ${corporateSummary.mice.totalPax}명 + 기타 ${Number(corporateSummary.totalPax) - Number(corporateSummary.mice.totalPax)}명)`
+                    : 'PMS 실측 투숙객 수')
+                : '백엔드 PMS 실측 연동 기준'}
             </p>
           </div>
         </div>
@@ -1362,7 +1396,9 @@ export default function GroupSales() {
               <span className="text-base font-semibold text-slate-400 ml-1">원</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              해당 채널 매출액 ÷ 판매 객실수
+              {isCurrentSeminar && seminarDayTypeStats.total.averageAdr > 0 
+                ? '백엔드 공인 세미나 통합 ADR (주중/주말 가중평균)' 
+                : '해당 채널 매출액 ÷ 판매 객실수'}
             </p>
           </div>
         </div>

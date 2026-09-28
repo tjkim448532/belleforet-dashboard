@@ -149,24 +149,47 @@ export default function GolfChannelIntelligence() {
 
       // Process Monthly YoY from real DB facility-monthly-trend
       const monthlyList = Array.isArray(trendRes?.data?.monthlyData) ? trendRes.data.monthlyData : [];
-      const realMonthlyYoy = Array.from({ length: 12 }, (_, i) => {
-        const m = i + 1;
-        const mStr = String(m).padStart(2, '0');
-        const findYearData = (y: string) => {
-          const item = monthlyList.find((d: any) => d.month === `${y}-${mStr}`);
-          const rev = Number(item?.revenue || 0);
-          const teams = Number(item?.teams || 0);
-          const avgGreenFee = Number(item?.avgGreenFee ?? item?.averageGreenFee ?? 0);
-          return { teams, avgGreenFee, revenue: rev };
-        };
-        return {
-          month: m,
-          monthName: `${m}월`,
-          y2024: findYearData('2024'),
-          y2025: findYearData('2025'),
-          y2026: findYearData('2026')
-        };
-      });
+      const queryDateStr = endDate || startDate || '2026-09-26';
+      const queryMonth = Number(queryDateStr.split('-')[1]);
+      const queryYear = queryDateStr.split('-')[0];
+
+      const buildMonthlyYoy = (totTeams: number, avgGf: number) => {
+        return Array.from({ length: 12 }, (_, i) => {
+          const m = i + 1;
+          const mStr = String(m).padStart(2, '0');
+          const findYearData = (y: string) => {
+            const item = monthlyList.find((d: any) => d.month === `${y}-${mStr}`);
+            const rev = Number(item?.revenue || 0);
+            const visitors = Number(item?.visitors || item?.players || 0);
+
+            let teams = Number(item?.teams || 0);
+            if (teams === 0 && visitors > 0) {
+              if (y === queryYear && m === queryMonth && totTeams > 0) {
+                teams = totTeams;
+              } else {
+                teams = Math.round(visitors / 4);
+              }
+            }
+
+            let avgGreenFee = Number(item?.avgGreenFee ?? item?.averageGreenFee ?? 0);
+            if (avgGreenFee === 0 && visitors > 0 && rev > 0) {
+              if (y === queryYear && m === queryMonth && avgGf > 0) {
+                avgGreenFee = avgGf;
+              } else {
+                avgGreenFee = Math.round(rev / visitors);
+              }
+            }
+            return { teams, avgGreenFee, revenue: rev };
+          };
+          return {
+            month: m,
+            monthName: `${m}월`,
+            y2024: findYearData('2024'),
+            y2025: findYearData('2025'),
+            y2026: findYearData('2026')
+          };
+        });
+      };
 
       if (res && res.success && (res.channels || res.data?.channels)) {
         const payload = res.data || res;
@@ -185,6 +208,17 @@ export default function GolfChannelIntelligence() {
         const joinRankingList = Array.isArray(payload.joinRanking) ? payload.joinRanking : [];
         const normalFourTeams = Math.max(0, totalTeams - threePlayerTeamsCount - joinTeamsCount);
 
+        let size4Ratio = 0;
+        let size3Ratio = 0;
+        let size2Ratio = 0;
+        if (totalTeams > 0) {
+          size4Ratio = Number(((normalFourTeams / totalTeams) * 100).toFixed(1));
+          size3Ratio = Number(((threePlayerTeamsCount / totalTeams) * 100).toFixed(1));
+          size2Ratio = Number(((joinTeamsCount / totalTeams) * 100).toFixed(1));
+        }
+
+        const realMonthlyYoy = buildMonthlyYoy(totalTeams, averageGreenFee);
+
         setData({
           summary: {
             totalTeams,
@@ -197,12 +231,12 @@ export default function GolfChannelIntelligence() {
             memberAnchorRevenue
           },
           channels: liveChannels,
-          teamSize: payload.teamSize || {
-            size1: { teams: 0, ratio: 0 },
-            size2: { teams: joinTeamsCount, ratio: 0 },
-            size3: { teams: threePlayerTeamsCount, ratio: 0, lostRevenue: threePlayerLostRevenue },
-            size4: { teams: normalFourTeams, ratio: 0 },
-            joinRanking: joinRankingList
+          teamSize: {
+            size1: payload.teamSize?.size1 || { teams: 0, ratio: 0 },
+            size2: { teams: Number(payload.teamSize?.size2?.teams ?? joinTeamsCount), ratio: Number(payload.teamSize?.size2?.ratio || size2Ratio) },
+            size3: { teams: Number(payload.teamSize?.size3?.teams ?? threePlayerTeamsCount), ratio: Number(payload.teamSize?.size3?.ratio || size3Ratio), lostRevenue: Number(payload.teamSize?.size3?.lostRevenue ?? threePlayerLostRevenue) },
+            size4: { teams: Number(payload.teamSize?.size4?.teams ?? normalFourTeams), ratio: Number(payload.teamSize?.size4?.ratio || size4Ratio) },
+            joinRanking: payload.teamSize?.joinRanking || joinRankingList
           },
           memberSynergy: payload.memberSynergy || {
             pureNonMember: { teams: 0, ratio: 0, revenue: 0 },
@@ -212,7 +246,7 @@ export default function GolfChannelIntelligence() {
             totalAnchorRevenue: memberAnchorRevenue
           },
           timeSlotYield: Array.isArray(payload.timeSlotYield) ? payload.timeSlotYield : [],
-          monthlyYoy: realMonthlyYoy
+          monthlyYoy: Array.isArray(payload.monthlyYoy) && payload.monthlyYoy.length > 0 ? payload.monthlyYoy : realMonthlyYoy
         });
         setLoading(false);
         return;
@@ -220,7 +254,7 @@ export default function GolfChannelIntelligence() {
 
       setData({
         ...EMPTY_INTELLIGENCE_DATA,
-        monthlyYoy: realMonthlyYoy
+        monthlyYoy: buildMonthlyYoy(0, 0)
       });
     } catch (err) {
       console.error('Golf Channel Intelligence Fetch Error:', err);
@@ -666,9 +700,9 @@ export default function GolfChannelIntelligence() {
     const teams2025 = data.monthlyYoy.map(m => m.y2025.teams);
     const teams2026 = data.monthlyYoy.map(m => m.y2026.teams);
 
-    const gf2024 = data.monthlyYoy.map(m => m.y2024.avgGreenFee);
-    const gf2025 = data.monthlyYoy.map(m => m.y2025.avgGreenFee);
-    const gf2026 = data.monthlyYoy.map(m => m.y2026.avgGreenFee);
+    const gf2024 = data.monthlyYoy.map(m => m.y2024.avgGreenFee > 0 ? m.y2024.avgGreenFee : null);
+    const gf2025 = data.monthlyYoy.map(m => m.y2025.avgGreenFee > 0 ? m.y2025.avgGreenFee : null);
+    const gf2026 = data.monthlyYoy.map(m => m.y2026.avgGreenFee > 0 ? m.y2026.avgGreenFee : null);
 
     return {
       tooltip: {
@@ -688,7 +722,7 @@ export default function GolfChannelIntelligence() {
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#0284c7;">
               <span>2025년:</span>
-              <strong>${row.y2025.teams.toLocaleString()}팀 (${formatCurrency(row.y2025.avgGreenFee)}원)</strong>
+              <strong>${row.y2025.teams > 0 ? `${row.y2025.teams.toLocaleString()}팀 (${formatCurrency(row.y2025.avgGreenFee)}원)` : '-'}</strong>
             </div>
             <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#00ae95;">
               <span>2026년:</span>
@@ -709,8 +743,8 @@ export default function GolfChannelIntelligence() {
         { 
           type: 'value', 
           name: '평균 그린피 (원)', 
-          min: (val: any) => Math.max(0, Math.floor((val.min * 0.9) / 10000) * 10000),
-          max: (val: any) => Math.ceil((val.max * 1.1) / 10000) * 10000,
+          min: (val: any) => (val && val.min > 0) ? Math.max(0, Math.floor((val.min * 0.9) / 10000) * 10000) : 0,
+          max: (val: any) => (val && val.max > 0) ? Math.ceil((val.max * 1.1) / 10000) * 10000 : 100000,
           axisLabel: { formatter: (val: number) => `${(val / 10000).toFixed(0)}만` },
           splitLine: { show: false }
         }
@@ -726,8 +760,24 @@ export default function GolfChannelIntelligence() {
     };
   };
 
-  const directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
-  const otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
+  let directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
+  let otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
+  if (directAvg === 0 && data.channels.length > 0) {
+    const directChannels = data.channels.filter(c => c.channelType === 'DIRECT');
+    const directRev = directChannels.reduce((sum, c) => sum + Number(c.revenue || 0), 0);
+    const directPax = directChannels.reduce((sum, c) => sum + Number(c.players || 0), 0);
+    if (directPax > 0 && directRev > 0) {
+      directAvg = Math.round(directRev / directPax);
+    }
+  }
+  if (otaAvg === 0 && data.channels.length > 0) {
+    const otaChannels = data.channels.filter(c => c.channelType === 'OTA');
+    const otaRev = otaChannels.reduce((sum, c) => sum + Number(c.revenue || 0), 0);
+    const otaPax = otaChannels.reduce((sum, c) => sum + Number(c.players || 0), 0);
+    if (otaPax > 0 && otaRev > 0) {
+      otaAvg = Math.round(otaRev / otaPax);
+    }
+  }
   const diffAvg = (directAvg > 0 && otaAvg > 0) ? directAvg - otaAvg : 0;
 
   const validSlots = data.timeSlotYield.filter(s => s.occupancy > 0);
@@ -1371,13 +1421,13 @@ export default function GolfChannelIntelligence() {
 
                   {/* 2025년 */}
                   <td className="py-3 px-3 text-right border-l border-slate-100 font-bold text-blue-700 bg-blue-50/10">
-                    {row.y2025.teams.toLocaleString()}팀
+                    {row.y2025.teams > 0 ? `${row.y2025.teams.toLocaleString()}팀` : '-'}
                   </td>
                   <td className="py-3 px-3 text-right text-blue-800 bg-blue-50/10">
-                    {formatCurrency(row.y2025.avgGreenFee)}원
+                    {row.y2025.avgGreenFee > 0 ? `${formatCurrency(row.y2025.avgGreenFee)}원` : '-'}
                   </td>
                   <td className="py-3 px-3 text-right text-blue-900 bg-blue-50/10">
-                    {formatCurrency(row.y2025.revenue)}원
+                    {row.y2025.revenue > 0 ? `${formatCurrency(row.y2025.revenue)}원` : '-'}
                   </td>
 
                   {/* 2026년 */}

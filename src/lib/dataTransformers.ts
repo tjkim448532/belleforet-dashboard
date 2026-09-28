@@ -258,11 +258,24 @@ export interface TransformedResortData {
     revenueGrowth?: number;
     roomsSold: number;
     lyRoomsSold?: number;
+    roomsGrowth?: number;
     totalCapacity: number;
     totalRoomInventory?: number;
     totalGuestCapacity?: number;
     guestCapacity?: number;
-    adr: number; weekdayRevenue?: number; weekendRevenue?: number; weekdayRoomsSold?: number; weekendRoomsSold?: number; weekdayAdr?: number; weekendAdr?: number; weekdayOcc?: number; weekendOcc?: number;
+    adr: number;
+    physicalOccRate?: number;
+    standardOccRate?: number;
+    connectingOccRate?: number;
+    remainingOccRate?: number;
+    weekdayRevenue?: number;
+    weekendRevenue?: number;
+    weekdayRoomsSold?: number;
+    weekendRoomsSold?: number;
+    weekdayAdr?: number;
+    weekendAdr?: number;
+    weekdayOcc?: number;
+    weekendOcc?: number;
   };
 }
 
@@ -389,9 +402,11 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     if (chGrand) summaryRevenue = parseNum(chGrand.ytdRevenue || chGrand.todayRevenue || chGrand.mtdRevenue || 0);
   }
   
-  const summaryRoomsSold = parseNum(payload.summary?.totalRooms || 0);
+  const ls = payload.lodgingStats || {};
+
+  const summaryRoomsSold = parseNum(ls.roomsSold || payload.summary?.totalRooms || 0);
   // 객실 인벤토리 모수 SSOT
-  const physicalRoomCap = parseNum(payload.summary?.availableRooms || payload.summary?.totalPhysicalKeys || 0);
+  const physicalRoomCap = parseNum(ls.totalCapacity || payload.summary?.availableRooms || payload.summary?.totalPhysicalKeys || 0);
   // 투숙객 인원 모수 (Guests / Pax) SSOT
   const guestCap = parseNum(payload.summary?.totalRoomCap || 0);
 
@@ -408,23 +423,38 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
     }
   }
 
+  const connectingFromMap = roomOccupancyMap['51평']?.sold || 0;
+  const connectingPhysicalRooms = parseNum(payload.summary?.connectingPhysicalRooms || ls.connectingPhysicalRooms || connectingFromMap);
+  const standardPhysicalRooms = parseNum(payload.summary?.standardPhysicalRooms || ls.standardPhysicalRooms || Math.max(0, summaryRoomsSold - connectingPhysicalRooms));
+  const totalPhysicalKeysSold = parseNum(payload.summary?.totalPhysicalKeysSold || ls.totalPhysicalKeysSold || (connectingPhysicalRooms + standardPhysicalRooms));
+
   const lodgingStats = {
-    revenue: summaryRevenue || parseNum(payload.summary?.totalRoomRev || 0),
-    lyRevenue,
-    revenueGrowth,
+    revenue: parseNum(ls.revenue || summaryRevenue || payload.summary?.totalRoomRev || 0),
+    lyRevenue: ls.lyRevenue !== undefined ? parseNum(ls.lyRevenue) : lyRevenue,
+    revenueGrowth: ls.revenueGrowth !== undefined ? parseNum(ls.revenueGrowth) : revenueGrowth,
     roomsSold: summaryRoomsSold,
-    lyRoomsSold,
+    lyRoomsSold: ls.lyRoomsSold !== undefined ? parseNum(ls.lyRoomsSold) : lyRoomsSold,
+    roomsGrowth: ls.roomsGrowth !== undefined ? parseNum(ls.roomsGrowth) : undefined,
     // [안전 분리] 객실 동 모수
     totalRoomInventory: physicalRoomCap,
     totalCapacity: physicalRoomCap,
     // [안전 분리] 투숙객 인원 모수 (Pax) - 기존 컴포넌트 하위 호환성 100% 보장
     totalGuestCapacity: guestCap,
     guestCapacity: guestCap,
-    adr: parseNum(payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0), weekdayRevenue: parseNum(payload.summary?.weekdayRoomRev ?? 0), weekendRevenue: parseNum(payload.summary?.weekendRoomRev ?? 0), weekdayRoomsSold: parseNum(payload.summary?.weekdayRoomsCount ?? 0), weekendRoomsSold: parseNum(payload.summary?.weekendRoomsCount ?? 0), weekdayAdr: parseNum(payload.summary?.weekdayADR ?? 0), weekendAdr: parseNum(payload.summary?.weekendADR ?? 0), weekdayOcc: parseNum(payload.summary?.weekdayOcc ?? 0), weekendOcc: parseNum(payload.summary?.weekendOcc ?? 0)
+    adr: parseNum(ls.adr ?? payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0),
+    physicalOccRate: ls.physicalOccRate !== undefined ? parseNum(ls.physicalOccRate) : undefined,
+    standardOccRate: ls.standardOccRate !== undefined ? parseNum(ls.standardOccRate) : undefined,
+    connectingOccRate: ls.connectingOccRate !== undefined ? parseNum(ls.connectingOccRate) : undefined,
+    remainingOccRate: ls.remainingOccRate !== undefined ? parseNum(ls.remainingOccRate) : undefined,
+    weekdayRevenue: ls.weekdayRevenue !== undefined ? parseNum(ls.weekdayRevenue) : (payload.summary?.weekdayRoomRev !== undefined ? parseNum(payload.summary.weekdayRoomRev) : undefined),
+    weekendRevenue: ls.weekendRevenue !== undefined ? parseNum(ls.weekendRevenue) : (payload.summary?.weekendRoomRev !== undefined ? parseNum(payload.summary.weekendRoomRev) : undefined),
+    weekdayRoomsSold: ls.weekdayRoomsSold !== undefined ? parseNum(ls.weekdayRoomsSold) : (payload.summary?.weekdayRoomsCount !== undefined ? parseNum(payload.summary.weekdayRoomsCount) : undefined),
+    weekendRoomsSold: ls.weekendRoomsSold !== undefined ? parseNum(ls.weekendRoomsSold) : (payload.summary?.weekendRoomsCount !== undefined ? parseNum(payload.summary.weekendRoomsCount) : undefined),
+    weekdayAdr: ls.weekdayAdr !== undefined ? parseNum(ls.weekdayAdr) : (payload.summary?.weekdayADR !== undefined ? parseNum(payload.summary.weekdayADR) : undefined),
+    weekendAdr: ls.weekendAdr !== undefined ? parseNum(ls.weekendAdr) : (payload.summary?.weekendADR !== undefined ? parseNum(payload.summary.weekendADR) : undefined),
+    weekdayOcc: ls.weekdayOcc !== undefined ? parseNum(ls.weekdayOcc) : (payload.summary?.weekdayOcc !== undefined ? parseNum(payload.summary.weekdayOcc) : undefined),
+    weekendOcc: ls.weekendOcc !== undefined ? parseNum(ls.weekendOcc) : (payload.summary?.weekendOcc !== undefined ? parseNum(payload.summary.weekendOcc) : undefined)
   };
-
-  const connectingPhysicalRooms = parseNum(payload.summary?.connectingPhysicalRooms || 0);
-  const standardPhysicalRooms = parseNum(payload.summary?.standardPhysicalRooms || summaryRoomsSold);
 
   return {
     success: payload.success || true,
@@ -435,7 +465,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       ...payload.summary,
       connectingPhysicalRooms,
       standardPhysicalRooms,
-      totalPhysicalKeysSold: parseNum(payload.summary?.totalPhysicalKeysSold || (connectingPhysicalRooms + standardPhysicalRooms))
+      totalPhysicalKeysSold,
+      totalPhysicalKeys: physicalRoomCap,
+      totalRoomInventory: physicalRoomCap
     },
     roomOccupancyMap,
     channelAdrData,

@@ -510,7 +510,7 @@ export default function ResortBusiness() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms}실</div>
+                    <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms.toLocaleString()}실</div>
                     <div className="text-[10px] text-slate-400">{lodgingStats.standardOccRate !== undefined ? lodgingStats.standardOccRate + '%' : '-'}</div>
                   </div>
                 </div>
@@ -524,7 +524,7 @@ export default function ResortBusiness() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms}실</div>
+                    <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms.toLocaleString()}실</div>
                     <div className="text-[10px] text-slate-400">{lodgingStats.connectingOccRate !== undefined ? lodgingStats.connectingOccRate + '%' : '-'}</div>
                   </div>
                 </div>
@@ -538,7 +538,7 @@ export default function ResortBusiness() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-base font-bold text-slate-700">{remainingRooms}실</div>
+                    <div className="text-base font-bold text-slate-700">{remainingRooms.toLocaleString()}실</div>
                     <div className="text-[10px] text-slate-400">{lodgingStats.remainingOccRate !== undefined ? lodgingStats.remainingOccRate + '%' : '-'}</div>
                   </div>
                 </div>

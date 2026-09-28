@@ -511,7 +511,11 @@ export default function OnlineMembers() {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="text-xs font-bold text-slate-600 mb-1">단일 채널 의존도 (이탈 위험군)</div>
                     <div className="text-xl font-bold text-slate-500 flex items-baseline gap-1">
-                      {channelBreakdown.singleChannelRatio ?? '-'}<span className="text-sm">%</span>
+                      {channelBreakdown.singleChannelRatio != null ? (
+                        <>{channelBreakdown.singleChannelRatio}<span className="text-sm">%</span></>
+                      ) : (
+                        '-'
+                      )}
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
                       리조트에 방문하여 1가지 시설(예: 콘도만)만 이용하고 떠나는 고객 비중입니다.
@@ -595,7 +599,7 @@ export default function OnlineMembers() {
                         </th>
                       ))}
                       <th className="px-4 py-3 bg-emerald-50/80 text-emerald-900 font-black sticky right-0 z-10 w-28">
-                        누적 합계 (YTD)
+                        {startDate && startDate.endsWith('-01-01') ? '누적 합계 (YTD)' : '조회 기간 합계'}
                       </th>
                     </tr>
                   </thead>

@@ -68,7 +68,7 @@ export default function GolfBusiness() {
 
         const unitPrice = Number(c.unitPrice ?? c.unit_price ?? 0);
 
-        const displayName = c.displayName || venueName;
+        const displayName = c.displayName || (venueName === '기타매출' && productGroup === '대여품' ? '기타매출 (대여채)' : venueName);
         const description = c.description || '';
 
         return {
@@ -107,14 +107,36 @@ export default function GolfBusiness() {
 
   const { summary } = data.meta;
 
-  const greenFeeItem = normalizedChannels.find(c => c.venueName === '그린피' || c.productGroup === '그린피' || c.productGroup === 'GREEN_FEE');
-  const cartFeeItem = normalizedChannels.find(c => c.venueName === '골프카트' || c.venueName === '카트' || c.productGroup === 'CART_FEE');
-  const startHouseItem = normalizedChannels.find(c => c.venueName === '스타트하우스' || c.productGroup === 'START_HOUSE');
-  const restaurantItem = normalizedChannels.find(c => c.venueName === '클럽하우스 레스토랑' || c.productGroup === 'RESTAURANT');
-  const proShopItem = normalizedChannels.find(c => c.venueName === '골프 프로샵' || c.venueName === '프로샵' || c.productGroup === 'PRO_SHOP');
+  const greenFeeItem = normalizedChannels.find(c => 
+    c.venueName.includes('그린피') || c.productGroup.includes('그린피') || c.productGroup === 'GREEN_FEE'
+  );
+  const cartFeeItem = normalizedChannels.find(c => 
+    c.venueName.includes('카트') || c.productGroup.includes('카트') || c.productGroup === 'CART_FEE'
+  );
+  const startHouseItem = normalizedChannels.find(c => 
+    c.venueName.includes('스타트하우스') || c.productGroup === 'START_HOUSE'
+  );
+  const restaurantItem = normalizedChannels.find(c => 
+    c.venueName.includes('레스토랑') || c.productGroup === 'RESTAURANT'
+  );
+  const proShopItem = normalizedChannels.find(c => 
+    c.venueName.includes('프로샵') || c.productGroup === 'PRO_SHOP'
+  );
+
+  const etcItems = normalizedChannels.filter(c => 
+    c !== greenFeeItem && c !== cartFeeItem && c !== startHouseItem && c !== restaurantItem && c !== proShopItem
+  );
+
+  const totalCourseRevenue = Math.round((greenFeeItem?.revenue || 0) + (cartFeeItem?.revenue || 0));
+  const etcRevenue = etcItems.reduce((acc, c) => acc + (c.revenue || 0), 0);
+  const etcQuantity = etcItems.reduce((acc, c) => acc + (c.quantity || 0), 0);
+  const etcSharePct = Number(etcItems.reduce((acc, c) => acc + (c.revenueSharePct || 0), 0).toFixed(2));
+
+  const totalAmenityRevenue = Math.round((startHouseItem?.revenue || 0) + (restaurantItem?.revenue || 0) + (proShopItem?.revenue || 0) + etcRevenue);
+  const totalAmenityQuantity = (startHouseItem?.quantity || 0) + (restaurantItem?.quantity || 0) + (proShopItem?.quantity || 0) + etcQuantity;
 
   const courseCoreRatio = (summary as any).courseCoreRatio ?? Number(((greenFeeItem?.revenueSharePct || 0) + (cartFeeItem?.revenueSharePct || 0)).toFixed(1));
-  const amenityRatio = (summary as any).amenityRatio ?? (Number(courseCoreRatio) > 0 ? (100 - Number(courseCoreRatio)).toFixed(1) : 0);
+  const amenityRatio = (summary as any).amenityRatio ?? (Number(courseCoreRatio) > 0 ? Number((100 - Number(courseCoreRatio)).toFixed(1)) : 0);
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -223,10 +245,10 @@ export default function GolfBusiness() {
                     핵심 매출 기여도 {courseCoreRatio}%
                   </span>
                 </div>
-                <div className="text-2xl font-black text-emerald-900 my-1">
-                  {greenFeeItem?.revenueFormatted || '0'}원 <span className="text-xs font-normal text-slate-500">({greenFeeItem?.playersFormatted || '0'}명 내장)</span>
+                <div className="text-2xl font-black text-emerald-900 my-1 font-financial">
+                  {totalCourseRevenue.toLocaleString()}원 <span className="text-xs font-normal text-slate-500">({greenFeeItem?.playersFormatted || '0'}명 내장, 카트 {cartFeeItem?.quantityFormatted || '0'}건)</span>
                 </div>
-                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-emerald-200/60">
+                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-emerald-200/60 font-financial">
                   <div className="flex justify-between">
                     <span>• 그린피 순매출 (점유율):</span>
                     <strong>{greenFeeItem?.revenueFormatted || '0'}원 ({greenFeeItem?.revenueSharePct || 0}%)</strong>
@@ -242,22 +264,22 @@ export default function GolfBusiness() {
               </p>
             </div>
 
-            {/* 카드 2: 클럽 부대시설 부가 수익 (식음 + 프로샵) */}
+            {/* 카드 2: 클럽 부대시설 부가 수익 (식음 + 프로샵 등) */}
             <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 p-6 rounded-2xl border border-slate-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <UtensilsCrossed className="w-4 h-4 text-blue-600" /> 클럽 부대시설 수익 성과 (식음료 및 프로샵)
+                    <UtensilsCrossed className="w-4 h-4 text-blue-600" /> 클럽 부대시설 수익 성과 (식음료 및 프로샵 등)
                   </span>
                   <span className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                     부가 매출 기여도 {amenityRatio}%
                   </span>
                 </div>
-                <div className="text-2xl font-black text-slate-900 my-1">
-                  {((startHouseItem?.revenue || 0) + (restaurantItem?.revenue || 0) + (proShopItem?.revenue || 0)).toLocaleString()}원
-                  <span className="text-xs font-normal text-slate-500"> (총 {((startHouseItem?.quantity || 0) + (restaurantItem?.quantity || 0) + (proShopItem?.quantity || 0)).toLocaleString()}건)</span>
+                <div className="text-2xl font-black text-slate-900 my-1 font-financial">
+                  {totalAmenityRevenue.toLocaleString()}원
+                  <span className="text-xs font-normal text-slate-500"> (총 {totalAmenityQuantity.toLocaleString()}건)</span>
                 </div>
-                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-slate-200">
+                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-slate-200 font-financial">
                   <div className="flex justify-between">
                     <span>• 스타트하우스 식음:</span>
                     <strong>{startHouseItem?.revenueFormatted || '0'}원 ({startHouseItem?.revenueSharePct || 0}%)</strong>
@@ -270,6 +292,12 @@ export default function GolfBusiness() {
                     <span>• 프로샵 용품 매출:</span>
                     <strong>{proShopItem?.revenueFormatted || '0'}원 ({proShopItem?.revenueSharePct || 0}%)</strong>
                   </div>
+                  {etcRevenue > 0 && (
+                    <div className="flex justify-between">
+                      <span>• 기타매출 및 대여:</span>
+                      <strong>{Math.round(etcRevenue).toLocaleString()}원 ({etcSharePct}%)</strong>
+                    </div>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-slate-600 mt-4 pt-2 border-t border-slate-200 leading-relaxed">

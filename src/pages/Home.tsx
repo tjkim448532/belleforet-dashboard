@@ -294,16 +294,16 @@ export default function Home() {
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* 🌟 Card 1: 전사 순매출 (Hero Bento Card) */}
-            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative overflow-hidden group flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group flex flex-col justify-between">
               <div>
                 <div className="min-h-[88px] mb-3 relative z-10 flex flex-col gap-2.5">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-1.5">
                       <CalendarDays className="w-5 h-5 text-brand-mint shrink-0" /> 
-                      <span className="text-sm font-bold text-slate-800">
+                       <span className="text-sm font-bold text-slate-800">
                         {isRangeMode && coreData.core?.endDate ? `선택 기간 전사 순매출` : `당일 전사 순매출`}
                       </span>
-                      <MetricExplainerTooltip presetKey="netRevenue" />
+                      <MetricExplainerTooltip presetKey="netRevenue" align="left" />
                       <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">VAT 제외</span>
                     </div>
                     <span className="text-xs text-slate-400 font-medium font-financial">

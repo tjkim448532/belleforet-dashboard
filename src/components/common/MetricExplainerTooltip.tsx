@@ -99,12 +99,14 @@ export default function MetricExplainerTooltip({
   presetKey,
   customData,
   position = 'bottom',
-  align = 'center',
+  align = 'left',
   className = '',
   iconSize = 15
 }: MetricExplainerTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [boundaryShift, setBoundaryShift] = useState<{ left?: string; right?: string; transform?: string }>({});
 
   const data: MetricExplainerData | undefined = customData || (presetKey ? METRIC_PRESETS[presetKey] : undefined);
 
@@ -127,6 +129,50 @@ export default function MetricExplainerTooltip({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  // 뷰포트 좌우 경계 자동 보정 (화면 잘림 100% 방지)
+  useEffect(() => {
+    if (!isOpen || !tooltipRef.current || !containerRef.current) {
+      setBoundaryShift({});
+      return;
+    }
+
+    const checkBoundary = () => {
+      if (!tooltipRef.current || !containerRef.current) return;
+      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const padding = 16; // 화면 좌우 최소 안전 마진 (16px)
+
+      // 1. 왼쪽 화면 바깥으로 삐져나간 경우
+      if (tooltipRect.left < padding) {
+        const shiftX = padding - containerRect.left;
+        setBoundaryShift({
+          left: `${shiftX}px`,
+          right: 'auto',
+          transform: 'none'
+        });
+      } 
+      // 2. 오른쪽 화면 바깥으로 삐져나간 경우
+      else if (tooltipRect.right > window.innerWidth - padding) {
+        const shiftX = containerRect.right - (window.innerWidth - padding);
+        setBoundaryShift({
+          right: `${shiftX}px`,
+          left: 'auto',
+          transform: 'none'
+        });
+      } else {
+        setBoundaryShift({});
+      }
+    };
+
+    // 렌더링 직후 및 윈도우 리사이즈 시 경계 검사
+    const timer = setTimeout(checkBoundary, 0);
+    window.addEventListener('resize', checkBoundary);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkBoundary);
     };
   }, [isOpen]);
 
@@ -169,7 +215,9 @@ export default function MetricExplainerTooltip({
 
       {isOpen && (
         <div
-          className={`absolute z-50 w-[calc(100vw-32px)] max-w-sm sm:max-w-md sm:w-96 max-h-[85vh] overflow-y-auto p-4 bg-white rounded-2xl border border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.18)] text-slate-800 text-left animate-in fade-in zoom-in-95 duration-150 ${getPositionClasses()}`}
+          ref={tooltipRef}
+          style={boundaryShift}
+          className={`absolute z-[9999] w-[calc(100vw-32px)] max-w-sm sm:max-w-md sm:w-96 max-h-[85vh] overflow-y-auto p-4 bg-white rounded-2xl border border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.22)] text-slate-800 text-left animate-in fade-in zoom-in-95 duration-150 ${getPositionClasses()}`}
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={() => setIsOpen(false)}
         >

@@ -197,11 +197,15 @@ export default function Home() {
 
   const mtdRoomsDiff = displayData?.mtd?.roomsDiff !== undefined 
     ? displayData.mtd.roomsDiff 
-    : (mtdRoomsSold - lyMtdRoomsSold);
+    : (coreData.core?.summary?.mtdRoomsDiff !== undefined 
+        ? Number(coreData.core.summary.mtdRoomsDiff) 
+        : (mtdRoomsSold - lyMtdRoomsSold));
 
   const mtdRoomsGrowth = displayData?.mtd?.roomsGrowth !== undefined 
     ? displayData.mtd.roomsGrowth 
-    : null;
+    : (coreData.core?.summary?.mtdRoomsGrowth !== undefined 
+        ? Number(coreData.core.summary.mtdRoomsGrowth) 
+        : null);
 
   // [기간 모드 지능형 동적 바인딩] 선택 기간 모드 시 선택 기간 전체 실적 바인딩, 단일 일자 시 MTD 당월 실적 바인딩
   const rangeRoomsSold = parseNum(coreData.core?.summary?.totalRooms || roomSub?.todayVisitors || roomSub?.visitors || 0);

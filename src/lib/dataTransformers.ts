@@ -345,8 +345,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       : payload.salesByChannel.filter((item: any) => !item.isGrandTotal && !item.isSegmentSubtotal);
 
     sourceRows.forEach((item: any) => {
-      const sold = parseNum(isRange ? (item.ytdRooms || item.mtdRooms || item.todayRooms || item.roomsSold || 0) : (item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0));
-      const rev = parseNum(isRange ? (item.ytdRevenue || item.mtdRevenue || item.todayRevenue || item.totalSales || 0) : (item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0));
+      const sold = parseNum(item.rangeRooms ?? item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0);
+      const rev = parseNum(item.rangeRevenue ?? item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0);
+      const adr = parseNum(item.rangeAdr ?? item.todayAdr ?? item.adr ?? 0);
       const channelName = item.channelName || item.channel || '기타';
       
       if (sold > 0 || rev > 0) {
@@ -354,7 +355,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
           channel: channelName,
           roomsSold: sold,
           totalRevenue: rev,
-          adr: parseNum(item.adr) || 0
+          adr: adr
         });
       }
     });
@@ -369,8 +370,9 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       : payload.salesBySegment.filter((item: any) => !item.isGrandTotal && !item.isChannelSubtotal);
 
     sourceRows.forEach((item: any) => {
-      const sold = parseNum(isRange ? (item.ytdRooms || item.mtdRooms || item.todayRooms || item.roomsSold || 0) : (item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0));
-      const rev = parseNum(isRange ? (item.ytdRevenue || item.mtdRevenue || item.todayRevenue || item.totalSales || 0) : (item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0));
+      const sold = parseNum(item.rangeRooms ?? item.todayRooms ?? item.roomsSold ?? item.rooms ?? 0);
+      const rev = parseNum(item.rangeRevenue ?? item.todayRevenue ?? item.totalSales ?? item.revenue ?? 0);
+      const adr = parseNum(item.rangeAdr ?? item.todayAdr ?? item.adr ?? 0);
       const marketName = item.rateName || item.segmentName || item.marketType || '기타';
 
       if (sold > 0 || rev > 0) {
@@ -378,7 +380,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
           marketType: marketName,
           roomsSold: sold,
           totalRevenue: rev,
-          adr: parseNum(item.adr) || 0
+          adr: adr
         });
       }
     });

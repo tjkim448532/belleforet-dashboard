@@ -974,9 +974,9 @@ export default function ResortBusiness() {
                       {channelAdrData.map((row: any, idx: number) => (
                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
                           <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.channel}</td>
-                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold}건</td>
-                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}</td>
-                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{formatCurrency(row.adr)}</td>
+                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold.toLocaleString()}건</td>
+                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}원</td>
+                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1008,9 +1008,9 @@ export default function ResortBusiness() {
                       {rateAdrData.map((row: any, idx: number) => (
                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
                           <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.marketType}</td>
-                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold}건</td>
-                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}</td>
-                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{formatCurrency(row.adr)}</td>
+                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold.toLocaleString()}건</td>
+                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}원</td>
+                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</td>
                         </tr>
                       ))}
                     </tbody>

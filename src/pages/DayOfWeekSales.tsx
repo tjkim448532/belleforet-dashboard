@@ -138,15 +138,20 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
   const CHART_PALETTE = ['#3b82f6', '#6366f1', '#8b5cf6', '#0ea5e9', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#64748b'];
 
   // 2. 3D Beveled Pie Options (전체 및 레저 부문 3D 원근 입체 파이 차트)
-  const getPieOptions = (title: string, pieData: any[], formatter: string) => ({
+  const getPieOptions = (title: string, pieData: any[], minLabelPct: number = 0) => ({
     title: { text: title, left: 'center', textStyle: { color: '#334155', fontSize: 15, fontWeight: 'bold' } },
     tooltip: { 
       trigger: 'item',
       backgroundColor: '#ffffff',
       borderColor: '#e2e8f0',
       borderWidth: 1,
-      padding: [8, 12],
-      textStyle: { color: '#0f172a', fontWeight: 'bold' }
+      padding: [10, 14],
+      textStyle: { color: '#0f172a', fontWeight: 'bold' },
+      formatter: (params: any) => {
+        const rev = typeof params.value === 'number' ? `${params.value.toLocaleString()}원` : params.value;
+        const pct = params.percent !== undefined ? ` (${params.percent}%)` : '';
+        return `<div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">${params.name}</div><div style="color: #0d9488; font-weight: 600;">매출: ${rev}${pct}</div>`;
+      }
     },
     color: CHART_PALETTE,
     series: [
@@ -184,7 +189,12 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
         },
         label: {
           show: true,
-          formatter: formatter,
+          formatter: (params: any) => {
+            if (minLabelPct > 0 && params.percent !== undefined && params.percent < minLabelPct) {
+              return '';
+            }
+            return `${params.name}\n${params.percent}%`;
+          },
           color: '#334155',
           fontWeight: 'bold',
           fontSize: 12
@@ -209,20 +219,21 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
 
   const totalPieData = targetHierarchy.map((org: any) => ({
       name: org.orgDivision,
-      value: org.sharePct
+      value: org.revenue || 0
     })).filter((d: any) => d.value > 0);
 
   const leisurePieData: any[] = [];
-  const leisureOrg = targetHierarchy.find((org: any) => org.orgDivision.includes('레저') || org.orgDivision.includes('콘텐츠'));
-  if (leisureOrg && leisureOrg.parts) {
-    leisureOrg.parts.forEach((p: any) => {
+  const targetOrgs = targetHierarchy.filter((org: any) => org.orgDivision.includes('레저') || org.orgDivision.includes('콘텐츠'));
+  targetOrgs.forEach((org: any) => {
+    org.parts?.forEach((p: any) => {
       p.venues?.forEach((v: any) => {
         if (v.revenue > 0) {
           leisurePieData.push({ name: v.venueName, value: v.revenue });
         }
       });
     });
-  }
+  });
+  leisurePieData.sort((a, b) => b.value - a.value);
 
   // 3. Day of Week Bar Chart (Executive Blue Gradient)
   const barOptions = {
@@ -473,7 +484,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
             <h2 className="text-lg lg:text-xl font-bold text-slate-900">본부별 종합 점유율</h2>
           </div>
           <div className="h-[300px]">
-            <ReactECharts option={getPieOptions('', totalPieData, '{b}\n{c}%')} style={{ height: '100%', width: '100%' }} />
+            <ReactECharts option={getPieOptions('', totalPieData, 0)} style={{ height: '100%', width: '100%' }} />
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
@@ -482,7 +493,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
             <h2 className="text-lg lg:text-xl font-bold text-slate-900">레저/콘텐츠 영업장별 비중</h2>
           </div>
           <div className="h-[300px]">
-            <ReactECharts option={getPieOptions('', leisurePieData, '{b}\n{d}%')} style={{ height: '100%', width: '100%' }} />
+            <ReactECharts option={getPieOptions('', leisurePieData, 2.5)} style={{ height: '100%', width: '100%' }} />
           </div>
         </div>
       </div>

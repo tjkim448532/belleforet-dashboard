@@ -830,7 +830,7 @@ export default function Synergy() {
 
                   const rooms = parseNum(isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0));
                   const rev = parseNum(isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0));
-                  const adr = parseNum(item.adr || summaryData?.summary?.totalADR || 0);
+                  const adr = parseNum(item.adr ?? 0);
                   const mtdRooms = parseNum(item.mtdRooms || 0);
                   const mtdRev = parseNum(item.mtdRevenue || 0);
 

@@ -10,7 +10,9 @@ export type MetricPresetKey =
   | 'yoyDow' 
   | 'occupancy' 
   | 'golfRevenuePerTeam'
-  | 'arpu';
+  | 'arpu'
+  | 'mtdRevenue'
+  | 'ytdRevenue';
 
 interface MetricExplainerData {
   title: string;
@@ -27,6 +29,20 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
     definition: '고객이 결제한 총매출(Gross Sales)에서 부가가치세(10%)를 제외하고 벨포레에 실질적으로 귀속되는 실제 순수익입니다.',
     formula: '총 결제 금액 (Gross) ÷ 1.1 = 순매출 (원단위 절사)',
     insight: '모든 대시보드의 매출 집계는 본 순매출(VAT 제외)을 SSOT 단일 기준으로 삼아 부서 간 실적 왜곡을 원천 방지합니다.'
+  },
+  mtdRevenue: {
+    title: '월별 누적 매출 (MTD Revenue)',
+    badge: '월간 누적 실적',
+    definition: '당월 1일부터 조회일까지 리조트 전사(객실+골프+식음+레저 등)에서 발생한 순매출(VAT 제외) 누적 합산입니다.',
+    formula: '당월 1일 ~ 조회일 전사 일별 순매출 합산 vs 전년 동월 동일 기간(Calendar MTD) 누적 비교',
+    insight: '회계 기준에 따라 전년 동월 동일 일수 구간(예: 9/1~9/27 vs 전년 9/1~9/27)과 1:1 대조하여 당월 목표 달성 진척도와 성장세를 정밀 평가합니다.'
+  },
+  ytdRevenue: {
+    title: '올해 누적 매출 (YTD Revenue)',
+    badge: '연간 누적 실적',
+    definition: '당해 1월 1일부터 조회일까지 리조트 전사에서 발생한 순매출(VAT 제외) 총 누적 합산입니다.',
+    formula: '당해 1월 1일 ~ 조회일 전사 순매출 누적 vs 전년 1월 1일 ~ 동일 일자(Calendar YTD) 누적 비교',
+    insight: '연간 경영 목표 달성률을 추적하고, 전년 동기간 대비 전사 외형 성장과 사업 부문별 기여도를 총괄 진단하는 최상위 재무 지표입니다.'
   },
   trevpar: {
     title: 'TrevPAR (가용객실당 총매출)',

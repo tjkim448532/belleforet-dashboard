@@ -230,6 +230,26 @@ export default function Home() {
   const activeSecondaryDiff = isRangeMode ? rangeRoomRevDiff : mtdDiff;
   const activeSecondaryGrowth = isRangeMode ? rangeRoomRevGrowth : mtdGrowth;
 
+  // [전년 누적 실적 및 기간 정의 SSOT] 백엔드 마트 완제품 바인딩
+  const ytdLyGross = parseNum(coreData.core?.summary?.ytdLy || displayData.ytd?.ly_gross || 0);
+  const mtdLyGross = parseNum(coreData.core?.summary?.mtdLy || displayData.mtd?.ly_gross || 0);
+  const activeSecondaryLyRev = isRangeMode ? rangeLyRoomRev : mtdLyGross;
+
+  // 날짜 및 대조 기간 문자열 (당해 vs 전년 동기간)
+  const currentYear = startDate.slice(0, 4);
+  const lyYear = (parseInt(currentYear, 10) - 1).toString();
+  
+  const mtdPeriodStr = `${startDate.slice(0, 7)}-01 ~ ${startDate}`;
+  const lyMtdPeriodStr = `${lyYear}-${startDate.slice(5, 7)}-01 ~ ${lyYear}-${startDate.slice(5)}`;
+  
+  const ytdPeriodStr = `${currentYear}-01-01 ~ ${startDate}`;
+  const lyYtdPeriodStr = `${lyYear}-01-01 ~ ${lyYear}-${startDate.slice(5)}`;
+
+  const activePeriodStr = isRangeMode ? `${startDate} ~ ${currentEndDateStr}` : mtdPeriodStr;
+  const activeLyPeriodStr = isRangeMode 
+    ? `${lyYear}${startDate.slice(4)} ~ ${lyYear}${currentEndDateStr.slice(4)}`
+    : lyMtdPeriodStr;
+
 
   
   const multiNight = (() => {
@@ -257,7 +277,9 @@ export default function Home() {
 
   const todayFinancial = formatFinancialKorean(todayGross);
   const ytdFinancial = formatFinancialKorean(ytdGross);
+  const ytdLyFinancial = formatFinancialKorean(ytdLyGross);
   const secondaryFinancial = formatFinancialKorean(activeSecondaryRev);
+  const secondaryLyFinancial = formatFinancialKorean(activeSecondaryLyRev);
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -402,15 +424,15 @@ export default function Home() {
                   <div className="flex items-center gap-1.5">
                     <Building2 className="w-5 h-5 text-brand-mint shrink-0" />
                     <span className="text-sm font-bold text-slate-800">올해 누적 매출 (YTD)</span>
-                    <MetricExplainerTooltip presetKey="yoyDow" />
+                    <MetricExplainerTooltip presetKey="ytdRevenue" align="left" />
                   </div>
                   {isRangeMode ? (
                     <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg whitespace-nowrap font-financial">
                       종료일({currentEndDateStr}) 기준
                     </span>
                   ) : (
-                    <span className="text-xs text-slate-400 font-medium font-financial whitespace-nowrap">
-                      {startDate.slice(0, 4)}-01-01 ~ {startDate}
+                    <span className="text-xs text-slate-500 font-medium font-financial bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                      📅 {ytdPeriodStr}
                     </span>
                   )}
                 </div>
@@ -427,11 +449,11 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-1">
                   {ytdGrowth !== undefined && ytdGrowth !== null ? (
                     <div className={ytdGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
                       <span className="text-slate-600 font-medium">전년 동기 대비</span>
-                      <span className="font-bold">{ytdGrowth !== undefined && ytdGrowth !== null ? (ytdGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(ytdGrowth).toFixed(1) + '%' : '-'}</span>
+                      <span className="font-bold">{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
                       {ytdDiff !== undefined && (
                         <span className="font-medium opacity-85">({ytdDiff > 0 ? '+' : ''}{formatRevenue(ytdDiff)}원)</span>
                       )}
@@ -439,6 +461,12 @@ export default function Home() {
                   ) : (
                     <div className="badge-delta-neutral">
                       <span>전년 비교 데이터 산출 대기</span>
+                    </div>
+                  )}
+
+                  {ytdLyGross > 0 && (
+                    <div className="text-[11px] text-slate-500 font-financial bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 whitespace-nowrap">
+                      전년 실적 ({lyYtdPeriodStr}): <span className="font-bold text-slate-700">{formatRevenue(ytdLyGross)}원</span> ({ytdLyFinancial.formatted})
                     </div>
                   )}
                 </div>
@@ -450,27 +478,33 @@ export default function Home() {
                   <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
                     <div className="flex items-center gap-1.5">
                       <CalendarDays className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-sm font-bold text-slate-800">
                         {isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출 (MTD)'}
                       </span>
-                      <MetricExplainerTooltip presetKey="occupancy" />
+                      <MetricExplainerTooltip presetKey={isRangeMode ? "netRevenue" : "mtdRevenue"} align="left" />
                     </div>
 
-                    {/* 🎈 공휴일수 비교 배지 */}
-                    <div 
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
-                      title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
-                    >
-                      <span className="text-amber-800">🎈 공휴일:</span>
-                      <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
-                      <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
-                      {periodHolidays.diffHolidays !== 0 ? (
-                        <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
-                      )}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs text-slate-500 font-medium font-financial bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                        📅 {activePeriodStr}
+                      </span>
+
+                      {/* 🎈 공휴일수 비교 배지 */}
+                      <div 
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
+                        title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
+                      >
+                        <span className="text-amber-800">🎈 공휴일:</span>
+                        <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
+                        <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
+                        {periodHolidays.diffHolidays !== 0 ? (
+                          <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -488,25 +522,41 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
-                    <div className={activeSecondaryGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
-                      <span className="text-slate-600 font-medium">전년 동기간 대비</span>
-                      <span className="font-bold">{activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
-                      {activeSecondaryDiff !== undefined && (
-                        <span className="font-medium opacity-85">({activeSecondaryDiff > 0 ? '+' : ''}{formatRevenue(activeSecondaryDiff)}원)</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="badge-delta-neutral">
-                      <span>전년 비교 데이터 산출 대기</span>
-                    </div>
-                  )}
+                {/* 🌟 전년 동기 실적 금액 및 비교 안내 */}
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs font-financial">
+                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+                      전년 동기 실적
+                    </span>
+                    <span className="font-extrabold text-slate-800 text-sm">
+                      {activeSecondaryLyRev > 0 ? `${formatRevenue(activeSecondaryLyRev)}원` : '-'}
+                    </span>
+                    {activeSecondaryLyRev > 0 && (
+                      <span className="text-xs font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
+                        {secondaryLyFinancial.formatted}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      ({activeLyPeriodStr})
+                    </span>
+                  </div>
 
-                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-                    (토 {periodHolidays.currentPeriod.saturdays}일 · 일 {periodHolidays.currentPeriod.sundays}일
-                    {periodHolidays.currentPeriod.nationalHolidaysOnWeekdays > 0 && ` · 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays}일`})
-                  </span>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
+                      <div className={`px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap font-financial ${
+                        activeSecondaryGrowth >= 0 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                          : 'bg-rose-100 text-rose-800 border border-rose-200'
+                      }`}>
+                        <span>전년비 {activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
+                        {activeSecondaryDiff !== undefined && (
+                          <span className="font-semibold text-[10px] opacity-90">({activeSecondaryDiff > 0 ? '+' : ''}{formatRevenue(activeSecondaryDiff)}원)</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">전년 비교 산출 대기</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* 🛏️ 객실 판매수 vs 전년동기간 비교 레이아웃 */}

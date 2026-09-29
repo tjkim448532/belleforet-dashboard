@@ -1,5 +1,6 @@
 import React from 'react';
-import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble, Package } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -37,6 +38,7 @@ export default function Home() {
   const lastYearWeather = coreData.core?.weather?.lastYear || ((weather?.lyDescription || weather?.lyTempMax) ? { weatherDesc: weather.lyDescription || '', description: weather.lyDescription || '', tempMax: weather.lyTempMax, tempMin: weather.lyTempMin } : null);
 
   const displayData: any = data;
+  const [trevparViewMode, setTrevparViewMode] = React.useState<'TOTAL' | 'EX_GOLF'>('EX_GOLF');
 
     const formatCurrency = (val: any) => {
   if (!val) return '0';
@@ -839,20 +841,75 @@ export default function Home() {
                 </div>
                 
                 {/* 4. 가용객실당 총매출 (TrevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
+                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between min-h-[155px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
                   <div className="flex items-center justify-between text-slate-700">
-                    <span className="text-xs font-bold text-emerald-800">가용객실당 총매출 (TrevPAR)</span>
-                    <MetricExplainerTooltip presetKey="trevpar" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-emerald-800">
+                        {trevparViewMode === 'EX_GOLF' ? '순수리조트 TrevPAR (골프제외)' : '가용객실당 총매출 (TrevPAR)'}
+                      </span>
+                      <MetricExplainerTooltip presetKey="trevpar" />
+                    </div>
+                    {/* Toggle: 전사 vs 골프제외 */}
+                    <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setTrevparViewMode('TOTAL')}
+                        className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${
+                          trevparViewMode === 'TOTAL'
+                            ? 'bg-white text-emerald-800 shadow-xs font-bold'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        전사
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTrevparViewMode('EX_GOLF')}
+                        className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${
+                          trevparViewMode === 'EX_GOLF'
+                            ? 'bg-emerald-600 text-white shadow-xs font-black'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        골프제외
+                      </button>
+                    </div>
                   </div>
                   {(() => {
-                    const trevPar = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
-                    return trevPar !== undefined && trevPar !== null && Number(trevPar) > 0 ? (
+                    const trevParTotal = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
+                    const golfSales = coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'GOLF')?.todayActual 
+                                   || coreData.core?.summary?.golfGreenFeeRevenue 
+                                   || 0;
+                    const netRevWithoutGolf = Math.max(0, (coreData.core?.summary?.totalRevenue || 0) - golfSales);
+                    const trevParExGolf = Math.round(netRevWithoutGolf / 175);
+                    const activeTrevPar = trevparViewMode === 'EX_GOLF' ? trevParExGolf : trevParTotal;
+
+                    return activeTrevPar !== undefined && activeTrevPar !== null && Number(activeTrevPar) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-emerald-800 tracking-tight font-financial">
-                          {formatRevenue(trevPar)} <span className="text-sm font-semibold text-emerald-600">원</span>
+                        <div>
+                          <div className="text-3xl font-extrabold text-emerald-800 tracking-tight font-financial">
+                            {formatRevenue(activeTrevPar)} <span className="text-sm font-semibold text-emerald-600">원</span>
+                          </div>
+                          <div className="text-[11px] text-emerald-700 font-medium">
+                            {trevparViewMode === 'EX_GOLF' 
+                              ? '순수 리조트(골프 제외) ÷ 175실 (패키지 기획 기준)' 
+                              : '전사 총매출 ÷ 175실 (리조트 통합 소비력)'}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-emerald-700 font-medium">
-                          전사 총매출 ÷ 175실 (리조트 통합 소비력)
+                        <div className="flex items-center justify-between pt-1.5 border-t border-emerald-100 text-[10px]">
+                          <span className="text-slate-500">
+                            {trevparViewMode === 'EX_GOLF' 
+                              ? `골프포함: ${formatRevenue(trevParTotal)}원` 
+                              : `골프제외: ${formatRevenue(trevParExGolf)}원`}
+                          </span>
+                          <Link 
+                            to="/strategic-simulator?tab=package" 
+                            className="font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5 hover:underline"
+                          >
+                            <Package size={11} className="text-teal-600" />
+                            <span>패키지 생성기</span>
+                            <span>➔</span>
+                          </Link>
                         </div>
                       </>
                     ) : (

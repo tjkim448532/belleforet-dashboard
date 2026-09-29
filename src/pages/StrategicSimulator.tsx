@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
-  RotateCcw, PieChart, CheckCircle2, Clock
+  RotateCcw, PieChart, CheckCircle2, Clock, Package
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
@@ -11,6 +12,7 @@ import { MULTI_YEAR_SEASONALITY_DATA } from '../data/monthlySeasonalityData';
 import { runTargetSimulation } from '../lib/targetSimulationEngine';
 import { secureFetcher } from '../lib/secureFetcher';
 import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicRebalancer';
+import PackageGeneratorSimulator from '../components/dashboard/PackageGeneratorSimulator';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -160,6 +162,19 @@ interface ApiSummary {
 
 export default function StrategicSimulator() {
   const [capacityMaster] = useState<FacilityCapacityItem[]>(DEFAULT_CAPACITY_SEEDS);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'package' ? 'PACKAGE_GEN' : 'TARGET_SIM';
+  const setActiveTab = (tab: 'TARGET_SIM' | 'PACKAGE_GEN') => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (tab === 'PACKAGE_GEN') {
+        next.set('tab', 'package');
+      } else {
+        next.delete('tab');
+      }
+      return next;
+    });
+  };
 
   // Simulation Target Input State
   const [input, setInput] = useState<SimulationTargetInput>({
@@ -625,8 +640,44 @@ export default function StrategicSimulator() {
         </div>
       </div>
 
-      {/* 2. 🎛️ Master Target Console */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6">
+      {/* 1.5 Tab Switcher: Target Simulator vs Package Generator */}
+      <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('TARGET_SIM')}
+          className={`flex-1 py-3 px-5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'TARGET_SIM'
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Target size={18} />
+          <span>🎯 전사 전략 목표 & 리밸런싱 (Target Rebalancing)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('PACKAGE_GEN')}
+          className={`flex-1 py-3 px-5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'PACKAGE_GEN'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Package size={18} />
+          <span>📦 비수기 패키지 생성 & 가격 시뮬레이터 (Package Generator)</span>
+          <span className="text-[10px] bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full font-black hidden sm:inline-block">
+            TrevPAR & RevPAR 기반
+          </span>
+        </button>
+      </div>
+
+      {activeTab === 'PACKAGE_GEN' ? (
+        <PackageGeneratorSimulator />
+      ) : (
+        <>
+          {/* 2. 🎛️ Master Target Console */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6">
         
         {/* Top Control Bar: Year Selection & Golf Toggle */}
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-700/80 pb-5">
@@ -1205,6 +1256,8 @@ export default function StrategicSimulator() {
           })}
         </div>
       </div>
+        </>
+      )}
 
     </div>
   );

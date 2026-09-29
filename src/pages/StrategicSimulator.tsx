@@ -307,7 +307,13 @@ export default function StrategicSimulator() {
 
   // Grand totals
   const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
-  const rawGrandTarget2026 = simulationResult.totalTargetRevenue ?? Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100));
+  const rawGrandTarget2026 = baselineMode === 'WMA_2YEAR'
+    ? Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100))
+    : ((apiData?.summary?.grandTarget2026 && apiData.summary.grandTarget2026 > 0)
+        ? apiData.summary.grandTarget2026
+        : ((simulationResult.totalTargetRevenue && simulationResult.totalTargetRevenue > 0)
+            ? simulationResult.totalTargetRevenue
+            : Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100))));
 
   // Feature 1: Strategic Multiplier Zero-Sum Rebalancing Algorithm (w'_f = (w_f * β_f) / Σ(w_j * β_j))
   const effectiveCategories: ApiCategory[] = useMemo(() => {
@@ -386,13 +392,13 @@ export default function StrategicSimulator() {
   }, [rawCategories, input.includeGolf, rawGrandTarget2026, rawGrandTotal2025, strategicMultipliers]);
 
   const grandTargetTotal = useMemo(() => {
-    const rawTarget = Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100));
+    const rawTarget = rawGrandTarget2026;
     const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF');
     const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
     const rawGrandTotal = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
     const totalBaseRev = input.includeGolf ? rawGrandTotal : Math.max(0, rawGrandTotal - golfActual2025);
     return input.includeGolf ? rawTarget : Math.round(rawTarget * (totalBaseRev / (rawGrandTotal || 1)));
-  }, [input.includeGolf, input.targetGrowthRate, rawCategories, wmaBaselineData, apiData, simulationResult]);
+  }, [input.includeGolf, rawGrandTarget2026, rawCategories, apiData, simulationResult]);
 
   // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {

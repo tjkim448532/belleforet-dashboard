@@ -62,8 +62,12 @@ export function runTargetSimulation(
     : (rawCap > 0 && rawCap <= 175 ? rawCap : 175);
 
   // 2. 연간 성장률 적용한 목표 전사 매출액 및 목표 TrevPAR
-  let targetTotalRevenue = input.targetTotalRevenue ?? Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));
-  let achievedTrevpar = input.targetTrevpar ?? Math.round(baseLyTrevpar * (1 + input.targetGrowthRate / 100));
+  let targetTotalRevenue = (input.targetTotalRevenue !== undefined && input.targetTotalRevenue > 0)
+    ? input.targetTotalRevenue
+    : Math.round(baseLyTotalRevenue * (1 + input.targetGrowthRate / 100));
+  let achievedTrevpar = (input.targetTrevpar !== undefined && input.targetTrevpar > 0)
+    ? input.targetTrevpar
+    : Math.round(baseLyTrevpar * (1 + input.targetGrowthRate / 100));
 
   if (input.metricInputMode === 'TREVPAR' && input.targetTrevpar > 0) {
     achievedTrevpar = input.targetTrevpar;

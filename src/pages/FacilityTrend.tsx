@@ -94,9 +94,10 @@ export default function FacilityTrend() {
         appendYear(res2025);
         appendYear(res2026);
 
-        // 2024-01부터 현재 선택된 날짜(startDate) 월까지 연속 월 배열 생성
-        const endYearMonth = startDate ? startDate.substring(0, 7) : '2026-12';
-        const [endYear, endMonth] = endYearMonth.split('-').map(Number);
+        // 2024-01부터 데이터가 존재하는 최신 월까지 연속 월 배열 생성 (과거 날짜 캐시로 인한 잘림 방지)
+        const allMonths = Array.from(monthlyDataMap.keys()).sort();
+        const latestAvailableMonth = allMonths.length > 0 ? allMonths[allMonths.length - 1] : '2026-12';
+        const [endYear, endMonth] = latestAvailableMonth.split('-').map(Number);
         
         let curYear = 2024;
         let curMonth = 1;
@@ -132,8 +133,8 @@ export default function FacilityTrend() {
           monthlyData
         });
       } else {
-        // 개별 영업장 조회 (2024-01-01부터 현재 선택된 날짜까지)
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent(selectedFacility)}&endDate=${endDate || startDate}`).catch(() => null);
+        // 개별 영업장 조회 (2024년부터 최신 월까지 전수 데이터 조회)
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent(selectedFacility)}`).catch(() => null);
         const payload = res?.data ?? res;
         
         if (payload && Array.isArray(payload.monthlyData)) {

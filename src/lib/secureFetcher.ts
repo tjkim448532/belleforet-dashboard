@@ -129,6 +129,8 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
     ...options.headers,
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
   };
 
   const controller = new AbortController();
@@ -140,6 +142,7 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
   try {
     response = await fetch(url, {
       ...options,
+      cache: 'no-store',
       headers,
       signal: controller.signal,
     });

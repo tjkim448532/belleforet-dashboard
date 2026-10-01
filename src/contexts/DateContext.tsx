@@ -15,31 +15,39 @@ const DateContext = createContext<DateContextType | undefined>(undefined);
 
 export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [startDate, setStartDateState] = useState<string>(() => {
-    return localStorage.getItem('startDate') || getLatestClosedDateStr();
+    // 이전 localStorage에 남아있던 오래된 날짜 캐시 제거 (시크릿모드 불일치 원천 차단)
+    try {
+      localStorage.removeItem('startDate');
+      localStorage.removeItem('endDate');
+      localStorage.removeItem('isRange');
+    } catch {
+      // ignore
+    }
+    return sessionStorage.getItem('startDate') || getLatestClosedDateStr();
   });
   
   const [endDate, setEndDateState] = useState<string | null>(() => {
-    return localStorage.getItem('endDate') || null;
+    return sessionStorage.getItem('endDate') || null;
   });
 
   const [isRange, setIsRangeState] = useState<boolean>(() => {
-    return localStorage.getItem('isRange') === 'true';
+    return sessionStorage.getItem('isRange') === 'true';
   });
 
   const setStartDate = useCallback((date: string) => {
     setStartDateState(date);
-    localStorage.setItem('startDate', date);
+    sessionStorage.setItem('startDate', date);
   }, []);
   
   const setEndDate = useCallback((date: string | null) => {
     setEndDateState(date);
     if (date) {
-      localStorage.setItem('endDate', date);
-      localStorage.setItem('isRange', 'true');
+      sessionStorage.setItem('endDate', date);
+      sessionStorage.setItem('isRange', 'true');
       setIsRangeState(true);
     } else {
-      localStorage.removeItem('endDate');
-      localStorage.removeItem('isRange');
+      sessionStorage.removeItem('endDate');
+      sessionStorage.removeItem('isRange');
       setIsRangeState(false);
     }
   }, []);
@@ -47,10 +55,10 @@ export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setIsRange = useCallback((range: boolean) => {
     setIsRangeState(range);
     if (range) {
-      localStorage.setItem('isRange', 'true');
+      sessionStorage.setItem('isRange', 'true');
     } else {
-      localStorage.removeItem('isRange');
-      localStorage.removeItem('endDate');
+      sessionStorage.removeItem('isRange');
+      sessionStorage.removeItem('endDate');
       setEndDateState(null);
     }
   }, []);
@@ -61,13 +69,13 @@ export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEndDateState(effectiveRange ? end : null);
     setIsRangeState(effectiveRange);
     
-    localStorage.setItem('startDate', start);
+    sessionStorage.setItem('startDate', start);
     if (end && effectiveRange) {
-      localStorage.setItem('endDate', end);
-      localStorage.setItem('isRange', 'true');
+      sessionStorage.setItem('endDate', end);
+      sessionStorage.setItem('isRange', 'true');
     } else {
-      localStorage.removeItem('endDate');
-      localStorage.removeItem('isRange');
+      sessionStorage.removeItem('endDate');
+      sessionStorage.removeItem('isRange');
     }
   }, []);
 

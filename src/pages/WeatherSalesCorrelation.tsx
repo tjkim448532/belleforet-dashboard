@@ -119,23 +119,53 @@ export default function WeatherSalesCorrelation() {
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
   };
 
-  // Distinct categories from venue rankings
-  const availableCategories = useMemo(() => {
+  // Distinct venues deduplicated by venueName (SSOT: 매출 규모가 큰 공식 주(Primary) 카테고리 영업장 보존)
+  const uniqueVenues = useMemo(() => {
     if (!data?.venueRankings) return [];
+    const venueMap = new Map<string, WeatherVenueRankingItem>();
+    
+    // 맑은날 일평균 매출(clearDayAvgRevenue) 기준 내림차순 정렬하여 진성 주관 업장 데이터 우선 배정
+    const sorted = [...data.venueRankings].sort((a, b) => (b.clearDayAvgRevenue || 0) - (a.clearDayAvgRevenue || 0));
+    for (const item of sorted) {
+      if (!venueMap.has(item.venueName)) {
+        venueMap.set(item.venueName, item);
+      }
+    }
+    return Array.from(venueMap.values());
+  }, [data]);
+
+  // Distinct categories from unique venues
+  const availableCategories = useMemo(() => {
+    if (!uniqueVenues.length) return [];
     const map = new Map<string, string>();
-    data.venueRankings.forEach(v => {
+    uniqueVenues.forEach(v => {
       if (v.categoryCode && v.categoryName) {
         map.set(v.categoryCode, v.categoryName);
       }
     });
     return Array.from(map.entries()).map(([code, name]) => ({ code, name }));
-  }, [data]);
+  }, [uniqueVenues]);
 
   // Filtered and sorted venue rankings
-  const filteredVenues = useMemo(() => {
-    if (!data?.venueRankings) return [];
+  const topBeneficiaryVenues = useMemo(() => {
+    if (!uniqueVenues.length) return [];
+    // 골프 부속 잡매출(기타매출 등)을 제외하고 실내·객실·식음·굿즈 중심 진성 수혜 시설 Top 3 추출
+    return uniqueVenues
+      .filter(v => v.categoryCode !== 'GOLF' && v.rainyImpactRate > 0)
+      .sort((a, b) => b.rainyImpactRate - a.rainyImpactRate)
+      .slice(0, 3)
+      .map(v => ({
+        venueName: v.venueName,
+        categoryName: v.categoryName,
+        impactRate: v.rainyImpactRate,
+        deltaRevenue: v.rainyRevenueDelta
+      }));
+  }, [uniqueVenues]);
 
-    let list = [...data.venueRankings];
+  const filteredVenues = useMemo(() => {
+    if (!uniqueVenues.length) return [];
+
+    let list = [...uniqueVenues];
 
     if (selectedCategory !== 'ALL') {
       list = list.filter(v => v.categoryCode === selectedCategory);
@@ -172,7 +202,7 @@ export default function WeatherSalesCorrelation() {
     });
 
     return list;
-  }, [data, selectedCategory, searchQuery, sortBy, dayTypeFilter]);
+  }, [uniqueVenues, selectedCategory, searchQuery, sortBy, dayTypeFilter]);
 
   // Sensitivity Tag Helper
   const getSensitivityBadge = (tag: string, rate: number) => {
@@ -553,7 +583,7 @@ export default function WeatherSalesCorrelation() {
                   </span>
                 </div>
                 <div className="space-y-2 mt-3">
-                  {data.summary?.topBeneficiaryVenues?.slice(0, 3).map((v, i) => (
+                  {topBeneficiaryVenues.map((v, i) => (
                     <div key={v.venueName} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
                       <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
                         <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px] flex items-center justify-center font-bold">{i + 1}</span>
@@ -766,10 +796,10 @@ export default function WeatherSalesCorrelation() {
                     <th className="py-3 px-4 text-center">기상 민감도</th>
                     <th className="py-3 px-4 text-right">☀️ 맑은 날 일평균</th>
                     <th className="py-3 px-4 text-right">🌧️ 비 온 날 일평균</th>
-                    <th className="py-3 px-4 text-right">우천 변동액 ($\Delta$)</th>
-                    <th className="py-3 px-4 text-right font-black">우천 증감률 ($\Delta\%$)</th>
+                    <th className="py-3 px-4 text-right">우천 변동액 (Δ)</th>
+                    <th className="py-3 px-4 text-right font-black">우천 증감률 (Δ%)</th>
                     <th className="py-3 px-4 text-center">주중 vs 휴일 변동</th>
-                    <th className="py-3 px-4 text-right rounded-r-xl">강수 상관계수 ($r$)</th>
+                    <th className="py-3 px-4 text-right rounded-r-xl">강수 상관계수 (r)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -790,7 +820,7 @@ export default function WeatherSalesCorrelation() {
                       const corr = target?.correlationPrecip ?? v.correlationPrecip ?? 0;
 
                       return (
-                        <tr key={v.venueName} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={`${v.categoryCode}_${v.venueName}`} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3 px-4 text-slate-500 font-semibold">{v.categoryName}</td>
                           <td className="py-3 px-4 font-bold text-slate-900">{v.venueName}</td>
                           <td className="py-3 px-4 text-center">
@@ -838,7 +868,7 @@ export default function WeatherSalesCorrelation() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-2">
-              <span>* 피어슨 상관계수($r$): -1.0에 가까울수록 강수량 증가 시 매출 급감, +1.0에 가까울수록 강수량 증가 시 매출 동반 상승을 의미합니다.</span>
+              <span>* 피어슨 상관계수(r): -1.0에 가까울수록 강수량 증가 시 매출 급감, +1.0에 가까울수록 강수량 증가 시 매출 동반 상승을 의미합니다.</span>
               <span className="font-bold text-slate-600">표시 업장: 총 {filteredVenues.length}개 업장</span>
             </div>
           </div>

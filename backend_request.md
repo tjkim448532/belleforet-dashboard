@@ -849,3 +849,21 @@ const reverseSpillover = totalRoomSales > 0
   3. 모든 매출은 1원 단위까지 부가세 제외 순매출(Net Revenue) 기준으로 마트 집계.
   4. 프론트엔드는 본 API가 프로덕션에 배포될 때까지 임의의 더미 데이터를 생성하지 않고, 대기 배너와 스켈레톤 상태를 유지합니다.
 
+---
+
+# 🚨 [백엔드 API 긴급 보강 요청] 날씨 상관관계 API(weather-correlation) 영업장 중복 반환 해소 (2026-10-01)
+
+### 1. 현상 및 원인 분석
+- **엔드포인트**: `GET /api/v6/dashboard/weather-correlation?startDate=...&endDate=...&categoryCode=ALL`
+- **현상**: `venueRankings` 배열 내에 동일 영업장(`얼룩말카페`, `미디어-뮤지엄카페`)이 2개 이상의 레코드로 분할되어 반환됨.
+  - `얼룩말카페`: `MOTO`(모토아레나, 3.1만원/일) / `TICKET`(레저본부, 46.1만원/일) 분할
+  - `미디어-뮤지엄카페`: `TICKET`(레저본부, 8.9만원/일) / `MOTO`(모토아레나, 0.4만원/일) 분할
+- **원인**: 백엔드 데이터 마트(`mat_v6_weather_correlation_summary`) 또는 API 쿼리 집계 시 `GROUP BY category_code, venue_name`으로 처리되어, POS 단말 분산 등록으로 인해 복수 카테고리에 걸쳐 있는 업장이 분할 집계됨.
+
+### 2. 요청 사항 (Pure Consumer & SSOT 원칙)
+- 벨포레 공식 매핑 SSOT(`dim_facility_team_mapping` 및 Admin 매핑)에 따라, 업장의 정규 부문(Category)을 단일 귀속한 후 `GROUP BY venue_name`으로 1개 영업장당 1개 레코드만 산출하도록 마트 집계 쿼리를 정규화해 주십시오:
+  - `얼룩말카페` ➔ **레저본부 (`TICKET`)** 단일 귀속
+  - `미디어-뮤지엄카페` ➔ **레저본부 (`TICKET`)** 단일 귀속
+- 프론트엔드는 임시 조치로서 UI 렌더링 시 주관 부문(진성 매출 기준) 단일화 필터링 및 복합 Key(`categoryCode_venueName`)를 적용하였으나, 근본적인 0-Variance 수치 보존을 위해 백엔드 DB 마트 레벨의 단일 정규 집계를 요청합니다.
+
+

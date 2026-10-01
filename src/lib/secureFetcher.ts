@@ -119,18 +119,19 @@ const sanitizePayloadNumbers = (node: any) => {
 
 
 export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) => {
-  const url = rawUrl;
-  if (url.includes('/api/v5/')) { throw new Error('[Zero-Proxy] V5 구버전 API 호출이 감지되었습니다. V6 엔드포인트로 즉시 교체하십시오.'); }
+  if (rawUrl.includes('/api/v5/')) { throw new Error('[Zero-Proxy] V5 구버전 API 호출이 감지되었습니다. V6 엔드포인트로 즉시 교체하십시오.'); }
+
+  // URL 단위 타임스탬프 쿼리 자동 부착 (CORS 헤더 간섭 없이 100% 캐시 무효화)
+  const separator = rawUrl.includes('?') ? '&' : '?';
+  const url = rawUrl.includes('_t=') ? rawUrl : `${rawUrl}${separator}_t=${Date.now()}`;
 
   const isV6Api = url.includes('/api/v6/') ;
   const token = isV6Api ? 'belleforet-m2m-secret' : await getAuthToken();
 
   const headers = {
-    ...options.headers,
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
+    ...options.headers,
   };
 
   const controller = new AbortController();

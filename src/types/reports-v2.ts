@@ -426,5 +426,63 @@ export interface WeatherSalesCorrelationResponse {
   };
 }
 
+// ============================================================================
+// ⑧ 날씨 예측 시뮬레이션 V6 (weather-forecast-simulation)
+// ============================================================================
+export interface WeatherForecastSimulationVenue {
+  categoryCode: string;
+  categoryName: string;
+  venueName: string;
+  lyWeekdayAvgRevenue: number;
+  forecastWeekdayRevenue: number;
+  weekdayRevenueDelta: number;
+  weekdayImpactRate: number;
+  lyHolidayAvgRevenue: number;
+  forecastHolidayRevenue: number;
+  holidayRevenueDelta: number;
+  holidayImpactRate: number;
+  sensitivityTag: string;
+}
+
+export interface WeatherForecastSimulationCategory {
+  categoryCode: string;
+  categoryName: string;
+  lyWeekdayAvgRevenue: number;
+  forecastWeekdayRevenue: number;
+  weekdayRevenueDelta: number;
+  weekdayImpactRate: number;
+  lyHolidayAvgRevenue: number;
+  forecastHolidayRevenue: number;
+  holidayRevenueDelta: number;
+  holidayImpactRate: number;
+}
+
+export interface WeatherForecastSimulationGrandTotal {
+  lyWeekdayAvgRevenue: number;
+  forecastWeekdayRevenue: number;
+  weekdayRevenueDelta: number;
+  weekdayImpactRate: number;
+  lyHolidayAvgRevenue: number;
+  forecastHolidayRevenue: number;
+  holidayRevenueDelta: number;
+  holidayImpactRate: number;
+}
+
+export interface WeatherForecastSimulationResponse {
+  success: boolean;
+  data: {
+    targetMonth: string;
+    lyMonth: string;
+    weatherInput: {
+      precipitation: number;
+      snowfall: number;
+    };
+    grandTotal: WeatherForecastSimulationGrandTotal;
+    categories: WeatherForecastSimulationCategory[];
+    venues: WeatherForecastSimulationVenue[];
+  };
+}
+
+
 
 

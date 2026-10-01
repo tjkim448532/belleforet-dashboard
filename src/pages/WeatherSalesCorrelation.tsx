@@ -5,13 +5,14 @@ import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import type { 
   WeatherSalesCorrelationResponse,
-  WeatherVenueRankingItem
+  WeatherVenueRankingItem,
+  WeatherForecastSimulationResponse
 } from '../types/reports-v2';
 import { 
   CloudRain, Sun, CloudSnow, TrendingDown, TrendingUp,
   Sparkles, Zap, Calendar, RefreshCw,
   ShieldCheck, HelpCircle, Layers, ArrowUpRight, ArrowDownRight,
-  Search, Umbrella, Compass, Activity
+  Search, Umbrella, Compass, Activity, Sliders, BarChart3
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -52,6 +53,45 @@ export default function WeatherSalesCorrelation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<WeatherSalesCorrelationResponse['data'] | null>(null);
+
+  // 기상 시뮬레이션 상태 (Backend SSOT API 연동)
+  const [simMonth, setSimMonth] = useState<string>('2026-10');
+  const [simPrecipitation, setSimPrecipitation] = useState<number>(15);
+  const [simSnowfall, setSimSnowfall] = useState<number>(0);
+  const [simCategory, setSimCategory] = useState<string>('ALL');
+  const [simViewMode, setSimViewMode] = useState<'COMBINED' | 'WEEKDAY' | 'HOLIDAY'>('COMBINED');
+  const [simSortBy, setSimSortBy] = useState<'weekdayDelta' | 'holidayDelta' | 'name'>('weekdayDelta');
+  const [simSearchQuery, setSimSearchQuery] = useState<string>('');
+
+  const [simLoading, setSimLoading] = useState<boolean>(false);
+  const [simError, setSimError] = useState<string | null>(null);
+  const [simData, setSimData] = useState<WeatherForecastSimulationResponse['data'] | null>(null);
+
+  const fetchSimulationData = async (month: string, precip: number, snow: number, cat: string) => {
+    setSimLoading(true);
+    setSimError(null);
+    try {
+      const url = `${API_BASE}/api/v6/dashboard/weather-forecast-simulation?targetMonth=${month}&precipitation=${precip}&snowfall=${snow}&categoryCode=${cat}`;
+      const res = await secureFetcher(url);
+      if (res && res.success && res.data) {
+        setSimData(res.data);
+      } else {
+        throw new Error(res?.message || '시뮬레이션 데이터 조회에 실패했습니다.');
+      }
+    } catch (err: any) {
+      console.error('Weather Forecast Simulation API Error:', err);
+      setSimError(err?.message || '시뮬레이션 API 호출 중 오류가 발생했습니다.');
+    } finally {
+      setSimLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchSimulationData(simMonth, simPrecipitation, simSnowfall, simCategory);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [simMonth, simPrecipitation, simSnowfall, simCategory]);
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     let sDate = overrideStart || startDate;
@@ -370,6 +410,170 @@ export default function WeatherSalesCorrelation() {
       ]
     };
   }, [data]);
+
+  // 기상 시뮬레이션 필터 및 정렬
+  const simulationVenues = useMemo(() => {
+    if (!simData?.venues) return [];
+    let list = [...simData.venues];
+    if (simSearchQuery.trim()) {
+      const q = simSearchQuery.trim().toLowerCase();
+      list = list.filter(v => v.venueName.toLowerCase().includes(q) || v.categoryName.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      if (simSortBy === 'weekdayDelta') {
+        return a.weekdayRevenueDelta - b.weekdayRevenueDelta;
+      } else if (simSortBy === 'holidayDelta') {
+        return a.holidayRevenueDelta - b.holidayRevenueDelta;
+      } else {
+        return a.venueName.localeCompare(b.venueName);
+      }
+    });
+    return list;
+  }, [simData, simSearchQuery, simSortBy]);
+
+  // ECharts Option for Weather Forecast Simulation (Weekday vs Holiday by Venue)
+  const simChartOption = useMemo(() => {
+    if (!simData || !simulationVenues.length) return {};
+
+    const venueNames = simulationVenues.map(v => v.venueName);
+    const seriesList: any[] = [];
+
+    if (simViewMode === 'COMBINED' || simViewMode === 'WEEKDAY') {
+      seriesList.push({
+        name: '주중 LY 실측 (일평균)',
+        type: 'bar',
+        data: simulationVenues.map(v => v.lyWeekdayAvgRevenue),
+        itemStyle: { color: '#94a3b8', borderRadius: [4, 4, 0, 0] },
+        barMaxWidth: 16
+      });
+      seriesList.push({
+        name: '주중 기상 예측 (일평균)',
+        type: 'bar',
+        data: simulationVenues.map(v => v.forecastWeekdayRevenue),
+        itemStyle: { color: '#0284c7', borderRadius: [4, 4, 0, 0] },
+        barMaxWidth: 16
+      });
+    }
+
+    if (simViewMode === 'COMBINED' || simViewMode === 'HOLIDAY') {
+      seriesList.push({
+        name: '휴일 LY 실측 (일평균)',
+        type: 'bar',
+        data: simulationVenues.map(v => v.lyHolidayAvgRevenue),
+        itemStyle: { color: '#fdba74', borderRadius: [4, 4, 0, 0] },
+        barMaxWidth: 16
+      });
+      seriesList.push({
+        name: '휴일 기상 예측 (일평균)',
+        type: 'bar',
+        data: simulationVenues.map(v => v.forecastHolidayRevenue),
+        itemStyle: { color: '#ea580c', borderRadius: [4, 4, 0, 0] },
+        barMaxWidth: 16
+      });
+    }
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: [12, 16],
+        textStyle: { color: '#f8fafc', fontSize: 12 },
+        formatter: (params: any) => {
+          if (!params || !params.length) return '';
+          const idx = params[0].dataIndex;
+          const venue = simulationVenues[idx];
+          if (!venue) return '';
+
+          const wDeltaSign = venue.weekdayRevenueDelta > 0 ? '+' : '';
+          const hDeltaSign = venue.holidayRevenueDelta > 0 ? '+' : '';
+
+          return `
+            <div style="min-width: 230px;">
+              <div style="font-weight: 800; font-size: 14px; margin-bottom: 2px; color: #ffffff;">${venue.venueName}</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">[${venue.categoryName}] ${simData.lyMonth} 실측 대조 기상 시뮬레이션</div>
+              
+              <div style="border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px; margin-bottom: 6px;">
+                <div style="font-weight: 700; color: #38bdf8; font-size: 11px; margin-bottom: 3px;">주중 (평일) 일평균</div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; color: #cbd5e1; font-size: 11px;">
+                  <span>LY 실측:</span>
+                  <span>${formatCurrency(venue.lyWeekdayAvgRevenue)}원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; color: #ffffff; font-weight: 700; font-size: 11px;">
+                  <span>기상 예측:</span>
+                  <span>${formatCurrency(venue.forecastWeekdayRevenue)}원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: ${venue.weekdayRevenueDelta >= 0 ? '#4ade80' : '#f87171'};">
+                  <span>변동폭:</span>
+                  <span style="font-weight: 700;">${wDeltaSign}${formatCurrency(venue.weekdayRevenueDelta)}원 (${formatRate(venue.weekdayImpactRate)})</span>
+                </div>
+              </div>
+
+              <div style="border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px;">
+                <div style="font-weight: 700; color: #fb923c; font-size: 11px; margin-bottom: 3px;">휴일 (주말/공휴일) 일평균</div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; color: #cbd5e1; font-size: 11px;">
+                  <span>LY 실측:</span>
+                  <span>${formatCurrency(venue.lyHolidayAvgRevenue)}원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; color: #ffffff; font-weight: 700; font-size: 11px;">
+                  <span>기상 예측:</span>
+                  <span>${formatCurrency(venue.forecastHolidayRevenue)}원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: ${venue.holidayRevenueDelta >= 0 ? '#4ade80' : '#f87171'};">
+                  <span>변동폭:</span>
+                  <span style="font-weight: 700;">${hDeltaSign}${formatCurrency(venue.holidayRevenueDelta)}원 (${formatRate(venue.holidayImpactRate)})</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      },
+      legend: {
+        bottom: 0,
+        icon: 'roundRect',
+        itemWidth: 12,
+        itemHeight: 12,
+        textStyle: { color: '#475569', fontSize: 11, fontWeight: 'bold' }
+      },
+      grid: {
+        top: 25,
+        left: '2%',
+        right: '2%',
+        bottom: 45,
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: venueNames,
+        axisLine: { lineStyle: { color: '#e2e8f0' } },
+        axisLabel: {
+          color: '#475569',
+          fontSize: 10,
+          fontWeight: 600,
+          interval: 0,
+          rotate: venueNames.length > 8 ? 30 : 0
+        }
+      },
+      yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+        axisLabel: {
+          color: '#94a3b8',
+          fontSize: 10,
+          formatter: (v: number) => {
+            if (v >= 100000000) return `${(v / 100000000).toFixed(1)}억`;
+            if (v >= 10000) return `${Math.round(v / 10000)}만`;
+            return `${v}`;
+          }
+        }
+      },
+      series: seriesList
+    };
+  }, [simData, simulationVenues, simViewMode]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[1680px] mx-auto min-h-screen bg-slate-50/50">
@@ -873,7 +1077,435 @@ export default function WeatherSalesCorrelation() {
             </div>
           </div>
 
-          {/* 5. Strategic Operations Guide Card */}
+          {/* 5. V6 기상 시뮬레이션: 강수·적설 대비 업장별 예상 매출 예측 (SSOT) */}
+          <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+            {/* Header & Badges */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-sky-50 text-sky-700 text-xs font-bold px-3 py-1 rounded-full border border-sky-200 inline-flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-sky-600" /> V6 공식 기상 예측 시뮬레이터 (Zero-Variance SSOT)
+                  </span>
+                  {simData?.lyMonth && (
+                    <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full border border-slate-200">
+                      대조 기준: 전년 동월 ({simData.lyMonth}) 실측 일평균
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-sky-600" /> 기상 시뮬레이션: 강수·적설 대비 업장별 예상 매출 분석
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  선택한 대상 연월의 전년도(LY) 실측 주중·휴일 매출과 공식 기상 탄력성 모델(SSOT)을 대입하여 산출된 예측치입니다.
+                </p>
+              </div>
+
+              {simLoading && (
+                <div className="flex items-center gap-2 text-xs font-bold text-sky-600 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200 animate-pulse">
+                  <RefreshCw size={13} className="animate-spin" /> 기상 예측 모델 집계 중...
+                </div>
+              )}
+            </div>
+
+            {/* Simulation Parameter Controls */}
+            <div className="bg-slate-50/90 rounded-2xl p-5 border border-slate-200/80 mb-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                
+                {/* Month Picker */}
+                <div className="md:col-span-5 flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Calendar size={14} className="text-sky-600" /> 시뮬레이션 대상 연월 (Target Month)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="month" 
+                      value={simMonth}
+                      onChange={e => e.target.value && setSimMonth(e.target.value)}
+                      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:border-sky-500 shadow-2xs"
+                    />
+                    <div className="flex items-center gap-1 text-[11px] font-bold">
+                      {['2026-10', '2026-11', '2026-12', '2026-09'].map(m => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setSimMonth(m)}
+                          className={`px-2 py-1 rounded-lg border transition-all ${
+                            simMonth === m ? 'bg-sky-600 text-white border-sky-600 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {m.slice(5)}월
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Category Selector */}
+                <div className="md:col-span-7 flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Layers size={14} className="text-indigo-600" /> 부문 필터 (Category)
+                  </label>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[
+                      { code: 'ALL', name: '전체 부문' },
+                      { code: 'GOLF', name: '골프' },
+                      { code: 'TICKET', name: '레저본부' },
+                      { code: 'FNB', name: '식음' },
+                      { code: 'ROOM', name: '콘도' },
+                    ].map(c => (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => setSimCategory(c.code)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
+                          simCategory === c.code 
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Sliders: Precipitation & Snowfall */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-200/70">
+                
+                {/* Precipitation Slider */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <CloudRain size={16} className="text-sky-500" /> 주간 예상 강수량 (06~20시)
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-50 text-sky-700 border border-sky-200">
+                      {simPrecipitation} mm
+                    </span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={100} 
+                    step={1} 
+                    value={simPrecipitation} 
+                    onChange={e => setSimPrecipitation(Number(e.target.value))} 
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600"
+                  />
+                  <div className="flex items-center justify-between text-[11px] pt-1">
+                    {[
+                      { label: '맑음 0mm', val: 0 },
+                      { label: '약한 비 5mm', val: 5 },
+                      { label: '보통 비 15mm', val: 15 },
+                      { label: '집중호우 40mm', val: 40 },
+                    ].map(p => (
+                      <button
+                        key={p.val}
+                        type="button"
+                        onClick={() => setSimPrecipitation(p.val)}
+                        className={`px-2 py-0.5 rounded-md font-semibold text-[10px] border transition-colors ${
+                          simPrecipitation === p.val ? 'bg-sky-100 text-sky-800 border-sky-300 font-bold' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Snowfall Slider */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <CloudSnow size={16} className="text-indigo-500" /> 주간 예상 적설량 (06~20시)
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {simSnowfall} cm
+                    </span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={20} 
+                    step={0.5} 
+                    value={simSnowfall} 
+                    onChange={e => setSimSnowfall(Number(e.target.value))} 
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  />
+                  <div className="flex items-center justify-between text-[11px] pt-1">
+                    {[
+                      { label: '눈 없음 0cm', val: 0 },
+                      { label: '약한 눈 2cm', val: 2 },
+                      { label: '대설 5cm', val: 5 },
+                      { label: '폭설 10cm', val: 10 },
+                    ].map(s => (
+                      <button
+                        key={s.val}
+                        type="button"
+                        onClick={() => setSimSnowfall(s.val)}
+                        className={`px-2 py-0.5 rounded-md font-semibold text-[10px] border transition-colors ${
+                          simSnowfall === s.val ? 'bg-indigo-100 text-indigo-800 border-indigo-300 font-bold' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {simError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-xs text-red-700 flex items-center gap-2">
+                <HelpCircle size={16} className="text-red-500 shrink-0" />
+                <span>{simError}</span>
+              </div>
+            )}
+
+            {/* Simulation Results (Grand Total & Chart) */}
+            {simData && (
+              <div className="space-y-6">
+                
+                {/* Grand Total Comparison Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  
+                  {/* Weekday Forecast Card */}
+                  <div className="bg-gradient-to-br from-sky-50/70 to-white p-6 rounded-2xl border border-sky-100 shadow-xs relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-sky-800 flex items-center gap-1.5">
+                        <Activity size={16} className="text-sky-600" /> 주중 (평일) 일평균 예상 총매출
+                      </span>
+                      <span className="text-[11px] font-bold bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-full border border-sky-200">
+                        월~목 & 일요일
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                      <div className="text-2xl font-black text-slate-900 font-financial">
+                        {formatCurrency(simData.grandTotal?.forecastWeekdayRevenue)}원
+                      </div>
+                      <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-md font-financial font-extrabold text-xs ${
+                        (simData.grandTotal?.weekdayRevenueDelta ?? 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {(simData.grandTotal?.weekdayRevenueDelta ?? 0) >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        {formatRate(simData.grandTotal?.weekdayImpactRate)}
+                      </span>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-sky-100/80 flex items-center justify-between text-xs text-slate-500 font-financial">
+                      <span>전년 동월({simData.lyMonth}) 실측 일평균: <strong>{formatCurrency(simData.grandTotal?.lyWeekdayAvgRevenue)}원</strong></span>
+                      <span className={simData.grandTotal?.weekdayRevenueDelta >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                        변동: {simData.grandTotal?.weekdayRevenueDelta > 0 ? '+' : ''}{formatCurrency(simData.grandTotal?.weekdayRevenueDelta)}원
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Holiday Forecast Card */}
+                  <div className="bg-gradient-to-br from-amber-50/70 to-white p-6 rounded-2xl border border-amber-100 shadow-xs relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                        <Activity size={16} className="text-amber-600" /> 휴일 (주말/공휴일) 일평균 예상 총매출
+                      </span>
+                      <span className="text-[11px] font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full border border-amber-200">
+                        금·토 & 공휴일
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                      <div className="text-2xl font-black text-slate-900 font-financial">
+                        {formatCurrency(simData.grandTotal?.forecastHolidayRevenue)}원
+                      </div>
+                      <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-md font-financial font-extrabold text-xs ${
+                        (simData.grandTotal?.holidayRevenueDelta ?? 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {(simData.grandTotal?.holidayRevenueDelta ?? 0) >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        {formatRate(simData.grandTotal?.holidayImpactRate)}
+                      </span>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-amber-100/80 flex items-center justify-between text-xs text-slate-500 font-financial">
+                      <span>전년 동월({simData.lyMonth}) 실측 일평균: <strong>{formatCurrency(simData.grandTotal?.lyHolidayAvgRevenue)}원</strong></span>
+                      <span className={simData.grandTotal?.holidayRevenueDelta >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                        변동: {simData.grandTotal?.holidayRevenueDelta > 0 ? '+' : ''}{formatCurrency(simData.grandTotal?.holidayRevenueDelta)}원
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Category Pills Breakdown */}
+                {simData.categories && simData.categories.length > 0 && (
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-600 mb-2.5 flex items-center gap-1.5">
+                      <Layers size={14} className="text-slate-500" /> 부문별 예측 요약 ({simData.targetMonth})
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      {simData.categories.map(cat => (
+                        <div key={cat.categoryCode} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+                          <div className="text-xs font-bold text-slate-800 truncate mb-1">{cat.categoryName}</div>
+                          <div className="text-[11px] text-slate-500 flex justify-between font-financial">
+                            <span>주중:</span>
+                            <span className={cat.weekdayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                              {formatRate(cat.weekdayImpactRate)}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex justify-between font-financial">
+                            <span>휴일:</span>
+                            <span className={cat.holidayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                              {formatRate(cat.holidayImpactRate)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ECharts Chart: Venues Weekday vs Holiday */}
+                <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/80">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                        <BarChart3 size={16} className="text-sky-600" /> 영업장별 예상 매출 비교 (주중 vs 휴일)
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        전년 동월 실측 대비 기상 조건({simPrecipitation > 0 ? `강수 ${simPrecipitation}mm` : ''}{simPrecipitation > 0 && simSnowfall > 0 ? ', ' : ''}{simSnowfall > 0 ? `적설 ${simSnowfall}cm` : ''}{simPrecipitation === 0 && simSnowfall === 0 ? '맑음' : ''}) 대입 결과
+                      </p>
+                    </div>
+
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center bg-slate-200/70 p-1 rounded-xl text-xs font-bold border border-slate-300/60">
+                      <button
+                        type="button"
+                        onClick={() => setSimViewMode('COMBINED')}
+                        className={`px-3 py-1 rounded-lg transition-all ${
+                          simViewMode === 'COMBINED' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        주중·휴일 통합
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSimViewMode('WEEKDAY')}
+                        className={`px-3 py-1 rounded-lg transition-all ${
+                          simViewMode === 'WEEKDAY' ? 'bg-white text-sky-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        주중(평일) 집중
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSimViewMode('HOLIDAY')}
+                        className={`px-3 py-1 rounded-lg transition-all ${
+                          simViewMode === 'HOLIDAY' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        휴일(주말) 집중
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-[400px] w-full">
+                    <ReactECharts option={simChartOption} style={{ height: '100%', width: '100%' }} notMerge={true} />
+                  </div>
+                </div>
+
+                {/* Detailed Table */}
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Layers size={14} className="text-indigo-600" /> 영업장별 정밀 예측 명세표 (총 {simulationVenues.length}개 업장)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="업장명 검색..."
+                          value={simSearchQuery}
+                          onChange={e => setSimSearchQuery(e.target.value)}
+                          className="pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-hidden focus:border-sky-500 w-36"
+                        />
+                      </div>
+                      <select
+                        value={simSortBy}
+                        onChange={e => setSimSortBy(e.target.value as any)}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 focus:outline-hidden"
+                      >
+                        <option value="weekdayDelta">주중 변동액순</option>
+                        <option value="holidayDelta">휴일 변동액순</option>
+                        <option value="name">업장명 가나다순</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-100 rounded-2xl shadow-xs">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-100 text-[11px]">
+                          <th className="py-2.5 px-3 font-bold">부문</th>
+                          <th className="py-2.5 px-3 font-bold">영업장명</th>
+                          <th className="py-2.5 px-3 font-bold text-center">민감도</th>
+                          <th className="py-2.5 px-3 font-bold text-right">주중 LY 실측</th>
+                          <th className="py-2.5 px-3 font-bold text-right text-sky-800">주중 기상 예측</th>
+                          <th className="py-2.5 px-3 font-bold text-right text-sky-800">주중 변동률</th>
+                          <th className="py-2.5 px-3 font-bold text-right">휴일 LY 실측</th>
+                          <th className="py-2.5 px-3 font-bold text-right text-amber-800">휴일 기상 예측</th>
+                          <th className="py-2.5 px-3 font-bold text-right text-amber-800">휴일 변동률</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {simulationVenues.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
+                              선택된 조건에 부합하는 업장이 없습니다.
+                            </td>
+                          </tr>
+                        ) : (
+                          simulationVenues.map(v => {
+                            const badge = getSensitivityBadge(v.sensitivityTag, v.weekdayImpactRate);
+                            return (
+                              <tr key={`${v.categoryCode}_${v.venueName}`} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="py-2.5 px-3 text-slate-500 font-medium">{v.categoryName}</td>
+                                <td className="py-2.5 px-3 font-bold text-slate-900">{v.venueName}</td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg}`}>
+                                    {badge.text}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-financial text-slate-500">
+                                  {formatCurrency(v.lyWeekdayAvgRevenue)}원
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-financial font-bold text-slate-900">
+                                  {formatCurrency(v.forecastWeekdayRevenue)}원
+                                </td>
+                                <td className={`py-2.5 px-3 text-right font-financial font-extrabold ${v.weekdayRevenueDelta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {formatRate(v.weekdayImpactRate)}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-financial text-slate-500">
+                                  {formatCurrency(v.lyHolidayAvgRevenue)}원
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-financial font-bold text-slate-900">
+                                  {formatCurrency(v.forecastHolidayRevenue)}원
+                                </td>
+                                <td className={`py-2.5 px-3 text-right font-financial font-extrabold ${v.holidayRevenueDelta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {formatRate(v.holidayImpactRate)}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
+          </div>
+
+          {/* 6. Strategic Operations Guide Card */}
           <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[28px] p-8 text-white shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-2 mb-4">
               <span className="bg-indigo-500/30 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30">

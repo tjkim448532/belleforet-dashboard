@@ -35,6 +35,7 @@ import GroupSales from './pages/GroupSales';
 import TargetSimulator from './pages/TargetSimulator';
 import StrategicSimulator from './pages/StrategicSimulator';
 import AdminCapacity from './pages/AdminCapacity';
+import WeatherSalesCorrelation from './pages/WeatherSalesCorrelation';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -96,6 +97,8 @@ export function App() {
                   <Route path="synergy" element={<Synergy />} />
                   <Route path="synergy/correlation" element={<SynergyCorrelation />} />
                   <Route path="synergy-correlation" element={<SynergyCorrelation />} />
+                  <Route path="synergy/weather-sales" element={<WeatherSalesCorrelation />} />
+                  <Route path="synergy-weather" element={<WeatherSalesCorrelation />} />
                   <Route path="online-members" element={<OnlineMembers />} />
                 </Route>
 

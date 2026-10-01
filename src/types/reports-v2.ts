@@ -339,5 +339,92 @@ export interface SalesVenuePerformanceResponse {
   error?: string;
 }
 
+// ============================================================================
+// ⑩ 날씨-매출 상관관계 분석 (weather-correlation)
+// ============================================================================
+export interface WeatherStats {
+  rainyDays: number;
+  snowyDays: number;
+  clearDays: number;
+  avgPrecipitation: number;
+  maxPrecipitation: number;
+}
+
+export interface WeatherImpactVenue {
+  venueName: string;
+  categoryName: string;
+  impactRate: number;
+  deltaRevenue: number;
+}
+
+export interface WeatherCorrelationDayBreakdown {
+  correlationPrecip: number;
+  correlationSnow: number;
+  clearDayAvgRevenue: number;
+  rainyDayAvgRevenue: number;
+  snowyDayAvgRevenue: number;
+  rainyRevenueDelta: number;
+  rainyImpactRate: number;
+  snowyRevenueDelta: number;
+  snowyImpactRate: number;
+  sampleClearDays: number;
+  sampleRainyDays: number;
+  sampleSnowyDays: number;
+  sensitivityTag: string;
+}
+
+export interface WeatherVenueRankingItem {
+  categoryCode: string;
+  categoryName: string;
+  venueName: string;
+  correlationPrecip: number;
+  correlationSnow: number;
+  clearDayAvgRevenue: number;
+  rainyDayAvgRevenue: number;
+  snowyDayAvgRevenue: number;
+  rainyRevenueDelta: number;
+  rainyImpactRate: number;
+  snowyRevenueDelta: number;
+  snowyImpactRate: number;
+  sensitivityTag: string;
+  weekday: WeatherCorrelationDayBreakdown;
+  holiday: WeatherCorrelationDayBreakdown;
+}
+
+export interface WeatherDailyTimeSeriesItem {
+  date: string;
+  dayType: 'WEEKDAY' | 'HOLIDAY';
+  dayName: string;
+  precipitation: number;
+  snowfall: number;
+  avgTemp: number;
+  weatherCondition: 'RAIN' | 'SNOW' | 'CLEAR';
+  totalRevenue: number;
+  golfRevenue: number;
+  ticketRevenue: number;
+  fnbRevenue: number;
+  roomRevenue: number;
+  motoRevenue: number;
+  goodsRevenue: number;
+}
+
+export interface WeatherSalesCorrelationResponse {
+  success: boolean;
+  data: {
+    summary: {
+      period: {
+        startDate: string;
+        endDate: string;
+        totalDays: number;
+      };
+      weatherStats: WeatherStats;
+      topVulnerableVenues: WeatherImpactVenue[];
+      topBeneficiaryVenues: WeatherImpactVenue[];
+    };
+    venueRankings: WeatherVenueRankingItem[];
+    dailyTimeSeries: WeatherDailyTimeSeriesItem[];
+  };
+}
+
 
 

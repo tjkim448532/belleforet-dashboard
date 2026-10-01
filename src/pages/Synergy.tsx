@@ -6,7 +6,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { 
   Zap, Building2, TrendingUp, Sparkles, 
   Hotel, Activity, Calendar, RefreshCw, ShieldCheck, CreditCard,
-  Globe, Smartphone, PhoneCall, Users, Layers, Landmark
+  Globe, Smartphone, PhoneCall, Users, Layers, Landmark, CloudRain
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -475,6 +475,15 @@ export default function Synergy() {
                 }`}
               >
                 <Zap size={14} className="shrink-0" /> <span className="whitespace-nowrap">2. 앵커시설 순수 인과 & CAPA 분석</span>
+              </NavLink>
+
+              <NavLink 
+                to="/synergy/weather-sales" 
+                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+                  isActive ? 'bg-sky-500 text-white shadow-md ring-2 ring-sky-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                <CloudRain size={14} className="shrink-0" /> <span className="whitespace-nowrap">3. 🌦️ 날씨-매출 상관관계 분석</span>
               </NavLink>
             </div>
           </div>

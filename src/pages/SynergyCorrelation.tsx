@@ -7,7 +7,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import type { SynergyStoreCorrelationV2Response } from '../types/reports-v2';
 import { 
   TrendingUp, Calendar, RefreshCw, Grid, Zap,
-  Sparkles, HelpCircle
+  Sparkles, HelpCircle, CloudRain
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -156,6 +156,13 @@ export default function SynergyCorrelation() {
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30"
               >
                 <Zap size={14} /> 2. 매장 시너지 분석 V2
+              </NavLink>
+
+              <NavLink 
+                to="/synergy/weather-sales" 
+                className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-white/10 text-slate-300 hover:bg-white/20"
+              >
+                <CloudRain size={14} /> 3. 🌦️ 날씨-매출 상관관계 분석
               </NavLink>
             </div>
           </div>

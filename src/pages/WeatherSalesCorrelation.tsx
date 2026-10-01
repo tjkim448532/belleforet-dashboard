@@ -38,6 +38,15 @@ const formatRate = (rate: number | undefined | null) => {
   return `${sign}${rate.toFixed(1)}%`;
 };
 
+// 영업장 제외 목록 (room, room other, 기타매출 전면 제외)
+const EXCLUDED_VENUES = new Set(['ROOM', 'ROOM OTHER', '기타매출']);
+
+const isExcludedVenue = (name: string | undefined | null): boolean => {
+  if (!name) return false;
+  const normalized = String(name).trim().replace(/\s+/g, ' ').toUpperCase();
+  return EXCLUDED_VENUES.has(normalized);
+};
+
 export default function WeatherSalesCorrelation() {
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
 
@@ -167,6 +176,7 @@ export default function WeatherSalesCorrelation() {
     // 맑은날 일평균 매출(clearDayAvgRevenue) 기준 내림차순 정렬하여 진성 주관 업장 데이터 우선 배정
     const sorted = [...data.venueRankings].sort((a, b) => (b.clearDayAvgRevenue || 0) - (a.clearDayAvgRevenue || 0));
     for (const item of sorted) {
+      if (isExcludedVenue(item.venueName)) continue;
       if (!venueMap.has(item.venueName)) {
         venueMap.set(item.venueName, item);
       }
@@ -414,7 +424,7 @@ export default function WeatherSalesCorrelation() {
   // 기상 시뮬레이션 필터 및 정렬
   const simulationVenues = useMemo(() => {
     if (!simData?.venues) return [];
-    let list = [...simData.venues];
+    let list = simData.venues.filter(v => !isExcludedVenue(v.venueName));
     if (simSearchQuery.trim()) {
       const q = simSearchQuery.trim().toLowerCase();
       list = list.filter(v => v.venueName.toLowerCase().includes(q) || v.categoryName.toLowerCase().includes(q));
@@ -756,7 +766,7 @@ export default function WeatherSalesCorrelation() {
                   </span>
                 </div>
                 <div className="space-y-2 mt-3">
-                  {data.summary?.topVulnerableVenues?.slice(0, 3).map((v, i) => (
+                  {data.summary?.topVulnerableVenues?.filter(v => !isExcludedVenue(v.venueName)).slice(0, 3).map((v, i) => (
                     <div key={v.venueName} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
                       <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
                         <span className="w-4 h-4 rounded-full bg-red-100 text-red-700 text-[10px] flex items-center justify-center font-bold">{i + 1}</span>
@@ -1151,7 +1161,6 @@ export default function WeatherSalesCorrelation() {
                       { code: 'GOLF', name: '골프' },
                       { code: 'TICKET', name: '레저본부' },
                       { code: 'FNB', name: '식음' },
-                      { code: 'ROOM', name: '콘도' },
                     ].map(c => (
                       <button
                         key={c.code}
@@ -1338,8 +1347,8 @@ export default function WeatherSalesCorrelation() {
                     <div className="text-xs font-bold text-slate-600 mb-2.5 flex items-center gap-1.5">
                       <Layers size={14} className="text-slate-500" /> 부문별 예측 요약 ({simData.targetMonth})
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                      {simData.categories.map(cat => (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      {simData.categories.filter(cat => cat.categoryCode !== 'ROOM').map(cat => (
                         <div key={cat.categoryCode} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                           <div className="text-xs font-bold text-slate-800 truncate mb-1">{cat.categoryName}</div>
                           <div className="text-[11px] text-slate-500 flex justify-between font-financial">

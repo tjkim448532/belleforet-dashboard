@@ -7,6 +7,7 @@ import {
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import { getLatestClosedDateStr } from '../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { transformResortData } from '../lib/dataTransformers';
@@ -120,7 +121,7 @@ export default function ResortBusiness() {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = endDate && startDate !== endDate
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-          : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
+          : `date=${startDate || getLatestClosedDateStr()}&_t=${Date.now()}`;
           
           const [overviewRes, channelRes, rateRes] = await Promise.all([
             secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),

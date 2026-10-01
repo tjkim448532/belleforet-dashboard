@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, Database, Activity, Server, FileBox, CalendarRange, CheckCircle2 } from 'lucide-react';
+import { secureFetcher } from '../lib/secureFetcher';
 
 interface EtlLog {
   source_file_name: string;
@@ -21,16 +22,13 @@ export const DataSyncStatus: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/v6/admin/etl-logs`);
-      if (!response.ok) throw new Error('Failed to fetch data sync status');
-      
-      const data = await response.json();
-      if (data.status === 'SUCCESS') {
-        setLogs(data.data);
+      const data = await secureFetcher(`${API_BASE}/api/v6/admin/etl-logs?_t=${Date.now()}`);
+      if (data && (data.status === 'SUCCESS' || Array.isArray(data.data) || Array.isArray(data))) {
+        setLogs(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
         const now = new Date();
         setLastUpdated(now.toLocaleTimeString('en-US', { hour12: false }) + '.' + now.getMilliseconds().toString().padStart(3, '0'));
       } else {
-        throw new Error('Invalid response from server');
+        throw new Error(data?.message || 'Invalid response from server');
       }
     } catch (err: any) {
       setError(err.message || 'Unknown error occurred');

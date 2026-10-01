@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
-import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
+import { getPresetDateRange, getLatestClosedDateStr, getLatestClosedMonthStr, getClosedBusinessDate, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import type { 
   WeatherSalesCorrelationResponse,
@@ -50,9 +50,13 @@ const isExcludedVenue = (name: string | undefined | null): boolean => {
 export default function WeatherSalesCorrelation() {
   const { startDate: globalStartDate, endDate: globalEndDate, isRange: globalIsRange, setDateRange } = useDate();
 
+  const defaultLatest = getLatestClosedDateStr();
+  const defaultStart = globalStartDate || (defaultLatest.slice(0, 7) + '-01');
+  const defaultEnd = globalEndDate || defaultLatest;
+
   const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
-  const [startDate, setStartDate] = useState<string>(globalStartDate || '2026-09-01');
-  const [endDate, setEndDate] = useState<string>(globalEndDate || '2026-09-30');
+  const [startDate, setStartDate] = useState<string>(defaultStart);
+  const [endDate, setEndDate] = useState<string>(defaultEnd);
   
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [dayTypeFilter, setDayTypeFilter] = useState<'TOTAL' | 'WEEKDAY' | 'HOLIDAY'>('TOTAL');
@@ -64,7 +68,7 @@ export default function WeatherSalesCorrelation() {
   const [data, setData] = useState<WeatherSalesCorrelationResponse['data'] | null>(null);
 
   // 기상 시뮬레이션 상태 (Backend SSOT API 연동)
-  const [simMonth, setSimMonth] = useState<string>('2026-10');
+  const [simMonth, setSimMonth] = useState<string>(getLatestClosedMonthStr());
   const [simPrecipitation, setSimPrecipitation] = useState<number>(15);
   const [simSnowfall, setSimSnowfall] = useState<number>(0);
   const [simCategory, setSimCategory] = useState<string>('ALL');
@@ -139,10 +143,16 @@ export default function WeatherSalesCorrelation() {
   };
 
   useEffect(() => {
+    const latestClosed = getLatestClosedDateStr();
+    const fallbackStart = latestClosed.slice(0, 7) + '-01';
+    const fallbackEnd = latestClosed;
+    const s = globalStartDate || fallbackStart;
+    const e = globalEndDate || fallbackEnd;
+
     setIsRangeMode(globalIsRange);
-    setStartDate(globalStartDate || '2026-09-01');
-    setEndDate(globalEndDate || '2026-09-30');
-    fetchData(globalStartDate || '2026-09-01', globalEndDate || '2026-09-30', globalIsRange);
+    setStartDate(s);
+    setEndDate(e);
+    fetchData(s, e, globalIsRange);
   }, [globalStartDate, globalEndDate, globalIsRange]);
 
   const handleSearch = () => {
@@ -1134,7 +1144,10 @@ export default function WeatherSalesCorrelation() {
                       className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:border-sky-500 shadow-2xs"
                     />
                     <div className="flex items-center gap-1 text-[11px] font-bold">
-                      {['2026-10', '2026-11', '2026-12', '2026-09'].map(m => (
+                      {(() => {
+                        const yr = simMonth ? simMonth.split('-')[0] : String(getClosedBusinessDate(1).getFullYear());
+                        return [`${yr}-10`, `${yr}-11`, `${yr}-12`, `${yr}-09`];
+                      })().map(m => (
                         <button
                           key={m}
                           type="button"

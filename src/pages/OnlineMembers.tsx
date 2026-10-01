@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
+import { getLatestClosedDateStr } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { Users, TrendingUp, UserPlus, RefreshCw, Activity, CalendarDays, PieChart, TableProperties, BarChart3 } from 'lucide-react';
@@ -47,7 +48,7 @@ export default function OnlineMembers() {
   const trends = data?.trends || { daily: [], monthly: [] };
   const channelBreakdown = data?.channelBreakdown || {};
   const recentMembers = data?.recentMembers || [];
-  const currentMonthNum = parseInt(endDate ? endDate.slice(5, 7) : new Date().toISOString().slice(5, 7), 10);
+  const currentMonthNum = parseInt(endDate ? endDate.slice(5, 7) : getLatestClosedDateStr().slice(5, 7), 10);
 
   const pieOptions = {
     tooltip: { trigger: 'item', formatter: '{b}: {c}명 ({d}%)' },

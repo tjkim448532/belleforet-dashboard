@@ -141,10 +141,10 @@ export default function AdminRoles() {
 
     if (!confirm('입력하신 구글 시트에서 최신 명단을 불러와 일괄 등록하시겠습니까? (기존 권한은 최신 내용으로 덮어쓰기 됩니다)')) return;
     setImporting(true);
-    
     try {
-      // CSV 데이터 가져오기
-      const response = await fetch(fetchUrl);
+      // CSV 데이터 가져오기 (캐시 무효화 적용)
+      const bustUrl = `${fetchUrl}${fetchUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+      const response = await fetch(bustUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error('구글 시트를 읽을 수 없습니다. "링크가 있는 모든 사용자 보기 가능" 설정인지 확인해주세요.');
       
       const csvText = await response.text();

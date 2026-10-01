@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { LayoutDashboard, ShieldCheck, Users, AlertTriangle, Gauge } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { parseNum } from '../lib/dataTransformers';
+import { secureFetcher } from '../lib/secureFetcher';
 
 export default function AdminLayout() {
   const { isAdmin } = useAuth();
@@ -13,10 +14,8 @@ export default function AdminLayout() {
       const fetchEtlStatus = async () => {
         try {
           const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-          const res = await fetch(`${API_BASE}/api/v6/admin/system/etl-status`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.status === 'SUCCESS' && data.data) {
+          const data = await secureFetcher(`${API_BASE}/api/v6/admin/system/etl-status?_t=${Date.now()}`);
+          if (data && data.status === 'SUCCESS' && data.data) {
               const gap = parseNum(data.data.ticket_gap || data.data.variance_gap || 0);
               const unmappedCount = parseNum(data.data.unmapped_count || 0);
               if (Math.abs(gap) >= 1 || unmappedCount > 0) {
@@ -28,7 +27,6 @@ export default function AdminLayout() {
                 setEtlAlert(null);
               }
             }
-          }
         } catch (e) {
           console.error("Failed to fetch ETL status", e);
         }

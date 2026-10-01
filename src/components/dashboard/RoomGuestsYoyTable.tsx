@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { BedDouble, RefreshCw, AlertCircle, HelpCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { useDate } from '../../contexts/DateContext';
+import { getClosedBusinessDate, getClosedBusinessYear } from '../../lib/dateUtils';
 import type { RoomGuestsYoyResponse, RoomGuestsYoyRow } from '../../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -18,10 +19,14 @@ export default function RoomGuestsYoyTable() {
     setError(null);
     try {
       // 1. Fetch Room Guests YoY Matrix & 2. Fetch Monthly Room Efficiency for Room Subtotal (ROOM + ROOM OTHER)
-      const [resYoy, resEff26, resEff25] = await Promise.all([
+      const curYear = getClosedBusinessYear();
+      const prevYear = curYear - 1;
+      const prev2Year = curYear - 2;
+
+      const [resYoy, resEffCurrent, resEffPrev] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy?startYear=2024`),
-        secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=2026&compareYear=2025`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=2025&compareYear=2024`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=${curYear}&compareYear=${prevYear}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=${prevYear}&compareYear=${prev2Year}`).catch(() => null),
       ]);
 
       const payloadYoy: RoomGuestsYoyResponse = resYoy?.data ?? resYoy;
@@ -32,21 +37,24 @@ export default function RoomGuestsYoyTable() {
       }
 
       // Build Revenue Map by Year & Month (ROOM + ROOM OTHER Subtotal)
-      const revMap: Record<string, Record<number, number>> = { '2024': {}, '2025': {}, '2026': {} };
-      if (resEff26?.monthlyComparison) {
-        resEff26.monthlyComparison.forEach((m: any) => {
+      const revMap: Record<string, Record<number, number>> = {};
+      for (let y = 2024; y <= curYear; y++) {
+        revMap[String(y)] = {};
+      }
+      if (resEffCurrent?.monthlyComparison) {
+        resEffCurrent.monthlyComparison.forEach((m: any) => {
           if (typeof m.ty?.roomRevenue === 'number' && m.ty.roomRevenue > 0) {
-            revMap['2026'][m.month] = m.ty.roomRevenue;
+            revMap[String(curYear)][m.month] = m.ty.roomRevenue;
           }
           if (typeof m.ly?.roomRevenue === 'number' && m.ly.roomRevenue > 0) {
-            revMap['2025'][m.month] = m.ly.roomRevenue;
+            revMap[String(prevYear)][m.month] = m.ly.roomRevenue;
           }
         });
       }
-      if (resEff25?.monthlyComparison) {
-        resEff25.monthlyComparison.forEach((m: any) => {
-          if (typeof m.ly?.roomRevenue === 'number' && m.ly.roomRevenue > 0) {
-            revMap['2024'][m.month] = m.ly.roomRevenue;
+      if (resEffPrev?.monthlyComparison) {
+        resEffPrev.monthlyComparison.forEach((m: any) => {
+          if (typeof m.ly?.roomRevenue === 'number' && m.ly.roomRevenue > 0 && !revMap[String(prev2Year)][m.month]) {
+            revMap[String(prev2Year)][m.month] = m.ly.roomRevenue;
           }
         });
       }
@@ -66,18 +74,18 @@ export default function RoomGuestsYoyTable() {
 
   // Currently viewed month from global date context (e.g. '2026-09-26' -> month 9)
   const currentMonthNum = useMemo(() => {
-    if (!startDate) return new Date().getMonth() + 1;
+    if (!startDate) return getClosedBusinessDate(1).getMonth() + 1;
     const parts = startDate.split('-');
     if (parts.length >= 2) {
       return parseInt(parts[1], 10);
     }
-    return new Date().getMonth() + 1;
+    return getClosedBusinessDate(1).getMonth() + 1;
   }, [startDate]);
 
   // Current year string from global date context (e.g. '2026')
   const currentYearStr = useMemo(() => {
-    if (!startDate) return String(new Date().getFullYear());
-    return startDate.split('-')[0] || String(new Date().getFullYear());
+    if (!startDate) return String(getClosedBusinessYear());
+    return startDate.split('-')[0] || String(getClosedBusinessYear());
   }, [startDate]);
 
   // Extract years dynamically from backend response

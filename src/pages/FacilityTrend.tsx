@@ -3,6 +3,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
 import { Store, TrendingUp, Calendar, AlertCircle, RefreshCw, Scale, TreePine } from 'lucide-react';
 import { useDate } from '../contexts/DateContext';
+import { getLatestClosedMonthStr } from '../lib/dateUtils';
 import HolidayComparison from '../components/dashboard/HolidayComparison';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -96,7 +97,7 @@ export default function FacilityTrend() {
 
         // 2024-01부터 데이터가 존재하는 최신 월까지 연속 월 배열 생성 (과거 날짜 캐시로 인한 잘림 방지)
         const allMonths = Array.from(monthlyDataMap.keys()).sort();
-        const latestAvailableMonth = allMonths.length > 0 ? allMonths[allMonths.length - 1] : '2026-12';
+        const latestAvailableMonth = allMonths.length > 0 ? allMonths[allMonths.length - 1] : getLatestClosedMonthStr();
         const [endYear, endMonth] = latestAvailableMonth.split('-').map(Number);
         
         let curYear = 2024;

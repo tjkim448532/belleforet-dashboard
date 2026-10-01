@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import { getLatestClosedDateStr } from '../lib/dateUtils';
 import type { GolfChannelAnalysisV2Response } from '../types/reports-v2';
 import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
 
@@ -27,7 +28,7 @@ export default function GolfBusiness() {
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const queryParams = endDate && startDate !== endDate
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-          : `date=${startDate || new Date().toISOString().split('T')[0]}&_t=${Date.now()}`;
+          : `date=${startDate || getLatestClosedDateStr()}&_t=${Date.now()}`;
 
         const res = await secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`);
         

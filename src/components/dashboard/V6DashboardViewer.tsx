@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDate } from '../../contexts/DateContext';
+import { secureFetcher } from '../../lib/secureFetcher';
+import { getLatestClosedDateStr } from '../../lib/dateUtils';
 
 // --- 1. 백엔드(SSOT) 명세에 대한 정의 ---
 interface RevenueMetrics {
@@ -87,14 +89,12 @@ export default function V6DashboardViewer() {
       setLoading(true);
       setError(null);
       try {
+        const latestClosed = getLatestClosedDateStr();
         const query = isRangeMode
-          ? `startDate=${startDate}&endDate=${endDate}`
-          : `date=${startDate}`;
-        const res = await fetch(`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?${query}`);
-        if (!res.ok) throw new Error(`HTTP 통신 에러: ${res.status}`);
-        
-        const json = await res.json();
-        setData(json.data || json);
+          ? `startDate=${startDate || latestClosed}&endDate=${endDate || latestClosed}&_t=${Date.now()}`
+          : `date=${startDate || latestClosed}&_t=${Date.now()}`;
+        const res = await secureFetcher(`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?${query}`);
+        setData(res?.data || res);
       } catch (err: any) {
         setError(err.message || '데이터를 불러오는데 실패했습니다.');
       } finally {

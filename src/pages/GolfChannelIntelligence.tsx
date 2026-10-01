@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import { getLatestClosedDateStr, getClosedBusinessYear } from '../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
 import {
   Flag,
@@ -132,24 +133,26 @@ export default function GolfChannelIntelligence() {
   const fetchIntelligenceData = async () => {
     setLoading(true);
     try {
+      const latestClosed = getLatestClosedDateStr();
+      const currentYear = getClosedBusinessYear();
       const queryParams = new URLSearchParams();
       if (viewScope === 'FULL_ASSET') {
-        queryParams.append('startDate', '2026-01-01');
-        queryParams.append('endDate', endDate || startDate || '2026-09-26');
+        queryParams.append('startDate', `${currentYear}-01-01`);
+        queryParams.append('endDate', endDate || startDate || latestClosed);
       } else {
         if (startDate) queryParams.append('startDate', startDate);
         if (endDate) queryParams.append('endDate', endDate);
       }
 
       // Parallel fetch: 1) Golf channel intelligence SSOT, 2) Facility monthly trend (그린피)
+      const queryDateStr = endDate || startDate || latestClosed;
       const [res, trendRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${endDate || startDate || '2026-09-26'}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${queryDateStr}`).catch(() => null)
       ]);
 
       // Process Monthly YoY from real DB facility-monthly-trend
       const monthlyList = Array.isArray(trendRes?.data?.monthlyData) ? trendRes.data.monthlyData : [];
-      const queryDateStr = endDate || startDate || '2026-09-26';
       const queryMonth = Number(queryDateStr.split('-')[1]);
       const queryYear = queryDateStr.split('-')[0];
 

@@ -39,13 +39,20 @@ export default function AdminCapacity() {
           notes: `${r.shopName} (좌석: ${r.seatingCapacity || 0}, 회전: ${r.dailyTurnoverRate || 1}회, 피크: ${r.peakHourWindow || '12:00-14:00'})`
         }));
         setItems(cleaned);
-        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(cleaned));
+        try {
+          localStorage.removeItem('BELLEFORET_CAPACITY_MASTER_V3');
+          sessionStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(cleaned));
+        } catch (_) {}
         setLoading(false);
         return;
       }
 
-      // 2. Fallback to LocalStorage Cache
-      const cached = localStorage.getItem('BELLEFORET_CAPACITY_MASTER_V3');
+      // 2. Fallback to SessionStorage Cache
+      let cached: string | null = null;
+      try {
+        localStorage.removeItem('BELLEFORET_CAPACITY_MASTER_V3');
+        cached = sessionStorage.getItem('BELLEFORET_CAPACITY_MASTER_V3');
+      } catch (_) {}
       if (cached) {
         const parsed = JSON.parse(cached);
         const cleaned = Array.isArray(parsed) ? parsed.filter((item: any) => item.id !== 'cap_leisure_luge' && item.shopName !== '익스트림 루지') : DEFAULT_CAPACITY_SEEDS;
@@ -98,8 +105,11 @@ export default function AdminCapacity() {
         console.warn('Backend capacity save warning:', err);
       });
 
-      // 2. Save to LocalStorage cache
-      localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(items));
+      // 2. Save to SessionStorage cache
+      try {
+        localStorage.removeItem('BELLEFORET_CAPACITY_MASTER_V3');
+        sessionStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(items));
+      } catch (_) {}
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -120,7 +130,10 @@ export default function AdminCapacity() {
       } catch (err) {
         console.error('Reset error:', err);
         setItems(DEFAULT_CAPACITY_SEEDS);
-        localStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(DEFAULT_CAPACITY_SEEDS));
+        try {
+          localStorage.removeItem('BELLEFORET_CAPACITY_MASTER_V3');
+          sessionStorage.setItem('BELLEFORET_CAPACITY_MASTER_V3', JSON.stringify(DEFAULT_CAPACITY_SEEDS));
+        } catch (_) {}
         setLoading(false);
       }
     }

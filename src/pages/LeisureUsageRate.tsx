@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
+import { getClosedBusinessYear, getLatestClosedMonthStr } from '../lib/dateUtils';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import type { 
   LeisureUsageRateResponse,
@@ -62,9 +63,10 @@ export default function LeisureUsageRate() {
     setIsLoading(true);
     setError(null);
     try {
+      const currentYear = getClosedBusinessYear();
       const [resUsage, resYoy] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/leisure-usage-rate`),
-        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=2026`),
+        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=${currentYear}`),
       ]);
 
       const payloadUsage: LeisureUsageRateResponse = resUsage?.data ?? resUsage;
@@ -131,8 +133,8 @@ export default function LeisureUsageRate() {
 
   // Compute selected period string range
   const startMonthStr = useMemo(() => {
-    return startDate ? startDate.slice(0, 7) : '2026-01';
-  }, [startDate]);
+    return startDate ? startDate.slice(0, 7) : (latestAvailableMonth || getLatestClosedMonthStr());
+  }, [startDate, latestAvailableMonth]);
 
   const endMonthStr = useMemo(() => {
     if (isRange && endDate) return endDate.slice(0, 7);

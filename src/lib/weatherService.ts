@@ -26,9 +26,9 @@ export async function fetchLiveWeatherFallback(dateStr: string): Promise<LiveWea
   try {
     const lat = 36.7825;
     const lon = 127.6042;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}&_t=${Date.now()}`;
     
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
     

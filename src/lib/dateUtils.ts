@@ -16,12 +16,21 @@ export const formatDate = (d: Date): string => {
 };
 
 /**
- * 마감된 최신 영업일(어제, D-1) Date 객체 반환
+ * 대한민국 KST (UTC+9) 기준 현재 시각 Date 반환 (해외 단말기 타임존 편차 방어)
+ */
+export const getKSTNow = (): Date => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+  const kstOffset = 9 * 60 * 60 * 1000;
+  return new Date(utc + kstOffset);
+};
+
+/**
+ * 마감된 최신 영업일(어제, D-1) Date 객체 반환 (KST 기준)
  */
 export const getClosedBusinessDate = (offsetDays: number = 1): Date => {
-  const now = new Date();
-  // KST 기준 어제 계산
-  const target = new Date(now.getTime() - offsetDays * 24 * 60 * 60 * 1000);
+  const kstNow = getKSTNow();
+  const target = new Date(kstNow.getTime() - offsetDays * 24 * 60 * 60 * 1000);
   return target;
 };
 
@@ -30,6 +39,20 @@ export const getClosedBusinessDate = (offsetDays: number = 1): Date => {
  */
 export const getLatestClosedDateStr = (): string => {
   return formatDate(getClosedBusinessDate(1));
+};
+
+/**
+ * 마감된 최신 영업월(YYYY-MM) 문자열 반환
+ */
+export const getLatestClosedMonthStr = (): string => {
+  return getLatestClosedDateStr().slice(0, 7);
+};
+
+/**
+ * 마감된 최신 영업연도(YYYY) 반환
+ */
+export const getClosedBusinessYear = (): number => {
+  return getClosedBusinessDate(1).getFullYear();
 };
 
 export type DatePresetType = 'TODAY' | 'WEEK' | 'MTD' | 'H1' | 'PAST_6M' | 'YTD' | 'PAST_1Y';

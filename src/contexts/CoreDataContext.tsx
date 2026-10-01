@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useDate } from './DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
+import { getLatestClosedDateStr } from '../lib/dateUtils';
 
 export interface V6Payload {
   date: string;
@@ -52,7 +53,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         validEnd = temp;
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getLatestClosedDateStr();
       const queryParams = validEnd && validStart !== validEnd
         ? `startDate=${validStart}&endDate=${validEnd}&_t=${Date.now()}`
         : `date=${validStart || todayStr}&_t=${Date.now()}`;

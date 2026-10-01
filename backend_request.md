@@ -866,4 +866,59 @@ const reverseSpillover = totalRoomSales > 0
   - `미디어-뮤지엄카페` ➔ **레저본부 (`TICKET`)** 단일 귀속
 - 프론트엔드는 임시 조치로서 UI 렌더링 시 주관 부문(진성 매출 기준) 단일화 필터링 및 복합 Key(`categoryCode_venueName`)를 적용하였으나, 근본적인 0-Variance 수치 보존을 위해 백엔드 DB 마트 레벨의 단일 정규 집계를 요청합니다.
 
+---
+
+# 🚨 [백엔드 신규 API 요청] 월별 전년도(LY) 실측 기준 기상 시뮬레이션 예측 API 신설 (2026-10-01)
+
+### 1. 배경 및 필요성
+- 리조트 비즈니스는 **월별 계절성(Seasonality)**이 극심합니다 (예: 7~8월 썸머랜드/워터파크 중심 vs 12~1월 썰매장/스파/실내식음 중심).
+- 다년도 전체 기간의 단순 평균치로는 특정 월(예: 10월 단풍시즌, 12월 동계시즌)의 실제 기상 충격을 정밀하게 예측할 수 없습니다.
+- 사용자가 특정 대상 월(`targetMonth`)과 예상 강수량(mm) 또는 적설량(cm)을 설정했을 때, **해당 월의 전년도(LY) 실측 주중/휴일 일평균 매출을 기준 모수(Baseline)**로 삼고 기상 탄력성을 대입한 정확한 예상 매출을 산출하는 공식 백엔드 마트 API가 반드시 필요합니다.
+
+### 2. 요청 엔드포인트
+- `GET /api/v6/dashboard/weather-forecast-simulation?targetMonth=YYYY-MM&precipitation=N&snowfall=N`
+
+### 3. 요청 파라미터 규격
+- `targetMonth`: 시뮬레이션 대상 년월 (예: `2026-10`, 미입력 시 당월)
+- `precipitation`: 예상 일일 강수량 (mm 단위 정수/실수, 기본값 `0`)
+- `snowfall`: 예상 일일 적설량 (cm 단위 정수/실수, 기본값 `0`)
+
+### 4. 백엔드 산출 로직 가이드 (Pure Consumer 원칙)
+1. **전년도 동월 베이스라인 추출 (SSOT)**:
+   - `mat_v6_data_mart` 또는 `mat_v6_data_mart_revenue`에서 `targetMonth`의 전년도 동월(예: 2025-10)의 영업장별 **주중 일평균 실측 순매출(`lyWeekdayAvgRevenue`)**과 **휴무일 일평균 실측 순매출(`lyHolidayAvgRevenue`)**을 집계.
+2. **기상 탄력성 결합 및 예상 매출 도출**:
+   - `mat_v6_weather_correlation_summary`의 업장별 주중/휴일 우천 및 강설 탄력성을 입력된 강수량/적설량 강도에 맞게 적용.
+   - 모든 예상 매출과 변동액은 소수점이 제거된 **순수 정수(Integer)**로 산출.
+3. **기대 응답 JSON 규격**:
+```json
+{
+  "success": true,
+  "data": {
+    "targetMonth": "2026-10",
+    "compareMonthLY": "2025-10",
+    "condition": {
+      "precipitation": 15,
+      "snowfall": 0
+    },
+    "venues": [
+      {
+        "categoryCode": "TICKET",
+        "categoryName": "레저본부",
+        "venueName": "사계절썰매장",
+        "lyWeekdayAvgRevenue": 596163,
+        "lyHolidayAvgRevenue": 1867843,
+        "forecastWeekdayRevenue": 328187,
+        "forecastHolidayRevenue": 795701,
+        "weekdayDelta": -267976,
+        "holidayDelta": -1072142,
+        "weekdayImpactRate": -44.9,
+        "holidayImpactRate": -57.4
+      }
+    ]
+  }
+}
+```
+4. 프론트엔드는 본 API가 배포되면 클라이언트 단독 연산을 전면 배제하고, 수신된 완제품 데이터를 차트에 100% Passthrough 바인딩합니다.
+
+
 

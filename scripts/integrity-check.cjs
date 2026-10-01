@@ -174,6 +174,18 @@ files.forEach(filePath => {
         code: codeOnly
       });
     }
+
+    // 10. 클라이언트 기상 시뮬레이션 및 임의 강도 배수 합성 검사 (Rule 10: Zero-Simulation)
+    // 금지: 강수량이나 적설량을 기반으로 클라이언트에서 임의의 계수를 합성해 매출을 추정하는 행위
+    const simulationSynthesisMatch = codeOnly.match(/(?:simPrecipitation|simSnowfall)\s*\/\s*(?:15|3|10|5|30)\b|\bMath\.round\([^)]*\*\s*\([^)]*(?:rainy|snowy|weather)Impact/i);
+    if (simulationSynthesisMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Client-Side Weather/Forecast Synthesis (클라이언트 임의 시뮬레이션 및 계수 합성 금지 - Rule 10 위반)',
+        code: codeOnly
+      });
+    }
   });
 });
 

@@ -920,5 +920,164 @@ const reverseSpillover = totalRoomSales > 0
 ```
 4. 프론트엔드는 본 API가 배포되면 클라이언트 단독 연산을 전면 배제하고, 수신된 완제품 데이터를 차트에 100% Passthrough 바인딩합니다.
 
+---
+
+# 🚨 [가짜 숫자·클라이언트 시뮬레이션 전면 박멸] 백엔드 정규 사업목표 수립 및 계절성 마트 API 신설 요청서 (2026-10-02)
+
+## 📜 V6 백엔드 API 개발 5대 철칙 (Backend Guardrails 준수 필수)
+1. **[Zero-Proxy] API 서버 내 자바스크립트 연산 100% 금지**: Next.js 라우트에서 합산(`reduce`), 평균, 차액 분배를 절대 하지 마십시오. 모든 목표 산출과 계절성 안분, 반올림 보정은 MariaDB 프로시저/뷰에서 완료되어야 합니다.
+2. **[SSOT 수호] 골드 마트(Mart) 테이블 외 접근 엄금**: `mat_v6_data_mart_revenue`, `dim_calendar_kr`, `dim_facility_team_mapping` 등 승인된 골드 테이블만 조회하십시오.
+3. **[Pure Data] 매직 스트링 및 UI 종속성 주입 금지**: UI 표시용 텍스트 하드코딩 금지, 100% camelCase 규격, 순수 정수형(Integer) 완제품 반환.
+4. **[ETL 격리] 외부 API 호출 및 데이터 적재 로직 금지**: API는 오직 읽기 전용(Read-only).
+5. **[DRY 원칙] 공통 유틸리티 모듈 사용 강제**: 날짜 파싱, 에러 처리, 인증 등 공통 모듈 재사용.
+
+---
+
+### 1. 현황 및 요청 배경 (배경 진단)
+* **대표님/이사님 절대 지시**: "프론트엔드 단독으로 판단하여 숫자를 지어내거나 가설을 사실로 포장하는 행위 영구 금지. 필요하면 공식 문서를 통해 백엔드 팀에 요청만 수행할 것."
+* **현재 문제점**:
+  1. `src/data/monthlySeasonalityData.ts` (4,655줄, 136KB)에 2024~2025년 월별/업장별 실측 매출 및 점유비 총 1,600여 개의 숫자가 소스코드에 하드코딩되어 있습니다.
+  2. `src/lib/targetSimulationEngine.ts`, `src/pages/StrategicSimulator.tsx`, `src/components/dashboard/PackageGeneratorSimulator.tsx`에서 클라이언트 자바스크립트가 임의의 패키지 가격(`279,000원` 등)을 지어내고, 선형 성장률(`* (1 + growth/100)`)을 곱해 목표를 임의 생성하며, 나눗셈 오차를 특정 1개 업장에 몰아넣는 땜질(`sorted[0].target += diff`)을 수행하고 있습니다.
+* **해결 방향**:
+  프론트엔드 내의 모든 로컬 계산 엔진과 4,655줄짜리 정적 데이터셋을 **완전 삭제(Zero-Code)**할 수 있도록, 백엔드 데이터 마트 팀에서 정규 계산이 완료된 완제품 API 3종을 제공해 주시기 바랍니다.
+
+---
+
+### 2. 요청 API 상세 명세
+
+#### [API 1] 월별 계절성 및 부문/업장 실적 비중 SSOT API (정적 데이터셋 4,655줄 대체용)
+- **엔드포인트**: `GET /api/v6/report/seasonality-shares`
+- **요청 파라미터**:
+  - `baseYear`: 기준 연도 (예: `2025`, `2024`)
+  - `month`: 대상 월 (`1`~`12` 또는 `ANNUAL`, 기본값 `ANNUAL`)
+  - `includeGolf`: 골프 포함 여부 (`true` | `false`, 기본값 `true`)
+- **백엔드 산출 로직**:
+  - `mat_v6_data_mart_revenue`에서 해당 연도/월의 사업부별 실측 순매출 및 전사 대비 비중(`divisionShares`), 업장별 실측 순매출(`netRevenue`) 및 부문 내 점유비(`shareRatio`)를 집계.
+  - 리조트 물리 객실수(`175실`) 및 일수(`days`) 기반의 정확한 TrevPAR 산출.
+- **기대 응답 JSON 규격 (camelCase)**:
+```json
+{
+  "success": true,
+  "data": {
+    "baseYear": 2025,
+    "month": 1,
+    "periodDays": 31,
+    "totalRevenue": 1001006783,
+    "trevpar": 184517,
+    "divisionShares": {
+      "ROOM": 0.2963,
+      "GOLF": 0.1825,
+      "FNB": 0.2642,
+      "TICKET": 0.1199,
+      "MOTO": 0.0343,
+      "BANQUET": 0.0182,
+      "OTHER": 0.0847
+    },
+    "facilities": [
+      {
+        "categoryCode": "ROOM",
+        "categoryName": "콘도",
+        "venueName": "객실",
+        "netRevenue": 292815660,
+        "shareRatio": 0.2925
+      },
+      {
+        "categoryCode": "GOLF",
+        "categoryName": "골프",
+        "venueName": "그린피",
+        "netRevenue": 153568000,
+        "shareRatio": 0.1534
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### [API 2] 정규 사업목표 수립 및 계절성 목표 배분 완제품 API (Zero-Simulation SSOT)
+- **엔드포인트**: `GET /api/v6/report/business-plan-simulation`
+- **요청 파라미터**:
+  - `baseYear`: 기준 실적 연도 (예: `2025`)
+  - `targetYear`: 수립 목표 연도 (예: `2026`)
+  - `growthRate`: 전사 목표 성장률 (%, 예: `10.5`)
+  - `month`: 대상 월 (`1`~`12` 또는 `ANNUAL`)
+  - `includeGolf`: 골프 포함 여부 (`true` | `false`)
+- **백엔드 산출 로직**:
+  - `mat_v6_data_mart_revenue` 기준 연도 실적에 목표 성장률을 결합하여 전사 목표액(`targetTotalRevenue`) 및 TrevPAR를 산출.
+  - 부문별(`categories`) 및 영업장별(`facilities`) 목표 배분 시 반올림 오차(Rounding Error)가 발생하지 않도록 **DB 프로시저 레벨에서 1원 단위 정수 일치(Zero-Variance)** 보정 완료 후 반환.
+  - 프론트엔드가 `.reduce()`로 다시 더하지 않아도 되도록 각 부문별 소계(`totalTargetRevenue`)와 전체 총계(`grandTotalTargetRevenue`)를 완제품으로 포함.
+- **기대 응답 JSON 규격 (camelCase)**:
+```json
+{
+  "success": true,
+  "data": {
+    "baseYear": 2025,
+    "targetYear": 2026,
+    "selectedMonth": "ANNUAL",
+    "periodDays": 365,
+    "targetGrowthRate": 10.5,
+    "grandTotalLyRevenue": 24706936601,
+    "grandTotalTargetRevenue": 27301164944,
+    "grandTotalRevenueDelta": 2594228343,
+    "targetTrevpar": 427415,
+    "categories": [
+      {
+        "categoryCode": "GOLF",
+        "categoryName": "골프사업본부",
+        "lyRevenue": 4500000000,
+        "targetRevenue": 4972500000,
+        "revenueDelta": 472500000,
+        "targetShare": 18.21,
+        "facilities": [
+          {
+            "shopCode": "SHOP_GOLF_01",
+            "venueName": "그린피",
+            "lyRevenue": 3800000000,
+            "targetRevenue": 4199000000,
+            "revenueDelta": 399000000,
+            "shareRatio": 84.45
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### [API 3] 대한민국 법정 공휴일 마스터 API (하드코딩 제거용)
+- **엔드포인트**: `GET /api/v6/common/holidays?year=YYYY`
+- **요청 파라미터**: `year` (예: `2026`, 미지정 시 당해연도)
+- **백엔드 산출 로직**: `dim_calendar_kr`에서 `is_holiday = 1` 또는 `holiday_name IS NOT NULL`인 날짜 목록 단순 `SELECT`.
+- **기대 응답 JSON 규격**:
+```json
+{
+  "success": true,
+  "year": 2026,
+  "holidays": [
+    { "date": "2026-01-01", "name": "신정" },
+    { "date": "2026-02-16", "name": "설날 연휴" },
+    { "date": "2026-02-17", "name": "설날" },
+    { "date": "2026-02-18", "name": "설날 연휴" },
+    { "date": "2026-03-01", "name": "삼일절" },
+    { "date": "2026-03-02", "name": "삼일절 대체공휴일" }
+  ]
+}
+```
+
+---
+
+### 3. 프론트엔드 조치 계획 (배포 즉시 실행)
+1. 백엔드에서 위 API가 배포되는 즉시:
+   - `src/data/monthlySeasonalityData.ts` (4,655줄) 전면 삭제 (Git 파일 영구 제거)
+   - `src/lib/targetSimulationEngine.ts` 클라이언트 계산 엔진 전면 삭제
+   - `PackageGeneratorSimulator.tsx` 내의 하드코딩 가격 및 사칙연산 수식 전면 철거
+   - `StrategicSimulator.tsx`, `TargetSimulator.tsx`를 신규 API 완제품 직결 구조로 100% Passthrough 전환
+2. 백엔드 배포 전까지:
+   - 프론트엔드는 임의의 거짓 숫자를 새로 생성하지 않으며, 현재 상태를 안전하게 격리 유지합니다.
+
+
 
 

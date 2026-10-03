@@ -945,13 +945,6 @@ export default function LeisureUsageRate() {
                 }`}
               >
                 <span>{label}</span>
-                {key === '벨포레 목장(체험)' && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                    isSelected ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    체험
-                  </span>
-                )}
               </button>
             );
           })}
@@ -1170,7 +1163,7 @@ export default function LeisureUsageRate() {
           <div className="flex items-center gap-1.5">
             <HelpCircle size={14} className="text-slate-400" />
             <span>
-              각 셀 표기: <b>[이용률 %]</b> 상단, <b>(시설 이용객수 / 전체 객실정원 숙박객수)</b> 하단
+              각 셀 표기: <b>[{selectedFacility === '벨포레 목장(체험)' ? '체험 전환율 %' : '이용률 %'}]</b> 상단, <b>({selectedFacility === '벨포레 목장(체험)' ? '체험 이용객수 / 목장 입장객수' : '시설 이용객수 / 전체 객실정원 숙박객수'})</b> 하단
               {selectedFacility === '벨포레 목장(체험)' && (
                 <span className="text-emerald-700 ml-1.5 font-bold">
                   (※ '목장체험'은 전체 숙박객이 아닌 '목장 입장객'을 분모로 한 실질 체험 전환율입니다)

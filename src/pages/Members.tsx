@@ -12,7 +12,8 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 
 export default function Members() {
   const { startDate, endDate, isRange } = useDate();
-  const isEffectiveRange = isRange || (!!endDate && startDate !== endDate);
+  const isEffectiveRange = Boolean(isRange && endDate && startDate !== endDate);
+  const effectiveEnd = isEffectiveRange && endDate ? endDate : startDate;
 
   const [data, setData] = useState<DailyMemberVisitorsV2Response | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -23,7 +24,7 @@ export default function Members() {
     setApiError(null);
     try {
       const queryParams = isEffectiveRange
-        ? `startDate=${startDate}&endDate=${endDate}`
+        ? `startDate=${startDate}&endDate=${effectiveEnd}`
         : `startDate=${startDate}&endDate=${startDate}`;
 
       const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors-v2?${queryParams}`);
@@ -45,7 +46,7 @@ export default function Members() {
 
   useEffect(() => {
     fetchMemberVisitors();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isRange]);
 
   const summary = data?.meta?.summary;
   const venueVisitors = (data as any)?.venueVisitors || (data as any)?.venues || [];

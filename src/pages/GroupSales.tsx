@@ -256,8 +256,10 @@ export default function GroupSales() {
     setLoading(true);
     setVenueLoading(true);
     try {
-      const queryParams = endDate
-        ? `startDate=${startDate}&endDate=${endDate}`
+      const isRangeQuery = Boolean(endDate && startDate !== endDate);
+      const effectiveEnd = isRangeQuery && endDate ? endDate : startDate;
+      const queryParams = isRangeQuery
+        ? `startDate=${startDate}&endDate=${effectiveEnd}`
         : `startDate=${startDate}&endDate=${startDate}`;
 
       // 1. 판매방식 × 평형별 세그먼트 교차 데이터 (SSOT API)
@@ -759,7 +761,7 @@ export default function GroupSales() {
 
           <div className="flex items-center gap-2 self-start sm:self-auto text-xs font-medium text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
             <CalendarDays size={14} className="text-brand-mint" />
-            <span>조회 구간: <strong className="text-white font-bold">{startDate} ~ {endDate || startDate}</strong></span>
+            <span>조회 {endDate && startDate !== endDate ? '구간' : '일자'}: <strong className="text-white font-bold">{endDate && startDate !== endDate ? `${startDate} ~ ${endDate}` : `${startDate} 당일`}</strong></span>
           </div>
         </div>
 

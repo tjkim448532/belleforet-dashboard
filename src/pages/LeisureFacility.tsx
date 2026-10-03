@@ -44,7 +44,8 @@ export default function LeisureFacility() {
     const fetchTopItems = async () => {
       setIsTopItemsLoading(true);
       try {
-        const queryParams = endDate
+        const isRangeQuery = Boolean(endDate && startDate !== endDate);
+        const queryParams = isRangeQuery
           ? `startDate=${startDate}&endDate=${endDate}&limit=30`
           : `date=${startDate}&limit=30`;
         const res = await secureFetcher(`${API_BASE}/api/v6/report/top-ticket-items?${queryParams}`).catch(() => null);
@@ -173,7 +174,7 @@ export default function LeisureFacility() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 relative overflow-hidden group hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
             <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-50 transition-transform duration-500 group-hover:scale-150 group-hover:rotate-12 rounded-full" />
             <h2 className="text-base font-bold text-slate-600 mb-6 flex items-center gap-2 relative z-10 whitespace-nowrap">
-              <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal text-slate-400">(조회일)</span>
+              <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal text-slate-400">({endDate && startDate !== endDate ? '조회기간' : '조회일'})</span>
             </h2>
             <div className="text-3xl font-black text-slate-900 mb-2 tracking-tight relative z-10 tabular-nums whitespace-nowrap">
               {formatCurrency(totalSales)} <span className="text-base font-normal text-slate-500">원</span>

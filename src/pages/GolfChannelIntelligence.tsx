@@ -139,10 +139,16 @@ export default function GolfChannelIntelligence() {
       if (viewScope === 'FULL_ASSET') {
         queryParams.append('startDate', `${currentYear}-01-01`);
         queryParams.append('endDate', endDate || startDate || latestClosed);
+      } else if (isRangeMode) {
+        queryParams.append('startDate', startDate || latestClosed);
+        queryParams.append('endDate', endDate || startDate || latestClosed);
       } else {
-        if (startDate) queryParams.append('startDate', startDate);
-        if (endDate) queryParams.append('endDate', endDate);
+        const singleDate = startDate || latestClosed;
+        queryParams.append('startDate', singleDate);
+        queryParams.append('endDate', singleDate);
+        queryParams.append('date', singleDate);
       }
+      queryParams.append('_t', String(Date.now()));
 
       // Parallel fetch: 1) Golf channel intelligence SSOT, 2) Facility monthly trend (그린피)
       const queryDateStr = endDate || startDate || latestClosed;

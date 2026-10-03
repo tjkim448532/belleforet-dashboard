@@ -199,7 +199,7 @@ const getChannelMeta = (channelName: string): { iconType: ChannelGroup['iconType
 };
 
 export default function GroupSales() {
-  const { startDate, endDate, setStartDate, setEndDate } = useDate();
+  const { startDate, endDate, isRange, setStartDate, setEndDate } = useDate();
   
   const [channelRawData, setChannelRawData] = useState<RawChannelRoomItem[]>([]);
   const [seminarShare, setSeminarShare] = useState<SeminarDayTypeShare | null>(null);
@@ -322,7 +322,7 @@ export default function GroupSales() {
 
   useEffect(() => {
     fetchSalesData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isRange]);
 
   // 🏛️ 판매방식(채널)별 × 평형별 세그먼트 정규화 및 집계
   const { channelGroups, grandTotals, uniqueRoomTypes, availableChannels } = useMemo(() => {

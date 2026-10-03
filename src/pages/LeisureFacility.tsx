@@ -32,7 +32,7 @@ export interface TopTicketItem {
 
 export default function LeisureFacility() {
   const { core, isLoading } = useCoreData();
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, isRange } = useDate();
 
   const [apiTopItems, setApiTopItems] = useState<TopTicketItem[]>([]);
 
@@ -82,7 +82,7 @@ export default function LeisureFacility() {
     return () => {
       isCancelled = true;
     };
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isRange]);
 
   const { totalSales, topTickets } = useMemo(() => {
     if (!core?.salesByFacility) {

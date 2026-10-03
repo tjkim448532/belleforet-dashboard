@@ -13,7 +13,7 @@ export interface DayOfWeekSalesProps {
 }
 
 export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps = {}) {
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, isRange } = useDate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error422, setError422] = useState<any>(null);
@@ -25,9 +25,18 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
     setLoading(true);
     setError422(null);
 
-    let queryParams = startDate === endDate || !endDate
-      ? `date=${startDate}`
-      : `startDate=${startDate}&endDate=${endDate}`;
+    const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
+    let s = startDate;
+    let e = endDate;
+    if (isRangeMode && s && e && s > e) {
+      const temp = s;
+      s = e;
+      e = temp;
+    }
+
+    let queryParams = isRangeMode
+      ? `startDate=${s}&endDate=${e}`
+      : `date=${s}`;
 
     if (activeFilter.type === 'PART') {
       queryParams += `&partName=${encodeURIComponent(activeFilter.value)}`;
@@ -68,7 +77,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       });
 
     return () => { isMounted = false; };
-  }, [startDate, endDate, activeFilter]);
+  }, [startDate, endDate, isRange, activeFilter]);
 
   const hierarchyDrilldown = data?.hierarchyDrilldown || [];
 

@@ -48,7 +48,7 @@ export default function GolfBusiness() {
     };
 
     fetchSummary();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isRange]);
 
   const normalizedChannels = useMemo(() => {
     if (!data?.channels) return [];

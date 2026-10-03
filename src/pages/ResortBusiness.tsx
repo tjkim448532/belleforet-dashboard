@@ -7,7 +7,7 @@ import {
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
-import { getLatestClosedDateStr } from '../lib/dateUtils';
+import { getLatestClosedDateStr, formatDate } from '../lib/dateUtils';
 import { getPeriodHolidayComparison } from '../lib/holidayUtils';
 import ReactECharts from 'echarts-for-react';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -61,7 +61,7 @@ export default function ResortBusiness() {
   const [data, setData] = useState<any>(null);
   const [lyData, setLyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, isRange: isGlobalRange } = useDate();
   const [showLyCompareTable, setShowLyCompareTable] = useState<boolean>(true);
   const [channelCompareView, setChannelCompareView] = useState<'compare' | 'single'>('compare');
 
@@ -102,9 +102,10 @@ export default function ResortBusiness() {
         if (endDate && startDate !== endDate) {
           queryParams = `startDate=${startDate}&endDate=${endDate}`;
         } else {
-          const cur = new Date(startDate);
-          const past14 = new Date(cur.getTime() - 13 * 24 * 60 * 60 * 1000);
-          const past14Str = past14.toISOString().split('T')[0];
+          const parts = startDate.split('-').map(Number);
+          const d = new Date(parts[0], parts[1] - 1, parts[2]);
+          d.setDate(d.getDate() - 13);
+          const past14Str = formatDate(d);
           queryParams = `startDate=${past14Str}&endDate=${startDate}`;
         }
         const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/los-correlation-trend?${queryParams}`).catch(() => ({ data: [] }));
@@ -118,7 +119,7 @@ export default function ResortBusiness() {
       }
     };
     fetchLosTrend();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isGlobalRange]);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -138,10 +139,15 @@ export default function ResortBusiness() {
 
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
         const isRangeQuery = Boolean(endDate && startDate !== endDate);
-        const curStart = startDate || getLatestClosedDateStr();
-        const curEnd = isRangeQuery && endDate ? endDate : curStart;
+        let curStart = startDate || getLatestClosedDateStr();
+        let curEnd = isRangeQuery && endDate ? endDate : curStart;
+        if (isRangeQuery && curStart > curEnd) {
+          const tmp = curStart;
+          curStart = curEnd;
+          curEnd = tmp;
+        }
         const queryParams = isRangeQuery
-          ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
+          ? `startDate=${curStart}&endDate=${curEnd}&_t=${Date.now()}`
           : `date=${curStart}&_t=${Date.now()}`;
         
         const lyStartStr = getLyDateStr(curStart);
@@ -196,7 +202,7 @@ export default function ResortBusiness() {
     };
 
     fetchSummary();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isGlobalRange]);
 
   const formatCurrency = (val: any) => {
     if (!val) return '0';

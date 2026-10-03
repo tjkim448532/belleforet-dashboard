@@ -15,7 +15,7 @@ const formatCurrency = (val: any) => {
 };
 
 export default function OnlineMembers() {
-  const { startDate, endDate } = useDate();
+  const { startDate, endDate, isRange } = useDate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [monthlyViewMode, setMonthlyViewMode] = useState<'table' | 'chart'>('table');
@@ -44,7 +44,7 @@ export default function OnlineMembers() {
     if (startDate) {
       fetchOnlineMembers();
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isRange]);
 
   const summary = data?.summary || {};
   const trends = data?.trends || { daily: [], monthly: [] };

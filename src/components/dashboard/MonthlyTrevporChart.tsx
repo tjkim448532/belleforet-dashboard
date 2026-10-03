@@ -38,6 +38,8 @@ export interface MonthlyEfficiencyItem {
     resortOtherRatio?: number;
     trevparTotal?: number;
     trevparWithoutGolf?: number;
+    revpar?: number;
+    revPar?: number;
   };
   ty: {
     year: number;
@@ -67,6 +69,8 @@ export interface MonthlyEfficiencyItem {
     resortOtherRatio?: number;
     trevparTotal?: number;
     trevparWithoutGolf?: number;
+    revpar?: number;
+    revPar?: number;
     isClosed?: boolean;
   } | null;
   growthTotalRate: number | null;
@@ -179,6 +183,12 @@ export default function MonthlyTrevporChart() {
     } else {
       return itemNode.trevparWithoutGolf ?? null;
     }
+  };
+
+  // SSOT 1:1 완제품 바인딩 (Zero-Proxy / Pure Consumer: 백엔드 산출 revpar 직결)
+  const getRevparValue = (itemNode: any) => {
+    if (!itemNode) return null;
+    return itemNode.revpar ?? itemNode.revPar ?? itemNode.revPAR ?? null;
   };
 
   // Helper to extract divisional share ratios
@@ -1487,11 +1497,11 @@ export default function MonthlyTrevporChart() {
               <div className="bg-white p-3 rounded-xl border border-slate-200/70">
                 <div className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                  <span>TrevPAR 산출 연동</span>
+                  <span>RevPAR & TrevPAR 산출 연동</span>
                 </div>
                 <div className="text-[11px] leading-relaxed">
-                  • <b>TrevPAR 공식</b> = <b>전사 총매출액 ÷ 월 가용객실수</b><br/>
-                  • 객실 1실의 물리적 인프라가 창출한 전체 사업장 매출 기여도<br/>
+                  • <b>RevPAR 공식</b> = <b>객실 순매출액 ÷ 월 가용객실수</b> (순수 객실 판매 효율)<br/>
+                  • <b>TrevPAR 공식</b> = <b>{metricMode === 'TOTAL' ? '전사 총매출액' : '순수 리조트매출액'} ÷ 월 가용객실수</b> (객실 1실당 전체 매출 기여도)<br/>
                   • 참고: <b>TrevPOR</b> = 전사 총매출액 ÷ 실판매객실수
                 </div>
               </div>
@@ -1510,6 +1520,7 @@ export default function MonthlyTrevporChart() {
                     2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/60 font-bold text-slate-700" title="객실 순매출액 ÷ 월 가용객실수 (RevPAR)">2025년 RevPAR</th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40" title="물리 고정 175실 × 해당 월 역일수">2026년 가용객실</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/50 font-bold text-teal-900" title="PMS 정산 실판매 계약 객실수">2026년 판매객실</th>
@@ -1517,6 +1528,7 @@ export default function MonthlyTrevporChart() {
                     2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/60 font-bold text-teal-800" title="객실 순매출액 ÷ 월 가용객실수 (RevPAR)">2026년 RevPAR</th>
                   <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPAR</th>
                   <th className="py-3.5 px-3 text-right">전년 대비 증감액</th>
                   <th className="py-3.5 px-3 text-center">증감률</th>
@@ -1526,10 +1538,12 @@ export default function MonthlyTrevporChart() {
                 {data.monthlyComparison.map((item) => {
                   const isOngoing = item.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
+                  const lyRevpar = getRevparValue(item.ly);
                   const lyTrevpar = getTrevparValue(item.ly, metricMode);
                   const lyShares = getShareRatios(item.ly, metricMode);
                   
                   const tyRev = item.ty ? (metricMode === 'TOTAL' ? item.ty.totalRevenue : item.ty.netRevenueWithoutGolf) : null;
+                  const tyRevpar = item.ty ? getRevparValue(item.ty) : null;
                   const tyTrevpar = item.ty ? getTrevparValue(item.ty, metricMode) : null;
                   const tyShares = item.ty ? getShareRatios(item.ty, metricMode) : null;
                   
@@ -1589,6 +1603,9 @@ export default function MonthlyTrevporChart() {
                       <td className="py-3 px-3 text-right tabular-nums">
                         {lyRev ? `${formatCurrency(lyRev)} 원` : '-'}
                       </td>
+                      <td className="py-3 px-3 text-right font-bold text-slate-700 tabular-nums bg-slate-100/20" title="2025년 RevPAR (객실 순매출 ÷ 가용객실)">
+                        {lyRevpar !== null && lyRevpar !== undefined ? `${formatCurrency(lyRevpar)} 원` : <span className="text-slate-300">-</span>}
+                      </td>
                       <td className="py-3 px-3 text-right font-bold text-slate-900 tabular-nums bg-slate-100/30">
                         {lyTrevpar ? `${formatCurrency(lyTrevpar)} 원` : '-'}
                       </td>
@@ -1636,6 +1653,9 @@ export default function MonthlyTrevporChart() {
 
                       <td className="py-3 px-3 text-right tabular-nums">
                         {tyRev !== null && tyRev !== undefined ? `${formatCurrency(tyRev)} 원` : <span className="text-slate-300">-</span>}
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-teal-800 tabular-nums bg-teal-50/20" title="2026년 RevPAR (객실 순매출 ÷ 가용객실)">
+                        {tyRevpar !== null && tyRevpar !== undefined ? `${formatCurrency(tyRevpar)} 원` : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3 px-3 text-right font-black text-teal-800 tabular-nums bg-teal-50/30">
                         {tyTrevpar !== null && tyTrevpar !== undefined ? `${formatCurrency(tyTrevpar)} 원` : <span className="text-slate-300">-</span>}

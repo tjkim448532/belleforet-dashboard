@@ -11,6 +11,7 @@
 | **P0 (긴급)** | 장애 복구 | **CORS Preflight `Cache-Control` 차단 해제** | 프로덕션 배포 사이트(`bell-dashboard.web.app`)에서 백엔드 V6 API 전면 호출 실패 차단 해제 |
 | **P1 (높음)** | 데이터 정합성 | **`벨포레 목장(체험)` 이용객수(`visitor_count`) 정상화** | 분모(입장객수)는 정상이나 분자(체험객수)가 0명으로 적재되어 `0.0%`로 고정되는 문제 해결 |
 | **P1 (높음)** | 데이터 검증 | **썸머랜드(워터파크) 9월 실적 이상치 원인 규명 및 분리** | 8월 말 폐장 시설에 9월 매출/이용객이 잡히는 원인(사우나 매핑, 이연 매출, 지연 전표 등) 점검 |
+| **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 `revpar` 필드 추가** | 12개월 정산 대조표에 순수 객실 판매 효율(RevPAR = 객실 순매출 ÷ 가용객실수) 제공 |
 | **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
 | **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
 | **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
@@ -1197,15 +1198,76 @@ const reverseSpillover = totalRoomSales > 0
 
 ---
 
-### 3. 프론트엔드 조치 계획 (배포 즉시 실행)
-1. 백엔드에서 위 API가 배포되는 즉시:
-   - `src/data/monthlySeasonalityData.ts` (4,655줄) 전면 삭제 (Git 파일 영구 제거)
-   - `src/lib/targetSimulationEngine.ts` 클라이언트 계산 엔진 전면 삭제
-   - `PackageGeneratorSimulator.tsx` 내의 하드코딩 가격 및 사칙연산 수식 전면 철거
-   - `StrategicSimulator.tsx`, `TargetSimulator.tsx`를 신규 API 완제품 직결 구조로 100% Passthrough 전환
-2. 백엔드 배포 전까지:
-   - 프론트엔드는 임의의 거짓 숫자를 새로 생성하지 않으며, 현재 상태를 안전하게 격리 유지합니다.
+---
 
+## 8. 🏨 [P1 신규 필드] 월별 가용객실 효율 API (`/api/v6/report/monthly-room-efficiency`)에 `revpar` 필드 추가
 
+### 8-1. 배경 및 요청 사유
+* **위치**: 대시보드 리조트 사업실적 (`/resort-business`) 하단 **「12-Month Detailed Reconciliation Table (12개월 정산 대조표)」**
+* **요청 목적**: 경영진 및 대표님 지시로 가용객실 1실당 전사/리조트 전체 매출 기여도를 나타내는 **`TrevPAR`**와 함께, **순수 객실 판매 효율을 나타내는 `RevPAR`**를 나란히 비교 검증하고자 함.
+* **현황**: 현재 `/api/v6/report/monthly-room-efficiency` 응답에는 `trevparTotal`, `trevparWithoutGolf`, `trevporTotal`, `trevporWithoutGolf`가 포함되어 있으나, `revpar` (또는 `revPar`) 필드는 누락되어 있음.
+* **프론트엔드 준수 원칙**: Fail-Stop 원칙 및 무관용 원칙(Zero-Proxy / No Client Synthesis)에 따라 클라이언트에서 사칙연산(`roomRevenue ÷ availableRooms`)으로 숫자를 임의 합성하지 않고 백엔드 공식 완제품 필드 바인딩 대기 상태(`-`)로 표출함.
 
+### 8-2. 백엔드 산출 로직
+* **RevPAR 산출 공식**:
+  $$\text{RevPAR} = \left\lfloor \frac{\text{roomRevenue (객실 순매출)}}{\text{availableRooms (월 가용객실수)}} + 0.5 \right\rfloor \quad (\text{정수형 원화 단위 반올림})$$
+* **기존 연산과의 정합성**:
+  * `trevparTotal` = `ROUND(totalRevenue / availableRooms)`
+  * `trevparWithoutGolf` = `ROUND(netRevenueWithoutGolf / availableRooms)`
+  * **신규 `revpar`** = `ROUND(roomRevenue / availableRooms)`
 
+### 8-3. 기대 응답 JSON 규격
+`monthlyComparison` 배열 내의 `ly`와 `ty` 객체에 `revpar` (또는 `revPar`) 추가:
+```json
+{
+  "monthlyComparison": [
+    {
+      "month": 1,
+      "monthLabel": "1월",
+      "ly": {
+        "year": 2025,
+        "availableRooms": 5425,
+        "roomsSold": 1837,
+        "totalRevenue": 975873463,
+        "roomRevenue": 296552928,
+        "netRevenueWithoutGolf": 824016810,
+        "revpar": 54664,
+        "trevparTotal": 179885,
+        "trevparWithoutGolf": 151892,
+        "trevporTotal": 531232,
+        "trevporWithoutGolf": 448567
+      },
+      "ty": {
+        "year": 2026,
+        "availableRooms": 5425,
+        "roomsSold": 1997,
+        "totalRevenue": 966197010,
+        "roomRevenue": 293051509,
+        "netRevenueWithoutGolf": 898758568,
+        "revpar": 54019,
+        "trevparTotal": 178101,
+        "trevparWithoutGolf": 165670,
+        "trevporTotal": 483824,
+        "trevporWithoutGolf": 450054,
+        "isClosed": true
+      }
+    }
+  ],
+  "summary": {
+    "ty": {
+      "revpar": 54019,
+      "trevparTotal": 408476,
+      "trevparWithoutGolf": 275900
+    },
+    "ly": {
+      "revpar": 54664,
+      "trevparTotal": 381245,
+      "trevparWithoutGolf": 235152
+    }
+  }
+}
+```
+
+### 8-4. 프론트엔드 조치 완료 사항
+* `MonthlyTrevporChart.tsx` 테이블 내 2025년 및 2026년에 각각 **`2025년 RevPAR`**, **`2026년 RevPAR`** 컬럼 신설 완료.
+* 백엔드 API에서 `revpar` 또는 `revPar` 응답 시 실시간 자동 반영(100% camelCase 정규화) 연동 완료.

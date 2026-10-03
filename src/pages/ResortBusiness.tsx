@@ -2,16 +2,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   CalendarDays, Hotel, Coins, KeyRound, Layers, 
   PieChart as PieChartIcon, Activity, Sparkles, 
-  Building2, Globe, Lightbulb 
+  Building2, Globe, Lightbulb, ArrowUpDown, BarChart3
 } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import { getLatestClosedDateStr } from '../lib/dateUtils';
+import { getPeriodHolidayComparison } from '../lib/holidayUtils';
 import ReactECharts from 'echarts-for-react';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { transformResortData } from '../lib/dataTransformers';
 import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
+
 // 🌟 대한민국 법정 공휴일 마스터 (2025~2026)
 const KOREAN_HOLIDAYS_SET = new Set([
   // 2025
@@ -41,11 +43,27 @@ function checkNextDayHoliday(dateStr: string): boolean {
   return KOREAN_HOLIDAYS_SET.has(`${ny}-${nm}-${nd}`);
 }
 
+// 🌟 전년 동기간 일자 산출 유틸리티 (윤년 2/29 안전 보정)
+function getLyDateStr(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return '';
+  const y = parseInt(parts[0], 10) - 1;
+  const m = parts[1];
+  let d = parts[2];
+  if (m === '02' && d === '29') {
+    d = '28';
+  }
+  return `${y}-${m}-${d}`;
+}
 
 export default function ResortBusiness() {
   const [data, setData] = useState<any>(null);
+  const [lyData, setLyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { startDate, endDate } = useDate();
+  const [showLyCompareTable, setShowLyCompareTable] = useState<boolean>(true);
+  const [channelCompareView, setChannelCompareView] = useState<'compare' | 'single'>('compare');
 
   // 💡 LOS (연박) 체류 시너지 분석 데이터 상태
   const [losTrendData, setLosTrendData] = useState<any[]>([]);
@@ -119,28 +137,57 @@ export default function ResortBusiness() {
         }
 
         const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
-        const queryParams = endDate && startDate !== endDate
+        const isRangeQuery = Boolean(endDate && startDate !== endDate);
+        const curStart = startDate || getLatestClosedDateStr();
+        const curEnd = isRangeQuery && endDate ? endDate : curStart;
+        const queryParams = isRangeQuery
           ? `startDate=${startDate}&endDate=${endDate}&_t=${Date.now()}`
-          : `date=${startDate || getLatestClosedDateStr()}&_t=${Date.now()}`;
+          : `date=${curStart}&_t=${Date.now()}`;
+        
+        const lyStartStr = getLyDateStr(curStart);
+        const lyEndStr = getLyDateStr(curEnd);
+        const lyQueryParams = isRangeQuery
+          ? `startDate=${lyStartStr}&endDate=${lyEndStr}&_t=${Date.now()}`
+          : `date=${lyStartStr}&_t=${Date.now()}`;
           
-          const [overviewRes, channelRes, rateRes] = await Promise.all([
-            secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
-            secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
-            secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`).catch(() => ({ data: [] }))
-          ]);
-  
-          const rawOverview = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes.data || overviewRes);
-          const rawChannels = channelRes.data || channelRes;
-          const rawRates = rateRes.data || rateRes;
-  
-          const transformed = transformResortData({
-            ...rawOverview,
-            matrix: Array.isArray(rawOverview.gridData) ? rawOverview.gridData : [],
-            salesByChannel: Array.isArray(rawChannels) ? rawChannels : (rawChannels.channels || rawChannels.data || []),
-            salesBySegment: Array.isArray(rawRates) ? rawRates : (rawRates.rates || rawRates.data || [])
-          }, caps);
+        const [overviewRes, channelRes, rateRes, lyOverviewRes, lyChannelRes, lyRateRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${lyQueryParams}`).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`).catch(() => ({ data: [] }))
+        ]);
+
+        const rawOverview = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes.data || overviewRes);
+        const rawChannels = channelRes.data || channelRes;
+        const rawRates = rateRes.data || rateRes;
+
+        const transformed = transformResortData({
+          ...rawOverview,
+          matrix: Array.isArray(rawOverview.gridData) ? rawOverview.gridData : [],
+          salesByChannel: Array.isArray(rawChannels) ? rawChannels : (rawChannels.channels || rawChannels.data || []),
+          salesBySegment: Array.isArray(rawRates) ? rawRates : (rawRates.rates || rawRates.data || [])
+        }, caps);
 
         setData(transformed);
+
+        if (lyOverviewRes) {
+          const rawLyOverview = (lyOverviewRes?.summary || lyOverviewRes?.gridData) ? lyOverviewRes : (lyOverviewRes.data || lyOverviewRes);
+          const rawLyChannels = lyChannelRes?.data || lyChannelRes;
+          const rawLyRates = lyRateRes?.data || lyRateRes;
+
+          const lyTransformed = transformResortData({
+            ...rawLyOverview,
+            matrix: Array.isArray(rawLyOverview.gridData) ? rawLyOverview.gridData : [],
+            salesByChannel: Array.isArray(rawLyChannels) ? rawLyChannels : (rawLyChannels.channels || rawLyChannels.data || []),
+            salesBySegment: Array.isArray(rawLyRates) ? rawLyRates : (rawLyRates.rates || rawLyRates.data || [])
+          }, caps);
+
+          setLyData(lyTransformed);
+        } else {
+          setLyData(null);
+        }
       } catch (err) {
         console.error('Error fetching resort data:', err);
       } finally {
@@ -159,28 +206,84 @@ export default function ResortBusiness() {
 
   // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
   const isRange = Boolean(startDate && endDate && startDate !== endDate);
+  const curStart = startDate || getLatestClosedDateStr();
+  const curEnd = isRange && endDate ? endDate : curStart;
+  const lyStart = getLyDateStr(curStart);
+  const lyEnd = getLyDateStr(curEnd);
+
   const safeRangeDays = isRange && startDate && endDate 
     ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) 
     : 1;
   const rangeDays = safeRangeDays;
 
+  // 공휴일 수 대조 정보
+  const holidayComparison = useMemo(() => {
+    if (!startDate) return null;
+    return getPeriodHolidayComparison(startDate, endDate || undefined);
+  }, [startDate, endDate]);
+
   const lodgingStats = data?.lodgingStats || { revenue: 0, roomsSold: 0, adr: 0, totalCapacity: 0 };
+  const lyStats = lyData?.lodgingStats || null;
+
+  // 🌟 전년 동일기간 비교 핵심 지표 (Zero-Fake, 공식 마트 실측 바인딩)
+  // 1. 객실 총 매출
+  const revCurrent = lodgingStats.revenue;
+  const revLy = (lodgingStats.lyRevenue !== undefined && lodgingStats.lyRevenue > 0)
+    ? lodgingStats.lyRevenue
+    : (lyStats?.revenue || 0);
+  const revDiff = revLy > 0 ? revCurrent - revLy : 0;
+  const revGrowth = lodgingStats.revenueGrowth !== undefined
+    ? lodgingStats.revenueGrowth
+    : (revLy > 0 ? Number(((revDiff / revLy) * 100).toFixed(1)) : null);
+
+  // 2. 판매 건수 (계약)
+  const roomsCurrent = lodgingStats.roomsSold;
+  const roomsLy = (lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0)
+    ? lodgingStats.lyRoomsSold
+    : (lyStats?.roomsSold || 0);
+  const roomsDiff = roomsLy > 0 ? roomsCurrent - roomsLy : 0;
+  const roomsGrowth = lodgingStats.roomsGrowth !== undefined
+    ? lodgingStats.roomsGrowth
+    : (roomsLy > 0 ? Number(((roomsDiff / roomsLy) * 100).toFixed(1)) : null);
+
+  // 3. 실운영 점유실 (물리) & 점유율
+  const occCurrent = lodgingStats.physicalOccRate;
+  const occLy = lyStats?.physicalOccRate !== undefined ? lyStats.physicalOccRate : null;
+  const occDiff = occCurrent !== undefined && occLy !== null ? Number((occCurrent - occLy).toFixed(1)) : null;
+
+  // 4. 객실 평균 단가 (ADR)
+  const adrCurrent = lodgingStats.adr;
+  const adrLy = lyStats?.adr !== undefined && lyStats.adr > 0 ? lyStats.adr : null;
+  const adrDiff = adrCurrent !== undefined && adrLy !== null ? adrCurrent - adrLy : null;
+  const adrGrowth = adrCurrent !== undefined && adrLy !== null && adrLy > 0
+    ? Number((((adrCurrent - adrLy) / adrLy) * 100).toFixed(1))
+    : null;
   
   const roomOccupancyData = (() => {
     if (!data?.roomOccupancyMap) return [];
     
     const groups = data.roomOccupancyMap;
+    const lyGroups = lyData?.roomOccupancyMap || {};
     const result = [];
     const keys = Object.keys(groups);
     for (const key of keys) {
       const g = groups[key];
       if (!g || (g.sold === 0 && g.cap === 0 && g.rev === 0)) continue;
       
-      // Fail-Stop: 백엔드가 내려준 정원(g.cap)이 없으면 g.sold로 대체하지 않고 결함을 그대로 노출
       const effectiveCap = g.cap;
       const rate = g.occupancyRate ?? null;
       const cappedRate = rate !== null ? Math.min(rate, 100) : 0;
       const displayRate = rate !== null ? `${rate}%` : '-';
+
+      const lyG = lyGroups[key] || null;
+      const lySold = lyG?.sold ?? null;
+      const lyCap = lyG?.cap ?? null;
+      const lyRev = lyG?.rev ?? null;
+      const lyAdr = (lyG as any)?.adr !== null && (lyG as any)?.adr !== undefined ? Number((lyG as any).adr) : null;
+      const lyRate = lyG?.occupancyRate ?? null;
+      const rateDiff = rate !== null && lyRate !== null ? Number((rate - lyRate).toFixed(1)) : null;
+      const soldDiff = lySold !== null ? g.sold - lySold : null;
+      const adrDiff = ((g as any).adr !== null && (g as any).adr !== undefined && lyAdr !== null) ? Number((g as any).adr) - lyAdr : null;
 
       result.push({
         roomSize: key,
@@ -193,7 +296,16 @@ export default function ResortBusiness() {
         adr: (g as any).adr !== null && (g as any).adr !== undefined ? Number((g as any).adr) : null,
         isConnectedType: key === '51평',
         dynamicCapacity: (g as any).dynamicCapacity,
-        dynamicOccupancyRate: (g as any).dynamicOccupancyRate
+        dynamicOccupancyRate: (g as any).dynamicOccupancyRate,
+        // 전년 동기
+        lySold,
+        lyCap,
+        lyRev,
+        lyAdr,
+        lyRate,
+        rateDiff,
+        soldDiff,
+        adrDiff
       });
     }
 
@@ -207,11 +319,78 @@ export default function ResortBusiness() {
     summary.totalPhysicalKeysSold ||
     (standardPhysicalRooms + connectingPhysicalRooms)
   );
+  const lySummary = lyData?.summary || {};
+  const lyConnectingPhysicalRooms = Number(lySummary.connectingPhysicalRooms || 0);
+  const lyStandardPhysicalRooms = Number(lySummary.standardPhysicalRooms || lyStats?.roomsSold || 0);
+  const lyTotalPhysicalOccupied = Number(
+    lySummary.totalPhysicalKeysSold ||
+    (lyStandardPhysicalRooms + lyConnectingPhysicalRooms)
+  );
   const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || 0);
   const remainingRooms = totalBaseRooms > 0 ? Math.max(0, totalBaseRooms - totalPhysicalOccupied) : 0;
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];
+
+  // 판매채널별 전년 동기 대조 데이터
+  const channelComparisonData = useMemo(() => {
+    const curList = data?.channelAdrData || [];
+    const lyList = lyData?.channelAdrData || [];
+    const lyMap = new Map<string, any>();
+    lyList.forEach((item: any) => lyMap.set(item.channel, item));
+
+    return curList.map((cur: any) => {
+      const ly = lyMap.get(cur.channel);
+      const lySold = ly?.roomsSold ?? 0;
+      const lyRev = ly?.totalRevenue ?? 0;
+      const lyAdr = ly?.adr ?? 0;
+      const soldDiff = cur.roomsSold - lySold;
+      const revDiff = cur.totalRevenue - lyRev;
+      const revGrowth = lyRev > 0 ? Number(((revDiff / lyRev) * 100).toFixed(1)) : null;
+      const adrDiff = (cur.adr > 0 && lyAdr > 0) ? cur.adr - lyAdr : null;
+
+      return {
+        ...cur,
+        lySold,
+        lyRev,
+        lyAdr,
+        soldDiff,
+        revDiff,
+        revGrowth,
+        adrDiff
+      };
+    });
+  }, [data?.channelAdrData, lyData?.channelAdrData]);
+
+  // 요금타입별 전년 동기 대조 데이터
+  const rateComparisonData = useMemo(() => {
+    const curList = data?.rateAdrData || [];
+    const lyList = lyData?.rateAdrData || [];
+    const lyMap = new Map<string, any>();
+    lyList.forEach((item: any) => lyMap.set(item.marketType, item));
+
+    return curList.map((cur: any) => {
+      const ly = lyMap.get(cur.marketType);
+      const lySold = ly?.roomsSold ?? 0;
+      const lyRev = ly?.totalRevenue ?? 0;
+      const lyAdr = ly?.adr ?? 0;
+      const soldDiff = cur.roomsSold - lySold;
+      const revDiff = cur.totalRevenue - lyRev;
+      const revGrowth = lyRev > 0 ? Number(((revDiff / lyRev) * 100).toFixed(1)) : null;
+      const adrDiff = (cur.adr > 0 && lyAdr > 0) ? cur.adr - lyAdr : null;
+
+      return {
+        ...cur,
+        lySold,
+        lyRev,
+        lyAdr,
+        soldDiff,
+        revDiff,
+        revGrowth,
+        adrDiff
+      };
+    });
+  }, [data?.rateAdrData, lyData?.rateAdrData]);
 
   // 도넛 차트: 전체 175실 기준 레이어링 (잔여 30실 / 일반 점유 75실 / 커넥팅 점유 70실)
   const pieOptions = (() => {
@@ -329,9 +508,46 @@ export default function ResortBusiness() {
         </div>
       ) : (
         <>
-          {/* Main KPI Cards Grid: 용어 표기 명확 분리 */}
+          {/* 기간 선택 시: 전년 동기간 대조 배너 및 공휴일수 분석 */}
+          {isRange && (
+            <div className="bg-gradient-to-r from-emerald-50 via-teal-50/60 to-slate-50 border border-emerald-200/80 rounded-2xl p-4 mb-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg text-xs shadow-2xs flex items-center gap-1">
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  전년 동기간(YoY) 비교 모드
+                </span>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <span className="font-medium text-slate-500">당해 선택기간:</span>
+                  <span className="font-bold text-slate-900 font-financial bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                    {startDate} ~ {endDate} ({rangeDays}일간)
+                  </span>
+                  <span className="text-slate-400 font-bold">vs</span>
+                  <span className="font-medium text-slate-500">전년 동일기간:</span>
+                  <span className="font-bold text-emerald-800 font-financial bg-emerald-100/60 px-2 py-0.5 rounded-md border border-emerald-200">
+                    {lyStart} ~ {lyEnd} ({rangeDays}일간)
+                  </span>
+                </div>
+              </div>
+
+              {holidayComparison && (
+                <div className="flex items-center gap-2 bg-white/80 border border-amber-200 px-3 py-1 rounded-xl text-amber-950 font-financial">
+                  <span className="font-bold text-amber-800">🎈 공휴일수:</span>
+                  <span>당해 <strong className="text-slate-900">{holidayComparison.currentPeriod.totalHolidays}일</strong> vs 전년 <strong className="text-slate-900">{holidayComparison.lastYearPeriod.totalHolidays}일</strong></span>
+                  {holidayComparison.diffHolidays !== 0 ? (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${holidayComparison.diffHolidays > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'}`}>
+                      ({holidayComparison.diffHolidays > 0 ? `+${holidayComparison.diffHolidays}일` : `${holidayComparison.diffHolidays}일`})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-medium">(동일)</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Main KPI Cards Grid: 용어 표기 명확 분리 & YoY 전면 대조 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Total Revenue */}
+            {/* 1. Total Revenue */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <Coins className="w-5 h-5 text-[#00ae95]" /> 
@@ -339,7 +555,7 @@ export default function ResortBusiness() {
                 <MetricExplainerTooltip presetKey="netRevenue" align="left" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                {formatCurrency(lodgingStats.revenue)} <span className="text-base text-slate-400 font-normal">원</span>
+                {formatCurrency(revCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
               {(lodgingStats.weekdayRevenue !== undefined || lodgingStats.weekendRevenue !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
@@ -348,20 +564,23 @@ export default function ResortBusiness() {
                   <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRevenue)}</strong>원</span>
                 </div>
               )}
-              {lodgingStats.lyRevenue !== undefined && lodgingStats.lyRevenue > 0 && (
-                <div className="flex items-center gap-2 mt-2">
+              {revLy > 0 && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
-                    (lodgingStats.revenueGrowth || 0) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                    (revGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
                   }`}>
-                    {(lodgingStats.revenueGrowth || 0) > 0 ? '▲' : '▼'} {Math.abs(lodgingStats.revenueGrowth || 0).toFixed(1)}%
+                    {(revGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(revGrowth || 0).toFixed(1)}%
+                    {revDiff !== 0 && (
+                      <span className="ml-1 opacity-80">({revDiff > 0 ? '+' : ''}{formatCurrency(revDiff)}원)</span>
+                    )}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(lodgingStats.lyRevenue)}원</span>
+                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(revLy)}원</span>
                 </div>
               )}
               <p className="text-[10px] text-slate-400 mt-2 break-keep">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
             </div>
 
-            {/* 판매 건수 (계약) */}
+            {/* 2. 판매 건수 (계약) */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <CalendarDays className="w-5 h-5 text-[#00ae95]" /> 
@@ -369,7 +588,7 @@ export default function ResortBusiness() {
                 <MetricExplainerTooltip presetKey="occupancy" align="center" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                {formatCurrency(lodgingStats.roomsSold)}건
+                {formatCurrency(roomsCurrent)}건
               </div>
               {(lodgingStats.weekdayRoomsSold !== undefined || lodgingStats.weekendRoomsSold !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
@@ -378,20 +597,23 @@ export default function ResortBusiness() {
                   <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRoomsSold)}</strong>건</span>
                 </div>
               )}
-              {lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0 && (
-                <div className="flex items-center gap-2 mt-2">
+              {roomsLy > 0 && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
-                    lodgingStats.roomsSold > lodgingStats.lyRoomsSold ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                    (roomsGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
                   }`}>
-                    {lodgingStats.roomsGrowth !== undefined ? (lodgingStats.roomsGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(lodgingStats.roomsGrowth).toFixed(1) + '%' : '-'}
+                    {(roomsGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(roomsGrowth || 0).toFixed(1)}%
+                    {roomsDiff !== 0 && (
+                      <span className="ml-1 opacity-80">({roomsDiff > 0 ? '+' : ''}{formatCurrency(roomsDiff)}건)</span>
+                    )}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(lodgingStats.lyRoomsSold)}건</span>
+                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(roomsLy)}건</span>
                 </div>
               )}
               <p className="text-[10px] text-slate-400 mt-2 break-keep">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
             </div>
 
-            {/* 실운영 점유실 (물리) */}
+            {/* 3. 실운영 점유실 (물리) */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <KeyRound className="w-5 h-5 text-[#00ae95]" /> 
@@ -409,10 +631,22 @@ export default function ResortBusiness() {
                   <span className="text-slate-500">휴일전일 점유 <strong className="text-[#00ae95]">{lodgingStats.weekendOcc}%</strong></span>
                 </div>
               )}
+              {occLy !== null && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
+                    (occDiff || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                  }`}>
+                    {(occDiff || 0) >= 0 ? '▲' : '▼'} {Math.abs(occDiff || 0).toFixed(1)}%p
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium font-financial">
+                    전년 {(lyTotalPhysicalOccupied > 0 ? lyTotalPhysicalOccupied : lyStats?.roomsSold)?.toLocaleString()}실 ({occLy}%)
+                  </span>
+                </div>
+              )}
               <p className="text-[11px] text-slate-400 mt-2 break-keep">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
             </div>
 
-            {/* Overall ADR */}
+            {/* 4. Overall ADR */}
             <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                 <Coins className="w-5 h-5 text-[#00ae95]" /> 
@@ -420,13 +654,26 @@ export default function ResortBusiness() {
                 <MetricExplainerTooltip presetKey="adr" align="right" />
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                {formatCurrency(lodgingStats.adr)} <span className="text-base text-slate-400 font-normal">원</span>
+                {formatCurrency(adrCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
               </div>
               {(lodgingStats.weekdayAdr !== undefined || lodgingStats.weekendAdr !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
                   <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</span>
                   <span className="text-slate-300">|</span>
                   <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</span>
+                </div>
+              )}
+              {adrLy !== null && adrLy > 0 && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
+                    (adrGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                  }`}>
+                    {(adrGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(adrGrowth || 0).toFixed(1)}%
+                    {adrDiff !== null && adrDiff !== 0 && (
+                      <span className="ml-1 opacity-80">({adrDiff > 0 ? '+' : ''}{formatCurrency(adrDiff)}원)</span>
+                    )}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(adrLy)}원</span>
                 </div>
               )}
               <p className="text-[11px] text-slate-400 mt-2 break-keep">총 객실 매출 ÷ 판매 건수(계약)</p>
@@ -469,10 +716,44 @@ export default function ResortBusiness() {
                       </svg>
                       <span className="absolute text-base font-bold text-slate-800">{row.displayRate}</span>
                     </div>
-                    <div className="flex flex-col items-center mt-4 space-y-1 text-center">
-                      <span className="text-xs font-semibold text-slate-600">{row.sold}건 / {row.capacity}실</span>
-                      <span className="text-[10px] text-slate-400">매출: {formatCurrency(row.revenue)}</span>
-                      <span className="text-[10px] text-emerald-600 font-bold">ADR: {row.adr !== null && row.adr !== undefined ? formatCurrency(row.adr) + '원' : '-'}</span>
+
+                    {/* 전년 동기 가동률 비교 배지 */}
+                    {row.lyRate !== null && row.lyRate !== undefined && (
+                      <div className="mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full font-financial bg-white border border-slate-200 text-slate-600 flex items-center gap-1">
+                        <span>전년 {row.lyRate}%</span>
+                        {row.rateDiff !== null && (
+                          <span className={row.rateDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                            ({row.rateDiff >= 0 ? '+' : ''}{row.rateDiff}%p)
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col items-center mt-3 space-y-1 text-center w-full">
+                      <div className="text-xs font-semibold text-slate-600 flex items-center justify-center gap-1 flex-wrap">
+                        <span>{row.sold}건 / {row.capacity}실</span>
+                        {row.lySold !== null && (
+                          <span className="text-[10px] text-slate-400 font-normal font-financial">
+                            (전년 {row.lySold}건)
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-financial">
+                        매출: {formatCurrency(row.revenue)}원
+                        {row.lyRev !== null && row.lyRev > 0 && (
+                          <span className="text-slate-400 block text-[9px]">
+                            전년 {formatCurrency(row.lyRev)}원
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-emerald-600 font-bold font-financial">
+                        ADR: {row.adr !== null && row.adr !== undefined ? formatCurrency(row.adr) + '원' : '-'}
+                        {row.lyAdr !== null && row.lyAdr > 0 && (
+                          <span className="text-slate-400 block text-[9px] font-normal">
+                            전년 {formatCurrency(row.lyAdr)}원
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -483,6 +764,254 @@ export default function ResortBusiness() {
               </div>
             )}
           </div>
+
+          {/* 🌟 기간 선택 시: 전년 동일기간 객실 실적 정밀 대조 매트릭스 */}
+          {isRange && lyStats && (
+            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 border border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      YoY 동일기간 비교 SSOT
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500 font-financial">
+                      당해 ({startDate} ~ {endDate}) vs 전년 동기 ({lyStart} ~ {lyEnd})
+                    </span>
+                  </div>
+                  <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-emerald-600" />
+                    <span>객실 경영 실적 전년 동일기간 정밀 대조표</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    선택한 전체 기간의 핵심 객실 지표(매출, 판매량, ADR, 점유율, 평형별)를 전년 동기간 실측 데이터와 1:1로 직접 대조합니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLyCompareTable(!showLyCompareTable)}
+                  className="text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors self-start sm:self-auto cursor-pointer"
+                >
+                  {showLyCompareTable ? '테이블 접기 ▲' : '테이블 펼치기 ▼'}
+                </button>
+              </div>
+
+              {showLyCompareTable && (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left whitespace-nowrap min-w-[720px]">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-xs font-bold text-slate-500 bg-slate-50/80 uppercase tracking-wider">
+                        <th className="py-3.5 px-4">경영 지표 구분</th>
+                        <th className="py-3.5 px-4 text-right">당해 실적 ({startDate} ~ {endDate})</th>
+                        <th className="py-3.5 px-4 text-right">전년 동기 ({lyStart} ~ {lyEnd})</th>
+                        <th className="py-3.5 px-4 text-right">YoY 증감 (Delta)</th>
+                        <th className="py-3.5 px-4 text-right">YoY 증감률 (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-financial">
+                      {/* 1. 객실 총매출 */}
+                      <tr className="bg-emerald-50/20 font-bold hover:bg-emerald-50/40 transition-colors">
+                        <td className="py-3.5 px-4 text-slate-900 flex items-center gap-2">
+                          <Coins className="w-4 h-4 text-emerald-600" />
+                          <span>객실 총 매출 (순매출)</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(revCurrent)}원</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(revLy)}원</td>
+                        <td className={`py-3.5 px-4 text-right font-bold ${revDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {revDiff > 0 ? '+' : ''}{formatCurrency(revDiff)}원
+                        </td>
+                        <td className={`py-3.5 px-4 text-right font-extrabold ${revGrowth !== null && revGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {revGrowth !== null ? `${revGrowth >= 0 ? '▲' : '▼'} ${Math.abs(revGrowth)}%` : '-'}
+                        </td>
+                      </tr>
+                      {/* 세부: 주중/휴일전일 매출 */}
+                      <tr className="text-slate-500 hover:bg-slate-50/40">
+                        <td className="py-2.5 px-4 pl-8 text-xs">• 주중 객실 매출</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekdayRevenue)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayRevenue)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekdayRevenue !== undefined && lyStats.weekdayRevenue !== undefined
+                            ? `${lodgingStats.weekdayRevenue - lyStats.weekdayRevenue > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayRevenue - lyStats.weekdayRevenue)}원`
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekdayRevenue !== undefined && lyStats.weekdayRevenue ? (
+                            <span className={lodgingStats.weekdayRevenue >= lyStats.weekdayRevenue ? 'text-emerald-700' : 'text-rose-600'}>
+                              {lodgingStats.weekdayRevenue >= lyStats.weekdayRevenue ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayRevenue - lyStats.weekdayRevenue) / lyStats.weekdayRevenue * 100).toFixed(1)))}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      </tr>
+                      <tr className="text-slate-500 hover:bg-slate-50/40">
+                        <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 객실 매출</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekendRevenue)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendRevenue)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekendRevenue !== undefined && lyStats.weekendRevenue !== undefined
+                            ? `${lodgingStats.weekendRevenue - lyStats.weekendRevenue > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendRevenue - lyStats.weekendRevenue)}원`
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekendRevenue !== undefined && lyStats.weekendRevenue ? (
+                            <span className={lodgingStats.weekendRevenue >= lyStats.weekendRevenue ? 'text-emerald-700' : 'text-rose-600'}>
+                              {lodgingStats.weekendRevenue >= lyStats.weekendRevenue ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendRevenue - lyStats.weekendRevenue) / lyStats.weekendRevenue * 100).toFixed(1)))}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      </tr>
+
+                      {/* 2. 총 판매 계약 건수 */}
+                      <tr className="bg-slate-50/40 font-bold hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4 text-slate-900 flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4 text-[#00ae95]" />
+                          <span>총 판매 계약 건수 (실)</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(roomsCurrent)}건</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(roomsLy)}건</td>
+                        <td className={`py-3.5 px-4 text-right font-bold ${roomsDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {roomsDiff > 0 ? '+' : ''}{formatCurrency(roomsDiff)}건
+                        </td>
+                        <td className={`py-3.5 px-4 text-right font-extrabold ${roomsGrowth !== null && roomsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {roomsGrowth !== null ? `${roomsGrowth >= 0 ? '▲' : '▼'} ${Math.abs(roomsGrowth)}%` : '-'}
+                        </td>
+                      </tr>
+                      {/* 세부: 주중/휴일전일 판매 */}
+                      <tr className="text-slate-500 hover:bg-slate-50/40">
+                        <td className="py-2.5 px-4 pl-8 text-xs">• 주중 판매 건수</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekdayRoomsSold)}건</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayRoomsSold)}건</td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekdayRoomsSold !== undefined && lyStats.weekdayRoomsSold !== undefined
+                            ? `${lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold)}건`
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekdayRoomsSold !== undefined && lyStats.weekdayRoomsSold ? (
+                            <span className={lodgingStats.weekdayRoomsSold >= lyStats.weekdayRoomsSold ? 'text-emerald-700' : 'text-rose-600'}>
+                              {lodgingStats.weekdayRoomsSold >= lyStats.weekdayRoomsSold ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold) / lyStats.weekdayRoomsSold * 100).toFixed(1)))}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      </tr>
+                      <tr className="text-slate-500 hover:bg-slate-50/40">
+                        <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 판매 건수</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekendRoomsSold)}건</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendRoomsSold)}건</td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekendRoomsSold !== undefined && lyStats.weekendRoomsSold !== undefined
+                            ? `${lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold)}건`
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekendRoomsSold !== undefined && lyStats.weekendRoomsSold ? (
+                            <span className={lodgingStats.weekendRoomsSold >= lyStats.weekendRoomsSold ? 'text-emerald-700' : 'text-rose-600'}>
+                              {lodgingStats.weekendRoomsSold >= lyStats.weekendRoomsSold ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold) / lyStats.weekendRoomsSold * 100).toFixed(1)))}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      </tr>
+
+                      {/* 3. 객실 평균 단가 (ADR) */}
+                      <tr className="bg-sky-50/20 font-bold hover:bg-sky-50/40 transition-colors">
+                        <td className="py-3.5 px-4 text-slate-900 flex items-center gap-2">
+                          <Coins className="w-4 h-4 text-sky-600" />
+                          <span>객실 평균 단가 (ADR)</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(adrCurrent)}원</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(adrLy)}원</td>
+                        <td className={`py-3.5 px-4 text-right font-bold ${adrDiff !== null && adrDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {adrDiff !== null ? `${adrDiff > 0 ? '+' : ''}${formatCurrency(adrDiff)}원` : '-'}
+                        </td>
+                        <td className={`py-3.5 px-4 text-right font-extrabold ${adrGrowth !== null && adrGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {adrGrowth !== null ? `${adrGrowth >= 0 ? '▲' : '▼'} ${Math.abs(adrGrowth)}%` : '-'}
+                        </td>
+                      </tr>
+                      {/* 세부: 주중/휴일전일 ADR */}
+                      <tr className="text-slate-500 hover:bg-slate-50/40">
+                        <td className="py-2.5 px-4 pl-8 text-xs">• 주중 평균 ADR</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekdayAdr)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayAdr)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekdayAdr !== undefined && lyStats.weekdayAdr !== undefined
+                            ? `${lodgingStats.weekdayAdr - lyStats.weekdayAdr > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayAdr - lyStats.weekdayAdr)}원`
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekdayAdr !== undefined && lyStats.weekdayAdr ? (
+                            <span className={lodgingStats.weekdayAdr >= lyStats.weekdayAdr ? 'text-emerald-700' : 'text-rose-600'}>
+                              {lodgingStats.weekdayAdr >= lyStats.weekdayAdr ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayAdr - lyStats.weekdayAdr) / lyStats.weekdayAdr * 100).toFixed(1)))}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      </tr>
+                      <tr className="text-slate-500 hover:bg-slate-50/40">
+                        <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 평균 ADR</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekendAdr)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendAdr)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekendAdr !== undefined && lyStats.weekendAdr !== undefined
+                            ? `${lodgingStats.weekendAdr - lyStats.weekendAdr > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendAdr - lyStats.weekendAdr)}원`
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-4 text-right text-xs">
+                          {lodgingStats.weekendAdr !== undefined && lyStats.weekendAdr ? (
+                            <span className={lodgingStats.weekendAdr >= lyStats.weekendAdr ? 'text-emerald-700' : 'text-rose-600'}>
+                              {lodgingStats.weekendAdr >= lyStats.weekendAdr ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendAdr - lyStats.weekendAdr) / lyStats.weekendAdr * 100).toFixed(1)))}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      </tr>
+
+                      {/* 4. 실운영 점유율 */}
+                      <tr className="bg-teal-50/20 font-bold hover:bg-teal-50/40 transition-colors">
+                        <td className="py-3.5 px-4 text-slate-900 flex items-center gap-2">
+                          <KeyRound className="w-4 h-4 text-teal-600" />
+                          <span>실운영 객실 가동률 (Occupancy)</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">
+                          {occCurrent !== undefined ? `${occCurrent}%` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">
+                          {occLy !== null ? `${occLy}%` : '-'}
+                        </td>
+                        <td className={`py-3.5 px-4 text-right font-bold ${occDiff !== null && occDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {occDiff !== null ? `${occDiff > 0 ? '+' : ''}${occDiff}%p` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-400 text-xs">
+                          (물리 인벤토리 기준)
+                        </td>
+                      </tr>
+
+                      {/* 5. 평형별 상세 실적 */}
+                      {roomOccupancyData.map((row) => (
+                        <tr key={row.roomSize} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-3 px-4 font-semibold text-slate-800 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>{row.roomSize} (판매 {row.sold}건 vs 전년 {row.lySold ?? '-'}건)</span>
+                          </td>
+                          <td className="py-3 px-4 text-right font-bold text-slate-800">
+                            {formatCurrency(row.revenue)}원 <span className="text-xs text-slate-400 font-normal">({row.displayRate})</span>
+                          </td>
+                          <td className="py-3 px-4 text-right text-slate-600">
+                            {row.lyRev !== null ? `${formatCurrency(row.lyRev)}원` : '-'} <span className="text-xs text-slate-400">({row.lyRate !== null ? `${row.lyRate}%` : '-'})</span>
+                          </td>
+                          <td className={`py-3 px-4 text-right font-bold ${row.lyRev !== null && row.revenue >= row.lyRev ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            {row.lyRev !== null ? `${row.revenue - row.lyRev > 0 ? '+' : ''}${formatCurrency(row.revenue - row.lyRev)}원` : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            {row.lyRev !== null && row.lyRev > 0 ? (
+                              <span className={row.revenue >= row.lyRev ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
+                                {row.revenue >= row.lyRev ? '▲' : '▼'} {Math.abs(Number(((row.revenue - row.lyRev) / row.lyRev * 100).toFixed(1)))}%
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 175실 기준 실운영 점유 레이어링 도넛 차트 */}
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
@@ -956,30 +1485,114 @@ export default function ResortBusiness() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* 1. 판매채널별 객단가 분석 */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <h2 className="text-base font-medium text-slate-800 mb-8 flex items-center gap-2">
-                💰 판매채널별 객단가 분석
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-2 border-b border-slate-100 gap-2">
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  💰 판매채널별 객단가 분석
+                </h2>
+                {lyData && (
+                  <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setChannelCompareView('compare')}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${
+                        channelCompareView === 'compare'
+                          ? 'bg-white text-emerald-800 shadow-xs font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      전년 대조
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChannelCompareView('single')}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${
+                        channelCompareView === 'single'
+                          ? 'bg-white text-emerald-800 shadow-xs font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      단독 보기
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {channelAdrData.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left whitespace-nowrap min-w-[500px]">
                     <thead>
                       <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
                         <th className="py-3 px-4 whitespace-nowrap">판매 채널명</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">판매 건수(계약)</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">총 매출액</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">평균 객단가 (ADR)</th>
+                        {channelCompareView === 'compare' && lyData ? (
+                          <>
+                            <th className="py-3 px-3 text-right whitespace-nowrap">판매 건수 (당해 vs 전년)</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap">총 매출액 (YoY)</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap">평균 ADR (당해 vs 전년)</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="py-3 px-4 text-right whitespace-nowrap">판매 건수(계약)</th>
+                            <th className="py-3 px-4 text-right whitespace-nowrap">총 매출액</th>
+                            <th className="py-3 px-4 text-right whitespace-nowrap">평균 객단가 (ADR)</th>
+                          </>
+                        )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 text-sm">
-                      {channelAdrData.map((row: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
-                          <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.channel}</td>
-                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold.toLocaleString()}건</td>
-                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}원</td>
-                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-slate-50 text-sm font-financial">
+                      {channelCompareView === 'compare' && lyData ? (
+                        channelComparisonData.map((row: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
+                            <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.channel}</td>
+                            <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <span className="font-bold text-slate-900">{row.roomsSold.toLocaleString()}건</span>
+                              <span className="text-slate-400 text-xs block">
+                                전년 {row.lySold.toLocaleString()}건 
+                                {row.soldDiff !== 0 && (
+                                  <strong className={row.soldDiff > 0 ? ' text-emerald-600' : ' text-rose-500'}>
+                                    ({row.soldDiff > 0 ? '+' : ''}{row.soldDiff})
+                                  </strong>
+                                )}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <span className="font-bold text-slate-900">{formatCurrency(row.totalRevenue)}원</span>
+                              <span className="text-xs block">
+                                {row.lyRev > 0 ? (
+                                  <span className={row.revGrowth >= 0 ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}>
+                                    전년 {formatCurrency(row.lyRev)}원 ({row.revGrowth >= 0 ? '▲' : '▼'} {Math.abs(row.revGrowth)}%)
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">전년 실적 없음</span>
+                                )}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <span className="font-bold text-slate-900">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</span>
+                              {row.lyAdr > 0 && (
+                                <span className="text-slate-400 text-xs block">
+                                  전년 {formatCurrency(row.lyAdr)}원
+                                  {row.adrDiff !== null && row.adrDiff !== 0 && (
+                                    <strong className={row.adrDiff > 0 ? ' text-emerald-600' : ' text-rose-500'}>
+                                      ({row.adrDiff > 0 ? '+' : ''}{formatCurrency(row.adrDiff)})
+                                    </strong>
+                                  )}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        channelAdrData.map((row: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
+                            <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.channel}</td>
+                            <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold.toLocaleString()}건</td>
+                            <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}원</td>
+                            <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -990,30 +1603,114 @@ export default function ResortBusiness() {
               )}
             </div>
 
+            {/* 2. 요금타입(회원/상품)별 실적 및 객단가 */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <h2 className="text-base font-medium text-slate-800 mb-8 flex items-center gap-2">
-                🏷️ 요금타입(회원/상품)별 실적 및 객단가 (Rate Type Analysis)
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-2 border-b border-slate-100 gap-2">
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  🏷️ 요금타입(회원/상품)별 실적 및 객단가
+                </h2>
+                {lyData && (
+                  <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setChannelCompareView('compare')}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${
+                        channelCompareView === 'compare'
+                          ? 'bg-white text-emerald-800 shadow-xs font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      전년 대조
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChannelCompareView('single')}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${
+                        channelCompareView === 'single'
+                          ? 'bg-white text-emerald-800 shadow-xs font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      단독 보기
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {rateAdrData.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left whitespace-nowrap min-w-[500px]">
                     <thead>
                       <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
                         <th className="py-3 px-4 whitespace-nowrap">요금타입(상품)명</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">판매 건수(계약)</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">총 매출액</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">평균 객단가 (ADR)</th>
+                        {channelCompareView === 'compare' && lyData ? (
+                          <>
+                            <th className="py-3 px-3 text-right whitespace-nowrap">판매 건수 (당해 vs 전년)</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap">총 매출액 (YoY)</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap">평균 ADR (당해 vs 전년)</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="py-3 px-4 text-right whitespace-nowrap">판매 건수(계약)</th>
+                            <th className="py-3 px-4 text-right whitespace-nowrap">총 매출액</th>
+                            <th className="py-3 px-4 text-right whitespace-nowrap">평균 객단가 (ADR)</th>
+                          </>
+                        )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 text-sm">
-                      {rateAdrData.map((row: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
-                          <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.marketType}</td>
-                          <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold.toLocaleString()}건</td>
-                          <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}원</td>
-                          <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-slate-50 text-sm font-financial">
+                      {channelCompareView === 'compare' && lyData ? (
+                        rateComparisonData.map((row: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
+                            <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.marketType}</td>
+                            <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <span className="font-bold text-slate-900">{row.roomsSold.toLocaleString()}건</span>
+                              <span className="text-slate-400 text-xs block">
+                                전년 {row.lySold.toLocaleString()}건 
+                                {row.soldDiff !== 0 && (
+                                  <strong className={row.soldDiff > 0 ? ' text-emerald-600' : ' text-rose-500'}>
+                                    ({row.soldDiff > 0 ? '+' : ''}{row.soldDiff})
+                                  </strong>
+                                )}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <span className="font-bold text-slate-900">{formatCurrency(row.totalRevenue)}원</span>
+                              <span className="text-xs block">
+                                {row.lyRev > 0 ? (
+                                  <span className={row.revGrowth >= 0 ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}>
+                                    전년 {formatCurrency(row.lyRev)}원 ({row.revGrowth >= 0 ? '▲' : '▼'} {Math.abs(row.revGrowth)}%)
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">전년 실적 없음</span>
+                                )}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <span className="font-bold text-slate-900">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</span>
+                              {row.lyAdr > 0 && (
+                                <span className="text-slate-400 text-xs block">
+                                  전년 {formatCurrency(row.lyAdr)}원
+                                  {row.adrDiff !== null && row.adrDiff !== 0 && (
+                                    <strong className={row.adrDiff > 0 ? ' text-emerald-600' : ' text-rose-500'}>
+                                      ({row.adrDiff > 0 ? '+' : ''}{formatCurrency(row.adrDiff)})
+                                    </strong>
+                                  )}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        rateAdrData.map((row: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
+                            <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.marketType}</td>
+                            <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">{row.roomsSold.toLocaleString()}건</td>
+                            <td className="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">{formatCurrency(row.totalRevenue)}원</td>
+                            <td className="py-3.5 px-4 text-right font-medium text-slate-900 whitespace-nowrap">{row.adr > 0 ? `${formatCurrency(row.adr)}원` : '-'}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

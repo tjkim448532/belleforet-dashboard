@@ -1452,19 +1452,67 @@ export default function MonthlyTrevporChart() {
             </div>
           </div>
 
+          {/* 가용객실 vs 판매객실 카운팅 기준 및 TrevPAR 연동 공식 안내 */}
+          <div className="mb-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 shadow-2xs">
+            <div className="flex items-center gap-2 mb-2 font-bold text-slate-900 text-sm">
+              <Building className="w-4 h-4 text-teal-700" />
+              <span>📌 객실 지표 카운팅(Counting) 기준 및 산정 공식 안내</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200/60 text-slate-600">
+              <div className="bg-white p-3 rounded-xl border border-slate-200/70">
+                <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                  <span>가용객실 (Available Rooms)</span>
+                </div>
+                <div className="text-[11px] leading-relaxed">
+                  • <b>산정 방식</b>: 벨포레 물리 고정 인벤토리 <b>1일 175실 × 해당 월 역일수(Days)</b><br/>
+                  • 31일 월: 5,425실 (1, 3, 5, 7, 8, 10, 12월)<br/>
+                  • 30일 월: 5,250실 (4, 6, 9, 11월)<br/>
+                  • 28일 월: 4,900실 (2월) · 진행월: 175실 × 누적일수
+                </div>
+              </div>
+
+              <div className="bg-white p-3 rounded-xl border border-slate-200/70">
+                <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+                  <span>판매객실 (Rooms Sold)</span>
+                </div>
+                <div className="text-[11px] leading-relaxed">
+                  • <b>산정 방식</b>: 산하 PMS(정산 마스터)에 등록된 <b>실제 정산 계약 및 체크인 완료 객실수 누적</b><br/>
+                  • <b>객실 점유율(Occupancy)</b> = (판매객실 ÷ 가용객실) × 100<br/>
+                  • 조립형 커넥팅룸 등 PMS 실판매 기준 1:1 바인딩
+                </div>
+              </div>
+
+              <div className="bg-white p-3 rounded-xl border border-slate-200/70">
+                <div className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                  <span>TrevPAR 산출 연동</span>
+                </div>
+                <div className="text-[11px] leading-relaxed">
+                  • <b>TrevPAR 공식</b> = <b>전사 총매출액 ÷ 월 가용객실수</b><br/>
+                  • 객실 1실의 물리적 인프라가 창출한 전체 사업장 매출 기여도<br/>
+                  • 참고: <b>TrevPOR</b> = 전사 총매출액 ÷ 실판매객실수
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 12-Month Detailed Reconciliation Table */}
           <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3.5 px-3 text-center">월</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 가용객실</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/50" title="물리 고정 175실 × 해당 월 역일수">2025년 가용객실</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/60 font-bold text-slate-800" title="PMS 정산 실판매 계약 객실수">2025년 판매객실</th>
                   <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[360px] whitespace-nowrap">
                     2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
                   <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 가용객실</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/40" title="물리 고정 175실 × 해당 월 역일수">2026년 가용객실</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/50 font-bold text-teal-900" title="PMS 정산 실판매 계약 객실수">2026년 판매객실</th>
                   <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[360px] whitespace-nowrap">
                     2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
@@ -1499,6 +1547,9 @@ export default function MonthlyTrevporChart() {
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">
                         {item.ly?.availableRooms ? `${formatCurrency(item.ly.availableRooms)} 실` : '-'}
+                      </td>
+                      <td className="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 bg-slate-100/20">
+                        {item.ly?.roomsSold !== undefined && item.ly?.roomsSold !== null ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
                       </td>
                       
                       {/* 2025년 매출 비중 */}
@@ -1544,6 +1595,9 @@ export default function MonthlyTrevporChart() {
                       
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">
                         {item.ty?.availableRooms ? `${formatCurrency(item.ty.availableRooms)} 실` : <span className="text-slate-300">-</span>}
+                      </td>
+                      <td className="py-3 px-3 text-right tabular-nums font-bold text-teal-900 bg-teal-50/20">
+                        {item.ty?.roomsSold !== undefined && item.ty?.roomsSold !== null ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
                       </td>
 
                       {/* 2026년 매출 비중 */}

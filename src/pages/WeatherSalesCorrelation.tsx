@@ -921,7 +921,15 @@ export default function WeatherSalesCorrelation() {
             </div>
 
             <div className="h-[380px] w-full">
-              <ReactECharts option={timeSeriesOption} style={{ height: '100%', width: '100%' }} notMerge={true} />
+              {data?.dailyTimeSeries && data.dailyTimeSeries.length > 0 ? (
+                <ReactECharts option={timeSeriesOption} style={{ height: '100%', width: '100%' }} notMerge={true} />
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-6 text-center">
+                  <CloudRain className="w-10 h-10 text-slate-300 mb-2" />
+                  <p className="text-sm font-semibold text-slate-600">선택하신 기간({startDate || '조회 기간'})의 일자별 기상 연동 데이터가 없습니다.</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md">기상청 AWS 관측 데이터 및 일별 매출 결합 배치(ETL)가 완료된 기간(예: 최근 7일, 전월 MTD 등)을 선택해 주세요.</p>
+                </div>
+              )}
             </div>
           </div>
 

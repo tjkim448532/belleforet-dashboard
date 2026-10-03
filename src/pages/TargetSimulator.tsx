@@ -5,9 +5,7 @@ import {
   ChevronDown, ChevronRight, TrendingUp
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
-import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
-import { runTargetSimulation } from '../lib/targetSimulationEngine';
+import type { SimulationTargetInput } from '../types/simulation';
 import { secureFetcher } from '../lib/secureFetcher';
 import { getClosedBusinessDate } from '../lib/dateUtils';
 
@@ -146,8 +144,6 @@ interface ApiSummary {
 }
 
 export default function TargetSimulator() {
-  const [capacityMaster] = useState<FacilityCapacityItem[]>(DEFAULT_CAPACITY_SEEDS);
-
   // Simulation Target Input State
   const [input, setInput] = useState<SimulationTargetInput>({
     baseYear: 2025,
@@ -172,10 +168,8 @@ export default function TargetSimulator() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [openParts, setOpenParts] = useState<Record<string, boolean>>({});
 
-  // Fallback Simulation Engine
-  const simulationResult = useMemo(() => {
-    return runTargetSimulation({ ...input, totalRoomCapacity: apiData?.summary?.totalRoomCap || 0 }, capacityMaster);
-  }, [input, capacityMaster, apiData]);
+  const selectedMonthLabel = input.selectedMonth === 'ANNUAL' ? '연간 종합 (1~12월)' : `${input.selectedMonth}월`;
+  const periodDays = apiData?.summary?.daysCount || (input.selectedMonth === 'ANNUAL' ? 365 : new Date(input.targetYear, Number(input.selectedMonth), 0).getDate());
 
   // Fetch Business Plan from Backend API
   useEffect(() => {
@@ -216,34 +210,11 @@ export default function TargetSimulator() {
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
 
-  // Raw categories from API or Simulation Engine (주차관제, 벨포레굿즈, 기타/과거업장 영구 제외)
+  // Raw categories from API (주차관제, 벨포레굿즈, 기타/과거업장 영구 제외)
   const rawCategories: ApiCategory[] = useMemo(() => {
     const list: ApiCategory[] = (apiData?.categories && apiData.categories.length > 0)
       ? apiData.categories
-      : simulationResult.divisionResults.map((div) => ({
-        categoryCode: div.category,
-        categoryName: div.categoryLabel,
-        teamName: div.categoryLabel,
-        facilityCount: div.facilities.length,
-        totalActual2025: div.lyRevenue,
-        totalWeight: div.targetShare,
-        totalTarget2026: div.targetRevenue,
-        totalActual2026: 0,
-        achievementRate: 0,
-        facilities: div.facilities.map((f, fIdx) => ({
-          no: fIdx + 1,
-          categoryCode: div.category,
-          categoryName: div.categoryLabel,
-          teamName: div.categoryLabel,
-          partName: f.category,
-          facilityName: f.shopName,
-          weight: Number((f.shareRatio * 100).toFixed(2)),
-          actual2025: f.lyRevenue,
-          target2026: f.targetRevenue,
-          actual2026: 0,
-          achievementRate: 0
-        }))
-      }));
+      : [];
 
     // 공식 제외 카테고리 필터링 (주차, 굿즈, 기타)
     return list.filter(c => 
@@ -251,7 +222,7 @@ export default function TargetSimulator() {
       c.categoryCode !== 'GOODS' && 
       c.categoryCode !== 'OTHER'
     );
-  }, [apiData, simulationResult]);
+  }, [apiData]);
 
   // Golf Category Subtotal for Minus Operation
   const golfCategory = useMemo(() => {
@@ -405,9 +376,9 @@ export default function TargetSimulator() {
   };
 
   // Grand totals using The Bible Minus Operation (전체 총합 - 골프 소계)
-  const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
-  const rawGrandTarget2026 = apiData?.summary?.grandTarget2026 || simulationResult.totalTargetRevenue;
-  const rawGrandActual2026 = apiData?.summary?.grandActual2026 || 0;
+  const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 ?? 0;
+  const rawGrandTarget2026 = apiData?.summary?.grandTarget2026 ?? 0;
+  const rawGrandActual2026 = apiData?.summary?.grandActual2026 ?? 0;
 
   const golfTarget2026 = golfCategory?.totalTarget2026 || 0;
   const golfActual2025 = golfCategory?.totalActual2025 || 0;
@@ -718,7 +689,7 @@ export default function TargetSimulator() {
               시뮬레이션 대상 월 선택 ({input.baseYear}년 해당 월의 실측 매출 비중 자동 대입)
             </span>
             <span className="text-teal-300 font-extrabold flex items-center gap-1.5 flex-wrap">
-              <span>현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)</span>
+              <span>현재 선택: {input.targetYear}년 {selectedMonthLabel} ({periodDays}일 기준)</span>
               {currentStatus.isCurrentMonth && (
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-400 text-slate-950 shadow-xs">
                   MTD 1~{currentStatus.latestClosedDay}일 집계중 (경과율 {currentStatus.elapsedRate}%)
@@ -811,7 +782,7 @@ export default function TargetSimulator() {
           <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between space-y-3">
             <div>
               <div className="text-xs font-bold text-teal-300 flex items-center justify-between">
-                <span>🎯 {input.targetYear}년 {simulationResult.selectedMonthLabel} 목표 실적 지표</span>
+                <span>🎯 {input.targetYear}년 {selectedMonthLabel} 목표 실적 지표</span>
                 <span className="text-[11px] text-slate-300">백엔드 제공 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준</span>
               </div>
               
@@ -962,7 +933,7 @@ export default function TargetSimulator() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-200">
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Layers className="w-5 h-5 text-indigo-600" />
-              부문별 {input.targetYear}년 {simulationResult.selectedMonthLabel} 목표 분배 현황
+              부문별 {input.targetYear}년 {selectedMonthLabel} 목표 분배 현황
             </h3>
             <span className="text-xs text-slate-500 font-semibold">{input.baseYear}년 해당 월의 실측 비중 곡선 적용</span>
           </div>
@@ -1023,7 +994,7 @@ export default function TargetSimulator() {
           <div>
             <h3 className="text-sm font-black text-slate-900 mb-1 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600" />
-              {input.targetYear}년 {simulationResult.selectedMonthLabel} 부문별 기여 비중
+              {input.targetYear}년 {selectedMonthLabel} 부문별 기여 비중
             </h3>
             <p className="text-xs text-slate-400 mb-4">
               전체 {(summaryGrandTarget2026 / 100000000).toFixed(2)}억원 구성
@@ -1043,7 +1014,7 @@ export default function TargetSimulator() {
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Target className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
+              영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               <strong>[부문(본부) ➔ 파트 ➔ 소속 영업장]</strong> 계층별 헤더를 클릭하여 각 파트별 소계와 소속 영업장 리스트를 펼쳐볼 수 있습니다.

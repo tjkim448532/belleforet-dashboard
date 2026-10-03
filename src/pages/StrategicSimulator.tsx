@@ -6,10 +6,7 @@ import {
   RotateCcw, PieChart, CheckCircle2, Clock, Package
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import type { SimulationTargetInput, FacilityCapacityItem } from '../types/simulation';
-import { DEFAULT_CAPACITY_SEEDS } from '../data/defaultCapacitySeeds';
-import { MULTI_YEAR_SEASONALITY_DATA } from '../data/monthlySeasonalityData';
-import { runTargetSimulation } from '../lib/targetSimulationEngine';
+import type { SimulationTargetInput } from '../types/simulation';
 import { secureFetcher } from '../lib/secureFetcher';
 import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicRebalancer';
 import PackageGeneratorSimulator from '../components/dashboard/PackageGeneratorSimulator';
@@ -161,7 +158,6 @@ interface ApiSummary {
 }
 
 export default function StrategicSimulator() {
-  const [capacityMaster] = useState<FacilityCapacityItem[]>(DEFAULT_CAPACITY_SEEDS);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') === 'package' ? 'PACKAGE_GEN' : 'TARGET_SIM';
   const setActiveTab = (tab: 'TARGET_SIM' | 'PACKAGE_GEN') => {
@@ -213,10 +209,8 @@ export default function StrategicSimulator() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [openParts, setOpenParts] = useState<Record<string, boolean>>({});
 
-  // Fallback Simulation Engine
-  const simulationResult = useMemo(() => {
-    return runTargetSimulation({ ...input, totalRoomCapacity: apiData?.summary?.totalRoomCap || 0 }, capacityMaster);
-  }, [input, capacityMaster, apiData]);
+  const selectedMonthLabel = input.selectedMonth === 'ANNUAL' ? '연간 종합 (1~12월)' : `${input.selectedMonth}월`;
+  const periodDays = apiData?.summary?.daysCount || (input.selectedMonth === 'ANNUAL' ? 365 : new Date(input.targetYear, Number(input.selectedMonth), 0).getDate());
 
   // Fetch Business Plan from Backend API
   useEffect(() => {
@@ -254,63 +248,23 @@ export default function StrategicSimulator() {
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
 
-  // Feature 4: Real Multi-Year Weighted Moving Average (WMA) Baseline Engine (No fake 2023 numbers)
+  // Feature 4: Baseline Engine directly from Backend API (0-Variance)
   const wmaBaselineData = useMemo(() => {
-    const isAnnual = input.selectedMonth === 'ANNUAL';
-    const monthNum = typeof input.selectedMonth === 'number' ? input.selectedMonth : 1;
-    
-    const y2025 = MULTI_YEAR_SEASONALITY_DATA[2025];
-    const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024];
-
-    const rev2025 = isAnnual
-      ? (y2025?.annual?.totalRevenue || 0)
-      : (y2025?.months?.[monthNum]?.totalRevenue || 0);
-
-    const rev2024 = isAnnual
-      ? (y2024?.annual?.totalRevenue || 0)
-      : (y2024?.months?.[monthNum]?.totalRevenue || 0);
-
-    // Real SSOT Baseline Revenue
-    const baselineRevenue = rev2025 > 0 ? rev2025 : rev2024;
-    const singleYearRevenue = rev2025;
-
+    const baselineRevenue = apiData?.summary?.grandTotal2025 || 0;
     return {
       activeBaselineRevenue: baselineRevenue,
       wmaTotalRevenue: baselineRevenue,
-      singleYearRevenue,
+      singleYearRevenue: baselineRevenue,
       smoothingDelta: 0,
       smoothingRate: 0
     };
-  }, [input.selectedMonth, baselineMode]);
+  }, [apiData]);
 
-  // Base raw categories from API or Simulation Engine
+  // Base raw categories from API
   const rawCategories: ApiCategory[] = useMemo(() => {
     const list: ApiCategory[] = (apiData?.categories && apiData.categories.length > 0)
       ? apiData.categories
-      : simulationResult.divisionResults.map((div) => ({
-        categoryCode: div.category,
-        categoryName: div.category,
-        teamName: DIVISION_META[div.category]?.name || div.categoryLabel,
-        facilityCount: div.facilities.length,
-        totalActual2025: div.lyRevenue,
-        totalWeight: div.targetShare,
-        totalTarget2026: div.targetRevenue,
-        totalActual2026: 0,
-        achievementRate: 0,
-        facilities: div.facilities.map((f, fIdx) => ({
-          no: fIdx + 1,
-          categoryCode: div.category,
-          categoryName: div.category,
-          teamName: DIVISION_META[div.category]?.name || div.categoryLabel,
-          partName: f.category,
-          facilityName: f.shopName,
-          weight: Number((f.shareRatio * 100).toFixed(2)),
-          actual2025: f.lyRevenue,
-          target2026: f.targetRevenue,
-          actual2026: 0,
-          achievementRate: 0
-        }))
-      }));
+      : [];
 
     // 공식 제외 카테고리 필터링 (주차, 굿즈, 기타)
     return list.filter(c => 
@@ -318,17 +272,13 @@ export default function StrategicSimulator() {
       c.categoryCode !== 'GOODS' && 
       c.categoryCode !== 'OTHER'
     );
-  }, [apiData, simulationResult]);
+  }, [apiData]);
 
   // Grand totals
-  const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
-  const rawGrandTarget2026 = baselineMode === 'WMA_2YEAR'
-    ? Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100))
-    : ((apiData?.summary?.grandTarget2026 && apiData.summary.grandTarget2026 > 0)
-        ? apiData.summary.grandTarget2026
-        : ((simulationResult.totalTargetRevenue && simulationResult.totalTargetRevenue > 0)
-            ? simulationResult.totalTargetRevenue
-            : Math.round(wmaBaselineData.activeBaselineRevenue * (1 + input.targetGrowthRate / 100))));
+  const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 ?? 0;
+  const rawGrandTarget2026 = (apiData?.summary?.grandTarget2026 && apiData.summary.grandTarget2026 > 0)
+    ? apiData.summary.grandTarget2026
+    : Math.round(rawGrandTotal2025 * (1 + input.targetGrowthRate / 100));
 
   // Feature 1: Strategic Multiplier Zero-Sum Rebalancing Algorithm (w'_f = (w_f * β_f) / Σ(w_j * β_j))
   const effectiveCategories: ApiCategory[] = useMemo(() => {
@@ -410,10 +360,10 @@ export default function StrategicSimulator() {
     const rawTarget = rawGrandTarget2026;
     const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF');
     const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
-    const rawGrandTotal = apiData?.summary?.grandTotal2025 || simulationResult.totalLyRevenue;
+    const rawGrandTotal = apiData?.summary?.grandTotal2025 ?? 0;
     const totalBaseRev = input.includeGolf ? rawGrandTotal : Math.max(0, rawGrandTotal - golfActual2025);
     return input.includeGolf ? rawTarget : Math.round(rawTarget * (totalBaseRev / (rawGrandTotal || 1)));
-  }, [input.includeGolf, rawGrandTarget2026, rawCategories, apiData, simulationResult]);
+  }, [input.includeGolf, rawGrandTarget2026, rawCategories, apiData]);
 
   // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {
@@ -730,7 +680,7 @@ export default function StrategicSimulator() {
               시뮬레이션 대상 월 선택 ({baselineMode === 'WMA_2YEAR' ? '2개년 가중이동평균(2025: 60%, 2024: 40%) 기상정규화 비중 대입' : `${input.baseYear}년 실측 비중 대입`})
             </span>
             <span className="text-teal-300 font-extrabold">
-              현재 선택: {input.targetYear}년 {simulationResult.selectedMonthLabel} ({simulationResult.periodDays}일 기준)
+              현재 선택: {input.targetYear}년 {selectedMonthLabel} ({periodDays}일 기준)
             </span>
           </div>
 
@@ -1056,7 +1006,7 @@ export default function StrategicSimulator() {
           <div>
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Target className="w-5 h-5 text-indigo-600" />
-              영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {simulationResult.selectedMonthLabel})
+              영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {selectedMonthLabel})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               전략 승수(β_f)가 반영된 <strong>[부문 ➔ 파트 ➔ 소속 영업장]</strong> 1원 단위 정규화 결과입니다.

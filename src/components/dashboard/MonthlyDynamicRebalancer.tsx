@@ -4,7 +4,9 @@ import {
   CheckCircle2, Sliders, BarChart2
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { MULTI_YEAR_SEASONALITY_DATA } from '../../data/monthlySeasonalityData';
+import { secureFetcher } from '../../lib/secureFetcher';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 interface MonthlyDynamicRebalancerProps {
   annualBaseRevenue: number;
@@ -42,16 +44,37 @@ export default function MonthlyDynamicRebalancer({
   onMonthlyTargetsChange
 }: MonthlyDynamicRebalancerProps) {
   
-  // 1. Build Base Monthly Revenue Profile from Seasonality Data (100% Dynamic Occupancy & Headroom)
+  const [trendsData, setTrendsData] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchTrends = async () => {
+      try {
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=${baseYear}`) as any;
+        const list = Array.isArray(res?.data) ? res.data : [];
+        if (isMounted) {
+          setTrendsData(list);
+        }
+      } catch (err) {
+        console.warn('[MonthlyDynamicRebalancer] Failed to fetch monthly-trends:', err);
+      }
+    };
+    fetchTrends();
+    return () => { isMounted = false; };
+  }, [baseYear]);
+
+  // 1. Build Base Monthly Revenue Profile from Real Backend Trends Data (100% Dynamic Occupancy & Headroom)
   const monthlyMetaList: MonthMeta[] = useMemo(() => {
-    const yData = MULTI_YEAR_SEASONALITY_DATA[baseYear] || MULTI_YEAR_SEASONALITY_DATA[2025];
     const monthRevs: Record<number, number> = {};
     let maxMonthRev = 1;
 
     for (let m = 1; m <= 12; m++) {
-      const rawMonthRev = yData?.months?.[m]?.totalRevenue || 0;
-      const golfShare = yData?.months?.[m]?.divisionShares?.GOLF ?? 0;
-      const adjRev = Math.round(rawMonthRev * (includeGolf ? 1.0 : (1.0 - golfShare)));
+      const monthKey = `${baseYear}${String(m).padStart(2, '0')}`;
+      const item = trendsData.find((d: any) => String(d.month) === monthKey);
+      let adjRev = 0;
+      if (item) {
+        adjRev = Math.round(includeGolf ? (item.totalRevenue ?? item.revenue ?? 0) : (item.exGolfRevenue ?? 0));
+      }
       monthRevs[m] = adjRev;
       if (adjRev > maxMonthRev) maxMonthRev = adjRev;
     }
@@ -75,7 +98,7 @@ export default function MonthlyDynamicRebalancer({
     }
 
     return list;
-  }, [baseYear, annualBaseRevenue, includeGolf]);
+  }, [baseYear, annualBaseRevenue, includeGolf, trendsData]);
 
   // 2. Lock State per month
   const [lockedMonths, setLockedMonths] = useState<Record<number, boolean>>({});

@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Package, Sparkles, Sliders, DollarSign,
   Hotel, Utensils, Ticket, CheckCircle2, 
   ShieldCheck, Flame, HelpCircle
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { MULTI_YEAR_SEASONALITY_DATA } from '../../data/monthlySeasonalityData';
+import { secureFetcher } from '../../lib/secureFetcher';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 interface PackagePreset {
   id: string;
@@ -88,27 +90,45 @@ export default function PackageGeneratorSimulator() {
     return new Intl.NumberFormat('ko-KR').format(Math.round(val));
   };
 
-  // SSOT Historical Baseline for Selected Month
+  // Fetch real monthly business plan (excluding golf) from backend API
+  const [monthlyPlanData, setMonthlyPlanData] = useState<any>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPlan = async () => {
+      try {
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/business-plan?year=2026&month=${selectedMonth}&growthRate=10.5&includeGolf=false`) as any;
+        if (isMounted && res?.data) {
+          setMonthlyPlanData(res.data);
+        }
+      } catch (err) {
+        console.warn('[PackageGeneratorSimulator] Failed to fetch business plan:', err);
+      }
+    };
+    fetchPlan();
+    return () => { isMounted = false; };
+  }, [selectedMonth]);
+
+  // SSOT Historical Baseline for Selected Month directly from Backend API
   const monthBaseline = useMemo(() => {
-    const y2025 = MULTI_YEAR_SEASONALITY_DATA[2025]?.months[selectedMonth];
-    const y2024 = MULTI_YEAR_SEASONALITY_DATA[2024]?.months[selectedMonth];
-    const base = y2025 ? y2025 : y2024;
+    const summary = monthlyPlanData?.summary;
+    const categories: any[] = monthlyPlanData?.categories || [];
 
-    const days = base?.days ? base.days : new Date(2025, selectedMonth, 0).getDate();
-    const totalRev = base?.totalRevenue ? Number(base.totalRevenue) : 0;
-    const totalTrevpar = base?.trevpar ? Number(base.trevpar) : 0;
-    const golfShare = base?.divisionShares?.GOLF ? Number(base.divisionShares.GOLF) : 0;
-    const roomShare = base?.divisionShares?.ROOM ? Number(base.divisionShares.ROOM) : 0;
-    
-    // SSOT 기반 순수 리조트(골프 제외) TrevPAR 및 객실 RevPAR 직결 계산
-    const exGolfTrevpar = Math.round(totalTrevpar * (1 - golfShare));
-    const revPar = Math.round(totalTrevpar * roomShare);
+    const days = summary?.daysCount || new Date(2026, selectedMonth, 0).getDate();
+    const totalRev = summary?.grandTotal2025 ? Number(summary.grandTotal2025) : 0;
+    const exGolfTrevpar = summary?.dailyTrevPar ? Number(summary.dailyTrevPar) : 0;
+    const totalTrevpar = exGolfTrevpar;
 
-    // Non-golf division distribution
-    const nonGolfTotalShare = (1 - golfShare) > 0 ? (1 - golfShare) : 1;
-    const normRoomShare = Number(((base?.divisionShares?.ROOM ? Number(base.divisionShares.ROOM) : 0.35) / nonGolfTotalShare * 100).toFixed(1));
-    const normFnbShare = Number(((base?.divisionShares?.FNB ? Number(base.divisionShares.FNB) : 0.40) / nonGolfTotalShare * 100).toFixed(1));
-    const normLeisureShare = Number(((base?.divisionShares?.LEISURE ? Number(base.divisionShares.LEISURE) : 0.15) / nonGolfTotalShare * 100).toFixed(1));
+    // Non-golf division shares from real DB categories
+    const roomCat = categories.find(c => c.categoryCode === 'ROOM');
+    const fnbCat = categories.find(c => c.categoryCode === 'FNB');
+    const leisureCat = categories.find(c => c.categoryCode === 'TICKET' || c.categoryCode === 'LEISURE');
+
+    const normRoomShare = roomCat?.totalWeight ?? roomCat?.weight ?? 35.0;
+    const normFnbShare = fnbCat?.totalWeight ?? fnbCat?.weight ?? 40.0;
+    const normLeisureShare = leisureCat?.totalWeight ?? leisureCat?.weight ?? 25.0;
+
+    const revPar = Math.round(exGolfTrevpar * (normRoomShare / 100));
 
     return {
       days,
@@ -120,7 +140,7 @@ export default function PackageGeneratorSimulator() {
       normFnbShare,
       normLeisureShare
     };
-  }, [selectedMonth]);
+  }, [selectedMonth, monthlyPlanData]);
 
   // Calculations for Mode A (TrevPAR -> Package)
   const modeAResults = useMemo(() => {

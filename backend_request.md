@@ -1,7 +1,135 @@
-# 프론트엔드/백엔드 개발팀 협조 요청 (수석 DBA 하달)
+# 🚨 [공식 전달용] 벨포레 대시보드 백엔드 통합 요청서 (2026-10-03)
 
-수석 DBA(관리자)님의 승인을 받은 '0-Variance' 아키텍처 정규화 작업이 DB 단에서 완료되었습니다.
-이에 따라 프론트엔드 연동 API에 대한 변경을 요청합니다.
+본 문서는 프론트엔드 전수 감사, 대표님/경영진 지시사항, 그리고 운영 환경에서 발견된 긴급 장애 및 데이터 정합성 이슈를 바탕으로 백엔드 개발팀 및 데이터 엔지니어링팀에 전달하는 **최종 통합 공식 요청서**입니다.
+
+---
+
+## 📋 [요약] 백엔드 조치 요청 우선순위 매트릭스
+
+| 우선순위 | 구분 | 요청 항목 | 핵심 내용 및 영향도 |
+| :--- | :---: | :--- | :--- |
+| **P0 (긴급)** | 장애 복구 | **CORS Preflight `Cache-Control` 차단 해제** | 프로덕션 배포 사이트(`bell-dashboard.web.app`)에서 백엔드 V6 API 전면 호출 실패 차단 해제 |
+| **P1 (높음)** | 데이터 정합성 | **`벨포레 목장(체험)` 이용객수(`visitor_count`) 정상화** | 분모(입장객수)는 정상이나 분자(체험객수)가 0명으로 적재되어 `0.0%`로 고정되는 문제 해결 |
+| **P1 (높음)** | 데이터 검증 | **썸머랜드(워터파크) 9월 실적 이상치 원인 규명 및 분리** | 8월 말 폐장 시설에 9월 매출/이용객이 잡히는 원인(사우나 매핑, 이연 매출, 지연 전표 등) 점검 |
+| **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
+| **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
+| **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
+
+---
+
+## 1. 🚨 [P0 긴급] CORS 프리플라이트(Preflight) `Cache-Control` 헤더 차단 해제
+
+### 1-1. 현상 및 에러 로그
+Firebase 배포 도메인(`https://bell-dashboard.web.app`)에서 Vercel 백엔드(`https://belleforet-data.vercel.app`)의 V6 API 호출 시 Preflight(OPTIONS) 단계에서 `ERR_FAILED`로 전면 차단됨.
+```text
+Access to fetch at 'https://belleforet-data.vercel.app/api/v6/dashboard/revenue-summary' 
+from origin 'https://bell-dashboard.web.app' has been blocked by CORS policy: 
+Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response.
+```
+
+### 1-2. 발생 원인
+프론트엔드 캐시 방지용 파라미터 및 브라우저 기본 헤더에 포함된 `Cache-Control`이 백엔드의 `Access-Control-Allow-Headers` 허용 목록에 누락되어 있음.
+
+### 1-3. 요청 조치 사항
+백엔드(`vercel.json` 또는 `next.config.js`, API CORS 미들웨어) 설정의 `Access-Control-Allow-Headers`에 다음 헤더들을 추가 허용해 주시기 바랍니다.
+```json
+{
+  "key": "Access-Control-Allow-Headers",
+  "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Cache-Control, Pragma, Expires, Authorization"
+}
+```
+
+---
+
+## 2. 🎡 [P1 데이터 정합성] `벨포레 목장(체험)` 분자(이용객수) 0명 적재 정상화
+
+### 2-1. 현상
+* **엔드포인트**: `GET /api/v6/report/leisure-yoy-matrix`
+* **현상 요약**:
+  * 분모는 '벨포레 목장 입장객수'(2026년 5월 기준 14,174명 등)로 정상 치환되어 연산되고 있으나,
+  * **분자인 '체험 이용객수(`visitors`)'가 전 기간 0명**으로 집계되어 대시보드 화면에 항상 **`0.0% (0명 / 14,174명)`**으로 표출됨.
+
+### 2-2. 원인 분석
+* 원천 POS 데이터에서 당근 먹이주기 컵, 승마 체험 티켓 등 목장 체험형 단품 아이템들이 `is_visitor_count = 0`으로 처리되어 인원수가 카운트되지 않음.
+
+### 2-3. 요청 조치 사항
+* `fact_leisure_sales_v6` 적재 선행 ETL 프로시저(`sp_etl_v6_fact_leisure`) 내에서:
+  * '벨포레 목장(체험)' 부문의 유효 판매 수량(티켓 수량, 체험 바우처 수량, 영수증 건수 등 운영 기준)을 체험 이용객수(`visitor_count`)로 인정하여 집계하도록 룰 수정 및 마트 리프레시 요청.
+
+---
+
+## 3. 🏊 [P1 데이터 검증] 썸머랜드(워터파크) 9월 실적 이상치 원인 규명 및 분리
+
+### 3-1. 현상
+* 워터파크(썸머랜드)는 계절성 하계 시설로 매년 8월 말경 폐장함에도 불구하고, **9월 실적 데이터에 매출 및 이용객수가 집계되는 이상 현상** 발생. (대표님 및 경영진 지적 사항)
+
+### 3-2. 확인 및 조치 요청 사항
+1. **전표 원천 조사**: 9월에 발생한 전표가 사우나, 실내 수영장, 또는 푸드코트 등 타 업장 단말기에서 승인된 것인지 확인.
+2. **이연/온라인 예매 안분 여부**: 7~8월 판매된 온라인 티켓의 9월 취소/미사용 정산인지 확인.
+3. **매핑 정제**: `dim_facility_team_mapping`에서 타 업장 매출이 썸머랜드로 오매핑된 경우 올바른 업장(F&B, 기타 레저 등)으로 분리 재배정.
+
+---
+
+## 4. 📊 [P2 API 보강] 기간 조회 시 전년 동일 기간(YoY) 누적 완제품 제공
+
+### 4-1. 배경 및 무관용 원칙 준수
+* 벨포레 API 바이블 1조: 프론트엔드는 배열 데이터를 `reduce` 등으로 직접 합산하거나 월별 API를 Loop 호출해 더할 수 없음 (Zero-Proxy / No Slice Summation).
+* 대시보드에서 기간 선택(예: 1월 ~ 9월 등 다중 월 조회) 시 백엔드가 계산한 공식 누적 합계가 필요함.
+
+### 4-2. 요청 조치 사항
+* `GET /api/v6/report/leisure-yoy-matrix` 등 주요 리포트 API에 기간 파라미터(`startMonth`, `endMonth` 또는 `startDate`, `endDate`) 지원 강화.
+* 응답 JSON에 선택 구간의 당해연도 누적 실적 및 **전년 동기간(YoY) 누적 실적과 증감률**을 완성된 객체(`periodCumulative`)로 포함하여 반환 요청.
+
+```json
+{
+  "periodCumulative": {
+    "2024": { "visitors": 128450, "roomGuests": 84210, "usageRate": 152.5 },
+    "2025": { "visitors": 142100, "roomGuests": 91200, "usageRate": 155.8 },
+    "2026": { "visitors": 158900, "roomGuests": 98400, "usageRate": 161.5 },
+    "yoyDiff": 5.7
+  }
+}
+```
+
+---
+
+## 5. 🛏️ [P2 메타데이터] 객실 가용 객실수(Fixed Capacity) 및 판매 객실수(Sold Rooms) 카운팅 기준 메타데이터 제공
+
+### 5-1. 배경 (대표님 지시사항)
+* "가용객실 옆에 판매객실의 숫자와 카운팅 방법도 명확히 설명할 것"
+* 51평형 등 조립형 커넥팅 객실은 단독 판매(16평, 35평) 소진 시 조립 잔여 재고가 0이 되어 점유율 분모가 왜곡되는 Dynamic Capacity Trap 방지 필요.
+
+### 5-2. 요청 조치 사항
+* 객실 관련 API(`/api/v6/report/room-guests-yoy`, `/api/v6/dashboard/revenue-summary`) 응답에 다음 공식 메타데이터 블록 제공 요청:
+```json
+{
+  "metadata": {
+    "capacity": {
+      "fixedCapacity": 1080,
+      "fixedCapacityDescription": "벨포레 리조트 물리 고정 객실수 1,080실 (SSOT)",
+      "soldRoomsDescription": "PMS 확정 체크인 및 유효 판매 객실수 (단순 예약 포함 여부 및 조립형 커넥팅룸 실물 반영)",
+      "countingRules": "조립형 51평형의 가용 변동과 무관하게 전체 물리 고정 객실수(1,080실)를 단일 기준으로 점유율 및 정원 숙박객수를 산출함."
+    }
+  }
+}
+```
+
+---
+
+## 6. 🎯 [P3 신규 정규 API] Zero-Simulation 실측 기반 월별 계절성 및 사업계획 목표 배분 API
+
+### 6-1. 배경
+* 프론트엔드 단의 모든 하드코딩 상수, 가짜 시뮬레이션, 임의 강수량/월별 계절성 배분 수식을 100% 제거 완료함.
+* 프론트엔드가 순수 완제품만 소비할 수 있도록 백엔드 데이터 마트 기반의 정규 API 신설 요청.
+
+### 6-2. 신설 요청 API 목록
+1. **`GET /api/v6/report/monthly-seasonality-matrix?year=YYYY`**: 전년도(LY) 실측 데이터 기반의 월별·업장별 매출 및 비중 완제품.
+2. **`POST /api/v6/report/target-allocation`**: 목표 성장률 입력 시 전사/부문별/업장별 1원 단위 Zero-Variance 보정 목표액 배분 완제품.
+3. **`GET /api/v6/common/holidays?year=YYYY`**: 대한민국 법정 공휴일 마스터 (`dim_calendar_kr` 기준).
+
+---
+
+# 프론트엔드/백엔드 개발팀 협조 요청 (수석 DBA 하달)
 
 ## 변경 대상 파일
 - `src/app/api/v6/report/channel-correlation/route.ts`

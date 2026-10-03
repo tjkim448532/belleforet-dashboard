@@ -75,6 +75,11 @@ export interface MonthlyEfficiencyItem {
   } | null;
   growthTotalRate: number | null;
   growthWithoutGolfRate: number | null;
+  trevparGrowthRate?: number | null;
+  trevparWithoutGolfGrowthRate?: number | null;
+  trevporGrowthRate?: number | null;
+  trevporWithoutGolfGrowthRate?: number | null;
+  revparGrowthRate?: number | null;
   diffTotalAmount: number | null;
   diffWithoutGolfAmount: number | null;
 }
@@ -84,6 +89,31 @@ export interface MonthlyEfficiencyResponse {
   baseYear: number;
   compareYear: number;
   lastClosedMonth?: string;
+  summary?: {
+    ytdPeriodLabel: string;
+    ongoingMonth: number;
+    ty: {
+      trevparTotal: number;
+      trevparWithoutGolf: number;
+      revpar?: number;
+      revPar?: number;
+    };
+    ly: {
+      trevparTotal: number;
+      trevparWithoutGolf: number;
+      revpar?: number;
+      revPar?: number;
+    };
+    growthTotalRate: number;
+    growthWithoutGolfRate: number;
+    growthRevparRate?: number;
+    revparGrowthRate?: number;
+    avgTyTrevpar: number;
+    avgLyTrevpar: number;
+    avgTyRevpar?: number;
+    avgLyRevpar?: number;
+  };
+  ytdSummary?: any;
   monthlyComparison: MonthlyEfficiencyItem[];
 }
 
@@ -326,16 +356,24 @@ export default function MonthlyTrevporChart() {
       periodLabel = '4분기 (10~12월)';
     }
 
+    // [Zero-Proxy SSOT] 백엔드 공인 완제품 RevPAR YTD 요약 바인딩
+    const avgTyRevpar = (data?.summary?.avgTyRevpar ?? data?.summary?.ty?.revpar ?? (data?.summary?.ty as any)?.revPar) ?? null;
+    const avgLyRevpar = (data?.summary?.avgLyRevpar ?? data?.summary?.ly?.revpar ?? (data?.summary?.ly as any)?.revPar) ?? null;
+    const revparGrowth = (data?.summary?.revparGrowthRate ?? data?.summary?.growthRevparRate) ?? null;
+
     return {
       periodLabel,
       closedCount: targetPeriodMonths.length,
       avgTyTrevpar,
       avgLyTrevpar,
       yoyGrowth,
+      avgTyRevpar,
+      avgLyRevpar,
+      revparGrowth,
       maxMonthName: maxMonth.monthLabel,
       maxTrevpar
     };
-  }, [targetPeriodMonths, metricMode, periodMode, monthMeta]);
+  }, [targetPeriodMonths, metricMode, periodMode, monthMeta, data]);
 
   // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPAR 성장 트렌드 차트
   const yoyTrendChartOptions = useMemo(() => {
@@ -1153,7 +1191,7 @@ export default function MonthlyTrevporChart() {
 
       {/* 🏆 Executive KPI Summary Highlight Cards (선택된 기간 기준 실측치) */}
       {kpiHighlights && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mb-6">
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
             <div className="text-[11px] font-bold text-slate-500 mb-1">
               2026년 평균 TrevPAR ({kpiHighlights.periodLabel})
@@ -1167,7 +1205,24 @@ export default function MonthlyTrevporChart() {
           </div>
 
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
-            <div className="text-[11px] font-bold text-slate-500 mb-1">전년 동기 대비 성장률</div>
+            <div className="text-[11px] font-bold text-slate-500 mb-1">
+              2026년 평균 RevPAR (객실 순매출)
+            </div>
+            <div className="text-xl font-black text-teal-800 tabular-nums">
+              {kpiHighlights.avgTyRevpar !== null ? `${formatCurrency(kpiHighlights.avgTyRevpar)}원` : '-'} <span className="text-xs font-normal text-slate-400">/실·월</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+              {kpiHighlights.revparGrowth !== null ? (
+                <span className={`font-bold ${kpiHighlights.revparGrowth >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                  {kpiHighlights.revparGrowth >= 0 ? '▲' : '▼'}{Math.abs(kpiHighlights.revparGrowth).toFixed(1)}%
+                </span>
+              ) : null}
+              <span>전년({kpiHighlights.avgLyRevpar ? `${formatCurrency(kpiHighlights.avgLyRevpar)}원` : '-'}) 대비</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
+            <div className="text-[11px] font-bold text-slate-500 mb-1">TrevPAR 전년 대비 성장률</div>
             <div className={`text-xl font-black tabular-nums flex items-center gap-1 ${
               kpiHighlights.yoyGrowth >= 0 ? 'text-teal-600' : 'text-rose-500'
             }`}>
@@ -1654,8 +1709,13 @@ export default function MonthlyTrevporChart() {
                       <td className="py-3 px-3 text-right tabular-nums">
                         {tyRev !== null && tyRev !== undefined ? `${formatCurrency(tyRev)} 원` : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="py-3 px-3 text-right font-bold text-teal-800 tabular-nums bg-teal-50/20" title="2026년 RevPAR (객실 순매출 ÷ 가용객실)">
-                        {tyRevpar !== null && tyRevpar !== undefined ? `${formatCurrency(tyRevpar)} 원` : <span className="text-slate-300">-</span>}
+                      <td className="py-3 px-3 text-right font-bold text-teal-800 tabular-nums bg-teal-50/20" title={`2026년 RevPAR (객실 순매출 ÷ 가용객실)${item.revparGrowthRate !== undefined && item.revparGrowthRate !== null ? ` | 증감률: ${item.revparGrowthRate > 0 ? '+' : ''}${item.revparGrowthRate}%` : ''}`}>
+                        <div>{tyRevpar !== null && tyRevpar !== undefined ? `${formatCurrency(tyRevpar)} 원` : <span className="text-slate-300">-</span>}</div>
+                        {item.revparGrowthRate !== undefined && item.revparGrowthRate !== null && (
+                          <div className={`text-[10px] font-semibold ${item.revparGrowthRate >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                            {item.revparGrowthRate >= 0 ? '▲' : '▼'}{Math.abs(item.revparGrowthRate).toFixed(1)}%
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-right font-black text-teal-800 tabular-nums bg-teal-50/30">
                         {tyTrevpar !== null && tyTrevpar !== undefined ? `${formatCurrency(tyTrevpar)} 원` : <span className="text-slate-300">-</span>}

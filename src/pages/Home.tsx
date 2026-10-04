@@ -753,7 +753,7 @@ export default function Home() {
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {/* 1. 객실 점유율 (Occ) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="text-xs font-bold text-slate-700">객실 점유율 (Occ)</span>
                     <MetricExplainerTooltip presetKey="occupancy" />
@@ -770,11 +770,17 @@ export default function Home() {
                                        ?? coreData.core?.summary?.physicalOccupiedUnits;
                     return occ !== undefined && occ !== null ? (
                       <>
-                        <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                          {Number(occ).toFixed(1)}%
+                        <div>
+                          <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                            {Number(occ).toFixed(1)}%
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
+                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
+                          <span>{isRangeMode ? '선택 기간 누적 가동' : '가용 175실 기준'}</span>
+                          <span className="font-semibold text-emerald-700">{occupiedUnits ? `실운영 ${occupiedUnits}실 가동` : '공식 정산 기준'}</span>
                         </div>
                       </>
                     ) : (
@@ -786,7 +792,7 @@ export default function Home() {
                 </div>
                 
                 {/* 2. 객단가 (ADR) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="text-xs font-bold text-slate-700">객단가 (ADR)</span>
                     <MetricExplainerTooltip presetKey="adr" />
@@ -797,11 +803,17 @@ export default function Home() {
                               : displayData?.kpiMetrics?.totalADR;
                     return adr !== undefined && adr !== null && Number(adr) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                          {formatRevenue(adr)} <span className="text-sm font-semibold text-slate-400">원</span>
+                        <div>
+                          <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                            {formatRevenue(adr)} <span className="text-sm font-semibold text-slate-400">원</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            객실 순매출 ÷ 실제 판매 객실수
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          객실 순매출 ÷ 실제 판매 객실수
+                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
+                          <span>순수 객실 판매 실적</span>
+                          <span className="font-semibold text-slate-600">계약 기준 객단가</span>
                         </div>
                       </>
                     ) : (
@@ -813,7 +825,7 @@ export default function Home() {
                 </div>
                 
                 {/* 3. 객실당 매출 (RevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[140px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="text-xs font-bold text-slate-700">객실당 매출 (RevPAR)</span>
                     <MetricExplainerTooltip 
@@ -831,11 +843,17 @@ export default function Home() {
                                  : displayData?.kpiMetrics?.revPAR;
                     return revPar !== undefined && revPar !== null && Number(revPar) > 0 ? (
                       <>
-                        <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                          {formatRevenue(revPar)} <span className="text-sm font-semibold text-slate-400">원</span>
+                        <div>
+                          <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                            {formatRevenue(revPar)} <span className="text-sm font-semibold text-slate-400">원</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            객실 순매출 ÷ 전체 객실수 (175실)
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          객실 순매출 ÷ 전체 객실수 (175실)
+                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
+                          <span>전체 물리 175실 기준</span>
+                          <span className="font-semibold text-slate-600">ADR × 점유율 연동</span>
                         </div>
                       </>
                     ) : (
@@ -847,7 +865,7 @@ export default function Home() {
                 </div>
                 
                 {/* 4. 가용객실당 총매출 (TrevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between min-h-[155px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
+                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
                   <div className="flex items-center justify-between text-slate-700">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-emerald-800">
@@ -896,14 +914,14 @@ export default function Home() {
                           <div className="text-3xl font-extrabold text-emerald-800 tracking-tight font-financial">
                             {formatRevenue(activeTrevPar)} <span className="text-sm font-semibold text-emerald-600">원</span>
                           </div>
-                          <div className="text-[11px] text-emerald-700 font-medium">
+                          <div className="text-[11px] text-emerald-700 font-medium mt-1">
                             {trevparViewMode === 'EX_GOLF' 
                               ? '순수 리조트(골프 제외) ÷ 175실 (패키지 기획 기준)' 
                               : '전사 총매출 ÷ 175실 (리조트 통합 소비력)'}
                           </div>
                         </div>
                         <div className="flex items-center justify-between pt-1.5 border-t border-emerald-100 text-[10px]">
-                          <span className="text-slate-500">
+                          <span className="text-slate-500 font-financial">
                             {trevparViewMode === 'EX_GOLF' 
                               ? `골프포함: ${formatRevenue(trevParTotal)}원` 
                               : `골프제외: ${formatRevenue(trevParExGolf)}원`}

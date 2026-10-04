@@ -181,7 +181,7 @@ export default function Members() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         
         {/* Card 1: 총 숙박객 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between h-full">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
@@ -191,11 +191,11 @@ export default function Members() {
                 정원 기준 산출
               </span>
             </div>
-            <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap">
+            <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap font-financial">
               {loading ? (
                 <div className="animate-pulse h-9 w-24 bg-slate-200 rounded-lg inline-block align-middle"></div>
               ) : apiError ? (
-                <span className="text-xl text-red-500 font-bold">오류</span>
+                <span className="text-xl text-rose-500 font-bold">오류</span>
               ) : (
                 <>{summary?.roomGuestsFormatted || '0'} <span className="text-sm font-medium text-slate-400">명</span></>
               )}
@@ -215,7 +215,7 @@ export default function Members() {
         </div>
 
         {/* Card 2: 골프 내장객 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between h-full">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
@@ -225,11 +225,11 @@ export default function Members() {
                 그린피 정산
               </span>
             </div>
-            <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap">
+            <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap font-financial">
               {loading ? (
                 <div className="animate-pulse h-9 w-24 bg-slate-200 rounded-lg inline-block align-middle"></div>
               ) : apiError ? (
-                <span className="text-xl text-red-500 font-bold">-</span>
+                <span className="text-xl text-rose-500 font-bold">-</span>
               ) : (
                 <>{summary?.golfPlayersFormatted || '0'} <span className="text-sm font-medium text-slate-400">명</span></>
               )}
@@ -249,7 +249,7 @@ export default function Members() {
         </div>
 
         {/* Card 3: 리조트 총 발생 매출 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between h-full">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
@@ -259,13 +259,13 @@ export default function Members() {
                 VAT 제외 순매출
               </span>
             </div>
-            <div className="text-3xl font-black text-indigo-600 my-1 whitespace-nowrap">
+            <div className="text-3xl font-black text-slate-900 my-1 whitespace-nowrap font-financial">
               {loading ? (
                 <div className="animate-pulse h-9 w-32 bg-indigo-100 rounded-lg inline-block align-middle"></div>
               ) : apiError ? (
-                <span className="text-xl text-red-500 font-bold">-</span>
+                <span className="text-xl text-rose-500 font-bold">-</span>
               ) : (
-                <>{summary?.totalResortSalesFormatted || '0'}원</>
+                <>{summary?.totalResortSalesFormatted || '0'} <span className="text-sm font-medium text-slate-400">원</span></>
               )}
             </div>
           </div>

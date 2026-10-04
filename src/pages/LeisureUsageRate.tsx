@@ -706,67 +706,73 @@ export default function LeisureUsageRate() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             
             {/* Card 1: Selected Facility Usage Rate */}
-            <div className="bg-white rounded-3xl p-6 border border-emerald-200/80 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden">
+            <div className="bg-white rounded-3xl p-6 border border-emerald-200/80 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col justify-between h-full">
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-6 -mt-6"></div>
-              <div className="flex items-center justify-between mb-4 relative z-10">
-                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                  [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {selectedFacility === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
-                </span>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
-                  <Ticket size={20} />
+              <div>
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                    [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {selectedFacility === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
+                  </span>
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
+                    <Ticket size={20} />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 relative z-10 whitespace-nowrap">
+                  <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums font-financial">
+                    {currentSummary.selectedVenue.usageRate.toFixed(1)}
+                  </span>
+                  <span className="text-sm font-bold text-[#00ae95]">%</span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 relative z-10 whitespace-nowrap">
-                <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">
-                  {currentSummary.selectedVenue.usageRate.toFixed(1)}
-                </span>
-                <span className="text-sm font-bold text-[#00ae95]">%</span>
-              </div>
-              <div className="text-xs text-slate-500 mt-2 font-medium relative z-10 whitespace-nowrap truncate">
+              <div className="text-xs text-slate-500 mt-auto pt-2 font-medium relative z-10 whitespace-nowrap truncate">
                 {currentSummary.label}
               </div>
             </div>
 
             {/* Card 2: Selected Facility Visitors */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                  [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
-                </span>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
-                  <Users size={20} />
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                    [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
+                  </span>
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
+                    <Users size={20} />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums font-financial">
+                    {currentSummary.selectedVenue.visitors.toLocaleString()}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-500">명</span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">
-                  {currentSummary.selectedVenue.visitors.toLocaleString()}
-                </span>
-                <span className="text-sm font-semibold text-slate-500">명</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
+              <div className="text-xs text-slate-400 mt-auto pt-2 font-medium whitespace-nowrap">
                 진성 티켓 이용객 (is_visitor_count = 1)
               </div>
             </div>
 
             {/* Card 3: Total Room Guests or Farm Visitors (Denominator) */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
-                  {selectedFacility === '벨포레 목장(체험)'
-                    ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
-                    : (isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)')}
-                </span>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
-                  <Building2 size={20} />
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
+                    {selectedFacility === '벨포레 목장(체험)'
+                      ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
+                      : (isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)')}
+                  </span>
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
+                    <Building2 size={20} />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums font-financial">
+                    {currentSummary.roomGuests.toLocaleString()}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-500">명</span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                <span className="text-2xl lg:text-3xl font-bold text-slate-900 tabular-nums">
-                  {currentSummary.roomGuests.toLocaleString()}
-                </span>
-                <span className="text-sm font-semibold text-slate-500">명</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
+              <div className="text-xs text-slate-400 mt-auto pt-2 font-medium whitespace-nowrap">
                 {selectedFacility === '벨포레 목장(체험)'
                   ? '목장 입장객 대비 실질 체험 전환율 산출 기준'
                   : '관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등) 반영'}
@@ -774,24 +780,26 @@ export default function LeisureUsageRate() {
             </div>
 
             {/* Card 4: Top Venue for that Period/Month */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
-                  {isPeriodTotalMode ? '기간 최고 이용률 영업장' : '당월 최고 이용률 영업장'}
-                </span>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
-                  <TrendingUp size={20} />
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
+                    {isPeriodTotalMode ? '기간 최고 이용률 영업장' : '당월 최고 이용률 영업장'}
+                  </span>
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
+                    <TrendingUp size={20} />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2 whitespace-nowrap">
+                  <span className="text-xl font-bold text-slate-900 truncate max-w-[140px]">
+                    {currentSummary.topVenue.name}
+                  </span>
+                  <span className="text-2xl lg:text-3xl font-bold text-[#00ae95] tabular-nums font-financial">
+                    {currentSummary.topVenue.usageRate.toFixed(1)}%
+                  </span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <span className="text-xl font-bold text-slate-900 truncate max-w-[140px]">
-                  {currentSummary.topVenue.name}
-                </span>
-                <span className="text-2xl lg:text-3xl font-bold text-[#00ae95] tabular-nums">
-                  {currentSummary.topVenue.usageRate.toFixed(1)}%
-                </span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2 font-medium whitespace-nowrap">
+              <div className="text-xs text-slate-400 mt-auto pt-2 font-medium whitespace-nowrap">
                 {currentSummary.topVenue.visitors.toLocaleString()}명 이용 (침투율 1위)
               </div>
             </div>

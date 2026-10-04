@@ -993,12 +993,12 @@ ${itemListText}
                   {activeMetrics.targetLabel} 기준
                 </span>
               </div>
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="text-2xl font-black text-slate-900 tracking-tight font-financial">
                 {formatCurrency(activeMetrics.targetAdr || liveSummary?.adr)}
-                <span className="text-xs font-semibold text-slate-500 ml-1">원</span>
+                <span className="text-xs font-semibold text-slate-500 ml-1 font-sans">원</span>
               </div>
             </div>
-            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600">
+            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600 font-financial">
               <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayAdr)}원</strong></span>
               <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendAdr)}원</strong></span>
             </div>
@@ -1013,12 +1013,12 @@ ${itemListText}
                   {activeMetrics.targetLabel} 기준
                 </span>
               </div>
-              <div className="text-2xl font-black text-teal-800 tracking-tight">
+              <div className="text-2xl font-black text-teal-800 tracking-tight font-financial">
                 {formatCurrency(activeMetrics.targetRevpar || liveSummary?.revpar)}
-                <span className="text-xs font-semibold text-slate-500 ml-1">원</span>
+                <span className="text-xs font-semibold text-slate-500 ml-1 font-sans">원</span>
               </div>
             </div>
-            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600">
+            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600 font-financial">
               <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayRevpar)}원</strong></span>
               <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendRevpar)}원</strong></span>
             </div>
@@ -1033,12 +1033,12 @@ ${itemListText}
                   {activeMetrics.targetLabel} 기준
                 </span>
               </div>
-              <div className="text-2xl font-black text-emerald-800 tracking-tight">
+              <div className="text-2xl font-black text-emerald-800 tracking-tight font-financial">
                 {formatCurrency(activeMetrics.targetTrevpar || liveSummary?.trevparWithoutGolf || liveSummary?.trevpar)}
-                <span className="text-xs font-semibold text-slate-500 ml-1">원</span>
+                <span className="text-xs font-semibold text-slate-500 ml-1 font-sans">원</span>
               </div>
             </div>
-            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600">
+            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600 font-financial">
               <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayTrevpar)}원</strong></span>
               <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendTrevpar)}원</strong></span>
             </div>

@@ -598,135 +598,143 @@ export default function ResortBusiness() {
           {/* Main KPI Cards Grid: 용어 표기 명확 분리 & YoY 전면 대조 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* 1. Total Revenue */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
-                <Coins className="w-5 h-5 text-[#00ae95]" /> 
-                <span>객실 총 매출</span>
-                <MetricExplainerTooltip presetKey="netRevenue" align="left" />
-              </h2>
-              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                {formatCurrency(revCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+              <div>
+                <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
+                  <Coins className="w-5 h-5 text-[#00ae95]" /> 
+                  <span>객실 총 매출</span>
+                  <MetricExplainerTooltip presetKey="netRevenue" align="left" />
+                </h2>
+                <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
+                  {formatCurrency(revCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
+                </div>
+                {(lodgingStats.weekdayRevenue !== undefined || lodgingStats.weekendRevenue !== undefined) && (
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
+                    <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayRevenue)}</strong>원</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRevenue)}</strong>원</span>
+                  </div>
+                )}
+                {revLy > 0 && (
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
+                      (revGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                    }`}>
+                      {(revGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(revGrowth || 0).toFixed(1)}%
+                      {revDiff !== 0 && (
+                        <span className="ml-1 opacity-80">({revDiff > 0 ? '+' : ''}{formatCurrency(revDiff)}원)</span>
+                      )}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(revLy)}원</span>
+                  </div>
+                )}
               </div>
-              {(lodgingStats.weekdayRevenue !== undefined || lodgingStats.weekendRevenue !== undefined) && (
-                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
-                  <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayRevenue)}</strong>원</span>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRevenue)}</strong>원</span>
-                </div>
-              )}
-              {revLy > 0 && (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
-                    (revGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
-                  }`}>
-                    {(revGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(revGrowth || 0).toFixed(1)}%
-                    {revDiff !== 0 && (
-                      <span className="ml-1 opacity-80">({revDiff > 0 ? '+' : ''}{formatCurrency(revDiff)}원)</span>
-                    )}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(revLy)}원</span>
-                </div>
-              )}
-              <p className="text-[10px] text-slate-400 mt-2 break-keep">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
+              <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">선택 기간 순수 객실 판매 총액 (부가세 별도)</p>
             </div>
 
             {/* 2. 판매 건수 (계약) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
-                <CalendarDays className="w-5 h-5 text-[#00ae95]" /> 
-                <span>판매 건수 (계약)</span>
-                <MetricExplainerTooltip presetKey="occupancy" align="center" />
-              </h2>
-              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                {formatCurrency(roomsCurrent)}건
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+              <div>
+                <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
+                  <CalendarDays className="w-5 h-5 text-[#00ae95]" /> 
+                  <span>판매 건수 (계약)</span>
+                  <MetricExplainerTooltip presetKey="occupancy" align="center" />
+                </h2>
+                <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
+                  {formatCurrency(roomsCurrent)}건
+                </div>
+                {(lodgingStats.weekdayRoomsSold !== undefined || lodgingStats.weekendRoomsSold !== undefined) && (
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
+                    <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayRoomsSold)}</strong>건</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRoomsSold)}</strong>건</span>
+                  </div>
+                )}
+                {roomsLy > 0 && (
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
+                      (roomsGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                    }`}>
+                      {(roomsGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(roomsGrowth || 0).toFixed(1)}%
+                      {roomsDiff !== 0 && (
+                        <span className="ml-1 opacity-80">({roomsDiff > 0 ? '+' : ''}{formatCurrency(roomsDiff)}건)</span>
+                      )}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(roomsLy)}건</span>
+                  </div>
+                )}
               </div>
-              {(lodgingStats.weekdayRoomsSold !== undefined || lodgingStats.weekendRoomsSold !== undefined) && (
-                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
-                  <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayRoomsSold)}</strong>건</span>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendRoomsSold)}</strong>건</span>
-                </div>
-              )}
-              {roomsLy > 0 && (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
-                    (roomsGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
-                  }`}>
-                    {(roomsGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(roomsGrowth || 0).toFixed(1)}%
-                    {roomsDiff !== 0 && (
-                      <span className="ml-1 opacity-80">({roomsDiff > 0 ? '+' : ''}{formatCurrency(roomsDiff)}건)</span>
-                    )}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(roomsLy)}건</span>
-                </div>
-              )}
-              <p className="text-[10px] text-slate-400 mt-2 break-keep">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
+              <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">정산 계약 기준 총 판매 계약 건수 (PMS 실적)</p>
             </div>
 
             {/* 3. 실운영 점유실 (물리) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
-                <KeyRound className="w-5 h-5 text-[#00ae95]" /> 
-                <span>실운영 점유실 (물리)</span>
-                <MetricExplainerTooltip presetKey="connectingRoom" align="center" />
-              </h2>
-              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap font-financial">
-                <span>{totalPhysicalOccupied.toLocaleString()}실</span>
-                <span className="text-xs text-[#00ae95] font-semibold">({occCurrent !== undefined && occCurrent !== null ? occCurrent + '%' : '-'})</span>
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+              <div>
+                <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
+                  <KeyRound className="w-5 h-5 text-[#00ae95]" /> 
+                  <span>실운영 점유실 (물리)</span>
+                  <MetricExplainerTooltip presetKey="connectingRoom" align="center" />
+                </h2>
+                <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap font-financial">
+                  <span>{totalPhysicalOccupied.toLocaleString()}실</span>
+                  <span className="text-xs text-[#00ae95] font-semibold">({occCurrent !== undefined && occCurrent !== null ? occCurrent + '%' : '-'})</span>
+                </div>
+                {(lodgingStats.weekdayOcc !== undefined || lodgingStats.weekendOcc !== undefined) && (
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
+                    <span className="text-slate-500">주중 점유 <strong className="text-slate-700">{lodgingStats.weekdayOcc}%</strong></span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-500">휴일전일 점유 <strong className="text-[#00ae95]">{lodgingStats.weekendOcc}%</strong></span>
+                  </div>
+                )}
+                {occLy !== null && (
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
+                      (occDiff || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                    }`}>
+                      {(occDiff || 0) >= 0 ? '▲' : '▼'} {Math.abs(occDiff || 0).toFixed(1)}%p
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium font-financial">
+                      전년 {(lyTotalPhysicalOccupied > 0 ? lyTotalPhysicalOccupied : lyStats?.roomsSold)?.toLocaleString()}실 ({occLy}%)
+                    </span>
+                  </div>
+                )}
               </div>
-              {(lodgingStats.weekdayOcc !== undefined || lodgingStats.weekendOcc !== undefined) && (
-                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
-                  <span className="text-slate-500">주중 점유 <strong className="text-slate-700">{lodgingStats.weekdayOcc}%</strong></span>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-slate-500">휴일전일 점유 <strong className="text-[#00ae95]">{lodgingStats.weekendOcc}%</strong></span>
-                </div>
-              )}
-              {occLy !== null && (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
-                    (occDiff || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
-                  }`}>
-                    {(occDiff || 0) >= 0 ? '▲' : '▼'} {Math.abs(occDiff || 0).toFixed(1)}%p
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-medium font-financial">
-                    전년 {(lyTotalPhysicalOccupied > 0 ? lyTotalPhysicalOccupied : lyStats?.roomsSold)?.toLocaleString()}실 ({occLy}%)
-                  </span>
-                </div>
-              )}
-              <p className="text-[11px] text-slate-400 mt-2 break-keep">일반/단독 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 {breakdownText ? `(${breakdownText}, ` : '('}{isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
+              <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">일반/단독 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 {breakdownText ? `(${breakdownText}, ` : '('}{isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
             </div>
 
             {/* 4. Overall ADR */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100">
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
-                <Coins className="w-5 h-5 text-[#00ae95]" /> 
-                <span>객실 평균 단가 (ADR)</span>
-                <MetricExplainerTooltip presetKey="adr" align="right" />
-              </h2>
-              <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                {formatCurrency(adrCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+              <div>
+                <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
+                  <Coins className="w-5 h-5 text-[#00ae95]" /> 
+                  <span>객실 평균 단가 (ADR)</span>
+                  <MetricExplainerTooltip presetKey="adr" align="right" />
+                </h2>
+                <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
+                  {formatCurrency(adrCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
+                </div>
+                {(lodgingStats.weekdayAdr !== undefined || lodgingStats.weekendAdr !== undefined) && (
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
+                    <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</span>
+                  </div>
+                )}
+                {adrLy !== null && adrLy > 0 && (
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
+                      (adrGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                    }`}>
+                      {(adrGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(adrGrowth || 0).toFixed(1)}%
+                      {adrDiff !== null && adrDiff !== 0 && (
+                        <span className="ml-1 opacity-80">({adrDiff > 0 ? '+' : ''}{formatCurrency(adrDiff)}원)</span>
+                      )}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(adrLy)}원</span>
+                  </div>
+                )}
               </div>
-              {(lodgingStats.weekdayAdr !== undefined || lodgingStats.weekendAdr !== undefined) && (
-                <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
-                  <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</span>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</span>
-                </div>
-              )}
-              {adrLy !== null && adrLy > 0 && (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md font-financial ${
-                    (adrGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
-                  }`}>
-                    {(adrGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(adrGrowth || 0).toFixed(1)}%
-                    {adrDiff !== null && adrDiff !== 0 && (
-                      <span className="ml-1 opacity-80">({adrDiff > 0 ? '+' : ''}{formatCurrency(adrDiff)}원)</span>
-                    )}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(adrLy)}원</span>
-                </div>
-              )}
-              <p className="text-[11px] text-slate-400 mt-2 break-keep">총 객실 매출 ÷ 판매 건수(계약)</p>
+              <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">총 객실 매출 ÷ 판매 건수(계약)</p>
             </div>
           </div>
 

@@ -267,7 +267,7 @@ export default function WeatherSalesCorrelation() {
   // Sensitivity Tag Helper
   const getSensitivityBadge = (tag: string, rate: number) => {
     if (rate <= -35 || tag === 'HIGH_NEGATIVE') {
-      return { text: '극심한 타격', bg: 'bg-red-50 text-red-700 border-red-200' };
+      return { text: '극심한 타격', bg: 'bg-rose-50 text-rose-700 border-rose-200' };
     }
     if (rate < -10 || tag === 'VULNERABLE') {
       return { text: '우천 취약', bg: 'bg-amber-50 text-amber-700 border-amber-200' };
@@ -1066,12 +1066,12 @@ export default function WeatherSalesCorrelation() {
                           <td className="py-3 px-4 text-right font-financial text-slate-900 font-semibold">
                             {formatCurrency(rainyRev)}원
                           </td>
-                          <td className={`py-3 px-4 text-right font-financial font-bold ${deltaRev >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          <td className={`py-3 px-4 text-right font-financial font-bold ${deltaRev >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {deltaRev > 0 ? '+' : ''}{formatCurrency(deltaRev)}원
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-financial font-extrabold text-[11px] ${
-                              impactRate >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                              impactRate >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
                             }`}>
                               {impactRate >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
                               {formatRate(impactRate)}
@@ -1080,11 +1080,11 @@ export default function WeatherSalesCorrelation() {
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-2 text-[10px] font-financial">
                               <span className="text-slate-500">
-                                주중: <strong className={v.weekday?.rainyImpactRate >= 0 ? 'text-emerald-600' : 'text-red-600'}>{formatRate(v.weekday?.rainyImpactRate)}</strong>
+                                주중: <strong className={v.weekday?.rainyImpactRate >= 0 ? 'text-emerald-600' : 'text-rose-600'}>{formatRate(v.weekday?.rainyImpactRate)}</strong>
                               </span>
                               <span className="text-slate-300">|</span>
                               <span className="text-slate-500">
-                                휴일: <strong className={v.holiday?.rainyImpactRate >= 0 ? 'text-emerald-600' : 'text-red-600'}>{formatRate(v.holiday?.rainyImpactRate)}</strong>
+                                휴일: <strong className={v.holiday?.rainyImpactRate >= 0 ? 'text-emerald-600' : 'text-rose-600'}>{formatRate(v.holiday?.rainyImpactRate)}</strong>
                               </span>
                             </div>
                           </td>
@@ -1317,7 +1317,7 @@ export default function WeatherSalesCorrelation() {
                         {formatCurrency(simData.grandTotal?.forecastWeekdayRevenue)}원
                       </div>
                       <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-md font-financial font-extrabold text-xs ${
-                        (simData.grandTotal?.weekdayRevenueDelta ?? 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                        (simData.grandTotal?.weekdayRevenueDelta ?? 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                       }`}>
                         {(simData.grandTotal?.weekdayRevenueDelta ?? 0) >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                         {formatRate(simData.grandTotal?.weekdayImpactRate)}
@@ -1325,7 +1325,7 @@ export default function WeatherSalesCorrelation() {
                     </div>
                     <div className="mt-3 pt-3 border-t border-sky-100/80 flex items-center justify-between text-xs text-slate-500 font-financial">
                       <span>전년 동월({simData.lyMonth}) 실측 일평균: <strong>{formatCurrency(simData.grandTotal?.lyWeekdayAvgRevenue)}원</strong></span>
-                      <span className={simData.grandTotal?.weekdayRevenueDelta >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                      <span className={simData.grandTotal?.weekdayRevenueDelta >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
                         변동: {simData.grandTotal?.weekdayRevenueDelta > 0 ? '+' : ''}{formatCurrency(simData.grandTotal?.weekdayRevenueDelta)}원
                       </span>
                     </div>
@@ -1346,7 +1346,7 @@ export default function WeatherSalesCorrelation() {
                         {formatCurrency(simData.grandTotal?.forecastHolidayRevenue)}원
                       </div>
                       <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-md font-financial font-extrabold text-xs ${
-                        (simData.grandTotal?.holidayRevenueDelta ?? 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                        (simData.grandTotal?.holidayRevenueDelta ?? 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                       }`}>
                         {(simData.grandTotal?.holidayRevenueDelta ?? 0) >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                         {formatRate(simData.grandTotal?.holidayImpactRate)}
@@ -1354,7 +1354,7 @@ export default function WeatherSalesCorrelation() {
                     </div>
                     <div className="mt-3 pt-3 border-t border-amber-100/80 flex items-center justify-between text-xs text-slate-500 font-financial">
                       <span>전년 동월({simData.lyMonth}) 실측 일평균: <strong>{formatCurrency(simData.grandTotal?.lyHolidayAvgRevenue)}원</strong></span>
-                      <span className={simData.grandTotal?.holidayRevenueDelta >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                      <span className={simData.grandTotal?.holidayRevenueDelta >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
                         변동: {simData.grandTotal?.holidayRevenueDelta > 0 ? '+' : ''}{formatCurrency(simData.grandTotal?.holidayRevenueDelta)}원
                       </span>
                     </div>
@@ -1374,13 +1374,13 @@ export default function WeatherSalesCorrelation() {
                           <div className="text-xs font-bold text-slate-800 truncate mb-1">{cat.categoryName}</div>
                           <div className="text-[11px] text-slate-500 flex justify-between font-financial">
                             <span>주중:</span>
-                            <span className={cat.weekdayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                            <span className={cat.weekdayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
                               {formatRate(cat.weekdayImpactRate)}
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-500 flex justify-between font-financial">
                             <span>휴일:</span>
-                            <span className={cat.holidayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                            <span className={cat.holidayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
                               {formatRate(cat.holidayImpactRate)}
                             </span>
                           </div>
@@ -1508,7 +1508,7 @@ export default function WeatherSalesCorrelation() {
                                 <td className="py-2.5 px-3 text-right font-financial font-bold text-slate-900">
                                   {formatCurrency(v.forecastWeekdayRevenue)}원
                                 </td>
-                                <td className={`py-2.5 px-3 text-right font-financial font-extrabold ${v.weekdayRevenueDelta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                <td className={`py-2.5 px-3 text-right font-financial font-extrabold ${v.weekdayRevenueDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                   {formatRate(v.weekdayImpactRate)}
                                 </td>
                                 <td className="py-2.5 px-3 text-right font-financial text-slate-500">
@@ -1517,7 +1517,7 @@ export default function WeatherSalesCorrelation() {
                                 <td className="py-2.5 px-3 text-right font-financial font-bold text-slate-900">
                                   {formatCurrency(v.forecastHolidayRevenue)}원
                                 </td>
-                                <td className={`py-2.5 px-3 text-right font-financial font-extrabold ${v.holidayRevenueDelta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                <td className={`py-2.5 px-3 text-right font-financial font-extrabold ${v.holidayRevenueDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                   {formatRate(v.holidayImpactRate)}
                                 </td>
                               </tr>

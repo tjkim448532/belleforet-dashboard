@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { 
   Package, Sparkles, DollarSign, Hotel, Utensils, 
-  CheckCircle2, ShieldCheck, Flame, Plus, Minus, 
+  CheckCircle2, ShieldCheck, Plus, Minus, 
   RotateCcw, Copy, Check, TrendingUp, Award, 
-  Calendar, ChevronRight
+  Calendar, Trash2, Layers, CheckCircle
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -13,30 +13,13 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 // ==========================================
 // 1. Types & Interfaces
 // ==========================================
-export interface PackageItem {
+export interface UserCustomItem {
   id: string;
   name: string;
-  category: 'FNB' | 'LEISURE' | 'OTHER';
-  categoryLabel: string;
-  icon: string;
-  allocatedPrice: number;   // 내부 배분가 (VAT 포함 소비자가 내 할당액)
-  retailPrice: number;      // 소비자 정상 단품가 (고객 체감 가치)
-  variableCostRate: number; // 추정 변동비율 (F&B: 35~40%, 직영레저: 2~5%)
-  isDirectOperation: boolean; // 직영 시설 여부 (변동비 극소화, GOPPAR 보존 핵심)
-  unit: string;
-  description: string;
-}
-
-export interface PackagePresetStrategy {
-  id: string;
-  name: string;
-  badge: string;
-  targetPriceGross: number; // e.g. 265,000원
-  roomType: string;
-  roomAllocation: number;   // e.g. 54,000원 (실측 RevPAR 방어액)
-  itemQuantities: Record<string, number>;
-  tagline: string;
-  desc: string;
+  category: 'FNB' | 'LEISURE';
+  unitPrice: number;    // 1인 또는 단품 배분 금액 (원)
+  quantity: number;     // 수량 (인원/매수)
+  retailPrice: number;  // 소비자 정상 단품가 (고객 체감 가치)
 }
 
 export interface MonthlyEfficiencyData {
@@ -54,235 +37,18 @@ export interface MonthlyEfficiencyData {
   year: number;
 }
 
-// ==========================================
-// 2. Predefined Master Data & Presets
-// ==========================================
+// 객실 타입 마스터
 const ROOM_TYPES = [
   { id: 'ROOM_16', name: '16평형 콘도 (2인 기준)', baseNormalPrice: 150000, defaultCapacity: 2, desc: '커플 및 2인 여행객 최적화 기본 객실' },
   { id: 'ROOM_35', name: '35평형 콘도 (4인 기준)', baseNormalPrice: 220000, defaultCapacity: 4, desc: '가족 및 소모임 최적화 중형 객실' },
   { id: 'ROOM_51', name: '51평형 커넥팅룸 (4~6인)', baseNormalPrice: 320000, defaultCapacity: 6, desc: '대가족 및 단체 특화 복합 프리미엄 객실' }
 ];
 
-const DEFAULT_PACKAGE_ITEMS: PackageItem[] = [
-  // 🍽️ 식음 (F&B) 부문
-  {
-    id: 'FNB_CUCINA_BF2',
-    name: '쿠치나 조식 뷔페 (2인)',
-    category: 'FNB',
-    categoryLabel: '식음(F&B)',
-    icon: '🍳',
-    allocatedPrice: 36000,
-    retailPrice: 44000,
-    variableCostRate: 0.35,
-    isDirectOperation: false,
-    unit: '2인권',
-    description: '호텔식 조식 뷔페 성인 2인 식사권'
-  },
-  {
-    id: 'FNB_NAMDO_50',
-    name: '남도예담 정식 바우처',
-    category: 'FNB',
-    categoryLabel: '식음(F&B)',
-    icon: '🍱',
-    allocatedPrice: 50000,
-    retailPrice: 60000,
-    variableCostRate: 0.38,
-    isDirectOperation: false,
-    unit: '5만 바우처',
-    description: '남도 한정식 명가 남도예담 바우처 식음권'
-  },
-  {
-    id: 'FNB_BRISKET_80',
-    name: '브리스킷346 BBQ 플래터 세트',
-    category: 'FNB',
-    categoryLabel: '식음(F&B)',
-    icon: '🥩',
-    allocatedPrice: 80000,
-    retailPrice: 95000,
-    variableCostRate: 0.35,
-    isDirectOperation: false,
-    unit: '2~3인 세트',
-    description: '텍사스 정통 훈제 바비큐 플래터 & 디너'
-  },
-  {
-    id: 'FNB_CAFE_15',
-    name: '투썸/베이커리 음료권 (2인)',
-    category: 'FNB',
-    categoryLabel: '식음(F&B)',
-    icon: '☕',
-    allocatedPrice: 15000,
-    retailPrice: 18000,
-    variableCostRate: 0.20,
-    isDirectOperation: false,
-    unit: '2잔권',
-    description: '아메리카노 및 시그니처 베이커리 음료권'
-  },
-  {
-    id: 'FNB_WINE_30',
-    name: '인룸 웰컴 와인 & 치즈 플래터',
-    category: 'FNB',
-    categoryLabel: '식음(F&B)',
-    icon: '🍷',
-    allocatedPrice: 30000,
-    retailPrice: 40000,
-    variableCostRate: 0.30,
-    isDirectOperation: false,
-    unit: '1세트',
-    description: '객실 사전 세팅용 하우스 와인과 치즈 플레이트'
-  },
-
-  // 🏎️🎢 직영 레저 & 액티비티 부문 (변동비 극소화, GOPPAR 보존 핵심)
-  {
-    id: 'LEI_MOTO_KART2',
-    name: '모토아레나 서킷 레이싱 카트 (2인)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '🏎️',
-    allocatedPrice: 70000,
-    retailPrice: 80000,
-    variableCostRate: 0.05,
-    isDirectOperation: true,
-    unit: '2인권',
-    description: '국제 규격 서킷 스포츠 카트 주행권 (직영/한계이익 95%)'
-  },
-  {
-    id: 'LEI_LUGE_2R2',
-    name: '익스트림 루지 (2인 2회권)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '🛷',
-    allocatedPrice: 45000,
-    retailPrice: 56000,
-    variableCostRate: 0.03,
-    isDirectOperation: true,
-    unit: '2인 2회',
-    description: '산악 루지 트랙 2회 탑승권 (직영 무변동비 시설)'
-  },
-  {
-    id: 'LEI_FARM_HORSE2',
-    name: '벨포레 목장 & 승마체험 (2인)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '🐎',
-    allocatedPrice: 30000,
-    retailPrice: 38000,
-    variableCostRate: 0.05,
-    isDirectOperation: true,
-    unit: '2인권',
-    description: '양몰이 공연 관람 및 승마 체험 (패밀리 선호 1위)'
-  },
-  {
-    id: 'LEI_SLED_2',
-    name: '사계절 썰매장 (2인)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '⛷️',
-    allocatedPrice: 26000,
-    retailPrice: 32000,
-    variableCostRate: 0.03,
-    isDirectOperation: true,
-    unit: '2인권',
-    description: '사계절 튜브 슬로프 무제한 이용권'
-  },
-  {
-    id: 'LEI_MEDIA_ART2',
-    name: '미디어아트센터 \'몰입\' 관람권 (2인)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '🎨',
-    allocatedPrice: 32000,
-    retailPrice: 38000,
-    variableCostRate: 0.02,
-    isDirectOperation: true,
-    unit: '2인권',
-    description: '실감형 디지털 미디어 전시관 입장권'
-  },
-  {
-    id: 'LEI_MARINA_YACHT2',
-    name: '마리나클럽 요트 투어 (2인)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '⛵',
-    allocatedPrice: 50000,
-    retailPrice: 60000,
-    variableCostRate: 0.08,
-    isDirectOperation: true,
-    unit: '2인권',
-    description: '원남호수 럭셔리 요트 세일링 투어'
-  },
-  {
-    id: 'LEI_HEALING_SAUNA2',
-    name: '힐링 사우나 (2인 이용권)',
-    category: 'LEISURE',
-    categoryLabel: '직영 레저',
-    icon: '♨️',
-    allocatedPrice: 20000,
-    retailPrice: 26000,
-    variableCostRate: 0.05,
-    isDirectOperation: true,
-    unit: '2인권',
-    description: '천연 암반수 힐링 사우나 2인권'
-  }
-];
-
-// Google Slides SSOT 기반 3대 전략 패키지 프리셋
-const STRATEGY_PRESETS: PackagePresetStrategy[] = [
-  {
-    id: 'PRESET_SLIDE_SSOT',
-    name: '2026년 1월 실적 기반 표준 역산 패키지 (Slide SSOT)',
-    badge: '★ 슬라이드 공식 SSOT 모델',
-    targetPriceGross: 265000,
-    roomType: '16평형 콘도 (2인 기준)',
-    roomAllocation: 54000, // 1월 실측 RevPAR 54,019원 수준 방어
-    itemQuantities: {
-      'FNB_CUCINA_BF2': 1,     // 36,000원
-      'FNB_NAMDO_50': 1,       // 50,000원
-      'LEI_MOTO_KART2': 1,     // 70,000원
-      'LEI_FARM_HORSE2': 1,    // 30,000원
-      'LEI_HEALING_SAUNA2': 1  // 20,000원 (합계: 206,000원 / 잔여 마진 버퍼: +5,000원)
-    },
-    tagline: '총 26.5만원 타깃 = 객실 우선 선차감 + 부대시설 최적 배분',
-    desc: '선택 월 실측 RevPAR 기준 객실을 최소 방어선으로 우선 배분하고, 직영 고마진 모토아레나 카트와 식음을 결합하여 TRevPAR와 GOPPAR를 완벽히 동시 사수하는 표준 역산 모델'
-  },
-  {
-    id: 'PRESET_BBQ_SPA',
-    name: 'Cozy BBQ & 힐링 스파 프리미엄 패키지',
-    badge: '식음 락인 프리미엄',
-    targetPriceGross: 329000,
-    roomType: '35평형 콘도 (4인 기준)',
-    roomAllocation: 68000,
-    itemQuantities: {
-      'FNB_BRISKET_80': 1,     // 80,000원
-      'FNB_CUCINA_BF2': 1,     // 36,000원
-      'LEI_LUGE_2R2': 1,       // 45,000원
-      'LEI_MEDIA_ART2': 1,     // 32,000원
-      'LEI_FARM_HORSE2': 1,    // 30,000원
-      'LEI_HEALING_SAUNA2': 1, // 20,000원
-      'FNB_CAFE_15': 1         // 15,000원 (합계: 258,000원 / 잔여 버퍼: +3,000원)
-    },
-    tagline: '총 32.9만원 타깃 = 객실 우선 차감 + 부대시설 할당',
-    desc: '브리스킷346 바비큐 디너와 조식, 루지 및 사우나를 결합하여 겨울철 가족/커플 고객의 체류 소비와 객단가를 극대화'
-  },
-  {
-    id: 'PRESET_EXTREME_ALLINONE',
-    name: '익스트림 액티비티 올인원 어드벤처 패키지',
-    badge: '직영 레저 풀패키지',
-    targetPriceGross: 299000,
-    roomType: '16평형 콘도 (2인 기준)',
-    roomAllocation: 54000,
-    itemQuantities: {
-      'LEI_MOTO_KART2': 1,     // 70,000원
-      'LEI_LUGE_2R2': 1,       // 45,000원
-      'LEI_SLED_2': 1,         // 26,000원
-      'FNB_CUCINA_BF2': 1,     // 36,000원
-      'LEI_MEDIA_ART2': 1,     // 32,000원
-      'LEI_HEALING_SAUNA2': 1, // 20,000원
-      'FNB_CAFE_15': 1         // 15,000원 (합계: 244,000원 / 잔여 버퍼: +1,000원)
-    },
-    tagline: '총 29.9만원 타깃 = 객실 우선 차감 + 레저/식음 할당',
-    desc: '모토아레나 서킷 카트, 루지, 썰매 등 벨포레 핵심 직영 레저를 총동원하여 2030 및 액티브 고객 타깃'
-  }
-];
+// 사용자가 쉽게 클릭하여 품목명을 자동 입력할 수 있는 추천 명칭 태그 (단가/예시는 입력하지 않고 빈 칸으로 생성)
+const QUICK_NAME_TAGS = {
+  FNB: ['조식 뷔페', '석식 바우처', '바베큐 플래터', '카페 음료권', '웰컴 와인 플레이트', '식음 통합 이용권'],
+  LEISURE: ['서킷 카트 레이싱', '익스트림 루지', '벨포레 목장 & 승마', '사계절 썰매장', '미디어아트 관람권', '요트 세일링 투어', '힐링 사우나']
+};
 
 export default function PackageGeneratorSimulator() {
   // ==========================================
@@ -296,7 +62,7 @@ export default function PackageGeneratorSimulator() {
   // ==========================================
   // State: Step 1 (목표 패키지 판매가)
   // ==========================================
-  const [targetPackagePrice, setTargetPackagePrice] = useState<number>(265000); // 슬라이드 기본 265,000원
+  const [targetPackagePrice, setTargetPackagePrice] = useState<number>(265000); // 1월 기준 기본 265,000원
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string>('ROOM_16');
 
   // ==========================================
@@ -306,17 +72,26 @@ export default function PackageGeneratorSimulator() {
   const [customRoomDeduction, setCustomRoomDeduction] = useState<number>(54000);
 
   // ==========================================
-  // State: Step 4 (부대시설 아이템 조립기)
+  // State: Step 4 (유저가 직접 만드는 부대시설 품목 목록)
   // ==========================================
-  const [items] = useState<PackageItem[]>(DEFAULT_PACKAGE_ITEMS);
-  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({
-    'FNB_CUCINA_BF2': 1,
-    'FNB_NAMDO_50': 1,
-    'LEI_MOTO_KART2': 1,
-    'LEI_FARM_HORSE2': 1,
-    'LEI_HEALING_SAUNA2': 1
-  });
-  const [itemCategoryFilter, setItemCategoryFilter] = useState<'ALL' | 'FNB' | 'LEISURE'>('ALL');
+  const [userItems, setUserItems] = useState<UserCustomItem[]>([
+    {
+      id: 'init_fnb_1',
+      name: '식음(F&B) 바우처 / 식사',
+      category: 'FNB',
+      unitPrice: 100000,
+      quantity: 1,
+      retailPrice: 120000
+    },
+    {
+      id: 'init_lei_1',
+      name: '직영 레저 / 액티비티 체험권',
+      category: 'LEISURE',
+      unitPrice: 111000,
+      quantity: 1,
+      retailPrice: 140000
+    }
+  ]);
 
   // ==========================================
   // State: Step 6 (전사 시뮬레이션 볼륨)
@@ -404,7 +179,6 @@ export default function PackageGeneratorSimulator() {
   // Update room deduction when month changes (if auto)
   useEffect(() => {
     if (isAutoRoomDeduction && currentMonthData.revpar > 0) {
-      // 100원 단위 반올림 처리하여 직관적 방어선 제시 (예: 54,019원 ➔ 54,000원)
       setCustomRoomDeduction(Math.round(currentMonthData.revpar / 1000) * 1000);
     }
   }, [selectedMonth, currentMonthData.revpar, isAutoRoomDeduction]);
@@ -421,32 +195,28 @@ export default function PackageGeneratorSimulator() {
       ? (Math.round(currentMonthData.revpar / 1000) * 1000)
       : customRoomDeduction;
 
-    // 3. 부대시설 잔여 가용 예산 = 총 판매가 - 객실 배분액
+    // 3. 부대시설 정해진 가용 예산 = 총 판매가 - 객실 배분액
     const amenityBudget = Math.max(0, totalPkgGross - roomDeduction);
 
-    // 4. 선택된 부대시설 합산
+    // 4. 유저가 직접 구성한 부대시설 항목 합산
     let fnbAllocatedTotal = 0;
     let leisureAllocatedTotal = 0;
     let fnbRetailTotal = 0;
     let leisureRetailTotal = 0;
-    let totalVariableCost = 15000; // 기본 객실 세탁/어메니티 변동비 약 15,000원
+    let totalVariableCost = 15000; // 객실 세탁/어메니티 기본 변동비 약 15,000원
 
-    items.forEach(item => {
-      const qty = itemQuantities[item.id] || 0;
-      if (qty > 0) {
-        const itemAllocTotal = item.allocatedPrice * qty;
-        const itemRetailTotal = item.retailPrice * qty;
-        const itemVc = itemAllocTotal * item.variableCostRate;
+    userItems.forEach(item => {
+      const itemSubtotal = item.unitPrice * (item.quantity || 1);
+      const retailSubtotal = (item.retailPrice && item.retailPrice > 0 ? item.retailPrice : Math.round(item.unitPrice * 1.25)) * (item.quantity || 1);
 
-        if (item.category === 'FNB') {
-          fnbAllocatedTotal += itemAllocTotal;
-          fnbRetailTotal += itemRetailTotal;
-        } else if (item.category === 'LEISURE') {
-          leisureAllocatedTotal += itemAllocTotal;
-          leisureRetailTotal += itemRetailTotal;
-        }
-
-        totalVariableCost += itemVc;
+      if (item.category === 'FNB') {
+        fnbAllocatedTotal += itemSubtotal;
+        fnbRetailTotal += retailSubtotal;
+        totalVariableCost += itemSubtotal * 0.35; // 식음 변동원가율 약 35%
+      } else {
+        leisureAllocatedTotal += itemSubtotal;
+        leisureRetailTotal += retailSubtotal;
+        totalVariableCost += itemSubtotal * 0.05; // 직영 레저 변동원가율 약 5%
       }
     });
 
@@ -454,7 +224,7 @@ export default function PackageGeneratorSimulator() {
     const remainingBuffer = amenityBudget - allocatedAmenitiesTotal;
     const isOverBudget = remainingBuffer < 0;
 
-    // 5. 고객 체감 가치 분석 (정상가 합계 vs 패키지 판매가)
+    // 5. 고객 체감 가치 분석
     const roomRetailNormal = selectedRoomType.baseNormalPrice;
     const totalCustomerRetailValue = roomRetailNormal + fnbRetailTotal + leisureRetailTotal;
     const customerPerceivedSavings = Math.max(0, totalCustomerRetailValue - totalPkgGross);
@@ -462,31 +232,23 @@ export default function PackageGeneratorSimulator() {
       ? Number(((customerPerceivedSavings / totalCustomerRetailValue) * 100).toFixed(1))
       : 0;
 
-    // 6. GOPPAR 보존 & 한계이익 분석 (Slide 1 핵심)
+    // 6. GOPPAR 보존 & 한계이익 분석
     const packageNetPrice = Math.round(totalPkgGross / 1.1); // VAT 제외 순매출
     const packageContributionMargin = totalPkgGross - totalVariableCost;
     const contributionMarginRate = totalPkgGross > 0
       ? Number(((packageContributionMargin / totalPkgGross) * 100).toFixed(1))
       : 0;
 
-    // 7. 거시적 성과 시뮬레이션 (해당 월 전체 TRevPAR & RevPAR 상승분)
+    // 7. 거시적 성과 시뮬레이션
     const physicalRoomCount = 175; // 벨포레 전체 가용 객실수
     const daysInMonth = new Date(currentMonthData.year, selectedMonth, 0).getDate();
     const monthlyPkgSoldTotal = dailyPackageSalesRooms * daysInMonth;
 
-    // 패키지 1실당 추가 창출 순매출
     const dailyPkgNetRevenue = packageNetPrice * dailyPackageSalesRooms;
     const monthlyPkgNetRevenue = dailyPkgNetRevenue * daysInMonth;
-
-    // 패키지 투숙객의 TRevPOR (객단가)
     const packageTrevPOR = totalPkgGross;
 
-    // 패키지 도입에 따른 TRevPAR (골프 제외) 예상치
-    // 기존 순수 리조트 일평균 매출 + (패키지 판매로 인한 부대시설 지출 확장분)
     const dailyBaseNonGolfRev = Math.round(currentMonthData.netRevenueWithoutGolf / daysInMonth);
-    
-    // 객실 공실을 채우거나 식음/레저 추가 지출을 유도하는 순증분
-    // 객실 우선 배분액이 이미 RevPAR를 방어하므로, 부대시설 배분액(allocatedAmenitiesTotal)이 전사 TRevPAR의 순증으로 연결됨
     const incrementalAmenityNetDaily = Math.round((allocatedAmenitiesTotal / 1.1) * dailyPackageSalesRooms);
     const simulatedDailyNonGolfRev = dailyBaseNonGolfRev + incrementalAmenityNetDaily;
     const simulatedTrevPAR = Math.round(simulatedDailyNonGolfRev / physicalRoomCount);
@@ -528,31 +290,63 @@ export default function PackageGeneratorSimulator() {
     isAutoRoomDeduction,
     customRoomDeduction,
     currentMonthData,
-    items,
-    itemQuantities,
+    userItems,
     selectedRoomType,
     selectedMonth,
     dailyPackageSalesRooms
   ]);
 
   // ==========================================
-  // 3. Handlers
+  // 3. User Item Handlers (동적 생성, 수정, 삭제)
   // ==========================================
-  const handleItemQuantityChange = (itemId: string, delta: number) => {
-    setItemQuantities(prev => {
-      const current = prev[itemId] || 0;
-      const next = Math.max(0, current + delta);
-      return { ...prev, [itemId]: next };
+  const handleAddUserItem = (category: 'FNB' | 'LEISURE', defaultName?: string) => {
+    const newItem: UserCustomItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      name: defaultName || (category === 'FNB' ? '식음(F&B) 품목' : '레저·체험 품목'),
+      category,
+      unitPrice: 0,
+      quantity: 1,
+      retailPrice: 0
+    };
+    setUserItems(prev => [...prev, newItem]);
+  };
+
+  const handleUpdateUserItem = (id: string, updates: Partial<UserCustomItem>) => {
+    setUserItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const updated = { ...item, ...updates };
+        if (updates.unitPrice !== undefined && (!item.retailPrice || item.retailPrice === 0 || item.retailPrice === Math.round(item.unitPrice * 1.25))) {
+          updated.retailPrice = Math.round(updates.unitPrice * 1.25);
+        }
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const handleDeleteUserItem = (id: string) => {
+    setUserItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleFillRemainingBudget = (id: string) => {
+    const currentItem = userItems.find(it => it.id === id);
+    if (!currentItem) return;
+
+    const otherItemsTotal = userItems
+      .filter(it => it.id !== id)
+      .reduce((sum, it) => sum + (it.unitPrice * (it.quantity || 1)), 0);
+
+    const availableForItem = Math.max(0, reverseCalculations.amenityBudget - otherItemsTotal);
+    const calculatedUnitPrice = Math.max(0, Math.floor(availableForItem / (currentItem.quantity || 1)));
+
+    handleUpdateUserItem(id, { 
+      unitPrice: calculatedUnitPrice,
+      retailPrice: Math.round(calculatedUnitPrice * 1.25)
     });
   };
 
-  const handleApplyPreset = (preset: PackagePresetStrategy) => {
-    setTargetPackagePrice(preset.targetPriceGross);
-    setCustomRoomDeduction(preset.roomAllocation);
-    setIsAutoRoomDeduction(false);
-    setItemQuantities(preset.itemQuantities);
-    const matchingRoom = ROOM_TYPES.find(r => r.name.includes(preset.roomType.slice(0, 3))) || ROOM_TYPES[0];
-    setSelectedRoomTypeId(matchingRoom.id);
+  const handleClearAllItems = () => {
+    setUserItems([]);
   };
 
   const handleResetToSlideDefault = () => {
@@ -561,21 +355,31 @@ export default function PackageGeneratorSimulator() {
     setIsAutoRoomDeduction(true);
     setCustomRoomDeduction(54000);
     setSelectedRoomTypeId('ROOM_16');
-    setItemQuantities({
-      'FNB_CUCINA_BF2': 1,
-      'FNB_NAMDO_50': 1,
-      'LEI_MOTO_KART2': 1,
-      'LEI_FARM_HORSE2': 1,
-      'LEI_HEALING_SAUNA2': 1
-    });
+    setUserItems([
+      {
+        id: `fnb_${Date.now()}_1`,
+        name: '식음(F&B) 식사 및 바우처',
+        category: 'FNB',
+        unitPrice: 100000,
+        quantity: 1,
+        retailPrice: 120000
+      },
+      {
+        id: `lei_${Date.now()}_2`,
+        name: '직영 레저 / 액티비티 체험권',
+        category: 'LEISURE',
+        unitPrice: 111000,
+        quantity: 1,
+        retailPrice: 140000
+      }
+    ]);
     setDailyPackageSalesRooms(50);
   };
 
   const handleCopySummary = async () => {
-    const selectedItemList = items
-      .filter(it => (itemQuantities[it.id] || 0) > 0)
-      .map(it => `  - [${it.categoryLabel}] ${it.name} (${itemQuantities[it.id]}개): ${formatCurrency(it.allocatedPrice * itemQuantities[it.id])}원 (정상가 ${formatCurrency(it.retailPrice * itemQuantities[it.id])}원)`)
-      .join('\n');
+    const itemListText = userItems.length > 0
+      ? userItems.map(it => `  - [${it.category === 'FNB' ? '식음' : '레저/체험'}] ${it.name} (${it.quantity}개): ${formatCurrency(it.unitPrice * it.quantity)}원 (정상가 ${formatCurrency((it.retailPrice || Math.round(it.unitPrice * 1.25)) * it.quantity)}원)`).join('\n')
+      : '  - (등록된 부대시설 항목 없음)';
 
     const summaryText = `[벨포레 리조트 비수기 역산형 패키지 기획안 (SSOT)]
 ■ 적용 월: ${selectedMonth}월 (${currentMonthData.year}년 실적 기준)
@@ -585,11 +389,11 @@ export default function PackageGeneratorSimulator() {
 [1. 역산 배분 구조 (Top-Down Breakdown)]
 - 총 패키지 판매가: ${formatCurrency(reverseCalculations.totalPkgGross)}원
 - (−) 객실 우선 배분액: ${formatCurrency(reverseCalculations.roomDeduction)}원 (실측 RevPAR ${formatCurrency(currentMonthData.revpar)}원 수준 방어)
-- (=) 부대시설 가용 예산: ${formatCurrency(reverseCalculations.amenityBudget)}원
-- 부대시설 실제 소진액: ${formatCurrency(reverseCalculations.allocatedAmenitiesTotal)}원 (잔여 마진 버퍼: ${formatCurrency(reverseCalculations.remainingBuffer)}원)
+- (=) 부대시설 정해진 가용 예산: ${formatCurrency(reverseCalculations.amenityBudget)}원
+- 부대시설 실제 구성액: ${formatCurrency(reverseCalculations.allocatedAmenitiesTotal)}원 (잔여 마진 버퍼: ${formatCurrency(reverseCalculations.remainingBuffer)}원)
 
-[2. 부대시설 및 직영 레저 구성 내역]
-${selectedItemList || '  - 선택된 부대시설 없음'}
+[2. 유저 직접 구성 부대시설 품목 내역]
+${itemListText}
 
 [3. 고객 가치 및 수익성 분석]
 - 고객 체감 정상가 총액: ${formatCurrency(reverseCalculations.totalCustomerRetailValue)}원 상당
@@ -616,7 +420,6 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
   // ==========================================
   // 4. ECharts Configurations
   // ==========================================
-  // Chart 1: Package Component Breakdown Donut
   const packagePieOptions = useMemo(() => {
     return {
       tooltip: {
@@ -644,7 +447,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
           data: [
             { name: '객실 방어액', value: reverseCalculations.roomDeduction, itemStyle: { color: '#1E3A8A' } },
             { name: '식음(F&B)', value: reverseCalculations.fnbAllocatedTotal, itemStyle: { color: '#16A34A' } },
-            { name: '직영 레저', value: reverseCalculations.leisureAllocatedTotal, itemStyle: { color: '#EAB308' } },
+            { name: '레저/체험', value: reverseCalculations.leisureAllocatedTotal, itemStyle: { color: '#EAB308' } },
             ...(reverseCalculations.remainingBuffer > 0 ? [
               { name: '잔여 버퍼', value: reverseCalculations.remainingBuffer, itemStyle: { color: '#0D9488' } }
             ] : [])
@@ -654,7 +457,6 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
     };
   }, [reverseCalculations]);
 
-  // Chart 2: Before vs After TRevPAR & RevPAR Comparison
   const comparisonBarOptions = useMemo(() => {
     return {
       tooltip: {
@@ -718,12 +520,6 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
     };
   }, [currentMonthData, reverseCalculations, selectedMonth]);
 
-  // Filtered Items for Catalog
-  const filteredItems = useMemo(() => {
-    if (itemCategoryFilter === 'ALL') return items;
-    return items.filter(it => it.category === itemCategoryFilter);
-  }, [items, itemCategoryFilter]);
-
   return (
     <div className="space-y-6">
 
@@ -761,9 +557,9 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
               비수기 역산형 패키지 기획 & TRevPAR 시뮬레이터
             </h2>
             <p className="text-slate-300 text-xs lg:text-sm mt-1.5 max-w-3xl leading-relaxed">
-              <strong>RevPAR(객실)</strong> 중심에서 <strong>TRevPAR(객실+F&B+레저)</strong> 중심으로 전환하여 지갑 점유율을 극대화합니다. 
-              목표 패키지 판매가에서 실측 RevPAR 방어액을 선차감하고, 잔여 예산 내에서 <strong>변동비가 낮고 고객 체감가치가 높은 직영 레저</strong>를 필수 결합하여 
-              할인 체감도와 <strong>GOPPAR(객실당 영업이익)</strong>를 보존합니다.
+              <strong>목표 패키지 판매가</strong>에서 <strong>실측 RevPAR 방어액</strong>을 선차감한 후, 
+              <strong>정해진 부대시설 예산 안에서 유저가 식음과 레저·체험 품목을 직접 설계</strong>하여 
+              고객 체감 가치와 리조트의 실질 <strong>GOPPAR(객실당 영업이익)</strong>를 극대화합니다.
             </p>
           </div>
 
@@ -795,7 +591,6 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
               ))}
             </div>
 
-            {/* 전체 월 선택 드롭다운 */}
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -839,7 +634,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-bold transition-all text-xs cursor-pointer shadow-2xs"
           >
             <RotateCcw size={13} />
-            1월 슬라이드 기본값 복원
+            기본값 초기화
           </button>
           <button
             onClick={handleCopySummary}
@@ -852,57 +647,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
       </div>
 
       {/* ============================================================== */}
-      {/* 3. Predefined Strategy Packages (One-click Presets)            */}
-      {/* ============================================================== */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-            <Flame size={15} className="text-amber-500" />
-            슬라이드 검증 3대 전략 패키지 템플릿 (원클릭 로드)
-          </span>
-          <span className="text-[11px] text-slate-400">
-            카드를 클릭하면 판매가, 방어 RevPAR, 부대시설 조립 내역이 즉시 계산기에 주입됩니다
-          </span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {STRATEGY_PRESETS.map(pkg => (
-            <div
-              key={pkg.id}
-              onClick={() => handleApplyPreset(pkg)}
-              className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-black bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full border border-teal-200">
-                    {pkg.badge}
-                  </span>
-                  <span className="text-base font-black text-indigo-950 group-hover:text-teal-700 transition-colors">
-                    {formatCurrency(pkg.targetPriceGross)}원
-                  </span>
-                </div>
-                <div className="font-extrabold text-slate-900 text-sm mb-1 leading-snug">
-                  {pkg.name}
-                </div>
-                <div className="text-[11px] font-bold text-teal-800 bg-teal-50/60 p-1.5 rounded-lg border border-teal-100 mb-2">
-                  {pkg.tagline}
-                </div>
-                <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-2.5">
-                  {pkg.desc}
-                </p>
-              </div>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 font-medium">객실: {pkg.roomType}</span>
-                <span className="text-teal-600 font-extrabold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                  적용하기 <ChevronRight size={13} />
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ============================================================== */}
-      {/* 4. The 3-Step Top-Down Reverse Allocation Console             */}
+      {/* 3. The 3-Step Top-Down Reverse Allocation Console             */}
       {/* ============================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
@@ -921,7 +666,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
               <span className="text-sm font-semibold text-slate-500 ml-1">원 (VAT포함)</span>
             </div>
             <p className="text-[11px] text-slate-500 mb-3">
-              시장 경쟁력과 고객 심리 저항선을 고려하여 전략적으로 판매 총액을 먼저 고정합니다.
+              전략적으로 목표하는 총 소비자 판매가를 먼저 고정합니다.
             </p>
 
             {/* Quick Price Buttons */}
@@ -944,7 +689,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
             {/* Slider */}
             <input
               type="range"
-              min={180000}
+              min={150000}
               max={500000}
               step={5000}
               value={targetPackagePrice}
@@ -989,7 +734,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
               <span className="text-sm font-semibold text-slate-500 ml-1">원</span>
             </div>
             <p className="text-[11px] text-slate-500 mb-3">
-              해당 시즌의 목표 ADR 또는 <strong>실측 RevPAR({formatCurrency(currentMonthData.revpar)}원)</strong>를 최소 방어 요금으로 선차감합니다.
+              {selectedMonth}월 실측 RevPAR({formatCurrency(currentMonthData.revpar)}원)를 최소 방어 요금으로 선차감합니다.
             </p>
 
             {/* Toggle: Auto vs Manual */}
@@ -1036,7 +781,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
           </div>
 
           <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            💡 객실을 헐값에 파는 것이 아니라 최소 실현 매출을 먼저 락인(Lock-in)합니다.
+            💡 객실을 헐값에 파는 대신 최소 실현 매출을 먼저 락인(Lock-in)합니다.
           </div>
         </div>
 
@@ -1047,7 +792,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
           </div>
           <div>
             <div className="flex items-center justify-between mt-1 mb-2">
-              <span className="text-xs font-bold text-teal-900">부대시설 잔여 할당 예산</span>
+              <span className="text-xs font-bold text-teal-900">부대시설 정해진 가용 예산</span>
               <Award size={16} className="text-teal-700" />
             </div>
             <div className="text-3xl font-black text-teal-950 mb-1">
@@ -1055,26 +800,26 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
               <span className="text-sm font-bold text-teal-800 ml-1">원</span>
             </div>
             <p className="text-[11px] text-teal-800 font-medium mb-3 leading-relaxed">
-              잔여 금액 내에서 원가/내부 정산가 기준으로 <strong>F&B</strong> 및 <strong>직영 레저 상품</strong>을 구성합니다.
+              이 <strong>정해진 예산 금액 안에서</strong> 유저가 식음과 레저·체험 품목을 자유롭게 만들어 냅니다.
             </p>
 
             {/* Live Budget Meter */}
-            <div className="bg-white p-3 rounded-xl border border-teal-200/80 shadow-2xs space-y-2">
+            <div className="bg-white p-3.5 rounded-xl border border-teal-200/80 shadow-2xs space-y-2">
               <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-600">현재 조립 소진액:</span>
+                <span className="text-slate-600">유저 구성 총액:</span>
                 <span className="text-slate-900 font-extrabold">
                   {formatCurrency(reverseCalculations.allocatedAmenitiesTotal)}원
                 </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex">
+              {/* Multi-segment Progress Bar */}
+              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden flex">
                 <div
                   className="bg-emerald-500 h-full transition-all duration-300"
                   style={{
                     width: `${Math.min(100, (reverseCalculations.fnbAllocatedTotal / (reverseCalculations.amenityBudget || 1)) * 100)}%`
                   }}
-                  title={`F&B: ${formatCurrency(reverseCalculations.fnbAllocatedTotal)}원`}
+                  title={`식음: ${formatCurrency(reverseCalculations.fnbAllocatedTotal)}원`}
                 ></div>
                 <div
                   className="bg-amber-400 h-full transition-all duration-300"
@@ -1086,11 +831,11 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
               </div>
 
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">
-                  잔여 버퍼(한계이익):
+                <span className="text-slate-500 font-medium">
+                  {reverseCalculations.isOverBudget ? '초과 금액:' : '잔여 가용 예산 (남은 금액):'}
                 </span>
                 <span className={`font-black ${reverseCalculations.isOverBudget ? 'text-rose-600' : 'text-teal-700'}`}>
-                  {reverseCalculations.isOverBudget ? '⚠️ 초과 ' : '+ '}
+                  {reverseCalculations.isOverBudget ? '⚠️ ' : '+ '}
                   {formatCurrency(Math.abs(reverseCalculations.remainingBuffer))}원
                 </span>
               </div>
@@ -1098,153 +843,255 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
           </div>
 
           <div className="pt-2 text-[10px] text-teal-800 font-bold flex items-center justify-between">
-            <span>F&B: {formatCurrency(reverseCalculations.fnbAllocatedTotal)}원</span>
-            <span>직영 레저: {formatCurrency(reverseCalculations.leisureAllocatedTotal)}원</span>
+            <span>🍽️ 식음: {formatCurrency(reverseCalculations.fnbAllocatedTotal)}원</span>
+            <span>🏎️ 레저·체험: {formatCurrency(reverseCalculations.leisureAllocatedTotal)}원</span>
           </div>
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* 5. Step 04: Interactive Amenity & Leisure Builder             */}
+      {/* 4. Step 04: 유저가 직접 만드는 부대시설(식음/레저) 구성기       */}
       {/* ============================================================== */}
-      <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-5">
+        
+        {/* Header & Budget Gauge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Step 04
               </span>
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                 <Utensils size={18} className="text-emerald-600" />
-                부대시설 & 직영 레저 패키지 조립기
+                부대시설(식음 & 레저/체험) 사용자 직접 구성기
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              변동비가 낮고 고객 체감 가치가 높은 직영 레저 시설을 필수 포함하여 할인 체감도와 <strong>GOPPAR</strong>를 보존하세요.
+              정해진 가용 예산 <strong>({formatCurrency(reverseCalculations.amenityBudget)}원)</strong> 안에서 원하는 품목과 금액을 자유롭게 추가하고 조정하세요.
             </p>
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setItemCategoryFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                itemCategoryFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={() => handleAddUserItem('FNB')}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 hover:bg-emerald-700 transition-all cursor-pointer shadow-xs"
             >
-              전체 보기 ({items.length})
+              <Plus size={14} />
+              + 식음(F&B) 항목 추가
             </button>
             <button
-              onClick={() => setItemCategoryFilter('FNB')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                itemCategoryFilter === 'FNB'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={() => handleAddUserItem('LEISURE')}
+              className="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 hover:bg-amber-400 transition-all cursor-pointer shadow-xs"
             >
-              🍽️ 식음 F&B
+              <Plus size={14} />
+              + 레저·체험 항목 추가
             </button>
-            <button
-              onClick={() => setItemCategoryFilter('LEISURE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                itemCategoryFilter === 'LEISURE'
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              🏎️ 직영 레저 (고마진)
-            </button>
+            {userItems.length > 0 && (
+              <button
+                onClick={handleClearAllItems}
+                className="px-3 py-2 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-bold transition-all cursor-pointer"
+                title="전체 항목 비우기"
+              >
+                비우기
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Item Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredItems.map(item => {
-            const qty = itemQuantities[item.id] || 0;
-            const isSelected = qty > 0;
+        {/* Budget Status Alert Bar */}
+        <div className={`p-3.5 rounded-2xl border flex items-center justify-between text-xs transition-all ${
+          reverseCalculations.isOverBudget
+            ? 'bg-rose-50 border-rose-300 text-rose-800'
+            : reverseCalculations.remainingBuffer === 0
+              ? 'bg-teal-50 border-teal-300 text-teal-900'
+              : 'bg-slate-50 border-slate-200 text-slate-700'
+        }`}>
+          <div className="flex items-center gap-2">
+            {reverseCalculations.isOverBudget ? (
+              <span className="text-lg">⚠️</span>
+            ) : reverseCalculations.remainingBuffer === 0 ? (
+              <CheckCircle size={18} className="text-teal-600 shrink-0" />
+            ) : (
+              <Layers size={18} className="text-slate-500 shrink-0" />
+            )}
+            <span className="font-bold">
+              {reverseCalculations.isOverBudget
+                ? `정해진 가용 예산을 ${formatCurrency(Math.abs(reverseCalculations.remainingBuffer))}원 초과했습니다! 항목 금액을 낮추거나 판매가를 올리세요.`
+                : reverseCalculations.remainingBuffer === 0
+                  ? `정해진 가용 예산(${formatCurrency(reverseCalculations.amenityBudget)}원)이 100% 완벽하게 매칭되었습니다.`
+                  : `가용 예산 ${formatCurrency(reverseCalculations.amenityBudget)}원 중 ${formatCurrency(reverseCalculations.remainingBuffer)}원의 잔여 버퍼가 남아있습니다.`}
+            </span>
+          </div>
+          <div className="font-extrabold text-xs">
+            현재 합계: {formatCurrency(reverseCalculations.allocatedAmenitiesTotal)}원 / 가용 {formatCurrency(reverseCalculations.amenityBudget)}원
+          </div>
+        </div>
 
-            return (
-              <div
-                key={item.id}
-                className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between ${
-                  isSelected
-                    ? item.category === 'LEISURE'
-                      ? 'border-amber-400 bg-amber-50/30 shadow-xs'
-                      : 'border-emerald-400 bg-emerald-50/30 shadow-xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+        {/* Quick Name Suggestions Chips (명칭만 빠르게 입력할 수 있도록 지원) */}
+        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-600 flex items-center gap-1.5 text-[11px]">
+              <Sparkles size={13} className="text-amber-500" />
+              빠른 품목명 원클릭 추가:
+            </span>
+            <span className="text-[10px] text-slate-400">
+              클릭 시 해당 품목명이 자동 생성되며, 금액은 직접 입력할 수 있습니다
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_NAME_TAGS.FNB.map(tag => (
+              <button
+                key={tag}
+                onClick={() => handleAddUserItem('FNB', tag)}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50 transition-all cursor-pointer flex items-center gap-1"
               >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                <span>🍽️</span>
+                <span>+{tag}</span>
+              </button>
+            ))}
+            {QUICK_NAME_TAGS.LEISURE.map(tag => (
+              <button
+                key={tag}
+                onClick={() => handleAddUserItem('LEISURE', tag)}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white border border-amber-200 text-amber-900 hover:bg-amber-50 transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>🏎️</span>
+                <span>+{tag}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* User Items Table / List */}
+        {userItems.length === 0 ? (
+          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center space-y-3">
+            <div className="text-3xl">📝</div>
+            <div className="font-extrabold text-slate-800 text-sm">
+              등록된 부대시설 항목이 없습니다
+            </div>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              정해진 가용 예산 <strong>({formatCurrency(reverseCalculations.amenityBudget)}원)</strong> 안에서 
+              상단의 <strong>[+ 식음 항목 추가]</strong> 또는 <strong>[+ 레저·체험 항목 추가]</strong> 버튼을 눌러 원하는 구성을 만들어보세요.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {userItems.map((item, index) => {
+              const itemSubtotal = item.unitPrice * (item.quantity || 1);
+
+              return (
+                <div
+                  key={item.id}
+                  className={`p-3.5 rounded-2xl border transition-all flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 ${
+                    item.category === 'FNB'
+                      ? 'bg-emerald-50/20 border-emerald-200 hover:border-emerald-300'
+                      : 'bg-amber-50/20 border-amber-200 hover:border-amber-300'
+                  }`}
+                >
+                  {/* Left: Category & Item Name */}
+                  <div className="flex items-center gap-2.5 flex-1 min-w-[240px]">
+                    <span className="text-xs font-bold text-slate-400 w-5 text-center shrink-0">
+                      {index + 1}
+                    </span>
+
+                    {/* Category Selector */}
+                    <select
+                      value={item.category}
+                      onChange={(e) => handleUpdateUserItem(item.id, { category: e.target.value as 'FNB' | 'LEISURE' })}
+                      className={`text-xs font-bold px-2 py-1.5 rounded-xl border cursor-pointer shrink-0 ${
+                        item.category === 'FNB'
+                          ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                          : 'bg-amber-100 text-amber-900 border-amber-300'
+                      }`}
+                    >
+                      <option value="FNB">🍽️ 식음(F&B)</option>
+                      <option value="LEISURE">🏎️ 레저/체험</option>
+                    </select>
+
+                    {/* Item Name Input */}
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) => handleUpdateUserItem(item.id, { name: e.target.value })}
+                      placeholder="품목명을 입력하세요 (예: 석식 바우처, 서킷 카트)"
+                      className="flex-1 bg-white text-xs font-bold text-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  {/* Middle: Price & Quantity Controls */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    {/* Unit Price */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xl">{item.icon}</span>
-                      <div>
-                        <div className="font-extrabold text-slate-900 text-xs leading-snug">
-                          {item.name}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          {item.unit} · {item.description}
-                        </div>
+                      <span className="text-[11px] text-slate-400 font-medium">단가:</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step={1000}
+                          value={item.unitPrice || ''}
+                          onChange={(e) => handleUpdateUserItem(item.id, { unitPrice: Math.max(0, Number(e.target.value)) })}
+                          placeholder="0"
+                          className="w-24 text-right bg-white text-xs font-black text-slate-900 pr-5 pl-2 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500"
+                        />
+                        <span className="absolute right-2 top-1.5 text-[11px] text-slate-400 pointer-events-none">원</span>
                       </div>
                     </div>
 
-                    {item.isDirectOperation && (
-                      <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md shrink-0">
-                        직영 고마진
+                    {/* Quantity Stepper */}
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                      <button
+                        onClick={() => handleUpdateUserItem(item.id, { quantity: Math.max(1, (item.quantity || 1) - 1) })}
+                        disabled={item.quantity <= 1}
+                        className="w-6 h-6 rounded-lg bg-white text-slate-700 flex items-center justify-center font-bold text-xs hover:bg-slate-200 disabled:opacity-30 cursor-pointer shadow-2xs"
+                      >
+                        <Minus size={11} />
+                      </button>
+                      <span className="w-5 text-center text-xs font-black text-slate-900">
+                        {item.quantity}
                       </span>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => handleUpdateUserItem(item.id, { quantity: (item.quantity || 1) + 1 })}
+                        className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs hover:bg-teal-700 cursor-pointer shadow-2xs"
+                      >
+                        <Plus size={11} />
+                      </button>
+                    </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">내부 배분가</span>
-                      <strong className="text-slate-900 font-black">
-                        {formatCurrency(item.allocatedPrice)}원
+                    {/* Subtotal */}
+                    <div className="min-w-[90px] text-right">
+                      <span className="text-[10px] text-slate-400 block">소계</span>
+                      <strong className="text-sm font-black text-slate-900">
+                        {formatCurrency(itemSubtotal)}원
                       </strong>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block">정상 단품가</span>
-                      <span className="text-slate-500 line-through text-[11px]">
-                        {formatCurrency(item.retailPrice)}원
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Counter Control */}
-                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500">
-                    추정 변동비: {Math.round(item.variableCostRate * 100)}%
-                  </span>
-                  <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                    {/* Fill Remaining Budget Action */}
                     <button
-                      onClick={() => handleItemQuantityChange(item.id, -1)}
-                      disabled={qty === 0}
-                      className="w-6 h-6 rounded-lg bg-white text-slate-700 flex items-center justify-center font-bold text-xs hover:bg-slate-200 disabled:opacity-30 cursor-pointer shadow-2xs"
+                      onClick={() => handleFillRemainingBudget(item.id)}
+                      title="남은 가용 예산을 이 항목에 자동 채우기"
+                      className="px-2 py-1 rounded-lg text-[10px] font-bold border border-teal-200 text-teal-800 bg-teal-50 hover:bg-teal-100 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <Minus size={12} />
+                      잔여예산 채우기
                     </button>
-                    <span className="w-5 text-center text-xs font-black text-slate-900">
-                      {qty}
-                    </span>
+
+                    {/* Delete Action */}
                     <button
-                      onClick={() => handleItemQuantityChange(item.id, 1)}
-                      className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs hover:bg-teal-700 cursor-pointer shadow-2xs"
+                      onClick={() => handleDeleteUserItem(item.id)}
+                      className="w-7 h-7 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all cursor-pointer"
+                      title="품목 삭제"
                     >
-                      <Plus size={12} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ============================================================== */}
-      {/* 6. Step 05: Financial & Value Analysis (고객 가치 & GOPPAR)   */}
+      {/* 5. Step 05: Financial & Value Analysis (고객 가치 & GOPPAR)   */}
       {/* ============================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
@@ -1267,7 +1114,7 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
                 {formatCurrency(reverseCalculations.totalCustomerRetailValue)}원
               </div>
               <span className="text-[10px] text-slate-500 mt-1 block">
-                객실({formatCurrency(reverseCalculations.roomRetailNormal)}원) + 부대시설 단품가
+                객실({formatCurrency(reverseCalculations.roomRetailNormal)}원) + 부대시설 정상가
               </span>
             </div>
 
@@ -1323,14 +1170,14 @@ ${selectedItemList || '  - 선택된 부대시설 없음'}
           </div>
 
           <p className="text-xs text-teal-900 bg-teal-50/60 p-3 rounded-xl border border-teal-200 leading-relaxed">
-            🎯 <strong>슬라이드 핵심 증명:</strong> 변동비가 극히 낮은 <strong>직영 레저(카트, 루지, 목장 등)</strong>를 필수 포함함으로써, 
-            고객 할인율은 30%를 넘기면서도 리조트의 실질 공헌이익률은 <strong>80% 이상</strong> 보존되어 <strong>GOPPAR</strong>가 훼손되지 않습니다.
+            🎯 <strong>수익성 원리:</strong> 변동비가 극히 낮은 <strong>직영 레저</strong>를 필수 포함할수록, 
+            고객 할인 체감도는 30%를 넘기면서도 리조트 실질 공헌이익률은 <strong>80% 이상</strong> 보존되어 <strong>GOPPAR</strong>를 확고히 방어합니다.
           </p>
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* 7. Step 06: 전사 TRevPAR & 거시적 시뮬레이션 성과               */}
+      {/* 6. Step 06: 전사 TRevPAR & 거시적 시뮬레이션 성과               */}
       {/* ============================================================== */}
       <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">

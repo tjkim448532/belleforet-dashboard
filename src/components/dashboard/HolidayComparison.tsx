@@ -159,7 +159,7 @@ export default function HolidayComparison() {
                   <span>${valStr}</span>
                 </div>
                 <div class="text-[11px] text-slate-500 ml-4 font-medium">
-                  📅 ${dateStr}
+                  📅 ${dateStr}${block && canonical && !block.holidayNameLabel.includes(canonical.id) ? ` (${block.holidayNameLabel})` : ''}
                 </div>
               </div>
             `;
@@ -212,6 +212,9 @@ export default function HolidayComparison() {
       let dDay = block.dailyData.find((d: any) => d.holidayName === selectedHolidayId);
       if (!dDay) {
         dDay = block.dailyData.find((d: any) => d.holidayName && d.holidayName.includes(selectedHolidayId));
+      }
+      if (!dDay && selectedCanonical) {
+        dDay = block.dailyData.find((d: any) => selectedCanonical.matchKeys.some(k => d.holidayName?.includes(k)));
       }
       if (!dDay) {
         dDay = block.dailyData[Math.floor(block.dailyData.length / 2)];
@@ -419,8 +422,11 @@ export default function HolidayComparison() {
                         {block.startDate} ~ {block.endDate}
                       </span>
                       {block.holidayNameLabel !== selectedCanonical.name && (
-                        <span className="text-[10px] text-amber-700 bg-amber-50/80 px-1.5 py-0.5 rounded font-medium border border-amber-200/60">
-                          {block.holidayNameLabel}
+                        <span 
+                          className="text-[10px] text-amber-700 bg-amber-50/80 px-1.5 py-0.5 rounded font-medium border border-amber-200/60"
+                          title="공휴일이 포함된 연휴 블록 명칭입니다"
+                        >
+                          {block.holidayNameLabel}{!block.holidayNameLabel.includes(selectedCanonical.id) ? ' (통합 연휴)' : ''}
                         </span>
                       )}
                     </div>

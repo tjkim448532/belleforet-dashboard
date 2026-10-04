@@ -83,13 +83,13 @@ export default function GlobalDatePicker({ showPresets = true }: { showPresets?:
       {/* Quick Presets (Optional compact) */}
       {showPresets && (
         <div className="hidden xl:flex items-center gap-1 border-l border-white/15 pl-1.5 flex-shrink-0">
-          {(['TODAY', 'WEEK', 'MTD', 'H1'] as DatePresetType[]).map(p => {
+          {(['TODAY', 'WEEK', 'MTD', 'YTD'] as DatePresetType[]).map(p => {
             const active = isPresetActive(p);
             const labelMap: Record<string, string> = {
-              TODAY: '오늘',
+              TODAY: '어제 (D-1)',
               WEEK: '7일',
               MTD: '당월',
-              H1: '상반기'
+              YTD: '연간'
             };
             return (
               <button

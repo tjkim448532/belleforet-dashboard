@@ -54,8 +54,8 @@ const formatNum = (num: number | undefined | null) => {
 const formatGrowth = (num: number | undefined | null) => {
   if (num === undefined || num === null || isNaN(num)) return '-';
   const formatted = num.toFixed(1) + '%';
-  if (num > 0) return <span className="text-red-500 font-bold">▲ {formatted}</span>;
-  if (num < 0) return <span className="text-blue-500 font-bold">▼ {Math.abs(num).toFixed(1)}%</span>;
+  if (num > 0) return <span className="text-emerald-600 font-bold">▲ {formatted}</span>;
+  if (num < 0) return <span className="text-rose-600 font-bold">▼ {Math.abs(num).toFixed(1)}%</span>;
   return <span className="text-slate-400">{formatted}</span>;
 };
 

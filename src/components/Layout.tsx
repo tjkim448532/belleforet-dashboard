@@ -4,19 +4,36 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase, Target, Sparkles, Users, CloudRain
+  Briefcase, Target, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 
 export default function Layout() {
   const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
+  const [isPinned, setIsPinned] = useState<boolean>(() => {
+    const saved = localStorage.getItem('belleforet_sidebar_pinned');
+    return saved !== null ? saved === 'true' : true; // 사용자 승인 기본값: 펼침(고정)
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [golfOpen, setGolfOpen] = useState(true);
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(true);
 
-  const autoHideSidebar = true;
+  const togglePin = () => {
+    const next = !isPinned;
+    setIsPinned(next);
+    localStorage.setItem('belleforet_sidebar_pinned', String(next));
+    if (next) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleNavClick = () => {
+    if (window.innerWidth < 1024 || !isPinned) {
+      setSidebarOpen(false);
+    }
+  };
 
   const [pwdModalOpen, setPwdModalOpen] = useState(false);
   const [newPwd, setNewPwd] = useState('');
@@ -60,32 +77,53 @@ export default function Layout() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
       
       {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && !autoHideSidebar && (
+      {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar Hover Trigger */}
-      {autoHideSidebar && !sidebarOpen && (
+      {/* Sidebar Hover Trigger when collapsed on desktop */}
+      {!isPinned && !sidebarOpen && (
         <div 
-          className="fixed inset-y-0 left-0 w-6 z-40 bg-transparent cursor-pointer"
+          className="hidden lg:block fixed inset-y-0 left-0 w-4 z-40 bg-transparent cursor-pointer"
           onMouseEnter={() => setSidebarOpen(true)}
         />
       )}
 
       {/* Sidebar - Belleforet Light Theme */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${!autoHideSidebar ? 'lg:translate-x-0' : ''} transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm ${
+          isPinned 
+            ? 'translate-x-0' 
+            : (sidebarOpen ? 'translate-x-0' : '-translate-x-full')
+        }`}
         onMouseLeave={() => {
-          if (autoHideSidebar) setSidebarOpen(false);
+          if (!isPinned) setSidebarOpen(false);
         }}
       >
-        <div className={`p-4 flex items-center justify-end ${autoHideSidebar ? '' : 'lg:hidden'} border-b border-slate-100`}>
-          <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
-            <X size={20} />
-          </button>
+        <div className="p-4 flex items-center justify-between border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <h1 className="font-emphatic text-lg tracking-wider text-brand-mint font-black">BELLE FORET</h1>
+          </div>
+          <div className="flex items-center gap-1">
+            {/* Desktop Pin/Collapse Button */}
+            <button
+              onClick={togglePin}
+              className="hidden lg:flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-brand-mint hover:bg-slate-100 transition-colors cursor-pointer"
+              title={isPinned ? "사이드바 접기 (넓은 화면)" : "사이드바 고정"}
+            >
+              {isPinned ? <PanelLeftClose size={18} /> : <Pin size={18} className="rotate-45" />}
+            </button>
+            {/* Mobile Close Button */}
+            <button 
+              onClick={() => setSidebarOpen(false)} 
+              className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors p-1"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
@@ -103,7 +141,7 @@ export default function Layout() {
               onClick={(e) => {
                   if (item.path.startsWith('#')) e.preventDefault();
                   else {
-                    if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
+                    handleNavClick();
                   }
                 }}
             >
@@ -133,9 +171,7 @@ export default function Layout() {
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                       isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                     }`}
-                    onClick={() => { 
-                      if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                    }}
+                    onClick={handleNavClick}
                   >
                     경영 현황 대시보드
                   </NavLink>
@@ -144,9 +180,7 @@ export default function Layout() {
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                       isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                     }`}
-                    onClick={() => { 
-                      if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                    }}
+                    onClick={handleNavClick}
                   >
                     채널&예약
                   </NavLink>
@@ -176,9 +210,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   경영 현황 대시보드
                 </NavLink>
@@ -187,9 +219,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   연도별 숙박객/객실소계
                 </NavLink>
@@ -198,9 +228,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   회원관리
                 </NavLink>
@@ -230,9 +258,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   세그먼트/채널 시너지
                 </NavLink>
@@ -242,9 +268,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   ⚡ 인과 시너지 & CAPA 분석
                 </NavLink>
@@ -254,9 +278,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   <CloudRain size={14} className="shrink-0" />
                   🌦️ 날씨-매출 상관관계 분석
@@ -267,9 +289,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   <Users size={14} className="shrink-0" />
                   온라인 회원 가입 현황
@@ -300,9 +320,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   레저 영업장 현황
                 </NavLink>
@@ -311,9 +329,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   조직도 및 인력 현황
                 </NavLink>
@@ -322,9 +338,7 @@ export default function Layout() {
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                   }`}
-                  onClick={() => { 
-                    if (window.innerWidth < 1024 || autoHideSidebar) setSidebarOpen(false);
-                  }}
+                  onClick={handleNavClick}
                 >
                   영업장별 이용률 추이
                 </NavLink>
@@ -333,37 +347,39 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 4. 🎯 목표수립 시뮬레이터 v1 & 🚀 목표수립 시뮬레이터 v2 [PRO] */}
+          {/* 4. 🎯 목표수립 시뮬레이터 v1 & 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
             <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
               <NavLink
-                to="/target-simulator"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
+                to="/strategic-simulator"
+                className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
                   isActive
-                    ? 'bg-teal-50 text-teal-700 font-bold border border-teal-200/60 shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-900 font-bold border border-teal-200/80 shadow-xs'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                 }`}
-                onClick={() => {
-                  if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
-                }}
+                onClick={handleNavClick}
               >
-                <Target size={18} className="text-teal-600" />
-                <span className="text-sm">🎯 목표수립 시뮬레이터 v1</span>
+                <div className="flex items-center gap-2.5">
+                  <Sparkles size={18} className="text-teal-600" />
+                  <span className="text-sm font-bold">전략 목표 시뮬레이터</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200/60">v2 PRO</span>
               </NavLink>
 
               <NavLink
-                to="/strategic-simulator"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
+                to="/target-simulator"
+                className={({ isActive }) => `flex items-center justify-between px-4 py-2 font-medium transition-all rounded-xl whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-900 font-bold border border-indigo-200/60 shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-slate-100 text-slate-800 font-bold border border-slate-200 shadow-xs'
+                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
                 }`}
-                onClick={() => {
-                  if (!autoHideSidebar || window.innerWidth < 1024) setSidebarOpen(false);
-                }}
+                onClick={handleNavClick}
               >
-                <Sparkles size={18} className="text-indigo-600" />
-                <span className="text-sm">🚀 목표수립 시뮬레이터 v2</span>
+                <div className="flex items-center gap-2.5">
+                  <Target size={16} className="text-slate-400" />
+                  <span className="text-xs">목표수립 시뮬레이터 (구형)</span>
+                </div>
+                <span className="text-[9px] font-medium px-1 py-0.2 rounded bg-slate-100 text-slate-400">v1</span>
               </NavLink>
             </div>
           )}
@@ -402,7 +418,21 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col min-w-0 ${!autoHideSidebar ? 'lg:ml-64' : ''} transition-all duration-300`}>
+      <main className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isPinned ? 'lg:ml-64' : 'lg:ml-0'}`}>
+        {/* Desktop Expand Button when unpinned */}
+        {!isPinned && (
+          <button
+            onClick={() => {
+              setIsPinned(true);
+              localStorage.setItem('belleforet_sidebar_pinned', 'true');
+            }}
+            className="hidden lg:flex fixed top-4 left-4 z-40 items-center gap-1.5 px-3 py-2 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-md text-slate-700 hover:text-brand-mint text-xs font-bold transition-all hover:scale-105 cursor-pointer select-none"
+            title="사이드바 펼쳐서 고정"
+          >
+            <PanelLeftOpen size={16} className="text-brand-mint" />
+            <span>메뉴 열기</span>
+          </button>
+        )}
         {/* Topbar for mobile */}
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-3">

@@ -867,9 +867,16 @@ export default function Home() {
                 {/* 4. 가용객실당 총매출 (TrevPAR) */}
                 <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
                   <div className="flex items-center justify-between text-slate-700">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-bold text-emerald-800">
-                        {trevparViewMode === 'EX_GOLF' ? '순수리조트 TrevPAR (골프제외)' : '가용객실당 총매출 (TrevPAR)'}
+                        {trevparViewMode === 'EX_GOLF' ? '순수리조트 TrevPAR' : '전사 총매출 TrevPAR'}
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border whitespace-nowrap ${
+                        trevparViewMode === 'EX_GOLF'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : 'bg-slate-100 text-slate-700 border-slate-300'
+                      }`}>
+                        {trevparViewMode === 'EX_GOLF' ? '골프제외 SSOT' : '전사 총합'}
                       </span>
                       <MetricExplainerTooltip presetKey="trevpar" />
                     </div>

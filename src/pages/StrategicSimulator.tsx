@@ -3,9 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
-  RotateCcw, PieChart, CheckCircle2, Clock, Package
+  RotateCcw, PieChart, CheckCircle2, Clock, Package,
+  FileSpreadsheet, Download, Filter, FileText
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
+import * as XLSX from 'xlsx';
 import type { SimulationTargetInput } from '../types/simulation';
 import { secureFetcher } from '../lib/secureFetcher';
 import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicRebalancer';
@@ -159,12 +161,21 @@ interface ApiSummary {
 
 export default function StrategicSimulator() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') === 'package' ? 'PACKAGE_GEN' : 'TARGET_SIM';
-  const setActiveTab = (tab: 'TARGET_SIM' | 'PACKAGE_GEN') => {
+  const currentTabParam = searchParams.get('tab');
+  const activeTab: 'TARGET_SIM' | 'BUSINESS_PLAN' | 'PACKAGE_GEN' = 
+    currentTabParam === 'package' 
+      ? 'PACKAGE_GEN' 
+      : currentTabParam === 'plan' || currentTabParam === 'business-plan'
+      ? 'BUSINESS_PLAN' 
+      : 'TARGET_SIM';
+
+  const setActiveTab = (tab: 'TARGET_SIM' | 'BUSINESS_PLAN' | 'PACKAGE_GEN') => {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       if (tab === 'PACKAGE_GEN') {
         next.set('tab', 'package');
+      } else if (tab === 'BUSINESS_PLAN') {
+        next.set('tab', 'plan');
       } else {
         next.delete('tab');
       }
@@ -455,6 +466,168 @@ export default function StrategicSimulator() {
     );
   }, [effectiveCategories, selectedCategoryFilter]);
 
+  // Total facilities across all effective categories
+  const totalFacilityCount = useMemo(() => {
+    return effectiveCategories.reduce((acc, cat) => acc + (cat.facilities?.length || 0), 0);
+  }, [effectiveCategories]);
+
+  // Flat business plan facility list with computed simulator target metrics
+  const flatBusinessPlanFacilities = useMemo(() => {
+    const list: Array<{
+      no: number;
+      divisionName: string;
+      categoryCode: string;
+      categoryName: string;
+      partName: string;
+      facilityName: string;
+      weight: number;
+      baseActual: number;
+      targetRevenue: number;
+      diff: number;
+      growthRate: number;
+      strategyBadge: string;
+    }> = [];
+
+    let index = 1;
+    filteredCategories.forEach(cat => {
+      const divName = getCategoryDisplayName(cat);
+      (cat.facilities || []).forEach(fac => {
+        const diff = fac.target2026 - fac.actual2025;
+        const growth = fac.actual2025 > 0 ? Number(((diff / fac.actual2025) * 100).toFixed(1)) : 0;
+        let badge = '안정 운영';
+        if (fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM') {
+          badge = 'ADR 레버리지 권장';
+        } else if (fac.weight >= 10 && input.targetGrowthRate >= 15) {
+          badge = '핵심 볼륨 견인';
+        } else if (diff > 0) {
+          badge = '매출 확대';
+        } else if (diff < 0) {
+          badge = '비용/수익 방어';
+        }
+
+        list.push({
+          no: index++,
+          divisionName: divName,
+          categoryCode: fac.categoryCode,
+          categoryName: fac.categoryName || cat.categoryName,
+          partName: (fac.partName || fac.teamName || '일반').trim(),
+          facilityName: fac.facilityName,
+          weight: fac.weight,
+          baseActual: fac.actual2025,
+          targetRevenue: fac.target2026,
+          diff,
+          growthRate: growth,
+          strategyBadge: badge
+        });
+      });
+    });
+
+    return list;
+  }, [filteredCategories, input.targetGrowthRate]);
+
+  // Business plan totals for current filter
+  const businessPlanTotals = useMemo(() => {
+    let baseActualSum = 0;
+    let targetRevenueSum = 0;
+    flatBusinessPlanFacilities.forEach(f => {
+      baseActualSum += f.baseActual;
+      targetRevenueSum += f.targetRevenue;
+    });
+    const diffSum = targetRevenueSum - baseActualSum;
+    const growthRateSum = baseActualSum > 0 ? Number(((diffSum / baseActualSum) * 100).toFixed(1)) : 0;
+    return {
+      facilityCount: flatBusinessPlanFacilities.length,
+      baseActualSum,
+      targetRevenueSum,
+      diffSum,
+      growthRateSum
+    };
+  }, [flatBusinessPlanFacilities]);
+
+  // Export Business Plan to authentic Excel (.xlsx) using SheetJS
+  const handleExportExcel = () => {
+    if (flatBusinessPlanFacilities.length === 0) {
+      alert('내보낼 사업계획서 데이터가 없습니다.');
+      return;
+    }
+
+    const targetMonthLabel = input.selectedMonth === 'ANNUAL' ? '연간종합' : `${input.selectedMonth}월`;
+    const categoryLabel = selectedCategoryFilter === 'ALL' 
+      ? '전체부문' 
+      : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter);
+
+    const wb = XLSX.utils.book_new();
+
+    const rows: any[][] = [
+      [`[벨포레 리조트] ${input.targetYear}년 ${targetMonthLabel} 영업장별 사업계획서`],
+      [`시뮬레이션 조건: 비교연도 ${input.baseYear}년 실적 ➔ ${input.targetYear}년 목표 | 대상기간: ${targetMonthLabel} | 전사 목표성장률: +${input.targetGrowthRate}% | 골프: ${input.includeGolf ? '포함(전사)' : '제외(순수 리조트)'} | 선택 대분류: ${selectedCategoryFilter === 'ALL' ? '전체 부문' : categoryLabel}`],
+      [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출 SSOT)`],
+      [], // 공백 행
+      [
+        'No', 
+        '대분류(본부)', 
+        '중분류(파트)', 
+        '영업장명', 
+        '전략 비중(%)', 
+        `${input.baseYear}년 실적(원)`, 
+        `${input.targetYear}년 사업계획 목표치(원)`, 
+        '목표 증감액(원)', 
+        '목표 성장률(%)', 
+        '전략 방향'
+      ]
+    ];
+
+    flatBusinessPlanFacilities.forEach(f => {
+      rows.push([
+        f.no,
+        f.divisionName,
+        f.partName,
+        f.facilityName,
+        f.weight,
+        f.baseActual,
+        f.targetRevenue,
+        f.diff,
+        `${f.growthRate > 0 ? '+' : ''}${f.growthRate}%`,
+        f.strategyBadge
+      ]);
+    });
+
+    // 합계 행
+    rows.push([
+      '합계',
+      selectedCategoryFilter === 'ALL' ? '전체 부문 (전사)' : categoryLabel,
+      '-',
+      `총 ${businessPlanTotals.facilityCount}개 영업장`,
+      100.0,
+      businessPlanTotals.baseActualSum,
+      businessPlanTotals.targetRevenueSum,
+      businessPlanTotals.diffSum,
+      `${businessPlanTotals.growthRateSum > 0 ? '+' : ''}${businessPlanTotals.growthRateSum}%`,
+      'Zero-Variance 보존 완료'
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    ws['!cols'] = [
+      { wch: 6 },  // No
+      { wch: 20 }, // 대분류
+      { wch: 18 }, // 중분류
+      { wch: 28 }, // 영업장명
+      { wch: 14 }, // 전략 비중
+      { wch: 20 }, // 과거 실적
+      { wch: 22 }, // 목표치
+      { wch: 18 }, // 증감액
+      { wch: 15 }, // 성장률
+      { wch: 22 }  // 전략방향
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, '사업계획서');
+
+    const cleanCategoryName = categoryLabel.replace(/[\/\\?%*:|"<>]/g, '');
+    const fileName = `벨포레_${input.targetYear}년_${targetMonthLabel}_사업계획서_${cleanCategoryName}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   const formatCurrency = (val: any) => {
     if (!val && val !== 0) return '0';
     const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
@@ -590,40 +763,336 @@ export default function StrategicSimulator() {
         </div>
       </div>
 
-      {/* 1.5 Tab Switcher: Target Simulator vs Package Generator */}
-      <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+      {/* 1.5 Tab Switcher: Target Simulator vs Business Plan vs Package Generator */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
         <button
           type="button"
           onClick={() => setActiveTab('TARGET_SIM')}
-          className={`flex-1 py-3 px-5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'TARGET_SIM'
               ? 'bg-slate-900 text-white shadow-md'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Target size={18} />
-          <span>🎯 전사 전략 목표 & 리밸런싱 (Target Rebalancing)</span>
+          <Target size={17} />
+          <span>🎯 전사 전략 목표 & 리밸런싱</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('BUSINESS_PLAN')}
+          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'BUSINESS_PLAN'
+              ? 'bg-gradient-to-r from-indigo-700 to-indigo-900 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <FileSpreadsheet size={17} />
+          <span>📋 사업계획서 (영업장별 목표 & 엑셀)</span>
+          <span className="text-[10px] bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
+            다운로드 지원
+          </span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('PACKAGE_GEN')}
-          className={`flex-1 py-3 px-5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'PACKAGE_GEN'
               ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Package size={18} />
-          <span>📦 비수기 패키지 생성 & 가격 시뮬레이터 (Package Generator)</span>
-          <span className="text-[10px] bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full font-black hidden sm:inline-block">
-            TrevPAR & RevPAR 기반
+          <Package size={17} />
+          <span>📦 비수기 패키지 시뮬레이터</span>
+          <span className="text-[10px] bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
+            TrevPAR 기반
           </span>
         </button>
       </div>
 
       {activeTab === 'PACKAGE_GEN' ? (
         <PackageGeneratorSimulator />
+      ) : activeTab === 'BUSINESS_PLAN' ? (
+        <div className="space-y-6">
+          {/* Top Control Header Card */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-indigo-50 text-indigo-700 rounded-xl">
+                  <FileSpreadsheet size={22} />
+                </span>
+                <h2 className="text-xl font-black text-slate-900">
+                  {input.targetYear}년 {selectedMonthLabel} 영업장별 사업계획서
+                </h2>
+                <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-black rounded-lg">
+                  Zero-Variance 정규 시뮬레이션
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                시뮬레이터 설정 성장률(+{input.targetGrowthRate}%) 및 본부별 전략승수(β_f)가 1원 단위 무결성으로 각 영업장에 안분된 최종 목표치입니다.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('TARGET_SIM')}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Sliders size={14} />
+                <span>성장률 / 전략승수 조절</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Download size={15} />
+                <span>엑셀 (.xlsx) 다운로드</span>
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-mono">
+                  {flatBusinessPlanFacilities.length}개소
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter & Selector Bar */}
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <label htmlFor="categoryFilterSelect" className="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                <Filter size={15} className="text-indigo-600" />
+                <span>대분류(사업본부) 선택:</span>
+              </label>
+              <select
+                id="categoryFilterSelect"
+                value={selectedCategoryFilter}
+                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[240px] cursor-pointer"
+              >
+                <option value="ALL">전체 부문 (전사 총괄 - {totalFacilityCount}개 영업장)</option>
+                {effectiveCategories.map(cat => (
+                  <option key={cat.categoryCode} value={cat.categoryCode}>
+                    {getCategoryIcon(cat.categoryName, cat.categoryCode)} {getCategoryDisplayName(cat)} ({cat.facilities?.length || 0}개 영업장)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+              <span className="inline-block w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+              <span>
+                조회 중: <strong className="text-indigo-700">{selectedCategoryFilter === 'ALL' ? '전체 부문' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span>
+                영업장: <strong className="text-slate-900">{flatBusinessPlanFacilities.length}</strong> / {totalFacilityCount}개소
+              </span>
+            </div>
+          </div>
+
+          {/* 4 Summary KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="text-[11px] font-bold text-slate-500 mb-1">대상 영업장 수</div>
+              <div className="text-2xl font-black text-slate-800">
+                {businessPlanTotals.facilityCount}
+                <span className="text-xs font-bold text-slate-500 ml-1">개 영업장</span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-1">
+                전체 {totalFacilityCount}개 영업장 중
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="text-[11px] font-bold text-slate-500 mb-1">{input.baseYear}년 기준 실적</div>
+              <div className="text-2xl font-black text-slate-800">
+                {formatCurrency(businessPlanTotals.baseActualSum)}
+                <span className="text-xs font-bold text-slate-500 ml-1">원</span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-1">
+                순매출 (VAT 별도 SSOT)
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30">
+              <div className="text-[11px] font-bold text-indigo-700 mb-1">{input.targetYear}년 사업계획 목표치</div>
+              <div className="text-2xl font-black text-indigo-700">
+                {formatCurrency(businessPlanTotals.targetRevenueSum)}
+                <span className="text-xs font-bold text-indigo-500 ml-1">원</span>
+              </div>
+              <div className="text-[11px] text-indigo-500 mt-1">
+                시뮬레이터 목표 안분 합계
+              </div>
+            </div>
+
+            <div className={`p-4 rounded-2xl border shadow-xs ${
+              businessPlanTotals.diffSum >= 0 ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'
+            }`}>
+              <div className="text-[11px] font-bold text-slate-600 mb-1">목표 증감액 & 성장률</div>
+              <div className={`text-2xl font-black ${
+                businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+              }`}>
+                {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}
+                <span className="text-xs font-bold ml-1">원</span>
+              </div>
+              <div className={`text-xs font-black mt-1 ${
+                businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-600' : 'text-rose-600'
+              }`}>
+                {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                <span className="text-[10px] text-slate-500 font-normal ml-1">vs {input.baseYear}년</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Full Facility Business Plan Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80">
+              <div className="flex items-center gap-2">
+                <FileText size={17} className="text-indigo-600" />
+                <h3 className="text-sm font-black text-slate-900">영업장별 사업계획 세부 내역</h3>
+                <span className="text-xs text-slate-500 font-medium">
+                  ({flatBusinessPlanFacilities.length}개 라인)
+                </span>
+              </div>
+              <div className="text-xs text-slate-500 flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>녹색: 목표 상향(▲)</span>
+                <span className="text-slate-300">|</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>적색: 목표 조정(▼)</span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-3 text-center w-12">No</th>
+                    <th className="py-3 px-4">대분류(본부)</th>
+                    <th className="py-3 px-4">중분류(파트)</th>
+                    <th className="py-3 px-4 min-w-[160px]">영업장명</th>
+                    <th className="py-3 px-3 text-right">전략 비중</th>
+                    <th className="py-3 px-4 text-right min-w-[120px]">{input.baseYear}년 실적</th>
+                    <th className="py-3 px-4 text-right min-w-[140px] text-indigo-700 bg-indigo-50/40">
+                      {input.targetYear}년 사업계획 목표치
+                    </th>
+                    <th className="py-3 px-4 text-right min-w-[120px]">목표 증감액</th>
+                    <th className="py-3 px-3 text-right min-w-[90px]">목표 성장률</th>
+                    <th className="py-3 px-4 text-center min-w-[130px]">전략 방향</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {flatBusinessPlanFacilities.map(f => (
+                    <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-3 text-center font-mono text-slate-400 text-[11px]">
+                        {f.no}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">
+                        <span className="mr-1.5">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
+                        {f.divisionName}
+                      </td>
+                      <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
+                        {f.partName}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                        {f.facilityName}
+                      </td>
+                      <td className="py-3 px-3 text-right tabular-nums text-slate-600 font-medium">
+                        {f.weight.toFixed(2)}%
+                      </td>
+                      <td className="py-3 px-4 text-right tabular-nums text-slate-600 font-medium whitespace-nowrap">
+                        {formatCurrency(f.baseActual)}원
+                      </td>
+                      <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                        {formatCurrency(f.targetRevenue)}원
+                      </td>
+                      <td className={`py-3 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
+                        f.diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}>
+                        {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
+                      </td>
+                      <td className={`py-3 px-3 text-right tabular-nums font-black whitespace-nowrap ${
+                        f.growthRate >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}>
+                        {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                          f.strategyBadge === 'ADR 레버리지 권장'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : f.strategyBadge === '핵심 볼륨 견인'
+                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                            : f.diff > 0
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : f.diff < 0
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {f.strategyBadge}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                  <tr>
+                    <td className="py-3.5 px-3 text-center">합계</td>
+                    <td className="py-3.5 px-4 font-black">
+                      {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-500 font-normal">-</td>
+                    <td className="py-3.5 px-4 font-black">
+                      총 {businessPlanTotals.facilityCount}개 영업장
+                    </td>
+                    <td className="py-3.5 px-3 text-right tabular-nums text-indigo-700 font-black">
+                      100.0%
+                    </td>
+                    <td className="py-3.5 px-4 text-right tabular-nums font-bold whitespace-nowrap">
+                      {formatCurrency(businessPlanTotals.baseActualSum)}원
+                    </td>
+                    <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/50 whitespace-nowrap text-sm">
+                      {formatCurrency(businessPlanTotals.targetRevenueSum)}원
+                    </td>
+                    <td className={`py-3.5 px-4 text-right tabular-nums font-black whitespace-nowrap ${
+                      businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                    }`}>
+                      {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
+                    </td>
+                    <td className={`py-3.5 px-3 text-right tabular-nums font-black whitespace-nowrap ${
+                      businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                    }`}>
+                      {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                    </td>
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
+                        <CheckCircle2 size={12} />
+                        Zero-Variance 안분 완료
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* Business Plan Guidance Notes */}
+          <div className="bg-indigo-50/60 rounded-2xl p-4 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-3">
+            <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg shrink-0 mt-0.5">
+              <FileSpreadsheet size={16} />
+            </span>
+            <div className="space-y-1">
+              <p className="font-bold">
+                💡 사업계획서 엑셀 다운로드 안내
+              </p>
+              <p className="text-indigo-800/80 leading-relaxed text-[11px]">
+                • 우측 상단의 <strong className="text-indigo-950 font-bold">[엑셀 (.xlsx) 다운로드]</strong> 버튼을 클릭하시면, 대분류 필터가 적용된 현재 목록이 공식 양식(헤더, No, 분류, 영업장명, 전략 비중, 기준 실적, 목표치, 증감액, 성장률, 전략 방향, 합계 행)의 Microsoft Excel 파일로 즉시 내려받아집니다.
+                <br />
+                • 엑셀 파일 내 숫자는 서식 텍스트가 아닌 실제 숫자(Numeric Type)로 저장되어, Excel 내에서 합계(SUM), 평균(AVERAGE) 등의 수식 작업이 완벽하게 지원됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           {/* 2. 🎛️ Master Target Console */}
@@ -1013,7 +1482,23 @@ export default function StrategicSimulator() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setActiveTab('BUSINESS_PLAN')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+            >
+              <FileSpreadsheet size={14} />
+              <span>사업계획서 시트 보기</span>
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl transition-all cursor-pointer shadow-xs"
+              title="현재 시뮬레이션 목표치를 엑셀(.xlsx)로 다운로드합니다"
+            >
+              <Download size={14} />
+              <span>엑셀 다운로드</span>
+            </button>
+
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
               {availableCategoryFilters.map(cat => (
                 <button

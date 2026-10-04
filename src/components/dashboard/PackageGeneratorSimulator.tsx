@@ -62,7 +62,7 @@ export default function PackageGeneratorSimulator() {
   // ==========================================
   // State: Step 1 (목표 패키지 판매가)
   // ==========================================
-  const [targetPackagePrice, setTargetPackagePrice] = useState<number>(265000); // 1월 기준 기본 265,000원
+  const [targetPackagePrice, setTargetPackagePrice] = useState<number>(166000); // 1월 실측 TRevPAR(165,670원)에서 시작
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string>('ROOM_16');
 
   // ==========================================
@@ -79,17 +79,17 @@ export default function PackageGeneratorSimulator() {
       id: 'init_fnb_1',
       name: '식음(F&B) 바우처 / 식사',
       category: 'FNB',
-      unitPrice: 100000,
+      unitPrice: 50000,
       quantity: 1,
-      retailPrice: 120000
+      retailPrice: 65000
     },
     {
       id: 'init_lei_1',
       name: '직영 레저 / 액티비티 체험권',
       category: 'LEISURE',
-      unitPrice: 111000,
+      unitPrice: 62000,
       quantity: 1,
-      retailPrice: 140000
+      retailPrice: 80000
     }
   ]);
 
@@ -175,6 +175,13 @@ export default function PackageGeneratorSimulator() {
   const selectedRoomType = useMemo(() => {
     return ROOM_TYPES.find(r => r.id === selectedRoomTypeId) || ROOM_TYPES[0];
   }, [selectedRoomTypeId]);
+
+  // Update targetPackagePrice to start from month's TRevPAR
+  useEffect(() => {
+    if (currentMonthData.trevparWithoutGolf > 0) {
+      setTargetPackagePrice(Math.round(currentMonthData.trevparWithoutGolf / 1000) * 1000);
+    }
+  }, [selectedMonth, currentMonthData.trevparWithoutGolf]);
 
   // Update room deduction when month changes (if auto)
   useEffect(() => {
@@ -351,26 +358,30 @@ export default function PackageGeneratorSimulator() {
 
   const handleResetToSlideDefault = () => {
     setSelectedMonth(1);
-    setTargetPackagePrice(265000);
+    const baseTrevpar = Math.round((monthlyEfficiencyMap[1]?.trevparWithoutGolf || 165670) / 1000) * 1000;
+    setTargetPackagePrice(baseTrevpar);
     setIsAutoRoomDeduction(true);
     setCustomRoomDeduction(54000);
     setSelectedRoomTypeId('ROOM_16');
+    const remBudget = Math.max(0, baseTrevpar - 54000);
+    const fnbPart = Math.round((remBudget * 0.45) / 1000) * 1000;
+    const leiPart = remBudget - fnbPart;
     setUserItems([
       {
         id: `fnb_${Date.now()}_1`,
         name: '식음(F&B) 식사 및 바우처',
         category: 'FNB',
-        unitPrice: 100000,
+        unitPrice: fnbPart,
         quantity: 1,
-        retailPrice: 120000
+        retailPrice: Math.round(fnbPart * 1.25)
       },
       {
         id: `lei_${Date.now()}_2`,
         name: '직영 레저 / 액티비티 체험권',
         category: 'LEISURE',
-        unitPrice: 111000,
+        unitPrice: leiPart,
         quantity: 1,
-        retailPrice: 140000
+        retailPrice: Math.round(leiPart * 1.25)
       }
     ]);
     setDailyPackageSalesRooms(50);
@@ -657,41 +668,82 @@ ${itemListText}
             Step 01
           </div>
           <div>
-            <div className="flex items-center justify-between mt-1 mb-2">
+            <div className="flex items-center justify-between mt-1 mb-1.5">
               <span className="text-xs font-bold text-slate-500">목표 패키지 판매가 설정</span>
               <DollarSign size={16} className="text-teal-600" />
             </div>
-            <div className="text-2xl font-black text-slate-900 mb-1">
-              {formatCurrency(targetPackagePrice)}
-              <span className="text-sm font-semibold text-slate-500 ml-1">원 (VAT포함)</span>
+
+            {/* TRevPAR Baseline Callout */}
+            <div className="flex items-center justify-between text-[11px] text-slate-600 mb-2 bg-teal-50/70 p-2 rounded-xl border border-teal-100">
+              <span>
+                {selectedMonth}월 실측 TRevPAR: <strong>{formatCurrency(currentMonthData.trevparWithoutGolf)}원</strong>
+              </span>
+              <button
+                onClick={() => setTargetPackagePrice(Math.round(currentMonthData.trevparWithoutGolf / 1000) * 1000)}
+                className="text-[10px] font-bold text-teal-800 bg-white px-2 py-0.5 rounded-lg border border-teal-200 hover:bg-teal-100 transition-all cursor-pointer shadow-2xs"
+                title="실측 TRevPAR 금액으로 즉시 복귀"
+              >
+                TRevPAR 시작
+              </button>
             </div>
-            <p className="text-[11px] text-slate-500 mb-3">
-              전략적으로 목표하는 총 소비자 판매가를 먼저 고정합니다.
+
+            {/* Price Display & Direct Input */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="text-2xl font-black text-slate-900">
+                {formatCurrency(targetPackagePrice)}
+                <span className="text-xs font-semibold text-slate-500 ml-1">원 (VAT포함)</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] text-slate-400 font-bold">직접입력:</span>
+                <input
+                  type="number"
+                  step={1000}
+                  value={targetPackagePrice || ''}
+                  onChange={(e) => setTargetPackagePrice(Math.max(0, Number(e.target.value)))}
+                  className="w-24 text-right bg-slate-50 text-xs font-black text-slate-900 px-2 py-1 rounded-xl border border-slate-300 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+            </div>
+
+            <p className="text-[10px] text-slate-500 mb-2.5">
+              실측 TRevPAR({formatCurrency(currentMonthData.trevparWithoutGolf)}원)에서 시작하여 원하는 목표 단가로 자유롭게 변경합니다.
             </p>
 
-            {/* Quick Price Buttons */}
+            {/* Dynamic Buttons Starting from TRevPAR */}
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {[220000, 265000, 299000, 329000, 359000].map(p => (
-                <button
-                  key={p}
-                  onClick={() => setTargetPackagePrice(p)}
-                  className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
-                    targetPackagePrice === p
-                      ? 'bg-teal-600 text-white border-teal-600 font-black'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {Math.round(p / 10000)}만원
-                </button>
-              ))}
+              {[
+                { label: 'TRevPAR 기준', mult: 1.0 },
+                { label: '+20%', mult: 1.2 },
+                { label: '+40%', mult: 1.4 },
+                { label: '+60% 슬라이드', mult: 1.6 },
+                { label: '+80%', mult: 1.8 },
+                { label: '+100%', mult: 2.0 }
+              ].map(opt => {
+                const calculatedPrice = Math.round((currentMonthData.trevparWithoutGolf * opt.mult) / 1000) * 1000;
+                const isSelected = Math.abs(targetPackagePrice - calculatedPrice) < 1000;
+
+                return (
+                  <button
+                    key={opt.label}
+                    onClick={() => setTargetPackagePrice(calculatedPrice)}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-teal-600 text-white border-teal-600 font-black shadow-2xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {opt.label} ({(calculatedPrice / 10000).toFixed(1)}만)
+                  </button>
+                );
+              })}
             </div>
 
             {/* Slider */}
             <input
               type="range"
-              min={150000}
+              min={Math.max(50000, Math.round(currentMonthData.revpar / 1000) * 1000)}
               max={500000}
-              step={5000}
+              step={2000}
               value={targetPackagePrice}
               onChange={(e) => setTargetPackagePrice(Number(e.target.value))}
               className="w-full accent-teal-600 cursor-pointer mb-2"

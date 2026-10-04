@@ -132,6 +132,18 @@ interface ApiCategory {
   facilities: ApiFacility[];
 }
 
+interface MonthlyMatrixFacility {
+  no: number;
+  divisionName: string;
+  categoryCode: string;
+  categoryName: string;
+  partName: string;
+  facilityName: string;
+  weight: number;
+  months: Record<number, number>;
+  yearTotal: number;
+}
+
 interface ApiSummary {
   isYearly?: boolean;
   targetYear?: number;
@@ -213,6 +225,11 @@ export default function StrategicSimulator() {
 
 
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
+  // Business Plan View Mode: 'MONTHLY_MATRIX' (1~12월 월별 매트릭스) | 'SINGLE_MONTH' (단일 월 상세 비교)
+  const [businessPlanViewMode, setBusinessPlanViewMode] = useState<'MONTHLY_MATRIX' | 'SINGLE_MONTH'>('MONTHLY_MATRIX');
+  const [monthlyMatrixData, setMonthlyMatrixData] = useState<MonthlyMatrixFacility[] | null>(null);
+  const [isLoadingMatrix, setIsLoadingMatrix] = useState<boolean>(false);
+
   const [apiData, setApiData] = useState<{ summary: ApiSummary; categories: ApiCategory[] } | null>(null);
   const [, setRebalancedMonthlyTargets] = useState<Record<number, number>>({});
   
@@ -258,6 +275,71 @@ export default function StrategicSimulator() {
     fetchBusinessPlan();
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
+
+  // Fetch All 12 Months Matrix Data for Business Plan (Fast parallel fetch)
+  useEffect(() => {
+    let isMounted = true;
+    const fetch12Months = async () => {
+      setIsLoadingMatrix(true);
+      try {
+        const promises = Array.from({ length: 12 }, (_, i) => {
+          const m = i + 1;
+          const url = `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${m}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`;
+          return secureFetcher(url) as Promise<{ success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } }>;
+        });
+
+        const results = await Promise.all(promises);
+        if (!isMounted) return;
+
+        const facilityMap = new Map<string, MonthlyMatrixFacility>();
+        let index = 1;
+
+        results.forEach((res, idx) => {
+          const monthNum = idx + 1;
+          const cats = res?.data?.categories || [];
+          cats.forEach(cat => {
+            if (cat.categoryCode === 'PARKING' || cat.categoryCode === 'GOODS' || cat.categoryCode === 'OTHER') return;
+            if (!input.includeGolf && cat.categoryCode === 'GOLF') return;
+            const divName = getCategoryDisplayName(cat);
+            (cat.facilities || []).forEach(fac => {
+              const key = `${cat.categoryCode}___${fac.facilityName}`;
+              if (!facilityMap.has(key)) {
+                facilityMap.set(key, {
+                  no: index++,
+                  divisionName: divName,
+                  categoryCode: cat.categoryCode,
+                  categoryName: cat.categoryName,
+                  partName: (fac.partName || fac.teamName || '일반').trim(),
+                  facilityName: fac.facilityName,
+                  weight: fac.weight || 0,
+                  months: {},
+                  yearTotal: 0
+                });
+              }
+              const entry = facilityMap.get(key)!;
+              const target = fac.target2026 || 0;
+              entry.months[monthNum] = target;
+              entry.yearTotal += target;
+            });
+          });
+        });
+
+        const sortedList = Array.from(facilityMap.values()).sort((a, b) => b.yearTotal - a.yearTotal);
+        sortedList.forEach((item, idx) => {
+          item.no = idx + 1;
+        });
+
+        setMonthlyMatrixData(sortedList);
+      } catch (err) {
+        console.warn('Failed to fetch 12-month matrix:', err);
+      } finally {
+        if (isMounted) setIsLoadingMatrix(false);
+      }
+    };
+
+    fetch12Months();
+    return () => { isMounted = false; };
+  }, [input.targetYear, input.targetGrowthRate, input.includeGolf]);
 
   // Feature 4: Baseline Engine directly from Backend API (0-Variance)
   const wmaBaselineData = useMemo(() => {
@@ -544,9 +626,49 @@ export default function StrategicSimulator() {
     };
   }, [flatBusinessPlanFacilities]);
 
-  // Export Business Plan to authentic Excel (.xlsx) using SheetJS
+  // Filtered facilities for 12-month matrix view
+  const filteredMatrixFacilities = useMemo(() => {
+    if (!monthlyMatrixData) return [];
+    if (selectedCategoryFilter === 'ALL') return monthlyMatrixData;
+    return monthlyMatrixData.filter(f => 
+      f.categoryCode === selectedCategoryFilter || 
+      f.categoryName === selectedCategoryFilter
+    );
+  }, [monthlyMatrixData, selectedCategoryFilter]);
+
+  // Monthly totals across 12 months for matrix view
+  const matrixMonthlyTotals = useMemo(() => {
+    const monthSums: Record<number, number> = {};
+    for (let m = 1; m <= 12; m++) monthSums[m] = 0;
+    let grandYearTotal = 0;
+
+    filteredMatrixFacilities.forEach(f => {
+      for (let m = 1; m <= 12; m++) {
+        monthSums[m] += (f.months[m] || 0);
+      }
+      grandYearTotal += f.yearTotal;
+    });
+
+    let peakMonth = 1;
+    let peakVal = 0;
+    for (let m = 1; m <= 12; m++) {
+      if (monthSums[m] > peakVal) {
+        peakVal = monthSums[m];
+        peakMonth = m;
+      }
+    }
+
+    return {
+      monthSums,
+      grandYearTotal,
+      peakMonth,
+      peakVal
+    };
+  }, [filteredMatrixFacilities]);
+
+  // Export Business Plan to authentic multi-sheet Excel (.xlsx) using SheetJS
   const handleExportExcel = () => {
-    if (flatBusinessPlanFacilities.length === 0) {
+    if (flatBusinessPlanFacilities.length === 0 && filteredMatrixFacilities.length === 0) {
       alert('내보낼 사업계획서 데이터가 없습니다.');
       return;
     }
@@ -558,73 +680,139 @@ export default function StrategicSimulator() {
 
     const wb = XLSX.utils.book_new();
 
-    const rows: any[][] = [
-      [`[벨포레 리조트] ${input.targetYear}년 ${targetMonthLabel} 영업장별 사업계획서`],
-      [`시뮬레이션 조건: 비교연도 ${input.baseYear}년 실적 ➔ ${input.targetYear}년 목표 | 대상기간: ${targetMonthLabel} | 전사 목표성장률: +${input.targetGrowthRate}% | 골프: ${input.includeGolf ? '포함(전사)' : '제외(순수 리조트)'} | 선택 대분류: ${selectedCategoryFilter === 'ALL' ? '전체 부문' : categoryLabel}`],
-      [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출 SSOT)`],
-      [], // 공백 행
-      [
-        'No', 
-        '대분류(본부)', 
-        '중분류(파트)', 
-        '영업장명', 
-        '전략 비중(%)', 
-        `${input.baseYear}년 실적(원)`, 
-        `${input.targetYear}년 사업계획 목표치(원)`, 
-        '목표 증감액(원)', 
-        '목표 성장률(%)', 
-        '전략 방향'
-      ]
-    ];
+    // 1. Sheet 1: 1~12월_월별사업계획 (매트릭스)
+    if (filteredMatrixFacilities.length > 0) {
+      const matrixRows: any[][] = [
+        [`[벨포레 리조트] ${input.targetYear}년 1~12월 영업장별 월별 사업계획서`],
+        [`시뮬레이션 조건: 비교연도 ${input.baseYear}년 ➔ ${input.targetYear}년 목표 | 전사 목표성장률: +${input.targetGrowthRate}% | 골프: ${input.includeGolf ? '포함(전사)' : '제외(순수 리조트)'} | 선택 대분류: ${selectedCategoryFilter === 'ALL' ? '전체 부문' : categoryLabel}`],
+        [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출 SSOT)`],
+        [],
+        [
+          'No', 
+          '대분류(본부)', 
+          '중분류(파트)', 
+          '영업장명', 
+          '1월', '2월', '3월', '4월', '5월', '6월', 
+          '7월', '8월', '9월', '10월', '11월', '12월', 
+          '연간 합계(원)'
+        ]
+      ];
 
-    flatBusinessPlanFacilities.forEach(f => {
-      rows.push([
-        f.no,
-        f.divisionName,
-        f.partName,
-        f.facilityName,
-        f.weight,
-        f.baseActual,
-        f.targetRevenue,
-        f.diff,
-        `${f.growthRate > 0 ? '+' : ''}${f.growthRate}%`,
-        f.strategyBadge
+      filteredMatrixFacilities.forEach(f => {
+        matrixRows.push([
+          f.no,
+          f.divisionName,
+          f.partName,
+          f.facilityName,
+          f.months[1] || 0,
+          f.months[2] || 0,
+          f.months[3] || 0,
+          f.months[4] || 0,
+          f.months[5] || 0,
+          f.months[6] || 0,
+          f.months[7] || 0,
+          f.months[8] || 0,
+          f.months[9] || 0,
+          f.months[10] || 0,
+          f.months[11] || 0,
+          f.months[12] || 0,
+          f.yearTotal
+        ]);
+      });
+
+      // 합계 행
+      matrixRows.push([
+        '합계',
+        selectedCategoryFilter === 'ALL' ? '전체 부문 (전사)' : categoryLabel,
+        '-',
+        `총 ${filteredMatrixFacilities.length}개 영업장`,
+        matrixMonthlyTotals.monthSums[1] || 0,
+        matrixMonthlyTotals.monthSums[2] || 0,
+        matrixMonthlyTotals.monthSums[3] || 0,
+        matrixMonthlyTotals.monthSums[4] || 0,
+        matrixMonthlyTotals.monthSums[5] || 0,
+        matrixMonthlyTotals.monthSums[6] || 0,
+        matrixMonthlyTotals.monthSums[7] || 0,
+        matrixMonthlyTotals.monthSums[8] || 0,
+        matrixMonthlyTotals.monthSums[9] || 0,
+        matrixMonthlyTotals.monthSums[10] || 0,
+        matrixMonthlyTotals.monthSums[11] || 0,
+        matrixMonthlyTotals.monthSums[12] || 0,
+        matrixMonthlyTotals.grandYearTotal
       ]);
-    });
 
-    // 합계 행
-    rows.push([
-      '합계',
-      selectedCategoryFilter === 'ALL' ? '전체 부문 (전사)' : categoryLabel,
-      '-',
-      `총 ${businessPlanTotals.facilityCount}개 영업장`,
-      100.0,
-      businessPlanTotals.baseActualSum,
-      businessPlanTotals.targetRevenueSum,
-      businessPlanTotals.diffSum,
-      `${businessPlanTotals.growthRateSum > 0 ? '+' : ''}${businessPlanTotals.growthRateSum}%`,
-      'Zero-Variance 보존 완료'
-    ]);
+      const ws1 = XLSX.utils.aoa_to_sheet(matrixRows);
+      ws1['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 18 }, // 대분류
+        { wch: 16 }, // 중분류
+        { wch: 26 }, // 영업장명
+        { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+        { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+        { wch: 18 }  // 연간합계
+      ];
+      XLSX.utils.book_append_sheet(wb, ws1, '1~12월_월별사업계획');
+    }
 
-    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // 2. Sheet 2: 선택월_상세사업계획
+    if (flatBusinessPlanFacilities.length > 0) {
+      const detailRows: any[][] = [
+        [`[벨포레 리조트] ${input.targetYear}년 ${targetMonthLabel} 영업장별 사업계획서`],
+        [`시뮬레이션 조건: 비교연도 ${input.baseYear}년 실적 ➔ ${input.targetYear}년 목표 | 대상기간: ${targetMonthLabel} | 전사 목표성장률: +${input.targetGrowthRate}% | 골프: ${input.includeGolf ? '포함(전사)' : '제외(순수 리조트)'} | 선택 대분류: ${selectedCategoryFilter === 'ALL' ? '전체 부문' : categoryLabel}`],
+        [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출 SSOT)`],
+        [],
+        [
+          'No', 
+          '대분류(본부)', 
+          '중분류(파트)', 
+          '영업장명', 
+          '전략 비중(%)', 
+          `${input.baseYear}년 실적(원)`, 
+          `${input.targetYear}년 사업계획 목표치(원)`, 
+          '목표 증감액(원)', 
+          '목표 성장률(%)', 
+          '전략 방향'
+        ]
+      ];
 
-    ws['!cols'] = [
-      { wch: 6 },  // No
-      { wch: 20 }, // 대분류
-      { wch: 18 }, // 중분류
-      { wch: 28 }, // 영업장명
-      { wch: 14 }, // 전략 비중
-      { wch: 20 }, // 과거 실적
-      { wch: 22 }, // 목표치
-      { wch: 18 }, // 증감액
-      { wch: 15 }, // 성장률
-      { wch: 22 }  // 전략방향
-    ];
+      flatBusinessPlanFacilities.forEach(f => {
+        detailRows.push([
+          f.no,
+          f.divisionName,
+          f.partName,
+          f.facilityName,
+          f.weight,
+          f.baseActual,
+          f.targetRevenue,
+          f.diff,
+          `${f.growthRate > 0 ? '+' : ''}${f.growthRate}%`,
+          f.strategyBadge
+        ]);
+      });
 
-    XLSX.utils.book_append_sheet(wb, ws, '사업계획서');
+      detailRows.push([
+        '합계',
+        selectedCategoryFilter === 'ALL' ? '전체 부문 (전사)' : categoryLabel,
+        '-',
+        `총 ${businessPlanTotals.facilityCount}개 영업장`,
+        100.0,
+        businessPlanTotals.baseActualSum,
+        businessPlanTotals.targetRevenueSum,
+        businessPlanTotals.diffSum,
+        `${businessPlanTotals.growthRateSum > 0 ? '+' : ''}${businessPlanTotals.growthRateSum}%`,
+        'Zero-Variance 보존 완료'
+      ]);
+
+      const ws2 = XLSX.utils.aoa_to_sheet(detailRows);
+      ws2['!cols'] = [
+        { wch: 6 },  { wch: 20 }, { wch: 18 }, { wch: 28 }, { wch: 14 },
+        { wch: 20 }, { wch: 22 }, { wch: 18 }, { wch: 15 }, { wch: 22 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws2, `${targetMonthLabel}_상세내역`);
+    }
 
     const cleanCategoryName = categoryLabel.replace(/[\/\\?%*:|"<>]/g, '');
-    const fileName = `벨포레_${input.targetYear}년_${targetMonthLabel}_사업계획서_${cleanCategoryName}.xlsx`;
+    const fileName = `벨포레_${input.targetYear}년_사업계획서_${cleanCategoryName}_월별통합.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -823,14 +1011,14 @@ export default function StrategicSimulator() {
                   <FileSpreadsheet size={22} />
                 </span>
                 <h2 className="text-xl font-black text-slate-900">
-                  {input.targetYear}년 {selectedMonthLabel} 영업장별 사업계획서
+                  {input.targetYear}년 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '1~12월 월별' : selectedMonthLabel} 영업장별 사업계획서
                 </h2>
                 <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-black rounded-lg">
-                  Zero-Variance 정규 시뮬레이션
+                  {isLoadingMatrix ? '12개월 동기화 중...' : 'Zero-Variance 정규 시뮬레이션'}
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                시뮬레이터 설정 성장률(+{input.targetGrowthRate}%) 및 본부별 전략승수(β_f)가 1원 단위 무결성으로 각 영업장에 안분된 최종 목표치입니다.
+                시뮬레이터 설정 성장률(+{input.targetGrowthRate}%) 및 Zero-Variance 안분이 적용된 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '12개월 월별 전체 목표 매트릭스' : `${selectedMonthLabel} 상세 목표치`}입니다.
               </p>
             </div>
 
@@ -851,230 +1039,495 @@ export default function StrategicSimulator() {
                 <Download size={15} />
                 <span>엑셀 (.xlsx) 다운로드</span>
                 <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-mono">
-                  {flatBusinessPlanFacilities.length}개소
+                  1~12월 통합
                 </span>
               </button>
             </div>
           </div>
 
           {/* Filter & Selector Bar */}
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <label htmlFor="categoryFilterSelect" className="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                <Filter size={15} className="text-indigo-600" />
-                <span>대분류(사업본부) 선택:</span>
-              </label>
-              <select
-                id="categoryFilterSelect"
-                value={selectedCategoryFilter}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[240px] cursor-pointer"
-              >
-                <option value="ALL">전체 부문 (전사 총괄 - {totalFacilityCount}개 영업장)</option>
-                {effectiveCategories.map(cat => (
-                  <option key={cat.categoryCode} value={cat.categoryCode}>
-                    {getCategoryIcon(cat.categoryName, cat.categoryCode)} {getCategoryDisplayName(cat)} ({cat.facilities?.length || 0}개 영업장)
-                  </option>
-                ))}
-              </select>
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Dropdowns */}
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Category Dropdown */}
+                <div className="flex items-center gap-2">
+                  <label htmlFor="categoryFilterSelect" className="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                    <Filter size={15} className="text-indigo-600" />
+                    <span>대분류(본부):</span>
+                  </label>
+                  <select
+                    id="categoryFilterSelect"
+                    value={selectedCategoryFilter}
+                    onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                    className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[210px] cursor-pointer"
+                  >
+                    <option value="ALL">전체 부문 (전사 총괄 - {totalFacilityCount}개 영업장)</option>
+                    {effectiveCategories.map(cat => (
+                      <option key={cat.categoryCode} value={cat.categoryCode}>
+                        {getCategoryIcon(cat.categoryName, cat.categoryCode)} {getCategoryDisplayName(cat)} ({cat.facilities?.length || 0}개 영업장)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Period/Month Dropdown */}
+                <div className="flex items-center gap-2">
+                  <label htmlFor="periodFilterSelect" className="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                    <Calendar size={15} className="text-indigo-600" />
+                    <span>조회 기간(월):</span>
+                  </label>
+                  <select
+                    id="periodFilterSelect"
+                    value={businessPlanViewMode === 'MONTHLY_MATRIX' ? 'MATRIX' : input.selectedMonth}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'MATRIX') {
+                        setBusinessPlanViewMode('MONTHLY_MATRIX');
+                      } else if (val === 'ANNUAL') {
+                        setInput(prev => ({ ...prev, selectedMonth: 'ANNUAL' }));
+                        setBusinessPlanViewMode('SINGLE_MONTH');
+                      } else {
+                        setInput(prev => ({ ...prev, selectedMonth: Number(val) }));
+                        setBusinessPlanViewMode('SINGLE_MONTH');
+                      }
+                    }}
+                    className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[220px] cursor-pointer"
+                  >
+                    <option value="MATRIX">📅 1~12월 전체 월별 매트릭스</option>
+                    <option value="ANNUAL">📅 연간 종합 (1~12월 합산)</option>
+                    {MONTH_NAMES.filter(m => m.id !== 'ANNUAL').map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.label} ({m.season})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* View Mode Toggle Button */}
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs self-start lg:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setBusinessPlanViewMode('MONTHLY_MATRIX')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    businessPlanViewMode === 'MONTHLY_MATRIX'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Calendar size={13} />
+                  <span>1~12월 월별 매트릭스</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusinessPlanViewMode('SINGLE_MONTH');
+                    if (input.selectedMonth === 'ANNUAL') {
+                      setInput(prev => ({ ...prev, selectedMonth: 1 }));
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    businessPlanViewMode === 'SINGLE_MONTH'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <FileText size={13} />
+                  <span>단일 월 상세 비교 ({selectedMonthLabel})</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-              <span className="inline-block w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-              <span>
-                조회 중: <strong className="text-indigo-700">{selectedCategoryFilter === 'ALL' ? '전체 부문' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}</strong>
-              </span>
-              <span className="text-slate-300">|</span>
-              <span>
-                영업장: <strong className="text-slate-900">{flatBusinessPlanFacilities.length}</strong> / {totalFacilityCount}개소
-              </span>
+            {/* Quick Month Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-200/80 pb-1 text-xs">
+              <span className="text-[11px] font-black text-slate-500 mr-1 shrink-0">빠른 월 선택:</span>
+              <button
+                type="button"
+                onClick={() => setBusinessPlanViewMode('MONTHLY_MATRIX')}
+                className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
+                  businessPlanViewMode === 'MONTHLY_MATRIX'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                📅 1~12월 전체 매트릭스
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInput(prev => ({ ...prev, selectedMonth: 'ANNUAL' }));
+                  setBusinessPlanViewMode('SINGLE_MONTH');
+                }}
+                className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
+                  businessPlanViewMode === 'SINGLE_MONTH' && input.selectedMonth === 'ANNUAL'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                연간 종합
+              </button>
+              {MONTH_NAMES.filter(m => m.id !== 'ANNUAL').map(m => {
+                const isSelected = businessPlanViewMode === 'SINGLE_MONTH' && input.selectedMonth === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      setInput(prev => ({ ...prev, selectedMonth: m.id as number }));
+                      setBusinessPlanViewMode('SINGLE_MONTH');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {m.shortLabel}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* 4 Summary KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="text-[11px] font-bold text-slate-500 mb-1">대상 영업장 수</div>
-              <div className="text-2xl font-black text-slate-800">
-                {businessPlanTotals.facilityCount}
-                <span className="text-xs font-bold text-slate-500 ml-1">개 영업장</span>
+          {businessPlanViewMode === 'MONTHLY_MATRIX' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="text-[11px] font-bold text-slate-500 mb-1">대상 영업장 수</div>
+                <div className="text-2xl font-black text-slate-800">
+                  {filteredMatrixFacilities.length}
+                  <span className="text-xs font-bold text-slate-500 ml-1">개 영업장</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  전체 {totalFacilityCount}개 영업장 중
+                </div>
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
-                전체 {totalFacilityCount}개 영업장 중
+
+              <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="text-[11px] font-bold text-indigo-700 mb-1">{input.targetYear}년 연간 목표 합계</div>
+                <div className="text-2xl font-black text-indigo-700">
+                  {formatCurrency(matrixMonthlyTotals.grandYearTotal)}
+                  <span className="text-xs font-bold text-indigo-500 ml-1">원</span>
+                </div>
+                <div className="text-[11px] text-indigo-500 mt-1">
+                  1~12월 월별 목표치 합계
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="text-[11px] font-bold text-slate-500 mb-1">12개월 월평균 목표</div>
+                <div className="text-2xl font-black text-slate-800">
+                  {formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 12))}
+                  <span className="text-xs font-bold text-slate-500 ml-1">원</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  일평균 약 {formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 365))}원
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs bg-amber-50/30">
+                <div className="text-[11px] font-bold text-amber-800 mb-1">최대 매출 피크 월</div>
+                <div className="text-2xl font-black text-amber-900">
+                  {matrixMonthlyTotals.peakMonth}월
+                  <span className="text-xs font-bold text-amber-700 ml-1.5">
+                    ({formatCurrency(matrixMonthlyTotals.peakVal)}원)
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-700 mt-1">
+                  선택 부문 연간 최고 매출 시즌
+                </div>
               </div>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="text-[11px] font-bold text-slate-500 mb-1">대상 영업장 수</div>
+                <div className="text-2xl font-black text-slate-800">
+                  {businessPlanTotals.facilityCount}
+                  <span className="text-xs font-bold text-slate-500 ml-1">개 영업장</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  전체 {totalFacilityCount}개 영업장 중
+                </div>
+              </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="text-[11px] font-bold text-slate-500 mb-1">{input.baseYear}년 기준 실적</div>
-              <div className="text-2xl font-black text-slate-800">
-                {formatCurrency(businessPlanTotals.baseActualSum)}
-                <span className="text-xs font-bold text-slate-500 ml-1">원</span>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="text-[11px] font-bold text-slate-500 mb-1">{input.baseYear}년 기준 실적</div>
+                <div className="text-2xl font-black text-slate-800">
+                  {formatCurrency(businessPlanTotals.baseActualSum)}
+                  <span className="text-xs font-bold text-slate-500 ml-1">원</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  순매출 (VAT 별도 SSOT)
+                </div>
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
-                순매출 (VAT 별도 SSOT)
-              </div>
-            </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30">
-              <div className="text-[11px] font-bold text-indigo-700 mb-1">{input.targetYear}년 사업계획 목표치</div>
-              <div className="text-2xl font-black text-indigo-700">
-                {formatCurrency(businessPlanTotals.targetRevenueSum)}
-                <span className="text-xs font-bold text-indigo-500 ml-1">원</span>
+              <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="text-[11px] font-bold text-indigo-700 mb-1">{input.targetYear}년 사업계획 목표치</div>
+                <div className="text-2xl font-black text-indigo-700">
+                  {formatCurrency(businessPlanTotals.targetRevenueSum)}
+                  <span className="text-xs font-bold text-indigo-500 ml-1">원</span>
+                </div>
+                <div className="text-[11px] text-indigo-500 mt-1">
+                  시뮬레이터 목표 안분 합계
+                </div>
               </div>
-              <div className="text-[11px] text-indigo-500 mt-1">
-                시뮬레이터 목표 안분 합계
-              </div>
-            </div>
 
-            <div className={`p-4 rounded-2xl border shadow-xs ${
-              businessPlanTotals.diffSum >= 0 ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'
-            }`}>
-              <div className="text-[11px] font-bold text-slate-600 mb-1">목표 증감액 & 성장률</div>
-              <div className={`text-2xl font-black ${
-                businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+              <div className={`p-4 rounded-2xl border shadow-xs ${
+                businessPlanTotals.diffSum >= 0 ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'
               }`}>
-                {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}
-                <span className="text-xs font-bold ml-1">원</span>
-              </div>
-              <div className={`text-xs font-black mt-1 ${
-                businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-600' : 'text-rose-600'
-              }`}>
-                {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
-                <span className="text-[10px] text-slate-500 font-normal ml-1">vs {input.baseYear}년</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Full Facility Business Plan Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80">
-              <div className="flex items-center gap-2">
-                <FileText size={17} className="text-indigo-600" />
-                <h3 className="text-sm font-black text-slate-900">영업장별 사업계획 세부 내역</h3>
-                <span className="text-xs text-slate-500 font-medium">
-                  ({flatBusinessPlanFacilities.length}개 라인)
-                </span>
-              </div>
-              <div className="text-xs text-slate-500 flex items-center gap-2">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>녹색: 목표 상향(▲)</span>
-                <span className="text-slate-300">|</span>
-                <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
-                <span>적색: 목표 조정(▼)</span>
+                <div className="text-[11px] font-bold text-slate-600 mb-1">목표 증감액 & 성장률</div>
+                <div className={`text-2xl font-black ${
+                  businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                }`}>
+                  {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}
+                  <span className="text-xs font-bold ml-1">원</span>
+                </div>
+                <div className={`text-xs font-black mt-1 ${
+                  businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                }`}>
+                  {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                  <span className="text-[10px] text-slate-500 font-normal ml-1">vs {input.baseYear}년</span>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-3 text-center w-12">No</th>
-                    <th className="py-3 px-4">대분류(본부)</th>
-                    <th className="py-3 px-4">중분류(파트)</th>
-                    <th className="py-3 px-4 min-w-[160px]">영업장명</th>
-                    <th className="py-3 px-3 text-right">전략 비중</th>
-                    <th className="py-3 px-4 text-right min-w-[120px]">{input.baseYear}년 실적</th>
-                    <th className="py-3 px-4 text-right min-w-[140px] text-indigo-700 bg-indigo-50/40">
-                      {input.targetYear}년 사업계획 목표치
-                    </th>
-                    <th className="py-3 px-4 text-right min-w-[120px]">목표 증감액</th>
-                    <th className="py-3 px-3 text-right min-w-[90px]">목표 성장률</th>
-                    <th className="py-3 px-4 text-center min-w-[130px]">전략 방향</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {flatBusinessPlanFacilities.map(f => (
-                    <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-3 text-center font-mono text-slate-400 text-[11px]">
-                        {f.no}
+          {/* Business Plan Table Rendering (Matrix vs Single Month) */}
+          {businessPlanViewMode === 'MONTHLY_MATRIX' ? (
+            /* 1~12월 전체 월별 매트릭스 테이블 */
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80">
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet size={17} className="text-indigo-600" />
+                  <h3 className="text-sm font-black text-slate-900">
+                    영업장별 1~12월 월별 사업계획 목표치 매트릭스
+                  </h3>
+                  <span className="text-xs text-slate-500 font-medium">
+                    ({filteredMatrixFacilities.length}개 라인)
+                  </span>
+                </div>
+                <div className="text-xs text-indigo-700 font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={13} />
+                  <span>12개월 월별 합계 = 연간 목표치 1원 단위 무결성 보존</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-2 text-center w-10 sticky left-0 bg-slate-100 z-10">No</th>
+                      <th className="py-3 px-3 min-w-[110px] sticky left-10 bg-slate-100 z-10">대분류(본부)</th>
+                      <th className="py-3 px-3 min-w-[90px]">중분류(파트)</th>
+                      <th className="py-3 px-3 min-w-[150px]">영업장명</th>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <th key={i + 1} className="py-3 px-2.5 text-right min-w-[90px] whitespace-nowrap">
+                          {i + 1}월
+                        </th>
+                      ))}
+                      <th className="py-3 px-4 text-right min-w-[130px] text-indigo-900 bg-indigo-50/70 font-black whitespace-nowrap">
+                        연간 합계
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredMatrixFacilities.map(f => (
+                      <tr key={`${f.categoryCode}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-2 text-center font-mono text-slate-400 text-[11px] sticky left-0 bg-white">
+                          {f.no}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-slate-700 whitespace-nowrap sticky left-10 bg-white">
+                          <span className="mr-1">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
+                          {f.divisionName}
+                        </td>
+                        <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                          {f.partName}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
+                          {f.facilityName}
+                        </td>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const m = i + 1;
+                          const val = f.months[m] || 0;
+                          return (
+                            <td key={m} className="py-3 px-2.5 text-right tabular-nums whitespace-nowrap">
+                              {val > 0 ? (
+                                <span className="font-semibold text-slate-800">{formatCurrency(val)}원</span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">-</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                          {formatCurrency(f.yearTotal)}원
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                    <tr>
+                      <td className="py-3.5 px-2 text-center sticky left-0 bg-slate-100">합계</td>
+                      <td className="py-3.5 px-3 font-black whitespace-nowrap sticky left-10 bg-slate-100">
+                        {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">
-                        <span className="mr-1.5">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
-                        {f.divisionName}
+                      <td className="py-3.5 px-3 text-slate-500 font-normal">-</td>
+                      <td className="py-3.5 px-3 font-black whitespace-nowrap">
+                        총 {filteredMatrixFacilities.length}개 영업장
                       </td>
-                      <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
-                        {f.partName}
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const m = i + 1;
+                        const mSum = matrixMonthlyTotals.monthSums[m] || 0;
+                        return (
+                          <td key={m} className="py-3.5 px-2.5 text-right tabular-nums font-black whitespace-nowrap text-slate-800">
+                            {formatCurrency(mSum)}원
+                          </td>
+                        );
+                      })}
+                      <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/60 whitespace-nowrap text-sm">
+                        {formatCurrency(matrixMonthlyTotals.grandYearTotal)}원
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
-                        {f.facilityName}
-                      </td>
-                      <td className="py-3 px-3 text-right tabular-nums text-slate-600 font-medium">
-                        {f.weight.toFixed(2)}%
-                      </td>
-                      <td className="py-3 px-4 text-right tabular-nums text-slate-600 font-medium whitespace-nowrap">
-                        {formatCurrency(f.baseActual)}원
-                      </td>
-                      <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
-                        {formatCurrency(f.targetRevenue)}원
-                      </td>
-                      <td className={`py-3 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
-                        f.diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                      }`}>
-                        {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
-                      </td>
-                      <td className={`py-3 px-3 text-right tabular-nums font-black whitespace-nowrap ${
-                        f.growthRate >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                      }`}>
-                        {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
-                      </td>
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                          f.strategyBadge === 'ADR 레버리지 권장'
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                            : f.strategyBadge === '핵심 볼륨 견인'
-                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                            : f.diff > 0
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : f.diff < 0
-                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                            : 'bg-slate-100 text-slate-700'
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* 단일 월 상세 비교 테이블 */
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80">
+                <div className="flex items-center gap-2">
+                  <FileText size={17} className="text-indigo-600" />
+                  <h3 className="text-sm font-black text-slate-900">
+                    영업장별 {selectedMonthLabel} 사업계획 세부 내역
+                  </h3>
+                  <span className="text-xs text-slate-500 font-medium">
+                    ({flatBusinessPlanFacilities.length}개 라인)
+                  </span>
+                </div>
+                <div className="text-xs text-slate-500 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>녹색: 목표 상향(▲)</span>
+                  <span className="text-slate-300">|</span>
+                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
+                  <span>적색: 목표 조정(▼)</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-3 text-center w-12">No</th>
+                      <th className="py-3 px-4">대분류(본부)</th>
+                      <th className="py-3 px-4">중분류(파트)</th>
+                      <th className="py-3 px-4 min-w-[160px]">영업장명</th>
+                      <th className="py-3 px-3 text-right">전략 비중</th>
+                      <th className="py-3 px-4 text-right min-w-[120px]">{input.baseYear}년 실적</th>
+                      <th className="py-3 px-4 text-right min-w-[140px] text-indigo-700 bg-indigo-50/40">
+                        {input.targetYear}년 사업계획 목표치
+                      </th>
+                      <th className="py-3 px-4 text-right min-w-[120px]">목표 증감액</th>
+                      <th className="py-3 px-3 text-right min-w-[90px]">목표 성장률</th>
+                      <th className="py-3 px-4 text-center min-w-[130px]">전략 방향</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {flatBusinessPlanFacilities.map(f => (
+                      <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-3 text-center font-mono text-slate-400 text-[11px]">
+                          {f.no}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">
+                          <span className="mr-1.5">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
+                          {f.divisionName}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
+                          {f.partName}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                          {f.facilityName}
+                        </td>
+                        <td className="py-3 px-3 text-right tabular-nums text-slate-600 font-medium">
+                          {f.weight.toFixed(2)}%
+                        </td>
+                        <td className="py-3 px-4 text-right tabular-nums text-slate-600 font-medium whitespace-nowrap">
+                          {formatCurrency(f.baseActual)}원
+                        </td>
+                        <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                          {formatCurrency(f.targetRevenue)}원
+                        </td>
+                        <td className={`py-3 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
+                          f.diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
                         }`}>
-                          {f.strategyBadge}
+                          {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
+                        </td>
+                        <td className={`py-3 px-3 text-right tabular-nums font-black whitespace-nowrap ${
+                          f.growthRate >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                        }`}>
+                          {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                            f.strategyBadge === 'ADR 레버리지 권장'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : f.strategyBadge === '핵심 볼륨 견인'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                              : f.diff > 0
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : f.diff < 0
+                              ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {f.strategyBadge}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                    <tr>
+                      <td className="py-3.5 px-3 text-center">합계</td>
+                      <td className="py-3.5 px-4 font-black">
+                        {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 font-normal">-</td>
+                      <td className="py-3.5 px-4 font-black">
+                        총 {businessPlanTotals.facilityCount}개 영업장
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums text-indigo-700 font-black">
+                        100.0%
+                      </td>
+                      <td className="py-3.5 px-4 text-right tabular-nums font-bold whitespace-nowrap">
+                        {formatCurrency(businessPlanTotals.baseActualSum)}원
+                      </td>
+                      <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/50 whitespace-nowrap text-sm">
+                        {formatCurrency(businessPlanTotals.targetRevenueSum)}원
+                      </td>
+                      <td className={`py-3.5 px-4 text-right tabular-nums font-black whitespace-nowrap ${
+                        businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}>
+                        {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
+                      </td>
+                      <td className={`py-3.5 px-3 text-right tabular-nums font-black whitespace-nowrap ${
+                        businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}>
+                        {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          <CheckCircle2 size={12} />
+                          Zero-Variance 안분 완료
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
-                  <tr>
-                    <td className="py-3.5 px-3 text-center">합계</td>
-                    <td className="py-3.5 px-4 font-black">
-                      {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-normal">-</td>
-                    <td className="py-3.5 px-4 font-black">
-                      총 {businessPlanTotals.facilityCount}개 영업장
-                    </td>
-                    <td className="py-3.5 px-3 text-right tabular-nums text-indigo-700 font-black">
-                      100.0%
-                    </td>
-                    <td className="py-3.5 px-4 text-right tabular-nums font-bold whitespace-nowrap">
-                      {formatCurrency(businessPlanTotals.baseActualSum)}원
-                    </td>
-                    <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/50 whitespace-nowrap text-sm">
-                      {formatCurrency(businessPlanTotals.targetRevenueSum)}원
-                    </td>
-                    <td className={`py-3.5 px-4 text-right tabular-nums font-black whitespace-nowrap ${
-                      businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                    }`}>
-                      {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
-                    </td>
-                    <td className={`py-3.5 px-3 text-right tabular-nums font-black whitespace-nowrap ${
-                      businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                    }`}>
-                      {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
-                    </td>
-                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
-                        <CheckCircle2 size={12} />
-                        Zero-Variance 안분 완료
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+                  </tfoot>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Business Plan Guidance Notes */}
           <div className="bg-indigo-50/60 rounded-2xl p-4 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-3">
@@ -1083,12 +1536,14 @@ export default function StrategicSimulator() {
             </span>
             <div className="space-y-1">
               <p className="font-bold">
-                💡 사업계획서 엑셀 다운로드 안내
+                💡 사업계획서 월별 매트릭스 & 엑셀 다운로드 안내
               </p>
               <p className="text-indigo-800/80 leading-relaxed text-[11px]">
-                • 우측 상단의 <strong className="text-indigo-950 font-bold">[엑셀 (.xlsx) 다운로드]</strong> 버튼을 클릭하시면, 대분류 필터가 적용된 현재 목록이 공식 양식(헤더, No, 분류, 영업장명, 전략 비중, 기준 실적, 목표치, 증감액, 성장률, 전략 방향, 합계 행)의 Microsoft Excel 파일로 즉시 내려받아집니다.
+                • <strong className="text-indigo-950 font-bold">[1~12월 월별 매트릭스]</strong>를 통해 썸머랜드(여름 피크), 사계절썰매장, 골프, 콘도 등 리조트 각 영업장의 계절성(Seasonality)이 반영된 12개월 월별 전체 목표치를 한눈에 비교·검토하실 수 있습니다.
                 <br />
-                • 엑셀 파일 내 숫자는 서식 텍스트가 아닌 실제 숫자(Numeric Type)로 저장되어, Excel 내에서 합계(SUM), 평균(AVERAGE) 등의 수식 작업이 완벽하게 지원됩니다.
+                • 상단 빠른 월 선택 탭(1월~12월)을 클릭하면 해당 월의 전년 실적 대비 증감액, 성장률 및 전략 방향을 상세 조회할 수 있습니다.
+                <br />
+                • 우측 상단의 <strong className="text-indigo-950 font-bold">[엑셀 (.xlsx) 다운로드]</strong> 버튼을 누르시면 <strong>[1~12월_월별사업계획]</strong> 매트릭스 시트와 <strong>[{selectedMonthLabel}_상세내역]</strong> 시트가 모두 포함된 통합 Excel 파일로 즉시 내려받아집니다.
               </p>
             </div>
           </div>

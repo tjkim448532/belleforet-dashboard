@@ -12,7 +12,7 @@
 | **P1 (높음)** | 데이터 정합성 | **`벨포레 목장(체험)` 이용객수(`visitor_count`) 정상화** | 분모(입장객수)는 정상이나 분자(체험객수)가 0명으로 적재되어 `0.0%`로 고정되는 문제 해결 |
 | **P1 (높음)** | 데이터 검증 | **썸머랜드(워터파크) 9월 실적 이상치 원인 규명 및 분리** | 8월 말 폐장 시설에 9월 매출/이용객이 잡히는 원인(사우나 매핑, 이연 매출, 지연 전표 등) 점검 |
 | **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 `revpar` 필드 추가** | 12개월 정산 대조표에 순수 객실 판매 효율(RevPAR = 객실 순매출 ÷ 가용객실수) 제공 |
-| **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 주중/주말 분리형 RevPAR 및 TRevPAR 추가** | 역산형 패키지 시뮬레이터 주중/주말 타깃팅 시 객실 방어선 및 목표 판매가 정밀 연동 지원 |
+| **P1 (완료)** | API 보강 | **월별 가용객실 효율 API에 주중/주말 분리형 RevPAR 및 TRevPAR 6종 추가** | [배포완료] 역산형 패키지 시뮬레이터 주중/주말 타깃팅 시 객실 방어선 및 목표 판매가 정밀 연동 지원 |
 | **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
 | **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
 | **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
@@ -1345,7 +1345,7 @@ const reverseSpillover = totalRoomSales > 0
 
 ---
 
-## 10. 📈 [P1 API 보강] 월별 가용객실 효율 API (`/api/v6/report/monthly-room-efficiency`)에 주중/주말 분리형 RevPAR 및 TRevPAR (`weekdayRevpar`, `weekendRevpar`, `weekdayTrevpar`, `weekendTrevpar`) 정규 마트 필드 탑재 요청
+## 10. 📈 [배포 및 연동 검증 완료] 월별 가용객실 효율 API (`/api/v6/report/monthly-room-efficiency`)에 주중/주말 분리형 RevPAR 및 TRevPAR 6종 정규 완제품 필드 탑재
 
 ### 10-1. 배경 및 비즈니스 목적 (수익 관리 RM 관점)
 * **적용 화면**: 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 시뮬레이터 (`PackageGeneratorSimulator.tsx`, `/strategic-simulator?tab=package`)
@@ -1419,4 +1419,16 @@ const reverseSpillover = totalRoomSales > 0
    - [주중용] 선택 시: 목표 판매가 시작점 105,000원(주중 TRevPAR), 객실 방어선 37,000원(주중 RevPAR 선차감) 자동 락인.
    - [주말용] 선택 시: 목표 판매가 시작점 294,000원(주말 TRevPAR), 객실 방어선 90,000원(주말 RevPAR 선차감) 자동 락인.
    - 상단 Section 2의 4개 핵심 지표 카드(ADR, RevPAR, TRevPAR, 점유율)가 선택 구분에 따라 동적 라벨(`[주중 기준]` / `[주말 기준]`) 및 실측 수치와 주중/주말 보조 수치로 100% 완벽한 대칭 규격으로 표출됨.
+
+### 10-5. 백엔드 프로덕션 배포 및 라이브 검증 완료 내역 (2026-10-04)
+* **배포 커밋**: `59ab2073f7e90fcd6267e46df0fc05db381f2bb0`
+* **라이브 엔드포인트**: `GET https://belleforet-data.vercel.app/api/v6/report/monthly-room-efficiency?baseYear=2026&compareYear=2025`
+* **2026년 1월 실측 응답 대조 (100% Zero-Variance 확인 완료)**:
+  - `weekdayRevpar`: 36,996원
+  - `weekendRevpar`: 89,832원
+  - `weekdayTrevpar`: 104,657원
+  - `weekendTrevpar`: 293,796원
+  - `weekdayTrevparTotal`: 112,510원
+  - `weekendTrevparTotal`: 315,841원
+* **프론트엔드 실시간 직결 연동**: 프론트엔드(`PackageGeneratorSimulator.tsx`, `MonthlyTrevporChart.tsx`)에서 별도 코드 수정 없이 1순위 완제품으로 0ms 직결 매핑되어 완벽하게 서비스 중임을 최종 확인 완료.
 

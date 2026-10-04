@@ -46,6 +46,12 @@ export interface MonthlyEfficiencyItem {
     weekendOcc?: number;
     weekdayAdr?: number;
     weekendAdr?: number;
+    weekdayRevpar?: number;
+    weekendRevpar?: number;
+    weekdayTrevpar?: number;
+    weekendTrevpar?: number;
+    weekdayTrevparTotal?: number;
+    weekendTrevparTotal?: number;
   };
   ty: {
     year: number;
@@ -83,6 +89,12 @@ export interface MonthlyEfficiencyItem {
     weekendOcc?: number;
     weekdayAdr?: number;
     weekendAdr?: number;
+    weekdayRevpar?: number;
+    weekendRevpar?: number;
+    weekdayTrevpar?: number;
+    weekendTrevpar?: number;
+    weekdayTrevparTotal?: number;
+    weekendTrevparTotal?: number;
     isClosed?: boolean;
   } | null;
   growthTotalRate: number | null;

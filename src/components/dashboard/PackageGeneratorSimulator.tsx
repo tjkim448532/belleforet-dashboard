@@ -3,7 +3,8 @@ import {
   Package, Sparkles, DollarSign, Hotel, Utensils, 
   CheckCircle2, ShieldCheck, Plus, Minus, 
   RotateCcw, Copy, Check, TrendingUp, Award, 
-  Calendar, Trash2, Layers, CheckCircle
+  Calendar, Trash2, Layers, CheckCircle, Lock,
+  AlertTriangle, Sun, Moon, ArrowRight
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -37,6 +38,22 @@ export interface MonthlyEfficiencyData {
   year: number;
 }
 
+export interface LiveMonthlySummary {
+  adr: number;
+  revpar: number;
+  trevpar: number;
+  trevparWithoutGolf: number;
+  overallOcc: number;
+  weekdayOcc: number;
+  weekendOcc: number;
+  weekdayAdr: number;
+  weekendAdr: number;
+  roomsSold: number;
+  totalCapacity: number;
+  benchmarkYear: number;
+  isBenchmarkLy: boolean;
+}
+
 // 객실 타입 마스터
 const ROOM_TYPES = [
   { id: 'ROOM_16', name: '16평형 콘도 (2인 기준)', baseNormalPrice: 150000, defaultCapacity: 2, desc: '커플 및 2인 여행객 최적화 기본 객실' },
@@ -44,7 +61,7 @@ const ROOM_TYPES = [
   { id: 'ROOM_51', name: '51평형 커넥팅룸 (4~6인)', baseNormalPrice: 320000, defaultCapacity: 6, desc: '대가족 및 단체 특화 복합 프리미엄 객실' }
 ];
 
-// 사용자가 쉽게 클릭하여 품목명을 자동 입력할 수 있는 추천 명칭 태그 (단가/예시는 입력하지 않고 빈 칸으로 생성)
+// 사용자가 쉽게 클릭하여 품목명을 자동 입력할 수 있는 추천 명칭 태그
 const QUICK_NAME_TAGS = {
   FNB: ['조식 뷔페', '석식 바우처', '바베큐 플래터', '카페 음료권', '웰컴 와인 플레이트', '식음 통합 이용권'],
   LEISURE: ['서킷 카트 레이싱', '익스트림 루지', '벨포레 목장 & 승마', '사계절 썰매장', '미디어아트 관람권', '요트 세일링 투어', '힐링 사우나']
@@ -52,12 +69,17 @@ const QUICK_NAME_TAGS = {
 
 export default function PackageGeneratorSimulator() {
   // ==========================================
-  // State: Month & DB Baseline
+  // State: Year, Month & Target Classification
   // ==========================================
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedMonth, setSelectedMonth] = useState<number>(1);
+  const [targetType, setTargetType] = useState<'WEEKDAY' | 'WEEKEND'>('WEEKDAY');
+
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingSummary, setLoadingSummary] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [monthlyEfficiencyMap, setMonthlyEfficiencyMap] = useState<Record<number, MonthlyEfficiencyData>>({});
+  const [liveSummary, setLiveSummary] = useState<LiveMonthlySummary | null>(null);
 
   // ==========================================
   // State: Step 1 (목표 패키지 판매가)
@@ -106,7 +128,7 @@ export default function PackageGeneratorSimulator() {
   };
 
   // ==========================================
-  // 1. Fetch Live Monthly Efficiency Data from DB
+  // 1. Fetch 12-Month Efficiency Table from DB
   // ==========================================
   useEffect(() => {
     let isMounted = true;
@@ -114,7 +136,7 @@ export default function PackageGeneratorSimulator() {
       setLoading(true);
       setError(null);
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=2026&compareYear=2025`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=${selectedYear}&compareYear=${selectedYear - 1}`);
         const payload = (res as any)?.data ?? res;
         if (isMounted && payload?.monthlyComparison && Array.isArray(payload.monthlyComparison)) {
           const map: Record<number, MonthlyEfficiencyData> = {};
@@ -133,7 +155,7 @@ export default function PackageGeneratorSimulator() {
                 roomRevenue: Number(activeData.roomRevenue ?? 0),
                 fnbRevenue: Number(activeData.fnbRevenue ?? 0),
                 leisureRevenue: Number(activeData.leisureRevenue ?? 0),
-                year: Number(activeData.year ?? 2026)
+                year: Number(activeData.year ?? selectedYear)
               };
             }
           });
@@ -151,25 +173,84 @@ export default function PackageGeneratorSimulator() {
 
     fetchEfficiencyData();
     return () => { isMounted = false; };
-  }, []);
+  }, [selectedYear]);
 
-  // Selected Month DB Metrics
+  // ==========================================
+  // 2. Fetch Selected Month Exact Metrics (ADR, RevPAR, TRevPAR, 점유율 3분할)
+  // ==========================================
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMonthSummary = async () => {
+      setLoadingSummary(true);
+      try {
+        const start = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+        const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+        const end = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        let res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${start}&endDate=${end}`);
+        let isLy = false;
+        let bYear = selectedYear;
+
+        // If target month has no rooms sold (e.g., future or unclosed month), automatically load the most recent same-month benchmark
+        if (!res?.lodgingStats?.roomsSold || res?.lodgingStats?.roomsSold === 0) {
+          isLy = true;
+          bYear = selectedYear - 1;
+          const lyStart = `${bYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+          const lyLastDay = new Date(bYear, selectedMonth, 0).getDate();
+          const lyEnd = `${bYear}-${String(selectedMonth).padStart(2, '0')}-${String(lyLastDay).padStart(2, '0')}`;
+          res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${lyStart}&endDate=${lyEnd}`);
+        }
+
+        const ls = res?.lodgingStats || {};
+        const sum = res?.summary || {};
+        const effData = monthlyEfficiencyMap[selectedMonth];
+        const trevparWithoutGolf = effData?.trevparWithoutGolf ?? sum.trevPar ?? 0;
+
+        if (isMounted) {
+          setLiveSummary({
+            adr: ls.adr || sum.totalADR || 0,
+            revpar: sum.revPAR || 0,
+            trevpar: sum.trevPar || 0,
+            trevparWithoutGolf,
+            overallOcc: ls.physicalOccRate || sum.totalOcc || 0,
+            weekdayOcc: ls.weekdayOcc || 0,
+            weekendOcc: ls.weekendOcc || 0,
+            weekdayAdr: ls.weekdayAdr || 0,
+            weekendAdr: ls.weekendAdr || 0,
+            roomsSold: ls.roomsSold || sum.totalRooms || 0,
+            totalCapacity: ls.totalCapacity ?? 0,
+            benchmarkYear: bYear,
+            isBenchmarkLy: isLy
+          });
+        }
+      } catch (err) {
+        console.warn('[PackageGeneratorSimulator] fetchMonthSummary error:', err);
+      } finally {
+        if (isMounted) setLoadingSummary(false);
+      }
+    };
+
+    fetchMonthSummary();
+    return () => { isMounted = false; };
+  }, [selectedYear, selectedMonth, monthlyEfficiencyMap]);
+
+  // Selected Month Efficiency Baseline
   const currentMonthData = useMemo(() => {
     return monthlyEfficiencyMap[selectedMonth] || {
       month: selectedMonth,
       monthLabel: `${selectedMonth}월`,
-      revpar: 54019, // 1월 기본 실측 Fallback
-      trevparWithoutGolf: 165670,
-      trevparTotal: 178101,
-      availableRooms: 5425,
-      roomsSold: 1997,
-      netRevenueWithoutGolf: 898758568,
-      roomRevenue: 293051509,
-      fnbRevenue: 352455171,
-      leisureRevenue: 133424771,
-      year: 2026
+      revpar: liveSummary?.revpar ?? 0,
+      trevparWithoutGolf: liveSummary?.trevparWithoutGolf ?? 0,
+      trevparTotal: liveSummary?.trevpar ?? 0,
+      availableRooms: liveSummary?.totalCapacity ?? 0,
+      roomsSold: liveSummary?.roomsSold ?? 0,
+      netRevenueWithoutGolf: 0,
+      roomRevenue: 0,
+      fnbRevenue: 0,
+      leisureRevenue: 0,
+      year: selectedYear
     };
-  }, [monthlyEfficiencyMap, selectedMonth]);
+  }, [monthlyEfficiencyMap, selectedMonth, liveSummary, selectedYear]);
 
   // Selected Room Type Meta
   const selectedRoomType = useMemo(() => {
@@ -178,20 +259,60 @@ export default function PackageGeneratorSimulator() {
 
   // Update targetPackagePrice to start from month's TRevPAR
   useEffect(() => {
-    if (currentMonthData.trevparWithoutGolf > 0) {
-      setTargetPackagePrice(Math.round(currentMonthData.trevparWithoutGolf / 1000) * 1000);
+    const baseTrevpar = liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf;
+    if (baseTrevpar > 0) {
+      setTargetPackagePrice(Math.round(baseTrevpar / 1000) * 1000);
     }
-  }, [selectedMonth, currentMonthData.trevparWithoutGolf]);
+  }, [selectedMonth, liveSummary?.trevparWithoutGolf, currentMonthData.trevparWithoutGolf]);
 
   // Update room deduction when month changes (if auto)
   useEffect(() => {
-    if (isAutoRoomDeduction && currentMonthData.revpar > 0) {
-      setCustomRoomDeduction(Math.round(currentMonthData.revpar / 1000) * 1000);
+    const baseRevpar = liveSummary?.revpar || currentMonthData.revpar;
+    if (isAutoRoomDeduction && baseRevpar > 0) {
+      setCustomRoomDeduction(Math.round(baseRevpar / 1000) * 1000);
     }
-  }, [selectedMonth, currentMonthData.revpar, isAutoRoomDeduction]);
+  }, [selectedMonth, liveSummary?.revpar, currentMonthData.revpar, isAutoRoomDeduction]);
 
   // ==========================================
-  // 2. Core Reverse Calculation Engine (Top-Down)
+  // 3. RM Quota & Safe Allotment Math Engine
+  // ==========================================
+  const allotmentCalculations = useMemo(() => {
+    const totalPhysicalRooms = 175; // SSOT: 리조트 물리 총 객실수 175실 고정
+
+    const wOcc = liveSummary?.weekdayOcc ?? 30.6;
+    const weOcc = liveSummary?.weekendOcc ?? 48.3;
+    const targetOccPct = targetType === 'WEEKDAY' ? wOcc : weOcc;
+    const occTarget = targetOccPct / 100;
+
+    // 수식 1: 일반 객실 방어 수량 = ROUND(175 × OCC_target)
+    const lockedRegularRooms = Math.round(totalPhysicalRooms * occTarget);
+
+    // 수식 2: 패키지 최대 할당 마지노선 = 175 - 일반 객실 방어 수량 = ROUND(175 × (1 - OCC_target))
+    const maxPackageAllotment = Math.max(0, totalPhysicalRooms - lockedRegularRooms);
+
+    const targetLabel = targetType === 'WEEKDAY' ? '주중' : '주말';
+    const targetFullLabel = targetType === 'WEEKDAY' ? '주중(일~목)' : '주말(금~토)';
+    const recommendationText = `해당 월 [${targetLabel}]의 기본 점유율은 ${targetOccPct.toFixed(1)}%이므로, 정가 객실 ${lockedRegularRooms}실을 우선 락(Lock) 걸고, 역산형 패키지는 하루 최대 ${maxPackageAllotment}실까지만 배정하는 것이 안전합니다.`;
+
+    const targetAdr = targetType === 'WEEKDAY' 
+      ? (liveSummary?.weekdayAdr || liveSummary?.adr || 0) 
+      : (liveSummary?.weekendAdr || liveSummary?.adr || 0);
+
+    return {
+      totalPhysicalRooms,
+      targetOccPct,
+      occTarget,
+      lockedRegularRooms,
+      maxPackageAllotment,
+      targetLabel,
+      targetFullLabel,
+      recommendationText,
+      targetAdr
+    };
+  }, [targetType, liveSummary]);
+
+  // ==========================================
+  // 4. Core Reverse Calculation Engine (Top-Down)
   // ==========================================
   const reverseCalculations = useMemo(() => {
     // 1. 총 패키지 판매가
@@ -199,7 +320,7 @@ export default function PackageGeneratorSimulator() {
     
     // 2. 객실 우선 배분액 (실측 RevPAR 방어)
     const roomDeduction = isAutoRoomDeduction
-      ? (Math.round(currentMonthData.revpar / 1000) * 1000)
+      ? (Math.round((liveSummary?.revpar || currentMonthData.revpar) / 1000) * 1000)
       : customRoomDeduction;
 
     // 3. 부대시설 정해진 가용 예산 = 총 판매가 - 객실 배분액
@@ -248,21 +369,22 @@ export default function PackageGeneratorSimulator() {
 
     // 7. 거시적 성과 시뮬레이션
     const physicalRoomCount = 175; // 벨포레 전체 가용 객실수
-    const daysInMonth = new Date(currentMonthData.year, selectedMonth, 0).getDate();
+    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
     const monthlyPkgSoldTotal = dailyPackageSalesRooms * daysInMonth;
 
     const dailyPkgNetRevenue = packageNetPrice * dailyPackageSalesRooms;
     const monthlyPkgNetRevenue = dailyPkgNetRevenue * daysInMonth;
     const packageTrevPOR = totalPkgGross;
 
-    const dailyBaseNonGolfRev = Math.round(currentMonthData.netRevenueWithoutGolf / daysInMonth);
+    const baseNonGolfTrevpar = liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf;
+    const dailyBaseNonGolfRev = Math.round((baseNonGolfTrevpar * physicalRoomCount));
     const incrementalAmenityNetDaily = Math.round((allocatedAmenitiesTotal / 1.1) * dailyPackageSalesRooms);
     const simulatedDailyNonGolfRev = dailyBaseNonGolfRev + incrementalAmenityNetDaily;
     const simulatedTrevPAR = Math.round(simulatedDailyNonGolfRev / physicalRoomCount);
 
-    const trevparUpliftAmount = simulatedTrevPAR - currentMonthData.trevparWithoutGolf;
-    const trevparGrowthRate = currentMonthData.trevparWithoutGolf > 0
-      ? Number(((trevparUpliftAmount / currentMonthData.trevparWithoutGolf) * 100).toFixed(1))
+    const trevparUpliftAmount = simulatedTrevPAR - baseNonGolfTrevpar;
+    const trevparGrowthRate = baseNonGolfTrevpar > 0
+      ? Number(((trevparUpliftAmount / baseNonGolfTrevpar) * 100).toFixed(1))
       : 0;
 
     return {
@@ -297,14 +419,16 @@ export default function PackageGeneratorSimulator() {
     isAutoRoomDeduction,
     customRoomDeduction,
     currentMonthData,
+    liveSummary,
     userItems,
     selectedRoomType,
+    selectedYear,
     selectedMonth,
     dailyPackageSalesRooms
   ]);
 
   // ==========================================
-  // 3. User Item Handlers (동적 생성, 수정, 삭제)
+  // 5. User Item Handlers (동적 생성, 수정, 삭제)
   // ==========================================
   const handleAddUserItem = (category: 'FNB' | 'LEISURE', defaultName?: string) => {
     const newItem: UserCustomItem = {
@@ -358,7 +482,7 @@ export default function PackageGeneratorSimulator() {
 
   const handleResetToSlideDefault = () => {
     setSelectedMonth(1);
-    const baseTrevpar = Math.round((monthlyEfficiencyMap[1]?.trevparWithoutGolf || 165670) / 1000) * 1000;
+    const baseTrevpar = Math.round((liveSummary?.trevparWithoutGolf || monthlyEfficiencyMap[1]?.trevparWithoutGolf || 165670) / 1000) * 1000;
     setTargetPackagePrice(baseTrevpar);
     setIsAutoRoomDeduction(true);
     setCustomRoomDeduction(54000);
@@ -384,7 +508,12 @@ export default function PackageGeneratorSimulator() {
         retailPrice: Math.round(leiPart * 1.25)
       }
     ]);
-    setDailyPackageSalesRooms(50);
+    const initialAllotment = allotmentCalculations.maxPackageAllotment > 0 ? allotmentCalculations.maxPackageAllotment : 0;
+    setDailyPackageSalesRooms(initialAllotment);
+  };
+
+  const handleApplySafeAllotment = () => {
+    setDailyPackageSalesRooms(allotmentCalculations.maxPackageAllotment);
   };
 
   const handleCopySummary = async () => {
@@ -392,30 +521,43 @@ export default function PackageGeneratorSimulator() {
       ? userItems.map(it => `  - [${it.category === 'FNB' ? '식음' : '레저/체험'}] ${it.name} (${it.quantity}개): ${formatCurrency(it.unitPrice * it.quantity)}원 (정상가 ${formatCurrency((it.retailPrice || Math.round(it.unitPrice * 1.25)) * it.quantity)}원)`).join('\n')
       : '  - (등록된 부대시설 항목 없음)';
 
-    const summaryText = `[벨포레 리조트 비수기 역산형 패키지 기획안 (SSOT)]
-■ 적용 월: ${selectedMonth}월 (${currentMonthData.year}년 실적 기준)
+    const summaryText = `[벨포레 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 기획안 (SSOT)]
+■ 적용 대상: ${selectedYear}년 ${selectedMonth}월 (${liveSummary?.isBenchmarkLy ? `${liveSummary.benchmarkYear}년 동월 벤치마크 적용` : `${selectedYear}년 실적 기준`})
+■ 패키지 타겟 구분: ${allotmentCalculations.targetFullLabel}
 ■ 목표 패키지 판매가: ${formatCurrency(reverseCalculations.totalPkgGross)}원 (VAT 포함)
-■ 대상 객실: ${selectedRoomType.name}
+■ 대상 객실: ${selectedRoomType.name} (물리 가용 총 175실)
 
-[1. 역산 배분 구조 (Top-Down Breakdown)]
+[1. 리조트 수익 관리(RM) 안전 할당 쿼터 (Allotment)]
+- 대상 구분 점유율(OCC): ${allotmentCalculations.targetOccPct.toFixed(1)}%
+- 일반 객실 방어 수량: ${allotmentCalculations.lockedRegularRooms}실 (정가 잠식 방지 Lock-in)
+- 패키지 최대 할당 마지노선: 하루 최대 ${allotmentCalculations.maxPackageAllotment}실
+- 권고 사항: "${allotmentCalculations.recommendationText}"
+
+[2. 기준 월 실적 지표 (DB SSOT)]
+- 객실 ADR: ${formatCurrency(liveSummary?.adr)}원 (주중: ${formatCurrency(liveSummary?.weekdayAdr)}원 / 주말: ${formatCurrency(liveSummary?.weekendAdr)}원)
+- 객실 RevPAR: ${formatCurrency(liveSummary?.revpar)}원
+- 순수 리조트 TRevPAR: ${formatCurrency(liveSummary?.trevparWithoutGolf)}원 (전체: ${formatCurrency(liveSummary?.trevpar)}원)
+- 점유율(OCC): 전체 ${(liveSummary?.overallOcc ?? 0).toFixed(1)}% | 주중 ${(liveSummary?.weekdayOcc ?? 0).toFixed(1)}% | 주말 ${(liveSummary?.weekendOcc ?? 0).toFixed(1)}%
+
+[3. 역산 배분 구조 (Top-Down Breakdown)]
 - 총 패키지 판매가: ${formatCurrency(reverseCalculations.totalPkgGross)}원
-- (−) 객실 우선 배분액: ${formatCurrency(reverseCalculations.roomDeduction)}원 (실측 RevPAR ${formatCurrency(currentMonthData.revpar)}원 수준 방어)
+- (−) 객실 우선 배분액: ${formatCurrency(reverseCalculations.roomDeduction)}원 (실측 RevPAR 수준 방어)
 - (=) 부대시설 정해진 가용 예산: ${formatCurrency(reverseCalculations.amenityBudget)}원
 - 부대시설 실제 구성액: ${formatCurrency(reverseCalculations.allocatedAmenitiesTotal)}원 (잔여 마진 버퍼: ${formatCurrency(reverseCalculations.remainingBuffer)}원)
 
-[2. 유저 직접 구성 부대시설 품목 내역]
+[4. 유저 직접 구성 부대시설 품목 내역]
 ${itemListText}
 
-[3. 고객 가치 및 수익성 분석]
+[5. 고객 가치 및 수익성 분석]
 - 고객 체감 정상가 총액: ${formatCurrency(reverseCalculations.totalCustomerRetailValue)}원 상당
 - 고객 체감 할인 혜택: ${formatCurrency(reverseCalculations.customerPerceivedSavings)}원 절약 (${reverseCalculations.customerDiscountRate}% 할인 체감)
 - 리조트 추정 변동비: ${formatCurrency(reverseCalculations.totalVariableCost)}원
 - 1실당 공헌이익(GOPPAR): ${formatCurrency(reverseCalculations.packageContributionMargin)}원 (공헌이익률 ${reverseCalculations.contributionMarginRate}%)
 
-[4. 전사 TRevPAR 기대 성과 (일 ${dailyPackageSalesRooms}실 판매 기준)]
-- 실측 베이스라인 TRevPAR (골프 제외): ${formatCurrency(currentMonthData.trevparWithoutGolf)}원
+[6. 전사 TRevPAR 기대 성과 (일 ${dailyPackageSalesRooms}실 판매 기준)]
+- 실측 베이스라인 TRevPAR (골프 제외): ${formatCurrency(liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf)}원
 - 패키지 도입 후 시뮬레이션 TRevPAR: ${formatCurrency(reverseCalculations.simulatedTrevPAR)}원 (+${formatCurrency(reverseCalculations.trevparUpliftAmount)}원 / +${reverseCalculations.trevparGrowthRate}%)
-- 객실 RevPAR: ${formatCurrency(currentMonthData.revpar)}원 방어선 사수
+- 객실 RevPAR: ${formatCurrency(reverseCalculations.roomDeduction)}원 방어선 사수
 - 월간 패키지 창출 순매출: 약 ${formatCurrency(reverseCalculations.monthlyPkgNetRevenue)}원
 `;
 
@@ -429,7 +571,7 @@ ${itemListText}
   };
 
   // ==========================================
-  // 4. ECharts Configurations
+  // 6. ECharts Configurations
   // ==========================================
   const packagePieOptions = useMemo(() => {
     return {
@@ -469,6 +611,9 @@ ${itemListText}
   }, [reverseCalculations]);
 
   const comparisonBarOptions = useMemo(() => {
+    const baseNonGolfTrevpar = liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf;
+    const baseRevpar = liveSummary?.revpar || currentMonthData.revpar;
+
     return {
       tooltip: {
         trigger: 'axis',
@@ -509,7 +654,7 @@ ${itemListText}
         {
           name: `${selectedMonth}월 실측 베이스라인`,
           type: 'bar',
-          data: [currentMonthData.trevparWithoutGolf, currentMonthData.revpar],
+          data: [baseNonGolfTrevpar, baseRevpar],
           itemStyle: { color: '#94A3B8', borderRadius: [6, 6, 0, 0] },
           barWidth: 40
         },
@@ -529,16 +674,16 @@ ${itemListText}
         }
       ]
     };
-  }, [currentMonthData, reverseCalculations, selectedMonth]);
+  }, [currentMonthData, liveSummary, reverseCalculations, selectedMonth]);
 
   return (
     <div className="space-y-6">
 
       {/* Loading or Error State */}
-      {loading && (
+      {(loading || loadingSummary) && (
         <div className="bg-teal-50 border border-teal-200 text-teal-800 text-xs px-4 py-2.5 rounded-2xl flex items-center gap-2 font-bold shadow-2xs">
           <span className="animate-pulse">📊</span>
-          <span>V6 데이터 마트 실측 월별 효율 지표를 동기화하고 있습니다...</span>
+          <span>V6 데이터 마트 실측 월별 ADR·RevPAR·TRevPAR 및 주중/주말 점유율을 실시간 동기화하고 있습니다...</span>
         </div>
       )}
       {error && (
@@ -548,49 +693,68 @@ ${itemListText}
       )}
 
       {/* ============================================================== */}
-      {/* 1. Header Banner & Monthly Selection                          */}
+      {/* 1. Header Banner & Target Year/Month Selection                */}
       {/* ============================================================== */}
       <div className="bg-gradient-to-r from-teal-900 via-emerald-950 to-slate-900 rounded-[28px] p-6 lg:p-8 text-white relative overflow-hidden shadow-xl border border-teal-800/40">
         <div className="absolute right-0 top-0 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/30 flex items-center gap-1.5 uppercase">
                 <Sparkles size={13} />
-                TOP-DOWN REVERSE PACKAGE ARCHITECTURE (V6 SSOT)
+                RM & REVERSE ALLOTMENT ENGINE (V6 SSOT)
               </span>
-              <span className="text-xs text-slate-300 font-medium">
-                가용객실 175실 · 지갑 점유율 극대화
+              <span className="text-xs text-slate-300 font-medium bg-white/10 px-2.5 py-0.5 rounded-full">
+                물리 가용 객실수 175실 고정 · 일반 정가 판매 잠식(Cannibalization) 방지
               </span>
             </div>
             <h2 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-2.5 break-keep">
               <Package className="text-teal-400 shrink-0" size={26} />
-              비수기 역산형 패키지 기획 & TRevPAR 시뮬레이터
+              리조트 수익 관리(RM) 및 역산형 패키지 쿼터 시뮬레이터
             </h2>
             <p className="text-slate-300 text-xs lg:text-sm mt-1.5 max-w-3xl leading-relaxed">
-              <strong>목표 패키지 판매가</strong>에서 <strong>실측 RevPAR 방어액</strong>을 선차감한 후, 
-              <strong>정해진 부대시설 예산 안에서 유저가 식음과 레저·체험 품목을 직접 설계</strong>하여 
-              고객 체감 가치와 리조트의 실질 <strong>GOPPAR(객실당 영업이익)</strong>를 극대화합니다.
+              분석 대상 월의 <strong>ADR, RevPAR, TRevPAR 및 점유율(전체/주중/주말)</strong>을 조회하여, 
+              일반 정가 판매를 방어하는 <strong>안전 판매 마지노선(Allotment)</strong>을 자동 제안받고 
+              <strong>정해진 부대시설 예산 안에서 식음과 레저·체험 품목을 직접 설계</strong>합니다.
             </p>
           </div>
 
-          {/* Month Selector for Low Seasons */}
+          {/* Target Year & Month Selector */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-900/90 p-2.5 rounded-2xl border border-white/10 shrink-0 shadow-inner">
-            <span className="text-xs font-bold text-slate-400 px-2 flex items-center gap-1.5">
-              <Calendar size={14} className="text-teal-400" />
-              타깃 월 선택:
+            {/* Year Selector */}
+            <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+              {[2026, 2025].map(y => (
+                <button
+                  key={y}
+                  onClick={() => setSelectedYear(y)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedYear === y
+                      ? 'bg-teal-500 text-slate-950 font-black shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {y}년
+                </button>
+              ))}
+            </div>
+
+            <span className="text-xs font-bold text-slate-400 px-1 flex items-center gap-1">
+              <Calendar size={13} className="text-teal-400" />
+              월:
             </span>
+
+            {/* Quick Season Buttons */}
             <div className="flex items-center gap-1">
               {[
-                { m: 1, label: '1월', sub: '겨울 비수기' },
-                { m: 2, label: '2월', sub: '연중 최저점' },
-                { m: 3, label: '3월', sub: '봄 개장기' },
-                { m: 12, label: '12월', sub: '동계 진입기' }
+                { m: 1, label: '1월', sub: '겨울비수기' },
+                { m: 2, label: '2월', sub: '연중최저' },
+                { m: 3, label: '3월', sub: '봄개장' },
+                { m: 12, label: '12월', sub: '동계진입' }
               ].map(item => (
                 <button
                   key={item.m}
                   onClick={() => setSelectedMonth(item.m)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedMonth === item.m
                       ? 'bg-teal-500 text-slate-950 font-black shadow-md'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -602,6 +766,7 @@ ${itemListText}
               ))}
             </div>
 
+            {/* All Months Dropdown */}
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -617,48 +782,329 @@ ${itemListText}
       </div>
 
       {/* ============================================================== */}
-      {/* 2. SSOT 실측 기준선 (Database Verified Live Baseline)          */}
+      {/* 2. 기준 월 실적 지표 출력 & 점유율(OCC) 3분할 콘솔 (Uniform)   */}
       {/* ============================================================== */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 text-xs shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <ShieldCheck size={20} className="text-teal-600 shrink-0" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-slate-800 text-sm">
-                {selectedMonth}월 실측 베이스라인 (DB API SSOT):
-              </span>
-              <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
-                0-Variance 검증 완료
-              </span>
-            </div>
-            <p className="text-slate-600 mt-0.5">
-              순수 리조트 TRevPAR(골프 제외) <strong className="text-teal-800 font-extrabold">{formatCurrency(currentMonthData.trevparWithoutGolf)}원</strong> · 
-              실측 객실 RevPAR <strong className="text-indigo-900 font-extrabold">{formatCurrency(currentMonthData.revpar)}원</strong> · 
-              판매객실 {formatCurrency(currentMonthData.roomsSold)}실 (총 가용 {formatCurrency(currentMonthData.availableRooms)}실)
-            </p>
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={18} className="text-teal-600 shrink-0" />
+            <span className="font-extrabold text-slate-800 text-sm">
+              {selectedYear}년 {selectedMonth}월 기본 실적 지표 & 점유율(OCC) 3분할
+            </span>
+            <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
+              {liveSummary?.isBenchmarkLy ? `${liveSummary.benchmarkYear}년 동월 벤치마크 적용` : '실측 DB SSOT'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetToSlideDefault}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-bold transition-all text-xs cursor-pointer shadow-2xs"
+            >
+              <RotateCcw size={13} />
+              기본값 초기화
+            </button>
+            <button
+              onClick={handleCopySummary}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-700 font-bold transition-all text-xs cursor-pointer shadow-xs"
+            >
+              {copiedNotification ? <Check size={13} className="text-amber-300" /> : <Copy size={13} />}
+              {copiedNotification ? '클립보드 복사 완료!' : '기획안 요약 복사'}
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleResetToSlideDefault}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-bold transition-all text-xs cursor-pointer shadow-2xs"
-          >
-            <RotateCcw size={13} />
-            기본값 초기화
-          </button>
-          <button
-            onClick={handleCopySummary}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-700 font-bold transition-all text-xs cursor-pointer shadow-xs"
-          >
-            {copiedNotification ? <Check size={13} className="text-amber-300" /> : <Copy size={13} />}
-            {copiedNotification ? '클립보드 복사 완료!' : '기획안 요약 복사'}
-          </button>
+        {/* Uniform 4 KPI Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+          
+          {/* Card 1: ADR */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
+                <span>ADR (객실 평균 판매 단가)</span>
+                <Hotel size={16} className="text-indigo-600" />
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tight">
+                {formatCurrency(liveSummary?.adr)}
+                <span className="text-xs font-semibold text-slate-500 ml-1">원</span>
+              </div>
+            </div>
+            <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600">
+              <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayAdr)}원</strong></span>
+              <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendAdr)}원</strong></span>
+            </div>
+          </div>
+
+          {/* Card 2: RevPAR */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
+                <span>RevPAR (가용객실당 객실매출)</span>
+                <ShieldCheck size={16} className="text-teal-600" />
+              </div>
+              <div className="text-2xl font-black text-teal-800 tracking-tight">
+                {formatCurrency(liveSummary?.revpar)}
+                <span className="text-xs font-semibold text-slate-500 ml-1">원</span>
+              </div>
+            </div>
+            <div className="border-t border-slate-100 pt-2.5 mt-2 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>최소 방어선 (175실 기준)</span>
+              <span className="text-[10px] bg-teal-50 text-teal-700 font-bold px-1.5 py-0.5 rounded">
+                선차감 기준
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: TRevPAR */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
+                <span>TRevPAR (가용객실당 총매출)</span>
+                <DollarSign size={16} className="text-emerald-600" />
+              </div>
+              <div className="text-2xl font-black text-emerald-800 tracking-tight">
+                {formatCurrency(liveSummary?.trevparWithoutGolf || liveSummary?.trevpar)}
+                <span className="text-xs font-semibold text-slate-500 ml-1">원</span>
+              </div>
+            </div>
+            <div className="border-t border-slate-100 pt-2.5 mt-2 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>순수 리조트 (골프 제외)</span>
+              <span className="text-[10px] text-slate-400">
+                골프포함 {formatCurrency(liveSummary?.trevpar)}원
+              </span>
+            </div>
+          </div>
+
+          {/* Card 4: 점유율 (OCC) 3분할 */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
+                <span>점유율 (OCC) 3분할</span>
+                <TrendingUp size={16} className="text-teal-600" />
+              </div>
+              <div className="grid grid-cols-3 gap-1 text-center py-0.5">
+                <div className="bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                  <div className="text-[10px] text-slate-400 font-bold">전체</div>
+                  <div className="text-sm font-black text-slate-900">
+                    {(liveSummary?.overallOcc ?? 0).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="bg-teal-50/70 p-1.5 rounded-xl border border-teal-100">
+                  <div className="text-[10px] text-teal-700 font-bold">주중</div>
+                  <div className="text-sm font-black text-teal-800">
+                    {(liveSummary?.weekdayOcc ?? 0).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="bg-indigo-50/70 p-1.5 rounded-xl border border-indigo-100">
+                  <div className="text-[10px] text-indigo-700 font-bold">주말</div>
+                  <div className="text-sm font-black text-indigo-900">
+                    {(liveSummary?.weekendOcc ?? 0).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-slate-100 pt-2 mt-1 text-[10px] text-slate-500 text-center">
+              가용 총 175실 기준 물리 점유율 (SSOT)
+            </div>
+          </div>
+
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* 3. The 3-Step Top-Down Reverse Allocation Console             */}
+      {/* 3. 패키지 타겟 구분 선택 & 안전 판매 마지노선(Allotment) 제안   */}
+      {/* ============================================================== */}
+      <div className="bg-gradient-to-br from-white via-teal-50/30 to-indigo-50/30 rounded-[28px] border-2 border-teal-600/30 p-6 shadow-sm space-y-5">
+        
+        {/* Header & Target Selector */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="bg-teal-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                RM Quota Engine
+              </span>
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Lock size={18} className="text-teal-600" />
+                역산형 패키지 타겟 구분 & 안전 판매 마지노선(Allotment) 자동 산출
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 mt-1">
+              생성하려는 패키지 타깃을 선택하면, DB에서 비교 벤치마크 점유율(OCC<sub>target</sub>)을 자동 로드하여 
+              <strong>정가 잠식 방어 객실 수</strong>와 <strong>하루 최대 안전 배정 마지노선</strong>을 계산합니다.
+            </p>
+          </div>
+
+          {/* Toggle: 주중용 vs 주말용 */}
+          <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-2xl shrink-0 shadow-inner">
+            <button
+              onClick={() => setTargetType('WEEKDAY')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                targetType === 'WEEKDAY'
+                  ? 'bg-teal-500 text-slate-950 shadow-md scale-102'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Sun size={15} />
+              <span>[주중용] 패키지 (일~목)</span>
+              <span className="text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded-md">
+                {(liveSummary?.weekdayOcc ?? 30.6).toFixed(1)}%
+              </span>
+            </button>
+
+            <button
+              onClick={() => setTargetType('WEEKEND')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                targetType === 'WEEKEND'
+                  ? 'bg-indigo-600 text-white shadow-md scale-102'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Moon size={15} />
+              <span>[주말용] 패키지 (금~토)</span>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md">
+                {(liveSummary?.weekendOcc ?? 48.3).toFixed(1)}%
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Quota Metric Visual Box */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          
+          {/* Card A: 비교 벤치마크 점유율 */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 block mb-1">
+                비교 벤치마크 점유율 (OCC<sub>target</sub>)
+              </span>
+              <div className="text-2xl font-black text-slate-900">
+                {allotmentCalculations.targetOccPct.toFixed(1)}%
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {liveSummary?.isBenchmarkLy
+                  ? `${liveSummary.benchmarkYear}년 ${selectedMonth}월 [${allotmentCalculations.targetLabel}] 전년 실측`
+                  : `${selectedYear}년 ${selectedMonth}월 [${allotmentCalculations.targetLabel}] 당해 실측`}
+              </p>
+            </div>
+            <div className="border-t border-slate-100 pt-2 mt-2 text-[10px] text-slate-400">
+              해당 구분 평균 판매단가: {formatCurrency(allotmentCalculations.targetAdr)}원
+            </div>
+          </div>
+
+          {/* Card B: 일반 객실 방어 수량 */}
+          <div className="bg-white p-4 rounded-2xl border-2 border-indigo-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-indigo-900">
+                  일반 객실 방어 수량 (정가 Lock-in)
+                </span>
+                <Lock size={14} className="text-indigo-600" />
+              </div>
+              <div className="text-2xl font-black text-indigo-950 mt-1">
+                {allotmentCalculations.lockedRegularRooms}
+                <span className="text-xs font-semibold text-slate-500 ml-1">실</span>
+              </div>
+              <p className="text-[11px] text-indigo-800 font-medium mt-1">
+                수식: ROUND(175 × {allotmentCalculations.targetOccPct.toFixed(1)}%)
+              </p>
+            </div>
+            <div className="border-t border-indigo-50 pt-2 mt-2 text-[10px] text-indigo-700 font-bold">
+              🔒 정가 판매 잠식(Cannibalization) 전면 차단
+            </div>
+          </div>
+
+          {/* Card C: 패키지 최대 할당 마지노선 */}
+          <div className="bg-teal-50/70 p-4 rounded-2xl border-2 border-teal-500 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-teal-900">
+                  패키지 최대 할당 마지노선 (Allotment)
+                </span>
+                <CheckCircle2 size={15} className="text-teal-600" />
+              </div>
+              <div className="text-2xl font-black text-teal-950 mt-1">
+                하루 최대 {allotmentCalculations.maxPackageAllotment}
+                <span className="text-xs font-semibold text-slate-500 ml-1">실</span>
+              </div>
+              <p className="text-[11px] text-teal-800 font-medium mt-1">
+                수식: 175실 − {allotmentCalculations.lockedRegularRooms}실
+              </p>
+            </div>
+            <div className="border-t border-teal-200 pt-2 mt-2 text-[10px] text-teal-800 font-extrabold flex items-center justify-between">
+              <span>🎯 안전 쿼터 준수</span>
+              <button
+                onClick={handleApplySafeAllotment}
+                className="text-[10px] bg-teal-600 text-white px-2 py-0.5 rounded-lg hover:bg-teal-700 transition-all cursor-pointer font-bold"
+                title="시뮬레이터 일일 판매량에 이 수량을 즉시 적용합니다"
+              >
+                마지노선 적용
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Stacked Visual Bar (175 Rooms SSOT) */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-slate-600">
+              전체 객실 175실 쿼터 배분 구조:
+            </span>
+            <div className="flex items-center gap-4 text-[11px]">
+              <span className="flex items-center gap-1.5 text-indigo-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span>
+                일반 정가 방어 {allotmentCalculations.lockedRegularRooms}실 ({allotmentCalculations.targetOccPct.toFixed(1)}%)
+              </span>
+              <span className="flex items-center gap-1.5 text-teal-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block"></span>
+                패키지 마지노선 {allotmentCalculations.maxPackageAllotment}실 ({(100 - allotmentCalculations.targetOccPct).toFixed(1)}%)
+              </span>
+            </div>
+          </div>
+
+          <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden flex shadow-inner">
+            <div
+              className="bg-indigo-600 h-full transition-all duration-300"
+              style={{ width: `${Math.min(100, (allotmentCalculations.lockedRegularRooms / 175) * 100)}%` }}
+              title={`일반 객실 방어: ${allotmentCalculations.lockedRegularRooms}실`}
+            ></div>
+            <div
+              className="bg-teal-500 h-full transition-all duration-300"
+              style={{ width: `${Math.min(100, (allotmentCalculations.maxPackageAllotment / 175) * 100)}%` }}
+              title={`패키지 최대 할당 마지노선: ${allotmentCalculations.maxPackageAllotment}실`}
+            ></div>
+          </div>
+        </div>
+
+        {/* Official Recommendation Banner */}
+        <div className="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-teal-700/50">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center shrink-0">
+              <Award size={20} className="text-teal-300" />
+            </div>
+            <div>
+              <span className="text-[10px] text-teal-300 font-bold uppercase tracking-wider block">
+                RM POLICY ADVISORY (권고문구)
+              </span>
+              <p className="text-xs sm:text-sm font-black text-white leading-relaxed mt-0.5">
+                "{allotmentCalculations.recommendationText}"
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleApplySafeAllotment}
+            className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-black text-xs hover:bg-teal-400 transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            <span>일 {allotmentCalculations.maxPackageAllotment}실로 시뮬레이션 동기화</span>
+            <ArrowRight size={13} />
+          </button>
+        </div>
+
+      </div>
+
+      {/* ============================================================== */}
+      {/* 4. The 3-Step Top-Down Reverse Allocation Console             */}
       {/* ============================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
@@ -676,10 +1122,10 @@ ${itemListText}
             {/* TRevPAR Baseline Callout */}
             <div className="flex items-center justify-between text-[11px] text-slate-600 mb-2 bg-teal-50/70 p-2 rounded-xl border border-teal-100">
               <span>
-                {selectedMonth}월 실측 TRevPAR: <strong>{formatCurrency(currentMonthData.trevparWithoutGolf)}원</strong>
+                {selectedMonth}월 실측 TRevPAR: <strong>{formatCurrency(liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf)}원</strong>
               </span>
               <button
-                onClick={() => setTargetPackagePrice(Math.round(currentMonthData.trevparWithoutGolf / 1000) * 1000)}
+                onClick={() => setTargetPackagePrice(Math.round((liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf) / 1000) * 1000)}
                 className="text-[10px] font-bold text-teal-800 bg-white px-2 py-0.5 rounded-lg border border-teal-200 hover:bg-teal-100 transition-all cursor-pointer shadow-2xs"
                 title="실측 TRevPAR 금액으로 즉시 복귀"
               >
@@ -706,7 +1152,7 @@ ${itemListText}
             </div>
 
             <p className="text-[10px] text-slate-500 mb-2.5">
-              실측 TRevPAR({formatCurrency(currentMonthData.trevparWithoutGolf)}원)에서 시작하여 원하는 목표 단가로 자유롭게 변경합니다.
+              실측 TRevPAR({formatCurrency(liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf)}원)에서 시작하여 원하는 목표 단가로 자유롭게 변경합니다.
             </p>
 
             {/* Dynamic Buttons Starting from TRevPAR */}
@@ -719,7 +1165,8 @@ ${itemListText}
                 { label: '+80%', mult: 1.8 },
                 { label: '+100%', mult: 2.0 }
               ].map(opt => {
-                const calculatedPrice = Math.round((currentMonthData.trevparWithoutGolf * opt.mult) / 1000) * 1000;
+                const baseTrevpar = liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf;
+                const calculatedPrice = Math.round((baseTrevpar * opt.mult) / 1000) * 1000;
                 const isSelected = Math.abs(targetPackagePrice - calculatedPrice) < 1000;
 
                 return (
@@ -741,7 +1188,7 @@ ${itemListText}
             {/* Slider */}
             <input
               type="range"
-              min={Math.max(50000, Math.round(currentMonthData.revpar / 1000) * 1000)}
+              min={Math.max(50000, Math.round((liveSummary?.revpar || currentMonthData.revpar) / 1000) * 1000)}
               max={500000}
               step={2000}
               value={targetPackagePrice}
@@ -786,7 +1233,7 @@ ${itemListText}
               <span className="text-sm font-semibold text-slate-500 ml-1">원</span>
             </div>
             <p className="text-[11px] text-slate-500 mb-3">
-              {selectedMonth}월 실측 RevPAR({formatCurrency(currentMonthData.revpar)}원)를 최소 방어 요금으로 선차감합니다.
+              {selectedMonth}월 실측 RevPAR({formatCurrency(liveSummary?.revpar || currentMonthData.revpar)}원)를 최소 방어 요금으로 선차감합니다.
             </p>
 
             {/* Toggle: Auto vs Manual */}
@@ -819,7 +1266,7 @@ ${itemListText}
                 <input
                   type="range"
                   min={30000}
-                  max={120000}
+                  max={150000}
                   step={2000}
                   value={customRoomDeduction}
                   onChange={(e) => setCustomRoomDeduction(Number(e.target.value))}
@@ -902,7 +1349,7 @@ ${itemListText}
       </div>
 
       {/* ============================================================== */}
-      {/* 4. Step 04: 유저가 직접 만드는 부대시설(식음/레저) 구성기       */}
+      {/* 5. Step 04: 유저가 직접 만드는 부대시설(식음/레저) 구성기       */}
       {/* ============================================================== */}
       <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-5">
         
@@ -980,7 +1427,7 @@ ${itemListText}
           </div>
         </div>
 
-        {/* Quick Name Suggestions Chips (명칭만 빠르게 입력할 수 있도록 지원) */}
+        {/* Quick Name Suggestions Chips */}
         <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="font-bold text-slate-600 flex items-center gap-1.5 text-[11px]">
@@ -1143,7 +1590,7 @@ ${itemListText}
       </div>
 
       {/* ============================================================== */}
-      {/* 5. Step 05: Financial & Value Analysis (고객 가치 & GOPPAR)   */}
+      {/* 6. Step 05: Financial & Value Analysis (고객 가치 & GOPPAR)   */}
       {/* ============================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
@@ -1229,13 +1676,13 @@ ${itemListText}
       </div>
 
       {/* ============================================================== */}
-      {/* 6. Step 06: 전사 TRevPAR & 거시적 시뮬레이션 성과               */}
+      {/* 7. Step 06: 전사 TRevPAR & 거시적 시뮬레이션 성과               */}
       {/* ============================================================== */}
       <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+              <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Step 05
               </span>
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
@@ -1248,74 +1695,97 @@ ${itemListText}
             </p>
           </div>
 
-          {/* Volume Slider Control */}
-          <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
-            <span className="text-xs font-bold text-slate-600">일일 목표 패키지 판매량:</span>
-            <input
-              type="range"
-              min={10}
-              max={120}
-              step={5}
-              value={dailyPackageSalesRooms}
-              onChange={(e) => setDailyPackageSalesRooms(Number(e.target.value))}
-              className="accent-teal-600 cursor-pointer w-28"
-            />
-            <span className="text-sm font-black text-teal-800 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-              일 {dailyPackageSalesRooms}실
-            </span>
-            <span className="text-[10px] text-slate-400">
-              (월 {formatCurrency(reverseCalculations.monthlyPkgSoldTotal)}실)
-            </span>
+          {/* Volume Slider Control with Allotment Warning */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-600">일일 목표 패키지 판매량:</span>
+              <input
+                type="range"
+                min={5}
+                max={175}
+                step={5}
+                value={dailyPackageSalesRooms}
+                onChange={(e) => setDailyPackageSalesRooms(Number(e.target.value))}
+                className="accent-teal-600 cursor-pointer w-28"
+              />
+              <span className="text-sm font-black text-teal-800 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
+                일 {dailyPackageSalesRooms}실
+              </span>
+              <span className="text-[10px] text-slate-400">
+                (월 {formatCurrency(reverseCalculations.monthlyPkgSoldTotal)}실)
+              </span>
+            </div>
+
+            {/* Warning or Success Badge */}
+            {dailyPackageSalesRooms > allotmentCalculations.maxPackageAllotment ? (
+              <span className="text-[10px] bg-amber-100 text-amber-900 font-extrabold px-2 py-1 rounded-xl border border-amber-300 flex items-center gap-1">
+                <AlertTriangle size={12} className="text-amber-700" />
+                안전 마지노선({allotmentCalculations.maxPackageAllotment}실) 초과 (잠식 위험)
+              </span>
+            ) : (
+              <span className="text-[10px] bg-teal-100 text-teal-900 font-extrabold px-2 py-1 rounded-xl border border-teal-300 flex items-center gap-1">
+                <CheckCircle2 size={12} className="text-teal-700" />
+                안전 마지노선({allotmentCalculations.maxPackageAllotment}실) 준수
+              </span>
+            )}
           </div>
         </div>
 
         {/* 4 Key Macro Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <span className="text-[11px] text-slate-500 font-bold block mb-1">
-              시뮬레이션 TRevPAR (골프 제외)
-            </span>
-            <div className="text-2xl font-black text-teal-700">
-              {formatCurrency(reverseCalculations.simulatedTrevPAR)}원
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <span className="text-[11px] text-slate-500 font-bold block mb-1">
+                시뮬레이션 TRevPAR (골프 제외)
+              </span>
+              <div className="text-2xl font-black text-teal-700 tracking-tight">
+                {formatCurrency(reverseCalculations.simulatedTrevPAR)}원
+              </div>
             </div>
-            <div className="text-[10px] text-teal-800 font-bold mt-1">
-              실측 베이스라인({formatCurrency(currentMonthData.trevparWithoutGolf)}원) 대비 
+            <div className="border-t border-slate-200/80 pt-2.5 mt-2 text-[10px] text-teal-800 font-bold">
+              실측 베이스라인({formatCurrency(liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf)}원) 대비 
               <strong className="ml-1 text-emerald-600">+{reverseCalculations.trevparGrowthRate}%</strong>
             </div>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <span className="text-[11px] text-slate-500 font-bold block mb-1">
-              객실 RevPAR 방어 수준
-            </span>
-            <div className="text-2xl font-black text-indigo-900">
-              {formatCurrency(reverseCalculations.roomDeduction)}원
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <span className="text-[11px] text-slate-500 font-bold block mb-1">
+                객실 RevPAR 방어 수준
+              </span>
+              <div className="text-2xl font-black text-indigo-900 tracking-tight">
+                {formatCurrency(reverseCalculations.roomDeduction)}원
+              </div>
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">
-              실측 RevPAR({formatCurrency(currentMonthData.revpar)}원) 100% 방어선 유지
+            <div className="border-t border-slate-200/80 pt-2.5 mt-2 text-[10px] text-slate-500">
+              실측 RevPAR({formatCurrency(liveSummary?.revpar || currentMonthData.revpar)}원) 100% 방어선 유지
             </div>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <span className="text-[11px] text-slate-500 font-bold block mb-1">
-              패키지 1실 객단가 (TRevPOR)
-            </span>
-            <div className="text-2xl font-black text-slate-900">
-              {formatCurrency(reverseCalculations.packageTrevPOR)}원
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <span className="text-[11px] text-slate-500 font-bold block mb-1">
+                패키지 1실 객단가 (TRevPOR)
+              </span>
+              <div className="text-2xl font-black text-slate-900 tracking-tight">
+                {formatCurrency(reverseCalculations.packageTrevPOR)}원
+              </div>
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">
+            <div className="border-t border-slate-200/80 pt-2.5 mt-2 text-[10px] text-slate-500">
               단품 투숙객 대비 지갑 점유율 락인
             </div>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <span className="text-[11px] text-slate-500 font-bold block mb-1">
-              월간 패키지 창출 순매출
-            </span>
-            <div className="text-2xl font-black text-emerald-700">
-              약 {Math.round(reverseCalculations.monthlyPkgNetRevenue / 100000000).toLocaleString()}억 {(Math.round((reverseCalculations.monthlyPkgNetRevenue % 100000000) / 10000)).toLocaleString()}만
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between h-full min-h-[145px]">
+            <div>
+              <span className="text-[11px] text-slate-500 font-bold block mb-1">
+                월간 패키지 창출 순매출
+              </span>
+              <div className="text-2xl font-black text-emerald-700 tracking-tight">
+                약 {Math.round(reverseCalculations.monthlyPkgNetRevenue / 100000000).toLocaleString()}억 {(Math.round((reverseCalculations.monthlyPkgNetRevenue % 100000000) / 10000)).toLocaleString()}만
+              </div>
             </div>
-            <div className="text-[10px] text-emerald-800 font-bold mt-1">
+            <div className="border-t border-slate-200/80 pt-2.5 mt-2 text-[10px] text-emerald-800 font-bold">
               순수 리조트 비수기 매출 견인
             </div>
           </div>

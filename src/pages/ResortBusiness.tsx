@@ -60,6 +60,8 @@ function getLyDateStr(dateStr: string): string {
 export default function ResortBusiness() {
   const [data, setData] = useState<any>(null);
   const [lyData, setLyData] = useState<any>(null);
+  const [physicalRoomMaster, setPhysicalRoomMaster] = useState<any>(null);
+  const [lyPhysicalRoomMaster, setLyPhysicalRoomMaster] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { startDate, endDate, isRange: isGlobalRange } = useDate();
   const [showLyCompareTable, setShowLyCompareTable] = useState<boolean>(true);
@@ -156,18 +158,23 @@ export default function ResortBusiness() {
           ? `startDate=${lyStartStr}&endDate=${lyEndStr}&_t=${Date.now()}`
           : `date=${lyStartStr}&_t=${Date.now()}`;
           
-        const [overviewRes, channelRes, rateRes, lyOverviewRes, lyChannelRes, lyRateRes] = await Promise.all([
+        const [overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${lyQueryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`).catch(() => ({ data: [] }))
+          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${lyQueryParams}`).catch(() => null)
         ]);
 
         const rawOverview = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes.data || overviewRes);
         const rawChannels = channelRes.data || channelRes;
         const rawRates = rateRes.data || rateRes;
+
+        const curPhysicalMaster = orgRes?.data?.physicalRoomMaster || orgRes?.physicalRoomMaster || null;
+        setPhysicalRoomMaster(curPhysicalMaster);
 
         const transformed = transformResortData({
           ...rawOverview,
@@ -178,21 +185,25 @@ export default function ResortBusiness() {
 
         setData(transformed);
 
-        if (lyOverviewRes) {
-          const rawLyOverview = (lyOverviewRes?.summary || lyOverviewRes?.gridData) ? lyOverviewRes : (lyOverviewRes.data || lyOverviewRes);
+        if (lyOverviewRes || lyOrgRes) {
+          const rawLyOverview = (lyOverviewRes?.summary || lyOverviewRes?.gridData) ? lyOverviewRes : (lyOverviewRes?.data || lyOverviewRes || {});
           const rawLyChannels = lyChannelRes?.data || lyChannelRes;
           const rawLyRates = lyRateRes?.data || lyRateRes;
 
+          const lyPhysicalMaster = lyOrgRes?.data?.physicalRoomMaster || lyOrgRes?.physicalRoomMaster || null;
+          setLyPhysicalRoomMaster(lyPhysicalMaster);
+
           const lyTransformed = transformResortData({
             ...rawLyOverview,
-            matrix: Array.isArray(rawLyOverview.gridData) ? rawLyOverview.gridData : [],
-            salesByChannel: Array.isArray(rawLyChannels) ? rawLyChannels : (rawLyChannels.channels || rawLyChannels.data || []),
-            salesBySegment: Array.isArray(rawLyRates) ? rawLyRates : (rawLyRates.rates || rawLyRates.data || [])
+            matrix: Array.isArray(rawLyOverview?.gridData) ? rawLyOverview.gridData : [],
+            salesByChannel: Array.isArray(rawLyChannels) ? rawLyChannels : (rawLyChannels?.channels || rawLyChannels?.data || []),
+            salesBySegment: Array.isArray(rawLyRates) ? rawLyRates : (rawLyRates?.rates || rawLyRates?.data || [])
           }, caps);
 
           setLyData(lyTransformed);
         } else {
           setLyData(null);
+          setLyPhysicalRoomMaster(null);
         }
       } catch (err) {
         console.error('Error fetching resort data:', err);
@@ -231,6 +242,10 @@ export default function ResortBusiness() {
   const lodgingStats = data?.lodgingStats || { revenue: 0, roomsSold: 0, adr: 0, totalCapacity: 0 };
   const lyStats = lyData?.lodgingStats || null;
 
+  // 🏛️ 건축학적 물리 가동 객실 인벤토리 모수 (SSOT - /api/v6/dashboard/revenue-by-org)
+  const curPhysicalMetrics = physicalRoomMaster?.metrics;
+  const lyPhysicalMetrics = lyPhysicalRoomMaster?.metrics;
+
   // 🌟 전년 동일기간 비교 핵심 지표 (Zero-Fake, 공식 마트 실측 바인딩)
   // 1. 객실 총 매출
   const revCurrent = lodgingStats.revenue;
@@ -242,20 +257,66 @@ export default function ResortBusiness() {
     ? lodgingStats.revenueGrowth
     : (revLy > 0 ? Number(((revDiff / revLy) * 100).toFixed(1)) : null);
 
-  // 2. 판매 건수 (계약)
-  const roomsCurrent = lodgingStats.roomsSold;
-  const roomsLy = (lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0)
-    ? lodgingStats.lyRoomsSold
-    : (lyStats?.roomsSold || 0);
+  // 2. 판매 건수 (계약) - physicalRoomMaster.metrics.totalRoomsSold 우선 바인딩
+  const roomsCurrent = curPhysicalMetrics?.totalRoomsSold ?? lodgingStats.roomsSold;
+  const roomsLy = curPhysicalMetrics?.totalRoomsSold !== undefined && lyPhysicalMetrics?.totalRoomsSold !== undefined
+    ? lyPhysicalMetrics.totalRoomsSold
+    : ((lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0)
+      ? lodgingStats.lyRoomsSold
+      : (lyStats?.roomsSold || 0));
   const roomsDiff = roomsLy > 0 ? roomsCurrent - roomsLy : 0;
-  const roomsGrowth = lodgingStats.roomsGrowth !== undefined
-    ? lodgingStats.roomsGrowth
-    : (roomsLy > 0 ? Number(((roomsDiff / roomsLy) * 100).toFixed(1)) : null);
+  const roomsGrowth = curPhysicalMetrics?.totalRoomsSold !== undefined && lyPhysicalMetrics?.totalRoomsSold !== undefined && roomsLy > 0
+    ? Number((((roomsCurrent - roomsLy) / roomsLy) * 100).toFixed(1))
+    : (lodgingStats.roomsGrowth !== undefined
+      ? lodgingStats.roomsGrowth
+      : (roomsLy > 0 ? Number(((roomsDiff / roomsLy) * 100).toFixed(1)) : null));
 
-  // 3. 실운영 점유실 (물리) & 점유율
-  const occCurrent = lodgingStats.physicalOccRate;
-  const occLy = lyStats?.physicalOccRate !== undefined ? lyStats.physicalOccRate : null;
-  const occDiff = occCurrent !== undefined && occLy !== null ? Number((occCurrent - occLy).toFixed(1)) : null;
+  // 3. 실운영 점유실 (물리) & 점유율 - physicalRoomMaster.metrics 우선 바인딩 (167실, 95.4%)
+  const summary = data?.summary || {};
+  const totalBaseRooms = curPhysicalMetrics?.denominatorUnits ?? Number(summary.totalPhysicalKeys || summary.totalRoomInventory || lodgingStats.totalCapacity || 0);
+
+  const connectingSets = curPhysicalMetrics?.totalRoomsSold !== undefined && curPhysicalMetrics?.physicalOccupiedUnits !== undefined
+    ? Math.max(0, curPhysicalMetrics.physicalOccupiedUnits - curPhysicalMetrics.totalRoomsSold)
+    : Math.max(0, Math.round(Number(summary.connectingPhysicalRooms || 0) / 2));
+  const connectingPhysicalRooms = curPhysicalMetrics ? connectingSets * 2 : Number(summary.connectingPhysicalRooms || 0);
+  const standardPhysicalRooms = curPhysicalMetrics
+    ? Math.max(0, (curPhysicalMetrics.physicalOccupiedUnits ?? 0) - connectingPhysicalRooms)
+    : Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
+  const totalPhysicalOccupied = curPhysicalMetrics?.physicalOccupiedUnits ?? Number(
+    summary.totalPhysicalKeysSold ||
+    (standardPhysicalRooms + connectingPhysicalRooms)
+  );
+  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
+
+  const occCurrent = curPhysicalMetrics?.physicalOccupancyRate !== undefined && curPhysicalMetrics?.physicalOccupancyRate !== null
+    ? Number(curPhysicalMetrics.physicalOccupancyRate.toFixed(1))
+    : lodgingStats.physicalOccRate;
+
+  const lySummary = lyData?.summary || {};
+  const lyConnectingSets = lyPhysicalMetrics?.totalRoomsSold !== undefined && lyPhysicalMetrics?.physicalOccupiedUnits !== undefined
+    ? Math.max(0, lyPhysicalMetrics.physicalOccupiedUnits - lyPhysicalMetrics.totalRoomsSold)
+    : Math.max(0, Math.round(Number(lySummary.connectingPhysicalRooms || 0) / 2));
+  const lyConnectingPhysicalRooms = lyPhysicalMetrics ? lyConnectingSets * 2 : Number(lySummary.connectingPhysicalRooms || 0);
+  const lyStandardPhysicalRooms = lyPhysicalMetrics
+    ? Math.max(0, (lyPhysicalMetrics.physicalOccupiedUnits ?? 0) - lyConnectingPhysicalRooms)
+    : Number(lySummary.standardPhysicalRooms || lyStats?.roomsSold || 0);
+  const lyTotalPhysicalOccupied = lyPhysicalMetrics?.physicalOccupiedUnits ?? Number(
+    lySummary.totalPhysicalKeysSold ||
+    (lyStandardPhysicalRooms + lyConnectingPhysicalRooms)
+  );
+
+  const occLy = lyPhysicalMetrics?.physicalOccupancyRate !== undefined && lyPhysicalMetrics?.physicalOccupancyRate !== null
+    ? Number(lyPhysicalMetrics.physicalOccupancyRate.toFixed(1))
+    : (lyStats?.physicalOccRate !== undefined ? lyStats.physicalOccRate : null);
+  const occDiff = occCurrent !== undefined && occCurrent !== null && occLy !== null
+    ? Number((occCurrent - occLy).toFixed(1))
+    : null;
+
+  // Breakdown subtext for Card 3
+  const breakdown = curPhysicalMetrics?.breakdownOccupied;
+  const breakdownText = breakdown && (breakdown.occupied16 !== undefined || breakdown.occupied35 !== undefined)
+    ? `16평 ${breakdown.occupied16 ?? 0}실 · 35평 ${breakdown.occupied35 ?? 0}실 · 단독51평 ${breakdown.occupiedSolo51 ?? 0}실`
+    : null;
 
   // 4. 객실 평균 단가 (ADR)
   const adrCurrent = lodgingStats.adr;
@@ -317,23 +378,6 @@ export default function ResortBusiness() {
 
     return result;
   })();
-
-  const summary = data?.summary || {};
-  const connectingPhysicalRooms = Number(summary.connectingPhysicalRooms || 0);
-  const standardPhysicalRooms = Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
-  const totalPhysicalOccupied = Number(
-    summary.totalPhysicalKeysSold ||
-    (standardPhysicalRooms + connectingPhysicalRooms)
-  );
-  const lySummary = lyData?.summary || {};
-  const lyConnectingPhysicalRooms = Number(lySummary.connectingPhysicalRooms || 0);
-  const lyStandardPhysicalRooms = Number(lySummary.standardPhysicalRooms || lyStats?.roomsSold || 0);
-  const lyTotalPhysicalOccupied = Number(
-    lySummary.totalPhysicalKeysSold ||
-    (lyStandardPhysicalRooms + lyConnectingPhysicalRooms)
-  );
-  const totalBaseRooms = Number(data?.summary?.totalPhysicalKeys || data?.summary?.totalRoomInventory || 0);
-  const remainingRooms = totalBaseRooms > 0 ? Math.max(0, totalBaseRooms - totalPhysicalOccupied) : 0;
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];
@@ -398,7 +442,7 @@ export default function ResortBusiness() {
     });
   }, [data?.rateAdrData, lyData?.rateAdrData]);
 
-  // 도넛 차트: 전체 175실 기준 레이어링 (잔여 30실 / 일반 점유 75실 / 커넥팅 점유 70실)
+  // 도넛 차트: 물리 객실 기준 레이어링
   const pieOptions = (() => {
     return {
       tooltip: {
@@ -416,7 +460,7 @@ export default function ResortBusiness() {
       color: ['#10b981', '#06b6d4', '#cbd5e1'],
       series: [
         {
-          name: '객실 실운영 점유 현황 (175실 기준)',
+          name: '객실 실운영 점유 현황',
           type: 'pie',
           radius: ['45%', '72%'],
           avoidLabelOverlap: true,
@@ -439,8 +483,8 @@ export default function ResortBusiness() {
             }
           },
           data: [
-            { value: standardPhysicalRooms, name: '일반 점유 (물리)' },
-            { value: connectingPhysicalRooms, name: '커넥팅 점유 (물리 35세트×2)' },
+            { value: standardPhysicalRooms, name: '일반/단독 점유 (물리)' },
+            { value: connectingPhysicalRooms, name: connectingSets > 0 ? `커넥팅 점유 (물리 ${connectingSets}세트×2)` : '커넥팅 점유 (물리)' },
             { value: remainingRooms, name: '잔여 미판매' }
           ]
         }
@@ -628,7 +672,7 @@ export default function ResortBusiness() {
               </h2>
               <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight flex items-baseline gap-2 whitespace-nowrap font-financial">
                 <span>{totalPhysicalOccupied.toLocaleString()}실</span>
-                <span className="text-xs text-[#00ae95] font-semibold">({lodgingStats.physicalOccRate !== undefined ? lodgingStats.physicalOccRate + '%' : '-'})</span>
+                <span className="text-xs text-[#00ae95] font-semibold">({occCurrent !== undefined && occCurrent !== null ? occCurrent + '%' : '-'})</span>
               </div>
               {(lodgingStats.weekdayOcc !== undefined || lodgingStats.weekendOcc !== undefined) && (
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
@@ -649,7 +693,7 @@ export default function ResortBusiness() {
                   </span>
                 </div>
               )}
-              <p className="text-[11px] text-slate-400 mt-2 break-keep">일반 점유 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 ({isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
+              <p className="text-[11px] text-slate-400 mt-2 break-keep">일반/단독 {standardPhysicalRooms.toLocaleString()}실 + 커넥팅 {connectingPhysicalRooms.toLocaleString()}실 {breakdownText ? `(${breakdownText}, ` : '('}{isRange ? `총 ${totalBaseRooms.toLocaleString()}실 (${rangeDays}일) 기준` : '총 175실 기준'})</p>
             </div>
 
             {/* 4. Overall ADR */}
@@ -1023,7 +1067,7 @@ export default function ResortBusiness() {
           <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <PieChartIcon className="w-5 h-5 text-emerald-500" /> 전체 175실 기준 실운영 점유 레이어링 분석
+                <PieChartIcon className="w-5 h-5 text-emerald-500" /> {isRange ? `총 ${totalBaseRooms.toLocaleString()}실 기준 실운영 점유 레이어링 분석` : '전체 175실 기준 실운영 점유 레이어링 분석'}
               </h2>
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
                 <Layers size={14} className="text-brand-mint" />
@@ -1041,13 +1085,13 @@ export default function ResortBusiness() {
                   <div className="flex items-center gap-3">
                     <div className="w-3.5 h-3.5 rounded-full bg-[#10b981]"></div>
                     <div>
-                      <div className="text-xs font-bold text-slate-700">일반 점유 (물리)</div>
-                      <div className="text-[11px] text-slate-500">16평 / 35평 전용 판매 실적</div>
+                      <div className="text-xs font-bold text-slate-700">일반/단독 점유 (물리)</div>
+                      <div className="text-[11px] text-slate-500">16평 / 35평 / 단독51평 전용 판매 실적</div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms.toLocaleString()}실</div>
-                    <div className="text-[10px] text-slate-400">{lodgingStats.standardOccRate !== undefined ? lodgingStats.standardOccRate + '%' : '-'}</div>
+                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '-'}</div>
                   </div>
                 </div>
 
@@ -1056,12 +1100,12 @@ export default function ResortBusiness() {
                     <div className="w-3.5 h-3.5 rounded-full bg-[#06b6d4]"></div>
                     <div>
                       <div className="text-xs font-bold text-slate-700">커넥팅 점유 (물리)</div>
-                      <div className="text-[11px] text-slate-500">51평 35세트 × 2개 객실(16평+35평)</div>
+                      <div className="text-[11px] text-slate-500">51평 {connectingSets.toLocaleString()}세트 × 2개 객실(16평+35평)</div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms.toLocaleString()}실</div>
-                    <div className="text-[10px] text-slate-400">{lodgingStats.connectingOccRate !== undefined ? lodgingStats.connectingOccRate + '%' : '-'}</div>
+                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '-'}</div>
                   </div>
                 </div>
 
@@ -1075,7 +1119,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-slate-700">{remainingRooms.toLocaleString()}실</div>
-                    <div className="text-[10px] text-slate-400">{lodgingStats.remainingOccRate !== undefined ? lodgingStats.remainingOccRate + '%' : '-'}</div>
+                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((remainingRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '-'}</div>
                   </div>
                 </div>
               </div>

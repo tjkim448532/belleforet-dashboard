@@ -1274,13 +1274,13 @@ const reverseSpillover = totalRoomSales > 0
 
 ---
 
-## 9. 🏨 [P1 신규 필드] 월별 가용객실 효율 API (`/api/v6/report/monthly-room-efficiency`)에 ADR 및 주중/주말 점유율(weekdayOcc, weekendOcc) 정규 마트 필드 탑재
+## 9. 🏨 [배포 및 연동 완료] 월별 가용객실 효율 API (`/api/v6/report/monthly-room-efficiency`)에 ADR 및 주중/주말 점유율(weekdayOcc, weekendOcc) 정규 마트 필드 탑재
 
 ### 9-1. 배경 및 비즈니스 목적
 * **적용 화면**: 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 시뮬레이터 (`PackageGeneratorSimulator.tsx`, `/strategic-simulator?tab=package`)
 * **목적**:
   * 리조트 총 175실(물리 고정) 기준, 일반 객실 정가 판매 잠식(Cannibalization)을 방지하고 비수기 패키지의 하루 안전 판매 마지노선(Allotment)을 산출하기 위해 월별 **ADR, 전체 점유율, 주중(일~목) 점유율, 주말(금~토) 점유율**이 필수적으로 요구됨.
-  * 현재 프론트엔드는 `GET /api/v6/dashboard/revenue-summary?startDate=YYYY-MM-01&endDate=YYYY-MM-DD`를 통해 해당 수치를 정상 조회하여 실시간 표출하고 있으나, 12개월 전체 월 데이터를 `monthly-room-efficiency` 응답에 사전 적재해 주면 다중 월 전환 시 추가 API 왕복 없이 0ms 즉시 전환이 가능함.
+  * 백엔드 정규 마트에서 12개월 전체 월 데이터를 `monthly-room-efficiency` 응답에 사전 적재 완료하여, 다중 월 전환 시 추가 API 왕복 없이 0ms 즉시 전환 지원.
 
 ### 9-2. 산출 로직 및 정의
 * **물리 총 가용객실**: 175실 고정 (SSOT)
@@ -1291,7 +1291,7 @@ const reverseSpillover = totalRoomSales > 0
 * **weekdayAdr / weekendAdr**: 주중 및 주말 각각의 평균 객실 판매 단가 (정수형)
 
 ### 9-3. 기대 응답 JSON 규격
-`monthlyComparison` 배열 내의 각 월 `ty` 및 `ly` 객체에 아래 6개 필드 추가:
+`monthlyComparison` 배열 내의 각 월 `ty` 및 `ly` 객체에 아래 6개 필드 추가 (적용 완료):
 ```json
 {
   "monthlyComparison": [
@@ -1333,11 +1333,11 @@ const reverseSpillover = totalRoomSales > 0
 }
 ```
 
-### 9-4. 프론트엔드 구현 및 연동 완료 상태
-* 프론트엔드(`PackageGeneratorSimulator.tsx`)는 현재 `GET /api/v6/dashboard/revenue-summary?startDate=...&endDate=...`를 통해 실측 수치를 정상 조회하여:
-  1. ADR, RevPAR, TRevPAR, 점유율 3분할(전체/주중/주말) 카드 4종 100% 동일 규격 표출
-  2. [주중용] / [주말용] 선택에 따른 $OCC_{target}$ 자동 로딩
-  3. 일반 객실 방어 수량 및 패키지 최대 할당 마지노선(Allotment) 공식 수식 산출
-  4. 대표님 권고 문구 자동 표출
-  모든 로직을 구현 완료하였습니다.
-* 백엔드에서 `monthly-room-efficiency`에 해당 필드가 탑재되는 즉시 프론트엔드가 이를 우선 활용하도록 자동 연동 준비가 완료되었습니다.
+### 9-4. 프론트엔드 연동 및 검증 완료 상태 (2026-10-04)
+* **배포 및 응답 검증 완료**: 백엔드 프로덕션 API에서 `adr`, `overallOcc`, `weekdayOcc`, `weekendOcc`, `weekdayAdr`, `weekendAdr` 필드가 12개월 전 월에 걸쳐 정확하게 반환됨을 확인 완료(Zero-Variance).
+* **프론트엔드 1:1 완제품 바인딩 완료**:
+  1. `PackageGeneratorSimulator.tsx`에서 `monthlyEfficiencyMap`을 통한 12개월 전 월 0ms 즉각 전환 및 캐싱 바인딩 완료.
+  2. ADR, RevPAR, TRevPAR, 점유율 3분할(전체/주중/주말) 카드 4종 100% 동일 규격 표출.
+  3. [주중용] / [주말용] 선택에 따른 $OCC_{target}$ 자동 로딩 및 안전 판매 마지노선(Allotment) 수식 연동.
+  4. 일반 객실 정가 판매 잠식(Cannibalization) 방지 공식 권고 문구 자동 표출 완료.
+  5. `MonthlyTrevporChart.tsx` 인터페이스(`MonthlyEfficiencyItem`) 내 정규 필드 동기화 완료.

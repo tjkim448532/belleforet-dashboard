@@ -36,6 +36,13 @@ export interface MonthlyEfficiencyData {
   fnbRevenue: number;
   leisureRevenue: number;
   year: number;
+  adr: number;
+  overallOcc: number;
+  weekdayOcc: number;
+  weekendOcc: number;
+  weekdayAdr: number;
+  weekendAdr: number;
+  isBenchmarkLy: boolean;
 }
 
 export interface LiveMonthlySummary {
@@ -128,7 +135,7 @@ export default function PackageGeneratorSimulator() {
   };
 
   // ==========================================
-  // 1. Fetch 12-Month Efficiency Table from DB
+  // 1. Fetch 12-Month Efficiency Table from DB (Deployed SSOT)
   // ==========================================
   useEffect(() => {
     let isMounted = true;
@@ -141,7 +148,8 @@ export default function PackageGeneratorSimulator() {
         if (isMounted && payload?.monthlyComparison && Array.isArray(payload.monthlyComparison)) {
           const map: Record<number, MonthlyEfficiencyData> = {};
           payload.monthlyComparison.forEach((m: any) => {
-            const activeData = m.ty && m.ty.revpar !== undefined && m.ty.revpar !== null ? m.ty : m.ly;
+            const hasTyData = Boolean(m.ty && m.ty.roomsSold && m.ty.roomsSold > 0);
+            const activeData = hasTyData ? m.ty : m.ly;
             if (activeData) {
               map[m.month] = {
                 month: m.month,
@@ -155,7 +163,14 @@ export default function PackageGeneratorSimulator() {
                 roomRevenue: Number(activeData.roomRevenue ?? 0),
                 fnbRevenue: Number(activeData.fnbRevenue ?? 0),
                 leisureRevenue: Number(activeData.leisureRevenue ?? 0),
-                year: Number(activeData.year ?? selectedYear)
+                year: Number(activeData.year ?? (hasTyData ? selectedYear : selectedYear - 1)),
+                adr: Number(activeData.adr ?? 0),
+                overallOcc: Number(activeData.overallOcc ?? 0),
+                weekdayOcc: Number(activeData.weekdayOcc ?? 0),
+                weekendOcc: Number(activeData.weekendOcc ?? 0),
+                weekdayAdr: Number(activeData.weekdayAdr ?? 0),
+                weekendAdr: Number(activeData.weekendAdr ?? 0),
+                isBenchmarkLy: !hasTyData
               };
             }
           });
@@ -174,6 +189,28 @@ export default function PackageGeneratorSimulator() {
     fetchEfficiencyData();
     return () => { isMounted = false; };
   }, [selectedYear]);
+
+  // Synchronize liveSummary immediately from preloaded monthlyEfficiencyMap (0ms instant switch)
+  useEffect(() => {
+    const eff = monthlyEfficiencyMap[selectedMonth];
+    if (eff && eff.weekdayOcc > 0) {
+      setLiveSummary({
+        adr: eff.adr,
+        revpar: eff.revpar,
+        trevpar: eff.trevparTotal,
+        trevparWithoutGolf: eff.trevparWithoutGolf,
+        overallOcc: eff.overallOcc,
+        weekdayOcc: eff.weekdayOcc,
+        weekendOcc: eff.weekendOcc,
+        weekdayAdr: eff.weekdayAdr,
+        weekendAdr: eff.weekendAdr,
+        roomsSold: eff.roomsSold,
+        totalCapacity: eff.availableRooms,
+        benchmarkYear: eff.year,
+        isBenchmarkLy: eff.isBenchmarkLy
+      });
+    }
+  }, [monthlyEfficiencyMap, selectedMonth]);
 
   // ==========================================
   // 2. Fetch Selected Month Exact Metrics (ADR, RevPAR, TRevPAR, 점유율 3분할)
@@ -208,17 +245,17 @@ export default function PackageGeneratorSimulator() {
 
         if (isMounted) {
           setLiveSummary({
-            adr: ls.adr || sum.totalADR || 0,
-            revpar: sum.revPAR || 0,
-            trevpar: sum.trevPar || 0,
+            adr: ls.adr || effData?.adr || sum.totalADR || 0,
+            revpar: sum.revPAR || effData?.revpar || 0,
+            trevpar: sum.trevPar || effData?.trevparTotal || 0,
             trevparWithoutGolf,
-            overallOcc: ls.physicalOccRate || sum.totalOcc || 0,
-            weekdayOcc: ls.weekdayOcc || 0,
-            weekendOcc: ls.weekendOcc || 0,
-            weekdayAdr: ls.weekdayAdr || 0,
-            weekendAdr: ls.weekendAdr || 0,
-            roomsSold: ls.roomsSold || sum.totalRooms || 0,
-            totalCapacity: ls.totalCapacity ?? 0,
+            overallOcc: ls.physicalOccRate || effData?.overallOcc || sum.totalOcc || 0,
+            weekdayOcc: ls.weekdayOcc || effData?.weekdayOcc || 0,
+            weekendOcc: ls.weekendOcc || effData?.weekendOcc || 0,
+            weekdayAdr: ls.weekdayAdr || effData?.weekdayAdr || 0,
+            weekendAdr: ls.weekendAdr || effData?.weekendAdr || 0,
+            roomsSold: ls.roomsSold || effData?.roomsSold || sum.totalRooms || 0,
+            totalCapacity: ls.totalCapacity ?? effData?.availableRooms ?? 0,
             benchmarkYear: bYear,
             isBenchmarkLy: isLy
           });

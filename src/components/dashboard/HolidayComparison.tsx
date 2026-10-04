@@ -73,12 +73,23 @@ export default function HolidayComparison() {
     const canonical = CANONICAL_HOLIDAYS.find(c => c.id === canonicalId || c.name === canonicalId);
     if (!canonical) return null;
 
+    // 1차: 블록 대표 명칭(holidayNameLabel)에 매칭 키가 포함된 경우
     for (const cat of Object.values(data.groupedByYear[year])) {
       const block = (cat as any[]).find((b: any) => 
         canonical.matchKeys.some(k => b.holidayNameLabel?.includes(k))
       );
       if (block) return block;
     }
+
+    // 2차: 블록 명칭에 없더라도 복합/통합 연휴의 세부 일자(dailyData)에 해당 공휴일이 포함된 경우 탐색
+    // (예: 2025년 10월 10일 황금연휴 블록은 '추석 연휴'로 명명되었으나 10/3 개천절, 10/9 한글날을 포함함)
+    for (const cat of Object.values(data.groupedByYear[year])) {
+      const block = (cat as any[]).find((b: any) => 
+        b.dailyData?.some((day: any) => canonical.matchKeys.some(k => day.holidayName?.includes(k)))
+      );
+      if (block) return block;
+    }
+
     return null;
   };
 

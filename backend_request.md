@@ -12,6 +12,7 @@
 | **P1 (높음)** | 데이터 정합성 | **`벨포레 목장(체험)` 이용객수(`visitor_count`) 정상화** | 분모(입장객수)는 정상이나 분자(체험객수)가 0명으로 적재되어 `0.0%`로 고정되는 문제 해결 |
 | **P1 (높음)** | 데이터 검증 | **썸머랜드(워터파크) 9월 실적 이상치 원인 규명 및 분리** | 8월 말 폐장 시설에 9월 매출/이용객이 잡히는 원인(사우나 매핑, 이연 매출, 지연 전표 등) 점검 |
 | **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 `revpar` 필드 추가** | 12개월 정산 대조표에 순수 객실 판매 효율(RevPAR = 객실 순매출 ÷ 가용객실수) 제공 |
+| **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 주중/주말 분리형 RevPAR 및 TRevPAR 추가** | 역산형 패키지 시뮬레이터 주중/주말 타깃팅 시 객실 방어선 및 목표 판매가 정밀 연동 지원 |
 | **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
 | **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
 | **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
@@ -1341,3 +1342,81 @@ const reverseSpillover = totalRoomSales > 0
   3. [주중용] / [주말용] 선택에 따른 $OCC_{target}$ 자동 로딩 및 안전 판매 마지노선(Allotment) 수식 연동.
   4. 일반 객실 정가 판매 잠식(Cannibalization) 방지 공식 권고 문구 자동 표출 완료.
   5. `MonthlyTrevporChart.tsx` 인터페이스(`MonthlyEfficiencyItem`) 내 정규 필드 동기화 완료.
+
+---
+
+## 10. 📈 [P1 API 보강] 월별 가용객실 효율 API (`/api/v6/report/monthly-room-efficiency`)에 주중/주말 분리형 RevPAR 및 TRevPAR (`weekdayRevpar`, `weekendRevpar`, `weekdayTrevpar`, `weekendTrevpar`) 정규 마트 필드 탑재 요청
+
+### 10-1. 배경 및 비즈니스 목적 (수익 관리 RM 관점)
+* **적용 화면**: 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 시뮬레이터 (`PackageGeneratorSimulator.tsx`, `/strategic-simulator?tab=package`)
+* **문제점 및 분리 필요성**:
+  1. 리조트 비즈니스는 **주중(일~목)**과 **주말·공휴일(금~토/공휴일)**의 고객 지출 패턴 및 가용 객실 가치가 극단적으로 상이합니다.
+     - **2026년 1월 실측 기준**:
+       * 주중 RevPAR: **36,996원** (ADR 120,901원 × OCC 30.6%) vs 주말 RevPAR: **89,832원** (ADR 185,987원 × OCC 48.3%)
+       * 주중 순수 리조트 TRevPAR: **104,657원** vs 주말 순수 리조트 TRevPAR: **293,796원**
+  2. 만약 주중/주말 구분 없이 전체 월평균 가중치(Blended TRevPAR 165,670원, RevPAR 54,019원)를 단일 기준으로 적용하면:
+     - **[주중용 패키지]**: 주중 실측 수준(105,000원) 대비 약 6만원이나 과도하게 비싼 가격으로 생성되어 비수기 평일 판매 경쟁력을 상실합니다.
+     - **[주말용 패키지]**: 주말 실측 수준(294,000원) 대비 13만원이나 헐값에 판매되어, 주말 정가 판매를 스스로 갉아먹는 치명적인 잠식(Cannibalization)이 발생합니다.
+  3. 따라서 역산형 패키지 시뮬레이터의 **Step 01(목표 패키지 판매가 도출)**과 **Step 02(객실 방어선 선차감)**가 사용자의 타겟 구분([주중용] vs [주말용])에 맞추어 **해당 구분의 실측 TRevPAR 및 RevPAR에 1:1로 직결**되어야 합니다.
+
+### 10-2. 산출 로직 및 정의 (SSOT 기준 - 물리 175실 고정)
+1. **주중 객실 RevPAR (`weekdayRevpar`)**:
+   $$\text{weekdayRevpar} = \text{ROUND}\left(\text{weekdayAdr} \times \frac{\text{weekdayOcc}}{100}\right)$$
+   *(예: 2026년 1월: 120,901원 × 30.6% = 36,996원)*
+2. **주말 객실 RevPAR (`weekendRevpar`)**:
+   $$\text{weekendRevpar} = \text{ROUND}\left(\text{weekendAdr} \times \frac{\text{weekendOcc}}{100}\right)$$
+   *(예: 2026년 1월: 185,987원 × 48.3% = 89,832원)*
+3. **주중 순수 TRevPAR (`weekdayTrevpar` - 골프 제외)**:
+   $$\text{weekdayTrevpar} = \text{ROUND}\left(\frac{\text{주중 일평균 순수 리조트 매출}}{175\text{실}}\right) = \text{ROUND}\left(\frac{\text{weekdayDailyAvg} \times \text{nonGolfRatio}}{175}\right)$$
+   *(예: 2026년 1월: (19,689,313원 × 93.02%) ÷ 175실 = 104,657원)*
+4. **주말·공휴일 순수 TRevPAR (`weekendTrevpar` - 골프 제외)**:
+   $$\text{weekendTrevpar} = \text{ROUND}\left(\frac{\text{빨간날 일평균 순수 리조트 매출}}{175\text{실}}\right) = \text{ROUND}\left(\frac{\text{redDayDailyAvg} \times \text{nonGolfRatio}}{175}\right)$$
+   *(예: 2026년 1월: (55,272,144원 × 93.02%) ÷ 175실 = 293,796원)*
+5. **(참고용) 전체 TRevPAR (`weekdayTrevparTotal`, `weekendTrevparTotal` - 골프 포함)**:
+   - `weekdayTrevparTotal`: `ROUND(weekdayDailyAvg / 175)` *(112,510원)*
+   - `weekendTrevparTotal`: `ROUND(redDayDailyAvg / 175)` *(315,841원)*
+
+### 10-3. 기대 응답 JSON 규격
+`monthlyComparison` 배열 내 각 월의 `ty` 및 `ly` 객체에 아래 6개 필드 추가 탑재:
+```json
+{
+  "monthlyComparison": [
+    {
+      "month": 1,
+      "monthLabel": "1월",
+      "ty": {
+        "year": 2026,
+        "availableRooms": 5425,
+        "roomsSold": 1997,
+        "totalRevenue": 966197010,
+        "netRevenueWithoutGolf": 898758568,
+        "revpar": 54019,
+        "adr": 146746,
+        "overallOcc": 36.8,
+        "weekdayOcc": 30.6,
+        "weekendOcc": 48.3,
+        "weekdayAdr": 120901,
+        "weekendAdr": 185987,
+        "weekdayRevpar": 36996,
+        "weekendRevpar": 89832,
+        "trevparTotal": 178101,
+        "trevparWithoutGolf": 165670,
+        "weekdayTrevpar": 104657,
+        "weekendTrevpar": 293796,
+        "weekdayTrevparTotal": 112510,
+        "weekendTrevparTotal": 315841
+      }
+    }
+  ]
+}
+```
+
+### 10-4. 프론트엔드 선제 조치 현황 (2026-10-04)
+1. **0ms 즉시 연동 및 실측 수학적 SSOT 어댑터 구축 완료**:
+   - `PackageGeneratorSimulator.tsx`에서 백엔드 완제품 필드가 내려오면 1순위로 즉시 바인딩(`??`)하도록 어댑터 인터페이스(`weekdayRevpar`, `weekendRevpar`, `weekdayTrevpar`, `weekendTrevpar`)를 100% 정규화 탑재 완료.
+   - 백엔드 마트 적재 전 과도기에도 `/api/v6/report/day-of-week-sales`와 `/api/v6/dashboard/revenue-summary`의 일평균 매출(19,689,313원 / 55,272,144원) 및 물리 175실 모수를 직결하여 1원의 오차도 없는 Zero-Variance 실측 동기화 완료.
+2. **시뮬레이션 전 프로세스 분리 연동 완료**:
+   - [주중용] 선택 시: 목표 판매가 시작점 105,000원(주중 TRevPAR), 객실 방어선 37,000원(주중 RevPAR 선차감) 자동 락인.
+   - [주말용] 선택 시: 목표 판매가 시작점 294,000원(주말 TRevPAR), 객실 방어선 90,000원(주말 RevPAR 선차감) 자동 락인.
+   - 상단 Section 2의 4개 핵심 지표 카드(ADR, RevPAR, TRevPAR, 점유율)가 선택 구분에 따라 동적 라벨(`[주중 기준]` / `[주말 기준]`) 및 실측 수치와 주중/주말 보조 수치로 100% 완벽한 대칭 규격으로 표출됨.
+

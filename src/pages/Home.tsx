@@ -759,16 +759,22 @@ export default function Home() {
                     <MetricExplainerTooltip presetKey="occupancy" />
                   </div>
                   {(() => {
-                    const occ = (coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
+                    const physicalOcc = coreData.core?.physicalRoomMaster?.metrics?.physicalOccupancyRate
+                                      ?? coreData.core?.summary?.physicalOccRate;
+                    const occ = physicalOcc !== undefined && physicalOcc !== null
+                              ? Number(Number(physicalOcc).toFixed(1))
+                              : ((coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
                               : (coreData.core?.summary?.occRate && Number(coreData.core.summary.occRate) > 0) ? Number(coreData.core.summary.occRate)
-                              : displayData?.kpiMetrics?.totalOcc;
+                              : displayData?.kpiMetrics?.totalOcc);
+                    const occupiedUnits = coreData.core?.physicalRoomMaster?.metrics?.physicalOccupiedUnits
+                                       ?? coreData.core?.summary?.physicalOccupiedUnits;
                     return occ !== undefined && occ !== null ? (
                       <>
                         <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
                           {Number(occ).toFixed(1)}%
                         </div>
                         <div className="text-[11px] text-slate-500 font-medium">
-                          {isRangeMode ? '선택 기간 평균 가동률' : '175실 재고 기준 자동 산출'}
+                          {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
                         </div>
                       </>
                     ) : (

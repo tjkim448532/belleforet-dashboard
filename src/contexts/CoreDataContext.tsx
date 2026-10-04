@@ -59,11 +59,15 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         : `date=${validStart || todayStr}&_t=${Date.now()}`;
 
       try {
-        // [V6 SSOT Direct Call] Call V6 revenue-summary master endpoint (primary SSOT)
-        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`);
+        // [V6 SSOT Direct Call] Call V6 revenue-summary & revenue-by-org master endpoints (primary SSOT)
+        const [res, orgRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`).catch(() => null)
+        ]);
         if (isCancelled) return;
 
         const payload = (res?.summary ? res : res?.data) || res || {};
+        const physicalMaster = orgRes?.data?.physicalRoomMaster || orgRes?.physicalRoomMaster || null;
 
         const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false) => {
           // 100% SSOT Direct Binding: 프론트엔드 임의 키워드 필터링 및 reduce 클라이언트 합산 전면 철거
@@ -71,8 +75,15 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           const otaAvg = Number(payloadSummary?.golfOtaAvgGreenFee || gs.golfOtaAvgGreenFee || 0);
           const memberAvg = Number(payloadSummary?.golfMemberAvgGreenFee || gs.golfMemberAvgGreenFee || 0);
 
+          const physicalOccRate = physicalMaster?.metrics?.physicalOccupancyRate !== undefined && physicalMaster?.metrics?.physicalOccupancyRate !== null
+            ? Number(physicalMaster.metrics.physicalOccupancyRate.toFixed(1))
+            : undefined;
+
           return {
             ...payloadSummary,
+            totalOcc: physicalOccRate ?? payloadSummary?.totalOcc,
+            physicalOccRate: physicalOccRate ?? payloadSummary?.physicalOccRate,
+            physicalOccupiedUnits: physicalMaster?.metrics?.physicalOccupiedUnits ?? payloadSummary?.occupiedRooms,
             // TrevPAR 대소문자 호환성 (trevPar vs trevPAR)
             trevPAR: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
             trevPar: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
@@ -104,6 +115,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         const initialSummary = buildCoreSummary(payload.summary, {}, [], hasFullGolfMetrics);
         const corePayload = {
           ...payload,
+          physicalRoomMaster: physicalMaster,
           date: payload.targetDate || validStart || todayStr,
           salesByCategory: payload.salesByCategory || [],
           salesByFacility: payload.salesByFacility || [],

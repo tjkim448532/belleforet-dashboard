@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
-import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, updatePassword, signOut } from 'firebase/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -42,8 +42,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const token = await user.getIdToken();
         sessionStorage.setItem('token', token);
       } else {
-        // If firebase says not logged in, but session storage says yes, it's a mismatch
-        // But let's trust session storage for UI, Firebase will block data if token is bad
+        // Firebase 인증 결과 유효 사용자가 없을 경우, 조작/잔여 세션 스토리지 자동 정화
+        if (sessionStorage.getItem('auth') === 'true') {
+          sessionStorage.removeItem('auth');
+          sessionStorage.removeItem('userEmail');
+          sessionStorage.removeItem('isAdmin');
+          sessionStorage.removeItem('userRole');
+          sessionStorage.removeItem('token');
+          setIsAuthenticated(false);
+          setUserEmail(null);
+          setIsAdmin(false);
+          setUserRole(null);
+        }
       }
     });
     return () => unsubscribe();
@@ -119,6 +129,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    try {
+      signOut(auth);
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
     setIsAuthenticated(false);
     setUserEmail(null);
     setIsAdmin(false);

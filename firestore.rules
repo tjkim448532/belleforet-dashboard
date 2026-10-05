@@ -1,11 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // "너무 타이트하지 않은" 사내 대시보드용 보안 규칙:
-    // 인증된(로그인한) 사용자라면 모든 컬렉션에 대한 읽기/쓰기 허용.
-    // 로그인하지 않은 외부 접근은 차단.
-    match /{document=**} {
+    // 슈퍼 관리자(대표님 계정) 판별 함수
+    function isSuperAdmin() {
+      return request.auth != null && 
+        (request.auth.token.email == 'tjkim@bsbelleforet.com' || request.auth.token.email == 'tjkim448532@gmail.com');
+    }
+
+    // 1. 사용자 권한 컬렉션 (userRoles)
+    // - 읽기: 모든 로그인 사용자 허용 (본인 권한 조회용)
+    // - 쓰기/삭제: 오직 슈퍼 관리자만 허용 (일반 계정의 권한 탈취 원천 차단)
+    match /userRoles/{email} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    // 2. 로그인 감사 로그 (loginLogs)
+    // - 생성: 모든 로그인 사용자 허용 (로그인 기록용)
+    // - 조회/수정/삭제: 오직 슈퍼 관리자만 허용 (로그 임의 변조 방지)
+    match /loginLogs/{logId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // 3. 매핑 및 업무 설정 컬렉션 (storeMappings, settings, roomCapacity 등)
+    // - 인증된 모든 사용자의 정상적인 업무(매핑 변경 등) 100% 보장
+    match /storeMappings/{mappingId} {
       allow read, write: if request.auth != null;
+    }
+    match /settings/{settingId} {
+      allow read, write: if request.auth != null;
+    }
+    match /roomCapacity/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 4. 기타 문서 기본 규칙: 인증자는 읽기 가능, 쓰기는 슈퍼 관리자만 가능
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
     }
   }
 }

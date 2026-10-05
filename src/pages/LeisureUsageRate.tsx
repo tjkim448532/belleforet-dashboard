@@ -10,6 +10,7 @@ import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import { getClosedBusinessYear, getLatestClosedMonthStr } from '../lib/dateUtils';
 import GlobalDatePicker from '../components/GlobalDatePicker';
+import LeisurePricingSimulator from '../components/dashboard/LeisurePricingSimulator';
 import type { 
   LeisureUsageRateResponse,
   LeisureYoyMatrixResponse,
@@ -1852,6 +1853,9 @@ export default function LeisureUsageRate() {
         </div>
 
       </div>
+
+      {/* 5. 🎟️ 레저본부 티켓 가격 & 수요 탄력성 시뮬레이터 */}
+      <LeisurePricingSimulator />
 
     </div>
   );

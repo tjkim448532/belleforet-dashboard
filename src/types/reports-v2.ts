@@ -488,6 +488,31 @@ export interface WeatherForecastSimulationResponse {
   };
 }
 
+// ============================================================================
+// ⑫ 레저본부 영업장별 판매금액 Top 5 상품 및 가격/수요 시뮬레이션 (leisure-top-products)
+// ============================================================================
+export interface LeisureTopProductItem {
+  rank: number;
+  itemId: string;
+  itemName: string;
+  currentPrice: number;
+  lySoldQty: number;
+  lyRevenue: number;
+  sharePct?: number;
+  monthlyQty: number[];
+  monthlyRevenue?: number[];
+}
+
+export interface LeisureTopProductsResponse {
+  success: boolean;
+  facility: string;
+  baseYear: number;
+  totalFacilityRevenue?: number;
+  topProducts: LeisureTopProductItem[];
+  error?: string;
+}
+
+
 
 
 

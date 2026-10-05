@@ -14,6 +14,7 @@
 | **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 `revpar` 필드 추가** | 12개월 정산 대조표에 순수 객실 판매 효율(RevPAR = 객실 순매출 ÷ 가용객실수) 제공 |
 | **P1 (완료)** | API 보강 | **월별 가용객실 효율 API에 주중/주말 분리형 RevPAR 및 TRevPAR 6종 추가** | [배포완료] 역산형 패키지 시뮬레이터 주중/주말 타깃팅 시 객실 방어선 및 목표 판매가 정밀 연동 지원 |
 | **P1 (완료)** | API 보강 | **숙박객 수 YoY 및 개별 영업장 API 연간 총합(`totals`) 완제품 추가** | [배포/검증완료] `room-guests-yoy` 및 `facility-monthly-trend` 연간 총합 완제품 프론트 연동 완료 |
+| **P1 (신규)** | 정규 API | **레저본부 영업장별 판매금액 Top 5 상품 및 가격/수요 시뮬레이션 API** | 티켓 가격 변동 및 고객수 변동(+10%, +30%)에 따른 월/연 예상 매출 시뮬레이터 백엔드 SSOT 제공 (`leisure-top-products`) |
 | **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
 | **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
 | **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
@@ -1487,5 +1488,120 @@ const reverseSpillover = totalRoomSales > 0
    - 개별 영업장: `facility-monthly-trend`의 `yearlyTotals` 객체 직결 바인딩 완료.
 2. **`RoomGuestsYoyTable.tsx` 하단 연간 총합 행 직결 완료**:
    - 숙박객 YoY 매트릭스 하단 `tfoot`에 백엔드 공식 `totals` 및 최신 연도 vs 전년도 증감수/증감율 바인딩 완료.
+
+---
+
+## 12. 🎟️ [P1 신규 API] 레저본부 영업장별 판매금액 Top 5 상품 및 가격/수요 시뮬레이션 API (`leisure-top-products`)
+
+### 12-1. 요청 배경 및 경영진/사용자 요구사항
+1. **화면 요구사항**:
+   - 레저본부 페이지(`LeisureUsageRate.tsx`) 내에 **`레저본부 티켓 가격 및 수요 시뮬레이터`**를 신규 구축.
+   - 사용자가 영업장(예: `놀이동산`, `벨포레 목장`, `마운틴카트`, `사계절썰매장`, `미디어아트센터`, `마리나 클럽`, `벨포레 목장(체험)`)을 선택했을 때, 해당 영업장에서 **판매 중인 상품 중 판매금액(매출액) 상위 5개 상품(Top 5)**을 리스트로 제공.
+   - 티켓 가격을 인상/인하하거나 고객수 변동률(+10%, +30% 등)을 적용했을 때 **예상되는 월별/연간 매출**을 실시간 산출하여 대조 표출.
+2. **무관용 원칙 및 Zero-Mocking/Zero-Simulation 준수**:
+   - 프론트엔드는 임의의 가짜 티켓명이나 단가/수량을 하드코딩하지 않습니다.
+   - 실제 POS 원천 테이블 및 V6 마트에서 검증된 정규 실측 데이터(전년도 판매수량, 전년도 매출액, 공식 단가, 월별 계절성 판매 분포)를 백엔드 SSOT 완제품으로 반환해야 합니다.
+
+### 12-2. 엔드포인트 명세
+* **URL**: `GET /api/v6/report/leisure-top-products`
+* **Query Parameters**:
+  * `facility` (필수, string): 영업장 명칭 (예: `마운틴카트`, `놀이동산`, `사계절썰매장`, `벨포레 목장`, `미디어아트센터`, `마리나 클럽`, `벨포레 목장(체험)`)
+  * `baseYear` (선택, number, 기본값: 최신 마감 연도 2025): 기준이 되는 전년도(LY) 실적 연도
+
+### 12-3. 응답 데이터 규격 (100% camelCase JSON)
+```json
+{
+  "success": true,
+  "facility": "마운틴카트",
+  "baseYear": 2025,
+  "totalFacilityRevenue": 1420500000,
+  "topProducts": [
+    {
+      "rank": 1,
+      "itemId": "CART_001",
+      "itemName": "마운틴카트 1회권(대인)",
+      "currentPrice": 15000,
+      "lySoldQty": 52400,
+      "lyRevenue": 786000000,
+      "sharePct": 55.3,
+      "monthlyQty": [1200, 1500, 2800, 5400, 7200, 6100, 5800, 6900, 5300, 4800, 3100, 2300],
+      "monthlyRevenue": [18000000, 22500000, 42000000, 81000000, 108000000, 91500000, 87000000, 103500000, 79500000, 72000000, 46500000, 34500000]
+    },
+    {
+      "rank": 2,
+      "itemId": "CART_002",
+      "itemName": "마운틴카트 2회권(대인)",
+      "currentPrice": 25000,
+      "lySoldQty": 14200,
+      "lyRevenue": 355000000,
+      "sharePct": 25.0,
+      "monthlyQty": [300, 400, 800, 1500, 2100, 1800, 1700, 2000, 1500, 1200, 500, 400],
+      "monthlyRevenue": [7500000, 10000000, 20000000, 37500000, 52500000, 45000000, 42500000, 50000000, 37500000, 30000000, 12500000, 10000000]
+    },
+    {
+      "rank": 3,
+      "itemId": "CART_003",
+      "itemName": "마운틴카트 1회권(소인)",
+      "currentPrice": 12000,
+      "lySoldQty": 11500,
+      "lyRevenue": 138000000,
+      "sharePct": 9.7,
+      "monthlyQty": [200, 300, 600, 1200, 1600, 1400, 1500, 1800, 1300, 1000, 400, 200],
+      "monthlyRevenue": [2400000, 3600000, 7200000, 14400000, 19200000, 16800000, 18000000, 21600000, 15600000, 12000000, 4800000, 2400000]
+    },
+    {
+      "rank": 4,
+      "itemId": "CART_004",
+      "itemName": "마운틴카트 2회권(소인)",
+      "currentPrice": 20000,
+      "lySoldQty": 4100,
+      "lyRevenue": 82000000,
+      "sharePct": 5.8,
+      "monthlyQty": [50, 100, 200, 450, 600, 550, 500, 650, 450, 350, 150, 50],
+      "monthlyRevenue": [1000000, 2000000, 4000000, 9000000, 12000000, 11000000, 10000000, 13000000, 9000000, 7000000, 3000000, 1000000]
+    },
+    {
+      "rank": 5,
+      "itemId": "CART_005",
+      "itemName": "마운틴카트 동승권",
+      "currentPrice": 5000,
+      "lySoldQty": 11900,
+      "lyRevenue": 59500000,
+      "sharePct": 4.2,
+      "monthlyQty": [250, 300, 650, 1250, 1650, 1450, 1350, 1650, 1300, 1150, 550, 350],
+      "monthlyRevenue": [1250000, 1500000, 3250000, 6250000, 8250000, 7250000, 6750000, 8250000, 6500000, 5750000, 2750000, 1750000]
+    }
+  ]
+}
+```
+
+### 12-4. 수학적 시뮬레이션 연산 규칙 (SSOT Mathematical Model)
+1. **월별 계절성(Seasonality) 보존 원칙**:
+   - 단순 연평균 균등 분할(1/12)은 리조트 비즈니스의 성수기/비수기 편차를 심각하게 왜곡합니다.
+   - 따라서 반드시 전년도 각 월별 실측 판매수량(`monthlyQty[monthIndex]`)에 기반하여 시뮬레이션을 수행합니다.
+2. **시나리오 1: 작년과 동일한 상황 (전년 고객수 유지, 변동률 0%)**:
+   - 상품별 예상 연매출: $\text{AnnualRev} = \sum_{m=1}^{12} (\text{AdjustedPrice} \times \text{monthlyQty}_m)$
+   - 상품별 예상 m월 매출: $\text{MonthlyRev}_m = \text{AdjustedPrice} \times \text{monthlyQty}_m$
+3. **시나리오 2: 고객수 비율 조정 (+10%, +30% 등 탄력성 조정)**:
+   - 고객 증감률 $\Delta Q$ 적용 시 예상 m월 수량: $\text{Qty}'_m = \text{monthlyQty}_m \times (1 + \frac{\Delta Q}{100})$
+   - 상품별 예상 연매출: $\text{AnnualRev}' = \sum_{m=1}^{12} (\text{AdjustedPrice} \times \text{Qty}'_m)$
+   - 상품별 예상 m월 매출: $\text{MonthlyRev}'_m = \text{AdjustedPrice} \times \text{Qty}'_m$
+4. **Top 5 종합 효과 및 차액(Delta) 계산**:
+   - 연간 총 예상 매출: $\sum_{i=1}^{5} \text{AnnualRev}'_i$
+   - 전년 실적 대비 차액: $\Delta \text{Revenue} = \text{AnnualRev}'_{\text{Total}} - \text{LYRevenue}_{\text{Total}}$
+   - 성장률(%): $(\Delta \text{Revenue} / \text{LYRevenue}_{\text{Total}}) \times 100$
+
+### 12-5. 백엔드 구현 가이드 및 DB 소스 매핑
+* **참조 테이블**:
+  - `dim_facility_team_mapping` (영업장 및 카테고리 필터링: `category_code = 'TICKET'`)
+  - `raw_pos_ticket_detail` 또는 `fact_leisure_sales_v6` (POS 상세 전표 데이터)
+  - `dim_pos_item_master` (티켓 품목 식별자, 품목명, 기준 정상가)
+* **쿼리 로직 요약**:
+  1. 지정된 `facility`와 `baseYear`(예: 2025)의 전표 데이터에서 `SUM(net_amount)` 기준 상위 5개 `item_id` 추출.
+  2. 추출된 5개 상품에 대해 1~12월 월별 `SUM(sales_qty)` 및 `SUM(net_amount)` 집계.
+  3. JSON camelCase로 정규화하여 반환.
+
+---
+
 
 

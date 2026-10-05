@@ -45,8 +45,11 @@ export default function LeisurePricingSimulator() {
   // Price adjustments per item: itemId -> adjusted price
   const [priceAdjustments, setPriceAdjustments] = useState<Record<string, number>>({});
   
-  // Demand change percentage (-50% ~ +100%)
-  const [demandChangePct, setDemandChangePct] = useState<number>(10);
+  // Track active batch markup preset (0 = normal, 5, 10, 20, -1 = custom)
+  const [activeMarkup, setActiveMarkup] = useState<number>(0);
+
+  // Demand change percentage (-50% ~ +100%). Default to 0% (작년 동일)!
+  const [demandChangePct, setDemandChangePct] = useState<number>(0);
 
   // Fetch Top 5 products when selectedFacility or baseYear changes
   const fetchTopProducts = async () => {
@@ -59,12 +62,14 @@ export default function LeisurePricingSimulator() {
       if (payload?.success && Array.isArray(payload.topProducts) && payload.topProducts.length > 0) {
         setApiResponse(payload);
         setIsApiPending(false);
-        // Initialize price adjustments
+        // Initialize price adjustments with clean regular price (0% markup)
         const initialPrices: Record<string, number> = {};
         payload.topProducts.forEach((item) => {
           initialPrices[item.itemId] = item.currentPrice;
         });
         setPriceAdjustments(initialPrices);
+        setActiveMarkup(0);
+        setDemandChangePct(0);
       } else {
         // API not deployed yet or returned 404/empty
         setIsApiPending(true);
@@ -87,6 +92,7 @@ export default function LeisurePricingSimulator() {
   // Handle single item price change
   const handlePriceChange = (itemId: string, newPrice: number) => {
     const validPrice = Math.max(0, Math.round(newPrice));
+    setActiveMarkup(-1); // Set to custom
     setPriceAdjustments((prev) => ({
       ...prev,
       [itemId]: validPrice,
@@ -106,6 +112,7 @@ export default function LeisurePricingSimulator() {
 
   // Batch markup on all items (+5%, +10%, reset)
   const handleBatchMarkup = (ratePct: number) => {
+    setActiveMarkup(ratePct);
     if (!apiResponse?.topProducts) return;
     const next: Record<string, number> = {};
     apiResponse.topProducts.forEach((item) => {
@@ -120,7 +127,13 @@ export default function LeisurePricingSimulator() {
     setPriceAdjustments(next);
   };
 
-  // Compute Simulation Calculations
+  // Reset all to clean LY baseline (0% price markup, 0% demand change)
+  const handleResetAll = () => {
+    setDemandChangePct(0);
+    handleBatchMarkup(0);
+  };
+
+  // Compute Simulation Calculations (SSOT Zero-Variance)
   const simulationResults = useMemo(() => {
     if (!apiResponse?.topProducts || apiResponse.topProducts.length === 0) {
       return null;
@@ -149,12 +162,19 @@ export default function LeisurePricingSimulator() {
 
       for (let m = 0; m < 12; m++) {
         const lyMonthlyQty = item.monthlyQty && item.monthlyQty[m] ? item.monthlyQty[m] : 0;
-        const lyMonthlyRev = item.monthlyRevenue && item.monthlyRevenue[m] 
+        const lyMonthlyRev = item.monthlyRevenue && item.monthlyRevenue[m] !== undefined
           ? item.monthlyRevenue[m] 
           : lyMonthlyQty * item.currentPrice;
 
-        const baselineMonthlyRev = lyMonthlyQty * adjPrice;
-        const adjustedMonthlyRev = Math.round(lyMonthlyQty * demandFactor * adjPrice);
+        // Mathematical SSOT: If priceDelta is 0, baselineMonthlyRev is EXACTLY lyMonthlyRev!
+        const baselineMonthlyRev = priceDelta === 0 
+          ? lyMonthlyRev 
+          : lyMonthlyRev + (lyMonthlyQty * priceDelta);
+
+        // Mathematical SSOT: If priceDelta is 0 AND demandChangePct is 0, adjusted is EXACTLY lyMonthlyRev!
+        const adjustedMonthlyRev = (priceDelta === 0 && demandChangePct === 0)
+          ? lyMonthlyRev
+          : Math.round(baselineMonthlyRev * demandFactor);
 
         itemBaselineAnnualRev += baselineMonthlyRev;
         itemAdjustedAnnualRev += adjustedMonthlyRev;
@@ -433,88 +453,132 @@ export default function LeisurePricingSimulator() {
           
           {/* 4-A. Scenario & Demand Elasticity Controls */}
           <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-200/80 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            
+            {/* Step 1: Ticket Pricing Adjustment */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
               <div>
                 <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Sliders size={14} className="text-emerald-600" />
-                  고객수(수요 탄력성) 변동 시나리오 가정
+                  <ShoppingBag size={14} className="text-emerald-600" />
+                  [1단계] 티켓 판매단가 조정
                 </span>
                 <span className="text-[11px] text-slate-500 mt-0.5 block">
-                  기준 1(작년과 동일한 고객수 0%)과 기준 2(고객 비율 조정)를 동시에 비교합니다.
+                  원하시는 인상률을 클릭하거나, 하단 표에서 상품별 단가를 직접 수정하실 수 있습니다.
                 </span>
               </div>
 
-              {/* Demand Presets */}
+              {/* Batch Markup Buttons */}
               <div className="flex flex-wrap items-center gap-1.5">
-                {DEMAND_PRESETS.map((p) => {
-                  const isActive = demandChangePct === p.value;
-                  return (
-                    <button
-                      key={p.value}
-                      onClick={() => setDemandChangePct(p.value)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        isActive
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Slider & Input */}
-            <div className="flex items-center gap-4 pt-1">
-              <input
-                type="range"
-                min={-50}
-                max={100}
-                step={1}
-                value={demandChangePct}
-                onChange={(e) => setDemandChangePct(parseInt(e.target.value, 10))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-              />
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="font-mono font-black text-sm text-emerald-800 w-16 text-right">
-                  {demandChangePct > 0 ? `+${demandChangePct}` : demandChangePct}%
-                </span>
-                <span className="text-xs text-slate-500 font-semibold">변동</span>
-              </div>
-            </div>
-
-            {/* Batch Markup Controls */}
-            <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-slate-600 font-medium">티켓 단가 일괄 조정:</span>
-              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleBatchMarkup(0)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                    activeMarkup === 0
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  <RotateCcw size={12} />
+                  정상가 (0% 원복)
+                </button>
                 <button
                   onClick={() => handleBatchMarkup(5)}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md font-medium"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeMarkup === 5
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
                 >
                   전체 +5% 인상
                 </button>
                 <button
                   onClick={() => handleBatchMarkup(10)}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md font-medium"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeMarkup === 10
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
                 >
                   전체 +10% 인상
                 </button>
                 <button
                   onClick={() => handleBatchMarkup(20)}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md font-medium"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeMarkup === 20
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
                 >
                   전체 +20% 인상
                 </button>
-                <button
-                  onClick={() => handleBatchMarkup(0)}
-                  className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-medium flex items-center gap-1"
-                >
-                  <RotateCcw size={12} />
-                  단가 원복
-                </button>
+                {activeMarkup === -1 && (
+                  <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-bold border border-amber-200">
+                    직접 단가 조정 중
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Step 2: Customer Demand Elasticity */}
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Sliders size={14} className="text-emerald-600" />
+                    [2단계] 고객수(수요 탄력성) 변동 시나리오
+                  </span>
+                  <span className="text-[11px] text-slate-500 mt-0.5 block">
+                    작년과 동일한 고객수(0%) 기준과 고객 비율 조정(+10%, +30% 등) 시나리오를 동시 비교합니다.
+                  </span>
+                </div>
+
+                {/* Demand Presets */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {DEMAND_PRESETS.map((p) => {
+                    const isActive = demandChangePct === p.value;
+                    return (
+                      <button
+                        key={p.value}
+                        onClick={() => setDemandChangePct(p.value)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          isActive
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={handleResetAll}
+                    title="단가와 고객수를 모두 0%로 초기화합니다."
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 transition-all flex items-center gap-1 ml-1"
+                  >
+                    <RotateCcw size={12} />
+                    전체 리셋 (0%)
+                  </button>
+                </div>
+              </div>
+
+              {/* Slider & Input */}
+              <div className="flex items-center gap-4 pt-1">
+                <input
+                  type="range"
+                  min={-50}
+                  max={100}
+                  step={1}
+                  value={demandChangePct}
+                  onChange={(e) => setDemandChangePct(parseInt(e.target.value, 10))}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                />
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="font-mono font-black text-sm text-emerald-800 w-16 text-right">
+                    {demandChangePct > 0 ? `+${demandChangePct}` : demandChangePct}%
+                  </span>
+                  <span className="text-xs text-slate-500 font-semibold">고객 변동</span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* 4-B. Top KPI Comparison Cards */}
@@ -561,15 +625,26 @@ export default function LeisurePricingSimulator() {
                 <span className="text-blue-700">
                   월평균: <b className="font-mono">{simulationResults.baselineMonthlyAvg.toLocaleString()}원</b>
                 </span>
-                <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
-                  simulationResults.baselineTotalDelta >= 0 ? 'text-blue-800' : 'text-rose-700'
-                }`}>
-                  {simulationResults.baselineTotalDelta >= 0 ? '+' : ''}
-                  {simulationResults.baselineTotalDelta.toLocaleString()}원
-                  ({simulationResults.baselineTotalDeltaPct >= 0 ? '+' : ''}
-                  {simulationResults.baselineTotalDeltaPct.toFixed(1)}%)
-                </span>
+                {simulationResults.baselineTotalDelta === 0 ? (
+                  <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
+                    변동 없음 (+0원, 0.0%)
+                  </span>
+                ) : (
+                  <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
+                    simulationResults.baselineTotalDelta > 0 ? 'text-blue-800' : 'text-rose-700'
+                  }`}>
+                    {simulationResults.baselineTotalDelta > 0 ? '+' : ''}
+                    {simulationResults.baselineTotalDelta.toLocaleString()}원
+                    ({simulationResults.baselineTotalDeltaPct > 0 ? '+' : ''}
+                    {simulationResults.baselineTotalDeltaPct.toFixed(1)}%)
+                  </span>
+                )}
               </div>
+              {simulationResults.baselineTotalDelta > 0 && (
+                <div className="text-[10px] text-blue-700/80 mt-1.5 font-medium">
+                  ※ 고객수는 작년 동일하나, 티켓 단가 인상으로 매출 증가
+                </div>
+              )}
             </div>
 
             {/* Card 3: Adjusted Simulation (Demand + Price Adjusted) */}
@@ -592,15 +667,26 @@ export default function LeisurePricingSimulator() {
                 <span className="text-emerald-800">
                   월평균: <b className="font-mono">{simulationResults.adjustedMonthlyAvg.toLocaleString()}원</b>
                 </span>
-                <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
-                  simulationResults.adjustedTotalDelta >= 0 ? 'text-emerald-900' : 'text-rose-700'
-                }`}>
-                  {simulationResults.adjustedTotalDelta >= 0 ? '+' : ''}
-                  {simulationResults.adjustedTotalDelta.toLocaleString()}원
-                  ({simulationResults.adjustedTotalDeltaPct >= 0 ? '+' : ''}
-                  {simulationResults.adjustedTotalDeltaPct.toFixed(1)}%)
-                </span>
+                {simulationResults.adjustedTotalDelta === 0 ? (
+                  <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
+                    변동 없음 (+0원, 0.0%)
+                  </span>
+                ) : (
+                  <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
+                    simulationResults.adjustedTotalDelta > 0 ? 'text-emerald-900' : 'text-rose-700'
+                  }`}>
+                    {simulationResults.adjustedTotalDelta > 0 ? '+' : ''}
+                    {simulationResults.adjustedTotalDelta.toLocaleString()}원
+                    ({simulationResults.adjustedTotalDeltaPct > 0 ? '+' : ''}
+                    {simulationResults.adjustedTotalDeltaPct.toFixed(1)}%)
+                  </span>
+                )}
               </div>
+              {simulationResults.adjustedTotalDelta === 0 && (
+                <div className="text-[10px] text-slate-500 mt-1.5 font-medium">
+                  ※ 단가 및 고객수 변동이 없어 작년 실적과 100% 동일합니다.
+                </div>
+              )}
             </div>
 
           </div>

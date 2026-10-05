@@ -39,6 +39,16 @@ const DEFAULT_COLORS = [
   '#06b6d4', '#ec4899', '#14b8a6', '#6366f1', '#84cc16'
 ];
 
+export const SEVEN_KEY_FACILITIES = [
+  { key: '놀이동산', label: '놀이동산', color: '#3b82f6' },
+  { key: '벨포레 목장', label: '벨포레 목장', color: '#10b981' },
+  { key: '벨포레 목장(체험)', label: '목장체험', color: '#14b8a6' },
+  { key: '마운틴카트', label: '마운틴카트', color: '#ef4444' },
+  { key: '사계절썰매장', label: '사계절썰매장', color: '#f59e0b' },
+  { key: '미디어아트센터', label: '미디어아트센터', color: '#8b5cf6' },
+  { key: '마리나 클럽', label: '마리나 클럽', color: '#0284c7' },
+];
+
 export default function LeisureUsageRate() {
   const { startDate, endDate, isRange } = useDate();
 
@@ -46,6 +56,23 @@ export default function LeisureUsageRate() {
   const [yoyData, setYoyData] = useState<LeisureYoyMatrixResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Matrix View Mode: 'ALL_FACILITIES' (7개 영업장 컬럼 비교 - 기본값) vs 'SINGLE_FACILITY' (단일 영업장 정밀 분석)
+  const [matrixViewMode, setMatrixViewMode] = useState<'ALL_FACILITIES' | 'SINGLE_FACILITY'>('ALL_FACILITIES');
+
+  // Matrix Selected Years: Multi-select support for 2024, 2025, 2026. Default to ['2025', '2026']
+  const [selectedMatrixYears, setSelectedMatrixYears] = useState<string[]>(['2025', '2026']);
+
+  const handleToggleMatrixYear = (yr: string) => {
+    if (selectedMatrixYears.includes(yr)) {
+      if (selectedMatrixYears.length === 1) return; // 최소 1개년 유지
+      setSelectedMatrixYears(selectedMatrixYears.filter((y) => y !== yr));
+    } else {
+      const next = [...selectedMatrixYears, yr];
+      next.sort();
+      setSelectedMatrixYears(next);
+    }
+  };
 
   // Selected Facility for YoY Matrix & Chart
   const [selectedFacility, setSelectedFacility] = useState<string>('놀이동산');
@@ -534,6 +561,38 @@ export default function LeisureUsageRate() {
     }
     return null;
   }, [periodCumulative]);
+
+  // 7개 주요 영업장 선택 구간 누적 연산 (각 영업장 및 선택 연도별 실측 집계)
+  const sevenFacilitiesCumulative = useMemo(() => {
+    if (!yoyData?.pivotData) return {};
+    const result: Record<string, Record<string, { visitors: number; roomGuests: number; usageRate: number }>> = {};
+
+    SEVEN_KEY_FACILITIES.forEach(({ key }) => {
+      const rows = yoyData.pivotData[key] || [];
+      const targetRows = rows.filter((r) => selectedPeriodMonthNumbers.has(r.month));
+      result[key] = {};
+
+      selectedMatrixYears.forEach((yr) => {
+        let v = 0;
+        let g = 0;
+        const validRates: number[] = [];
+        targetRows.forEach((r) => {
+          const item = r[yr] as LeisureYoyYearData | undefined;
+          if (item) {
+            v += item.visitors;
+            g += item.roomGuests;
+            if (item.usageRate > 0) validRates.push(item.usageRate);
+          }
+        });
+        const usageRate = validRates.length > 0
+          ? Math.round((validRates.reduce((a, b) => a + b, 0) / validRates.length) * 10) / 10
+          : 0;
+        result[key][yr] = { visitors: v, roomGuests: g, usageRate };
+      });
+    });
+
+    return result;
+  }, [yoyData, selectedPeriodMonthNumbers, selectedMatrixYears]);
 
   // 엑셀 출력: 선택된 영업장에 관계없이 전 영업장의 2025 vs 2026 이용률 비교 워크북 생성
   const handleExportExcel = () => {
@@ -1124,7 +1183,7 @@ export default function LeisureUsageRate() {
 
       </div>
 
-      {/* 4. ⭐ 연도별 영업장 이용률 정밀 매트릭스 (1월~12월 행 × 2024, 2025, 2026 열) */}
+      {/* 4. ⭐ 연도별 영업장 이용률 정밀 매트릭스 */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         
         {/* Table Header: Dropdown & Title */}
@@ -1135,7 +1194,15 @@ export default function LeisureUsageRate() {
               연도별 영업장 이용률 정밀 매트릭스
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              드롭다운에서 원하는 영업장을 선택하면 1월부터 12월까지의 연도별(24년, 25년, 26년) 이용률과 YoY 증감이 표출됩니다.
+              {matrixViewMode === 'ALL_FACILITIES' ? (
+                <>
+                  7개 핵심 영업장이 컬럼(열)으로 배치되어 있으며, 연도(24년, 25년, 26년)를 클릭하여 원하는 기간을 한눈에 대조할 수 있습니다.
+                </>
+              ) : (
+                <>
+                  드롭다운에서 원하는 영업장을 선택하면 1월부터 12월까지의 연도별(24년, 25년, 26년) 이용률과 YoY 증감이 표출됩니다.
+                </>
+              )}
               {isRange && selectedPeriodMonths.length > 1 && (
                 <span className="ml-2 font-bold text-emerald-700">
                   (조회 기간: {startMonthStr} ~ {endMonthStr} 형광 표시)
@@ -1156,6 +1223,127 @@ export default function LeisureUsageRate() {
               <span>전 영업장 이용률 엑셀 다운로드</span>
             </button>
 
+            {/* Layout Mode Toggle */}
+            <div className="inline-flex p-1 bg-slate-200/70 rounded-2xl text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setMatrixViewMode('ALL_FACILITIES')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  matrixViewMode === 'ALL_FACILITIES'
+                    ? 'bg-white text-emerald-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🏢 7대 영업장 컬럼 비교
+              </button>
+              <button
+                type="button"
+                onClick={() => setMatrixViewMode('SINGLE_FACILITY')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  matrixViewMode === 'SINGLE_FACILITY'
+                    ? 'bg-white text-emerald-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🔍 단일 영업장 정밀 분석
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 🏢 ALL_FACILITIES Mode: Year Selection Pills & Presets */}
+        {matrixViewMode === 'ALL_FACILITIES' ? (
+          <div className="px-6 lg:px-8 py-3.5 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
+                비교 연도 선택:
+              </span>
+              <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
+                {(['2024', '2025', '2026'] as const).map((yr) => {
+                  const isSelected = selectedMatrixYears.includes(yr);
+                  return (
+                    <button
+                      key={yr}
+                      type="button"
+                      onClick={() => handleToggleMatrixYear(yr)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                      }`}
+                    >
+                      <span>{yr}년</span>
+                      {isSelected && <span className="text-[10px] opacity-90">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick Year Presets */}
+              <div className="flex items-center gap-1 text-[11px] ml-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMatrixYears(['2025', '2026'])}
+                  className={`px-2.5 py-1 rounded-xl font-bold border transition-colors cursor-pointer ${
+                    selectedMatrixYears.length === 2 && selectedMatrixYears.includes('2025') && selectedMatrixYears.includes('2026')
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  2개년 비교 (25 vs 26)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMatrixYears(['2024', '2025', '2026'])}
+                  className={`px-2.5 py-1 rounded-xl font-bold border transition-colors cursor-pointer ${
+                    selectedMatrixYears.length === 3
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  3개년 전체 (24~26)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMatrixYears(['2026'])}
+                  className={`px-2.5 py-1 rounded-xl font-bold border transition-colors cursor-pointer ${
+                    selectedMatrixYears.length === 1 && selectedMatrixYears[0] === '2026'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  2026년 단일
+                </button>
+              </div>
+            </div>
+
+            <span className="text-xs text-slate-400 font-medium">
+              💡 {selectedMatrixYears.length === 1 ? '선택 연도 1개 표시' : selectedMatrixYears.length === 2 ? '2개년 대조 (2026년 셀에 전년 대비 증감 %p 표시)' : '3개년 전체 대조 표시'}
+            </span>
+          </div>
+        ) : (
+          /* 🔍 SINGLE_FACILITY Mode: Facility Quick Chips & Dropdown */
+          <div className="px-6 lg:px-8 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400 mr-1">빠른 선택:</span>
+              {SEVEN_KEY_FACILITIES.map(({ key, label }) => {
+                const isSelected = selectedFacility === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedFacility(key)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                 영업장 선택:
@@ -1164,7 +1352,7 @@ export default function LeisureUsageRate() {
                 <select
                   value={selectedFacility}
                   onChange={(e) => setSelectedFacility(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-white border-2 border-emerald-500/80 text-emerald-900 font-bold rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs cursor-pointer pr-10 appearance-none"
+                  className="w-full sm:w-auto px-4 py-2 bg-white border-2 border-emerald-500/80 text-emerald-900 font-bold rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs cursor-pointer pr-10 appearance-none"
                 >
                   {facilityList.map((fac) => (
                     <option key={fac} value={fac}>
@@ -1180,244 +1368,422 @@ export default function LeisureUsageRate() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Quick Facility Chips */}
-        <div className="px-6 lg:px-8 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 mr-1">빠른 선택:</span>
-          {[
-            { key: '놀이동산', label: '놀이동산' },
-            { key: '벨포레 목장', label: '벨포레 목장' },
-            { key: '벨포레 목장(체험)', label: '목장체험' },
-            { key: '마운틴카트', label: '마운틴카트' },
-            { key: '사계절썰매장', label: '사계절썰매장' },
-            { key: '미디어아트센터', label: '미디어아트센터' },
-            { key: '마리나 클럽', label: '마리나 클럽' },
-          ].map(({ key, label }) => {
-            const isSelected = selectedFacility === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedFacility(key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                }`}
-              >
-                <span>{label}</span>
-              </button>
-            );
-          })}
-        </div>
+        )}
 
         {/* Matrix Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-4 px-6 text-center w-32">월 (Month)</th>
-                <th className="py-4 px-6 text-center">2024년 실적</th>
-                <th className="py-4 px-6 text-center">2025년 실적</th>
-                <th className="py-4 px-6 text-center bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80">
-                  2026년 실적 (최신)
-                </th>
-                <th className="py-4 px-6 text-center">YoY 증감 (26년 vs 25년)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {currentPivotRows.map((row) => {
-                const monthNum = row.month;
-                const d24 = row['2024'] as LeisureYoyYearData | undefined;
-                const d25 = row['2025'] as LeisureYoyYearData | undefined;
-                const d26 = row['2026'] as LeisureYoyYearData | undefined;
-
-                // 2026 data validity
-                const has26Data = d26 && (d26.roomGuests > 0 || d26.visitors > 0);
-                const has25Data = d25 && (d25.roomGuests > 0 || d25.visitors > 0);
-                const has24Data = d24 && (d24.roomGuests > 0 || d24.visitors > 0);
-
-                // Calculate YoY diff between 2026 and 2025
-                let yoyDiff: number | null = null;
-                if (has26Data && has25Data && d26 && d25) {
-                  yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
-                }
-
-                // Check if this month is in the selected period (e.g. 1월~9월)
-                const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
-
-                return (
-                  <tr 
-                    key={monthNum}
-                    className={`transition-colors ${
-                      isMonthInSelectedRange 
-                        ? 'bg-emerald-50/40 font-semibold' 
-                        : 'hover:bg-slate-50/80 opacity-75'
-                    }`}
+        {matrixViewMode === 'ALL_FACILITIES' ? (
+          /* 🏢 7대 영업장 열 × 월 행 매트릭스 */
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+              <thead>
+                {/* 1단 헤더: 영업장명 */}
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700">
+                  <th
+                    rowSpan={selectedMatrixYears.length > 1 ? 2 : 1}
+                    className="py-3.5 px-4 text-center sticky left-0 bg-slate-100 z-20 w-24 border-r border-slate-200 font-extrabold text-slate-800"
                   >
-                    {/* Month Cell */}
-                    <td className="py-4 px-6 text-center font-extrabold text-slate-800 bg-slate-50/30 text-sm">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <span>{monthNum}월</span>
-                        {isMonthInSelectedRange && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                            조회구간
-                          </span>
-                        )}
+                    월 (Month)
+                  </th>
+                  {SEVEN_KEY_FACILITIES.map((fac) => (
+                    <th
+                      key={fac.key}
+                      colSpan={selectedMatrixYears.length}
+                      className="py-3 px-3 text-center border-l border-slate-200 bg-slate-50"
+                    >
+                      <div className="flex items-center justify-center gap-1.5 font-bold text-slate-800 text-xs sm:text-sm">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: fac.color }} />
+                        <span>{fac.label}</span>
                       </div>
-                    </td>
-
-                    {/* 2024 Column */}
-                    <td className="py-4 px-6 text-center">
-                      {has24Data && d24 ? (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="font-mono text-sm font-bold text-slate-700">
-                            {d24.usageRate.toFixed(1)}%
-                          </span>
-                          <span className="text-[11px] text-slate-400 tabular-nums">
-                            {d24.visitors.toLocaleString()}명 / {d24.roomGuests.toLocaleString()}명
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 font-mono">-</span>
+                      {fac.key === '벨포레 목장(체험)' && (
+                        <span className="text-[10px] text-emerald-700 font-normal block mt-0.5">
+                          (목장입장객 대비)
+                        </span>
                       )}
-                    </td>
-
-                    {/* 2025 Column */}
-                    <td className="py-4 px-6 text-center">
-                      {has25Data && d25 ? (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="font-mono text-sm font-bold text-blue-700">
-                            {d25.usageRate.toFixed(1)}%
-                          </span>
-                          <span className="text-[11px] text-slate-400 tabular-nums">
-                            {d25.visitors.toLocaleString()}명 / {d25.roomGuests.toLocaleString()}명
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 font-mono">-</span>
+                      {selectedMatrixYears.length === 1 && (
+                        <span className="text-[10px] text-slate-400 font-normal block mt-0.5">
+                          {selectedMatrixYears[0]}년 실적
+                        </span>
                       )}
-                    </td>
+                    </th>
+                  ))}
+                </tr>
 
-                    {/* 2026 Column (Highlighted) */}
-                    <td className="py-4 px-6 text-center bg-emerald-50/30 border-x border-emerald-100/60">
-                      {has26Data && d26 ? (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="font-mono text-base font-extrabold text-emerald-700">
-                            {d26.usageRate.toFixed(1)}%
-                          </span>
-                          <span className="text-[11px] text-emerald-600 font-medium tabular-nums">
-                            {d26.visitors.toLocaleString()}명 / {d26.roomGuests.toLocaleString()}명
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 font-mono text-xs">미도래</span>
-                      )}
-                    </td>
+                {/* 2단 헤더: 선택 연도 (연도가 2개 이상일 때만 출력) */}
+                {selectedMatrixYears.length > 1 && (
+                  <tr className="bg-slate-50/70 border-b border-slate-200 text-[11px] font-bold text-slate-500">
+                    {SEVEN_KEY_FACILITIES.map((fac) =>
+                      selectedMatrixYears.map((yr, idx) => (
+                        <th
+                          key={`${fac.key}-${yr}`}
+                          className={`py-2 px-2.5 text-center ${
+                            idx === 0 ? 'border-l border-slate-200' : 'border-l border-slate-100'
+                          } ${yr === '2026' ? 'bg-emerald-50/50 text-emerald-900 font-extrabold' : ''}`}
+                        >
+                          {yr.slice(2)}년 실적
+                        </th>
+                      ))
+                    )}
+                  </tr>
+                )}
+              </thead>
 
-                    {/* YoY Diff (26 vs 25) Column */}
-                    <td className="py-4 px-6 text-center">
-                      {yoyDiff !== null ? (
-                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold font-mono">
-                          {yoyDiff > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-xl">
-                              <ArrowUpRight size={14} className="stroke-[2.5]" />
-                              +{yoyDiff.toFixed(1)}%p
-                            </span>
-                          ) : yoyDiff < 0 ? (
-                            <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded-xl">
-                              <ArrowDownRight size={14} className="stroke-[2.5]" />
-                              {yoyDiff.toFixed(1)}%p
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl">
-                              <Minus size={14} />
-                              0.0%p
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((monthNum) => {
+                  const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
+
+                  return (
+                    <tr
+                      key={monthNum}
+                      className={`transition-colors ${
+                        isMonthInSelectedRange
+                          ? 'bg-emerald-50/40 font-semibold'
+                          : 'hover:bg-slate-50/80'
+                      }`}
+                    >
+                      {/* Sticky Month Cell */}
+                      <td className="py-3.5 px-4 text-center font-extrabold text-slate-800 bg-slate-50/90 sticky left-0 z-10 border-r border-slate-200 text-sm">
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{monthNum}월</span>
+                          {isMonthInSelectedRange && (
+                            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                              조회
                             </span>
                           )}
                         </div>
-                      ) : (
-                        <span className="text-slate-300 font-mono">-</span>
-                      )}
+                      </td>
+
+                      {/* 7 Facilities × Selected Years Cells */}
+                      {SEVEN_KEY_FACILITIES.map((fac) => {
+                        const rows = yoyData?.pivotData?.[fac.key] || [];
+                        const mRow = rows.find((r) => r.month === monthNum);
+                        const d25 = mRow ? (mRow['2025'] as LeisureYoyYearData | undefined) : undefined;
+                        const d26 = mRow ? (mRow['2026'] as LeisureYoyYearData | undefined) : undefined;
+
+                        let yoyDiff: number | null = null;
+                        if (
+                          d25 &&
+                          d26 &&
+                          (d25.visitors > 0 || d25.roomGuests > 0) &&
+                          (d26.visitors > 0 || d26.roomGuests > 0)
+                        ) {
+                          yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+                        }
+
+                        return selectedMatrixYears.map((yr, idx) => {
+                          const item = mRow ? (mRow[yr] as LeisureYoyYearData | undefined) : undefined;
+                          const hasData = item && (item.visitors > 0 || item.roomGuests > 0);
+
+                          return (
+                            <td
+                              key={`${fac.key}-${monthNum}-${yr}`}
+                              className={`py-3 px-2.5 text-center ${
+                                idx === 0 ? 'border-l border-slate-200' : 'border-l border-slate-100'
+                              } ${yr === '2026' ? 'bg-emerald-50/20' : ''}`}
+                            >
+                              {hasData && item ? (
+                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                  <div className="flex items-center gap-1 justify-center flex-wrap">
+                                    <span
+                                      className={`font-mono text-xs sm:text-sm font-bold ${
+                                        yr === '2026'
+                                          ? 'text-emerald-700 font-extrabold'
+                                          : yr === '2025'
+                                          ? 'text-blue-700'
+                                          : 'text-slate-700'
+                                      }`}
+                                    >
+                                      {item.usageRate.toFixed(1)}%
+                                    </span>
+                                    {/* 2025와 2026이 동시 선택된 경우 2026 셀에 증감 %p 인라인 표기 */}
+                                    {yr === '2026' && selectedMatrixYears.includes('2025') && yoyDiff !== null && (
+                                      <span
+                                        className={`text-[10px] font-bold px-1 rounded-sm leading-tight ${
+                                          yoyDiff >= 0
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : 'bg-rose-100 text-rose-700'
+                                        }`}
+                                      >
+                                        {yoyDiff > 0 ? '+' : ''}
+                                        {yoyDiff.toFixed(1)}%p
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 tabular-nums">
+                                    {item.visitors.toLocaleString()}명
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 font-mono text-xs">
+                                  {yr === '2026' ? '미도래' : '-'}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        });
+                      })}
+                    </tr>
+                  );
+                })}
+
+                {/* 누적 합산 요약 행 */}
+                {periodCumulative && selectedPeriodMonthNumbers.size > 1 && (
+                  <tr className="bg-emerald-100/70 border-t-2 border-emerald-300 font-bold text-xs text-emerald-950">
+                    <td className="py-4 px-4 text-center font-black text-xs sm:text-sm bg-emerald-200/60 sticky left-0 z-10 border-r border-emerald-300">
+                      <div>누적 합계</div>
+                      <div className="text-[10px] font-semibold text-emerald-800">
+                        ({startMonthStr.slice(5)}월~{endMonthStr.slice(5)}월)
+                      </div>
                     </td>
 
+                    {SEVEN_KEY_FACILITIES.map((fac) => {
+                      const cum25 = sevenFacilitiesCumulative[fac.key]?.['2025'];
+                      const cum26 = sevenFacilitiesCumulative[fac.key]?.['2026'];
+
+                      return selectedMatrixYears.map((yr, idx) => {
+                        const cum = sevenFacilitiesCumulative[fac.key]?.[yr];
+                        let diff: number | null = null;
+                        if (yr === '2026' && cum25 && cum26 && cum25.roomGuests > 0 && cum26.roomGuests > 0) {
+                          diff = Math.round((cum26.usageRate - cum25.usageRate) * 10) / 10;
+                        }
+
+                        return (
+                          <td
+                            key={`cum-${fac.key}-${yr}`}
+                            className={`py-3.5 px-2 text-center border-l ${
+                              idx === 0 ? 'border-emerald-300' : 'border-emerald-200'
+                            } ${yr === '2026' ? 'bg-emerald-200/50' : ''}`}
+                          >
+                            {cum && (cum.visitors > 0 || cum.roomGuests > 0) ? (
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                <div className="flex items-center gap-1 justify-center flex-wrap">
+                                  <span className="font-mono text-xs sm:text-sm font-black text-emerald-950">
+                                    {cum.usageRate.toFixed(1)}%
+                                  </span>
+                                  {yr === '2026' && selectedMatrixYears.includes('2025') && diff !== null && (
+                                    <span
+                                      className={`text-[10px] font-bold px-1 rounded-sm leading-tight ${
+                                        diff >= 0
+                                          ? 'bg-emerald-300 text-emerald-950'
+                                          : 'bg-rose-200 text-rose-900'
+                                      }`}
+                                    >
+                                      {diff > 0 ? '+' : ''}
+                                      {diff.toFixed(1)}%p
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-emerald-900/80 font-medium tabular-nums">
+                                  {cum.visitors.toLocaleString()}명
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-emerald-700/60 font-mono text-xs">-</span>
+                            )}
+                          </td>
+                        );
+                      });
+                    })}
                   </tr>
-                );
-              })}
-
-              {/* ⭐ 선택 기간 누적 합산 요약 행 (기간 범위 선택 시 출력) */}
-              {periodCumulative && selectedPeriodMonthNumbers.size > 1 && (
-                <tr className="bg-emerald-100/70 border-t-2 border-emerald-300 font-bold text-xs text-emerald-950">
-                  <td className="py-4 px-6 text-center font-black text-sm bg-emerald-200/50">
-                    <div>선택 구간 누적</div>
-                    <div className="text-[11px] font-semibold text-emerald-800">
-                      ({startMonthStr.slice(5)}월 ~ {endMonthStr.slice(5)}월)
-                    </div>
-                  </td>
-
-                  {/* 2024 Period Cumulative */}
-                  <td className="py-4 px-6 text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="font-mono text-sm font-black text-slate-800">
-                        {periodCumulative['2024'].usageRate.toFixed(1)}%
-                      </span>
-                      <span className="text-[11px] text-slate-600 tabular-nums">
-                        {periodCumulative['2024'].visitors.toLocaleString()}명 / {periodCumulative['2024'].roomGuests.toLocaleString()}명
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* 2025 Period Cumulative */}
-                  <td className="py-4 px-6 text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="font-mono text-sm font-black text-blue-900">
-                        {periodCumulative['2025'].usageRate.toFixed(1)}%
-                      </span>
-                      <span className="text-[11px] text-blue-700 tabular-nums">
-                        {periodCumulative['2025'].visitors.toLocaleString()}명 / {periodCumulative['2025'].roomGuests.toLocaleString()}명
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* 2026 Period Cumulative */}
-                  <td className="py-4 px-6 text-center bg-emerald-200/70 border-x border-emerald-300">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="font-mono text-base font-black text-emerald-950">
-                        {periodCumulative['2026'].usageRate.toFixed(1)}%
-                      </span>
-                      <span className="text-[11px] text-emerald-900 font-bold tabular-nums">
-                        {periodCumulative['2026'].visitors.toLocaleString()}명 / {periodCumulative['2026'].roomGuests.toLocaleString()}명
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* Period YoY Diff */}
-                  <td className="py-4 px-6 text-center">
-                    {periodYoYDiff !== null ? (
-                      <div className="inline-flex items-center gap-1 font-mono font-black text-xs">
-                        {periodYoYDiff > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-900 bg-white/90 px-3 py-1.5 rounded-xl shadow-xs border border-emerald-200">
-                            <ArrowUpRight size={15} className="stroke-[3]" />
-                            +{periodYoYDiff.toFixed(1)}%p
-                          </span>
-                        ) : periodYoYDiff < 0 ? (
-                          <span className="inline-flex items-center gap-1 text-rose-900 bg-white/90 px-3 py-1.5 rounded-xl shadow-xs border border-rose-200">
-                            <ArrowDownRight size={15} className="stroke-[3]" />
-                            {periodYoYDiff.toFixed(1)}%p
-                          </span>
-                        ) : (
-                          <span className="text-slate-700 bg-white px-3 py-1.5 rounded-xl">0.0%p</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 font-mono">-</span>
-                    )}
-                  </td>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* 🔍 SINGLE_FACILITY Mode: 기존 단일 영업장 테이블 */
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                  <th className="py-4 px-6 text-center w-32">월 (Month)</th>
+                  <th className="py-4 px-6 text-center">2024년 실적</th>
+                  <th className="py-4 px-6 text-center">2025년 실적</th>
+                  <th className="py-4 px-6 text-center bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80">
+                    2026년 실적 (최신)
+                  </th>
+                  <th className="py-4 px-6 text-center">YoY 증감 (26년 vs 25년)</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {currentPivotRows.map((row) => {
+                  const monthNum = row.month;
+                  const d24 = row['2024'] as LeisureYoyYearData | undefined;
+                  const d25 = row['2025'] as LeisureYoyYearData | undefined;
+                  const d26 = row['2026'] as LeisureYoyYearData | undefined;
+
+                  const has26Data = d26 && (d26.roomGuests > 0 || d26.visitors > 0);
+                  const has25Data = d25 && (d25.roomGuests > 0 || d25.visitors > 0);
+                  const has24Data = d24 && (d24.roomGuests > 0 || d24.visitors > 0);
+
+                  let yoyDiff: number | null = null;
+                  if (has26Data && has25Data && d26 && d25) {
+                    yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+                  }
+
+                  const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
+
+                  return (
+                    <tr 
+                      key={monthNum}
+                      className={`transition-colors ${
+                        isMonthInSelectedRange 
+                          ? 'bg-emerald-50/40 font-semibold' 
+                          : 'hover:bg-slate-50/80 opacity-75'
+                      }`}
+                    >
+                      <td className="py-4 px-6 text-center font-extrabold text-slate-800 bg-slate-50/30 text-sm">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span>{monthNum}월</span>
+                          {isMonthInSelectedRange && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              조회구간
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-4 px-6 text-center">
+                        {has24Data && d24 ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="font-mono text-sm font-bold text-slate-700">
+                              {d24.usageRate.toFixed(1)}%
+                            </span>
+                            <span className="text-[11px] text-slate-400 tabular-nums">
+                              {d24.visitors.toLocaleString()}명 / {d24.roomGuests.toLocaleString()}명
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-mono">-</span>
+                        )}
+                      </td>
+
+                      <td className="py-4 px-6 text-center">
+                        {has25Data && d25 ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="font-mono text-sm font-bold text-blue-700">
+                              {d25.usageRate.toFixed(1)}%
+                            </span>
+                            <span className="text-[11px] text-slate-400 tabular-nums">
+                              {d25.visitors.toLocaleString()}명 / {d25.roomGuests.toLocaleString()}명
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-mono">-</span>
+                        )}
+                      </td>
+
+                      <td className="py-4 px-6 text-center bg-emerald-50/30 border-x border-emerald-100/60">
+                        {has26Data && d26 ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="font-mono text-base font-extrabold text-emerald-700">
+                              {d26.usageRate.toFixed(1)}%
+                            </span>
+                            <span className="text-[11px] text-emerald-600 font-medium tabular-nums">
+                              {d26.visitors.toLocaleString()}명 / {d26.roomGuests.toLocaleString()}명
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-mono text-xs">미도래</span>
+                        )}
+                      </td>
+
+                      <td className="py-4 px-6 text-center">
+                        {yoyDiff !== null ? (
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold font-mono">
+                            {yoyDiff > 0 ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-xl">
+                                <ArrowUpRight size={14} className="stroke-[2.5]" />
+                                +{yoyDiff.toFixed(1)}%p
+                              </span>
+                            ) : yoyDiff < 0 ? (
+                              <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded-xl">
+                                <ArrowDownRight size={14} className="stroke-[2.5]" />
+                                {yoyDiff.toFixed(1)}%p
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl">
+                                <Minus size={14} />
+                                0.0%p
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 font-mono">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {/* 누적 합산 요약 행 */}
+                {periodCumulative && selectedPeriodMonthNumbers.size > 1 && (
+                  <tr className="bg-emerald-100/70 border-t-2 border-emerald-300 font-bold text-xs text-emerald-950">
+                    <td className="py-4 px-6 text-center font-black text-sm bg-emerald-200/50">
+                      <div>선택 구간 누적</div>
+                      <div className="text-[11px] font-semibold text-emerald-800">
+                        ({startMonthStr.slice(5)}월 ~ {endMonthStr.slice(5)}월)
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="font-mono text-sm font-black text-slate-800">
+                          {periodCumulative['2024'].usageRate.toFixed(1)}%
+                        </span>
+                        <span className="text-[11px] text-slate-600 tabular-nums">
+                          {periodCumulative['2024'].visitors.toLocaleString()}명 / {periodCumulative['2024'].roomGuests.toLocaleString()}명
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="font-mono text-sm font-black text-blue-900">
+                          {periodCumulative['2025'].usageRate.toFixed(1)}%
+                        </span>
+                        <span className="text-[11px] text-blue-700 tabular-nums">
+                          {periodCumulative['2025'].visitors.toLocaleString()}명 / {periodCumulative['2025'].roomGuests.toLocaleString()}명
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6 text-center bg-emerald-200/70 border-x border-emerald-300">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="font-mono text-base font-black text-emerald-950">
+                          {periodCumulative['2026'].usageRate.toFixed(1)}%
+                        </span>
+                        <span className="text-[11px] text-emerald-900 font-bold tabular-nums">
+                          {periodCumulative['2026'].visitors.toLocaleString()}명 / {periodCumulative['2026'].roomGuests.toLocaleString()}명
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6 text-center">
+                      {periodYoYDiff !== null ? (
+                        <div className="inline-flex items-center gap-1 font-mono font-black text-xs">
+                          {periodYoYDiff > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-900 bg-white/90 px-3 py-1.5 rounded-xl shadow-xs border border-emerald-200">
+                              <ArrowUpRight size={15} className="stroke-[3]" />
+                              +{periodYoYDiff.toFixed(1)}%p
+                            </span>
+                          ) : periodYoYDiff < 0 ? (
+                            <span className="inline-flex items-center gap-1 text-rose-900 bg-white/90 px-3 py-1.5 rounded-xl shadow-xs border border-rose-200">
+                              <ArrowDownRight size={15} className="stroke-[3]" />
+                              {periodYoYDiff.toFixed(1)}%p
+                            </span>
+                          ) : (
+                            <span className="text-slate-700 bg-white px-3 py-1.5 rounded-xl">0.0%p</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-mono">-</span>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Footer Note */}
         <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-500 gap-2">

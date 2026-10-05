@@ -47,12 +47,13 @@ export default function FacilityTrend() {
     setLoading(true);
     try {
       if (selectedFacility === '전체') {
-        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 및 /api/v6/report/room-guests-yoy)
-        const [res2024, res2025, res2026, guestsRes] = await Promise.all([
+        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends, /api/v6/report/room-guests-yoy, /api/v6/report/leisure-yoy-matrix)
+        const [res2024, res2025, res2026, guestsRes, leisureRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2024`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2025`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2026`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=2026`).catch(() => null),
         ]);
 
         const guestsMap: Record<string, number> = {};
@@ -153,11 +154,24 @@ export default function FacilityTrend() {
           visitors?: number;
         }> = {};
 
+        const resolveVisitors = (yr: string) => {
+          // 1순위: room-guests-yoy totals 객체 (백엔드 공식 totals 필드)
+          if (guestsRes?.totals?.[yr] !== undefined && guestsRes.totals[yr] !== null) {
+            return Math.round(Number(guestsRes.totals[yr]));
+          }
+          // 2순위: leisure-yoy-matrix periodCumulative 완제품 (DB 마트 집계 연간 누적 객실투숙객)
+          const periodData = leisureRes?.data?.periodCumulative ?? leisureRes?.periodCumulative;
+          if (periodData?.[yr]?.roomGuests !== undefined && periodData[yr].roomGuests !== null) {
+            return Math.round(Number(periodData[yr].roomGuests));
+          }
+          return undefined;
+        };
+
         const vm2024 = parseVM(res2024);
         if (vm2024) {
           totalsByYear['2024'] = {
             ...vm2024,
-            visitors: guestsRes?.totals?.['2024'] !== undefined ? Math.round(Number(guestsRes.totals['2024'])) : undefined
+            visitors: resolveVisitors('2024')
           };
         }
 
@@ -165,7 +179,7 @@ export default function FacilityTrend() {
         if (vm2025) {
           totalsByYear['2025'] = {
             ...vm2025,
-            visitors: guestsRes?.totals?.['2025'] !== undefined ? Math.round(Number(guestsRes.totals['2025'])) : undefined
+            visitors: resolveVisitors('2025')
           };
         }
 
@@ -173,7 +187,7 @@ export default function FacilityTrend() {
         if (vm2026) {
           totalsByYear['2026'] = {
             ...vm2026,
-            visitors: guestsRes?.totals?.['2026'] !== undefined ? Math.round(Number(guestsRes.totals['2026'])) : undefined
+            visitors: resolveVisitors('2026')
           };
         }
 

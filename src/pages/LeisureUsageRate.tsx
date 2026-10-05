@@ -60,8 +60,56 @@ export default function LeisureUsageRate() {
   // Matrix View Mode: 'ALL_FACILITIES' (7개 영업장 컬럼 비교 - 기본값) vs 'SINGLE_FACILITY' (단일 영업장 정밀 분석)
   const [matrixViewMode, setMatrixViewMode] = useState<'ALL_FACILITIES' | 'SINGLE_FACILITY'>('ALL_FACILITIES');
 
-  // Matrix Selected Years: Multi-select support for 2024, 2025, 2026. Default to ['2025', '2026']
+  // 백엔드 API 응답 기반 가용 연도 목록 (2024년 ~ 최신영업연도 동적 생성)
+  const availableYears = useMemo(() => {
+    if (yoyData?.years && yoyData.years.length > 0) {
+      return [...yoyData.years].sort();
+    }
+    const currentY = getClosedBusinessYear();
+    const fallback: string[] = [];
+    for (let y = 2024; y <= Math.max(currentY, 2026); y++) {
+      fallback.push(String(y));
+    }
+    return fallback;
+  }, [yoyData?.years]);
+
+  // 최신 연도 (2026년, 2027년 도래 시 2027년)
+  const latestYear = useMemo(() => {
+    return availableYears[availableYears.length - 1] || '2026';
+  }, [availableYears]);
+
+  // 직전 연도 (2025년, 2027년 도래 시 2026년)
+  const prevYear = useMemo(() => {
+    return availableYears.length >= 2 ? availableYears[availableYears.length - 2] : availableYears[0];
+  }, [availableYears]);
+
+  // Matrix Selected Years: Multi-select support for dynamic years. Default to latest 2 years
   const [selectedMatrixYears, setSelectedMatrixYears] = useState<string[]>(['2025', '2026']);
+
+  // 데이터 로드 시 기본 선택 연도를 최신 2개년([prevYear, latestYear])으로 자동 동기화
+  useEffect(() => {
+    if (availableYears.length >= 2) {
+      setSelectedMatrixYears((prev) => {
+        const valid = prev.filter((y) => availableYears.includes(y));
+        return valid.length > 0 ? valid : [prevYear, latestYear];
+      });
+    }
+  }, [availableYears, prevYear, latestYear]);
+
+  // 선택된 연도 정렬 및 비교 대상 2개년 판별 (예: 2개년 선택 시 [yrA, yrB], 최신 2개년 비교)
+  const sortedSelectedYears = useMemo(() => {
+    return [...selectedMatrixYears].sort();
+  }, [selectedMatrixYears]);
+
+  const compareYearB = useMemo(() => {
+    return sortedSelectedYears[sortedSelectedYears.length - 1] || latestYear;
+  }, [sortedSelectedYears, latestYear]);
+
+  const compareYearA = useMemo(() => {
+    return sortedSelectedYears.length >= 2
+      ? sortedSelectedYears[sortedSelectedYears.length - 2]
+      : prevYear;
+  }, [sortedSelectedYears, prevYear]);
 
   const handleToggleMatrixYear = (yr: string) => {
     if (selectedMatrixYears.includes(yr)) {
@@ -296,19 +344,23 @@ export default function LeisureUsageRate() {
     if (!yoyData?.pivotData || !yoyData.pivotData[selectedFacility]) return {};
 
     const rows = yoyData.pivotData[selectedFacility];
-    const years = yoyData.years || ['2024', '2025', '2026'];
+    const years = availableYears;
 
+    const baseColors = ['#94a3b8', '#3b82f6', '#10b981', '#06b6d4', '#8b5cf6', '#ef4444', '#f59e0b'];
     const colors: Record<string, string> = {
       '2024': '#94a3b8', // Slate
       '2025': '#3b82f6', // Blue
       '2026': '#10b981', // Emerald
+      '2027': '#06b6d4', // Cyan
+      '2028': '#8b5cf6', // Violet
     };
 
-    const series = years.map((yr) => {
+    const series = years.map((yr, idx) => {
+      const isCurrentYear = yr === latestYear;
       const dataPoints = rows.map((r) => {
         const item = r[yr] as LeisureYoyYearData | undefined;
-        // Don't show line drop to 0 for unarrived future months in 2026
-        if (yr === '2026' && item && item.roomGuests === 0 && item.visitors === 0) {
+        // Don't show line drop to 0 for unarrived future months in latestYear
+        if (yr === latestYear && item && item.roomGuests === 0 && item.visitors === 0) {
           return null;
         }
         return {
@@ -318,7 +370,7 @@ export default function LeisureUsageRate() {
         };
       });
 
-      const isCurrentYear = yr === '2026';
+      const seriesColor = colors[yr] || baseColors[idx % baseColors.length];
 
       return {
         name: `${yr}년`,
@@ -328,11 +380,11 @@ export default function LeisureUsageRate() {
         symbolSize: isCurrentYear ? 8 : 6,
         lineStyle: {
           width: isCurrentYear ? 3.5 : 2,
-          type: yr === '2024' ? 'dashed' : 'solid',
-          color: colors[yr] || '#64748b',
+          type: yr === availableYears[0] ? 'dashed' : 'solid',
+          color: seriesColor,
         },
         itemStyle: {
-          color: colors[yr] || '#64748b',
+          color: seriesColor,
         },
         connectNulls: false,
         emphasis: {
@@ -361,13 +413,13 @@ export default function LeisureUsageRate() {
 
           params.forEach((item) => {
             if (item.value === null || item.value === undefined) return;
-            const is26 = item.seriesName.includes('2026');
+            const isLatest = item.seriesName.includes(latestYear);
             const usageVal = Number(item.data?.value || 0).toFixed(1);
             const visitorsVal = Number(item.data?.visitors || 0).toLocaleString();
             const roomGuestsVal = Number(item.data?.roomGuests || 0).toLocaleString();
 
             html += `
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 4px; font-size: 11.5px; ${is26 ? 'font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 2px 4px; border-radius: 4px;' : ''}">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 4px; font-size: 11.5px; ${isLatest ? 'font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 2px 4px; border-radius: 4px;' : ''}">
                 <span style="display: flex; align-items: center; gap: 6px;">
                   <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${item.color};"></span>
                   ${item.seriesName}
@@ -518,20 +570,19 @@ export default function LeisureUsageRate() {
     };
   }, [usageData, timelineFilteredMonths, selectedFacilities]);
 
-  // Cumulative numbers for the selected period across 2024, 2025, 2026 in the matrix table
+  // Cumulative numbers for the selected period across availableYears in the matrix table
   const periodCumulative = useMemo(() => {
     if (!yoyData?.pivotData || !yoyData.pivotData[selectedFacility]) return null;
 
     const rows = yoyData.pivotData[selectedFacility];
     const targetRows = rows.filter((r) => selectedPeriodMonthNumbers.has(r.month));
 
-    const result: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {
-      '2024': { visitors: 0, roomGuests: 0, usageRate: 0 },
-      '2025': { visitors: 0, roomGuests: 0, usageRate: 0 },
-      '2026': { visitors: 0, roomGuests: 0, usageRate: 0 },
-    };
+    const result: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {};
+    availableYears.forEach((yr) => {
+      result[yr] = { visitors: 0, roomGuests: 0, usageRate: 0 };
+    });
 
-    ['2024', '2025', '2026'].forEach((yr) => {
+    availableYears.forEach((yr) => {
       let v = 0;
       let g = 0;
       const validRates: number[] = [];
@@ -550,17 +601,17 @@ export default function LeisureUsageRate() {
     });
 
     return result;
-  }, [yoyData, selectedFacility, selectedPeriodMonthNumbers]);
+  }, [yoyData, selectedFacility, selectedPeriodMonthNumbers, availableYears]);
 
   const periodYoYDiff = useMemo(() => {
     if (!periodCumulative) return null;
-    const c26 = periodCumulative['2026'];
-    const c25 = periodCumulative['2025'];
-    if (c26.roomGuests > 0 && c25.roomGuests > 0) {
-      return Math.round((c26.usageRate - c25.usageRate) * 10) / 10;
+    const cB = periodCumulative[compareYearB];
+    const cA = periodCumulative[compareYearA];
+    if (cB && cA && cB.roomGuests > 0 && cA.roomGuests > 0) {
+      return Math.round((cB.usageRate - cA.usageRate) * 10) / 10;
     }
     return null;
-  }, [periodCumulative]);
+  }, [periodCumulative, compareYearB, compareYearA]);
 
   // 7개 주요 영업장 선택 구간 누적 연산 (각 영업장 및 선택 연도별 실측 집계)
   const sevenFacilitiesCumulative = useMemo(() => {
@@ -594,23 +645,26 @@ export default function LeisureUsageRate() {
     return result;
   }, [yoyData, selectedPeriodMonthNumbers, selectedMatrixYears]);
 
-  // 엑셀 출력: 선택된 영업장에 관계없이 전 영업장의 2025 vs 2026 이용률 비교 워크북 생성
+  // 엑셀 출력: 선택된 영업장에 관계없이 전 영업장의 최신 2개년(prevYear vs latestYear) 및 전체 연도 이용률 비교 워크북 생성
   const handleExportExcel = () => {
     if (!yoyData || !yoyData.facilities || yoyData.facilities.length === 0) {
       alert('출력할 레저 영업장 이용률 데이터가 아직 로드되지 않았습니다.');
       return;
     }
 
+    const expYearA = prevYear;
+    const expYearB = latestYear;
+
     const wb = XLSX.utils.book_new();
     const nowStr = new Date().toLocaleString('ko-KR');
 
     // -------------------------------------------------------------------------
-    // Sheet 1: 전영업장_월별이용률대조 (1월~12월 25년 vs 26년 vs 증감%p 비교)
+    // Sheet 1: 전영업장_월별이용률대조 (1월~12월 expYearA vs expYearB vs 증감%p 비교)
     // -------------------------------------------------------------------------
     const sheet1Rows: any[][] = [
-      ['[벨포레 리조트] 레저본부 전 영업장 2025년 vs 2026년 월별 이용률 YoY 정밀 비교표'],
+      [`[벨포레 리조트] 레저본부 전 영업장 ${expYearA}년 vs ${expYearB}년 월별 이용률 YoY 정밀 비교표`],
       [`추출일시: ${nowStr} | 모수 기준: 벨포레 물리 고정 1,080실 숙박객 (목장체험은 입장객 기준)`],
-      ['단위: 이용률(%), YoY 증감(%p) | 데이터 출처: V6 정밀 데이터 마트 (leisure-yoy-matrix)'],
+      [`단위: 이용률(%), YoY 증감(%p) | 비교 구간: ${expYearB}년 vs ${expYearA}년 | 데이터 출처: V6 정밀 데이터 마트 (leisure-yoy-matrix)`],
       [],
       [
         'No',
@@ -625,61 +679,61 @@ export default function LeisureUsageRate() {
     yoyData.facilities.forEach((fac, idx) => {
       const rows = yoyData.pivotData?.[fac] || [];
       const cum = yoyData.facilityPeriodCumulative?.[fac];
-      const cum25 = cum?.['2025']?.usageRate;
-      const cum26 = cum?.['2026']?.usageRate;
+      const cumA = cum?.[expYearA]?.usageRate;
+      const cumB = cum?.[expYearB]?.usageRate;
       let cumDiffStr = '-';
-      if (cum25 !== undefined && cum26 !== undefined) {
-        const d = Math.round((cum26 - cum25) * 10) / 10;
+      if (cumA !== undefined && cumB !== undefined) {
+        const d = Math.round((cumB - cumA) * 10) / 10;
         cumDiffStr = d >= 0 ? `+${d.toFixed(1)}%p` : `${d.toFixed(1)}%p`;
       }
 
-      // 2025 row
-      const row25: any[] = [
+      // Prev Year row
+      const rowA: any[] = [
         idx + 1,
         fac,
-        '2025년 실적 (%)'
+        `${expYearA}년 실적 (%)`
       ];
-      // 2026 row
-      const row26: any[] = [
+      // Latest Year row
+      const rowB: any[] = [
         '',
         '',
-        '2026년 실적 (%)'
+        `${expYearB}년 실적 (%)`
       ];
       // YoY Diff row
       const rowDiff: any[] = [
         '',
         '',
-        'YoY 증감 (%p)'
+        `YoY 증감 (${expYearB.slice(2)} vs ${expYearA.slice(2)})`
       ];
 
       for (let m = 1; m <= 12; m++) {
         const mRow = rows.find((r) => r.month === m);
-        const d25 = mRow?.['2025'] as LeisureYoyYearData | undefined;
-        const d26 = mRow?.['2026'] as LeisureYoyYearData | undefined;
+        const dA = mRow?.[expYearA] as LeisureYoyYearData | undefined;
+        const dB = mRow?.[expYearB] as LeisureYoyYearData | undefined;
 
-        const has25 = d25 && (d25.roomGuests > 0 || d25.visitors > 0);
-        const has26 = d26 && (d26.roomGuests > 0 || d26.visitors > 0);
+        const hasA = dA && (dA.roomGuests > 0 || dA.visitors > 0);
+        const hasB = dB && (dB.roomGuests > 0 || dB.visitors > 0);
 
-        const val25 = has25 ? d25.usageRate : null;
-        const val26 = has26 ? d26.usageRate : null;
+        const valA = hasA ? dA.usageRate : null;
+        const valB = hasB ? dB.usageRate : null;
 
-        row25.push(val25 !== null ? `${val25.toFixed(1)}%` : '-');
-        row26.push(val26 !== null ? `${val26.toFixed(1)}%` : (m >= 11 ? '미도래' : '-'));
+        rowA.push(valA !== null ? `${valA.toFixed(1)}%` : '-');
+        rowB.push(valB !== null ? `${valB.toFixed(1)}%` : (m >= 11 ? '미도래' : '-'));
 
-        if (val25 !== null && val26 !== null) {
-          const diff = Math.round((val26 - val25) * 10) / 10;
+        if (valA !== null && valB !== null) {
+          const diff = Math.round((valB - valA) * 10) / 10;
           rowDiff.push(diff >= 0 ? `+${diff.toFixed(1)}%p` : `${diff.toFixed(1)}%p`);
         } else {
           rowDiff.push('-');
         }
       }
 
-      row25.push(cum25 !== undefined ? `${cum25.toFixed(1)}%` : '-');
-      row26.push(cum26 !== undefined ? `${cum26.toFixed(1)}%` : '-');
+      rowA.push(cumA !== undefined ? `${cumA.toFixed(1)}%` : '-');
+      rowB.push(cumB !== undefined ? `${cumB.toFixed(1)}%` : '-');
       rowDiff.push(cumDiffStr);
 
-      sheet1Rows.push(row25);
-      sheet1Rows.push(row26);
+      sheet1Rows.push(rowA);
+      sheet1Rows.push(rowB);
       sheet1Rows.push(rowDiff);
     });
 
@@ -687,7 +741,7 @@ export default function LeisureUsageRate() {
     ws1['!cols'] = [
       { wch: 6 },
       { wch: 20 },
-      { wch: 16 },
+      { wch: 18 },
       ...Array(12).fill({ wch: 11 }),
       { wch: 16 }
     ];
@@ -697,19 +751,19 @@ export default function LeisureUsageRate() {
     // Sheet 2: 전영업장_누적종합비교 (영업장별 1행 종합 서머리)
     // -------------------------------------------------------------------------
     const sheet2Rows: any[][] = [
-      ['[벨포레 리조트] 레저본부 전 영업장 2025년 vs 2026년 누적 실적 및 이용률 종합 비교'],
+      [`[벨포레 리조트] 레저본부 전 영업장 ${expYearA}년 vs ${expYearB}년 누적 실적 및 이용률 종합 비교`],
       [`추출일시: ${nowStr} | 모수 기준: 벨포레 물리 고정 1,080실 숙박객 (목장체험은 입장객 기준)`],
       ['단위: 명, 이용률(%), 증감(%p) | 데이터 출처: V6 정밀 데이터 마트 (mat_v6_data_mart)'],
       [],
       [
         'No',
         '영업장명',
-        '2025년 누적 이용객(명)',
-        '2025년 객실투숙객(명)',
-        '2025년 누적 이용률(%)',
-        '2026년 누적 이용객(명)',
-        '2026년 객실투숙객(명)',
-        '2026년 누적 이용률(%)',
+        `${expYearA}년 누적 이용객(명)`,
+        `${expYearA}년 객실투숙객(명)`,
+        `${expYearA}년 누적 이용률(%)`,
+        `${expYearB}년 누적 이용객(명)`,
+        `${expYearB}년 객실투숙객(명)`,
+        `${expYearB}년 누적 이용률(%)`,
         '이용률 증감(%p)',
         '이용객수 증감(명)',
         '성장 추세'
@@ -718,30 +772,30 @@ export default function LeisureUsageRate() {
 
     yoyData.facilities.forEach((fac, idx) => {
       const cum = yoyData.facilityPeriodCumulative?.[fac];
-      const c25 = cum?.['2025'];
-      const c26 = cum?.['2026'];
+      const cA = cum?.[expYearA];
+      const cB = cum?.[expYearB];
 
-      const v25 = c25?.visitors ?? 0;
-      const r25 = c25?.roomGuests ?? 0;
-      const u25 = c25?.usageRate ?? 0;
+      const vA = cA?.visitors ?? 0;
+      const rA = cA?.roomGuests ?? 0;
+      const uA = cA?.usageRate ?? 0;
 
-      const v26 = c26?.visitors ?? 0;
-      const r26 = c26?.roomGuests ?? 0;
-      const u26 = c26?.usageRate ?? 0;
+      const vB = cB?.visitors ?? 0;
+      const rB = cB?.roomGuests ?? 0;
+      const uB = cB?.usageRate ?? 0;
 
-      const rateDiff = (c25 && c26) ? Math.round((u26 - u25) * 10) / 10 : 0;
-      const visDiff = v26 - v25;
+      const rateDiff = (cA && cB) ? Math.round((uB - uA) * 10) / 10 : 0;
+      const visDiff = vB - vA;
       const trend = rateDiff > 0 ? '▲ 상승' : rateDiff < 0 ? '▼ 하락' : '- 유지';
 
       sheet2Rows.push([
         idx + 1,
         fac,
-        v25,
-        r25,
-        `${u25.toFixed(1)}%`,
-        v26,
-        r26,
-        `${u26.toFixed(1)}%`,
+        vA,
+        rA,
+        `${uA.toFixed(1)}%`,
+        vB,
+        rB,
+        `${uB.toFixed(1)}%`,
         rateDiff >= 0 ? `+${rateDiff.toFixed(1)}%p` : `${rateDiff.toFixed(1)}%p`,
         visDiff >= 0 ? `+${visDiff.toLocaleString()}` : visDiff.toLocaleString(),
         trend
@@ -765,25 +819,21 @@ export default function LeisureUsageRate() {
     XLSX.utils.book_append_sheet(wb, ws2, '전영업장_누적종합비교');
 
     // -------------------------------------------------------------------------
-    // Sheet 3: 월별_전영업장_상세내역 (Raw Data)
+    // Sheet 3: 월별_전영업장_상세내역 (Raw Data - 전체 가용 연도 동적 확장)
     // -------------------------------------------------------------------------
     const sheet3Rows: any[][] = [
-      ['[벨포레 리조트] 레저본부 영업장별 1~12월 상세 로우 데이터 (2024 ~ 2026)'],
+      [`[벨포레 리조트] 레저본부 영업장별 1~12월 상세 로우 데이터 (${availableYears[0]} ~ ${latestYear})`],
       [`추출일시: ${nowStr}`],
       [],
       [
         '영업장명',
         '월',
-        '2024년 이용객(명)',
-        '2024년 객실투숙객(명)',
-        '2024년 이용률(%)',
-        '2025년 이용객(명)',
-        '2025년 객실투숙객(명)',
-        '2025년 이용률(%)',
-        '2026년 이용객(명)',
-        '2026년 객실투숙객(명)',
-        '2026년 이용률(%)',
-        '26vs25 증감(%p)'
+        ...availableYears.flatMap((yr) => [
+          `${yr}년 이용객(명)`,
+          `${yr}년 객실투숙객(명)`,
+          `${yr}년 이용률(%)`
+        ]),
+        `YoY 증감 (${latestYear.slice(2)}vs${prevYear.slice(2)} %p)`
       ]
     ];
 
@@ -791,30 +841,25 @@ export default function LeisureUsageRate() {
       const rows = yoyData.pivotData?.[fac] || [];
       for (let m = 1; m <= 12; m++) {
         const mRow = rows.find((r) => r.month === m);
-        const d24 = mRow?.['2024'] as LeisureYoyYearData | undefined;
-        const d25 = mRow?.['2025'] as LeisureYoyYearData | undefined;
-        const d26 = mRow?.['2026'] as LeisureYoyYearData | undefined;
+        const rowData: any[] = [fac, `${m}월`];
 
+        availableYears.forEach((yr) => {
+          const d = mRow?.[yr] as LeisureYoyYearData | undefined;
+          const hasData = d && (d.visitors > 0 || d.roomGuests > 0);
+          rowData.push(d?.visitors ?? 0);
+          rowData.push(d?.roomGuests ?? 0);
+          rowData.push(hasData && d ? `${d.usageRate.toFixed(1)}%` : (yr === latestYear && m >= 11 ? '미도래' : '-'));
+        });
+
+        const dPrev = mRow?.[prevYear] as LeisureYoyYearData | undefined;
+        const dLatest = mRow?.[latestYear] as LeisureYoyYearData | undefined;
         let diffStr = '-';
-        if (d25 && d26 && (d25.visitors > 0 || d25.roomGuests > 0) && (d26.visitors > 0 || d26.roomGuests > 0)) {
-          const diff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+        if (dPrev && dLatest && (dPrev.visitors > 0 || dPrev.roomGuests > 0) && (dLatest.visitors > 0 || dLatest.roomGuests > 0)) {
+          const diff = Math.round((dLatest.usageRate - dPrev.usageRate) * 10) / 10;
           diffStr = diff >= 0 ? `+${diff.toFixed(1)}%p` : `${diff.toFixed(1)}%p`;
         }
-
-        sheet3Rows.push([
-          fac,
-          `${m}월`,
-          d24?.visitors ?? 0,
-          d24?.roomGuests ?? 0,
-          d24 ? `${d24.usageRate.toFixed(1)}%` : '-',
-          d25?.visitors ?? 0,
-          d25?.roomGuests ?? 0,
-          d25 ? `${d25.usageRate.toFixed(1)}%` : '-',
-          d26?.visitors ?? 0,
-          d26?.roomGuests ?? 0,
-          d26 ? `${d26.usageRate.toFixed(1)}%` : (m >= 11 ? '미도래' : '-'),
-          diffStr
-        ]);
+        rowData.push(diffStr);
+        sheet3Rows.push(rowData);
       }
     });
 
@@ -822,10 +867,8 @@ export default function LeisureUsageRate() {
     ws3['!cols'] = [
       { wch: 18 },
       { wch: 8 },
-      { wch: 18 }, { wch: 20 }, { wch: 16 },
-      { wch: 18 }, { wch: 20 }, { wch: 16 },
-      { wch: 18 }, { wch: 20 }, { wch: 16 },
-      { wch: 16 }
+      ...availableYears.flatMap(() => [{ wch: 18 }, { wch: 20 }, { wch: 16 }]),
+      { wch: 18 }
     ];
     XLSX.utils.book_append_sheet(wb, ws3, '월별_전영업장_상세내역');
 
@@ -1154,7 +1197,7 @@ export default function LeisureUsageRate() {
 
             {chartMode === 'ALL_TIMELINE' && (
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
-                {['ALL', '2026', '2025', '2024'].map((year) => (
+                {['ALL', ...[...availableYears].reverse()].map((year) => (
                   <button
                     key={year}
                     onClick={() => setSelectedYear(year)}
@@ -1259,7 +1302,7 @@ export default function LeisureUsageRate() {
                 비교 연도 선택:
               </span>
               <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
-                {(['2024', '2025', '2026'] as const).map((yr) => {
+                {availableYears.map((yr) => {
                   const isSelected = selectedMatrixYears.includes(yr);
                   return (
                     <button
@@ -1279,46 +1322,50 @@ export default function LeisureUsageRate() {
                 })}
               </div>
 
-              {/* Quick Year Presets */}
+              {/* Quick Year Presets (동적 슬라이딩 프리셋) */}
               <div className="flex items-center gap-1 text-[11px] ml-1">
                 <button
                   type="button"
-                  onClick={() => setSelectedMatrixYears(['2025', '2026'])}
+                  onClick={() => setSelectedMatrixYears([prevYear, latestYear])}
                   className={`px-2.5 py-1 rounded-xl font-bold border transition-colors cursor-pointer ${
-                    selectedMatrixYears.length === 2 && selectedMatrixYears.includes('2025') && selectedMatrixYears.includes('2026')
+                    selectedMatrixYears.length === 2 && selectedMatrixYears.includes(prevYear) && selectedMatrixYears.includes(latestYear)
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  2개년 비교 (25 vs 26)
+                  최근 2개년 ({prevYear.slice(2)} vs {latestYear.slice(2)})
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedMatrixYears(['2024', '2025', '2026'])}
+                  onClick={() => setSelectedMatrixYears([...availableYears])}
                   className={`px-2.5 py-1 rounded-xl font-bold border transition-colors cursor-pointer ${
-                    selectedMatrixYears.length === 3
+                    selectedMatrixYears.length === availableYears.length
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  3개년 전체 (24~26)
+                  전체 ({availableYears[0].slice(2)}~{latestYear.slice(2)})
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedMatrixYears(['2026'])}
+                  onClick={() => setSelectedMatrixYears([latestYear])}
                   className={`px-2.5 py-1 rounded-xl font-bold border transition-colors cursor-pointer ${
-                    selectedMatrixYears.length === 1 && selectedMatrixYears[0] === '2026'
+                    selectedMatrixYears.length === 1 && selectedMatrixYears[0] === latestYear
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  2026년 단일
+                  {latestYear}년 단일
                 </button>
               </div>
             </div>
 
             <span className="text-xs text-slate-400 font-medium">
-              💡 {selectedMatrixYears.length === 1 ? '선택 연도 1개 표시' : selectedMatrixYears.length === 2 ? '2개년 대조 (2026년 셀에 전년 대비 증감 %p 표시)' : '3개년 전체 대조 표시'}
+              💡 {selectedMatrixYears.length === 1 
+                ? '선택 연도 1개 표시' 
+                : selectedMatrixYears.length === 2 
+                ? `2개년 대조 (${compareYearB}년 셀에 ${compareYearA}년 대비 증감 %p 표시)` 
+                : `${selectedMatrixYears.length}개년 전체 대조 표시`}
             </span>
           </div>
         ) : (
@@ -1417,7 +1464,7 @@ export default function LeisureUsageRate() {
                           key={`${fac.key}-${yr}`}
                           className={`py-2 px-2.5 text-center ${
                             idx === 0 ? 'border-l border-slate-200' : 'border-l border-slate-100'
-                          } ${yr === '2026' ? 'bg-emerald-50/50 text-emerald-900 font-extrabold' : ''}`}
+                          } ${yr === latestYear ? 'bg-emerald-50/50 text-emerald-900 font-extrabold' : ''}`}
                         >
                           {yr.slice(2)}년 실적
                         </th>
@@ -1456,46 +1503,48 @@ export default function LeisureUsageRate() {
                       {SEVEN_KEY_FACILITIES.map((fac) => {
                         const rows = yoyData?.pivotData?.[fac.key] || [];
                         const mRow = rows.find((r) => r.month === monthNum);
-                        const d25 = mRow ? (mRow['2025'] as LeisureYoyYearData | undefined) : undefined;
-                        const d26 = mRow ? (mRow['2026'] as LeisureYoyYearData | undefined) : undefined;
+                        const dataA = mRow ? (mRow[compareYearA] as LeisureYoyYearData | undefined) : undefined;
+                        const dataB = mRow ? (mRow[compareYearB] as LeisureYoyYearData | undefined) : undefined;
 
                         let yoyDiff: number | null = null;
                         if (
-                          d25 &&
-                          d26 &&
-                          (d25.visitors > 0 || d25.roomGuests > 0) &&
-                          (d26.visitors > 0 || d26.roomGuests > 0)
+                          dataA &&
+                          dataB &&
+                          (dataA.visitors > 0 || dataA.roomGuests > 0) &&
+                          (dataB.visitors > 0 || dataB.roomGuests > 0)
                         ) {
-                          yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+                          yoyDiff = Math.round((dataB.usageRate - dataA.usageRate) * 10) / 10;
                         }
 
                         return selectedMatrixYears.map((yr, idx) => {
                           const item = mRow ? (mRow[yr] as LeisureYoyYearData | undefined) : undefined;
                           const hasData = item && (item.visitors > 0 || item.roomGuests > 0);
+                          const isLatest = yr === latestYear;
+                          const isCompareTarget = yr === compareYearB && selectedMatrixYears.includes(compareYearA);
 
                           return (
                             <td
                               key={`${fac.key}-${monthNum}-${yr}`}
                               className={`py-3 px-2.5 text-center ${
                                 idx === 0 ? 'border-l border-slate-200' : 'border-l border-slate-100'
-                              } ${yr === '2026' ? 'bg-emerald-50/20' : ''}`}
+                              } ${isLatest ? 'bg-emerald-50/20' : ''}`}
                             >
                               {hasData && item ? (
                                 <div className="flex flex-col items-center justify-center gap-0.5">
                                   <div className="flex items-center gap-1 justify-center flex-wrap">
                                     <span
                                       className={`font-mono text-xs sm:text-sm font-bold ${
-                                        yr === '2026'
+                                        isLatest
                                           ? 'text-emerald-700 font-extrabold'
-                                          : yr === '2025'
+                                          : yr === prevYear
                                           ? 'text-blue-700'
                                           : 'text-slate-700'
                                       }`}
                                     >
                                       {item.usageRate.toFixed(1)}%
                                     </span>
-                                    {/* 2025와 2026이 동시 선택된 경우 2026 셀에 증감 %p 인라인 표기 */}
-                                    {yr === '2026' && selectedMatrixYears.includes('2025') && yoyDiff !== null && (
+                                    {/* compareYearB 셀에 compareYearA 대비 증감 %p 인라인 표기 */}
+                                    {isCompareTarget && yoyDiff !== null && (
                                       <span
                                         className={`text-[10px] font-bold px-1 rounded-sm leading-tight ${
                                           yoyDiff >= 0
@@ -1514,7 +1563,7 @@ export default function LeisureUsageRate() {
                                 </div>
                               ) : (
                                 <span className="text-slate-300 font-mono text-xs">
-                                  {yr === '2026' ? '미도래' : '-'}
+                                  {isLatest ? '미도래' : '-'}
                                 </span>
                               )}
                             </td>
@@ -1536,22 +1585,24 @@ export default function LeisureUsageRate() {
                     </td>
 
                     {SEVEN_KEY_FACILITIES.map((fac) => {
-                      const cum25 = sevenFacilitiesCumulative[fac.key]?.['2025'];
-                      const cum26 = sevenFacilitiesCumulative[fac.key]?.['2026'];
+                      const cumA = sevenFacilitiesCumulative[fac.key]?.[compareYearA];
+                      const cumB = sevenFacilitiesCumulative[fac.key]?.[compareYearB];
+                      let diff: number | null = null;
+                      if (cumA && cumB && cumA.roomGuests > 0 && cumB.roomGuests > 0) {
+                        diff = Math.round((cumB.usageRate - cumA.usageRate) * 10) / 10;
+                      }
 
                       return selectedMatrixYears.map((yr, idx) => {
                         const cum = sevenFacilitiesCumulative[fac.key]?.[yr];
-                        let diff: number | null = null;
-                        if (yr === '2026' && cum25 && cum26 && cum25.roomGuests > 0 && cum26.roomGuests > 0) {
-                          diff = Math.round((cum26.usageRate - cum25.usageRate) * 10) / 10;
-                        }
+                        const isLatest = yr === latestYear;
+                        const isCompareTarget = yr === compareYearB && selectedMatrixYears.includes(compareYearA);
 
                         return (
                           <td
                             key={`cum-${fac.key}-${yr}`}
                             className={`py-3.5 px-2 text-center border-l ${
                               idx === 0 ? 'border-emerald-300' : 'border-emerald-200'
-                            } ${yr === '2026' ? 'bg-emerald-200/50' : ''}`}
+                            } ${isLatest ? 'bg-emerald-200/50' : ''}`}
                           >
                             {cum && (cum.visitors > 0 || cum.roomGuests > 0) ? (
                               <div className="flex flex-col items-center justify-center gap-0.5">
@@ -1559,7 +1610,7 @@ export default function LeisureUsageRate() {
                                   <span className="font-mono text-xs sm:text-sm font-black text-emerald-950">
                                     {cum.usageRate.toFixed(1)}%
                                   </span>
-                                  {yr === '2026' && selectedMatrixYears.includes('2025') && diff !== null && (
+                                  {isCompareTarget && diff !== null && (
                                     <span
                                       className={`text-[10px] font-bold px-1 rounded-sm leading-tight ${
                                         diff >= 0
@@ -1595,31 +1646,38 @@ export default function LeisureUsageRate() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
                   <th className="py-4 px-6 text-center w-32">월 (Month)</th>
-                  <th className="py-4 px-6 text-center">2024년 실적</th>
-                  <th className="py-4 px-6 text-center">2025년 실적</th>
-                  <th className="py-4 px-6 text-center bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80">
-                    2026년 실적 (최신)
+                  {availableYears.map((yr) => (
+                    <th 
+                      key={yr} 
+                      className={`py-4 px-6 text-center ${
+                        yr === latestYear 
+                          ? 'bg-emerald-50/40 text-emerald-900 border-x border-emerald-100/80 font-extrabold' 
+                          : ''
+                      }`}
+                    >
+                      {yr}년 실적 {yr === latestYear ? '(최신)' : ''}
+                    </th>
+                  ))}
+                  <th className="py-4 px-6 text-center">
+                    YoY 증감 ({latestYear.slice(2)}년 vs {prevYear.slice(2)}년)
                   </th>
-                  <th className="py-4 px-6 text-center">YoY 증감 (26년 vs 25년)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {currentPivotRows.map((row) => {
                   const monthNum = row.month;
-                  const d24 = row['2024'] as LeisureYoyYearData | undefined;
-                  const d25 = row['2025'] as LeisureYoyYearData | undefined;
-                  const d26 = row['2026'] as LeisureYoyYearData | undefined;
+                  const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
 
-                  const has26Data = d26 && (d26.roomGuests > 0 || d26.visitors > 0);
-                  const has25Data = d25 && (d25.roomGuests > 0 || d25.visitors > 0);
-                  const has24Data = d24 && (d24.roomGuests > 0 || d24.visitors > 0);
+                  const dPrev = row[prevYear] as LeisureYoyYearData | undefined;
+                  const dLatest = row[latestYear] as LeisureYoyYearData | undefined;
+
+                  const hasLatestData = dLatest && (dLatest.roomGuests > 0 || dLatest.visitors > 0);
+                  const hasPrevData = dPrev && (dPrev.roomGuests > 0 || dPrev.visitors > 0);
 
                   let yoyDiff: number | null = null;
-                  if (has26Data && has25Data && d26 && d25) {
-                    yoyDiff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+                  if (hasLatestData && hasPrevData && dLatest && dPrev) {
+                    yoyDiff = Math.round((dLatest.usageRate - dPrev.usageRate) * 10) / 10;
                   }
-
-                  const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
 
                   return (
                     <tr 
@@ -1641,50 +1699,43 @@ export default function LeisureUsageRate() {
                         </div>
                       </td>
 
-                      <td className="py-4 px-6 text-center">
-                        {has24Data && d24 ? (
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="font-mono text-sm font-bold text-slate-700">
-                              {d24.usageRate.toFixed(1)}%
-                            </span>
-                            <span className="text-[11px] text-slate-400 tabular-nums">
-                              {d24.visitors.toLocaleString()}명 / {d24.roomGuests.toLocaleString()}명
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-300 font-mono">-</span>
-                        )}
-                      </td>
+                      {availableYears.map((yr) => {
+                        const d = row[yr] as LeisureYoyYearData | undefined;
+                        const hasData = d && (d.roomGuests > 0 || d.visitors > 0);
+                        const isLatest = yr === latestYear;
 
-                      <td className="py-4 px-6 text-center">
-                        {has25Data && d25 ? (
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="font-mono text-sm font-bold text-blue-700">
-                              {d25.usageRate.toFixed(1)}%
-                            </span>
-                            <span className="text-[11px] text-slate-400 tabular-nums">
-                              {d25.visitors.toLocaleString()}명 / {d25.roomGuests.toLocaleString()}명
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-300 font-mono">-</span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-6 text-center bg-emerald-50/30 border-x border-emerald-100/60">
-                        {has26Data && d26 ? (
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="font-mono text-base font-extrabold text-emerald-700">
-                              {d26.usageRate.toFixed(1)}%
-                            </span>
-                            <span className="text-[11px] text-emerald-600 font-medium tabular-nums">
-                              {d26.visitors.toLocaleString()}명 / {d26.roomGuests.toLocaleString()}명
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-300 font-mono text-xs">미도래</span>
-                        )}
-                      </td>
+                        return (
+                          <td 
+                            key={yr} 
+                            className={`py-4 px-6 text-center ${
+                              isLatest ? 'bg-emerald-50/30 border-x border-emerald-100/60' : ''
+                            }`}
+                          >
+                            {hasData && d ? (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span 
+                                  className={`font-mono text-sm font-bold ${
+                                    isLatest 
+                                      ? 'text-base font-extrabold text-emerald-700' 
+                                      : yr === prevYear
+                                      ? 'text-blue-700'
+                                      : 'text-slate-700'
+                                  }`}
+                                >
+                                  {d.usageRate.toFixed(1)}%
+                                </span>
+                                <span className="text-[11px] text-slate-400 tabular-nums">
+                                  {d.visitors.toLocaleString()}명 / {d.roomGuests.toLocaleString()}명
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-300 font-mono text-xs">
+                                {isLatest ? '미도래' : '-'}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
 
                       <td className="py-4 px-6 text-center">
                         {yoyDiff !== null ? (
@@ -1724,38 +1775,35 @@ export default function LeisureUsageRate() {
                       </div>
                     </td>
 
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="font-mono text-sm font-black text-slate-800">
-                          {periodCumulative['2024'].usageRate.toFixed(1)}%
-                        </span>
-                        <span className="text-[11px] text-slate-600 tabular-nums">
-                          {periodCumulative['2024'].visitors.toLocaleString()}명 / {periodCumulative['2024'].roomGuests.toLocaleString()}명
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="font-mono text-sm font-black text-blue-900">
-                          {periodCumulative['2025'].usageRate.toFixed(1)}%
-                        </span>
-                        <span className="text-[11px] text-blue-700 tabular-nums">
-                          {periodCumulative['2025'].visitors.toLocaleString()}명 / {periodCumulative['2025'].roomGuests.toLocaleString()}명
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-6 text-center bg-emerald-200/70 border-x border-emerald-300">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="font-mono text-base font-black text-emerald-950">
-                          {periodCumulative['2026'].usageRate.toFixed(1)}%
-                        </span>
-                        <span className="text-[11px] text-emerald-900 font-bold tabular-nums">
-                          {periodCumulative['2026'].visitors.toLocaleString()}명 / {periodCumulative['2026'].roomGuests.toLocaleString()}명
-                        </span>
-                      </div>
-                    </td>
+                    {availableYears.map((yr) => {
+                      const cum = periodCumulative[yr];
+                      const isLatest = yr === latestYear;
+                      return (
+                        <td 
+                          key={`single-cum-${yr}`} 
+                          className={`py-4 px-6 text-center ${
+                            isLatest ? 'bg-emerald-200/70 border-x border-emerald-300' : ''
+                          }`}
+                        >
+                          {cum && (cum.visitors > 0 || cum.roomGuests > 0) ? (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span 
+                                className={`font-mono font-black ${
+                                  isLatest ? 'text-base text-emerald-950' : 'text-sm text-slate-800'
+                                }`}
+                              >
+                                {cum.usageRate.toFixed(1)}%
+                              </span>
+                              <span className="text-[11px] text-emerald-900 font-bold tabular-nums">
+                                {cum.visitors.toLocaleString()}명 / {cum.roomGuests.toLocaleString()}명
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 font-mono">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
 
                     <td className="py-4 px-6 text-center">
                       {periodYoYDiff !== null ? (

@@ -340,7 +340,7 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  영업장별 이용률 추이
+                  영업장별 이용률 & 시뮬레이터
                 </NavLink>
               </div>
             )}

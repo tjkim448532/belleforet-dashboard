@@ -379,6 +379,31 @@ export default function ResortBusiness() {
     return result;
   })();
 
+  // 🏨 평형별 분리 객단가 (16평, 35평, 51평 SSOT 데이터 바인딩)
+  const room16 = roomOccupancyData.find(r => r.roomSize === '16평');
+  const room35 = roomOccupancyData.find(r => r.roomSize === '35평');
+  const room51 = roomOccupancyData.find(r => r.roomSize === '51평');
+
+  const rawType16 = data?.roomSummaryByType?.find((r: any) => r.roomType === '16평');
+  const rawType35 = data?.roomSummaryByType?.find((r: any) => r.roomType === '35평');
+  const rawType51 = data?.roomSummaryByType?.find((r: any) => r.roomType === '51평');
+
+  const lyRawType16 = lyData?.roomSummaryByType?.find((r: any) => r.roomType === '16평');
+  const lyRawType35 = lyData?.roomSummaryByType?.find((r: any) => r.roomType === '35평');
+  const lyRawType51 = lyData?.roomSummaryByType?.find((r: any) => r.roomType === '51평');
+
+  const adr16 = room16?.adr ?? (rawType16?.adr ? Number(rawType16.adr) : undefined);
+  const lyAdr16 = room16?.lyAdr ?? (lyRawType16?.adr ? Number(lyRawType16.adr) : undefined);
+  const adrDiff16 = (adr16 !== undefined && lyAdr16 !== undefined) ? adr16 - lyAdr16 : (room16?.adrDiff ?? null);
+
+  const adr35 = room35?.adr ?? (rawType35?.adr ? Number(rawType35.adr) : undefined);
+  const lyAdr35 = room35?.lyAdr ?? (lyRawType35?.adr ? Number(lyRawType35.adr) : undefined);
+  const adrDiff35 = (adr35 !== undefined && lyAdr35 !== undefined) ? adr35 - lyAdr35 : (room35?.adrDiff ?? null);
+
+  const adr51 = room51?.adr ?? (rawType51?.adr ? Number(rawType51.adr) : undefined);
+  const lyAdr51 = room51?.lyAdr ?? (lyRawType51?.adr ? Number(lyRawType51.adr) : undefined);
+  const adrDiff51 = (adr51 !== undefined && lyAdr51 !== undefined) ? adr51 - lyAdr51 : (room51?.adrDiff ?? null);
+
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];
 
@@ -733,8 +758,73 @@ export default function ResortBusiness() {
                     <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(adrLy)}원</span>
                   </div>
                 )}
+
+                {/* 🏨 평형별 분리 객단가 (16평 · 35평 · 51평 SSOT) */}
+                {(adr16 !== undefined || adr35 !== undefined || adr51 !== undefined) && (
+                  <div className="mt-3 pt-2.5 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-1.5">
+                      <span>평형별 분리 ADR</span>
+                      <span className="text-[10px] text-slate-400 font-normal">전년 대비</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {/* 16평 */}
+                      <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">16평</span>
+                        <span className="text-xs font-extrabold text-slate-900 font-financial block">
+                          {adr16 !== undefined ? `${formatCurrency(adr16)}원` : '-'}
+                        </span>
+                        {lyAdr16 !== undefined && lyAdr16 !== null && (
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
+                            전년 {formatCurrency(lyAdr16)}
+                            {adrDiff16 !== null && adrDiff16 !== 0 && (
+                              <span className={`block font-bold ${adrDiff16 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                ({adrDiff16 > 0 ? '+' : ''}{formatCurrency(adrDiff16)})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 35평 */}
+                      <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">35평</span>
+                        <span className="text-xs font-extrabold text-slate-900 font-financial block">
+                          {adr35 !== undefined ? `${formatCurrency(adr35)}원` : '-'}
+                        </span>
+                        {lyAdr35 !== undefined && lyAdr35 !== null && (
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
+                            전년 {formatCurrency(lyAdr35)}
+                            {adrDiff35 !== null && adrDiff35 !== 0 && (
+                              <span className={`block font-bold ${adrDiff35 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                ({adrDiff35 > 0 ? '+' : ''}{formatCurrency(adrDiff35)})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 51평 */}
+                      <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">51평</span>
+                        <span className="text-xs font-extrabold text-slate-900 font-financial block">
+                          {adr51 !== undefined ? `${formatCurrency(adr51)}원` : '-'}
+                        </span>
+                        {lyAdr51 !== undefined && lyAdr51 !== null && (
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
+                            전년 {formatCurrency(lyAdr51)}
+                            {adrDiff51 !== null && adrDiff51 !== 0 && (
+                              <span className={`block font-bold ${adrDiff51 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                ({adrDiff51 > 0 ? '+' : ''}{formatCurrency(adrDiff51)})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">총 객실 매출 ÷ 판매 건수(계약)</p>
+              <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">총 객실 매출 ÷ 판매 건수(계약) · 평형별 분리 ADR 제공</p>
             </div>
           </div>
 
@@ -1018,6 +1108,67 @@ export default function ResortBusiness() {
                           ) : '-'}
                         </td>
                       </tr>
+                      {/* 세부: 평형별 평균 ADR (16평, 35평, 51평) */}
+                      {adr16 !== undefined && (
+                        <tr className="text-slate-600 hover:bg-slate-50/40">
+                          <td className="py-2.5 px-4 pl-8 text-xs font-medium flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>• 16평 평균 ADR</span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{formatCurrency(adr16)}원</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr16 !== undefined && lyAdr16 !== null ? `${formatCurrency(lyAdr16)}원` : '-'}</td>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff16 !== null && adrDiff16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            {adrDiff16 !== null ? `${adrDiff16 > 0 ? '+' : ''}${formatCurrency(adrDiff16)}원` : '-'}
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-xs font-bold">
+                            {adrDiff16 !== null && lyAdr16 ? (
+                              <span className={adrDiff16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                {adrDiff16 >= 0 ? '▲' : '▼'} {Math.abs(Number(((adrDiff16) / lyAdr16 * 100).toFixed(1)))}%
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      )}
+                      {adr35 !== undefined && (
+                        <tr className="text-slate-600 hover:bg-slate-50/40">
+                          <td className="py-2.5 px-4 pl-8 text-xs font-medium flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>• 35평 평균 ADR</span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{formatCurrency(adr35)}원</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr35 !== undefined && lyAdr35 !== null ? `${formatCurrency(lyAdr35)}원` : '-'}</td>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff35 !== null && adrDiff35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            {adrDiff35 !== null ? `${adrDiff35 > 0 ? '+' : ''}${formatCurrency(adrDiff35)}원` : '-'}
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-xs font-bold">
+                            {adrDiff35 !== null && lyAdr35 ? (
+                              <span className={adrDiff35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                {adrDiff35 >= 0 ? '▲' : '▼'} {Math.abs(Number(((adrDiff35) / lyAdr35 * 100).toFixed(1)))}%
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      )}
+                      {adr51 !== undefined && (
+                        <tr className="text-slate-600 hover:bg-slate-50/40">
+                          <td className="py-2.5 px-4 pl-8 text-xs font-medium flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>• 51평 평균 ADR</span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{formatCurrency(adr51)}원</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr51 !== undefined && lyAdr51 !== null ? `${formatCurrency(lyAdr51)}원` : '-'}</td>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff51 !== null && adrDiff51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            {adrDiff51 !== null ? `${adrDiff51 > 0 ? '+' : ''}${formatCurrency(adrDiff51)}원` : '-'}
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-xs font-bold">
+                            {adrDiff51 !== null && lyAdr51 ? (
+                              <span className={adrDiff51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                {adrDiff51 >= 0 ? '▲' : '▼'} {Math.abs(Number(((adrDiff51) / lyAdr51 * 100).toFixed(1)))}%
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      )}
 
                       {/* 4. 실운영 점유율 */}
                       <tr className="bg-teal-50/20 font-bold hover:bg-teal-50/40 transition-colors">

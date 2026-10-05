@@ -237,6 +237,7 @@ export interface TransformedResortData {
   date?: string;
   ytd: { actual: number; ly_actual: number };
   today: { actual: number; ly_actual: number };
+  roomSummaryByType?: any[];
   roomOccupancyMap: Record<string, {
     sold: number;
     cap: number;
@@ -471,6 +472,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
       totalPhysicalKeys: physicalRoomCap,
       totalRoomInventory: physicalRoomCap
     },
+    roomSummaryByType: Array.isArray(payload.roomSummaryByType) ? payload.roomSummaryByType : [],
     roomOccupancyMap,
     channelAdrData,
     marketTypeAdrData,

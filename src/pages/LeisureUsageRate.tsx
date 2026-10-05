@@ -3,8 +3,9 @@ import ReactECharts from 'echarts-for-react';
 import { 
   Ticket, Users, Building2, TrendingUp, Calendar, 
   RefreshCw, AlertCircle, Layers, BarChart3, HelpCircle,
-  ArrowUpRight, ArrowDownRight, Minus
+  ArrowUpRight, ArrowDownRight, Minus, FileSpreadsheet
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import { getClosedBusinessYear, getLatestClosedMonthStr } from '../lib/dateUtils';
@@ -534,6 +535,246 @@ export default function LeisureUsageRate() {
     return null;
   }, [periodCumulative]);
 
+  // 엑셀 출력: 선택된 영업장에 관계없이 전 영업장의 2025 vs 2026 이용률 비교 워크북 생성
+  const handleExportExcel = () => {
+    if (!yoyData || !yoyData.facilities || yoyData.facilities.length === 0) {
+      alert('출력할 레저 영업장 이용률 데이터가 아직 로드되지 않았습니다.');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const nowStr = new Date().toLocaleString('ko-KR');
+
+    // -------------------------------------------------------------------------
+    // Sheet 1: 전영업장_월별이용률대조 (1월~12월 25년 vs 26년 vs 증감%p 비교)
+    // -------------------------------------------------------------------------
+    const sheet1Rows: any[][] = [
+      ['[벨포레 리조트] 레저본부 전 영업장 2025년 vs 2026년 월별 이용률 YoY 정밀 비교표'],
+      [`추출일시: ${nowStr} | 모수 기준: 벨포레 물리 고정 1,080실 숙박객 (목장체험은 입장객 기준)`],
+      ['단위: 이용률(%), YoY 증감(%p) | 데이터 출처: V6 정밀 데이터 마트 (leisure-yoy-matrix)'],
+      [],
+      [
+        'No',
+        '영업장명',
+        '실적 구분',
+        '1월', '2월', '3월', '4월', '5월', '6월',
+        '7월', '8월', '9월', '10월', '11월', '12월',
+        '누적 이용률(%)'
+      ]
+    ];
+
+    yoyData.facilities.forEach((fac, idx) => {
+      const rows = yoyData.pivotData?.[fac] || [];
+      const cum = yoyData.facilityPeriodCumulative?.[fac];
+      const cum25 = cum?.['2025']?.usageRate;
+      const cum26 = cum?.['2026']?.usageRate;
+      let cumDiffStr = '-';
+      if (cum25 !== undefined && cum26 !== undefined) {
+        const d = Math.round((cum26 - cum25) * 10) / 10;
+        cumDiffStr = d >= 0 ? `+${d.toFixed(1)}%p` : `${d.toFixed(1)}%p`;
+      }
+
+      // 2025 row
+      const row25: any[] = [
+        idx + 1,
+        fac,
+        '2025년 실적 (%)'
+      ];
+      // 2026 row
+      const row26: any[] = [
+        '',
+        '',
+        '2026년 실적 (%)'
+      ];
+      // YoY Diff row
+      const rowDiff: any[] = [
+        '',
+        '',
+        'YoY 증감 (%p)'
+      ];
+
+      for (let m = 1; m <= 12; m++) {
+        const mRow = rows.find((r) => r.month === m);
+        const d25 = mRow?.['2025'] as LeisureYoyYearData | undefined;
+        const d26 = mRow?.['2026'] as LeisureYoyYearData | undefined;
+
+        const has25 = d25 && (d25.roomGuests > 0 || d25.visitors > 0);
+        const has26 = d26 && (d26.roomGuests > 0 || d26.visitors > 0);
+
+        const val25 = has25 ? d25.usageRate : null;
+        const val26 = has26 ? d26.usageRate : null;
+
+        row25.push(val25 !== null ? `${val25.toFixed(1)}%` : '-');
+        row26.push(val26 !== null ? `${val26.toFixed(1)}%` : (m >= 11 ? '미도래' : '-'));
+
+        if (val25 !== null && val26 !== null) {
+          const diff = Math.round((val26 - val25) * 10) / 10;
+          rowDiff.push(diff >= 0 ? `+${diff.toFixed(1)}%p` : `${diff.toFixed(1)}%p`);
+        } else {
+          rowDiff.push('-');
+        }
+      }
+
+      row25.push(cum25 !== undefined ? `${cum25.toFixed(1)}%` : '-');
+      row26.push(cum26 !== undefined ? `${cum26.toFixed(1)}%` : '-');
+      rowDiff.push(cumDiffStr);
+
+      sheet1Rows.push(row25);
+      sheet1Rows.push(row26);
+      sheet1Rows.push(rowDiff);
+    });
+
+    const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+    ws1['!cols'] = [
+      { wch: 6 },
+      { wch: 20 },
+      { wch: 16 },
+      ...Array(12).fill({ wch: 11 }),
+      { wch: 16 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, '전영업장_월별이용률대조');
+
+    // -------------------------------------------------------------------------
+    // Sheet 2: 전영업장_누적종합비교 (영업장별 1행 종합 서머리)
+    // -------------------------------------------------------------------------
+    const sheet2Rows: any[][] = [
+      ['[벨포레 리조트] 레저본부 전 영업장 2025년 vs 2026년 누적 실적 및 이용률 종합 비교'],
+      [`추출일시: ${nowStr} | 모수 기준: 벨포레 물리 고정 1,080실 숙박객 (목장체험은 입장객 기준)`],
+      ['단위: 명, 이용률(%), 증감(%p) | 데이터 출처: V6 정밀 데이터 마트 (mat_v6_data_mart)'],
+      [],
+      [
+        'No',
+        '영업장명',
+        '2025년 누적 이용객(명)',
+        '2025년 객실투숙객(명)',
+        '2025년 누적 이용률(%)',
+        '2026년 누적 이용객(명)',
+        '2026년 객실투숙객(명)',
+        '2026년 누적 이용률(%)',
+        '이용률 증감(%p)',
+        '이용객수 증감(명)',
+        '성장 추세'
+      ]
+    ];
+
+    yoyData.facilities.forEach((fac, idx) => {
+      const cum = yoyData.facilityPeriodCumulative?.[fac];
+      const c25 = cum?.['2025'];
+      const c26 = cum?.['2026'];
+
+      const v25 = c25?.visitors ?? 0;
+      const r25 = c25?.roomGuests ?? 0;
+      const u25 = c25?.usageRate ?? 0;
+
+      const v26 = c26?.visitors ?? 0;
+      const r26 = c26?.roomGuests ?? 0;
+      const u26 = c26?.usageRate ?? 0;
+
+      const rateDiff = (c25 && c26) ? Math.round((u26 - u25) * 10) / 10 : 0;
+      const visDiff = v26 - v25;
+      const trend = rateDiff > 0 ? '▲ 상승' : rateDiff < 0 ? '▼ 하락' : '- 유지';
+
+      sheet2Rows.push([
+        idx + 1,
+        fac,
+        v25,
+        r25,
+        `${u25.toFixed(1)}%`,
+        v26,
+        r26,
+        `${u26.toFixed(1)}%`,
+        rateDiff >= 0 ? `+${rateDiff.toFixed(1)}%p` : `${rateDiff.toFixed(1)}%p`,
+        visDiff >= 0 ? `+${visDiff.toLocaleString()}` : visDiff.toLocaleString(),
+        trend
+      ]);
+    });
+
+    const ws2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+    ws2['!cols'] = [
+      { wch: 6 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 12 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws2, '전영업장_누적종합비교');
+
+    // -------------------------------------------------------------------------
+    // Sheet 3: 월별_전영업장_상세내역 (Raw Data)
+    // -------------------------------------------------------------------------
+    const sheet3Rows: any[][] = [
+      ['[벨포레 리조트] 레저본부 영업장별 1~12월 상세 로우 데이터 (2024 ~ 2026)'],
+      [`추출일시: ${nowStr}`],
+      [],
+      [
+        '영업장명',
+        '월',
+        '2024년 이용객(명)',
+        '2024년 객실투숙객(명)',
+        '2024년 이용률(%)',
+        '2025년 이용객(명)',
+        '2025년 객실투숙객(명)',
+        '2025년 이용률(%)',
+        '2026년 이용객(명)',
+        '2026년 객실투숙객(명)',
+        '2026년 이용률(%)',
+        '26vs25 증감(%p)'
+      ]
+    ];
+
+    yoyData.facilities.forEach((fac) => {
+      const rows = yoyData.pivotData?.[fac] || [];
+      for (let m = 1; m <= 12; m++) {
+        const mRow = rows.find((r) => r.month === m);
+        const d24 = mRow?.['2024'] as LeisureYoyYearData | undefined;
+        const d25 = mRow?.['2025'] as LeisureYoyYearData | undefined;
+        const d26 = mRow?.['2026'] as LeisureYoyYearData | undefined;
+
+        let diffStr = '-';
+        if (d25 && d26 && (d25.visitors > 0 || d25.roomGuests > 0) && (d26.visitors > 0 || d26.roomGuests > 0)) {
+          const diff = Math.round((d26.usageRate - d25.usageRate) * 10) / 10;
+          diffStr = diff >= 0 ? `+${diff.toFixed(1)}%p` : `${diff.toFixed(1)}%p`;
+        }
+
+        sheet3Rows.push([
+          fac,
+          `${m}월`,
+          d24?.visitors ?? 0,
+          d24?.roomGuests ?? 0,
+          d24 ? `${d24.usageRate.toFixed(1)}%` : '-',
+          d25?.visitors ?? 0,
+          d25?.roomGuests ?? 0,
+          d25 ? `${d25.usageRate.toFixed(1)}%` : '-',
+          d26?.visitors ?? 0,
+          d26?.roomGuests ?? 0,
+          d26 ? `${d26.usageRate.toFixed(1)}%` : (m >= 11 ? '미도래' : '-'),
+          diffStr
+        ]);
+      }
+    });
+
+    const ws3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+    ws3['!cols'] = [
+      { wch: 18 },
+      { wch: 8 },
+      { wch: 18 }, { wch: 20 }, { wch: 16 },
+      { wch: 18 }, { wch: 20 }, { wch: 16 },
+      { wch: 18 }, { wch: 20 }, { wch: 16 },
+      { wch: 16 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws3, '월별_전영업장_상세내역');
+
+    // Download file
+    const dateTag = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    XLSX.writeFile(wb, `벨포레_레저본부_전영업장_이용률_비교_${dateTag}.xlsx`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#f8fafc]">
@@ -903,27 +1144,39 @@ export default function LeisureUsageRate() {
             </p>
           </div>
 
-          {/* Facility Dropdown Selector */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-              영업장 선택:
-            </span>
-            <div className="relative">
-              <select
-                value={selectedFacility}
-                onChange={(e) => setSelectedFacility(e.target.value)}
-                className="w-full sm:w-auto px-4 py-2.5 bg-white border-2 border-emerald-500/80 text-emerald-900 font-bold rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs cursor-pointer pr-10 appearance-none"
-              >
-                {facilityList.map((fac) => (
-                  <option key={fac} value={fac}>
-                    {fac === '벨포레 목장(체험)' ? '목장체험 (벨포레 목장 체험)' : fac}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
+          {/* Facility Dropdown Selector & Excel Export Button */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-2xl text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+              title="선택된 영업장에 관계없이 전 영업장의 2025년 vs 2026년 이용률 비교 엑셀을 다운로드합니다"
+            >
+              <FileSpreadsheet size={16} />
+              <span>전 영업장 이용률 엑셀 다운로드</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                영업장 선택:
+              </span>
+              <div className="relative">
+                <select
+                  value={selectedFacility}
+                  onChange={(e) => setSelectedFacility(e.target.value)}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-white border-2 border-emerald-500/80 text-emerald-900 font-bold rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-xs cursor-pointer pr-10 appearance-none"
+                >
+                  {facilityList.map((fac) => (
+                    <option key={fac} value={fac}>
+                      {fac === '벨포레 목장(체험)' ? '목장체험 (벨포레 목장 체험)' : fac}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-700">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>

@@ -256,6 +256,9 @@ export interface LeisureYoyMatrixResponse {
   facilities: string[];
   years: string[];
   pivotData: Record<string, LeisureYoyRow[]>;
+  periodRange?: { startMonth: number; endMonth: number; label: string };
+  periodCumulative?: Record<string, { visitors: number; roomGuests: number; usageRate: number }>;
+  facilityPeriodCumulative?: Record<string, Record<string, { visitors: number; roomGuests: number; usageRate: number }>>;
   error?: string;
 }
 

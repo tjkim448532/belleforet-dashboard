@@ -340,7 +340,16 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  영업장별 이용률 & 시뮬레이터
+                  영업장별 이용률 추이
+                </NavLink>
+                <NavLink
+                  to="/leisure/simulator"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  티켓 가격 & 수요 시뮬레이터
                 </NavLink>
               </div>
             )}

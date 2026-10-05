@@ -4,7 +4,6 @@ import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { Ticket, Trophy, AlertCircle, Wallet, Award } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
-import LeisurePricingSimulator from '../components/dashboard/LeisurePricingSimulator';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -293,11 +292,6 @@ export default function LeisureFacility() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* 레저본부 티켓 가격 & 수요 탄력성 시뮬레이터 */}
-      <div className="mt-8">
-        <LeisurePricingSimulator />
       </div>
     </div>
   );

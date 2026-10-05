@@ -4,7 +4,8 @@ import {
   Target, Sparkles, Sliders, TrendingUp,
   Calendar, ChevronDown, ChevronRight, CloudRain,
   RotateCcw, PieChart, CheckCircle2, Clock, Package,
-  FileSpreadsheet, Download, Filter, FileText
+  FileSpreadsheet, Download, Filter, FileText, AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import * as XLSX from 'xlsx';
@@ -229,6 +230,8 @@ export default function StrategicSimulator() {
   const [businessPlanViewMode, setBusinessPlanViewMode] = useState<'MONTHLY_MATRIX' | 'SINGLE_MONTH'>('MONTHLY_MATRIX');
   const [monthlyMatrixData, setMonthlyMatrixData] = useState<MonthlyMatrixFacility[] | null>(null);
   const [isLoadingMatrix, setIsLoadingMatrix] = useState<boolean>(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState<number>(0);
 
   const [apiData, setApiData] = useState<{ summary: ApiSummary; categories: ApiCategory[] } | null>(null);
   const [, setRebalancedMonthlyTargets] = useState<Record<number, number>>({});
@@ -245,6 +248,7 @@ export default function StrategicSimulator() {
     let isMounted = true;
     const fetchBusinessPlan = async () => {
       try {
+        setFetchError(null);
         const isYearly = input.selectedMonth === 'ANNUAL';
         const url = isYearly
           ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
@@ -267,20 +271,24 @@ export default function StrategicSimulator() {
           setOpenCategories(initialOpenCats);
           setOpenParts(initialOpenParts);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Business Plan API fetch warning, fallback to engine:', err);
+        if (isMounted) {
+          setFetchError(err?.details || err?.message || '현재 데이터베이스 서버가 중지(STOPPED) 상태이거나 네트워크 점검 중입니다.');
+        }
       }
     };
 
     fetchBusinessPlan();
     return () => { isMounted = false; };
-  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf]);
+  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf, retryTrigger]);
 
   // Fetch All 12 Months Matrix Data for Business Plan (Fast parallel fetch)
   useEffect(() => {
     let isMounted = true;
     const fetch12Months = async () => {
       setIsLoadingMatrix(true);
+      setFetchError(null);
       try {
         const promises = Array.from({ length: 12 }, (_, i) => {
           const m = i + 1;
@@ -330,8 +338,11 @@ export default function StrategicSimulator() {
         });
 
         setMonthlyMatrixData(sortedList);
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Failed to fetch 12-month matrix:', err);
+        if (isMounted) {
+          setFetchError(err?.details || err?.message || '현재 데이터베이스 서버가 중지(STOPPED) 상태이거나 네트워크 점검 중입니다.');
+        }
       } finally {
         if (isMounted) setIsLoadingMatrix(false);
       }
@@ -339,7 +350,7 @@ export default function StrategicSimulator() {
 
     fetch12Months();
     return () => { isMounted = false; };
-  }, [input.targetYear, input.targetGrowthRate, input.includeGolf]);
+  }, [input.targetYear, input.targetGrowthRate, input.includeGolf, retryTrigger]);
 
   // Feature 4: Baseline Engine directly from Backend API (0-Variance)
   const wmaBaselineData = useMemo(() => {
@@ -550,8 +561,44 @@ export default function StrategicSimulator() {
 
   // Total facilities across all effective categories
   const totalFacilityCount = useMemo(() => {
-    return effectiveCategories.reduce((acc, cat) => acc + (cat.facilities?.length || 0), 0);
-  }, [effectiveCategories]);
+    const fromEffective = effectiveCategories.reduce((acc, cat) => acc + (cat.facilities?.length || 0), 0);
+    if (fromEffective > 0) return fromEffective;
+    return monthlyMatrixData?.length || 0;
+  }, [effectiveCategories, monthlyMatrixData]);
+
+  const availableMatrixCategories = useMemo(() => {
+    if (effectiveCategories.length > 0) {
+      return effectiveCategories.map(c => ({
+        code: c.categoryCode,
+        name: getCategoryDisplayName(c),
+        icon: getCategoryIcon(c.categoryName, c.categoryCode),
+        count: c.facilities?.length || 0
+      }));
+    }
+    if (monthlyMatrixData && monthlyMatrixData.length > 0) {
+      const catMap = new Map<string, { code: string; name: string; icon: string; count: number }>();
+      monthlyMatrixData.forEach(f => {
+        if (!catMap.has(f.categoryCode)) {
+          catMap.set(f.categoryCode, {
+            code: f.categoryCode,
+            name: f.divisionName || f.categoryName,
+            icon: getCategoryIcon(f.categoryName, f.categoryCode),
+            count: 0
+          });
+        }
+        catMap.get(f.categoryCode)!.count += 1;
+      });
+      return Array.from(catMap.values());
+    }
+    return [
+      { code: 'GOLF', name: '골프사업본부', icon: '⛳', count: 0 },
+      { code: 'ROOM', name: '리조트사업본부', icon: '🏨', count: 0 },
+      { code: 'FNB', name: '콘텐츠기획본부', icon: '🍽️', count: 0 },
+      { code: 'TICKET', name: '레저본부', icon: '🎢', count: 0 },
+      { code: 'MOTO', name: '모토아레나', icon: '🏎️', count: 0 },
+      { code: 'BANQUET', name: '세일즈본부', icon: '🏛️', count: 0 }
+    ];
+  }, [effectiveCategories, monthlyMatrixData]);
 
   // Flat business plan facility list with computed simulator target metrics
   const flatBusinessPlanFacilities = useMemo(() => {
@@ -1045,6 +1092,54 @@ export default function StrategicSimulator() {
             </div>
           </div>
 
+          {/* DB Server Status / Error Alert Banner */}
+          {(fetchError || (!isLoadingMatrix && filteredMatrixFacilities.length === 0 && !apiData)) && (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 text-amber-800 rounded-xl shrink-0 mt-0.5">
+                  <AlertTriangle size={22} className="animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-amber-950 flex items-center gap-2">
+                    <span>데이터베이스 서버 중지(STOPPED) 또는 연결 대기 중</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md font-mono font-bold">
+                      서버 점검/수면 모드
+                    </span>
+                  </h4>
+                  <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                    {fetchError || '현재 AWS RDS 데이터베이스 서버가 심야/주말 절전(STOPPED) 상태이거나 네트워크 점검 중입니다.'}
+                    <br />
+                    관리자 콘솔에서 데이터베이스 서버가 가동되면 1~12월 전체 영업장별 사업계획서 데이터가 자동으로 표시됩니다.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFetchError(null);
+                  setRetryTrigger(prev => prev + 1);
+                }}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+              >
+                <RotateCcw size={14} />
+                <span>데이터 다시 불러오기</span>
+              </button>
+            </div>
+          )}
+
+          {/* Loading Indicator Banner */}
+          {isLoadingMatrix && (
+            <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-6 text-center shadow-xs flex flex-col items-center justify-center gap-2 animate-in fade-in duration-300">
+              <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs font-black text-indigo-900 mt-1">
+                1~12월 전체 영업장별 사업계획서 데이터를 동기화하는 중입니다...
+              </p>
+              <p className="text-[11px] text-indigo-600">
+                전체 12개월의 정규 마트 데이터를 0-Variance로 취합하고 있습니다.
+              </p>
+            </div>
+          )}
+
           {/* Filter & Selector Bar */}
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1062,10 +1157,12 @@ export default function StrategicSimulator() {
                     onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                     className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[210px] cursor-pointer"
                   >
-                    <option value="ALL">전체 부문 (전사 총괄 - {totalFacilityCount}개 영업장)</option>
-                    {effectiveCategories.map(cat => (
-                      <option key={cat.categoryCode} value={cat.categoryCode}>
-                        {getCategoryIcon(cat.categoryName, cat.categoryCode)} {getCategoryDisplayName(cat)} ({cat.facilities?.length || 0}개 영업장)
+                    <option value="ALL">
+                      전체 부문 (전사 총괄{isLoadingMatrix ? ' - 동기화 중...' : totalFacilityCount > 0 ? ` - ${totalFacilityCount}개 영업장` : ''})
+                    </option>
+                    {availableMatrixCategories.map(cat => (
+                      <option key={cat.code} value={cat.code}>
+                        {cat.icon} {cat.name} {cat.count > 0 ? `(${cat.count}개 영업장)` : ''}
                       </option>
                     ))}
                   </select>
@@ -1196,8 +1293,8 @@ export default function StrategicSimulator() {
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="text-[11px] font-bold text-slate-500 mb-1">대상 영업장 수</div>
                 <div className="text-2xl font-black text-slate-800">
-                  {filteredMatrixFacilities.length}
-                  <span className="text-xs font-bold text-slate-500 ml-1">개 영업장</span>
+                  {isLoadingMatrix ? '...' : `${filteredMatrixFacilities.length}개`}
+                  <span className="text-xs font-bold text-slate-500 ml-1">영업장</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">
                   전체 {totalFacilityCount}개 영업장 중
@@ -1207,8 +1304,7 @@ export default function StrategicSimulator() {
               <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30">
                 <div className="text-[11px] font-bold text-indigo-700 mb-1">{input.targetYear}년 연간 목표 합계</div>
                 <div className="text-2xl font-black text-indigo-700">
-                  {formatCurrency(matrixMonthlyTotals.grandYearTotal)}
-                  <span className="text-xs font-bold text-indigo-500 ml-1">원</span>
+                  {isLoadingMatrix ? '동기화 중...' : filteredMatrixFacilities.length > 0 ? `${formatCurrency(matrixMonthlyTotals.grandYearTotal)}원` : '-'}
                 </div>
                 <div className="text-[11px] text-indigo-500 mt-1">
                   1~12월 월별 목표치 합계
@@ -1218,21 +1314,24 @@ export default function StrategicSimulator() {
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="text-[11px] font-bold text-slate-500 mb-1">12개월 월평균 목표</div>
                 <div className="text-2xl font-black text-slate-800">
-                  {formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 12))}
-                  <span className="text-xs font-bold text-slate-500 ml-1">원</span>
+                  {isLoadingMatrix ? '동기화 중...' : filteredMatrixFacilities.length > 0 ? `${formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 12))}원` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">
-                  일평균 약 {formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 365))}원
+                  일평균 약 {filteredMatrixFacilities.length > 0 ? formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 365)) : '0'}원
                 </div>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs bg-amber-50/30">
                 <div className="text-[11px] font-bold text-amber-800 mb-1">최대 매출 피크 월</div>
                 <div className="text-2xl font-black text-amber-900">
-                  {matrixMonthlyTotals.peakMonth}월
-                  <span className="text-xs font-bold text-amber-700 ml-1.5">
-                    ({formatCurrency(matrixMonthlyTotals.peakVal)}원)
-                  </span>
+                  {isLoadingMatrix ? '...' : filteredMatrixFacilities.length > 0 ? (
+                    <>
+                      {matrixMonthlyTotals.peakMonth}월
+                      <span className="text-xs font-bold text-amber-700 ml-1.5">
+                        ({formatCurrency(matrixMonthlyTotals.peakVal)}원)
+                      </span>
+                    </>
+                  ) : '-'}
                 </div>
                 <div className="text-[11px] text-amber-700 mt-1">
                   선택 부문 연간 최고 매출 시즌
@@ -1255,8 +1354,7 @@ export default function StrategicSimulator() {
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="text-[11px] font-bold text-slate-500 mb-1">{input.baseYear}년 기준 실적</div>
                 <div className="text-2xl font-black text-slate-800">
-                  {formatCurrency(businessPlanTotals.baseActualSum)}
-                  <span className="text-xs font-bold text-slate-500 ml-1">원</span>
+                  {flatBusinessPlanFacilities.length > 0 ? `${formatCurrency(businessPlanTotals.baseActualSum)}원` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">
                   순매출 (VAT 별도 SSOT)
@@ -1266,8 +1364,7 @@ export default function StrategicSimulator() {
               <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30">
                 <div className="text-[11px] font-bold text-indigo-700 mb-1">{input.targetYear}년 사업계획 목표치</div>
                 <div className="text-2xl font-black text-indigo-700">
-                  {formatCurrency(businessPlanTotals.targetRevenueSum)}
-                  <span className="text-xs font-bold text-indigo-500 ml-1">원</span>
+                  {flatBusinessPlanFacilities.length > 0 ? `${formatCurrency(businessPlanTotals.targetRevenueSum)}원` : '-'}
                 </div>
                 <div className="text-[11px] text-indigo-500 mt-1">
                   시뮬레이터 목표 안분 합계
@@ -1281,14 +1378,22 @@ export default function StrategicSimulator() {
                 <div className={`text-2xl font-black ${
                   businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
                 }`}>
-                  {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}
-                  <span className="text-xs font-bold ml-1">원</span>
+                  {flatBusinessPlanFacilities.length > 0 ? (
+                    <>
+                      {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}
+                      <span className="text-xs font-bold ml-1">원</span>
+                    </>
+                  ) : '-'}
                 </div>
                 <div className={`text-xs font-black mt-1 ${
                   businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-600' : 'text-rose-600'
                 }`}>
-                  {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
-                  <span className="text-[10px] text-slate-500 font-normal ml-1">vs {input.baseYear}년</span>
+                  {flatBusinessPlanFacilities.length > 0 ? (
+                    <>
+                      {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                      <span className="text-[10px] text-slate-500 font-normal ml-1">vs {input.baseYear}년</span>
+                    </>
+                  ) : '-'}
                 </div>
               </div>
             </div>
@@ -1333,64 +1438,87 @@ export default function StrategicSimulator() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredMatrixFacilities.map(f => (
-                      <tr key={`${f.categoryCode}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-2 text-center font-mono text-slate-400 text-[11px] sticky left-0 bg-white">
-                          {f.no}
+                    {filteredMatrixFacilities.length === 0 ? (
+                      <tr>
+                        <td colSpan={17} className="py-12 text-center text-slate-400">
+                          {isLoadingMatrix ? (
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                              <span className="font-bold text-slate-600">1~12월 사업계획 매트릭스 데이터를 동기화하고 있습니다...</span>
+                            </div>
+                          ) : fetchError ? (
+                            <div className="flex flex-col items-center justify-center gap-2 text-amber-700">
+                              <AlertTriangle className="w-6 h-6 text-amber-500" />
+                              <span className="font-bold">데이터베이스 서버 응답 대기 중 ({fetchError})</span>
+                              <span className="text-xs text-slate-500">서버가 정상 가동되면 상단의 [데이터 다시 불러오기]를 눌러주십시오.</span>
+                            </div>
+                          ) : (
+                            <span>선택한 부문에 해당하는 영업장 데이터가 없습니다.</span>
+                          )}
                         </td>
-                        <td className="py-3 px-3 font-bold text-slate-700 whitespace-nowrap sticky left-10 bg-white">
-                          <span className="mr-1">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
-                          {f.divisionName}
+                      </tr>
+                    ) : (
+                      filteredMatrixFacilities.map(f => (
+                        <tr key={`${f.categoryCode}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-2 text-center font-mono text-slate-400 text-[11px] sticky left-0 bg-white">
+                            {f.no}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-slate-700 whitespace-nowrap sticky left-10 bg-white">
+                            <span className="mr-1">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
+                            {f.divisionName}
+                          </td>
+                          <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                            {f.partName}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
+                            {f.facilityName}
+                          </td>
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const m = i + 1;
+                            const val = f.months[m] || 0;
+                            return (
+                              <td key={m} className="py-3 px-2.5 text-right tabular-nums whitespace-nowrap">
+                                {val > 0 ? (
+                                  <span className="font-semibold text-slate-800">{formatCurrency(val)}원</span>
+                                ) : (
+                                  <span className="text-slate-300 font-normal">-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                            {formatCurrency(f.yearTotal)}원
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                  {filteredMatrixFacilities.length > 0 && (
+                    <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                      <tr>
+                        <td className="py-3.5 px-2 text-center sticky left-0 bg-slate-100">합계</td>
+                        <td className="py-3.5 px-3 font-black whitespace-nowrap sticky left-10 bg-slate-100">
+                          {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
                         </td>
-                        <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
-                          {f.partName}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
-                          {f.facilityName}
+                        <td className="py-3.5 px-3 text-slate-500 font-normal">-</td>
+                        <td className="py-3.5 px-3 font-black whitespace-nowrap">
+                          총 {filteredMatrixFacilities.length}개 영업장
                         </td>
                         {Array.from({ length: 12 }, (_, i) => {
                           const m = i + 1;
-                          const val = f.months[m] || 0;
+                          const mSum = matrixMonthlyTotals.monthSums[m] || 0;
                           return (
-                            <td key={m} className="py-3 px-2.5 text-right tabular-nums whitespace-nowrap">
-                              {val > 0 ? (
-                                <span className="font-semibold text-slate-800">{formatCurrency(val)}원</span>
-                              ) : (
-                                <span className="text-slate-300 font-normal">-</span>
-                              )}
+                            <td key={m} className="py-3.5 px-2.5 text-right tabular-nums font-black whitespace-nowrap text-slate-800">
+                              {formatCurrency(mSum)}원
                             </td>
                           );
                         })}
-                        <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
-                          {formatCurrency(f.yearTotal)}원
+                        <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/60 whitespace-nowrap text-sm">
+                          {formatCurrency(matrixMonthlyTotals.grandYearTotal)}원
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
-                    <tr>
-                      <td className="py-3.5 px-2 text-center sticky left-0 bg-slate-100">합계</td>
-                      <td className="py-3.5 px-3 font-black whitespace-nowrap sticky left-10 bg-slate-100">
-                        {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
-                      </td>
-                      <td className="py-3.5 px-3 text-slate-500 font-normal">-</td>
-                      <td className="py-3.5 px-3 font-black whitespace-nowrap">
-                        총 {filteredMatrixFacilities.length}개 영업장
-                      </td>
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const m = i + 1;
-                        const mSum = matrixMonthlyTotals.monthSums[m] || 0;
-                        return (
-                          <td key={m} className="py-3.5 px-2.5 text-right tabular-nums font-black whitespace-nowrap text-slate-800">
-                            {formatCurrency(mSum)}원
-                          </td>
-                        );
-                      })}
-                      <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/60 whitespace-nowrap text-sm">
-                        {formatCurrency(matrixMonthlyTotals.grandYearTotal)}원
-                      </td>
-                    </tr>
-                  </tfoot>
+                    </tfoot>
+                  )}
                 </table>
               </div>
             </div>
@@ -1435,95 +1563,113 @@ export default function StrategicSimulator() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {flatBusinessPlanFacilities.map(f => (
-                      <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-3 text-center font-mono text-slate-400 text-[11px]">
-                          {f.no}
+                    {flatBusinessPlanFacilities.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="py-12 text-center text-slate-400">
+                          {fetchError ? (
+                            <div className="flex flex-col items-center justify-center gap-2 text-amber-700">
+                              <AlertTriangle className="w-6 h-6 text-amber-500" />
+                              <span className="font-bold">데이터베이스 서버 응답 대기 중 ({fetchError})</span>
+                              <span className="text-xs text-slate-500">서버가 정상 가동되면 상단의 [데이터 다시 불러오기]를 눌러주십시오.</span>
+                            </div>
+                          ) : (
+                            <span>선택한 부문에 해당하는 영업장 데이터가 없습니다.</span>
+                          )}
                         </td>
-                        <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">
-                          <span className="mr-1.5">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
-                          {f.divisionName}
-                        </td>
-                        <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
-                          {f.partName}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
-                          {f.facilityName}
-                        </td>
-                        <td className="py-3 px-3 text-right tabular-nums text-slate-600 font-medium">
-                          {f.weight.toFixed(2)}%
-                        </td>
-                        <td className="py-3 px-4 text-right tabular-nums text-slate-600 font-medium whitespace-nowrap">
-                          {formatCurrency(f.baseActual)}원
-                        </td>
-                        <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
-                          {formatCurrency(f.targetRevenue)}원
-                        </td>
-                        <td className={`py-3 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
-                          f.diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                        }`}>
-                          {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
-                        </td>
-                        <td className={`py-3 px-3 text-right tabular-nums font-black whitespace-nowrap ${
-                          f.growthRate >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                        }`}>
-                          {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
-                        </td>
-                        <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                            f.strategyBadge === 'ADR 레버리지 권장'
-                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                              : f.strategyBadge === '핵심 볼륨 견인'
-                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                              : f.diff > 0
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                              : f.diff < 0
-                              ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                              : 'bg-slate-100 text-slate-700'
+                      </tr>
+                    ) : (
+                      flatBusinessPlanFacilities.map(f => (
+                        <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono text-slate-400 text-[11px]">
+                            {f.no}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">
+                            <span className="mr-1.5">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
+                            {f.divisionName}
+                          </td>
+                          <td className="py-3 px-4 font-medium text-slate-600 whitespace-nowrap">
+                            {f.partName}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                            {f.facilityName}
+                          </td>
+                          <td className="py-3 px-3 text-right tabular-nums text-slate-600 font-medium">
+                            {f.weight.toFixed(2)}%
+                          </td>
+                          <td className="py-3 px-4 text-right tabular-nums text-slate-600 font-medium whitespace-nowrap">
+                            {formatCurrency(f.baseActual)}원
+                          </td>
+                          <td className="py-3 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                            {formatCurrency(f.targetRevenue)}원
+                          </td>
+                          <td className={`py-3 px-4 text-right tabular-nums font-bold whitespace-nowrap ${
+                            f.diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
                           }`}>
-                            {f.strategyBadge}
+                            {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
+                          </td>
+                          <td className={`py-3 px-3 text-right tabular-nums font-black whitespace-nowrap ${
+                            f.growthRate >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                          }`}>
+                            {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                              f.strategyBadge === 'ADR 레버리지 권장'
+                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                : f.strategyBadge === '핵심 볼륨 견인'
+                                ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                : f.diff > 0
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : f.diff < 0
+                                ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {f.strategyBadge}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                  {flatBusinessPlanFacilities.length > 0 && (
+                    <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                      <tr>
+                        <td className="py-3.5 px-3 text-center">합계</td>
+                        <td className="py-3.5 px-4 font-black">
+                          {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500 font-normal">-</td>
+                        <td className="py-3.5 px-4 font-black">
+                          총 {businessPlanTotals.facilityCount}개 영업장
+                        </td>
+                        <td className="py-3.5 px-3 text-right tabular-nums text-indigo-700 font-black">
+                          100.0%
+                        </td>
+                        <td className="py-3.5 px-4 text-right tabular-nums font-bold whitespace-nowrap">
+                          {formatCurrency(businessPlanTotals.baseActualSum)}원
+                        </td>
+                        <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/50 whitespace-nowrap text-sm">
+                          {formatCurrency(businessPlanTotals.targetRevenueSum)}원
+                        </td>
+                        <td className={`py-3.5 px-4 text-right tabular-nums font-black whitespace-nowrap ${
+                          businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                        }`}>
+                          {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
+                        </td>
+                        <td className={`py-3.5 px-3 text-right tabular-nums font-black whitespace-nowrap ${
+                          businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                        }`}>
+                          {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            <CheckCircle2 size={12} />
+                            Zero-Variance 안분 완료
                           </span>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
-                    <tr>
-                      <td className="py-3.5 px-3 text-center">합계</td>
-                      <td className="py-3.5 px-4 font-black">
-                        {selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 font-normal">-</td>
-                      <td className="py-3.5 px-4 font-black">
-                        총 {businessPlanTotals.facilityCount}개 영업장
-                      </td>
-                      <td className="py-3.5 px-3 text-right tabular-nums text-indigo-700 font-black">
-                        100.0%
-                      </td>
-                      <td className="py-3.5 px-4 text-right tabular-nums font-bold whitespace-nowrap">
-                        {formatCurrency(businessPlanTotals.baseActualSum)}원
-                      </td>
-                      <td className="py-3.5 px-4 text-right tabular-nums font-black text-indigo-900 bg-indigo-100/50 whitespace-nowrap text-sm">
-                        {formatCurrency(businessPlanTotals.targetRevenueSum)}원
-                      </td>
-                      <td className={`py-3.5 px-4 text-right tabular-nums font-black whitespace-nowrap ${
-                        businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                      }`}>
-                        {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
-                      </td>
-                      <td className={`py-3.5 px-3 text-right tabular-nums font-black whitespace-nowrap ${
-                        businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                      }`}>
-                        {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
-                          <CheckCircle2 size={12} />
-                          Zero-Variance 안분 완료
-                        </span>
-                      </td>
-                    </tr>
-                  </tfoot>
+                    </tfoot>
+                  )}
                 </table>
               </div>
             </div>

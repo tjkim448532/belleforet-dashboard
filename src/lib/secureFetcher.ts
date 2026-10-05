@@ -159,7 +159,14 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const details = errorData.details || errorData.message || errorData.error || '';
-    if (typeof details === 'string' && (details.includes('심야 절전 운영') || details.includes('수면 모드') || details.includes('절전'))) {
+    if (typeof details === 'string' && (
+      details.includes('심야 절전 운영') || 
+      details.includes('수면 모드') || 
+      details.includes('절전') || 
+      details.includes('중지') || 
+      details.includes('STOPPED') || 
+      details.includes('데이터베이스')
+    )) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
       }
@@ -175,7 +182,14 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
   // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
   if (data && (data.status === 'error' || data.success === false)) {
     const details = data.details || data.message || data.error || '';
-    if (typeof details === 'string' && (details.includes('심야 절전 운영') || details.includes('수면 모드') || details.includes('절전'))) {
+    if (typeof details === 'string' && (
+      details.includes('심야 절전 운영') || 
+      details.includes('수면 모드') || 
+      details.includes('절전') || 
+      details.includes('중지') || 
+      details.includes('STOPPED') || 
+      details.includes('데이터베이스')
+    )) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
       }

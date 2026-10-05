@@ -36,6 +36,12 @@ export default function FacilityTrend() {
   const [golfViewMode, setGolfViewMode] = useState<GolfViewMode>('COMPARE');
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<{ facility: string; monthlyData: MonthlyDataPoint[] } | null>(null);
+  const [annualTotals, setAnnualTotals] = useState<Record<string, {
+    totalRevenue?: number;
+    exGolfRevenue?: number;
+    golfRevenue?: number;
+    visitors?: number;
+  }>>({});
 
   const fetchFacilityTrend = async () => {
     setLoading(true);
@@ -129,6 +135,50 @@ export default function FacilityTrend() {
           }
         }
 
+        // 백엔드 ValidationMaster 및 room-guests-yoy totals 연동 (NO SLICE SUMMATION SSOT)
+        const parseVM = (res: any) => {
+          const vm = res?.ValidationMaster;
+          if (!vm) return null;
+          return {
+            totalRevenue: Math.round(Number(vm.grandTotalRevenue ?? vm.totalRevenue ?? 0)),
+            exGolfRevenue: Math.round(Number(vm.grandExGolfRevenue ?? 0)),
+            golfRevenue: Math.round(Number(vm.grandGolfRevenue ?? 0))
+          };
+        };
+
+        const totalsByYear: Record<string, {
+          totalRevenue?: number;
+          exGolfRevenue?: number;
+          golfRevenue?: number;
+          visitors?: number;
+        }> = {};
+
+        const vm2024 = parseVM(res2024);
+        if (vm2024) {
+          totalsByYear['2024'] = {
+            ...vm2024,
+            visitors: guestsRes?.totals?.['2024'] !== undefined ? Math.round(Number(guestsRes.totals['2024'])) : undefined
+          };
+        }
+
+        const vm2025 = parseVM(res2025);
+        if (vm2025) {
+          totalsByYear['2025'] = {
+            ...vm2025,
+            visitors: guestsRes?.totals?.['2025'] !== undefined ? Math.round(Number(guestsRes.totals['2025'])) : undefined
+          };
+        }
+
+        const vm2026 = parseVM(res2026);
+        if (vm2026) {
+          totalsByYear['2026'] = {
+            ...vm2026,
+            visitors: guestsRes?.totals?.['2026'] !== undefined ? Math.round(Number(guestsRes.totals['2026'])) : undefined
+          };
+        }
+
+        setAnnualTotals(totalsByYear);
+
         setData({
           facility: '전체',
           monthlyData
@@ -150,16 +200,35 @@ export default function FacilityTrend() {
               visitors: Math.round(Number(d.visitors || 0))
             };
           });
+
+          if (payload?.totals) {
+            const facTotals: Record<string, { totalRevenue?: number; exGolfRevenue?: number; golfRevenue?: number; visitors?: number }> = {};
+            Object.keys(payload.totals).forEach(yr => {
+              const item = payload.totals[yr];
+              facTotals[yr] = {
+                totalRevenue: item.revenue !== undefined ? Math.round(Number(item.revenue)) : undefined,
+                exGolfRevenue: item.revenue !== undefined ? Math.round(Number(item.revenue)) : undefined,
+                golfRevenue: 0,
+                visitors: item.visitors !== undefined ? Math.round(Number(item.visitors)) : undefined
+              };
+            });
+            setAnnualTotals(facTotals);
+          } else {
+            setAnnualTotals({});
+          }
+
           setData({
             facility: selectedFacility,
             monthlyData: mapped
           });
         } else {
+          setAnnualTotals({});
           setData(null);
         }
       }
     } catch (err) {
       console.error('Facility Trend Fetch Error:', err);
+      setAnnualTotals({});
       setData(null);
     } finally {
       setLoading(false);
@@ -428,6 +497,68 @@ export default function FacilityTrend() {
             </tr>
           ))}
         </tbody>
+        {Object.keys(annualTotals).length > 0 && (
+          <tfoot className="bg-slate-100/95 font-black border-t-2 border-slate-300 text-slate-900 shadow-xs">
+            <tr>
+              <td className="px-6 py-4 font-black text-slate-900 text-center bg-slate-200/80 sticky left-0 z-10">
+                연간 합계
+              </td>
+              {years.map((year: string, idx) => {
+                const yearTotal = annualTotals[year];
+                const isLastYear = idx === years.length - 1;
+                return (
+                  <Fragment key={`foot_${year}`}>
+                    {isCompare ? (
+                      <>
+                        <td className="px-4 py-4 text-right font-black tabular-nums text-slate-900 bg-indigo-100/50">
+                          {yearTotal?.totalRevenue !== undefined && yearTotal.totalRevenue > 0
+                            ? `${formatCurrency(yearTotal.totalRevenue)}원`
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-4 text-right font-black tabular-nums text-sky-800 bg-sky-100/50">
+                          {yearTotal?.exGolfRevenue !== undefined && yearTotal.exGolfRevenue > 0
+                            ? `${formatCurrency(yearTotal.exGolfRevenue)}원`
+                            : '-'}
+                        </td>
+                        <td className={`px-4 py-4 text-right font-black tabular-nums text-emerald-700 bg-emerald-100/30 ${isLastYear ? '' : 'border-r border-slate-200'}`}>
+                          {yearTotal?.visitors !== undefined && yearTotal.visitors > 0
+                            ? `${formatCurrency(yearTotal.visitors)}명`
+                            : '-'}
+                        </td>
+                      </>
+                    ) : isExGolf ? (
+                      <>
+                        <td className="px-4 py-4 text-right font-black tabular-nums text-sky-800 bg-sky-100/50">
+                          {yearTotal?.exGolfRevenue !== undefined && yearTotal.exGolfRevenue > 0
+                            ? `${formatCurrency(yearTotal.exGolfRevenue)}원`
+                            : '-'}
+                        </td>
+                        <td className={`px-4 py-4 text-right font-black tabular-nums text-emerald-700 bg-emerald-100/30 ${isLastYear ? '' : 'border-r border-slate-200'}`}>
+                          {yearTotal?.visitors !== undefined && yearTotal.visitors > 0
+                            ? `${formatCurrency(yearTotal.visitors)}명`
+                            : '-'}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-4 text-right font-black tabular-nums text-blue-800 bg-blue-100/50">
+                          {yearTotal?.totalRevenue !== undefined && yearTotal.totalRevenue > 0
+                            ? `${formatCurrency(yearTotal.totalRevenue)}원`
+                            : '-'}
+                        </td>
+                        <td className={`px-4 py-4 text-right font-black tabular-nums text-emerald-700 bg-emerald-100/30 ${isLastYear ? '' : 'border-r border-slate-200'}`}>
+                          {yearTotal?.visitors !== undefined && yearTotal.visitors > 0
+                            ? `${formatCurrency(yearTotal.visitors)}명`
+                            : '-'}
+                        </td>
+                      </>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tr>
+          </tfoot>
+        )}
       </table>
     );
   };

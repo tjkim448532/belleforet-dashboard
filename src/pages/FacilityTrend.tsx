@@ -56,9 +56,10 @@ export default function FacilityTrend() {
           secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=2026`).catch(() => null),
         ]);
 
+        const guestsPayload = guestsRes?.data ?? guestsRes;
         const guestsMap: Record<string, number> = {};
-        if (guestsRes && Array.isArray(guestsRes.matrix)) {
-          guestsRes.matrix.forEach((row: any) => {
+        if (guestsPayload && Array.isArray(guestsPayload.matrix)) {
+          guestsPayload.matrix.forEach((row: any) => {
             const m = String(row.month).padStart(2, '0');
             ['2024', '2025', '2026'].forEach(y => {
               if (row[y] !== undefined) {
@@ -155,9 +156,9 @@ export default function FacilityTrend() {
         }> = {};
 
         const resolveVisitors = (yr: string) => {
-          // 1순위: room-guests-yoy totals 객체 (백엔드 공식 totals 필드)
-          if (guestsRes?.totals?.[yr] !== undefined && guestsRes.totals[yr] !== null) {
-            return Math.round(Number(guestsRes.totals[yr]));
+          // 1순위: room-guests-yoy totals 객체 (백엔드 공식 totals 필드 SSOT)
+          if (guestsPayload?.totals?.[yr] !== undefined && guestsPayload.totals[yr] !== null) {
+            return Math.round(Number(guestsPayload.totals[yr]));
           }
           // 2순위: leisure-yoy-matrix periodCumulative 완제품 (DB 마트 집계 연간 누적 객실투숙객)
           const periodData = leisureRes?.data?.periodCumulative ?? leisureRes?.periodCumulative;
@@ -215,16 +216,19 @@ export default function FacilityTrend() {
             };
           });
 
-          if (payload?.totals) {
+          const sourceTotals = payload?.yearlyTotals || (payload?.totals && typeof payload.totals['2024'] === 'object' ? payload.totals : null);
+          if (sourceTotals) {
             const facTotals: Record<string, { totalRevenue?: number; exGolfRevenue?: number; golfRevenue?: number; visitors?: number }> = {};
-            Object.keys(payload.totals).forEach(yr => {
-              const item = payload.totals[yr];
-              facTotals[yr] = {
-                totalRevenue: item.revenue !== undefined ? Math.round(Number(item.revenue)) : undefined,
-                exGolfRevenue: item.revenue !== undefined ? Math.round(Number(item.revenue)) : undefined,
-                golfRevenue: 0,
-                visitors: item.visitors !== undefined ? Math.round(Number(item.visitors)) : undefined
-              };
+            Object.keys(sourceTotals).forEach(yr => {
+              const item = sourceTotals[yr];
+              if (item && typeof item === 'object') {
+                facTotals[yr] = {
+                  totalRevenue: item.revenue !== undefined ? Math.round(Number(item.revenue)) : undefined,
+                  exGolfRevenue: item.revenue !== undefined ? Math.round(Number(item.revenue)) : undefined,
+                  golfRevenue: 0,
+                  visitors: item.visitors !== undefined ? Math.round(Number(item.visitors)) : undefined
+                };
+              }
             });
             setAnnualTotals(facTotals);
           } else {

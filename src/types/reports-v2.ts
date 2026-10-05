@@ -275,6 +275,8 @@ export interface RoomGuestsYoyResponse {
   success: boolean;
   years: string[];
   matrix: RoomGuestsYoyRow[];
+  totals?: Record<string, number>;
+  grandTotal?: number;
   error?: string;
 }
 

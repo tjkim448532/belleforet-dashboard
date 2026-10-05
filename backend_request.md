@@ -13,7 +13,7 @@
 | **P1 (높음)** | 데이터 검증 | **썸머랜드(워터파크) 9월 실적 이상치 원인 규명 및 분리** | 8월 말 폐장 시설에 9월 매출/이용객이 잡히는 원인(사우나 매핑, 이연 매출, 지연 전표 등) 점검 |
 | **P1 (높음)** | API 보강 | **월별 가용객실 효율 API에 `revpar` 필드 추가** | 12개월 정산 대조표에 순수 객실 판매 효율(RevPAR = 객실 순매출 ÷ 가용객실수) 제공 |
 | **P1 (완료)** | API 보강 | **월별 가용객실 효율 API에 주중/주말 분리형 RevPAR 및 TRevPAR 6종 추가** | [배포완료] 역산형 패키지 시뮬레이터 주중/주말 타깃팅 시 객실 방어선 및 목표 판매가 정밀 연동 지원 |
-| **P1 (높음)** | API 보강 | **숙박객 수 YoY 및 개별 영업장 API 연간 총합(`totals`) 완제품 추가** | 무관용 1원칙(NO SLICE SUMMATION) 수호: `room-guests-yoy` 및 `facility-monthly-trend` 연간 총합 완제품 제공 |
+| **P1 (완료)** | API 보강 | **숙박객 수 YoY 및 개별 영업장 API 연간 총합(`totals`) 완제품 추가** | [배포/검증완료] `room-guests-yoy` 및 `facility-monthly-trend` 연간 총합 완제품 프론트 연동 완료 |
 | **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
 | **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
 | **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
@@ -1435,7 +1435,7 @@ const reverseSpillover = totalRoomSales > 0
 
 ---
 
-## 11. 🏨 [P1 API 보강] 연도별 숙박객 수 YoY(`room-guests-yoy`) 및 개별 영업장 월별 실적(`facility-monthly-trend`) 연간 총합(`totals`) 완제품 탑재
+## 11. 🏨 [P1 완료] 연도별 숙박객 수 YoY(`room-guests-yoy`) 및 개별 영업장 월별 실적(`facility-monthly-trend`) 연간 총합(`totals`) 완제품 탑재 (✅ 배포 및 검증 완료)
 
 ### 11-1. 배경 및 무관용 원칙 (NO SLICE SUMMATION)
 1. **화면 요구사항**:
@@ -1443,55 +1443,49 @@ const reverseSpillover = totalRoomSales > 0
 2. **순매출(Revenue) 현황 - 준비 완료**:
    - 호출 API: `GET /api/v6/report/monthly-trends?year={2024|2025|2026}`
    - 백엔드가 이미 0-Variance 검증용 마스터 객체(`ValidationMaster`)에 연간 총합(`grandTotalRevenue`, `grandExGolfRevenue`)을 내려주고 있어, 프론트엔드가 이를 읽어 하단에 즉시 표출 완료함.
-3. **객실 투숙객 및 방문객(Visitors) 현황 - 백엔드 준비 필요**:
+3. **객실 투숙객 및 방문객(Visitors) 현황 - 배포 완료**:
    - 호출 API: `GET /api/v6/report/room-guests-yoy`
-   - 현재 응답 상태: 1~12월 행 데이터(`matrix`) 및 가로 월별 합(`rowTotal`)만 제공되며, 연도별 세로 1년치 합계인 `totals: { "2024": ..., "2025": ..., "2026": ... }` 필드가 누락되어 있음.
-   - **무관용 원칙 1번 (NO SLICE SUMMATION)**에 따라 프론트엔드가 1월~12월 배열을 `reduce`나 `for` 문으로 임의 가산하는 것은 엄격히 금지됨.
-   - 따라서 백엔드 API가 데이터베이스(데이터 마트 SSOT) 레벨에서 집계한 공식 연간 총합을 완성된 필드로 내려주어야 함.
+   - 백엔드 배포 완료: 연도별 세로 1년치 합계 `totals: { "2024": 91279, "2025": 124462, "2026": 93806 }` 및 `grandTotal: 309546` 완제품 제공 완료.
+   - 프론트엔드는 NO SLICE SUMMATION 원칙에 따라 백엔드 공식 SSOT 값을 직결 표출함.
 
-### 11-2. 요청 엔드포인트 및 기대 응답 JSON 규격
+### 11-2. 배포된 실측 응답 JSON 규격 (운영 검증 완료)
 
 #### ① 엔드포인트: `GET /api/v6/report/room-guests-yoy`
-응답 루트에 연도별 연간 투숙객 총합 객체 `totals` 추가:
 ```json
 {
   "success": true,
   "years": ["2024", "2025", "2026"],
-  "matrix": [
-    { "month": 1, "2024": 0, "2025": 7781, "2026": 7862, "rowTotal": 15643 },
-    { "month": 12, "2024": 9653, "2025": 10676, "2026": 0, "rowTotal": 20329 }
-  ],
   "totals": {
-    "2024": 52400,
-    "2025": 89200,
-    "2026": 5457
+    "2024": 91279,
+    "2025": 124462,
+    "2026": 93806
   },
-  "metadata": { ... }
+  "grandTotal": 309546
 }
 ```
 
 #### ② 엔드포인트: `GET /api/v6/report/facility-monthly-trend?facility={facilityName}`
-개별 영업장 선택 시에도 연도별 연간 매출액 및 방문객 총합 객체 `totals` 추가:
 ```json
 {
   "success": true,
   "data": {
-    "facility": "그린피",
+    "facility": "투스카나",
     "monthlyData": [ ... ],
-    "totals": {
-      "2024": { "revenue": 8757407987, "visitors": 0 },
-      "2025": { "revenue": 9277148772, "visitors": 0 },
-      "2026": { "revenue": 6485873943, "visitors": 0 }
-    }
+    "yearlyTotals": {
+      "2024": { "revenue": 0, "visitors": 0 },
+      "2025": { "revenue": 0, "visitors": 0 },
+      "2026": { "revenue": 0, "visitors": 0 }
+    },
+    "totals": { "revenue": 0, "visitors": 0 }
   }
 }
 ```
 
-### 11-3. 프론트엔드 선제 조치 현황 (2026-10-05)
-1. **`ValidationMaster` 순매출 완제품 즉시 직결 완료**:
-   - `FacilityTrend.tsx`에서 2024, 2025, 2026년 `monthly-trends`의 `ValidationMaster`(`grandTotalRevenue`, `grandExGolfRevenue`)를 수신하여 하단 연간 합계행에 1원 단위 무결성(0-Variance)으로 즉시 표출 완료.
-2. **`room-guests-yoy` 및 `facility-monthly-trend` totals 0ms 수신 대기 완료**:
-   - 백엔드에서 `totals` 객체가 내려오면 즉시 1순위로 바인딩하여 표출되도록 인터페이스를 완비함.
-   - 백엔드 배포 전까지는 임의의 클라이언트 가산 없이 `-` (Fail-Stop)로 정직하게 대기하여 데이터 조작 및 왜곡을 100% 원천 차단함.
+### 11-3. 프론트엔드 반영 및 바인딩 완료 현황 (2026-10-05)
+1. **`FacilityTrend.tsx` 전체 및 개별 영업장 연간 합계행 바인딩 완료**:
+   - 전체 리조트: `ValidationMaster`의 순매출 및 `room-guests-yoy`의 `totals` 객체(`91,279명`, `124,462명`, `93,806명`) 직결 바인딩 완료.
+   - 개별 영업장: `facility-monthly-trend`의 `yearlyTotals` 객체 직결 바인딩 완료.
+2. **`RoomGuestsYoyTable.tsx` 하단 연간 총합 행 직결 완료**:
+   - 숙박객 YoY 매트릭스 하단 `tfoot`에 백엔드 공식 `totals` 및 최신 연도 vs 전년도 증감수/증감율 바인딩 완료.
 
 

@@ -398,6 +398,65 @@ export default function RoomGuestsYoyTable() {
                 );
               })}
             </tbody>
+            {/* ⭐ 연간 총합 (totals) 행 (NO SLICE SUMMATION: 백엔드 공식 집계 완제품 바인딩) */}
+            {data?.totals && (
+              <tfoot className="bg-indigo-50/70 border-t-2 border-indigo-200 text-xs font-bold text-indigo-950">
+                <tr>
+                  <td className="py-4 px-6 text-center font-black text-sm bg-indigo-100/60 sticky left-0 z-10 border-r border-indigo-200">
+                    <div>연간 총합</div>
+                    <div className="text-[10px] text-indigo-700 font-semibold">(공식 SSOT)</div>
+                  </td>
+                  {years.map((yr) => {
+                    const isLatest = yr === latestYear;
+                    const guestTotal = data.totals?.[yr];
+                    return (
+                      <td
+                        key={`total_${yr}`}
+                        className={`py-4 px-6 text-center ${
+                          isLatest ? 'bg-indigo-100/80 border-x border-indigo-200' : ''
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className={`font-mono ${isLatest ? 'text-base font-black text-indigo-950' : 'text-sm font-bold text-slate-800'}`}>
+                            {guestTotal !== undefined ? `${guestTotal.toLocaleString('ko-KR')}명` : '-'}
+                          </span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                  {prevYear && latestYear && (
+                    <td className="py-4 px-6 text-center bg-indigo-50/50">
+                      {data.totals?.[latestYear] !== undefined && data.totals?.[prevYear] !== undefined ? (() => {
+                        const diff = data.totals[latestYear] - data.totals[prevYear];
+                        const pct = data.totals[prevYear] > 0 ? (diff / data.totals[prevYear]) * 100 : null;
+                        return (
+                          <div className="flex flex-col items-center gap-1 font-mono text-xs">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-slate-400 font-sans font-bold">인원</span>
+                              {diff > 0 ? (
+                                <span className="inline-flex items-center gap-0.5 text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                  <ArrowUpRight size={12} className="stroke-[2.5]" />
+                                  +{diff.toLocaleString()}명 {pct !== null ? `(+${pct.toFixed(1)}%)` : ''}
+                                </span>
+                              ) : diff < 0 ? (
+                                <span className="inline-flex items-center gap-0.5 text-rose-800 bg-rose-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                  <ArrowDownRight size={12} className="stroke-[2.5]" />
+                                  {diff.toLocaleString()}명 {pct !== null ? `(${pct.toFixed(1)}%)` : ''}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 font-bold">0명 (0.0%)</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })() : (
+                        <span className="text-slate-300 font-mono">-</span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       )}

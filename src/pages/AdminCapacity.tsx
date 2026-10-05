@@ -36,7 +36,7 @@ export default function AdminCapacity() {
           maxPriceHikeRate: 20,
           allowSpillover: Boolean(r.allowSpillover),
           spilloverPriority: 1,
-          notes: `${r.shopName} (좌석: ${r.seatingCapacity || 0}, 회전: ${r.dailyTurnoverRate || 1}회, 피크: ${r.peakHourWindow || '12:00-14:00'})`
+          notes: `${r.shopName} (좌석: ${r.seatingCapacity ?? 0}, 회전: ${r.dailyTurnoverRate ? `${r.dailyTurnoverRate}회` : '-'}, 피크: ${r.peakHourWindow || '-'})`
         }));
         setItems(cleaned);
         try {

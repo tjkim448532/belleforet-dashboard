@@ -103,41 +103,24 @@ export default function PackageGeneratorSimulator() {
   // ==========================================
   // State: Step 1 (목표 패키지 판매가)
   // ==========================================
-  const [targetPackagePrice, setTargetPackagePrice] = useState<number>(166000); // 1월 실측 TRevPAR(165,670원)에서 시작
+  const [targetPackagePrice, setTargetPackagePrice] = useState<number>(0);
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string>('ROOM_16');
 
   // ==========================================
   // State: Step 2 (객실 우선 배분액)
   // ==========================================
   const [isAutoRoomDeduction, setIsAutoRoomDeduction] = useState<boolean>(true); // 실측 RevPAR 자동 연동 여부
-  const [customRoomDeduction, setCustomRoomDeduction] = useState<number>(54000);
+  const [customRoomDeduction, setCustomRoomDeduction] = useState<number>(0);
 
   // ==========================================
   // State: Step 4 (유저가 직접 만드는 부대시설 품목 목록)
   // ==========================================
-  const [userItems, setUserItems] = useState<UserCustomItem[]>([
-    {
-      id: 'init_fnb_1',
-      name: '식음(F&B) 바우처 / 식사',
-      category: 'FNB',
-      unitPrice: 50000,
-      quantity: 1,
-      retailPrice: 65000
-    },
-    {
-      id: 'init_lei_1',
-      name: '직영 레저 / 액티비티 체험권',
-      category: 'LEISURE',
-      unitPrice: 62000,
-      quantity: 1,
-      retailPrice: 80000
-    }
-  ]);
+  const [userItems, setUserItems] = useState<UserCustomItem[]>([]);
 
   // ==========================================
   // State: Step 6 (전사 시뮬레이션 볼륨)
   // ==========================================
-  const [dailyPackageSalesRooms, setDailyPackageSalesRooms] = useState<number>(50); // 일일 목표 패키지 판매 객실 수
+  const [dailyPackageSalesRooms, setDailyPackageSalesRooms] = useState<number>(0); // 일일 목표 패키지 판매 객실 수
   const [copiedNotification, setCopiedNotification] = useState<boolean>(false);
 
   // Currency Formatter
@@ -192,7 +175,7 @@ export default function PackageGeneratorSimulator() {
                 trevparTotal,
                 weekdayTrevparTotal: Number(activeData.weekdayTrevparTotal ?? 0),
                 weekendTrevparTotal: Number(activeData.weekendTrevparTotal ?? 0),
-                availableRooms: Number(activeData.availableRooms ?? 5425),
+                availableRooms: Number(activeData.availableRooms ?? 0),
                 roomsSold: Number(activeData.roomsSold ?? 0),
                 netRevenueWithoutGolf: Number(activeData.netRevenueWithoutGolf ?? 0),
                 roomRevenue: Number(activeData.roomRevenue ?? 0),
@@ -305,7 +288,7 @@ export default function PackageGeneratorSimulator() {
         const physicalDailyUnits = 175; // SSOT
         const totalRev = Number(sum.totalRevenue ?? effData?.netRevenueWithoutGolf ?? 0);
         const nonGolfRev = Number(effData?.netRevenueWithoutGolf ?? totalRev);
-        const nonGolfRatio = (totalRev > 0 && nonGolfRev > 0) ? (nonGolfRev / totalRev) : 0.93;
+        const nonGolfRatio = (totalRev > 0 && nonGolfRev > 0) ? (nonGolfRev / totalRev) : (totalRev > 0 ? 1 : 0);
 
         const weekdayDailyAvg = Number(dowSum.weekday?.dailyAvg ?? 0);
         const weekendDailyAvg = Number(dowSum.redDayTotal?.dailyAvg ?? (dowSum.weekend?.dailyAvg ?? 0));
@@ -487,7 +470,7 @@ export default function PackageGeneratorSimulator() {
     let leisureAllocatedTotal = 0;
     let fnbRetailTotal = 0;
     let leisureRetailTotal = 0;
-    let totalVariableCost = 15000; // 객실 세탁/어메니티 기본 변동비 약 15,000원
+    let totalVariableCost = 0;
 
     userItems.forEach(item => {
       const itemSubtotal = item.unitPrice * (item.quantity || 1);
@@ -650,29 +633,8 @@ export default function PackageGeneratorSimulator() {
     setIsAutoRoomDeduction(true);
     setCustomRoomDeduction(effectiveRev);
     setSelectedRoomTypeId('ROOM_16');
-    const remBudget = Math.max(0, effectiveTrev - effectiveRev);
-    const fnbPart = Math.round((remBudget * 0.45) / 1000) * 1000;
-    const leiPart = remBudget - fnbPart;
-    setUserItems([
-      {
-        id: `fnb_${Date.now()}_1`,
-        name: '식음(F&B) 식사 및 바우처',
-        category: 'FNB',
-        unitPrice: fnbPart,
-        quantity: 1,
-        retailPrice: Math.round(fnbPart * 1.25)
-      },
-      {
-        id: `lei_${Date.now()}_2`,
-        name: '직영 레저 / 액티비티 체험권',
-        category: 'LEISURE',
-        unitPrice: leiPart,
-        quantity: 1,
-        retailPrice: Math.round(leiPart * 1.25)
-      }
-    ]);
-    const initialAllotment = allotmentCalculations.maxPackageAllotment > 0 ? allotmentCalculations.maxPackageAllotment : 0;
-    setDailyPackageSalesRooms(initialAllotment);
+    setUserItems([]);
+    setDailyPackageSalesRooms(0);
   };
 
   const handleApplySafeAllotment = () => {
@@ -1127,7 +1089,7 @@ ${itemListText}
               <Sun size={15} />
               <span>[주중용] 패키지 (일~목)</span>
               <span className="text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded-md">
-                {(liveSummary?.weekdayOcc ?? 30.6).toFixed(1)}%
+                {(liveSummary?.weekdayOcc ?? 0).toFixed(1)}%
               </span>
             </button>
 
@@ -1142,7 +1104,7 @@ ${itemListText}
               <Moon size={15} />
               <span>[주말용] 패키지 (금~토)</span>
               <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md">
-                {(liveSummary?.weekendOcc ?? 48.3).toFixed(1)}%
+                {(liveSummary?.weekendOcc ?? 0).toFixed(1)}%
               </span>
             </button>
           </div>

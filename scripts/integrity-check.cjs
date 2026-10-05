@@ -186,6 +186,38 @@ files.forEach(filePath => {
         code: codeOnly
       });
     }
+
+    // 11. 임의 숫자 널 병합 폴백 검사: ?? [1-9]\d* (Rule 11: Fail-Stop)
+    const nullishMatch = codeOnly.match(/\?\?\s*([1-9]\d*(?:\.\d+)?)/);
+    if (nullishMatch) {
+      const val = parseFloat(nullishMatch[1]);
+      const isAllowed = 
+        val === 1 || val === 1.0 || (val >= 2024 && val <= 2030) ||
+        codeOnly.includes('Year') || codeOnly.includes('year') ||
+        codeOnly.includes('digits') || codeOnly.includes('multiplier') || codeOnly.includes('val');
+      if (!isAllowed) {
+        violations.push({
+          file: relPath,
+          line: lineNum,
+          rule: 'Arbitrary Numeric Nullish Fallback (?? [양수] 사용 금지 - Fail-Stop 위반)',
+          code: codeOnly
+        });
+      }
+    }
+
+    // 12. useState 내 하드코딩된 단가/매출 상수(1000 이상) 검사 (연도 제외)
+    const stateMatch = codeOnly.match(/useState\s*(?:<[^>]+>)?\s*\(\s*([1-9]\d{3,})\s*\)/);
+    if (stateMatch) {
+      const num = parseInt(stateMatch[1], 10);
+      if (num < 2024 || num > 2030) {
+        violations.push({
+          file: relPath,
+          line: lineNum,
+          rule: 'Mock React Initial State (useState 내 하드코딩된 금액/수치 삽입 금지)',
+          code: codeOnly
+        });
+      }
+    }
   });
 });
 

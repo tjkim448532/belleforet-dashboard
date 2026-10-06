@@ -28,7 +28,7 @@ const DEFAULT_FACILITIES: FacilityOption[] = [
 ];
 
 const DEMAND_PRESETS = [
-  { label: '작년 동일 (0%)', value: 0 },
+  { label: '동일 고객 (0%)', value: 0 },
   { label: '+10% 증가', value: 10 },
   { label: '+20% 증가', value: 20 },
   { label: '+30% 증가', value: 30 },
@@ -37,7 +37,8 @@ const DEMAND_PRESETS = [
 
 export default function LeisurePricingSimulator() {
   const [selectedFacility, setSelectedFacility] = useState<string>('마운틴카트');
-  const [baseYear, setBaseYear] = useState<number>(2025);
+  // 가장 마지막 연도 (현재는 2026년) 실적 누적 기준
+  const [baseYear, setBaseYear] = useState<number>(2026);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isApiPending, setIsApiPending] = useState<boolean>(false);
   const [apiResponse, setApiResponse] = useState<LeisureTopProductsResponse | null>(null);
@@ -48,7 +49,7 @@ export default function LeisurePricingSimulator() {
   // Track active batch markup preset (0 = normal, 5, 10, 20, -1 = custom)
   const [activeMarkup, setActiveMarkup] = useState<number>(0);
 
-  // Demand change percentage (-50% ~ +100%). Default to 0% (작년 동일)!
+  // Demand change percentage (-50% ~ +100%). Default to 0%!
   const [demandChangePct, setDemandChangePct] = useState<number>(0);
 
   // Fetch Top 5 products when selectedFacility or baseYear changes
@@ -60,11 +61,22 @@ export default function LeisurePricingSimulator() {
       
       const payload: LeisureTopProductsResponse = res?.data ?? res;
       if (payload?.success && Array.isArray(payload.topProducts) && payload.topProducts.length > 0) {
-        setApiResponse(payload);
+        // 가장 마지막 연도 누적 트랜잭션 판매금액(lyRevenue) 기준 상위 5개 상품 (Top 5 SSOT)
+        const sortedTop5 = [...payload.topProducts]
+          .sort((a, b) => (b.lyRevenue ?? 0) - (a.lyRevenue ?? 0))
+          .slice(0, 5)
+          .map((item, idx) => ({ ...item, rank: idx + 1 }));
+
+        const normalizedPayload: LeisureTopProductsResponse = {
+          ...payload,
+          topProducts: sortedTop5,
+        };
+
+        setApiResponse(normalizedPayload);
         setIsApiPending(false);
         // Initialize price adjustments with clean regular price (0% markup)
         const initialPrices: Record<string, number> = {};
-        payload.topProducts.forEach((item) => {
+        sortedTop5.forEach((item) => {
           initialPrices[item.itemId] = item.currentPrice;
         });
         setPriceAdjustments(initialPrices);
@@ -297,7 +309,7 @@ export default function LeisurePricingSimulator() {
           barMaxWidth: 16,
         },
         {
-          name: '가격조정 (전년 고객수 동일)',
+          name: `가격조정 (${baseYear}년 고객수 동일)`,
           type: 'bar',
           data: simulationResults.monthlyBaselineTotals,
           itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
@@ -329,7 +341,7 @@ export default function LeisurePricingSimulator() {
             레저본부 티켓 가격 & 수요 탄력성 시뮬레이터
           </h2>
           <p className="text-xs lg:text-sm text-slate-500 mt-1">
-            영업장별 매출 Top 5 티켓의 가격 인상/인하 및 고객수 변동률(+10%, +30% 등)에 따른 예상 월별·연간 매출을 실시간 시뮬레이션합니다.
+            영업장별 {baseYear}년 누적 트랜잭션 판매금액 Top 5 티켓의 가격 인상/인하 및 고객수 변동률(+10%, +30% 등)에 따른 예상 월별·연간 매출을 실시간 시뮬레이션합니다.
           </p>
         </div>
 
@@ -356,17 +368,17 @@ export default function LeisurePricingSimulator() {
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <span>기준 연도:</span>
             <div className="flex items-center bg-slate-100 p-0.5 rounded-lg">
-              {[2024, 2025].map((y) => (
+              {[2024, 2025, 2026].map((y) => (
                 <button
                   key={y}
                   onClick={() => setBaseYear(y)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
+                  className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all ${
                     baseYear === y
                       ? 'bg-white text-emerald-700 shadow-xs'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  {y}년
+                  {y}년{y === 2026 ? ' (최신)' : ''}
                 </button>
               ))}
             </div>
@@ -526,7 +538,7 @@ export default function LeisurePricingSimulator() {
                     [2단계] 고객수(수요 탄력성) 변동 시나리오
                   </span>
                   <span className="text-[11px] text-slate-500 mt-0.5 block">
-                    작년과 동일한 고객수(0%) 기준과 고객 비율 조정(+10%, +30% 등) 시나리오를 동시 비교합니다.
+                    기준 연도({baseYear}년) 실측 고객수(0%) 기준과 고객 비율 조정(+10%, +30% 등) 시나리오를 동시 비교합니다.
                   </span>
                 </div>
 
@@ -609,7 +621,7 @@ export default function LeisurePricingSimulator() {
             <div className="bg-blue-50/70 rounded-2xl p-5 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-blue-900">
-                  예상 연매출 (작년 고객수 동일 기준)
+                  예상 연매출 ({baseYear}년 고객수 동일 기준)
                 </span>
                 <span className="px-2 py-0.5 bg-blue-200 text-blue-900 rounded text-[10px] font-bold">
                   순수 가격효과
@@ -642,7 +654,7 @@ export default function LeisurePricingSimulator() {
               </div>
               {simulationResults.baselineTotalDelta > 0 && (
                 <div className="text-[10px] text-blue-700/80 mt-1.5 font-medium">
-                  ※ 고객수는 작년 동일하나, 티켓 단가 인상으로 매출 증가
+                  ※ 고객수는 {baseYear}년과 동일하나, 티켓 단가 인상으로 매출 증가
                 </div>
               )}
             </div>
@@ -684,7 +696,7 @@ export default function LeisurePricingSimulator() {
               </div>
               {simulationResults.adjustedTotalDelta === 0 && (
                 <div className="text-[10px] text-slate-500 mt-1.5 font-medium">
-                  ※ 단가 및 고객수 변동이 없어 작년 실적과 100% 동일합니다.
+                  ※ 단가 및 고객수 변동이 없어 {baseYear}년 실적과 100% 동일합니다.
                 </div>
               )}
             </div>
@@ -696,10 +708,10 @@ export default function LeisurePricingSimulator() {
             <div className="p-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <ShoppingBag size={14} className="text-emerald-600" />
-                {selectedFacility} 판매금액 Top 5 상품 상세 및 단가 변경
+                {selectedFacility} 판매금액 Top 5 상품 상세 및 단가 변경 ({baseYear}년 누적 트랜잭션 매출 기준)
               </span>
               <span className="text-[11px] text-slate-500">
-                각 상품의 단가를 직접 입력하거나 증감 버튼을 클릭하여 시뮬레이션할 수 있습니다.
+                가장 마지막 연도({baseYear}년) 누적 중 가장 많이 팔린 트랜잭션 판매금액(매출액) 상위 5개 상품입니다.
               </span>
             </div>
 
@@ -709,11 +721,11 @@ export default function LeisurePricingSimulator() {
                   <tr>
                     <th className="py-3 px-3 text-center w-12">순위</th>
                     <th className="py-3 px-4">상품명 (티켓)</th>
-                    <th className="py-3 px-3 text-right">기준 정가</th>
+                    <th className="py-3 px-3 text-right">기준 정가 ({baseYear}년)</th>
                     <th className="py-3 px-4 text-center">조정 판매가</th>
-                    <th className="py-3 px-3 text-right">전년 수량</th>
-                    <th className="py-3 px-4 text-right">전년 실적 매출</th>
-                    <th className="py-3 px-4 text-right bg-blue-50/50">예상 연매출 (작년 고객)</th>
+                    <th className="py-3 px-3 text-right">{baseYear}년 수량</th>
+                    <th className="py-3 px-4 text-right">{baseYear}년 누적 매출</th>
+                    <th className="py-3 px-4 text-right bg-blue-50/50">예상 연매출 ({baseYear}년 고객)</th>
                     <th className="py-3 px-4 text-right bg-emerald-50/50">예상 연매출 (수요반영)</th>
                   </tr>
                 </thead>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Calculator, TrendingUp, RefreshCw, AlertCircle, Sparkles, 
-  Sliders, Layers, RotateCcw, Info, ShoppingBag
+  Sliders, Layers, RotateCcw, Info, ShoppingBag, Calendar
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -358,31 +358,67 @@ export default function LeisurePricingSimulator() {
         </div>
       </div>
 
-      {/* 2. Facility Selection Bar */}
+      {/* 2. Benchmark Year & Status Banner (Intuitive Year Indicator) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-gradient-to-r from-emerald-50 via-teal-50/60 to-slate-50 p-4 rounded-2xl border-2 border-emerald-300/80 shadow-2xs">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs">
+            <Calendar size={14} />
+            <span>분석 기준 연도: {baseYear}년 실측 데이터</span>
+          </div>
+          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            {baseYear === 2026 ? (
+              <>
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <strong className="text-emerald-950 font-black">2026년 누적 실적(Jan~Oct YTD)</strong> 트랜잭션 판매금액 Top 5 기준
+              </>
+            ) : (
+              <>
+                <span className="inline-block w-2 h-2 rounded-full bg-slate-400"></span>
+                <strong className="text-slate-900 font-bold">{baseYear}년 연간 마감 실적</strong> 트랜잭션 판매금액 Top 5 기준
+              </>
+            )}
+          </span>
+        </div>
+
+        {/* Prominent Year Selector */}
+        <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-emerald-200/90 shadow-2xs self-start md:self-auto">
+          <span className="text-[11px] font-bold text-slate-400 pl-2 pr-1">기준 연도 변경:</span>
+          {[2026, 2025, 2024].map((y) => (
+            <button
+              key={y}
+              onClick={() => setBaseYear(y)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                baseYear === y
+                  ? 'bg-emerald-600 text-white shadow-xs font-black'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <span>{y}년</span>
+              {y === 2026 && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-black ${
+                  baseYear === 2026 ? 'bg-emerald-900 text-emerald-100' : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  최신
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Facility Selection Bar */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <Layers size={14} className="text-emerald-600" />
-            분석 대상 영업장 선택
+            <span>분석 대상 영업장 선택:</span>
+            <strong className="text-slate-900 font-black px-2 py-0.5 bg-slate-100 rounded-md border border-slate-200">
+              {selectedFacility}
+            </strong>
           </span>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <span>기준 연도:</span>
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg">
-              {[2024, 2025, 2026].map((y) => (
-                <button
-                  key={y}
-                  onClick={() => setBaseYear(y)}
-                  className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all ${
-                    baseYear === y
-                      ? 'bg-white text-emerald-700 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {y}년{y === 2026 ? ' (최신)' : ''}
-                </button>
-              ))}
-            </div>
-          </div>
+          <span className="text-[11px] text-slate-500 font-medium">
+            현재 <strong>{selectedFacility}</strong>의 <strong className="text-emerald-700 font-bold">{baseYear}년 누적 트랜잭션 매출 상위 5개 상품</strong>을 시뮬레이션 중입니다.
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -471,10 +507,10 @@ export default function LeisurePricingSimulator() {
               <div>
                 <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                   <ShoppingBag size={14} className="text-emerald-600" />
-                  [1단계] 티켓 판매단가 조정
+                  [1단계] {baseYear}년 실측 단가 기준 티켓 판매가 조정
                 </span>
                 <span className="text-[11px] text-slate-500 mt-0.5 block">
-                  원하시는 인상률을 클릭하거나, 하단 표에서 상품별 단가를 직접 수정하실 수 있습니다.
+                  {baseYear}년 실측 평균 단가 기준 인상/인하율을 일괄 적용하거나, 하단 표에서 상품별 단가를 직접 수정합니다.
                 </span>
               </div>
 
@@ -599,11 +635,11 @@ export default function LeisurePricingSimulator() {
             {/* Card 1: LY Baseline Revenue */}
             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500">
-                  {baseYear}년 실적 총매출 (Top 5 합계)
+                <span className="text-xs font-black text-slate-700">
+                  {baseYear}년 실적 총매출 (Top 5)
                 </span>
-                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-bold">
-                  실측 기준
+                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-black">
+                  {baseYear}년 실측 전표 기준
                 </span>
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -612,19 +648,19 @@ export default function LeisurePricingSimulator() {
                 </span>
                 <span className="text-xs font-bold text-slate-500">원</span>
               </div>
-              <div className="text-[11px] text-slate-400 mt-2">
-                월평균: <span className="font-mono font-bold text-slate-600">{simulationResults.lyMonthlyAvg.toLocaleString()}원</span>
+              <div className="text-[11px] text-slate-500 mt-2">
+                월평균: <span className="font-mono font-bold text-slate-700">{simulationResults.lyMonthlyAvg.toLocaleString()}원</span> ({baseYear}년 실측)
               </div>
             </div>
 
             {/* Card 2: Baseline Simulation (Same Customers, Price Adjusted) */}
             <div className="bg-blue-50/70 rounded-2xl p-5 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-blue-900">
-                  예상 연매출 ({baseYear}년 고객수 동일 기준)
+                <span className="text-xs font-black text-blue-950">
+                  예상 연매출 ({baseYear}년 고객수 유지)
                 </span>
                 <span className="px-2 py-0.5 bg-blue-200 text-blue-900 rounded text-[10px] font-bold">
-                  순수 가격효과
+                  단가 변경 효과
                 </span>
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -639,7 +675,7 @@ export default function LeisurePricingSimulator() {
                 </span>
                 {simulationResults.baselineTotalDelta === 0 ? (
                   <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
-                    변동 없음 (+0원, 0.0%)
+                    {baseYear}년과 동일 (+0원, 0.0%)
                   </span>
                 ) : (
                   <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
@@ -662,11 +698,11 @@ export default function LeisurePricingSimulator() {
             {/* Card 3: Adjusted Simulation (Demand + Price Adjusted) */}
             <div className="bg-emerald-50/80 rounded-2xl p-5 border border-emerald-300 shadow-xs">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-emerald-950">
-                  예상 연매출 (수요 변동 {demandChangePct >= 0 ? `+${demandChangePct}` : demandChangePct}% 반영)
+                <span className="text-xs font-black text-emerald-950">
+                  예상 연매출 ({baseYear}년 대비 수요 {demandChangePct >= 0 ? `+${demandChangePct}` : demandChangePct}% 반영)
                 </span>
                 <span className="px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold">
-                  수요+가격 종합
+                  수요+단가 종합
                 </span>
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -681,7 +717,7 @@ export default function LeisurePricingSimulator() {
                 </span>
                 {simulationResults.adjustedTotalDelta === 0 ? (
                   <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
-                    변동 없음 (+0원, 0.0%)
+                    {baseYear}년과 동일 (+0원, 0.0%)
                   </span>
                 ) : (
                   <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
@@ -704,14 +740,19 @@ export default function LeisurePricingSimulator() {
           </div>
 
           {/* 4-C. Top 5 Products Interactive Pricing Table */}
-          <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <ShoppingBag size={14} className="text-emerald-600" />
-                {selectedFacility} 판매금액 Top 5 상품 상세 및 단가 변경 ({baseYear}년 누적 트랜잭션 매출 기준)
-              </span>
-              <span className="text-[11px] text-slate-500">
-                가장 마지막 연도({baseYear}년) 누적 중 가장 많이 팔린 트랜잭션 판매금액(매출액) 상위 5개 상품입니다.
+          <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+            <div className="p-4 bg-slate-50 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <ShoppingBag size={15} className="text-emerald-600" />
+                  <span>{selectedFacility} 판매금액 Top 5 상품 상세 및 단가 변경</span>
+                </span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[10px] font-black border border-emerald-200">
+                  {baseYear}년 누적 트랜잭션 기준
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 font-medium">
+                가장 마지막 연도({baseYear}년) 누적 중 가장 많이 팔린 트랜잭션 판매금액(순매출) 상위 5개 상품입니다.
               </span>
             </div>
 
@@ -821,7 +862,7 @@ export default function LeisurePricingSimulator() {
                 <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
                   <tr>
                     <td colSpan={5} className="py-3 px-4 text-center font-black text-slate-800">
-                      Top 5 상품 합계
+                      Top 5 상품 합계 ({baseYear}년 누적 실적)
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-slate-900">
                       {simulationResults.lyTotalRev.toLocaleString()}원
@@ -842,12 +883,15 @@ export default function LeisurePricingSimulator() {
           <div className="border border-slate-200/80 rounded-2xl p-5 bg-white space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                   <TrendingUp size={16} className="text-emerald-600" />
-                  월별 계절성(1~12월) 매출 시뮬레이션 추이
+                  <span>{selectedFacility} 월별 계절성(1~12월) 매출 시뮬레이션 추이</span>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[11px] font-black border border-emerald-200">
+                    {baseYear}년 실측 기준
+                  </span>
                 </h4>
-                <p className="text-[11px] text-slate-500">
-                  각 월의 실측 판매 비중에 따라 시뮬레이션된 월별 예상 매출을 비교합니다.
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {baseYear}년 각 월의 실측 판매 비중에 따라 시뮬레이션된 월별 예상 매출을 대조합니다.
                 </p>
               </div>
             </div>

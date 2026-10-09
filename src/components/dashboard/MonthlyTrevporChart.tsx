@@ -1592,25 +1592,25 @@ export default function MonthlyTrevporChart() {
             <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="py-3.5 px-3 text-center">월</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/50" title="물리 고정 175실 × 해당 월 역일수">2025년 가용객실</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/60 font-bold text-slate-800" title="PMS 정산 실판매 계약 객실수">2025년 판매객실</th>
-                  <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[360px] whitespace-nowrap">
+                  <th className="py-3.5 px-3 text-center min-w-[60px] whitespace-nowrap">월</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/50 min-w-[100px] whitespace-nowrap" title="물리 고정 175실 × 해당 월 역일수">2025년 가용객실</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/60 font-bold text-slate-800 min-w-[100px] whitespace-nowrap" title="PMS 정산 실판매 계약 객실수">2025년 판매객실</th>
+                  <th className="py-3.5 px-3 text-center bg-slate-100/60 min-w-[320px] whitespace-nowrap">
                     2025년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/50">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/60 font-bold text-slate-700" title="객실 순매출액 ÷ 월 가용객실수 (RevPAR)">2025년 RevPAR</th>
-                  <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800">2025년 TrevPAR</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/40" title="물리 고정 175실 × 해당 월 역일수">2026년 가용객실</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/50 font-bold text-teal-900" title="PMS 정산 실판매 계약 객실수">2026년 판매객실</th>
-                  <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[360px] whitespace-nowrap">
+                  <th className="py-3.5 px-3 text-right bg-slate-100/50 min-w-[140px] whitespace-nowrap">2025년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/60 font-bold text-slate-700 min-w-[110px] whitespace-nowrap" title="객실 순매출액 ÷ 월 가용객실수 (RevPAR)">2025년 RevPAR</th>
+                  <th className="py-3.5 px-3 text-right bg-slate-100/70 font-black text-slate-800 min-w-[115px] whitespace-nowrap">2025년 TrevPAR</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/40 min-w-[100px] whitespace-nowrap" title="물리 고정 175실 × 해당 월 역일수">2026년 가용객실</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/50 font-bold text-teal-900 min-w-[100px] whitespace-nowrap" title="PMS 정산 실판매 계약 객실수">2026년 판매객실</th>
+                  <th className="py-3.5 px-3 text-center bg-teal-50/60 min-w-[320px] whitespace-nowrap">
                     2026년 {metricMode === 'TOTAL' ? '매출 비중 (숙·식·레·모·대·골)' : '순수 리조트 비중 (숙·식·레·모·대)'}
                   </th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/40">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/60 font-bold text-teal-800" title="객실 순매출액 ÷ 월 가용객실수 (RevPAR)">2026년 RevPAR</th>
-                  <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900">2026년 TrevPAR</th>
-                  <th className="py-3.5 px-3 text-right">전년 대비 증감액</th>
-                  <th className="py-3.5 px-3 text-center">증감률</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/40 min-w-[140px] whitespace-nowrap">2026년 {metricMode === 'TOTAL' ? '전사 총매출' : '순수 리조트매출'}</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/60 font-bold text-teal-800 min-w-[110px] whitespace-nowrap" title="객실 순매출액 ÷ 월 가용객실수 (RevPAR)">2026년 RevPAR</th>
+                  <th className="py-3.5 px-3 text-right bg-teal-50/70 font-black text-teal-900 min-w-[115px] whitespace-nowrap">2026년 TrevPAR</th>
+                  <th className="py-3.5 px-3 text-right min-w-[140px] whitespace-nowrap">전년 대비 증감액</th>
+                  <th className="py-3.5 px-3 text-center min-w-[80px] whitespace-nowrap">증감률</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1627,22 +1627,22 @@ export default function MonthlyTrevporChart() {
                   const tyShares = item.ty ? getShareRatios(item.ty, metricMode) : null;
                   
                   // 백엔드 완제품 필드 직접 바인딩 (Zero-Proxy)
-                    const diffAmount = metricMode === 'TOTAL' ? item.diffTotalAmount : item.diffWithoutGolfAmount;
-                    const growthRate = metricMode === 'TOTAL' ? item.growthTotalRate : item.growthWithoutGolfRate;
+                  const diffAmount = metricMode === 'TOTAL' ? item.diffTotalAmount : item.diffWithoutGolfAmount;
+                  const growthRate = metricMode === 'TOTAL' ? item.growthTotalRate : item.growthWithoutGolfRate;
 
                   return (
                     <tr key={item.month} className={`hover:bg-slate-50/80 transition-colors ${isOngoing ? 'bg-amber-50/30' : ''}`}>
-                      <td className="py-3 px-3 font-bold text-center text-slate-900 bg-slate-50/30">
+                      <td className="py-3 px-3 font-bold text-center text-slate-900 bg-slate-50/30 whitespace-nowrap">
                         {item.monthLabel}
                         {isOngoing && (
                           <span className="block text-[10px] text-amber-700 font-semibold">({monthMeta.daysAccumulated}일 누적)</span>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-right tabular-nums font-semibold">
-                        {item.ly?.availableRooms ? `${formatCurrency(item.ly.availableRooms)} 실` : '-'}
+                      <td className="py-3 px-3 text-right tabular-nums font-semibold whitespace-nowrap font-financial">
+                        {item.ly?.availableRooms ? `${formatCurrency(item.ly.availableRooms)}실` : '-'}
                       </td>
-                      <td className="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 bg-slate-100/20">
-                        {item.ly?.roomsSold !== undefined && item.ly?.roomsSold !== null ? `${formatCurrency(item.ly.roomsSold)} 실` : '-'}
+                      <td className="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 bg-slate-100/20 whitespace-nowrap font-financial">
+                        {item.ly?.roomsSold !== undefined && item.ly?.roomsSold !== null ? `${formatCurrency(item.ly.roomsSold)}실` : '-'}
                       </td>
                       
                       {/* 2025년 매출 비중 */}
@@ -1679,21 +1679,21 @@ export default function MonthlyTrevporChart() {
                         )}
                       </td>
 
-                      <td className="py-3 px-3 text-right tabular-nums">
-                        {lyRev ? `${formatCurrency(lyRev)} 원` : '-'}
+                      <td className="py-3 px-3 text-right tabular-nums whitespace-nowrap font-financial">
+                        {lyRev ? `${formatCurrency(lyRev)}원` : '-'}
                       </td>
-                      <td className="py-3 px-3 text-right font-bold text-slate-700 tabular-nums bg-slate-100/20" title="2025년 RevPAR (객실 순매출 ÷ 가용객실)">
-                        {lyRevpar !== null && lyRevpar !== undefined ? `${formatCurrency(lyRevpar)} 원` : <span className="text-slate-300">-</span>}
+                      <td className="py-3 px-3 text-right font-bold text-slate-700 tabular-nums bg-slate-100/20 whitespace-nowrap font-financial" title="2025년 RevPAR (객실 순매출 ÷ 가용객실)">
+                        {lyRevpar !== null && lyRevpar !== undefined ? `${formatCurrency(lyRevpar)}원` : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="py-3 px-3 text-right font-bold text-slate-900 tabular-nums bg-slate-100/30">
-                        {lyTrevpar ? `${formatCurrency(lyTrevpar)} 원` : '-'}
+                      <td className="py-3 px-3 text-right font-bold text-slate-900 tabular-nums bg-slate-100/30 whitespace-nowrap font-financial">
+                        {lyTrevpar ? `${formatCurrency(lyTrevpar)}원` : '-'}
                       </td>
                       
-                      <td className="py-3 px-3 text-right tabular-nums font-semibold">
-                        {item.ty?.availableRooms ? `${formatCurrency(item.ty.availableRooms)} 실` : <span className="text-slate-300">-</span>}
+                      <td className="py-3 px-3 text-right tabular-nums font-semibold whitespace-nowrap font-financial">
+                        {item.ty?.availableRooms ? `${formatCurrency(item.ty.availableRooms)}실` : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="py-3 px-3 text-right tabular-nums font-bold text-teal-900 bg-teal-50/20">
-                        {item.ty?.roomsSold !== undefined && item.ty?.roomsSold !== null ? `${formatCurrency(item.ty.roomsSold)} 실` : <span className="text-slate-300">-</span>}
+                      <td className="py-3 px-3 text-right tabular-nums font-bold text-teal-900 bg-teal-50/20 whitespace-nowrap font-financial">
+                        {item.ty?.roomsSold !== undefined && item.ty?.roomsSold !== null ? `${formatCurrency(item.ty.roomsSold)}실` : <span className="text-slate-300">-</span>}
                       </td>
 
                       {/* 2026년 매출 비중 */}
@@ -1730,32 +1730,32 @@ export default function MonthlyTrevporChart() {
                         )}
                       </td>
 
-                      <td className="py-3 px-3 text-right tabular-nums">
-                        {tyRev !== null && tyRev !== undefined ? `${formatCurrency(tyRev)} 원` : <span className="text-slate-300">-</span>}
+                      <td className="py-3 px-3 text-right tabular-nums whitespace-nowrap font-financial">
+                        {tyRev !== null && tyRev !== undefined ? `${formatCurrency(tyRev)}원` : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="py-3 px-3 text-right font-bold text-teal-800 tabular-nums bg-teal-50/20" title={`2026년 RevPAR (객실 순매출 ÷ 가용객실)${item.revparGrowthRate !== undefined && item.revparGrowthRate !== null ? ` | 증감률: ${item.revparGrowthRate > 0 ? '+' : ''}${item.revparGrowthRate}%` : ''}`}>
-                        <div>{tyRevpar !== null && tyRevpar !== undefined ? `${formatCurrency(tyRevpar)} 원` : <span className="text-slate-300">-</span>}</div>
+                      <td className="py-3 px-3 text-right font-bold text-teal-800 tabular-nums bg-teal-50/20 whitespace-nowrap font-financial" title={`2026년 RevPAR (객실 순매출 ÷ 가용객실)${item.revparGrowthRate !== undefined && item.revparGrowthRate !== null ? ` | 증감률: ${item.revparGrowthRate > 0 ? '+' : ''}${item.revparGrowthRate}%` : ''}`}>
+                        <div className="whitespace-nowrap">{tyRevpar !== null && tyRevpar !== undefined ? `${formatCurrency(tyRevpar)}원` : <span className="text-slate-300">-</span>}</div>
                         {item.revparGrowthRate !== undefined && item.revparGrowthRate !== null && (
-                          <div className={`text-[10px] font-semibold ${item.revparGrowthRate >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                          <div className={`text-[10px] font-semibold whitespace-nowrap ${item.revparGrowthRate >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
                             {item.revparGrowthRate >= 0 ? '▲' : '▼'}{Math.abs(item.revparGrowthRate).toFixed(1)}%
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-right font-black text-teal-800 tabular-nums bg-teal-50/30">
-                        {tyTrevpar !== null && tyTrevpar !== undefined ? `${formatCurrency(tyTrevpar)} 원` : <span className="text-slate-300">-</span>}
+                      <td className="py-3 px-3 text-right font-black text-teal-800 tabular-nums bg-teal-50/30 whitespace-nowrap font-financial">
+                        {tyTrevpar !== null && tyTrevpar !== undefined ? `${formatCurrency(tyTrevpar)}원` : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="py-3 px-3 text-right tabular-nums">
+                      <td className="py-3 px-3 text-right tabular-nums whitespace-nowrap font-financial">
                         {diffAmount !== null && diffAmount !== undefined ? (
-                          <span className={`font-semibold ${diffAmount >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
-                            {diffAmount > 0 ? '+' : ''}{formatCurrency(diffAmount)} 원
+                          <span className={`font-semibold whitespace-nowrap ${diffAmount >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                            {diffAmount > 0 ? '+' : ''}{formatCurrency(diffAmount)}원
                           </span>
                         ) : (
                           <span className="text-slate-300">-</span>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
                         {growthRate !== null && growthRate !== undefined ? (
-                          <span className={`inline-block px-2 py-0.5 rounded font-bold text-[11px] ${
+                          <span className={`inline-block px-2 py-0.5 rounded font-bold text-[11px] whitespace-nowrap ${
                             growthRate >= 0 ? 'bg-teal-50 text-teal-700' : 'bg-rose-50 text-rose-600'
                           }`}>
                             {growthRate >= 0 ? '▲' : '▼'} {Math.abs(growthRate).toFixed(1)}%

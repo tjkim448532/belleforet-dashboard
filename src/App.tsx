@@ -35,7 +35,6 @@ import OnlineMembers from './pages/OnlineMembers';
 import GroupSales from './pages/GroupSales';
 import TargetSimulator from './pages/TargetSimulator';
 import StrategicSimulator from './pages/StrategicSimulator';
-import AdminCapacity from './pages/AdminCapacity';
 import WeatherSalesCorrelation from './pages/WeatherSalesCorrelation';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -106,12 +105,11 @@ export function App() {
                 </Route>
 
                 <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                  <Route path="capacity" element={<AdminCapacity />} />
                   <Route path="daol-rules" element={<AdminDaolRules />} />
                   <Route path="logs" element={<AdminLogs />} />
                   <Route path="mapping" element={<AdminMapping />} />
                   <Route path="roles" element={<AdminRoles />} />
-                  <Route index element={<Navigate to="capacity" replace />} />
+                  <Route index element={<Navigate to="roles" replace />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

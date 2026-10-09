@@ -1,19 +1,3 @@
-export interface FacilityCapacityItem {
-  id: string;
-  shopCode: string;
-  shopName: string;
-  category: 'ROOM' | 'GOLF' | 'LEISURE' | 'MOTO' | 'FNB' | 'BANQUET' | 'OTHER';
-  categoryLabel: string;
-  maxDailyUnits?: number;
-  unitName?: string;
-  baseUnitPrice?: number;
-  allowPriceLeverage?: boolean;
-  maxPriceHikeRate?: number;
-  allowSpillover?: boolean;
-  spilloverPriority?: number;
-  notes?: string;
-}
-
 export interface SimulationTargetInput {
   baseYear: number; // 기준 실적 연도 (2024, 2025, 2026)
   targetYear: number; // 목표 대상 연도 (2025, 2026, 2027)

@@ -421,11 +421,14 @@ export default function Home() {
             <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 flex flex-col justify-between">
               
               {/* 1. 올해 누적 매출 (YTD) */}
-              <div>
-                <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-1.5">
                   <div className="flex items-center gap-1.5">
-                    <Building2 className="w-5 h-5 text-brand-mint shrink-0" />
-                    <span className="text-sm font-bold text-slate-800">올해 누적 매출 (YTD)</span>
+                    <Building2 className="w-4.5 h-4.5 text-brand-mint shrink-0" />
+                    <span className="text-sm font-bold text-slate-800">올해 누적 매출</span>
+                    <span className="text-[10px] font-extrabold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-1.5 py-0.5 rounded tracking-wide">
+                      YTD
+                    </span>
                     <MetricExplainerTooltip presetKey="ytdRevenue" align="left" />
                   </div>
                   {isRangeMode ? (
@@ -439,94 +442,103 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="mb-2">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                      {formatRevenue(ytdGross)}
-                    </span>
-                    <span className="text-base font-semibold text-slate-400">원</span>
-                    <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap">
-                      {ytdFinancial.formatted}
-                    </span>
-                  </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                    {formatRevenue(ytdGross)}
+                  </span>
+                  <span className="text-base font-semibold text-slate-400">원</span>
+                  <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap font-financial">
+                    {ytdFinancial.formatted}
+                  </span>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-1">
-                  {ytdGrowth !== undefined && ytdGrowth !== null ? (
-                    <div className={ytdGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
-                      <span className="text-slate-600 font-medium">전년 동기 대비</span>
-                      <span className="font-bold">{ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
-                      {ytdDiff !== undefined && (
-                        <span className="font-medium opacity-85">({ytdDiff > 0 ? '+' : ''}{formatRevenue(ytdDiff)}원)</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="badge-delta-neutral">
-                      <span>전년 비교 데이터 산출 대기</span>
-                    </div>
-                  )}
+                {/* 🌟 전년 동기 대조 바 (일체형 오와열 정렬) */}
+                <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs" title={`대조 기간: ${lyYtdPeriodStr}`}>
+                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+                      전년 실적
+                    </span>
+                    <span className="font-extrabold text-slate-800 text-sm">
+                      {ytdLyGross > 0 ? `${formatRevenue(ytdLyGross)}원` : '-'}
+                    </span>
+                    {ytdLyGross > 0 && (
+                      <span className="text-xs font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
+                        {ytdLyFinancial.formatted}
+                      </span>
+                    )}
+                  </div>
 
-                  {ytdLyGross > 0 && (
-                    <div className="text-[11px] text-slate-500 font-financial bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 whitespace-nowrap">
-                      전년 실적 ({lyYtdPeriodStr}): <span className="font-bold text-slate-700">{formatRevenue(ytdLyGross)}원</span> ({ytdLyFinancial.formatted})
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    {ytdGrowth !== undefined && ytdGrowth !== null ? (
+                      <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
+                        ytdGrowth >= 0 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                          : 'bg-rose-100 text-rose-800 border border-rose-200'
+                      }`}>
+                        <span>전년비 {ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(ytdGrowth).toFixed(1)}%</span>
+                        {ytdDiff !== undefined && (
+                          <span className="font-semibold text-[10px] opacity-90">({ytdDiff > 0 ? '+' : ''}{formatRevenue(ytdDiff)}원)</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">전년 비교 산출 대기</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* 2. 💡 월별 누적 매출(MTD) / 선택기간 객실부문 실적 + 공휴일 일수 비교 */}
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <div className="mb-2">
-                  <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <CalendarDays className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="text-sm font-bold text-slate-800">
-                        {isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출 (MTD)'}
-                      </span>
-                      <MetricExplainerTooltip presetKey={isRangeMode ? "netRevenue" : "mtdRevenue"} align="left" />
-                    </div>
+              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                    <span className="text-sm font-bold text-slate-800">
+                      {isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출'}
+                    </span>
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded tracking-wide">
+                      MTD
+                    </span>
+                    <MetricExplainerTooltip presetKey={isRangeMode ? "netRevenue" : "mtdRevenue"} align="left" />
+                  </div>
 
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs text-slate-500 font-medium font-financial bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                        📅 {activePeriodStr}
-                      </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs text-slate-500 font-medium font-financial bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                      📅 {activePeriodStr}
+                    </span>
 
-                      {/* 🎈 공휴일수 비교 배지 */}
-                      <div 
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
-                        title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
-                      >
-                        <span className="text-amber-800">🎈 공휴일:</span>
-                        <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
-                        <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
-                        {periodHolidays.diffHolidays !== 0 ? (
-                          <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
-                        )}
-                      </div>
+                    {/* 🎈 공휴일수 비교 배지 */}
+                    <div 
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
+                      title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
+                    >
+                      <span className="text-amber-800">🎈 공휴일:</span>
+                      <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
+                      <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
+                      {periodHolidays.diffHolidays !== 0 ? (
+                        <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="mb-2">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-xl lg:text-2xl font-bold text-slate-900 font-financial tracking-tight">
-                      {formatRevenue(activeSecondaryRev)}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-400">원</span>
-                    <span className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md whitespace-nowrap">
-                      {secondaryFinancial.formatted}
-                    </span>
-                    {isRangeMode && <span className="text-[11px] text-slate-400 font-normal">(객실 순매출)</span>}
-                  </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                    {formatRevenue(activeSecondaryRev)}
+                  </span>
+                  <span className="text-base font-semibold text-slate-400">원</span>
+                  <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap font-financial">
+                    {secondaryFinancial.formatted}
+                  </span>
+                  {isRangeMode && <span className="text-[11px] text-slate-400 font-normal">(객실 순매출)</span>}
                 </div>
 
-                {/* 🌟 전년 동기 실적 금액 및 비교 안내 */}
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 flex-wrap text-xs font-financial">
+                {/* 🌟 전년 동기 대조 바 (일체형 오와열 정렬) */}
+                <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs" title={`대조 기간: ${activeLyPeriodStr}`}>
                     <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
                       전년 동기 실적
                     </span>
@@ -538,14 +550,11 @@ export default function Home() {
                         {secondaryLyFinancial.formatted}
                       </span>
                     )}
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      ({activeLyPeriodStr})
-                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                     {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
-                      <div className={`px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap font-financial ${
+                      <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
                         activeSecondaryGrowth >= 0 
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                           : 'bg-rose-100 text-rose-800 border border-rose-200'
@@ -560,55 +569,55 @@ export default function Home() {
                     )}
                   </div>
                 </div>
+              </div>
 
-                {/* 🛏️ 객실 판매수 vs 전년동기간 비교 레이아웃 */}
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
-                  <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                      <BedDouble className="w-4 h-4 text-emerald-600" />
-                      <span>{isRangeMode ? '선택 기간 객실 판매 비교' : '월별 누적 객실 판매'}</span>
-                    </div>
+              {/* 3. 🛏️ 월별 누적 객실 판매 */}
+              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <BedDouble className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                    <span className="text-sm font-bold text-slate-800">
+                      {isRangeMode ? '선택 기간 객실 판매' : '월별 누적 객실 판매'}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/80">
+                      콘도 투숙
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                    {activeRoomsSold.toLocaleString()}
+                  </span>
+                  <span className="text-base font-semibold text-slate-400">실</span>
+                </div>
+
+                {/* 🌟 전년 동기간 대조 바 (일체형 오와열 정렬) */}
+                <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+                      전년 동기간
+                    </span>
+                    <span className="font-extrabold text-slate-800 text-sm">
+                      {activeLyRoomsSold > 0 ? `${activeLyRoomsSold.toLocaleString()}실` : '-'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                     {activeLyRoomsSold > 0 && activeRoomsGrowth !== null ? (
-                      <div className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap font-financial ${
+                      <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
                         activeRoomsGrowth >= 0 
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                           : 'bg-rose-100 text-rose-800 border border-rose-200'
                       }`}>
-                        <span>{activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
+                        <span>전년비 {activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
                         <span className="font-semibold text-[10px] opacity-90">({activeRoomsDiff > 0 ? '+' : ''}{activeRoomsDiff.toLocaleString()}실)</span>
                       </div>
                     ) : (
                       <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 대기</span>
                     )}
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-0.5">
-                        <span>{isRangeMode ? '선택기간 누적' : '월별 누적'}</span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">당해</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-extrabold text-slate-900 tracking-tight font-financial">{activeRoomsSold.toLocaleString()}</span>
-                        <span className="text-xs font-semibold text-slate-500">실</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
-                      <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-0.5">
-                        <span>전년 동기간</span>
-                        <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">전년</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-extrabold text-slate-600 tracking-tight font-financial">
-                          {activeLyRoomsSold > 0 ? activeLyRoomsSold.toLocaleString() : '-'}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-400">실</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-
               </div>
             </div>
 

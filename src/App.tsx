@@ -33,7 +33,6 @@ import SynergyCorrelation from './pages/SynergyCorrelation';
 import FacilityTrend from './pages/FacilityTrend';
 import OnlineMembers from './pages/OnlineMembers';
 import GroupSales from './pages/GroupSales';
-import TargetSimulator from './pages/TargetSimulator';
 import StrategicSimulator from './pages/StrategicSimulator';
 import WeatherSalesCorrelation from './pages/WeatherSalesCorrelation';
 
@@ -87,9 +86,9 @@ export function App() {
                     <Route path="leisure-usage-rate" element={<LeisureUsageRate />} />
                     <Route path="leisure/simulator" element={<LeisureSimulator />} />
                     <Route path="leisure-simulator" element={<LeisureSimulator />} />
-                    <Route path="target-simulator" element={<TargetSimulator />} />
+                    <Route path="target-simulator" element={<Navigate to="/strategic-simulator" replace />} />
                     <Route path="strategic-simulator" element={<StrategicSimulator />} />
-                    <Route path="target-simulator/strategic" element={<StrategicSimulator />} />
+                    <Route path="target-simulator/strategic" element={<Navigate to="/strategic-simulator" replace />} />
 
                   <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                   <Route path="day-of-week-sales" element={<MatrixWeeklyDashboard defaultTab="day-of-week" />} />

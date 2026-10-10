@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase, Target, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen
+  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 
 export default function Layout() {
@@ -356,7 +356,7 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 4. 🎯 목표수립 시뮬레이터 v1 & 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
+          {/* 4. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
             <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
               <NavLink
@@ -373,22 +373,6 @@ export default function Layout() {
                   <span className="text-sm font-bold">전략 목표 시뮬레이터</span>
                 </div>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200/60">v2 PRO</span>
-              </NavLink>
-
-              <NavLink
-                to="/target-simulator"
-                className={({ isActive }) => `flex items-center justify-between px-4 py-2 font-medium transition-all rounded-xl whitespace-nowrap ${
-                  isActive
-                    ? 'bg-slate-100 text-slate-800 font-bold border border-slate-200 shadow-xs'
-                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-                }`}
-                onClick={handleNavClick}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Target size={16} className="text-slate-400" />
-                  <span className="text-xs">목표수립 시뮬레이터 (구형)</span>
-                </div>
-                <span className="text-[9px] font-medium px-1 py-0.2 rounded bg-slate-100 text-slate-400">v1</span>
               </NavLink>
             </div>
           )}

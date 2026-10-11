@@ -1,0 +1,238 @@
+import { useState, useEffect } from 'react';
+import { Users, Calendar } from 'lucide-react';
+import { secureFetcher } from '../../lib/secureFetcher';
+import { parseNum } from '../../lib/dataTransformers';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://belleforet-data.vercel.app';
+
+interface TodayGolfSummary {
+  reservedTeams: number;
+  visitedTeams: number;
+  canceledTeams: number;
+  pendingTeams: number;
+}
+
+interface NextDayGolfData {
+  targetDate: string;
+  reservedTeams: number;
+  visitedTeams: number;
+  canceledTeams: number;
+  pendingTeams: number;
+}
+
+interface GolfReservationCardProps {
+  currentDate: string; // e.g. "2026-10-10"
+  todaySummary: TodayGolfSummary;
+  isRangeMode?: boolean;
+}
+
+export default function GolfReservationCard({ currentDate, todaySummary, isRangeMode = false }: GolfReservationCardProps) {
+  const [loading, setLoading] = useState(false);
+  const [nextDayGolf, setNextDayGolf] = useState<NextDayGolfData | null>(null);
+
+  // 날짜 계산 헬퍼: D+1 익일(다음날, 실제로는 오늘 도착) 계산
+  const getNextDateStr = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // 요일 계산 헬퍼
+  const getDayOfWeek = (dateStr: string) => {
+    try {
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      const d = new Date(dateStr + 'T00:00:00');
+      return days[d.getDay()];
+    } catch {
+      return '';
+    }
+  };
+
+  const currentDayOfWeek = getDayOfWeek(currentDate);
+  const nextDateStr = getNextDateStr(currentDate);
+  const nextDayOfWeek = getDayOfWeek(nextDateStr);
+
+  // 다음날(익일 D+1) 골프 예약 현황 조회
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadNextDayGolf() {
+      setLoading(true);
+      try {
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?date=${nextDateStr}`).catch(() => null);
+        if (isCancelled) return;
+
+        if (res && res.success && res.summary) {
+          const s = res.summary;
+          setNextDayGolf({
+            targetDate: nextDateStr,
+            reservedTeams: parseNum(s.totalGolfReservedTeams || 0),
+            visitedTeams: parseNum(s.totalGolfVisitedTeams || s.totalGolfTeams || 0),
+            canceledTeams: parseNum(s.totalGolfCanceledTeams || 0),
+            pendingTeams: parseNum(s.totalGolfPendingTeams || 0)
+          });
+        } else {
+          setNextDayGolf({
+            targetDate: nextDateStr,
+            reservedTeams: 0,
+            visitedTeams: 0,
+            canceledTeams: 0,
+            pendingTeams: 0
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load next day golf reservations:', err);
+      } finally {
+        if (!isCancelled) setLoading(false);
+      }
+    }
+
+    loadNextDayGolf();
+    return () => { isCancelled = true; };
+  }, [nextDateStr]);
+
+  const todayCanceledAndPending = (todaySummary.canceledTeams || 0) + (todaySummary.pendingTeams || 0);
+  const nextDayCanceledAndPending = (nextDayGolf?.canceledTeams ?? 0) + (nextDayGolf?.pendingTeams ?? 0);
+
+  return (
+    <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
+      <div>
+        {/* Card Main Title */}
+        <div className="text-slate-800 font-bold text-base mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users size={18} className="text-brand-mint" />
+            <span>골프 예약 및 입장 현황</span>
+          </div>
+        </div>
+
+        {/* 1. 기준일 마감 실적 섹션 */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs mb-2.5 px-1">
+            <div className="flex items-center gap-1.5 font-bold text-slate-700">
+              <Calendar size={13} className="text-slate-500" />
+              <span>{currentDate} ({currentDayOfWeek}) {isRangeMode ? '선택 기간 합산 실적' : '마감 실적'}</span>
+            </div>
+            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80">
+              정산 완료
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            {/* 총 예약 팀수 */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">총 예약 팀수</div>
+              <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+                {todaySummary.reservedTeams} <span className="text-sm font-normal text-slate-500">팀</span>
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                당일 총 예약
+              </div>
+            </div>
+
+            {/* 실제 입장 (내장) */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">실제 입장 (내장)</div>
+              <div className="text-2xl lg:text-3xl font-black text-brand-mint tabular-nums whitespace-nowrap">
+                {todaySummary.visitedTeams} <span className="text-sm font-normal text-slate-500">팀</span>
+              </div>
+              <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                라운딩 완료
+              </div>
+            </div>
+
+            {/* 취소 / 미내장 */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-rose-500 font-semibold mb-1 whitespace-nowrap">취소 / 미내장</div>
+              <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums whitespace-nowrap">
+                {todayCanceledAndPending} <span className="text-sm font-normal text-slate-500">팀</span>
+              </div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
+                {todaySummary.pendingTeams > 0
+                  ? `취소 ${todaySummary.canceledTeams}팀 · 미내장 ${todaySummary.pendingTeams}팀`
+                  : `취소 ${todaySummary.canceledTeams}팀`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. 다음날 날짜와 예약 현황 섹션 (사용자 신규 요청: 실제 오늘/익일 도착 예약) */}
+        <div className="pt-4 border-t border-slate-200/80">
+          <div className="flex items-center justify-between text-xs mb-2.5 px-1 bg-teal-50/70 border border-teal-100/90 rounded-xl py-1.5 px-3">
+            <div className="flex items-center gap-1.5 font-bold text-teal-900">
+              <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+              <span>다음날({nextDateStr} {nextDayOfWeek}) 골프 예약 현황</span>
+            </div>
+            <span className="text-[10px] font-bold text-teal-700 bg-white/90 px-2 py-0.5 rounded-md border border-teal-200/80">
+              실시간 예약 원장
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            {/* 다음날 총 예약 팀수 */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">총 예약 팀수</div>
+              <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+                {loading ? (
+                  <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
+                ) : (
+                  <>
+                    {nextDayGolf?.reservedTeams ?? 0} <span className="text-sm font-normal text-slate-500">팀</span>
+                  </>
+                )}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                도착 예약 총계
+              </div>
+            </div>
+
+            {/* 다음날 실제 입장 (내장/진행) */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">실제 입장 (내장)</div>
+              <div className="text-2xl lg:text-3xl font-black text-teal-600 tabular-nums whitespace-nowrap">
+                {loading ? (
+                  <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
+                ) : (
+                  <>
+                    {nextDayGolf?.visitedTeams ?? 0} <span className="text-sm font-normal text-slate-500">팀</span>
+                  </>
+                )}
+              </div>
+              <div className="text-[10px] text-teal-700 font-semibold mt-0.5">
+                {(nextDayGolf?.visitedTeams ?? 0) > 0 ? `${nextDayGolf?.visitedTeams}팀 진행/완료` : '내장 대기 중'}
+              </div>
+            </div>
+
+            {/* 다음날 취소 / 내장 대기 */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-slate-600 font-semibold mb-1 whitespace-nowrap">취소 / 내장 대기</div>
+              <div className="text-2xl lg:text-3xl font-black text-slate-800 tabular-nums whitespace-nowrap">
+                {loading ? (
+                  <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
+                ) : (
+                  <>
+                    {nextDayCanceledAndPending} <span className="text-sm font-normal text-slate-500">팀</span>
+                  </>
+                )}
+              </div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
+                {`취소 ${nextDayGolf?.canceledTeams ?? 0}팀 · 대기 ${nextDayGolf?.pendingTeams ?? 0}팀`}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Subtext */}
+      <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+        <span>골프장 실시간 예약 원장 및 마감 라운딩 실적 데이터</span>
+      </div>
+    </div>
+  );
+}

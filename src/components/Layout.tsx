@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen
+  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Bell
 } from 'lucide-react';
 
 export default function Layout() {
@@ -397,15 +397,26 @@ export default function Layout() {
               로그아웃
             </button>
 
-            {/* 최고경영진 어드민 (맨 아래로 이동) */}
+            {/* 최고경영진 어드민 & 구매 알림 관리 */}
             {isAdmin && (
-              <NavLink
-                to="/admin/roles"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-md hover:bg-slate-800 mt-2"
-              >
-                <ShieldCheck size={20} className="text-brand-mint" />
-                최고경영진 어드민
-              </NavLink>
+              <>
+                <NavLink
+                  to="/admin/notifications"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-sky-950 text-sky-200 border border-sky-800/60 shadow-md hover:bg-sky-900 mt-2"
+                  onClick={handleNavClick}
+                >
+                  <Bell size={20} className="text-sky-400" />
+                  구매 알림 수신 관리
+                </NavLink>
+                <NavLink
+                  to="/admin/roles"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-md hover:bg-slate-800 mt-1"
+                  onClick={handleNavClick}
+                >
+                  <ShieldCheck size={20} className="text-brand-mint" />
+                  최고경영진 어드민
+                </NavLink>
+              </>
             )}
         </div>
       </aside>

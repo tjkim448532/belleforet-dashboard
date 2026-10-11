@@ -1783,3 +1783,68 @@ const reverseSpillover = totalRoomSales > 0
   ]
 }
 ```
+
+---
+
+## 📌 [2026-10-11 추가 요청 - Ticket 18, 19] 실질 경영 판단을 위한 Like-for-Like 및 우천 스트레스 테스트 SSOT 규격
+
+### [Ticket 18] 골프 채널 동일 요일·시간대(Like-for-Like) 직영 vs OTA 순정산액 비교 규격
+
+- **요청 배경 (경영적 타당성)**:
+  - 현재 `golf-channel-intelligence`의 전체 평균 비교(직영 29,546원 vs OTA 31,386원)는 직영(주중 비수기·회원가 포함)과 OTA(주말 잔여 골든타임 위주)의 상품 믹스(Product Mix) 차이로 인해 심슨의 역설(착시)을 유발함.
+  - 전체 평균 대신 동일 요일(주중 vs 주말) 및 동일 시간대(1부 골든타임 07~09시, 2부 골든타임 11~13시) 기준 1:1 Like-for-Like 실질 정산액(Net-Net Green Fee = 결제가 - 중개수수료) 비교가 필요함.
+- **대상 API**: `GET /api/v6/report/golf-channel-intelligence?date=YYYY-MM-DD`
+- **신규 추가 필드 제안 (`likeForLikeYield`)**:
+  ```json
+  {
+    "likeForLikeYield": [
+      {
+        "slotGroup": "주말 1부 골든 (07:00~08:30)",
+        "directAvgGreenFee": 165000,
+        "directNetGreenFee": 160875,
+        "otaAvgGreenFee": 175000,
+        "otaNetGreenFee": 154000,
+        "netDelta": 6875,
+        "winnerChannel": "DIRECT"
+      },
+      {
+        "slotGroup": "주말 2부 골든 (11:30~12:30)",
+        "directAvgGreenFee": 155000,
+        "directNetGreenFee": 151125,
+        "otaAvgGreenFee": 165000,
+        "otaNetGreenFee": 145200,
+        "netDelta": 5925,
+        "winnerChannel": "DIRECT"
+      }
+    ]
+  }
+  ```
+
+---
+
+### [Ticket 19] 과거 2개년 실측 우천 토요일(강수 10mm+) Matched Pairs 스트레스 테스트 마트 API
+
+- **요청 배경 (경영적 타당성)**:
+  - 기상 시뮬레이션에서 인위적인 선형 수식(강수량 / 15mm)이나 회귀 탄력성 계수를 사용하면 현장 운영진의 불신을 초래하고 잘못된 예측을 낳음.
+  - 비즈니스 현장에서 유일하게 유효한 접근은 과거 2개년(2024~2025) 중 **실제로 토요일 오전 10mm 이상 비가 왔던 실측 5개 일자(Matched Pairs)**의 부서별 실제 손익과 방문객 증발률을 벤치마크로 제공하여, **D-2 / D-1 파트타임 인건비 및 신선 식자재 발주를 동결하는 '변동비 방어 체계'**를 구축하는 것임.
+- **신규 API 제안**: `GET /api/v6/dashboard/weather-stress-test`
+- **응답 규격 (100% camelCase)**:
+  ```json
+  {
+    "success": true,
+    "historicalBaseline": {
+      "sampleDates": ["2024-05-11", "2024-06-22", "2024-09-21", "2025-04-12", "2025-07-19"],
+      "avgPrecipitation": 24.5,
+      "impactByDivision": {
+        "golf": { "clearSaturdayRevenue": 85000000, "rainySaturdayRevenue": 12500000, "dropRate": -85.3 },
+        "outdoorLeisure": { "clearSaturdayRevenue": 62000000, "rainySaturdayRevenue": 4900000, "dropRate": -92.1 },
+        "indoorFnBAndMedia": { "clearSaturdayRevenue": 28000000, "rainySaturdayRevenue": 35200000, "dropRate": 25.7 }
+      },
+      "variableCostSavingsPotential": {
+        "partTimeLabor": 12500000,
+        "freshFoodWaste": 8900000,
+        "totalSavingsPerRainySaturday": 21400000
+      }
+    }
+  }
+  ```

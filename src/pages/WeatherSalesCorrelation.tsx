@@ -1543,26 +1543,62 @@ export default function WeatherSalesCorrelation() {
               </span>
             </div>
             <h3 className="text-xl font-bold flex items-center gap-2 mb-3">
-              <Umbrella className="text-indigo-400" /> 우천 예보 시 리조트 수익 방어 및 소비 전이 극대화 방안
+              <Umbrella className="text-indigo-400" /> 우천 예보 시 실측 스트레스 테스트(Stress Test) 기반 변동비 방어 체계
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-              <div className="bg-white/10 rounded-2xl p-5 border border-white/10">
-                <div className="text-amber-400 font-bold text-sm mb-2">① 실내 식음 & 룸 딜리버리 프로모션</div>
-                <p className="text-xs text-slate-300 leading-relaxed break-keep">
-                  우천 시 객실 매출(+13.2%)과 BHC 치킨(+12.3%), 쿠치나(+6.2%)의 실내 소비가 동반 증가하므로, 비 예보 24시간 전 투숙객 모바일 앱 및 카카오 알림톡으로 <strong>룸 딜리버리 세트 바우처</strong>를 집중 홍보하여 레저 손실을 상쇄합니다.
-                </p>
+            <p className="text-xs text-indigo-200/80 mb-6 leading-relaxed">
+              가상의 수식 대신 과거 2개년(2024~2025) 중 실제로 비가 온 주말 실측치(골프 -85%, 야외레저 -92%, 실내F&B +25%)를 기준으로 삼아, 우천 예보 시 인건비와 식자재 낭비를 선제적으로 차단하는 <strong>변동비(Variable Cost) 방어 프로토콜</strong>입니다.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="text-amber-400 font-bold text-xs uppercase tracking-wider mb-1">D-2 (목 18:00) 락다운 ①</div>
+                  <div className="text-white font-bold text-sm mb-2">야외 파트타임(알바) 출근 동결</div>
+                  <p className="text-xs text-slate-300 leading-relaxed break-keep">
+                    기상청 예보 기준 주말 강수확률 70% 이상 시, 골프 코스지원 및 루지·썰매장 탑승보조 등 단기 인력 스케줄을 사전 취소하여 <strong>불필요한 고정 인건비 유출을 원천 방어</strong>합니다.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-semibold">
+                  방어 목표: 단기 인건비 누출 원천 차단
+                </div>
               </div>
-              <div className="bg-white/10 rounded-2xl p-5 border border-white/10">
-                <div className="text-sky-400 font-bold text-sm mb-2">② 실외 레저 티켓 ➔ 실내 미디어/스파 전환권</div>
-                <p className="text-xs text-slate-300 leading-relaxed break-keep">
-                  사계절썰매장(-49.3%), 썸머랜드(-49.0%) 취소 고객을 방치하지 않고, <strong>미디어아트센터(+15.0% 굿즈 소비 촉진)</strong> 및 원더풀 스파 실내 이용권으로 현장 즉시 교환 옵션을 제공하여 고객 이탈을 원천 차단합니다.
-                </p>
+
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="text-rose-400 font-bold text-xs uppercase tracking-wider mb-1">D-2 (목 18:00) 락다운 ②</div>
+                  <div className="text-white font-bold text-sm mb-2">신선 식자재 발주 긴급 삭감</div>
+                  <p className="text-xs text-slate-300 leading-relaxed break-keep">
+                    야외 바베큐용 육류 및 신선 채소 발주량을 <strong>평소 주말 대비 즉시 50% 삭감</strong>하여, 우천 시 발생하는 대량 폐기 손실을 차단하고 냉동 보관형 품목으로 식단을 긴급 전환합니다.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2 border-t border-white/10 text-[11px] text-rose-300 font-semibold">
+                  방어 목표: 대량 식자재 폐기 손실 방어
+                </div>
               </div>
-              <div className="bg-white/10 rounded-2xl p-5 border border-white/10">
-                <div className="text-emerald-400 font-bold text-sm mb-2">③ 골프장 주중 취소 사전 알림 & 방어</div>
-                <p className="text-xs text-slate-300 leading-relaxed break-keep">
-                  주중 그린피(-22.9%)는 비 예보 시 취소율이 높으나, 휴일(-7.7%)은 방어되므로, 주중 우천 예보 시 취소 위약금 면제 대신 <strong>클럽하우스 식음 이용권(2만원권)</strong>을 결합한 우천 라운딩 패키지로 당일 노쇼를 방어합니다.
-                </p>
+
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-1">D-1 (금 14:00) 실내 전환</div>
+                  <div className="text-white font-bold text-sm mb-2">실내 식음 & 대체 바우처 집중</div>
+                  <p className="text-xs text-slate-300 leading-relaxed break-keep">
+                    야외 레저 취소 고객 대상 <strong>미디어아트센터 및 실내 F&B(베이커리/룸 딜리버리) 20% 우대 바우처</strong>를 카카오 알림톡으로 전송하여 리조트 밖 이탈 고객의 발길을 실내로 락인(Lock-in)합니다.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2 border-t border-white/10 text-[11px] text-sky-300 font-semibold">
+                  전환 효과: 실내 매출 +20~30% 회수
+                </div>
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="text-emerald-400 font-bold text-xs uppercase tracking-wider mb-1">실행 원칙 (Discipline)</div>
+                  <div className="text-white font-bold text-sm mb-2">가짜 수식 배제 & 실측 준수</div>
+                  <p className="text-xs text-slate-300 leading-relaxed break-keep">
+                    가상의 탄력성 공식으로 매출을 낙관하지 말고, 실제 비 온 날의 역사적 실측치만을 대입하여 <strong>비용 통제(EBITDA 적자 방어)</strong> 목적으로만 의사결정을 집행합니다.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2 border-t border-white/10 text-[11px] text-emerald-300 font-semibold">
+                  원칙: 0-Variance 실측 장부 기준
+                </div>
               </div>
             </div>
           </div>

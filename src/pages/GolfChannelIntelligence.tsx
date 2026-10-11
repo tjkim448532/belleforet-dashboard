@@ -949,6 +949,10 @@ export default function GolfChannelIntelligence() {
               </span>
             )}
           </div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100/80 text-[10px] text-amber-800 bg-amber-50/70 p-2 rounded-xl flex items-start gap-1.5 leading-snug">
+            <span className="font-black text-amber-600 shrink-0">⚠️ Like-for-Like:</span>
+            <span>단순 전체 평균은 직영(주중·회원 할인 포함)과 OTA(주말 잔여티 위주)의 믹스 차이입니다. 주말 골든타임 동일 슬롯 순정산(수수료 차감 후) 기준으로 통제해야 실질 이익이 극대화됩니다.</span>
+          </div>
         </div>
 
         {/* Card 3: 3인 플레이 공실 기회손실 */}

@@ -287,9 +287,9 @@ export default function OnlineMembers() {
                 {formatCurrency(summary.totalActiveMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
               </div>
               <div className="text-[11px] mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
-                <span>실활동 <strong className="text-emerald-600 font-bold">{formatCurrency(summary.recentActiveMembers || 0)}명</strong> ({summary.recentActiveRate || 0}%)</span>
+                <span>실활동 <strong className="text-emerald-600 font-bold">{formatCurrency(summary.recentActiveMembers || 0)}명</strong> ({summary.recentActiveRate !== undefined && summary.recentActiveRate !== null ? `${summary.recentActiveRate}%` : '-'})</span>
                 <span className="text-slate-300">·</span>
-                <span className="text-slate-400">휴면 <strong className="text-slate-600 font-bold">{formatCurrency(summary.dormantMembers || 0)}명</strong> ({summary.dormantRate || 0}%)</span>
+                <span className="text-slate-400">휴면 <strong className="text-slate-600 font-bold">{formatCurrency(summary.dormantMembers || 0)}명</strong> ({summary.dormantRate !== undefined && summary.dormantRate !== null ? `${summary.dormantRate}%` : '-'})</span>
               </div>
             </div>
 

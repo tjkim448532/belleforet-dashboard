@@ -426,7 +426,9 @@ export default function GroupSales() {
     const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => a.localeCompare(b));
 
     const grandCalculatedAdr = grandRooms > 0 ? Math.round(grandRevenue / grandRooms) : 0;
-    const rawSummaryAdr = Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0);
+    const rawSummaryAdr = (!Array.isArray(channelRawData) && typeof channelRawData === 'object')
+      ? Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
+      : 0;
 
     return {
       channelGroups: groups,
@@ -936,13 +938,15 @@ export default function GroupSales() {
               <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
                 <div>
                   <span className="text-slate-400 block text-[11px]">세미나 평균 ADR</span>
-                  <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.total.averageAdr)}원</span>
+                  <span className="font-extrabold text-slate-200">
+                    {seminarDayTypeStats.total.averageAdr > 0 ? `${formatRevenue(seminarDayTypeStats.total.averageAdr)}원` : '-'}
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className="text-slate-400 block text-[11px]">전년 ADR (증감률)</span>
                   {seminarDayTypeStats.total.ly ? (
                     <span className="font-bold text-slate-300">
-                      {formatRevenue(seminarDayTypeStats.total.ly.averageAdr)}원{' '}
+                      {seminarDayTypeStats.total.ly.averageAdr > 0 ? `${formatRevenue(seminarDayTypeStats.total.ly.averageAdr)}원 ` : '- '}
                       {seminarDayTypeStats.total.growth?.adrGrowthRate !== undefined && (
                         <span className={`text-[11px] font-extrabold ${
                           seminarDayTypeStats.total.growth.adrGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -1076,13 +1080,15 @@ export default function GroupSales() {
               <div className="flex items-center justify-between pt-1 border-t border-indigo-900/50">
                 <div>
                   <span className="text-slate-400 block text-[11px]">주중 평균 ADR</span>
-                  <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.weekday.averageAdr)}원</span>
+                  <span className="font-extrabold text-slate-200">
+                    {seminarDayTypeStats.weekday.averageAdr > 0 ? `${formatRevenue(seminarDayTypeStats.weekday.averageAdr)}원` : '-'}
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className="text-slate-400 block text-[11px]">전년 ADR (증감률)</span>
                   {seminarDayTypeStats.weekday.ly ? (
                     <span className="font-bold text-slate-300">
-                      {formatRevenue(seminarDayTypeStats.weekday.ly.averageAdr)}원{' '}
+                      {seminarDayTypeStats.weekday.ly.averageAdr > 0 ? `${formatRevenue(seminarDayTypeStats.weekday.ly.averageAdr)}원 ` : '- '}
                       {seminarDayTypeStats.weekday.growth?.adrGrowthRate !== undefined && (
                         <span className={`text-[11px] font-extrabold ${
                           seminarDayTypeStats.weekday.growth.adrGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -1215,13 +1221,15 @@ export default function GroupSales() {
               <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
                 <div>
                   <span className="text-slate-400 block text-[11px]">주말 평균 ADR</span>
-                  <span className="font-extrabold text-slate-200">{formatRevenue(seminarDayTypeStats.weekend.averageAdr)}원</span>
+                  <span className="font-extrabold text-slate-200">
+                    {seminarDayTypeStats.weekend.averageAdr > 0 ? `${formatRevenue(seminarDayTypeStats.weekend.averageAdr)}원` : '-'}
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className="text-slate-400 block text-[11px]">전년 ADR (증감률)</span>
                   {seminarDayTypeStats.weekend.ly ? (
                     <span className="font-bold text-slate-300">
-                      {formatRevenue(seminarDayTypeStats.weekend.ly.averageAdr)}원{' '}
+                      {seminarDayTypeStats.weekend.ly.averageAdr > 0 ? `${formatRevenue(seminarDayTypeStats.weekend.ly.averageAdr)}원 ` : '- '}
                       {seminarDayTypeStats.weekend.growth?.adrGrowthRate !== undefined && (
                         <span className={`text-[11px] font-extrabold ${
                           seminarDayTypeStats.weekend.growth.adrGrowthRate >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -1450,8 +1458,11 @@ export default function GroupSales() {
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
-              {formatRevenue(displayAdr)}
-              <span className="text-base font-semibold text-slate-400 ml-1">원</span>
+              {displayAdr && displayAdr > 0 ? (
+                <>{formatRevenue(displayAdr)}<span className="text-base font-semibold text-slate-400 ml-1">원</span></>
+              ) : (
+                <span className="text-slate-400 font-normal">-</span>
+              )}
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
               {isCurrentSeminar && seminarDayTypeStats.total.averageAdr > 0 
@@ -1583,7 +1594,7 @@ export default function GroupSales() {
                     {activeChannelGroup.totalGuests > 0 ? `${activeChannelGroup.totalGuests.toLocaleString()}명` : '-'}
                   </td>
                   <td className="py-4 px-4 text-sm text-right text-brand-mint font-extrabold">
-                    {formatRevenue(activeChannelGroup.averageAdr)}원
+                    {activeChannelGroup.averageAdr > 0 ? `${formatRevenue(activeChannelGroup.averageAdr)}원` : '-'}
                   </td>
                   <td className="py-4 px-4 text-sm text-right font-black">
                     100.0%
@@ -1793,7 +1804,7 @@ export default function GroupSales() {
                     </div>
                     <div>
                       <div className="text-[11px] text-slate-400 font-medium">평균 ADR</div>
-                      <div className="text-sm font-bold text-slate-700">{formatRevenue(group.averageAdr)}원</div>
+                      <div className="text-sm font-bold text-slate-700">{group.averageAdr > 0 ? `${formatRevenue(group.averageAdr)}원` : '-'}</div>
                     </div>
                     <button
                       type="button"

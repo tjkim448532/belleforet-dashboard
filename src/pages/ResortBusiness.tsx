@@ -736,13 +736,17 @@ export default function ResortBusiness() {
                   <MetricExplainerTooltip presetKey="adr" align="right" />
                 </h2>
                 <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
-                  {formatCurrency(adrCurrent)} <span className="text-base text-slate-400 font-normal">원</span>
+                  {adrCurrent && adrCurrent > 0 ? (
+                    <>{formatCurrency(adrCurrent)} <span className="text-base text-slate-400 font-normal">원</span></>
+                  ) : (
+                    <span className="text-slate-400 font-normal">-</span>
+                  )}
                 </div>
-                {(lodgingStats.weekdayAdr !== undefined || lodgingStats.weekendAdr !== undefined) && (
+                {((lodgingStats.weekdayAdr !== undefined && lodgingStats.weekdayAdr > 0) || (lodgingStats.weekendAdr !== undefined && lodgingStats.weekendAdr > 0)) && (
                   <div className="flex items-center gap-2 mt-1.5 text-[11px] bg-slate-50 px-2 py-1 rounded-md border border-slate-100 font-financial">
-                    <span className="text-slate-500">주중 <strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</span>
+                    <span className="text-slate-500">주중 {lodgingStats.weekdayAdr && lodgingStats.weekdayAdr > 0 ? <><strong className="text-slate-700">{formatCurrency(lodgingStats.weekdayAdr)}</strong>원</> : '-'}</span>
                     <span className="text-slate-300">|</span>
-                    <span className="text-slate-500">휴일전일 <strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</span>
+                    <span className="text-slate-500">휴일전일 {lodgingStats.weekendAdr && lodgingStats.weekendAdr > 0 ? <><strong className="text-[#00ae95]">{formatCurrency(lodgingStats.weekendAdr)}</strong>원</> : '-'}</span>
                   </div>
                 )}
                 {adrLy !== null && adrLy > 0 && (
@@ -755,7 +759,7 @@ export default function ResortBusiness() {
                         <span className="ml-1 opacity-80">({adrDiff > 0 ? '+' : ''}{formatCurrency(adrDiff)}원)</span>
                       )}
                     </span>
-                    <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {formatCurrency(adrLy)}원</span>
+                    <span className="text-[11px] text-slate-400 font-medium font-financial">전년 {adrLy && adrLy > 0 ? `${formatCurrency(adrLy)}원` : '-'}</span>
                   </div>
                 )}
 
@@ -771,9 +775,9 @@ export default function ResortBusiness() {
                       <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">16평</span>
                         <span className="text-xs font-extrabold text-slate-900 font-financial block">
-                          {adr16 !== undefined ? `${formatCurrency(adr16)}원` : '-'}
+                          {adr16 !== undefined && adr16 > 0 ? `${formatCurrency(adr16)}원` : '-'}
                         </span>
-                        {lyAdr16 !== undefined && lyAdr16 !== null && (
+                        {lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 && (
                           <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
                             전년 {formatCurrency(lyAdr16)}
                             {adrDiff16 !== null && adrDiff16 !== 0 && (
@@ -789,9 +793,9 @@ export default function ResortBusiness() {
                       <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">35평</span>
                         <span className="text-xs font-extrabold text-slate-900 font-financial block">
-                          {adr35 !== undefined ? `${formatCurrency(adr35)}원` : '-'}
+                          {adr35 !== undefined && adr35 > 0 ? `${formatCurrency(adr35)}원` : '-'}
                         </span>
-                        {lyAdr35 !== undefined && lyAdr35 !== null && (
+                        {lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 && (
                           <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
                             전년 {formatCurrency(lyAdr35)}
                             {adrDiff35 !== null && adrDiff35 !== 0 && (
@@ -807,9 +811,9 @@ export default function ResortBusiness() {
                       <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">51평</span>
                         <span className="text-xs font-extrabold text-slate-900 font-financial block">
-                          {adr51 !== undefined ? `${formatCurrency(adr51)}원` : '-'}
+                          {adr51 !== undefined && adr51 > 0 ? `${formatCurrency(adr51)}원` : '-'}
                         </span>
-                        {lyAdr51 !== undefined && lyAdr51 !== null && (
+                        {lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 && (
                           <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
                             전년 {formatCurrency(lyAdr51)}
                             {adrDiff51 !== null && adrDiff51 !== 0 && (
@@ -895,7 +899,7 @@ export default function ResortBusiness() {
                         )}
                       </div>
                       <div className="text-[10px] text-emerald-600 font-bold font-financial">
-                        ADR: {row.adr !== null && row.adr !== undefined ? formatCurrency(row.adr) + '원' : '-'}
+                        ADR: {row.adr !== null && row.adr !== undefined && row.adr > 0 ? formatCurrency(row.adr) + '원' : '-'}
                         {row.lyAdr !== null && row.lyAdr > 0 && (
                           <span className="text-slate-400 block text-[9px] font-normal">
                             전년 {formatCurrency(row.lyAdr)}원
@@ -1064,8 +1068,8 @@ export default function ResortBusiness() {
                           <Coins className="w-4 h-4 text-sky-600" />
                           <span>객실 평균 단가 (ADR)</span>
                         </td>
-                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(adrCurrent)}원</td>
-                        <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(adrLy)}원</td>
+                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{adrCurrent && adrCurrent > 0 ? `${formatCurrency(adrCurrent)}원` : '-'}</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{adrLy && adrLy > 0 ? `${formatCurrency(adrLy)}원` : '-'}</td>
                         <td className={`py-3.5 px-4 text-right font-bold ${adrDiff !== null && adrDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                           {adrDiff !== null ? `${adrDiff > 0 ? '+' : ''}${formatCurrency(adrDiff)}원` : '-'}
                         </td>
@@ -1076,15 +1080,15 @@ export default function ResortBusiness() {
                       {/* 세부: 주중/휴일전일 ADR */}
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 주중 평균 ADR</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekdayAdr)}원</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayAdr)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekdayAdr && lodgingStats.weekdayAdr > 0 ? `${formatCurrency(lodgingStats.weekdayAdr)}원` : '-'}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekdayAdr && lyStats.weekdayAdr > 0 ? `${formatCurrency(lyStats.weekdayAdr)}원` : '-'}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayAdr !== undefined && lyStats.weekdayAdr !== undefined
+                          {lodgingStats.weekdayAdr !== undefined && lyStats?.weekdayAdr !== undefined
                             ? `${lodgingStats.weekdayAdr - lyStats.weekdayAdr > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayAdr - lyStats.weekdayAdr)}원`
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayAdr !== undefined && lyStats.weekdayAdr ? (
+                          {lodgingStats.weekdayAdr !== undefined && lyStats?.weekdayAdr ? (
                             <span className={lodgingStats.weekdayAdr >= lyStats.weekdayAdr ? 'text-emerald-700' : 'text-rose-600'}>
                               {lodgingStats.weekdayAdr >= lyStats.weekdayAdr ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayAdr - lyStats.weekdayAdr) / lyStats.weekdayAdr * 100).toFixed(1)))}%
                             </span>
@@ -1093,15 +1097,15 @@ export default function ResortBusiness() {
                       </tr>
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 평균 ADR</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekendAdr)}원</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendAdr)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekendAdr && lodgingStats.weekendAdr > 0 ? `${formatCurrency(lodgingStats.weekendAdr)}원` : '-'}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekendAdr && lyStats.weekendAdr > 0 ? `${formatCurrency(lyStats.weekendAdr)}원` : '-'}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendAdr !== undefined && lyStats.weekendAdr !== undefined
+                          {lodgingStats.weekendAdr !== undefined && lyStats?.weekendAdr !== undefined
                             ? `${lodgingStats.weekendAdr - lyStats.weekendAdr > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendAdr - lyStats.weekendAdr)}원`
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendAdr !== undefined && lyStats.weekendAdr ? (
+                          {lodgingStats.weekendAdr !== undefined && lyStats?.weekendAdr ? (
                             <span className={lodgingStats.weekendAdr >= lyStats.weekendAdr ? 'text-emerald-700' : 'text-rose-600'}>
                               {lodgingStats.weekendAdr >= lyStats.weekendAdr ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendAdr - lyStats.weekendAdr) / lyStats.weekendAdr * 100).toFixed(1)))}%
                             </span>
@@ -1115,8 +1119,8 @@ export default function ResortBusiness() {
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>• 16평 평균 ADR</span>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{formatCurrency(adr16)}원</td>
-                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr16 !== undefined && lyAdr16 !== null ? `${formatCurrency(lyAdr16)}원` : '-'}</td>
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr16 > 0 ? `${formatCurrency(adr16)}원` : '-'}</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 ? `${formatCurrency(lyAdr16)}원` : '-'}</td>
                           <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff16 !== null && adrDiff16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {adrDiff16 !== null ? `${adrDiff16 > 0 ? '+' : ''}${formatCurrency(adrDiff16)}원` : '-'}
                           </td>
@@ -1135,8 +1139,8 @@ export default function ResortBusiness() {
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>• 35평 평균 ADR</span>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{formatCurrency(adr35)}원</td>
-                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr35 !== undefined && lyAdr35 !== null ? `${formatCurrency(lyAdr35)}원` : '-'}</td>
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr35 > 0 ? `${formatCurrency(adr35)}원` : '-'}</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 ? `${formatCurrency(lyAdr35)}원` : '-'}</td>
                           <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff35 !== null && adrDiff35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {adrDiff35 !== null ? `${adrDiff35 > 0 ? '+' : ''}${formatCurrency(adrDiff35)}원` : '-'}
                           </td>
@@ -1155,8 +1159,8 @@ export default function ResortBusiness() {
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>• 51평 평균 ADR</span>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{formatCurrency(adr51)}원</td>
-                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr51 !== undefined && lyAdr51 !== null ? `${formatCurrency(lyAdr51)}원` : '-'}</td>
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr51 > 0 ? `${formatCurrency(adr51)}원` : '-'}</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 ? `${formatCurrency(lyAdr51)}원` : '-'}</td>
                           <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff51 !== null && adrDiff51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {adrDiff51 !== null ? `${adrDiff51 > 0 ? '+' : ''}${formatCurrency(adrDiff51)}원` : '-'}
                           </td>

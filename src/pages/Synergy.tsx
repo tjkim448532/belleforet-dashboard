@@ -584,7 +584,7 @@ export default function Synergy() {
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span className="whitespace-nowrap">객실 평균 단가 (ADR)</span>
-            <strong className="text-slate-900 font-bold tabular-nums whitespace-nowrap">{formatCurrency(grandTotal.adr)}원</strong>
+            <strong className="text-slate-900 font-bold tabular-nums whitespace-nowrap">{grandTotal.adr > 0 ? `${formatCurrency(grandTotal.adr)}원` : '-'}</strong>
           </div>
         </div>
 

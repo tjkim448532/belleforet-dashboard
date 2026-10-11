@@ -1646,3 +1646,140 @@ const reverseSpillover = totalRoomSales > 0
 }
 ```
 * **원칙 준수**: 가짜 숫자나 임의 배수(`rooms * 4`)를 합성하지 말고, PMS 원천 체크인 전표의 순수 실제 투숙객 수(`guest_count`)를 집계하여 반환해 주십시오.
+
+---
+
+## 14. [2026-10-11 긴급 요청] 골프 인텔리전스 API (`facility-monthly-trend` & `golf-channel-intelligence`) 실측 팀수 및 직영/OTA 평균 그린피 완제품 탑재
+
+* **문서 번호**: `TICKET-20261011-GOLF-INTELLIGENCE-01`
+* **대상 엔드포인트**: 
+  1. `GET /api/v6/report/facility-monthly-trend?facility=그린피`
+  2. `GET /api/v6/report/golf-channel-intelligence`
+* **관련 대시보드 화면**: 골프 채널 인텔리전스 (`/golf/intelligence`)
+
+### 14-1. 현상 및 필요성
+1. **임의 `/ 4` 나눗셈 제거 필요**: 현재 `facility-monthly-trend?facility=그린피` 응답의 `monthlyData` 배열에 과거 연도(2024, 2025년)의 `teams`(실제 팀 수) 필드가 누락되어, 프론트엔드에서 `teams = Math.round(visitors / 4)`라는 임의 4인 1팀 가정으로 가짜 숫자를 계산하는 심각한 결함이 존재합니다.
+2. **직영/OTA 평균 그린피 완제품 필요**: `golf-channel-intelligence` 응답의 `summary` 객체에 `directAvgGreenFee`, `otaAvgGreenFee`가 누락되어, 프론트엔드가 `.reduce`로 채널별 매출과 인원을 더해 나눗셈을 자체 수행하고 있습니다 (NO SLICE SUMMATION 위반).
+
+### 14-2. 요청 응답 규격 (camelCase 정규화)
+1. `GET /api/v6/report/facility-monthly-trend?facility=그린피`의 `monthlyData` 항목:
+```json
+{
+  "month": "2025-05",
+  "revenue": 582400000,
+  "visitors": 3480,
+  "teams": 892,
+  "avgGreenFee": 167356
+}
+```
+2. `GET /api/v6/report/golf-channel-intelligence`의 `summary` 객체:
+```json
+{
+  "totalTeams": 2450,
+  "totalPlayers": 9620,
+  "totalGreenFeeRevenue": 1450200000,
+  "averageGreenFee": 150748,
+  "directAvgGreenFee": 154200,
+  "otaAvgGreenFee": 142800,
+  "threePlayerTeamsCount": 142,
+  "joinTeamsCount": 58
+}
+```
+
+---
+
+## 15. [2026-10-11 긴급 요청] 골프 경영 현황 API (`golf-channel-teetime-analysis-v2`) 코스 본원/부대시설 소계 및 비중 완제품 탑재
+
+* **문서 번호**: `TICKET-20261011-GOLF-BUSINESS-02`
+* **대상 엔드포인트**: `GET /api/v6/report/golf-channel-teetime-analysis-v2`
+* **관련 대시보드 화면**: 골프사업본부 경영 현황 (`/golf/business`)
+
+### 15-1. 현상 및 필요성
+1. 현재 골프 경영 현황 상단 핵심 진단 카드에서 "코스 본원 매출(그린피+카트비)"과 "클럽 부대시설(식음+프로샵+기타)"의 소계를 프론트엔드에서 `.reduce()`와 `+` 사칙연산으로 직접 더해 합성하고 있습니다.
+2. 또한 매출 비중(`courseCoreRatio`, `amenityRatio`)도 프론트엔드가 자체 연산하고 있어 백엔드 0-Variance 단일 진실 공급원(SSOT) 원칙에 위배됩니다.
+
+### 15-2. 요청 응답 규격 (camelCase 정규화)
+`meta.summary` 객체 내에 다음 필드 완제품 추가:
+```json
+{
+  "meta": {
+    "summary": {
+      "totalGolfRevenue": 1820450000,
+      "totalPlayers": 9620,
+      "arpu": 189236,
+      "courseCoreRevenue": 1520000000,
+      "courseCoreRatio": 83.5,
+      "amenityRevenue": 300450000,
+      "amenityQuantity": 12450,
+      "amenityRatio": 16.5
+    }
+  }
+}
+```
+
+---
+
+## 16. [2026-10-11 긴급 요청] 레저본부 이용률 매트릭스 API (`leisure-yoy-matrix`) 가중 누적 이용률 완제품 제공
+
+* **문서 번호**: `TICKET-20261011-LEISURE-USAGE-RATE-03`
+* **대상 엔드포인트**: `GET /api/v6/report/leisure-yoy-matrix`
+* **관련 대시보드 화면**: 레저 투숙객 이용률 분석 (`/leisure/usage-rate`)
+
+### 16-1. 현상 및 필요성
+1. 현재 다중 월 선택 시 프론트엔드가 월별 이용률(%)을 `.reduce()`로 가산한 뒤 월 개수로 나누는 **'비율의 단순 산술평균' (심슨의 역설 오류)**을 범하고 있습니다.
+2. 누적 이용률은 모수가 반영된 `전체 이용객 합 ÷ 전체 숙박객 합`으로 가중 집계되어야 하며, 이를 프론트엔드가 계산하지 않고 백엔드 응답 `totals` 및 요약부에 사전 집계된 완제품으로 제공해 주셔야 합니다.
+
+### 16-2. 요청 응답 규격
+`totals` 객체 및 각 영업장 피벗 데이터 내 누적 지표:
+```json
+{
+  "pivotData": {
+    "마운틴카트": [
+      {
+        "month": 1,
+        "2025": { "visitors": 1200, "roomGuests": 15000, "usageRate": 8.0 },
+        "2026": { "visitors": 1450, "roomGuests": 16200, "usageRate": 9.0 }
+      }
+    ]
+  },
+  "facilityPeriodTotals": {
+    "마운틴카트": {
+      "2025": { "totalVisitors": 14500, "totalRoomGuests": 180000, "cumulativeUsageRate": 8.1 },
+      "2026": { "totalVisitors": 16800, "totalRoomGuests": 195000, "cumulativeUsageRate": 8.6 }
+    }
+  }
+}
+```
+
+---
+
+## 17. [2026-10-11 긴급 요청] 시설별 월별 추이 API (`monthly-trends`) 다중 연도 범위 쿼리 지원 및 전사 방문객 필드 탑재
+
+* **문서 번호**: `TICKET-20261011-FACILITY-TREND-04`
+* **대상 엔드포인트**: `GET /api/v6/report/monthly-trends`
+* **관련 대시보드 화면**: 시설별 실적 추이 (`/facility-trend`)
+
+### 17-1. 현상 및 필요성
+1. **다중 호출 제거**: 현재 전체 시설 추이 화면에서 2024, 2025, 2026년 데이터를 가져오기 위해 API를 연도별로 3회 반복 호출(`?year=2024`, `?year=2025`, `?year=2026`)하고 있습니다. 단일 호출(`?startYear=2024&endYear=2026`)로 전 기간 연속 월 데이터를 1회에 반환하도록 지원이 필요합니다.
+2. **전사 방문객 차원 복원**: 현재 '전체 시설' 선택 시 방문객 필드에 순수 객실 투숙객(`room-guests-yoy`)만 단독 바인딩되어 골프 내장객과 당일 레저 방문객이 전면 누락되는 차원 축소 문제가 있습니다. 백엔드에서 전사 실측 총방문객(`totalVisitors` = 객실 투숙객 + 골프 내장객 + 당일 레저 발권자)을 완제품으로 반환해 주시기 바랍니다.
+
+### 17-2. 요청 쿼리 파라미터 및 응답 규격
+* 요청: `GET /api/v6/report/monthly-trends?startYear=2024&endYear=2026`
+* 응답:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "month": "2025-05",
+      "totalRevenue": 2450000000,
+      "golfRevenue": 582400000,
+      "exGolfRevenue": 1867600000,
+      "totalVisitors": 28400,
+      "roomGuests": 12500,
+      "golfPlayers": 3480,
+      "leisureVisitors": 12420
+    }
+  ]
+}
+```

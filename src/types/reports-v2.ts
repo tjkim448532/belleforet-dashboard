@@ -571,6 +571,7 @@ export interface AncillaryCalendarInfo {
   dayOfWeek: number;
   dayName: string;
   dayType: string;
+  dayGroup?: string;
   isWeekend: boolean;
   isHoliday: boolean;
   holidayName: string;
@@ -579,12 +580,12 @@ export interface AncillaryCalendarInfo {
 export interface AncillaryWeatherForecast {
   targetDate: string;
   weatherDesc: string;
-  condition: string;
+  condition: 'CLEAR' | 'RAIN' | 'SNOW' | string;
   precipitationMm: number;
   tempMax: number;
   tempMin: number;
   isRainy: boolean;
-  source: string;
+  source?: string;
 }
 
 export interface BookingListItem {
@@ -607,6 +608,8 @@ export interface CondoDemographics {
   totalCapacity: number;
   occupancyRate: number;
   totalEstimatedGuests: number;
+  historicalAvgRooms?: number;
+  roomDeviation?: number;
   segments: {
     trueGroup: CondoSegmentDetail;
     corpWelfare: CondoSegmentDetail;
@@ -614,22 +617,36 @@ export interface CondoDemographics {
   };
 }
 
+export interface GolfContext {
+  targetDateGolfTeams: number;
+  golfPostRoundDiningSpilloverTotal: number;
+  golfPostRoundDiningSpilloverFormatted?: string;
+}
+
 export interface AncillaryForecastSummary {
   grandTotalForecastRevenue: number;
   grandTotalForecastFormatted: string;
-  totalLeisureForecastRevenue: number;
-  totalLeisureForecastFormatted: string;
-  totalFnbForecastRevenue: number;
-  totalFnbForecastFormatted: string;
-  totalMotoForecastRevenue: number;
-  totalMotoForecastFormatted: string;
-  totalHotelSpilloverRevenue: number;
-  totalHotelSpilloverFormatted: string;
-  clearDayBaselineRevenue: number;
-  totalWeatherImpactDelta: number;
-  spilloverSharePct: number;
-  modelName: string;
-  methodology: string;
+  totalGolfForecastRevenue?: number;
+  totalGolfForecastFormatted?: string;
+  totalRoomForecastRevenue?: number;
+  totalRoomForecastFormatted?: string;
+  totalFnbForecastRevenue?: number;
+  totalFnbForecastFormatted?: string;
+  totalLeisureForecastRevenue?: number;
+  totalLeisureForecastFormatted?: string;
+  totalMotoForecastRevenue?: number;
+  totalMotoForecastFormatted?: string;
+  totalHotelSpilloverRevenue?: number;
+  totalHotelSpilloverFormatted?: string;
+  totalGolfSpilloverRevenue?: number;
+  totalGolfSpilloverFormatted?: string;
+  clearDayBaselineRevenue?: number;
+  totalWeatherImpactDelta?: number;
+  spilloverSharePct?: number;
+  avgSeasonalityMultiplier?: number;
+  avgDayOfWeekMultiplier?: number;
+  modelName?: string;
+  methodology?: string;
 }
 
 export interface AncillaryVenueSegmentBreakdown {
@@ -642,22 +659,28 @@ export type WeatherSensitivityType = 'HIGH_NEGATIVE' | 'RESILIENT' | 'VULNERABLE
 
 export interface AncillaryForecastVenue {
   venueName: string;
+  displayName?: string;
   categoryCode: string;
   categoryName: string;
   forecastRevenue: number;
   forecastRevenueFormatted: string;
   forecastVisitorCount: number;
   forecastVisitorCountFormatted: string;
-  baselineDayTripperRevenue: number;
-  hotelSpilloverRevenue: number;
-  hotelSpilloverSharePct: number;
+  historicalBenchmarkRevenue?: number;
+  seasonalityMultiplier?: number;
+  dayOfWeekMultiplier?: number;
+  weatherMultiplier?: number;
+  baselineDayTripperRevenue?: number;
+  hotelSpilloverRevenue?: number;
+  golfSpilloverRevenue?: number;
+  hotelSpilloverSharePct?: number;
   segmentBreakdown?: AncillaryVenueSegmentBreakdown;
   weatherSensitivityTag: WeatherSensitivityType;
-  weatherImpactRatePct: number;
-  weatherDeltaRevenue: number;
-  weatherMultiplier: number;
-  seasonalityMultiplier: number;
-  dayOfWeekMultiplier: number;
+  weatherImpactRatePct?: number;
+  weatherDeltaRevenue?: number;
+  isClosed?: boolean;
+  dayGroup?: string;
+  sampleHistoricalDays?: number;
   keyInsight?: string;
 }
 
@@ -667,6 +690,7 @@ export interface AncillaryRevenueForecastResponse {
   calendar: AncillaryCalendarInfo;
   weatherForecast: AncillaryWeatherForecast;
   condoDemographics: CondoDemographics;
+  golfContext?: GolfContext;
   forecastSummary: AncillaryForecastSummary;
   venues: AncillaryForecastVenue[];
   error?: string;

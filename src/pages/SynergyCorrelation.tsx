@@ -164,6 +164,13 @@ export default function SynergyCorrelation() {
               >
                 <CloudRain size={14} /> 3. 🌦️ 날씨-매출 상관관계 분석
               </NavLink>
+
+              <NavLink 
+                to="/synergy/forecast" 
+                className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-white/10 text-slate-300 hover:bg-white/20"
+              >
+                <TrendingUp size={14} /> 4. 🔮 내일 매출 예상
+              </NavLink>
             </div>
           </div>
 

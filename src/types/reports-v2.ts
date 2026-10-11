@@ -563,6 +563,116 @@ export interface LeisureTopProductsResponse {
   error?: string;
 }
 
+// ============================================================================
+// ⑬ 익일 부대시설 예상 매출 예측 모델 (BESM v6.0 ancillary-revenue-forecast)
+// ============================================================================
+export interface AncillaryCalendarInfo {
+  dateId: string;
+  dayOfWeek: number;
+  dayName: string;
+  dayType: string;
+  isWeekend: boolean;
+  isHoliday: boolean;
+  holidayName: string;
+}
+
+export interface AncillaryWeatherForecast {
+  targetDate: string;
+  weatherDesc: string;
+  condition: string;
+  precipitationMm: number;
+  tempMax: number;
+  tempMin: number;
+  isRainy: boolean;
+  source: string;
+}
+
+export interface BookingListItem {
+  name: string;
+  type?: string;
+  rooms: number;
+  guests: number;
+}
+
+export interface CondoSegmentDetail {
+  label: string;
+  rooms: number;
+  guests: number;
+  roomSharePct: number;
+  bookingList?: BookingListItem[];
+}
+
+export interface CondoDemographics {
+  totalReservedRooms: number;
+  totalCapacity: number;
+  occupancyRate: number;
+  totalEstimatedGuests: number;
+  segments: {
+    trueGroup: CondoSegmentDetail;
+    corpWelfare: CondoSegmentDetail;
+    generalFit: CondoSegmentDetail;
+  };
+}
+
+export interface AncillaryForecastSummary {
+  grandTotalForecastRevenue: number;
+  grandTotalForecastFormatted: string;
+  totalLeisureForecastRevenue: number;
+  totalLeisureForecastFormatted: string;
+  totalFnbForecastRevenue: number;
+  totalFnbForecastFormatted: string;
+  totalMotoForecastRevenue: number;
+  totalMotoForecastFormatted: string;
+  totalHotelSpilloverRevenue: number;
+  totalHotelSpilloverFormatted: string;
+  clearDayBaselineRevenue: number;
+  totalWeatherImpactDelta: number;
+  spilloverSharePct: number;
+  modelName: string;
+  methodology: string;
+}
+
+export interface AncillaryVenueSegmentBreakdown {
+  groupSpillover: number;
+  welfareSpillover: number;
+  fitSpillover: number;
+}
+
+export type WeatherSensitivityType = 'HIGH_NEGATIVE' | 'RESILIENT' | 'VULNERABLE' | 'BENEFICIARY' | string;
+
+export interface AncillaryForecastVenue {
+  venueName: string;
+  categoryCode: string;
+  categoryName: string;
+  forecastRevenue: number;
+  forecastRevenueFormatted: string;
+  forecastVisitorCount: number;
+  forecastVisitorCountFormatted: string;
+  baselineDayTripperRevenue: number;
+  hotelSpilloverRevenue: number;
+  hotelSpilloverSharePct: number;
+  segmentBreakdown?: AncillaryVenueSegmentBreakdown;
+  weatherSensitivityTag: WeatherSensitivityType;
+  weatherImpactRatePct: number;
+  weatherDeltaRevenue: number;
+  weatherMultiplier: number;
+  seasonalityMultiplier: number;
+  dayOfWeekMultiplier: number;
+  keyInsight?: string;
+}
+
+export interface AncillaryRevenueForecastResponse {
+  success: boolean;
+  targetDate: string;
+  calendar: AncillaryCalendarInfo;
+  weatherForecast: AncillaryWeatherForecast;
+  condoDemographics: CondoDemographics;
+  forecastSummary: AncillaryForecastSummary;
+  venues: AncillaryForecastVenue[];
+  error?: string;
+}
+
+
 
 
 

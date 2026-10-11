@@ -688,6 +688,16 @@ export default function WeatherSalesCorrelation() {
                 <CloudRain size={14} className="shrink-0" />
                 <span>3. 🌦️ 날씨-매출 상관관계 분석</span>
               </NavLink>
+
+              <NavLink 
+                to="/synergy/forecast" 
+                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+                  isActive ? 'bg-teal-500 text-white shadow-md ring-2 ring-teal-400/40' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                <TrendingUp size={14} className="shrink-0" />
+                <span>4. 🔮 내일 매출 예상</span>
+              </NavLink>
             </div>
           </div>
 

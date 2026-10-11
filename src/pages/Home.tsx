@@ -1203,8 +1203,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 콘도(객실) 예약 및 익일 체크인 현황 */}
-                <CondoReservationCard currentDate={startDate} todayCoreData={coreData.core} />
+                {/* 콘도(객실) 체크인 예약 현황 */}
+                <CondoReservationCard currentDate={startDate} />
               </div>
             </div>
           </div>

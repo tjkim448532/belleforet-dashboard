@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Building2, Users, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { parseNum } from '../../lib/dataTransformers';
@@ -24,9 +24,7 @@ interface CondoReservationData {
   targetDate: string;
   totalRooms: number;
   totalCapacity: number;
-  physicalOccupancyRate: number | null;
-  physicalOccupiedUnits: number | null;
-  contractOccupancyRate: number | null;
+  occupancyRate: number | null;
   byType: RoomTypeStat[];
   groups: GroupBookingItem[];
   totalGroupRooms: number;
@@ -35,21 +33,13 @@ interface CondoReservationData {
 
 interface CondoReservationCardProps {
   currentDate: string; // e.g. "2026-10-10"
-  todayCoreData?: any; // coreData.core from Home.tsx (zero redundant network fetch)
 }
 
-export default function CondoReservationCard({ currentDate, todayCoreData }: CondoReservationCardProps) {
-  // 모드: 기본 'TODAY' (당일 확정 실측) vs 'NEXT_DAY' (익일 D+1 체크인 예약)
-  const [viewMode, setViewMode] = useState<'TODAY' | 'NEXT_DAY'>('TODAY');
+export default function CondoReservationCard({ currentDate }: CondoReservationCardProps) {
   const [loading, setLoading] = useState(false);
-  const [nextDayData, setNextDayData] = useState<CondoReservationData | null>(null);
-  const [todayGroups, setTodayGroups] = useState<{ groups: GroupBookingItem[]; totalGroupRooms: number }>({
-    groups: [],
-    totalGroupRooms: 0
-  });
-  const [showExplanation, setShowExplanation] = useState(true);
+  const [resData, setResData] = useState<CondoReservationData | null>(null);
 
-  // 날짜 계산 헬퍼: D+1 익일 계산
+  // 날짜 계산: 마감일(D-1) 기준 익일(D+1, 실제로는 오늘 도착) 체크인 날짜
   const getNextDateStr = (dateStr: string) => {
     try {
       const d = new Date(dateStr + 'T00:00:00');
@@ -63,7 +53,7 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
     }
   };
 
-  // 한글 요일 계산 헬퍼
+  // 요일 계산 헬퍼
   const getDayOfWeek = (dateStr: string) => {
     try {
       const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -74,9 +64,9 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
     }
   };
 
-  const nextDateStr = getNextDateStr(currentDate);
-  const activeDate = viewMode === 'NEXT_DAY' ? nextDateStr : currentDate;
-  const activeDayOfWeek = getDayOfWeek(activeDate);
+  // 사용자가 요구한 타겟: "내일(실제로는 오늘) 예약자"
+  const targetCheckInDate = getNextDateStr(currentDate);
+  const targetDayOfWeek = getDayOfWeek(targetCheckInDate);
 
   // 단체명 정제 헬퍼 (실제 기업/단체 이름 강조)
   const cleanGroupName = (raw: string) => {
@@ -89,86 +79,14 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
     return name.trim();
   };
 
-  // 1. 당일(TODAY) 데이터는 부모(Home)가 이미 가져온 todayCoreData에서 즉시 합성 (네트워크 대기 0초)
-  const todayData: CondoReservationData = useMemo(() => {
-    const s = todayCoreData?.summary || {};
-    const lodging = todayCoreData?.lodgingStats || {};
-    const physMaster = todayCoreData?.physicalRoomMaster?.metrics || {};
-
-    const physicalOccRate = s.physicalOccRate !== undefined && s.physicalOccRate !== null
-      ? Number(s.physicalOccRate)
-      : (physMaster.physicalOccupancyRate !== undefined && physMaster.physicalOccupancyRate !== null ? Number(physMaster.physicalOccupancyRate) : null);
-
-    const physicalUnits = parseNum(s.physicalOccupiedUnits || physMaster.physicalOccupiedUnits || 0);
-    const contractRooms = parseNum(s.totalRooms || lodging.roomsSold || 0);
-    const contractOcc = s.totalOcc !== undefined && s.totalOcc !== null 
-      ? Number(s.totalOcc) 
-      : (lodging.physicalOccRate !== undefined && lodging.physicalOccRate !== null ? Number(lodging.physicalOccRate) : null);
-    const capacity = parseNum(s.totalRoomCap || lodging.totalCapacity || 0);
-
-    // 평수별 현황 (16평, 35평, 51평 실제 객실수)
-    const rawTypes = todayCoreData?.roomSummaryByType || [];
-    const byType: RoomTypeStat[] = rawTypes.map((t: any) => ({
-      roomType: t.roomType,
-      roomsSold: parseNum(t.roomsSold || 0),
-      capacity: parseNum(t.fixedCapacity || t.capacity || 0),
-      rate: Number(t.fixedOccupancyRate ?? t.rate ?? 0)
-    }));
-
-    return {
-      targetDate: currentDate,
-      totalRooms: contractRooms,
-      totalCapacity: capacity,
-      physicalOccupancyRate: physicalOccRate,
-      physicalOccupiedUnits: physicalUnits,
-      contractOccupancyRate: contractOcc,
-      byType,
-      groups: todayGroups.groups,
-      totalGroupRooms: todayGroups.totalGroupRooms,
-      isBackendMartPending: false
-    };
-  }, [todayCoreData, currentDate, todayGroups]);
-
-  // 2. 단체 예약 명단 조회 (초고속 전용 V6 API 호출: ~200ms)
+  // 익일(실제 오늘) 체크인 예약 원장 조회 (초고속 전용 V6 API: ~200ms)
   useEffect(() => {
     let isCancelled = false;
 
-    async function loadGroupsForToday() {
-      try {
-        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/condo-reservations?date=${currentDate}`).catch(() => null);
-        if (isCancelled || !res || !res.success) return;
-
-        const rawGroups = Array.isArray(res.groups) ? res.groups : [];
-        const parsedGroups: GroupBookingItem[] = rawGroups.map((g: any) => ({
-          channelName: cleanGroupName(g.groupName || g.channel || '단체'),
-          corporateName: g.groupName || '단체',
-          category: g.channel || '기업영업(휴양소)',
-          totalRooms: parseNum(g.totalRooms || 0),
-          breakdown: g.roomTypeBreakdown ? [g.roomTypeBreakdown] : []
-        }));
-
-        setTodayGroups({
-          groups: parsedGroups,
-          totalGroupRooms: parseNum(res.summary?.totalGroupRooms || parsedGroups.reduce((acc, x) => acc + x.totalRooms, 0))
-        });
-      } catch (err) {
-        console.error('Failed to load today groups:', err);
-      }
-    }
-
-    loadGroupsForToday();
-    return () => { isCancelled = true; };
-  }, [currentDate]);
-
-  // 3. 익일(NEXT_DAY) 모드 전환 시 전용 API 호출 (~200ms)
-  useEffect(() => {
-    if (viewMode !== 'NEXT_DAY') return;
-    let isCancelled = false;
-
-    async function loadNextDayData() {
+    async function loadReservationData() {
       setLoading(true);
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/condo-reservations?date=${nextDateStr}`).catch(() => null);
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/condo-reservations?date=${targetCheckInDate}`).catch(() => null);
         if (isCancelled) return;
 
         if (res && res.success && res.summary) {
@@ -181,33 +99,31 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
             breakdown: g.roomTypeBreakdown ? [g.roomTypeBreakdown] : []
           }));
 
-          const byType: RoomTypeStat[] = (res.byRoomType || []).map((t: any) => ({
-            roomType: t.roomType,
-            roomsSold: parseNum(t.reservedRooms || t.roomsSold || 0),
-            capacity: parseNum(t.capacity || t.fixedCapacity || 0),
-            rate: Number(t.rate || 0)
-          }));
+          const byType: RoomTypeStat[] = (res.byRoomType || [])
+            .filter((t: any) => t.roomType !== '미지정')
+            .map((t: any) => ({
+              roomType: t.roomType,
+              roomsSold: parseNum(t.reservedRooms || t.roomsSold || 0),
+              capacity: parseNum(t.capacity || t.fixedCapacity || 0),
+              rate: Number(t.rate || 0)
+            }));
 
-          setNextDayData({
-            targetDate: nextDateStr,
+          setResData({
+            targetDate: targetCheckInDate,
             totalRooms: parseNum(s.totalReservedRooms || 0),
             totalCapacity: parseNum(s.totalCapacity || 0),
-            physicalOccupancyRate: s.occupancyRate !== undefined ? Number(s.occupancyRate) : null,
-            physicalOccupiedUnits: null,
-            contractOccupancyRate: s.occupancyRate !== undefined ? Number(s.occupancyRate) : null,
+            occupancyRate: s.occupancyRate !== undefined && s.occupancyRate !== null ? Number(s.occupancyRate) : null,
             byType,
             groups: parsedGroups,
             totalGroupRooms: parseNum(s.totalGroupRooms || 0),
             isBackendMartPending: false
           });
         } else {
-          setNextDayData({
-            targetDate: nextDateStr,
+          setResData({
+            targetDate: targetCheckInDate,
             totalRooms: 0,
             totalCapacity: 0,
-            physicalOccupancyRate: null,
-            physicalOccupiedUnits: null,
-            contractOccupancyRate: null,
+            occupancyRate: null,
             byType: [],
             groups: [],
             totalGroupRooms: 0,
@@ -215,71 +131,44 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
           });
         }
       } catch (err) {
-        console.error('Failed to load next day condo data:', err);
+        console.error('Failed to load condo reservation data:', err);
       } finally {
         if (!isCancelled) setLoading(false);
       }
     }
 
-    loadNextDayData();
+    loadReservationData();
     return () => { isCancelled = true; };
-  }, [viewMode, nextDateStr]);
-
-  // 활성 표시 데이터 선택
-  const resData = viewMode === 'NEXT_DAY' ? nextDayData : todayData;
+  }, [targetCheckInDate]);
 
   // 단체 기업 예약의 전체 객실 대비 비중 (%)
   const groupSharePct = (resData?.totalRooms && resData.totalRooms > 0 && resData.totalGroupRooms) 
     ? ((resData.totalGroupRooms / resData.totalRooms) * 100).toFixed(1)
     : '0.0';
 
-  // 대표 점유율 (상단 주요 지표 93.1%와 100% 일치)
-  const displayOccRate = resData?.physicalOccupancyRate ?? resData?.contractOccupancyRate;
-
   return (
     <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
       <div>
-        {/* Header & Date Toggle */}
+        {/* Header: 체크인 예약 현황 전용 (당일 과거 실적 제거) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4">
           <div className="text-slate-800 font-bold text-base flex items-center gap-2">
             <Building2 size={18} className="text-indigo-600" />
-            <span>콘도(객실) 예약 및 체크인 현황</span>
+            <span>콘도(객실) 체크인 예약 현황</span>
           </div>
 
-          {/* Toggle: 오늘(당일) 체크인 vs 내일(익일 D+1) 예약 */}
-          <div className="flex items-center bg-slate-200/70 p-0.5 rounded-xl text-[11px] font-bold shrink-0 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode('TODAY')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                viewMode === 'TODAY'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              오늘(당일) 체크인
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('NEXT_DAY')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                viewMode === 'NEXT_DAY'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              내일(익일 D+1) 예약
-            </button>
+          <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 shrink-0 self-start sm:self-auto">
+            <Calendar size={13} className="text-indigo-600" />
+            <span>{targetCheckInDate} ({targetDayOfWeek}) 도착 예약</span>
           </div>
         </div>
 
-        {/* Date Context Badge */}
+        {/* Date Context Badge: 실제 오늘/익일 체크인 안내 */}
         <div className="flex items-center justify-between text-xs mb-3 bg-indigo-50/60 border border-indigo-100 rounded-xl px-3 py-1.5">
           <div className="flex items-center gap-1.5 text-indigo-900 font-bold">
-            <Calendar size={13} className="text-indigo-600" />
-            <span>{activeDate} ({activeDayOfWeek})</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>체크인 예정 예약 고객 현황</span>
             <span className="text-indigo-600 text-[10px] font-semibold bg-indigo-100/80 px-1.5 py-0.5 rounded-md">
-              {viewMode === 'NEXT_DAY' ? '체크인 예정 예약 고객' : '실측 투숙/체크인 고객'}
+              PMS 실시간 예약 원장
             </span>
           </div>
           <span className="text-[11px] text-indigo-700/80 font-medium hidden sm:inline">
@@ -287,12 +176,12 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
           </span>
         </div>
 
-        {/* Top 3 KPI Badges - 실제 객실수 및 93.1% 점유율 정합성 보장 */}
+        {/* Top 3 KPI Badges - 실제 객실수 및 예약 점유율 표기 */}
         <div className="grid grid-cols-3 gap-2.5">
-          {/* 1. 총 예약 / 입실 객실수 */}
+          {/* 1. 총 예약 객실수 (실제 객실 숫자 중심) */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">
-              {viewMode === 'NEXT_DAY' ? '총 예약 객실' : '총 판매 객실'}
+              총 예약 객실
             </div>
             <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums whitespace-nowrap">
               {loading ? (
@@ -311,28 +200,22 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
             </div>
           </div>
 
-          {/* 2. 객실 점유율 (Occ) - 상단 주요 지표 93.1% 정합성 및 실가동 163실 표기 */}
+          {/* 2. 예약 점유율 (Occ) */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap flex items-center justify-between">
-              <span>{viewMode === 'TODAY' ? '객실 점유율' : '예약 점유율'}</span>
-              {viewMode === 'TODAY' && resData?.physicalOccupiedUnits && resData.physicalOccupiedUnits > 0 ? (
-                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1 py-0.2 rounded-sm border border-emerald-100">
-                  {resData.physicalOccupiedUnits}실 실가동
-                </span>
-              ) : (
-                <span className="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded-sm border border-indigo-100">
-                  SSOT 기준
-                </span>
-              )}
+              <span>예약 점유율</span>
+              <span className="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded-sm border border-indigo-100">
+                체크인 예정
+              </span>
             </div>
             <div className="text-2xl lg:text-3xl font-black text-indigo-600 tabular-nums whitespace-nowrap">
               {loading ? (
                 <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
               ) : resData?.isBackendMartPending ? (
                 <span className="text-lg text-slate-400 font-bold">-</span>
-              ) : displayOccRate !== null && displayOccRate !== undefined ? (
+              ) : resData?.occupancyRate !== null && resData?.occupancyRate !== undefined ? (
                 <>
-                  {displayOccRate.toFixed(1)}
+                  {resData.occupancyRate.toFixed(1)}
                   <span className="text-sm font-normal text-indigo-500">%</span>
                 </>
               ) : (
@@ -340,9 +223,7 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
               )}
             </div>
             <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
-              {viewMode === 'TODAY'
-                ? `실가동 ${resData?.physicalOccupiedUnits ?? 0}실 (계약 ${resData?.totalRooms ?? 0}실)`
-                : `총 예약 ${resData?.totalRooms ?? 0}실 SSOT`}
+              총 예약 {resData?.totalRooms ?? 0}실 / 175실 기준
             </div>
           </div>
 
@@ -374,65 +255,35 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
           </div>
         </div>
 
-        {/* 93.1% vs 69.7% 점유율 차이 경영진 명확 안내 배너 */}
-        {viewMode === 'TODAY' && showExplanation && (
-          <div className="mt-2.5 px-3 py-2 rounded-xl bg-slate-100/90 border border-slate-200 text-[11px] text-slate-600 flex items-start justify-between gap-2 leading-relaxed">
-            <div className="flex items-start gap-1.5">
-              <span className="shrink-0 text-indigo-600 font-bold mt-0.5">💡</span>
-              <span>
-                <strong className="text-slate-800 font-bold">점유율 93.1% vs 69.7% 안내:</strong> 51평형(30실)은 16평+35평 커넥팅룸으로 조립되어 물리적으로 60실을 가동합니다. 이에 따라 <strong>실운영 가동 점유율은 93.1%(163실)</strong>이며, <strong>단순 계약 판매 기준은 69.7%(122실)</strong>입니다. (상단 메인 대시보드 지표와 100% 동일)
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowExplanation(false)}
-              className="text-slate-400 hover:text-slate-600 shrink-0 text-xs px-1"
-              title="닫기"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
         {/* 상태별 본문 영역 */}
         {loading ? (
           <div className="py-10 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
             <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            <span>익일 예약 데이터를 불러오는 중입니다...</span>
+            <span>체크인 예약 데이터를 불러오는 중입니다...</span>
           </div>
         ) : resData?.isBackendMartPending ? (
           <div className="mt-3.5 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-amber-900">
               <AlertCircle size={15} className="text-amber-600 shrink-0" />
-              <span>익일({activeDate}) 산하 PMS 예약 원장 동기화 대기 중 [Ticket 22]</span>
+              <span>{targetCheckInDate} 산하 PMS 예약 원장 동기화 대기 중</span>
             </div>
             <p className="text-[11px] text-amber-800 leading-relaxed">
-              현재 백엔드 데이터 마트는 <strong>당일 마감 정산 실적(10월 10일)</strong>까지 적재되어 있습니다. 익일 사전 예약 데이터는 산하 PMS 원장 연동 완료 후 자동 반영됩니다.
+              선택하신 일자의 체크인 사전 예약 데이터가 PMS로부터 연동 대기 중입니다.
             </p>
-            <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between">
-              <span className="text-[11px] text-amber-700">당일 체크인 실측 현황을 즉시 확인하시겠습니까?</span>
-              <button
-                type="button"
-                onClick={() => setViewMode('TODAY')}
-                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-[10px] transition shadow-xs"
-              >
-                오늘 실측 현황 조회 ➔
-              </button>
-            </div>
           </div>
         ) : (
           <div className="space-y-3 mt-3.5">
-            {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - 실제 객실숫자 중심) */}
+            {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - %가 아닌 실제 객실숫자 중심) */}
             <div className="pt-3 border-t border-slate-200/80">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span className="flex items-center gap-1.5">
-                  <span>📐</span> 평수별 {viewMode === 'NEXT_DAY' ? '예약' : '입실'} 현황 (실제 객실수)
+                  <span>📐</span> 평수별 체크인 예약 현황 (실제 객실수)
                 </span>
                 <span className="text-[11px] font-normal text-slate-400">실제 객실수 기준</span>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                {(resData?.byType || []).filter(t => t.roomType !== '미지정').map((t, idx) => {
+                {(resData?.byType || []).map((t, idx) => {
                   const pct = Math.min(100, Math.max(0, t.rate || 0));
                   return (
                     <div key={idx} className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
@@ -465,7 +316,7 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span className="flex items-center gap-1.5 text-purple-900">
                   <Users size={14} className="text-purple-600" />
-                  <span>{viewMode === 'NEXT_DAY' ? '익일 체크인 단체·기업 실제 명단' : '당일 투숙 단체·기업 실제 명단'}</span>
+                  <span>단체 / 기업 예약 실제 명단</span>
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
@@ -525,7 +376,7 @@ export default function CondoReservationCard({ currentDate, todayCoreData }: Con
 
       {/* Footer Subtext */}
       <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-        <span>산하 PMS 확정 예약 및 실운영 객실 실시간 연동 (16평/35평/51평 & 법인 단체)</span>
+        <span>산하 PMS 실시간 예약 원장 연동 (16평/35평/51평 실제 배정 객실 & 법인 단체)</span>
       </div>
     </div>
   );

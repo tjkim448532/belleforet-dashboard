@@ -1613,9 +1613,36 @@ const reverseSpillover = totalRoomSales > 0
   7. **마리나 클럽**: 보트/요트 탑승권 (총매출: 26,638,359원)
 * **프론트엔드 실시간 직결 연동**:
   - `LeisurePricingSimulator.tsx`에서 백엔드 완제품이 정상 로드되어, 대기 상태 배너가 사라지고 실제 POS 1~5위 상품 표출, 가격 인상/인하 시뮬레이션, 월별 계절성 ECharts 차트가 완벽하게 라이브 구동됨을 확인 완료.
-
 ---
 
+## 13. [2026-10-11 긴급 요청] 판매방식별 객실 실적 API (`room-channel-sales`) 실측 투숙객(`guests`) 필드 탑재
 
+* **문서 번호**: `TICKET-20261011-SALES-ROOM-GUESTS-01`
+* **대상 엔드포인트**: `GET /api/v6/report/room-channel-sales`
+* **관련 대시보드 화면**: B2B 법인 & 단체 영업 실적 관리 (`/group-sales`)
 
+### 13-1. 현상 및 필요성
+1. 현재 `GET /api/v6/report/room-channel-sales` 응답의 `data` 배열 각 객실 평형별 항목에 `todayRooms`, `todayRevenue`, `todayAdr`는 정규화되어 반환되고 있으나, **실제 투숙객 수(`todayGuests`, `mtdGuests`, `guests`) 필드가 누락**되어 있습니다.
+2. 이로 인해 프론트엔드 평형별 상세 실적 테이블에서 투숙객 수가 미표출(`-`) 상태입니다.
+3. 리조트 경영진 보고 시 판매 객실수와 함께 해당 객실에 체크인한 순수 실측 투숙객 수를 정확히 대조할 수 있도록, 백엔드 데이터 마트(`fact_room_sales_v6` 또는 `mat_v6_...`)에서 해당 평형/채널의 실제 투숙 인원(`guests`)을 집계하여 응답에 포함해 주시기 바랍니다.
 
+### 13-2. 요청 응답 규격 (camelCase 정규화)
+```json
+{
+  "channelName": "단체영업(세미나)",
+  "roomType": "51평",
+  "todayRooms": 2,
+  "todayGuests": 8,
+  "todayRevenue": 636364,
+  "todayAdr": 318182,
+  "mtdRooms": 6,
+  "mtdGuests": 24,
+  "mtdRevenue": 2214544,
+  "mtdAdr": 369091,
+  "ytdRooms": 672,
+  "ytdGuests": 2688,
+  "ytdRevenue": 169276702,
+  "ytdAdr": 251900
+}
+```
+* **원칙 준수**: 가짜 숫자나 임의 배수(`rooms * 4`)를 합성하지 말고, PMS 원천 체크인 전표의 순수 실제 투숙객 수(`guest_count`)를 집계하여 반환해 주십시오.

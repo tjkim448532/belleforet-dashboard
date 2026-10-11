@@ -403,7 +403,7 @@ export default function GroupSales() {
       const isSeminar = chName.includes('단체') || chName.includes('세미나');
       const seminarAdr = isSeminar && seminarShare?.total?.averageAdr ? seminarShare.total.averageAdr : 0;
       const subtotalAdr = Number(items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal)?.adr ?? 0);
-      const groupGuests = isSeminar && corporateSummary?.totalPax ? Number(corporateSummary.totalPax) : chGuests;
+      const groupGuests = chGuests;
 
       groups.push({
         channelName: chName,
@@ -428,13 +428,13 @@ export default function GroupSales() {
       grandTotals: {
         revenue: grandRevenue,
         rooms: grandRooms,
-        guests: grandGuests > 0 ? grandGuests : Number(corporateSummary?.totalPax ?? 0),
+        guests: grandGuests,
         adr: Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
       },
       uniqueRoomTypes: sortedRoomTypes,
       availableChannels: groups.map(g => g.channelName)
     };
-  }, [channelRawData, hideZeroSales, seminarShare, corporateSummary]);
+  }, [channelRawData, hideZeroSales, seminarShare]);
 
   // 🎯 현재 활성화된 채널 그룹 (기본: 단체영업)
   const activeChannelGroup = useMemo(() => {
@@ -496,19 +496,66 @@ export default function GroupSales() {
     selectedChannel?.includes('단체') || 
     selectedChannel?.includes('세미나')
   );
+  const isCorpFit = !isAllMode && Boolean(
+    activeChannelGroup?.channelName?.includes('기업') || 
+    activeChannelGroup?.channelName?.includes('휴양소') || 
+    selectedChannel?.includes('기업') || 
+    selectedChannel?.includes('휴양소')
+  );
 
   const displayRevenue = isAllMode ? grandTotals.revenue : (activeChannelGroup?.totalRevenue || 0);
   const displayRooms = isAllMode ? grandTotals.rooms : (activeChannelGroup?.totalRooms || 0);
-  const displayGuests = isAllMode 
-    ? (grandTotals.guests > 0 ? grandTotals.guests : Number(corporateSummary?.totalPax || 0))
-    : (isCurrentSeminar && corporateSummary?.totalPax 
-        ? Number(corporateSummary.totalPax) 
-        : (activeChannelGroup?.totalGuests || 0));
   const displayAdr = isAllMode 
     ? grandTotals.adr 
     : (isCurrentSeminar && seminarDayTypeStats.total.averageAdr > 0 
         ? seminarDayTypeStats.total.averageAdr 
         : (activeChannelGroup?.averageAdr || 0));
+
+  // Card 3: B2B 단체 행사 유치 인원 지표 (채널별 엄격 매칭 & 가짜 숫자 원천 차단)
+  const eventPaxMeta = useMemo(() => {
+    if (isAllMode) {
+      const pax = corporateSummary?.totalPax ? Number(corporateSummary.totalPax) : 0;
+      const micePax = corporateSummary?.mice?.totalPax ? Number(corporateSummary.mice.totalPax) : 0;
+      const corpPax = corporateSummary?.corpFit?.totalPax ? Number(corporateSummary.corpFit.totalPax) : Math.max(0, pax - micePax);
+      return {
+        title: '전사 B2B 유치 총인원',
+        badge: 'B2B 종합',
+        pax: pax > 0 ? pax : null,
+        subtext: pax > 0 
+          ? `MICE ${micePax.toLocaleString()}명 + 법인휴양소 등 ${corpPax.toLocaleString()}명`
+          : 'B2B 유치 단체 데이터 연동 기준'
+      };
+    }
+    if (isCurrentSeminar) {
+      const micePax = corporateSummary?.mice?.totalPax ? Number(corporateSummary.mice.totalPax) : 0;
+      return {
+        title: '선택 채널 행사 인원',
+        badge: 'MICE 유치 실적',
+        pax: micePax > 0 ? micePax : null,
+        subtext: micePax > 0 
+          ? 'PMS 세미나/MICE 유치 행사 참가 인원 (농어촌공사 등)'
+          : '해당 기간 MICE 유치 행사 없음'
+      };
+    }
+    if (isCorpFit) {
+      const corpPax = corporateSummary?.corpFit?.totalPax ? Number(corporateSummary.corpFit.totalPax) : 0;
+      return {
+        title: '선택 채널 유치 인원',
+        badge: '법인 휴양소',
+        pax: corpPax > 0 ? corpPax : null,
+        subtext: corpPax > 0
+          ? '법인 임직원 휴양소 배정/이용 인원'
+          : '해당 기간 법인 휴양소 유치 실적'
+      };
+    }
+    // 일반 개인 채널 (OTA, 자사채널, 전화/메신저 등): B2B 단체 행사 미해당 (Fail-Stop)
+    return {
+      title: '선택 채널 행사 인원',
+      badge: '일반 채널',
+      pax: null,
+      subtext: 'B2B 단체 행사 미해당 (개인 예약 채널)'
+    };
+  }, [isAllMode, isCurrentSeminar, isCorpFit, corporateSummary]);
 
   const displayRevenueFinancial = formatFinancialKorean(displayRevenue);
   const grandRevenueFinancial = formatFinancialKorean(grandTotals.revenue);
@@ -1355,29 +1402,31 @@ export default function GroupSales() {
           </div>
         </div>
 
-        {/* Card 3: Total Guests */}
+        {/* Card 3: Event Attendees (B2B 유치 행사 인원) */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 relative group hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <Users size={16} className="text-brand-mint" /> 
-              <span>{isAllMode ? '전사 총 투숙객' : '선택 채널 투숙객'}</span>
+              <span>{eventPaxMeta.title}</span>
               <MetricExplainerTooltip presetKey="visitorCount" />
             </span>
             <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-              실측 투숙객
+              {eventPaxMeta.badge}
             </span>
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-financial tracking-tight">
-              {displayGuests.toLocaleString()}
-              <span className="text-base font-semibold text-slate-400 ml-1">명</span>
+              {eventPaxMeta.pax !== null ? (
+                <>
+                  {eventPaxMeta.pax.toLocaleString()}
+                  <span className="text-base font-semibold text-slate-400 ml-1">명</span>
+                </>
+              ) : (
+                <span className="text-slate-400 font-medium text-2xl">-</span>
+              )}
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              {displayGuests > 0 
-                ? (isCurrentSeminar && corporateSummary?.mice?.totalPax 
-                    ? `PMS 실측 투숙객 (MICE ${corporateSummary.mice.totalPax}명 + 기타 ${Number(corporateSummary.totalPax) - Number(corporateSummary.mice.totalPax)}명)`
-                    : 'PMS 실측 투숙객 수')
-                : '백엔드 PMS 실측 연동 기준'}
+              {eventPaxMeta.subtext}
             </p>
           </div>
         </div>
@@ -1526,7 +1575,7 @@ export default function GroupSales() {
                     {formatRevenue(activeChannelGroup.totalRevenue)}원
                   </td>
                   <td className="py-4 px-4 text-sm text-right font-bold">
-                    {activeChannelGroup.totalGuests.toLocaleString()}명
+                    {activeChannelGroup.totalGuests > 0 ? `${activeChannelGroup.totalGuests.toLocaleString()}명` : '-'}
                   </td>
                   <td className="py-4 px-4 text-sm text-right text-brand-mint font-extrabold">
                     {formatRevenue(activeChannelGroup.averageAdr)}원

@@ -10,6 +10,11 @@ interface TodayGolfSummary {
   visitedTeams: number;
   canceledTeams: number;
   pendingTeams: number;
+  golfParts?: {
+    part1?: { name?: string; timeRange?: string; reservedTeams: number; visitedTeams: number; pendingTeams: number; avgGreenFee?: number; avgGreenFeeFormatted?: string };
+    part2?: { name?: string; timeRange?: string; reservedTeams: number; visitedTeams: number; pendingTeams: number; avgGreenFee?: number; avgGreenFeeFormatted?: string };
+    part3?: { name?: string; timeRange?: string; reservedTeams: number; visitedTeams: number; pendingTeams: number; avgGreenFee?: number; avgGreenFeeFormatted?: string };
+  };
 }
 
 interface NextDayGolfData {
@@ -185,6 +190,48 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
               </div>
             </div>
           </div>
+
+          {/* 🌟 1-B. 기준일 1부 / 2부 / 3부 티타임 파트별 실적 */}
+          {todaySummary.golfParts && (
+            <div className="mt-3 pt-2.5 border-t border-slate-100">
+              <div className="flex items-center justify-between text-[11px] mb-2 px-0.5">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  <span>⏰</span> 티타임 파트별 마감 실적
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium">1부·2부·3부 실시간 집계</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: 'part1', data: todaySummary.golfParts.part1, label: '1부 (오전)', time: '06:00~11:00' },
+                  { key: 'part2', data: todaySummary.golfParts.part2, label: '2부 (오후)', time: '11:00~14:00' },
+                  { key: 'part3', data: todaySummary.golfParts.part3, label: '3부 (야간)', time: '14:00~마감' }
+                ].map(({ key, data: p, label }) => {
+                  if (!p) return null;
+                  return (
+                    <div key={key} className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] font-bold text-slate-800 mb-0.5">{label}</div>
+                        <div className="text-base font-black text-slate-900 tabular-nums">
+                          {p.visitedTeams} <span className="text-xs font-normal text-slate-500">팀 완료</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          총 예약 {p.reservedTeams}팀 {p.pendingTeams > 0 ? `(대기 ${p.pendingTeams})` : ''}
+                        </div>
+                      </div>
+                      {p.avgGreenFee !== undefined && p.avgGreenFee > 0 && (
+                        <div className="mt-2 pt-1.5 border-t border-slate-100 flex flex-col items-center">
+                          <span className="text-[9px] text-slate-400">평균 그린피</span>
+                          <span className="text-xs font-extrabold text-slate-800 tabular-nums">
+                            {p.avgGreenFeeFormatted || `${p.avgGreenFee.toLocaleString()}원`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2. 다음날 날짜와 예약 현황 섹션 (사용자 신규 요청: 실제 오늘/익일 도착 예약) */}

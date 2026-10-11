@@ -1103,7 +1103,8 @@ export default function Home() {
                     reservedTeams: golfReservedTeams,
                     visitedTeams: displayData.golfSummary ? displayData.golfSummary.visitedTeams : 0,
                     canceledTeams: displayData.golfSummary?.canceledTeams || 0,
-                    pendingTeams: displayData.golfSummary?.pendingTeams || 0
+                    pendingTeams: displayData.golfSummary?.pendingTeams || 0,
+                    golfParts: coreData.core?.summary?.golfParts
                   }}
                   isRangeMode={isRangeMode}
                 />

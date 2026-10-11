@@ -22,7 +22,8 @@
 | **P1 (높음)** | 정규 API | **[Ticket 19] 우천 토요일(10mm+) Matched Pairs 스트레스 테스트 마트 API** | 가짜 회귀식 제거, 실측 역사적 우천 토요일 기반 D-2/D-1 변동비(인건비·식자재) 방어 마트 신설 (`weather-stress-test`) |
 | **P1 (긴급)** | 데이터 적재 | **[Ticket 20] 2026년 10월 기상청 AWS 관측 데이터 및 마트 백필** | `fact_daily_weather` 10월 관측 데이터 부재로 인한 10월 상관관계 `totalDays: 0` 정상화 (증평/진천 AWS 관측치 적재) |
 | **P1 (신규)** | 정규 API | **[Ticket 22] 콘도(객실) 익일(D+1) 및 기간별 PMS 예약 현황 마트 API** | 오늘 기준 내일(D+1) 체크인 예정 고객의 전체 예약, 평수별(16/35/51평), 단체/세미나 예약 완제품 API (`condo-reservations`) |
-| **P1 (신규)** | API 보강 | **[Ticket 23] 골프 예약 현황 마트 API 내 1부/2부/3부 파트별 예약 팀수 필드 신설** | 대표님 지시: 실시간 및 익일 골프 예약 현황 하단에 1부(오전), 2부(오후), 3부(야간) 팀수 분할 제공 (`revenue-summary`) |
+| **P1 (완료)** | API 보강 | **[Ticket 23] 골프 예약 현황 마트 API 내 1부/2부/3부 파트별 예약 팀수 필드 신설** | [배포완료] 실시간 및 익일 골프 예약 현황 하단에 1부(오전), 2부(오후), 3부(야간) 팀수 분할 제공 (`revenue-summary`) |
+| **P0 (긴급)** | 데이터 로직 | **[Ticket 24] 미래(익일 D+1) 골프 1·2·3부 평균 그린피(ERP 예약 단가) 집계 정상화** | 미래 도착 예약일(10/11)의 `avgGreenFee`가 POS 미정산(매출 0원)으로 인해 `0원(- 원)`으로 출력되는 결함 해결: ERP 예약 원장 예약단가 기준 산출 요청 |
 
 
 ---
@@ -2011,5 +2012,87 @@ const reverseSpillover = totalRoomSales > 0
 3. **예약자 평균 그린피 산출**:
    - 각 파트별 예약 건의 순수 계약/예약 그린피 합계 $\div$ 총 예약 인원수 (원 단위 정수).
 4. **실시간 원장 연동**: 골프 ERP(스마트스코어) 실시간 예약 테이블에서 당일(D-Day) 및 익일(D+1) 티타임 슬롯별 예약 팀수 및 평균 그린피를 직접 집계하여 반환.
+
+---
+
+## 24. 🚨 [Ticket 24 - 긴급 P0] 미래(익일 D+1) 골프 1·2·3부 평균 그린피(ERP 예약 단가) 집계 정상화
+
+### 24-1. 현상 및 결함 원인 (실측 증거)
+* **대상 엔드포인트**:
+  1. `GET /api/v6/dashboard/revenue-summary?date=YYYY-MM-DD` (`summary.golfParts`)
+  2. `GET /api/v6/report/golf-channel-teetime-analysis-v2?date=YYYY-MM-DD` (`partAnalysis.parts`)
+* **현상**:
+  * 마감 완료일인 **2026-10-10** 조회 시:
+    * 1부: 44팀, 평균 그린피 **89,615원**
+    * 2부: 42팀, 평균 그린피 **87,046원**
+    * 3부: 36팀, 평균 그린피 **51,130원**
+    * 정상적으로 실제 정산 단가가 표출됨.
+  * 그러나 익일 도착 예약일인 **2026-10-11** 조회 시:
+    * 1부: 53팀, 평균 그린피 **`0` (`- 원`)**
+    * 2부: 53팀, 평균 그린피 **`0` (`- 원`)**
+    * 3부: 26팀, 평균 그린피 **`0` (`- 원`)**
+    * 팀수(53팀/53팀/26팀 = 총 132팀)는 완벽하게 집계되나, **평균 그린피가 전 파트 0원으로 내려와 대시보드에 `- 원`으로 노출**됨.
+* **원인 (Root Cause)**:
+  * 백엔드 API/ETL 수식이 `avgGreenFee = greenFeeRevenue / players`로만 구현되어 있음.
+  * 10월 11일(미래/익일)은 아직 고객이 라운딩을 완료하지 않았고 POS 정산이 발생하지 않아 **`greenFeeRevenue = 0`**, **`players = 0`**이므로 결과가 `0`으로 산출됨.
+  * 그러나 스마트스코어(ERP) 예약 원장(`raw_골프_예약` 또는 예약 테이블)에는 132팀 각각에 대해 **예약 시점에 확정된 그린피(`booked_green_fee` / 공시 예약가 / 회원·비회원 차등 요금)**가 분명히 기록되어 있음.
+
+### 24-2. 요청 조치 사항 (Backend Logic Fix)
+* **산출 로직 분기 (마감 실적 vs 미래 예약)**:
+  1. **마감 완료 일자 (`date <= closedDate`)**:
+     * 기존 로직 유지: `POS 순그린피 매출 ÷ 실제 내장객수 (players)`
+  2. **미래 도착 일자 (`date > closedDate` 또는 당일 라운딩 전/진행 중)**:
+     * ERP 예약 원장(`raw_골프_예약` / 실시간 티타임 테이블) 기준 산출:
+     $$\text{avgGreenFee} = \frac{\sum \text{유효 예약건의 예약 그린피}}{\text{총 예약 인원수 (또는 유효 예약팀수 } \times 4\text{인)}}$$
+     * 취소(`canceled`) 건을 제외한 정상 유효 예약 건의 1인당 평균 예약 그린피를 원 단위 정수로 산출.
+
+### 24-3. 기대하는 응답 스펙 (JSON) - 2026-10-11 기준
+```json
+{
+  "summary": {
+    "totalGolfReservedTeams": 132,
+    "totalGolfVisitedTeams": 0,
+    "totalGolfCanceledTeams": 20,
+    "totalGolfPendingTeams": 112,
+    "golfParts": {
+      "part1": {
+        "name": "1부 (오전)",
+        "timeRange": "06:00~11:00",
+        "reservedTeams": 53,
+        "visitedTeams": 0,
+        "pendingTeams": 44,
+        "players": 176,
+        "avgGreenFee": 95000,
+        "avgGreenFeeFormatted": "95,000"
+      },
+      "part2": {
+        "name": "2부 (오후)",
+        "timeRange": "11:00~14:00",
+        "reservedTeams": 53,
+        "visitedTeams": 0,
+        "pendingTeams": 42,
+        "players": 168,
+        "avgGreenFee": 105000,
+        "avgGreenFeeFormatted": "105,000"
+      },
+      "part3": {
+        "name": "3부 (야간)",
+        "timeRange": "14:00~마감",
+        "reservedTeams": 26,
+        "visitedTeams": 0,
+        "pendingTeams": 26,
+        "players": 104,
+        "avgGreenFee": 60000,
+        "avgGreenFeeFormatted": "60,000"
+      }
+    }
+  }
+}
+```
+
+### 24-4. 프론트엔드 통제 원칙 준수 확인
+* 프론트엔드는 **[Zero-Simulation & Fail-Stop 원칙]**에 따라, 백엔드가 `0`을 내려주었을 때 임의로 전날 단가를 복제하거나 가짜 숫자를 끼워 넣지 않고 **정직하게 `- 원`으로 결함을 노출(Fail Loudly)**하였습니다.
+* 백엔드에서 위 ERP 예약 단가 로직이 배포되는 즉시, 프론트엔드 수정 없이 실시간 1:1 바인딩되어 정상 표출됩니다.
+
 
 

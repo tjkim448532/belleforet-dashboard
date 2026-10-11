@@ -1,6 +1,6 @@
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, ShieldCheck, Users, AlertTriangle, Bell } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, Users, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { parseNum } from '../lib/dataTransformers';
 import { secureFetcher } from '../lib/secureFetcher';
@@ -44,7 +44,6 @@ export default function AdminLayout() {
 
   const menuItems = [
     { name: '임직원 대시보드 권한 관리', path: '/admin/roles', icon: <Users size={20} /> },
-    { name: '구매 알림 수신 직원 관리', path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: '대시보드 접속 및 보안 로그', path: '/admin/logs', icon: <ShieldCheck size={20} /> },
   ];
 

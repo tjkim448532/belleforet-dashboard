@@ -21,7 +21,6 @@
 | **P1 (높음)** | API 보강 | **[Ticket 18] 골프 동일 요일·시간대(Like-for-Like) 직영 vs OTA 순정산액 API** | 전체 평균 왜곡 제거, 골든타임 1:1 순수익(Net-Net Green Fee) 비교 규격 추가 (`golf-channel-intelligence`) |
 | **P1 (높음)** | 정규 API | **[Ticket 19] 우천 토요일(10mm+) Matched Pairs 스트레스 테스트 마트 API** | 가짜 회귀식 제거, 실측 역사적 우천 토요일 기반 D-2/D-1 변동비(인건비·식자재) 방어 마트 신설 (`weather-stress-test`) |
 | **P1 (긴급)** | 데이터 적재 | **[Ticket 20] 2026년 10월 기상청 AWS 관측 데이터 및 마트 백필** | `fact_daily_weather` 10월 관측 데이터 부재로 인한 10월 상관관계 `totalDays: 0` 정상화 (증평/진천 AWS 관측치 적재) |
-| **P1 (신규)** | 파이프라인 | **[Ticket 21] 구매 확정 시 직원 실시간 SMS 발송 및 중복방지 백엔드 워커** | POS/PG 결제 확정 시 활성 직원 무제한 SMS 자동 발송, 100% 멱등성(최초 1회 보장), 미발송 건 자동 재발송 파이프라인 |
 
 ---
 
@@ -1868,35 +1867,4 @@ const reverseSpillover = totalRoomSales > 0
   2. 날씨-매출 마트 집계 프로시저(`sp_etl_v6_mat_weather_sales_correlation`) 실행을 통해 `mat_v6_weather_daily_sales` 테이블 10월 데이터 갱신.
 - **검증 기준**:
   - `GET /api/v6/dashboard/weather-correlation?startDate=2026-10-01&endDate=2026-10-10&categoryCode=ALL` 호출 시 `totalDays >= 10` 및 `dailyTimeSeries`에 10개 일자의 강수량과 부문별 매출이 완제품으로 반환될 것.
-
----
-
-### [Ticket 21] 구매 발생 시 직원 실시간 SMS 자동 발송 백엔드 파이프라인 및 통신사 게이트웨이 연동 규격
-
-- **요청 배경 (경영진/운영 지시사항)**:
-  - *"직원의 전화번호를 입력할 수 있는 기능을 추가하고 몇 명이든 상관없이 추가하고, 리스트도 작성해. 구매가 확인되면 문자가 직원에게 자동으로 발송하고 발송 여부도 기억하고 있어야 해. 이후에 발송이 안 된 구매건은 또 직원에게 문자 보내야 하고. 최종 목적은 직원이 구매가 발생하면 그걸 문자로 받아서 알고 있게 하는 건데, 최초 한 번만 문자 받으면 됨."*
-  - 프론트엔드는 현재 관리자 화면(`/admin/notifications`)을 통해 **무제한 직원 연락처 등록/수정/삭제/활성화 토글(`notificationEmployees`)**, **구매 확정 및 발송 여부 추적(`purchaseNotifications`)**, **100% 멱등성 보장(`purchaseId` 기준 중복 발송 차단)**, **미발송 건 일괄 수동 발송**, 그리고 **전체 발송 감사 로그(`smsDispatchLogs`)** 구축을 완료하였습니다.
-  - 다만, 브라우저가 꺼져 있거나 야간/새벽 시간대에도 24시간 실시간으로 구매 확정 즉시 직원에게 문자가 발송되려면 **백엔드 PG/POS 웹훅 수신부 및 비동기 발송 워커(Worker)** 연동이 필수적입니다.
-
-- **백엔드 구현 요청 규격**:
-  1. **수신 대상 직원 SSOT 참조**:
-     - Firestore `notificationEmployees` 컬렉션에서 `active == true`인 직원 목록을 실시간 또는 캐시(TTL 60초) 조회.
-     - 직원이 몇 명이든(무제한) 모든 활성 직원에게 동시 발송.
-  2. **100% 멱등성 보장 (Idempotency - 최초 1회 발송 원칙)**:
-     - PG 결제 완료 또는 POS 주문 승인 이벤트 발생 시 고유 식별자(`purchaseId` 또는 `orderNo`)를 멱등성 키(Idempotency Key)로 사용.
-     - `purchaseNotifications` 컬렉션의 `dispatchStatus == 'SENT'`이거나 `sentAt`이 이미 존재하는 경우 **어떠한 경우에도 중복 문자를 발송하지 않고 즉시 스킵(Drop)**.
-  3. **통신사 SMS 게이트웨이 연동 (알리고, 쿨SMS, NHN Cloud SENS 등)**:
-     - 메시지 템플릿 표준:
-       ```text
-       [벨포레 실시간 구매알림]
-       ■ 상품: {itemName} ({quantity}건)
-       ■ 금액: {amount.toLocaleString()}원
-       ■ 고객: {customerName}
-       ■ 주문번호: {purchaseId}
-       ■ 일시: {purchasedAt}
-       ```
-  4. **미발송 구매건 자동 복구 워커 (Retry Cron)**:
-     - 매 5분 주기로 `purchaseNotifications`에서 `dispatchStatus == 'PENDING'`인 미발송 구매건을 탐색하여 자동 재발송 처리.
-     - 발송 성공 시 `dispatchStatus = 'SENT'`, `sentAt = NOW()`, `sentRecipients = [...]`로 원자적 업데이트 및 `smsDispatchLogs` 기록.
-
 

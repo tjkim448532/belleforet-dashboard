@@ -15,7 +15,6 @@ import AdminLogs from './pages/AdminLogs';
 import AdminMapping from './pages/AdminMapping';
 import AdminDaolRules from './pages/AdminDaolRules';
 import AdminRoles from './pages/AdminRoles';
-import AdminPurchaseNotifications from './pages/AdminPurchaseNotifications';
 
 import ResortBusiness from './pages/ResortBusiness';
 import ResortRoomGuestsYoy from './pages/ResortRoomGuestsYoy';
@@ -109,8 +108,6 @@ export function App() {
                   <Route path="logs" element={<AdminLogs />} />
                   <Route path="mapping" element={<AdminMapping />} />
                   <Route path="roles" element={<AdminRoles />} />
-                  <Route path="notifications" element={<AdminPurchaseNotifications />} />
-                  <Route path="purchase-notifications" element={<AdminPurchaseNotifications />} />
                   <Route index element={<Navigate to="roles" replace />} />
                 </Route>
 

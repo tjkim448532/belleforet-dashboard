@@ -50,12 +50,19 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
                 continue;
             }
             
-            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드, 코드 등 제외)
+            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드, 코드, 일자/연월 식별자 등 제외)
             const isMetricKey = (
                 key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|revpar|occ|rooms|gross)/i) ||
                 key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
-                key.match(/^ly([A-Z_]|$)/i)
-            ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code') && !key.toLowerCase().includes('formatted');
+                key.match(/^ly(?!month|year|period|date)([A-Z_]|$)/i)
+            ) && 
+            !key.toLowerCase().includes('date') && 
+            !key.toLowerCase().includes('desc') && 
+            !key.toLowerCase().includes('weather') && 
+            !key.toLowerCase().includes('name') && 
+            !key.toLowerCase().includes('code') && 
+            !key.toLowerCase().includes('formatted') &&
+            !key.match(/^(ly|target|base|year)?month$/i);
 
             if (isMetricKey) {
                 if (typeof value !== 'number') {
@@ -105,8 +112,15 @@ const sanitizePayloadNumbers = (node: any) => {
         const isMetricKey = (
             key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|revpar|occ|rooms|gross)/i) ||
             key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
-            key.match(/^ly([A-Z_]|$)/i)
-        ) && !key.toLowerCase().includes('date') && !key.toLowerCase().includes('desc') && !key.toLowerCase().includes('weather') && !key.toLowerCase().includes('name') && !key.toLowerCase().includes('code') && !key.toLowerCase().includes('formatted');
+            key.match(/^ly(?!month|year|period|date)([A-Z_]|$)/i)
+        ) && 
+        !key.toLowerCase().includes('date') && 
+        !key.toLowerCase().includes('desc') && 
+        !key.toLowerCase().includes('weather') && 
+        !key.toLowerCase().includes('name') && 
+        !key.toLowerCase().includes('code') && 
+        !key.toLowerCase().includes('formatted') &&
+        !key.match(/^(ly|target|base|year)?month$/i);
 
         if (typeof value === 'string' && isMetricKey) {
             const parsed = Number(value);

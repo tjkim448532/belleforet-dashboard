@@ -21,6 +21,9 @@ interface NextDayGolfData {
   part1Reserved: number | null;
   part2Reserved: number | null;
   part3Reserved: number | null;
+  part1AvgGreenFee: number | null;
+  part2AvgGreenFee: number | null;
+  part3AvgGreenFee: number | null;
 }
 
 interface GolfReservationCardProps {
@@ -74,9 +77,13 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
 
         if (res && res.success && res.summary) {
           const s = res.summary;
-          const p1 = s.golfPart1ReservedTeams ?? s.totalGolfPart1Teams ?? s.golfPart1Teams ?? s.golfParts?.part1ReservedTeams ?? s.golfParts?.part1 ?? null;
-          const p2 = s.golfPart2ReservedTeams ?? s.totalGolfPart2Teams ?? s.golfPart2Teams ?? s.golfParts?.part2ReservedTeams ?? s.golfParts?.part2 ?? null;
-          const p3 = s.golfPart3ReservedTeams ?? s.totalGolfPart3Teams ?? s.golfPart3Teams ?? s.golfParts?.part3ReservedTeams ?? s.golfParts?.part3 ?? null;
+          const p1 = s.golfPart1ReservedTeams ?? s.totalGolfPart1Teams ?? s.golfPart1Teams ?? s.golfParts?.part1ReservedTeams ?? s.golfParts?.part1?.reservedTeams ?? s.golfParts?.part1 ?? null;
+          const p2 = s.golfPart2ReservedTeams ?? s.totalGolfPart2Teams ?? s.golfPart2Teams ?? s.golfParts?.part2ReservedTeams ?? s.golfParts?.part2?.reservedTeams ?? s.golfParts?.part2 ?? null;
+          const p3 = s.golfPart3ReservedTeams ?? s.totalGolfPart3Teams ?? s.golfPart3Teams ?? s.golfParts?.part3ReservedTeams ?? s.golfParts?.part3?.reservedTeams ?? s.golfParts?.part3 ?? null;
+
+          const p1Fee = s.golfPart1AvgGreenFee ?? s.part1AvgGreenFee ?? s.golfParts?.part1?.avgGreenFee ?? null;
+          const p2Fee = s.golfPart2AvgGreenFee ?? s.part2AvgGreenFee ?? s.golfParts?.part2?.avgGreenFee ?? null;
+          const p3Fee = s.golfPart3AvgGreenFee ?? s.part3AvgGreenFee ?? s.golfParts?.part3?.avgGreenFee ?? null;
 
           setNextDayGolf({
             targetDate: nextDateStr,
@@ -86,7 +93,10 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
             pendingTeams: parseNum(s.totalGolfPendingTeams || 0),
             part1Reserved: p1 !== null && p1 !== undefined ? parseNum(p1) : null,
             part2Reserved: p2 !== null && p2 !== undefined ? parseNum(p2) : null,
-            part3Reserved: p3 !== null && p3 !== undefined ? parseNum(p3) : null
+            part3Reserved: p3 !== null && p3 !== undefined ? parseNum(p3) : null,
+            part1AvgGreenFee: p1Fee !== null && p1Fee !== undefined ? parseNum(p1Fee) : null,
+            part2AvgGreenFee: p2Fee !== null && p2Fee !== undefined ? parseNum(p2Fee) : null,
+            part3AvgGreenFee: p3Fee !== null && p3Fee !== undefined ? parseNum(p3Fee) : null
           });
         } else {
           setNextDayGolf({
@@ -97,7 +107,10 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
             pendingTeams: 0,
             part1Reserved: null,
             part2Reserved: null,
-            part3Reserved: null
+            part3Reserved: null,
+            part1AvgGreenFee: null,
+            part2AvgGreenFee: null,
+            part3AvgGreenFee: null
           });
         }
       } catch (err) {
@@ -256,52 +269,94 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
             <div className="grid grid-cols-3 gap-2">
               {/* 1부 */}
               <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50/80 py-0.5 rounded-md mb-1">
-                  1부 (오전)
+                <div>
+                  <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50/80 py-0.5 rounded-md mb-1">
+                    1부 (오전)
+                  </div>
+                  <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                    {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined ? (
+                      <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    06:00 ~ 11:00
+                  </div>
                 </div>
-                <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
-                  {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined ? (
-                    <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
-                  ) : (
-                    <span className="text-xs text-slate-400 font-medium">- 팀</span>
-                  )}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  06:00 ~ 11:00
+
+                {/* 1부 평균 그린피 (맨밑) */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col items-center">
+                  <span className="text-[10px] text-slate-400 font-medium">평균 그린피</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-indigo-700 tabular-nums mt-0.5">
+                    {nextDayGolf?.part1AvgGreenFee !== null && nextDayGolf?.part1AvgGreenFee !== undefined && nextDayGolf.part1AvgGreenFee > 0 ? (
+                      <>{nextDayGolf.part1AvgGreenFee.toLocaleString()}원</>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">- 원</span>
+                    )}
+                  </span>
                 </div>
               </div>
 
               {/* 2부 */}
               <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                <div className="text-[11px] font-bold text-teal-700 bg-teal-50/80 py-0.5 rounded-md mb-1">
-                  2부 (오후)
+                <div>
+                  <div className="text-[11px] font-bold text-teal-700 bg-teal-50/80 py-0.5 rounded-md mb-1">
+                    2부 (오후)
+                  </div>
+                  <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                    {nextDayGolf?.part2Reserved !== null && nextDayGolf?.part2Reserved !== undefined ? (
+                      <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    11:00 ~ 14:00
+                  </div>
                 </div>
-                <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
-                  {nextDayGolf?.part2Reserved !== null && nextDayGolf?.part2Reserved !== undefined ? (
-                    <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
-                  ) : (
-                    <span className="text-xs text-slate-400 font-medium">- 팀</span>
-                  )}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  11:00 ~ 14:00
+
+                {/* 2부 평균 그린피 (맨밑) */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col items-center">
+                  <span className="text-[10px] text-slate-400 font-medium">평균 그린피</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-teal-700 tabular-nums mt-0.5">
+                    {nextDayGolf?.part2AvgGreenFee !== null && nextDayGolf?.part2AvgGreenFee !== undefined && nextDayGolf.part2AvgGreenFee > 0 ? (
+                      <>{nextDayGolf.part2AvgGreenFee.toLocaleString()}원</>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">- 원</span>
+                    )}
+                  </span>
                 </div>
               </div>
 
               {/* 3부 */}
               <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                <div className="text-[11px] font-bold text-amber-700 bg-amber-50/80 py-0.5 rounded-md mb-1">
-                  3부 (야간/라이트)
+                <div>
+                  <div className="text-[11px] font-bold text-amber-700 bg-amber-50/80 py-0.5 rounded-md mb-1">
+                    3부 (야간/라이트)
+                  </div>
+                  <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                    {nextDayGolf?.part3Reserved !== null && nextDayGolf?.part3Reserved !== undefined ? (
+                      <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    14:00 ~ 마감
+                  </div>
                 </div>
-                <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
-                  {nextDayGolf?.part3Reserved !== null && nextDayGolf?.part3Reserved !== undefined ? (
-                    <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
-                  ) : (
-                    <span className="text-xs text-slate-400 font-medium">- 팀</span>
-                  )}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  14:00 ~ 마감
+
+                {/* 3부 평균 그린피 (맨밑) */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col items-center">
+                  <span className="text-[10px] text-slate-400 font-medium">평균 그린피</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-amber-700 tabular-nums mt-0.5">
+                    {nextDayGolf?.part3AvgGreenFee !== null && nextDayGolf?.part3AvgGreenFee !== undefined && nextDayGolf.part3AvgGreenFee > 0 ? (
+                      <>{nextDayGolf.part3AvgGreenFee.toLocaleString()}원</>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">- 원</span>
+                    )}
+                  </span>
                 </div>
               </div>
             </div>

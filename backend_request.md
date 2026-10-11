@@ -1962,33 +1962,39 @@ const reverseSpillover = totalRoomSales > 0
 {
   "summary": {
     "totalGolfReservedTeams": 132,
-    "totalGolfVisitedTeams": 44,
+    "totalGolfVisitedTeams": 0,
     "totalGolfCanceledTeams": 20,
-    "totalGolfPendingTeams": 68,
+    "totalGolfPendingTeams": 112,
     "golfPart1ReservedTeams": 48,
     "golfPart2ReservedTeams": 56,
     "golfPart3ReservedTeams": 28,
+    "golfPart1AvgGreenFee": 85000,
+    "golfPart2AvgGreenFee": 92000,
+    "golfPart3AvgGreenFee": 55000,
     "golfParts": {
       "part1": {
         "name": "1부 (오전)",
         "timeRange": "06:00~11:00",
         "reservedTeams": 48,
-        "visitedTeams": 44,
-        "pendingTeams": 4
+        "visitedTeams": 0,
+        "pendingTeams": 48,
+        "avgGreenFee": 85000
       },
       "part2": {
         "name": "2부 (오후)",
         "timeRange": "11:00~14:00",
         "reservedTeams": 56,
         "visitedTeams": 0,
-        "pendingTeams": 56
+        "pendingTeams": 56,
+        "avgGreenFee": 92000
       },
       "part3": {
         "name": "3부 (야간)",
         "timeRange": "14:00~마감",
         "reservedTeams": 28,
         "visitedTeams": 0,
-        "pendingTeams": 28
+        "pendingTeams": 28,
+        "avgGreenFee": 55000
       }
     }
   }
@@ -2002,6 +2008,8 @@ const reverseSpillover = totalRoomSales > 0
    - 1부: 티오프 시간 기준 06:00 ~ 11:00 (얼리 06~08시 포함 또는 골프장 공식 1부 편성 기준)
    - 2부: 티오프 시간 기준 11:00 ~ 14:00
    - 3부: 티오프 시간 기준 14:00 이후 ~ 야간 라이트 마감
-3. **실시간 원장 연동**: 골프 ERP(스마트스코어) 실시간 예약 테이블에서 당일(D-Day) 및 익일(D+1) 티타임 슬롯별 예약 팀수를 직접 집계하여 반환.
+3. **예약자 평균 그린피 산출**:
+   - 각 파트별 예약 건의 순수 계약/예약 그린피 합계 $\div$ 총 예약 인원수 (원 단위 정수).
+4. **실시간 원장 연동**: 골프 ERP(스마트스코어) 실시간 예약 테이블에서 당일(D-Day) 및 익일(D+1) 티타임 슬롯별 예약 팀수 및 평균 그린피를 직접 집계하여 반환.
 
 

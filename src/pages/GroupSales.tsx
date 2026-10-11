@@ -904,13 +904,13 @@ export default function GroupSales() {
             <div className="pt-3 border-t border-slate-700/60 space-y-2 text-xs font-financial">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-slate-400 block text-[11px]">세미나 매출 (점유율)</span>
+                  <span className="text-slate-400 block text-[11px]">세미나 숙박 매출 (점유율)</span>
                   <span className="font-extrabold text-slate-200">
                     {formatRevenue(seminarDayTypeStats.total.seminarRevenue)}원 ({seminarDayTypeStats.total.revenueSharePct.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[11px]">전년 동기 매출 (증감률)</span>
+                  <span className="text-slate-400 block text-[11px]">전년 동기 숙박 매출 (증감률)</span>
                   {seminarDayTypeStats.total.ly ? (
                     <span className="font-bold text-slate-300">
                       {formatRevenue(seminarDayTypeStats.total.ly.seminarRevenue)}원{' '}
@@ -1044,13 +1044,13 @@ export default function GroupSales() {
             <div className="pt-3 border-t border-indigo-800/60 space-y-2 text-xs font-financial">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-slate-400 block text-[11px]">주중 세미나 매출</span>
+                  <span className="text-slate-400 block text-[11px]">주중 세미나 숙박 매출</span>
                   <span className="font-extrabold text-slate-200">
                     {formatRevenue(seminarDayTypeStats.weekday.seminarRevenue)}원 ({seminarDayTypeStats.weekday.revenueSharePct.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[11px]">전년 주중 매출 (증감률)</span>
+                  <span className="text-slate-400 block text-[11px]">전년 주중 숙박 매출 (증감률)</span>
                   {seminarDayTypeStats.weekday.ly ? (
                     <span className="font-bold text-slate-300">
                       {formatRevenue(seminarDayTypeStats.weekday.ly.seminarRevenue)}원{' '}
@@ -1183,13 +1183,13 @@ export default function GroupSales() {
             <div className="pt-3 border-t border-slate-700/60 space-y-2 text-xs font-financial">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-slate-400 block text-[11px]">주말 세미나 매출</span>
+                  <span className="text-slate-400 block text-[11px]">주말 세미나 숙박 매출</span>
                   <span className="font-extrabold text-slate-200">
                     {formatRevenue(seminarDayTypeStats.weekend.seminarRevenue)}원 ({seminarDayTypeStats.weekend.revenueSharePct.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[11px]">전년 주말 매출 (증감률)</span>
+                  <span className="text-slate-400 block text-[11px]">전년 주말 숙박 매출 (증감률)</span>
                   {seminarDayTypeStats.weekend.ly ? (
                     <span className="font-bold text-slate-300">
                       {formatRevenue(seminarDayTypeStats.weekend.ly.seminarRevenue)}원{' '}
@@ -1348,7 +1348,7 @@ export default function GroupSales() {
           <div className="flex items-center justify-between">
             <span className="text-xs lg:text-sm font-semibold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
               <DollarSign size={16} className="text-brand-mint" /> 
-              <span>{isAllMode ? '전사 총 매출액' : '선택 채널 매출액'}</span>
+              <span>{isAllMode ? '전사 총 객실 매출액' : (isCurrentSeminar ? '세미나 숙박 매출액' : '선택 채널 매출액')}</span>
               <MetricExplainerTooltip presetKey="netRevenue" />
             </span>
             <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${

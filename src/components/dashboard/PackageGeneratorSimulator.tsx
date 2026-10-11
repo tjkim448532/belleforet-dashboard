@@ -102,7 +102,7 @@ export const ROOM_COST_MASTER: Record<string, RoomCostDetail> = {
     cleaningCost: 12325,
     linenLaunderingCost: 3670,
     amenityCost: 1518,
-    consumablesCost: 3353,
+    consumablesCost: 3354,
     utilityCost: 7327, // LPG 2,827원 + 수도 4,500원
     totalCostNet: 28194,
     totalCostGross: 31013,
@@ -116,7 +116,7 @@ export const ROOM_COST_MASTER: Record<string, RoomCostDetail> = {
       { item: '롤휴지 (2개)', amount: 787 },
       { item: '각티슈 (1개)', amount: 1500 },
       { item: '생수 (2병)', amount: 1000 },
-      { item: '위생 비닐봉투', amount: 66 }
+      { item: '위생 비닐봉투 (거실 48원+화장실 19원)', amount: 67 }
     ],
     utilityDetail: [
       { item: 'LPG 가스 (난방/온수)', amount: 2827, note: '1실/일 실측 가동률 45% 기준' },
@@ -155,7 +155,7 @@ export const ROOM_COST_MASTER: Record<string, RoomCostDetail> = {
     cleaningCost: 37075, // 12,325 + 24,750
     linenLaunderingCost: 10430, // 3,670 + 6,760
     amenityCost: 3036, // 1,518 * 2
-    consumablesCost: 10293, // 3,353 + 6,940
+    consumablesCost: 10294, // 3,354 + 6,940
     utilityCost: 17481, // 7,327 + 10,154
     totalCostNet: 78316,
     totalCostGross: 86147,
@@ -164,7 +164,7 @@ export const ROOM_COST_MASTER: Record<string, RoomCostDetail> = {
       { item: '35평 린넨 전체 세탁', unitPrice: 6760, qty: 1, amount: 6760 }
     ],
     consumableDetail: [
-      { item: '16평 소모품 일체', amount: 3353 },
+      { item: '16평 소모품 일체', amount: 3354 },
       { item: '35평 소모품 일체', amount: 6940 }
     ],
     utilityDetail: [

@@ -168,6 +168,10 @@ export default function Home() {
               <GlobalDatePicker />
             </div>
           </div>
+          <div className="flex items-center gap-2.5 mb-4 bg-white/10 backdrop-blur-md text-white text-xs px-4 py-2 rounded-full w-fit border border-white/20 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-medium">벨포레 실시간 리조트 경영 데이터를 안전하게 동기화하고 있습니다...</span>
+          </div>
           <SkeletonBentoGrid />
         </div>
       </div>
@@ -1200,7 +1204,7 @@ export default function Home() {
                 </div>
 
                 {/* 콘도(객실) 예약 및 익일 체크인 현황 */}
-                <CondoReservationCard currentDate={startDate} />
+                <CondoReservationCard currentDate={startDate} todayCoreData={coreData.core} />
               </div>
             </div>
           </div>

@@ -87,13 +87,16 @@ export default function FacilityTrend() {
               const exRev = item.exGolfRevenue !== undefined && item.exGolfRevenue !== null
                 ? Math.round(Number(item.exGolfRevenue))
                 : Math.max(0, totRev - gRev);
+              const totVisitors = item.totalVisitors !== undefined && item.totalVisitors !== null
+                ? Math.round(Number(item.totalVisitors))
+                : (guestsMap[mKey] || 0);
 
               monthlyDataMap.set(mKey, {
                 revenue: totRev,
                 totalRevenue: totRev,
                 golfRevenue: gRev,
                 exGolfRevenue: exRev,
-                visitors: guestsMap[mKey] || 0
+                visitors: totVisitors
               });
             });
           }

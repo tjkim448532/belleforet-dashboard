@@ -585,17 +585,15 @@ export default function LeisureUsageRate() {
     availableYears.forEach((yr) => {
       let v = 0;
       let g = 0;
-      const validRates: number[] = [];
       targetRows.forEach((r) => {
         const item = r[yr] as LeisureYoyYearData | undefined;
         if (item) {
           v += item.visitors;
           g += item.roomGuests;
-          if (item.usageRate > 0) validRates.push(item.usageRate);
         }
       });
-      const usageRate = validRates.length > 0 
-        ? Math.round((validRates.reduce((a, b) => a + b, 0) / validRates.length) * 10) / 10 
+      const usageRate = g > 0 
+        ? Math.round((v / g) * 1000) / 10 
         : 0;
       result[yr] = { visitors: v, roomGuests: g, usageRate };
     });
@@ -626,17 +624,15 @@ export default function LeisureUsageRate() {
       selectedMatrixYears.forEach((yr) => {
         let v = 0;
         let g = 0;
-        const validRates: number[] = [];
         targetRows.forEach((r) => {
           const item = r[yr] as LeisureYoyYearData | undefined;
           if (item) {
             v += item.visitors;
             g += item.roomGuests;
-            if (item.usageRate > 0) validRates.push(item.usageRate);
           }
         });
-        const usageRate = validRates.length > 0
-          ? Math.round((validRates.reduce((a, b) => a + b, 0) / validRates.length) * 10) / 10
+        const usageRate = g > 0
+          ? Math.round((v / g) * 1000) / 10
           : 0;
         result[key][yr] = { visitors: v, roomGuests: g, usageRate };
       });

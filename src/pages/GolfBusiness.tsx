@@ -128,13 +128,21 @@ export default function GolfBusiness() {
     c !== greenFeeItem && c !== cartFeeItem && c !== startHouseItem && c !== restaurantItem && c !== proShopItem
   );
 
-  const totalCourseRevenue = Math.round((greenFeeItem?.revenue || 0) + (cartFeeItem?.revenue || 0));
+  const totalCourseRevenue = (summary as any).courseCoreRevenue !== undefined
+    ? Number((summary as any).courseCoreRevenue)
+    : Math.round((greenFeeItem?.revenue || 0) + (cartFeeItem?.revenue || 0));
+
   const etcRevenue = etcItems.reduce((acc, c) => acc + (c.revenue || 0), 0);
   const etcQuantity = etcItems.reduce((acc, c) => acc + (c.quantity || 0), 0);
   const etcSharePct = Number(etcItems.reduce((acc, c) => acc + (c.revenueSharePct || 0), 0).toFixed(2));
 
-  const totalAmenityRevenue = Math.round((startHouseItem?.revenue || 0) + (restaurantItem?.revenue || 0) + (proShopItem?.revenue || 0) + etcRevenue);
-  const totalAmenityQuantity = (startHouseItem?.quantity || 0) + (restaurantItem?.quantity || 0) + (proShopItem?.quantity || 0) + etcQuantity;
+  const totalAmenityRevenue = (summary as any).amenityRevenue !== undefined
+    ? Number((summary as any).amenityRevenue)
+    : Math.round((startHouseItem?.revenue || 0) + (restaurantItem?.revenue || 0) + (proShopItem?.revenue || 0) + etcRevenue);
+
+  const totalAmenityQuantity = (summary as any).amenityQuantity !== undefined
+    ? Number((summary as any).amenityQuantity)
+    : (startHouseItem?.quantity || 0) + (restaurantItem?.quantity || 0) + (proShopItem?.quantity || 0) + etcQuantity;
 
   const courseCoreRatio = (summary as any).courseCoreRatio ?? Number(((greenFeeItem?.revenueSharePct || 0) + (cartFeeItem?.revenueSharePct || 0)).toFixed(1));
   const amenityRatio = (summary as any).amenityRatio ?? (Number(courseCoreRatio) > 0 ? Number((100 - Number(courseCoreRatio)).toFixed(1)) : 0);

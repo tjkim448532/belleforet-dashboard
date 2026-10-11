@@ -403,6 +403,8 @@ export default function GroupSales() {
       const isSeminar = chName.includes('단체') || chName.includes('세미나');
       const seminarAdr = isSeminar && seminarShare?.total?.averageAdr ? seminarShare.total.averageAdr : 0;
       const subtotalAdr = Number(items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal)?.adr ?? 0);
+      const calculatedChannelAdr = chRooms > 0 ? Math.round(chRev / chRooms) : 0;
+      const channelAdr = seminarAdr > 0 ? seminarAdr : (subtotalAdr > 0 ? subtotalAdr : calculatedChannelAdr);
       const groupGuests = chGuests;
 
       groups.push({
@@ -412,7 +414,7 @@ export default function GroupSales() {
         totalRooms: chRooms,
         totalRevenue: chRev,
         totalGuests: groupGuests,
-        averageAdr: seminarAdr || subtotalAdr,
+        averageAdr: channelAdr,
         revenueSharePct: grandRevenue > 0 ? (chRev / grandRevenue) * 100 : 0,
         items: segItems
       });
@@ -423,13 +425,16 @@ export default function GroupSales() {
 
     const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => a.localeCompare(b));
 
+    const grandCalculatedAdr = grandRooms > 0 ? Math.round(grandRevenue / grandRooms) : 0;
+    const rawSummaryAdr = Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0);
+
     return {
       channelGroups: groups,
       grandTotals: {
         revenue: grandRevenue,
         rooms: grandRooms,
         guests: grandGuests,
-        adr: Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
+        adr: rawSummaryAdr > 0 ? rawSummaryAdr : grandCalculatedAdr
       },
       uniqueRoomTypes: sortedRoomTypes,
       availableChannels: groups.map(g => g.channelName)
@@ -1451,7 +1456,7 @@ export default function GroupSales() {
             <p className="text-[11px] text-slate-400 mt-1">
               {isCurrentSeminar && seminarDayTypeStats.total.averageAdr > 0 
                 ? '백엔드 공인 세미나 통합 ADR (주중/주말 가중평균)' 
-                : '해당 채널 매출액 ÷ 판매 객실수'}
+                : (isAllMode ? '전사 객실 총매출 ÷ 전체 판매 객실수' : '해당 채널 매출액 ÷ 판매 객실수')}
             </p>
           </div>
         </div>

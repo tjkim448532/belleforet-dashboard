@@ -47,7 +47,7 @@ export default function FacilityTrend() {
     setLoading(true);
     try {
       if (selectedFacility === '전체') {
-        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends, /api/v6/report/room-guests-yoy, /api/v6/report/leisure-yoy-matrix)
+        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 연도별 VM 및 Ticket 17 totalVisitors 완제품)
         const [res2024, res2025, res2026, guestsRes, leisureRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2024`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2025`).catch(() => null),
@@ -78,10 +78,11 @@ export default function FacilityTrend() {
         }>();
 
         const appendYear = (res: any) => {
-          if (res && Array.isArray(res.data)) {
-            res.data.forEach((item: any) => {
+          const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+          if (list.length > 0) {
+            list.forEach((item: any) => {
               const rawM = String(item.month);
-              const mKey = `${rawM.substring(0, 4)}-${rawM.substring(4, 6)}`;
+              const mKey = rawM.includes('-') ? rawM : `${rawM.substring(0, 4)}-${rawM.substring(4, 6)}`;
               const totRev = Math.round(Number(item.totalRevenue ?? item.revenue ?? 0));
               const gRev = Math.round(Number(item.golfRevenue ?? 0));
               const exRev = item.exGolfRevenue !== undefined && item.exGolfRevenue !== null

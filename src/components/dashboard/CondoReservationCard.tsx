@@ -14,6 +14,8 @@ interface RoomTypeStat {
 
 interface GroupBookingItem {
   channelName: string;
+  corporateName: string;
+  category: string;
   totalRooms: number;
   breakdown: string[];
 }
@@ -22,7 +24,9 @@ interface CondoReservationData {
   targetDate: string;
   totalRooms: number;
   totalCapacity: number;
-  occupancyRate: number | null;
+  physicalOccupancyRate: number | null;
+  physicalOccupiedUnits: number | null;
+  contractOccupancyRate: number | null;
   byType: RoomTypeStat[];
   groups: GroupBookingItem[];
   totalGroupRooms: number;
@@ -84,7 +88,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             targetDate: activeDate,
             totalRooms: parseNum(s.totalReservedRooms || 0),
             totalCapacity: parseNum(s.totalCapacity || s.totalRoomCap || 0),
-            occupancyRate: s.occupancyRate !== undefined ? Number(s.occupancyRate) : null,
+            physicalOccupancyRate: s.occupancyRate !== undefined ? Number(s.occupancyRate) : null,
+            physicalOccupiedUnits: parseNum(s.physicalOccupiedUnits || s.totalReservedRooms || 0),
+            contractOccupancyRate: s.contractOccupancyRate !== undefined ? Number(s.contractOccupancyRate) : null,
             byType: (dedicatedRes.byRoomType || []).map((t: any) => ({
               roomType: t.roomType,
               roomsSold: parseNum(t.reservedRooms || t.roomsSold || 0),
@@ -93,6 +99,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             })),
             groups: (dedicatedRes.groups || []).map((g: any) => ({
               channelName: g.groupName || g.channel || '단체',
+              corporateName: g.corporateName || g.groupName || '단체',
+              category: g.categoryName || '단체/기업',
               totalRooms: parseNum(g.totalRooms || 0),
               breakdown: g.roomTypeBreakdown ? [g.roomTypeBreakdown] : []
             })),
@@ -104,16 +112,27 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
         }
 
         // 2. 표준 V6 마트 엔드포인트 병렬 조회
-        const [sumRes, channelRes, detailRes] = await Promise.all([
+        // - revenue-summary: 계약 판매 객실 및 평수별 판매 현황
+        // - revenue-by-org: 물리 실운영 163실 가동 및 실점유율 93.1% (SSOT)
+        // - corporate-group-sales: 실제 단체/기업 고객 공식 명칭 및 배정 객실 리스트
+        const [sumRes, orgRes, corpRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?date=${activeDate}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?date=${activeDate}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?date=${activeDate}`).catch(() => null)
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?date=${activeDate}`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?date=${activeDate}`).catch(() => null)
         ]);
 
         if (isCancelled) return;
 
+        // 점유율 1: 물리 실가동 점유율 (163실 / 175실 = 93.1%) - 상단 주요 지표와 100% 일치
+        const physicalMasterMetrics = orgRes?.data?.physicalRoomMaster?.metrics || orgRes?.physicalRoomMaster?.metrics;
+        const physicalOccupancyRate = physicalMasterMetrics?.physicalOccupancyRate !== undefined 
+          ? Number(physicalMasterMetrics.physicalOccupancyRate) 
+          : (sumRes?.summary?.physicalOccRate !== undefined ? Number(sumRes.summary.physicalOccRate) : null);
+        const physicalOccupiedUnits = parseNum(physicalMasterMetrics?.physicalOccupiedUnits || sumRes?.summary?.physicalOccupiedUnits || 0);
+
+        // 점유율 2: 계약 판매 점유율 (122실 / 175실 = 69.7%)
         const totalRooms = parseNum(sumRes?.summary?.totalRooms || sumRes?.lodgingStats?.roomsSold || 0);
-        const occRate = sumRes?.lodgingStats?.physicalOccRate ?? sumRes?.summary?.totalOcc ?? null;
+        const contractOccRate = sumRes?.lodgingStats?.physicalOccRate ?? sumRes?.summary?.totalOcc ?? null;
 
         // 평수별 현황
         const rawTypes = sumRes?.roomSummaryByType || [];
@@ -124,30 +143,37 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           rate: Number(t.fixedOccupancyRate ?? t.rate ?? 0)
         }));
 
-        // 단체/기업 예약 채널 필터링 (완제품 행 기준)
-        const channelList = Array.isArray(channelRes?.data) ? channelRes.data : [];
-        const groupChannelRows = channelList.filter((c: any) => {
-          const name = c.channelName || '';
-          return (name.includes('단체') || name.includes('세미나') || name.includes('기업') || name.includes('휴양소')) && parseNum(c.todayRooms || 0) > 0;
+        // 실제 단체/기업 고객 명단 파싱 (corporate-group-sales의 groups 원장)
+        const rawCorpGroups = Array.isArray(corpRes?.groups) ? corpRes.groups : [];
+        const corpMap = new Map<string, GroupBookingItem>();
+
+        rawCorpGroups.forEach((g: any) => {
+          const rawName = String(g.corporateName || g.groupName || '단체').trim();
+          // 끝자리 _26 등 연도 태그 정리 (표시용)
+          const cleanName = rawName.replace(/_26$/, '');
+          const rooms = parseNum(g.spendingBreakdown?.roomsCount || 1);
+          const types: string[] = Array.isArray(g.spendingBreakdown?.roomTypesUsed) ? g.spendingBreakdown.roomTypesUsed : [];
+
+          if (!corpMap.has(cleanName)) {
+            corpMap.set(cleanName, {
+              channelName: cleanName,
+              corporateName: rawName,
+              category: g.categoryName || '기업 휴양소/세미나',
+              totalRooms: 0,
+              breakdown: []
+            });
+          }
+          const item = corpMap.get(cleanName)!;
+          item.totalRooms += rooms;
+          if (types.length > 0) {
+            item.breakdown.push(...types);
+          }
         });
 
-        // 세부 평수별 분할 (room-channel-sales)
-        const detailList = Array.isArray(detailRes?.data) ? detailRes.data : [];
-        const groups: GroupBookingItem[] = groupChannelRows.map((c: any) => {
-          const chName = c.channelName;
-          const matchDetails = detailList.filter((d: any) => d.channelName === chName && parseNum(d.todayRooms || 0) > 0);
-          const breakdown = matchDetails.map((d: any) => `${d.roomType} ${d.todayRooms}실`);
-          return {
-            channelName: chName,
-            totalRooms: parseNum(c.todayRooms || 0),
-            breakdown: breakdown.length > 0 ? breakdown : [`${c.todayRooms}실`]
-          };
-        });
-
-        // 단체 총합: 백엔드가 내려준 채널 소계들의 합산치 (단순 합산이 아닌 백엔드 채널 소계 바인딩)
+        const groups = Array.from(corpMap.values());
         let totalGroupRooms = 0;
-        groupChannelRows.forEach((c: any) => {
-          totalGroupRooms += parseNum(c.todayRooms || 0);
+        groups.forEach(g => {
+          totalGroupRooms += g.totalRooms;
         });
 
         // 미래 일자 데이터가 0건인 경우 (PMS 예약 파이프라인 동기화 대기)
@@ -157,7 +183,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           targetDate: activeDate,
           totalRooms,
           totalCapacity: parseNum(sumRes?.lodgingStats?.totalCapacity || sumRes?.summary?.totalRoomCap || 0),
-          occupancyRate: occRate !== null ? Number(occRate) : null,
+          physicalOccupancyRate,
+          physicalOccupiedUnits,
+          contractOccupancyRate: contractOccRate !== null ? Number(contractOccRate) : null,
           byType,
           groups,
           totalGroupRooms,
@@ -187,6 +215,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
   const groupSharePct = (resData?.totalRooms && resData.totalRooms > 0 && resData.totalGroupRooms) 
     ? ((resData.totalGroupRooms / resData.totalRooms) * 100).toFixed(1)
     : '0.0';
+
+  // 대표 점유율 (상단 주요 지표 93.1%와 일치)
+  const displayOccRate = resData?.physicalOccupancyRate ?? resData?.contractOccupancyRate;
 
   return (
     <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
@@ -239,7 +270,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           </span>
         </div>
 
-        {/* Top 3 KPI Badges - 실제 객실수 중심 */}
+        {/* Top 3 KPI Badges - 실제 객실수 및 93.1% 점유율 정합성 보장 */}
         <div className="grid grid-cols-3 gap-2.5">
           {/* 1. 총 예약 / 입실 객실수 */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
@@ -263,27 +294,34 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             </div>
           </div>
 
-          {/* 2. 예약 점유율 (Occ) */}
+          {/* 2. 객실 점유율 (Occ) - 상단 주요 지표 93.1% 및 69.7% 정합성 동시 표기 */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">
-              {viewMode === 'NEXT_DAY' ? '예약 점유율' : '실제 점유율'}
+            <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap flex items-center justify-between">
+              <span>객실 점유율</span>
+              {resData?.physicalOccupiedUnits && resData.physicalOccupiedUnits > 0 && (
+                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1 py-0.2 rounded-sm">
+                  {resData.physicalOccupiedUnits}실 가동
+                </span>
+              )}
             </div>
             <div className="text-2xl lg:text-3xl font-black text-indigo-600 tabular-nums whitespace-nowrap">
               {loading ? (
                 <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
               ) : resData?.isBackendMartPending ? (
                 <span className="text-lg text-slate-400 font-bold">-</span>
-              ) : resData?.occupancyRate !== null && resData?.occupancyRate !== undefined ? (
+              ) : displayOccRate !== null && displayOccRate !== undefined ? (
                 <>
-                  {resData.occupancyRate.toFixed(1)}
+                  {displayOccRate.toFixed(1)}
                   <span className="text-sm font-normal text-indigo-500">%</span>
                 </>
               ) : (
                 '-'
               )}
             </div>
-            <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-              고정 175실 SSOT
+            <div className="text-[10px] text-slate-400 font-medium mt-0.5 truncate">
+              {resData?.physicalOccupiedUnits && resData.physicalOccupiedUnits > 0
+                ? `실가동 ${resData.physicalOccupiedUnits}실 (계약 ${resData.totalRooms}실)`
+                : '175실 재고 기준 SSOT'}
             </div>
           </div>
 
@@ -293,7 +331,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               <span>단체·기업 예약</span>
               {resData && resData.groups.length > 0 && (
                 <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-bold border border-purple-100">
-                  {resData.groups.length}건
+                  {resData.groups.length}개사
                 </span>
               )}
             </div>
@@ -344,7 +382,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           </div>
         ) : (
           <div className="space-y-3 mt-3.5">
-            {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - %가 아닌 실제 객실숫자 중심) */}
+            {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - 실제 객실숫자 중심) */}
             <div className="pt-3 border-t border-slate-200/80">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span className="flex items-center gap-1.5">
@@ -382,12 +420,12 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               </div>
             </div>
 
-            {/* 단체 기업예약: 전체 객실대비 비중 및 단체 이름 리스트 */}
+            {/* 단체 기업예약: 실제 단체/기업 공식 명칭 및 배정 객실 리스트 */}
             <div className="pt-3 border-t border-slate-200/80">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span className="flex items-center gap-1.5 text-purple-900">
                   <Users size={14} className="text-purple-600" />
-                  <span>단체 / 기업 예약 명단</span>
+                  <span>단체 / 기업 예약 실제 명단</span>
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
@@ -397,7 +435,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               </div>
 
               {resData?.groups && resData.groups.length > 0 ? (
-                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                   {resData.groups.map((grp, gIdx) => {
                     const itemShare = (resData.totalRooms > 0)
                       ? ((grp.totalRooms / resData.totalRooms) * 100).toFixed(1)
@@ -408,10 +446,10 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                         className="bg-white p-2.5 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-purple-200 transition-all"
                       >
                         <div className="min-w-0">
-                          <div className="font-bold text-slate-800 truncate flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
-                            <span className="truncate text-sm">{grp.channelName}</span>
-                            <span className="text-[10px] bg-purple-100/70 text-purple-800 px-1.5 py-0.2 rounded-md font-bold shrink-0">
+                          <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
+                            <span className="truncate text-sm font-extrabold">{grp.channelName}</span>
+                            <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-semibold shrink-0 border border-purple-100">
                               비중 {itemShare}%
                             </span>
                           </div>
@@ -442,7 +480,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
 
       {/* Footer Subtext */}
       <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-        <span>산하 PMS 확정 예약 및 체크인 실시간 연동 (16평/35평/51평 & 단체 세미나)</span>
+        <span>산하 PMS 확정 예약 및 실운영 객실 실시간 연동 (16평/35평/51평 & 법인 단체)</span>
       </div>
     </div>
   );

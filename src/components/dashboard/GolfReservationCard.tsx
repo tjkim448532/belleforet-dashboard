@@ -112,7 +112,6 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
   }, [nextDateStr]);
 
   const todayCanceledAndPending = (todaySummary.canceledTeams || 0) + (todaySummary.pendingTeams || 0);
-  const nextDayCanceledAndPending = (nextDayGolf?.canceledTeams ?? 0) + (nextDayGolf?.pendingTeams ?? 0);
 
   return (
     <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
@@ -201,41 +200,41 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
                 )}
               </div>
               <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                도착 예약 총계
+                전체 예약 접수
               </div>
             </div>
 
-            {/* 다음날 실제 체크인 (내장) */}
+            {/* 다음날 도착 예정 (유효 예약 = 총예약 - 취소) */}
             <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">체크인 (내장)</div>
+              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">도착 예정 (유효 예약)</div>
               <div className="text-2xl lg:text-3xl font-black text-teal-600 tabular-nums whitespace-nowrap">
                 {loading ? (
                   <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
                 ) : (
                   <>
-                    {nextDayGolf?.visitedTeams ?? 0} <span className="text-sm font-normal text-slate-500">팀</span>
+                    {Math.max(0, (nextDayGolf?.reservedTeams ?? 0) - (nextDayGolf?.canceledTeams ?? 0))} <span className="text-sm font-normal text-slate-500">팀</span>
                   </>
                 )}
               </div>
               <div className="text-[10px] text-teal-700 font-semibold mt-0.5">
-                {(nextDayGolf?.visitedTeams ?? 0) > 0 ? `체크인 ${nextDayGolf?.visitedTeams}팀 완료` : '내장 대기 중'}
+                취소 제외 라운딩 예정
               </div>
             </div>
 
-            {/* 다음날 취소 / 내장 대기 */}
+            {/* 다음날 예약 취소 */}
             <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-600 font-semibold mb-1 whitespace-nowrap">취소 / 내장 대기</div>
-              <div className="text-2xl lg:text-3xl font-black text-slate-800 tabular-nums whitespace-nowrap">
+              <div className="text-xs text-rose-500 font-semibold mb-1 whitespace-nowrap">예약 취소</div>
+              <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums whitespace-nowrap">
                 {loading ? (
                   <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
                 ) : (
                   <>
-                    {nextDayCanceledAndPending} <span className="text-sm font-normal text-slate-500">팀</span>
+                    {nextDayGolf?.canceledTeams ?? 0} <span className="text-sm font-normal text-slate-500">팀</span>
                   </>
                 )}
               </div>
               <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
-                {`취소 ${nextDayGolf?.canceledTeams ?? 0}팀 · 대기 ${nextDayGolf?.pendingTeams ?? 0}팀`}
+                취소율 {((nextDayGolf?.reservedTeams ?? 0) > 0 ? (((nextDayGolf?.canceledTeams ?? 0) / (nextDayGolf?.reservedTeams ?? 1)) * 100).toFixed(1) : '0.0')}%
               </div>
             </div>
           </div>

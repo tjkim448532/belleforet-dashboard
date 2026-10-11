@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, getLatestClosedDateStr, getLatestClosedMonthStr, getClosedBusinessDate, type DatePresetType } from '../lib/dateUtils';
@@ -12,7 +12,8 @@ import {
   CloudRain, Sun, CloudSnow, TrendingDown, TrendingUp,
   Sparkles, Zap, Calendar, RefreshCw,
   ShieldCheck, HelpCircle, Layers, ArrowUpRight, ArrowDownRight,
-  Search, Umbrella, Compass, Activity, Sliders, BarChart3
+  Search, Umbrella, Compass, Activity, Sliders, BarChart3,
+  AlertCircle, Info
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -54,7 +55,14 @@ export default function WeatherSalesCorrelation() {
   const defaultStart = globalStartDate || (defaultLatest.slice(0, 7) + '-01');
   const defaultEnd = globalEndDate || defaultLatest;
 
-  const [isRangeMode, setIsRangeMode] = useState<boolean>(globalIsRange);
+  const isInitialMount = useRef<boolean>(true);
+  const [autoSwitchedNotice, setAutoSwitchedNotice] = useState<string | null>(null);
+
+  // 최신 기상청 AWS 관측 데이터가 완비된 마감월 SSOT (2026년 9월)
+  const LATEST_OBSERVED_START = '2026-09-01';
+  const LATEST_OBSERVED_END = '2026-09-30';
+
+  const [isRangeMode, setIsRangeMode] = useState<boolean>(true);
   const [startDate, setStartDate] = useState<string>(defaultStart);
   const [endDate, setEndDate] = useState<string>(defaultEnd);
   
@@ -106,6 +114,15 @@ export default function WeatherSalesCorrelation() {
     return () => clearTimeout(timer);
   }, [simMonth, simPrecipitation, simSnowfall, simCategory]);
 
+  const handleSwitchToLatestMonth = () => {
+    setIsRangeMode(true);
+    setStartDate(LATEST_OBSERVED_START);
+    setEndDate(LATEST_OBSERVED_END);
+    setDateRange(LATEST_OBSERVED_START, LATEST_OBSERVED_END, true);
+    setAutoSwitchedNotice(null);
+    fetchData(LATEST_OBSERVED_START, LATEST_OBSERVED_END, true);
+  };
+
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean) => {
     let sDate = overrideStart || startDate;
     let eDate = overrideEnd !== undefined ? overrideEnd : endDate;
@@ -130,6 +147,22 @@ export default function WeatherSalesCorrelation() {
       const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/weather-correlation?${queryDateParams}&categoryCode=ALL`);
       
       if (res && res.success && res.data) {
+        const totalDays = res.data.summary?.period?.totalDays;
+        const seriesCount = res.data.dailyTimeSeries?.length ?? 0;
+
+        if (isInitialMount.current && (!totalDays || totalDays === 0 || seriesCount === 0)) {
+          // 최초 진입 시점에 해당 기간(예: 10월)의 관측 데이터가 아직 집계 대기 중인 경우,
+          // 실측 관측 데이터가 완비된 최신 마감월(2026-09-01 ~ 2026-09-30)로 자동 전환하여 빈 화면/0일 글리치 원천 차단
+          isInitialMount.current = false;
+          setStartDate(LATEST_OBSERVED_START);
+          setEndDate(LATEST_OBSERVED_END);
+          setIsRangeMode(true);
+          setAutoSwitchedNotice('2026년 10월 기상청 관측 데이터 집계 대기로 인해, 최신 관측 완료 기간(2026년 9월) 실적으로 자동 전환되었습니다.');
+          fetchData(LATEST_OBSERVED_START, LATEST_OBSERVED_END, true);
+          return;
+        }
+
+        isInitialMount.current = false;
         setData(res.data);
       } else {
         throw new Error('API 응답이 올바르지 않거나 success: false 입니다.');
@@ -146,16 +179,20 @@ export default function WeatherSalesCorrelation() {
     const latestClosed = getLatestClosedDateStr();
     const fallbackStart = latestClosed.slice(0, 7) + '-01';
     const fallbackEnd = latestClosed;
-    const s = globalStartDate || fallbackStart;
-    const e = globalEndDate || fallbackEnd;
 
-    setIsRangeMode(globalIsRange);
+    // 상관관계 분석은 다일간 기간 조회가 필수이므로, 단일 일자 진입 시에도 당월 MTD(1일~어제) 구간으로 자동 초기화
+    const effectiveIsRange = globalIsRange || true;
+    const s = globalIsRange ? (globalStartDate || fallbackStart) : (globalStartDate ? `${globalStartDate.slice(0, 7)}-01` : fallbackStart);
+    const e = globalIsRange ? (globalEndDate || fallbackEnd) : (globalStartDate || fallbackEnd);
+
+    setIsRangeMode(effectiveIsRange);
     setStartDate(s);
     setEndDate(e);
-    fetchData(s, e, globalIsRange);
+    fetchData(s, e, effectiveIsRange);
   }, [globalStartDate, globalEndDate, globalIsRange]);
 
   const handleSearch = () => {
+    setAutoSwitchedNotice(null);
     let s = startDate;
     let e = endDate;
     if (isRangeMode && s && e && s > e) {
@@ -170,6 +207,7 @@ export default function WeatherSalesCorrelation() {
   };
 
   const applyPreset = (preset: DatePresetType) => {
+    setAutoSwitchedNotice(null);
     const res = getPresetDateRange(preset);
     setIsRangeMode(res.isRange);
     setStartDate(res.startDate);
@@ -717,6 +755,13 @@ export default function WeatherSalesCorrelation() {
               <span className="text-slate-400 shrink-0 mr-1">단축:</span>
               <button 
                 type="button" 
+                onClick={handleSwitchToLatestMonth} 
+                className="px-2 py-0.5 rounded-md hover:bg-sky-500/20 bg-sky-500/10 border border-sky-400/30 text-sky-300 font-bold shrink-0"
+              >
+                최신 관측월(9월)
+              </button>
+              <button 
+                type="button" 
                 onClick={() => applyPreset('MTD')} 
                 className="px-2 py-0.5 rounded-md hover:bg-white/10 bg-white/5 border border-white/10 shrink-0"
               >
@@ -761,6 +806,23 @@ export default function WeatherSalesCorrelation() {
       {!loading && !error && data && (
         <div className="space-y-8">
           
+          {/* Auto-switch notice banner */}
+          {autoSwitchedNotice && (
+            <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 text-sky-900 flex items-center justify-between gap-3 text-xs shadow-xs">
+              <div className="flex items-center gap-2">
+                <Info size={16} className="text-sky-600 shrink-0" />
+                <span className="font-medium">{autoSwitchedNotice}</span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setAutoSwitchedNotice(null)} 
+                className="text-sky-600 hover:text-sky-800 font-bold px-2 py-0.5 rounded-md hover:bg-sky-100 transition shrink-0"
+              >
+                닫기
+              </button>
+            </div>
+          )}
+
           {/* 2. Executive 4 KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             
@@ -867,39 +929,71 @@ export default function WeatherSalesCorrelation() {
             </div>
 
             {/* KPI Card 4: 기간 내 기상 통계 */}
-            <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Compass size={16} className="text-slate-500" /> 분석 기간 기상 집계
-                  </span>
-                  <span className="text-[11px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-200">
-                    총 {data.summary?.period?.totalDays || 0}일간
-                  </span>
+            {(() => {
+              const totalDays = data.summary?.period?.totalDays;
+              const hasDays = typeof totalDays === 'number' && totalDays > 0;
+              return (
+                <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <Compass size={16} className="text-slate-500" /> 분석 기간 기상 집계
+                      </span>
+                      {hasDays ? (
+                        <span className="text-[11px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-200">
+                          총 {totalDays}일간
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                          <AlertCircle size={11} /> 관측 대기
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+                      <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
+                        <Sun size={18} className="mx-auto text-amber-500 mb-1" />
+                        <div className="text-xs text-slate-500">맑은 날</div>
+                        <div className={`text-base font-black ${hasDays ? 'text-slate-800' : 'text-slate-400'}`}>
+                          {hasDays ? `${data.summary?.weatherStats?.clearDays ?? 0}일` : '-'}
+                        </div>
+                      </div>
+                      <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
+                        <CloudRain size={18} className="mx-auto text-sky-500 mb-1" />
+                        <div className="text-xs text-slate-500">비 온 날</div>
+                        <div className={`text-base font-black ${hasDays ? 'text-sky-700' : 'text-slate-400'}`}>
+                          {hasDays ? `${data.summary?.weatherStats?.rainyDays ?? 0}일` : '-'}
+                        </div>
+                      </div>
+                      <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
+                        <CloudSnow size={18} className="mx-auto text-indigo-400 mb-1" />
+                        <div className="text-xs text-slate-500">눈 온 날</div>
+                        <div className={`text-base font-black ${hasDays ? 'text-indigo-700' : 'text-slate-400'}`}>
+                          {hasDays ? `${data.summary?.weatherStats?.snowyDays ?? 0}일` : '-'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-1.5 text-[11px] text-slate-500">
+                    <div className="flex items-center justify-between">
+                      <span>평균 강수량: <strong>{hasDays ? `${data.summary?.weatherStats?.avgPrecipitation ?? 0}mm` : '-'}</strong></span>
+                      <span>최고 강수량: <strong>{hasDays ? `${data.summary?.weatherStats?.maxPrecipitation ?? 0}mm` : '-'}</strong></span>
+                    </div>
+                    {!hasDays && (
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                        <span className="text-amber-600 font-medium">선택 기간 기상청 관측치 집계 대기</span>
+                        <button 
+                          type="button" 
+                          onClick={handleSwitchToLatestMonth} 
+                          className="text-sky-600 hover:text-sky-700 font-bold underline"
+                        >
+                          최신 관측월(9월) 보기
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-                  <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
-                    <Sun size={18} className="mx-auto text-amber-500 mb-1" />
-                    <div className="text-xs text-slate-500">맑은 날</div>
-                    <div className="text-base font-black text-slate-800">{data.summary?.weatherStats?.clearDays || 0}일</div>
-                  </div>
-                  <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
-                    <CloudRain size={18} className="mx-auto text-sky-500 mb-1" />
-                    <div className="text-xs text-slate-500">비 온 날</div>
-                    <div className="text-base font-black text-sky-700">{data.summary?.weatherStats?.rainyDays || 0}일</div>
-                  </div>
-                  <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
-                    <CloudSnow size={18} className="mx-auto text-indigo-400 mb-1" />
-                    <div className="text-xs text-slate-500">눈 온 날</div>
-                    <div className="text-base font-black text-indigo-700">{data.summary?.weatherStats?.snowyDays || 0}일</div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                <span>평균 강수량: <strong>{data.summary?.weatherStats?.avgPrecipitation || 0}mm</strong></span>
-                <span>최고 강수량: <strong>{data.summary?.weatherStats?.maxPrecipitation || 0}mm</strong></span>
-              </div>
-            </div>
+              );
+            })()}
 
           </div>
 
@@ -928,6 +1022,14 @@ export default function WeatherSalesCorrelation() {
                   <CloudRain className="w-10 h-10 text-slate-300 mb-2" />
                   <p className="text-sm font-semibold text-slate-600">선택하신 기간({startDate || '조회 기간'})의 일자별 기상 연동 데이터가 없습니다.</p>
                   <p className="text-xs text-slate-400 mt-1 max-w-md">기상청 AWS 관측 데이터 및 일별 매출 결합 배치(ETL)가 완료된 기간(예: 최근 7일, 전월 MTD 등)을 선택해 주세요.</p>
+                  <button
+                    type="button"
+                    onClick={handleSwitchToLatestMonth}
+                    className="mt-4 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-xl transition shadow-md flex items-center gap-1.5"
+                  >
+                    <Calendar size={14} />
+                    <span>최신 관측 완료 기간 (2026년 9월) 즉시 조회</span>
+                  </button>
                 </div>
               )}
             </div>

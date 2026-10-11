@@ -18,6 +18,9 @@
 | **P2 (보통)** | API 보강 | **기간 조회 시 전년 동기(YoY) 누적 완제품 제공** | 프론트엔드 직접 합산 금지(무관용) 원칙에 따른 백엔드 완제품 누적 블록 제공 (`leisure-yoy-matrix` 등) |
 | **P2 (보통)** | 메타데이터 | **가용객실(Capacity) 및 판매객실(Sold Rooms) 카운팅 기준 명시** | 조립형 커넥팅룸 왜곡 방지 및 모수 산출 기준(1,080실 고정, PMS 체크인 기준) 공식 메타데이터 제공 |
 | **P3 (신규)** | 정규 API | **Zero-Simulation 계절성 실측 및 사업목표 배분 API 신설** | 프론트 가짜 숫자 제거 완료에 따른 실측 기반 월별 계절성 및 사업목표 완제품 API 배포 |
+| **P1 (높음)** | API 보강 | **[Ticket 18] 골프 동일 요일·시간대(Like-for-Like) 직영 vs OTA 순정산액 API** | 전체 평균 왜곡 제거, 골든타임 1:1 순수익(Net-Net Green Fee) 비교 규격 추가 (`golf-channel-intelligence`) |
+| **P1 (높음)** | 정규 API | **[Ticket 19] 우천 토요일(10mm+) Matched Pairs 스트레스 테스트 마트 API** | 가짜 회귀식 제거, 실측 역사적 우천 토요일 기반 D-2/D-1 변동비(인건비·식자재) 방어 마트 신설 (`weather-stress-test`) |
+| **P1 (긴급)** | 데이터 적재 | **[Ticket 20] 2026년 10월 기상청 AWS 관측 데이터 및 마트 백필** | `fact_daily_weather` 10월 관측 데이터 부재로 인한 10월 상관관계 `totalDays: 0` 정상화 (증평/진천 AWS 관측치 적재) |
 
 ---
 
@@ -1848,3 +1851,20 @@ const reverseSpillover = totalRoomSales > 0
     }
   }
   ```
+
+---
+
+### [Ticket 20] 2026년 10월 기상청 AWS 관측 데이터(`fact_daily_weather`) 및 날씨 마트(`weather-correlation`) 백필(Backfill) 요청
+
+- **요청 배경 (데이터 정합성 및 운영 모니터링)**:
+  - 현재 `GET /api/v6/dashboard/weather-correlation?startDate=2026-10-01&endDate=2026-10-10&categoryCode=ALL` 호출 시 `summary.period.totalDays: 0` 및 `dailyTimeSeries: []`가 반환되어 10월 기상-매출 연동 분석이 불가능함.
+  - 마트 집계의 기상 원천 테이블인 `fact_daily_weather`에 2026년 9월 30일까지만 데이터가 존재하고, 2026년 10월 1일~10일 관측 데이터가 적재 대기 상태임.
+- **영향도**:
+  - 프론트엔드는 현재 무관용/Fail-Stop 원칙에 따라 10월 데이터 부재 시 `관측 대기` 및 최신 완료월(2026년 9월)로 안전하게 자동 전환되도록 조치하였음.
+  - 운영진이 실시간 당월(10월) 날씨-매출 상관관계를 조회할 수 있도록 10월 기상 데이터 백필이 시급함.
+- **요청 조치 사항**:
+  1. 기상청 종관기상관측(ASOS) 또는 자동기상관측(AWS) 증평/진천 관측소의 2026년 10월 1일 ~ 마감 영업일(2026-10-10) 일자별 기상 데이터(강수량, 적설량, 운량, 기온)를 `fact_daily_weather` 테이블에 적재.
+  2. 날씨-매출 마트 집계 프로시저(`sp_etl_v6_mat_weather_sales_correlation`) 실행을 통해 `mat_v6_weather_daily_sales` 테이블 10월 데이터 갱신.
+- **검증 기준**:
+  - `GET /api/v6/dashboard/weather-correlation?startDate=2026-10-01&endDate=2026-10-10&categoryCode=ALL` 호출 시 `totalDays >= 10` 및 `dailyTimeSeries`에 10개 일자의 강수량과 부문별 매출이 완제품으로 반환될 것.
+

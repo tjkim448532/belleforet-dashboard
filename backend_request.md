@@ -21,6 +21,7 @@
 | **P1 (높음)** | API 보강 | **[Ticket 18] 골프 동일 요일·시간대(Like-for-Like) 직영 vs OTA 순정산액 API** | 전체 평균 왜곡 제거, 골든타임 1:1 순수익(Net-Net Green Fee) 비교 규격 추가 (`golf-channel-intelligence`) |
 | **P1 (높음)** | 정규 API | **[Ticket 19] 우천 토요일(10mm+) Matched Pairs 스트레스 테스트 마트 API** | 가짜 회귀식 제거, 실측 역사적 우천 토요일 기반 D-2/D-1 변동비(인건비·식자재) 방어 마트 신설 (`weather-stress-test`) |
 | **P1 (긴급)** | 데이터 적재 | **[Ticket 20] 2026년 10월 기상청 AWS 관측 데이터 및 마트 백필** | `fact_daily_weather` 10월 관측 데이터 부재로 인한 10월 상관관계 `totalDays: 0` 정상화 (증평/진천 AWS 관측치 적재) |
+| **P1 (신규)** | 정규 API | **[Ticket 22] 콘도(객실) 익일(D+1) 및 기간별 PMS 예약 현황 마트 API** | 오늘 기준 내일(D+1) 체크인 예정 고객의 전체 예약, 평수별(16/35/51평), 단체/세미나 예약 완제품 API (`condo-reservations`) |
 
 ---
 
@@ -1867,4 +1868,77 @@ const reverseSpillover = totalRoomSales > 0
   2. 날씨-매출 마트 집계 프로시저(`sp_etl_v6_mat_weather_sales_correlation`) 실행을 통해 `mat_v6_weather_daily_sales` 테이블 10월 데이터 갱신.
 - **검증 기준**:
   - `GET /api/v6/dashboard/weather-correlation?startDate=2026-10-01&endDate=2026-10-10&categoryCode=ALL` 호출 시 `totalDays >= 10` 및 `dailyTimeSeries`에 10개 일자의 강수량과 부문별 매출이 완제품으로 반환될 것.
+
+---
+
+### [Ticket 22] 콘도(객실) 익일(D+1) 및 기간별 PMS 예약 현황 마트 API 신설
+
+- **요청 배경 (경영진/운영 지시사항)**:
+  - *"여기 근처에 콘도 예약 현황도 넣어줘. 오늘이 10일이면 11일 체크인 하기로 예약된 고객을 평수별로 또 전체적으로 표시해 주고, 단체 예약이 있으면 그것도 표시해줘."*
+  - 프론트엔드는 현재 메인 대시보드 골프 예약 현황 우측에 **[콘도(객실) 예약 및 체크인 현황]** 카드를 신설하고, **익일(D+1) 체크인 예약**과 **당일(D-Day) 실측 체크인**을 토글할 수 있는 완벽한 반응형 컴포넌트(`CondoReservationCard`)를 배포 완료하였습니다.
+  - 현재 백엔드 데이터 마트(`mat_v6_data_mart` 및 `fact_room_sales_v5`)는 **당일 마감 정산 실적(2026-10-10)**까지만 적재되어 있어, 미래 일자(2026-10-11) 조회 시 `totalRooms: 0`으로 반환됩니다.
+  - 따라서 산하정보기술 PMS 데이터베이스의 **미래 예약 원장(`raw_객실_예약` 또는 `raw_pms_reservation`)**을 읽어와 익일(D+1) 체크인 예정 고객의 전체 예약, 평수별 예약, 단체/기업 예약을 집계하는 전용 마트 API 신설이 필요합니다.
+
+- **신규 API 엔드포인트 제안**:
+  `GET /api/v6/dashboard/condo-reservations?date=YYYY-MM-DD`
+  (파라미터 `date`: 체크인 예정일자, 예: 오늘이 2026-10-10이면 `date=2026-10-11`)
+
+- **응답 규격 (100% camelCase)**:
+  ```json
+  {
+    "success": true,
+    "targetCheckInDate": "2026-10-11",
+    "summary": {
+      "totalReservedRooms": 142,
+      "totalCapacity": 175,
+      "occupancyRate": 81.1,
+      "totalGroupRooms": 32,
+      "groupCount": 3
+    },
+    "byRoomType": [
+      {
+        "roomType": "16평",
+        "reservedRooms": 52,
+        "capacity": 85,
+        "rate": 61.2
+      },
+      {
+        "roomType": "35평",
+        "reservedRooms": 46,
+        "capacity": 85,
+        "rate": 54.1
+      },
+      {
+        "roomType": "51평",
+        "reservedRooms": 44,
+        "capacity": 90,
+        "rate": 48.9
+      }
+    ],
+    "groups": [
+      {
+        "groupName": "한국통신 임직원 세미나",
+        "channel": "단체영업(세미나)",
+        "totalRooms": 20,
+        "roomTypeBreakdown": "16평 10실, 35평 10실",
+        "contactName": "김철수",
+        "contactPhone": "010-1234-5678"
+      },
+      {
+        "groupName": "현대자동차 가을 휴양소",
+        "channel": "기업영업(휴양소)",
+        "totalRooms": 12,
+        "roomTypeBreakdown": "35평 8실, 51평 4실",
+        "contactName": "이영희",
+        "contactPhone": "010-9876-5432"
+      }
+    ]
+  }
+  ```
+
+- **통제 기준 및 무관용 원칙 준수**:
+  1. **SSOT 준수**: 총 가용 객실수는 물리 고정 `175실`을 기준으로 산출하며, 조립형 커넥팅룸(51평) 소진에 따른 동적 분모 왜곡을 전면 배제합니다.
+  2. **완제품 반환**: 평수별 점유율(`rate`) 및 단체 총 객실수(`totalGroupRooms`)는 백엔드가 완전히 연산하여 반환해야 합니다.
+  3. **단체 예약 분류**: PMS 예약 마스터의 `group_code`, `company_name`, 또는 `market_type`이 단체/세미나/기업/휴양소에 해당하는 건들을 자동으로 필터링 및 1-depth 집계하여 제공합니다.
+
 

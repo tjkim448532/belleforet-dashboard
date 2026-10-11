@@ -12,6 +12,7 @@ import { getPeriodHolidayComparison } from '../lib/holidayUtils';
 import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
 import { SkeletonBentoGrid } from '../components/common/SkeletonCard';
 import { formatRevenue, formatFinancialKorean } from '../utils/formatters';
+import CondoReservationCard from '../components/dashboard/CondoReservationCard';
 
 export default function Home() {
   const { startDate, endDate } = useDate();
@@ -961,7 +962,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {/* 1인당 평균 그린피 (전체 / 자사 / OTA / 회원 4분할 분석) */}
                 <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
                   <div>
@@ -1197,6 +1198,9 @@ export default function Home() {
                     {isRangeMode ? '선택 기간 골프 총 예약/취소 및 실제 라운딩 실적 데이터' : '골프장 마감 예약/취소 및 실제 라운딩 실적 데이터'}
                   </div>
                 </div>
+
+                {/* 콘도(객실) 예약 및 익일 체크인 현황 */}
+                <CondoReservationCard currentDate={startDate} />
               </div>
             </div>
           </div>

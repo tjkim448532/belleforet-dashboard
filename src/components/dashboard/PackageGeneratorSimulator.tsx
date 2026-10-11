@@ -4,7 +4,8 @@ import {
   CheckCircle2, ShieldCheck, Plus, Minus, 
   RotateCcw, Copy, Check, TrendingUp, Award, 
   Calendar, Trash2, Layers, CheckCircle, Lock,
-  AlertTriangle, Sun, Moon, ArrowRight
+  AlertTriangle, Sun, Moon, ArrowRight,
+  ChevronDown, ChevronUp, FileSpreadsheet, ShieldAlert
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -80,6 +81,99 @@ const ROOM_TYPES = [
   { id: 'ROOM_51', name: '51평형 커넥팅룸 (4~6인)', baseNormalPrice: 320000, defaultCapacity: 6, desc: '대가족 및 단체 특화 복합 프리미엄 객실' }
 ];
 
+// 🌟 [콘도 객실 실측 원가 분석 마스터 SSOT]
+// 출처: 경영지원팀 콘도 객실 원가 분석표 (구글 스프레드시트 1AcqnpQP0giNR_lLLDkebORHXuvsWj68q)
+// 노벨 경영학적 한계 변동비(Marginal Cost) 원칙: 손님이 1박 투숙할 때마다 현금이 1:1로 유출되는 실질 변동비만 반영
+export interface RoomCostDetail {
+  cleaningCost: number;       // 청소비 (외주 용역 단가)
+  linenLaunderingCost: number;// 린넨류 세탁비 (시트, 베개피, 타올, 이불커버)
+  amenityCost: number;        // 어메니티 (4종 + 비누 2EA 1세트)
+  consumablesCost: number;    // 소모품비 (화장지, 각티슈, 주방세제, 수세미, 생수, 비닐)
+  utilityCost: number;        // 수도광열비 (LPG 난방/온수 45% 가동률 실측 + 욕조 수도요금)
+  totalCostNet: number;       // 총 실질 변동원가 (VAT 별도)
+  totalCostGross: number;     // 총 실질 변동원가 (VAT 10% 포함)
+  linenDetail: { item: string; unitPrice: number; qty: number; amount: number }[];
+  consumableDetail: { item: string; amount: number }[];
+  utilityDetail: { item: string; amount: number; note: string }[];
+}
+
+export const ROOM_COST_MASTER: Record<string, RoomCostDetail> = {
+  ROOM_16: {
+    cleaningCost: 12325,
+    linenLaunderingCost: 3670,
+    amenityCost: 1518,
+    consumablesCost: 3353,
+    utilityCost: 7327, // LPG 2,827원 + 수도 4,500원
+    totalCostNet: 28194,
+    totalCostGross: 31013,
+    linenDetail: [
+      { item: '시트', unitPrice: 450, qty: 2, amount: 900 },
+      { item: '베개피', unitPrice: 130, qty: 3, amount: 390 },
+      { item: '타올', unitPrice: 120, qty: 4, amount: 480 },
+      { item: '침대이불커버', unitPrice: 950, qty: 2, amount: 1900 }
+    ],
+    consumableDetail: [
+      { item: '롤휴지 (2개)', amount: 787 },
+      { item: '각티슈 (1개)', amount: 1500 },
+      { item: '생수 (2병)', amount: 1000 },
+      { item: '위생 비닐봉투', amount: 66 }
+    ],
+    utilityDetail: [
+      { item: 'LPG 가스 (난방/온수)', amount: 2827, note: '1실/일 실측 가동률 45% 기준' },
+      { item: '상수도 요금', amount: 4500, note: '욕조 1.344㎥ 기준' }
+    ]
+  },
+  ROOM_35: {
+    cleaningCost: 24750,
+    linenLaunderingCost: 6760,
+    amenityCost: 1518,
+    consumablesCost: 6940,
+    utilityCost: 10154, // LPG 5,654원 + 수도 4,500원
+    totalCostNet: 50122,
+    totalCostGross: 55134,
+    linenDetail: [
+      { item: '시트', unitPrice: 450, qty: 3, amount: 1350 },
+      { item: '베개피', unitPrice: 130, qty: 5, amount: 650 },
+      { item: '타올', unitPrice: 120, qty: 8, amount: 960 },
+      { item: '침대이불커버', unitPrice: 950, qty: 2, amount: 1900 },
+      { item: '한실이불커버', unitPrice: 950, qty: 1, amount: 950 },
+      { item: '한실요커버', unitPrice: 950, qty: 1, amount: 950 }
+    ],
+    consumableDetail: [
+      { item: '롤휴지 (2개)', amount: 787 },
+      { item: '각티슈 (2개)', amount: 3000 },
+      { item: '주방용품 (퐁퐁/수세미/행주)', amount: 1039 },
+      { item: '생수 (4병)', amount: 2000 },
+      { item: '위생 비닐봉투', amount: 114 }
+    ],
+    utilityDetail: [
+      { item: 'LPG 가스 (난방/온수)', amount: 5654, note: '1실/일 실측 월평균 10,303,642원 환산' },
+      { item: '상수도 요금', amount: 4500, note: '욕조 1.344㎥ 기준' }
+    ]
+  },
+  ROOM_51: {
+    cleaningCost: 37075, // 12,325 + 24,750
+    linenLaunderingCost: 10430, // 3,670 + 6,760
+    amenityCost: 3036, // 1,518 * 2
+    consumablesCost: 10293, // 3,353 + 6,940
+    utilityCost: 17481, // 7,327 + 10,154
+    totalCostNet: 78316,
+    totalCostGross: 86147,
+    linenDetail: [
+      { item: '16평 린넨 전체 세탁', unitPrice: 3670, qty: 1, amount: 3670 },
+      { item: '35평 린넨 전체 세탁', unitPrice: 6760, qty: 1, amount: 6760 }
+    ],
+    consumableDetail: [
+      { item: '16평 소모품 일체', amount: 3353 },
+      { item: '35평 소모품 일체', amount: 6940 }
+    ],
+    utilityDetail: [
+      { item: '16평 LPG 및 수도', amount: 7327, note: '16평 전용 광열비' },
+      { item: '35평 LPG 및 수도', amount: 10154, note: '35평 전용 광열비' }
+    ]
+  }
+};
+
 // 사용자가 쉽게 클릭하여 품목명을 자동 입력할 수 있는 추천 명칭 태그
 const QUICK_NAME_TAGS = {
   FNB: ['조식 뷔페', '석식 바우처', '바베큐 플래터', '카페 음료권', '웰컴 와인 플레이트', '식음 통합 이용권'],
@@ -122,6 +216,7 @@ export default function PackageGeneratorSimulator() {
   // ==========================================
   const [dailyPackageSalesRooms, setDailyPackageSalesRooms] = useState<number>(0); // 일일 목표 패키지 판매 객실 수
   const [copiedNotification, setCopiedNotification] = useState<boolean>(false);
+  const [showRoomCostDetail, setShowRoomCostDetail] = useState<boolean>(false); // 🌟 실측 객실 원가 분석 아코디언 토글
 
   // Currency Formatter
   const formatCurrency = (val: number | null | undefined) => {
@@ -470,7 +565,8 @@ export default function PackageGeneratorSimulator() {
     let leisureAllocatedTotal = 0;
     let fnbRetailTotal = 0;
     let leisureRetailTotal = 0;
-    let totalVariableCost = 0;
+    let fnbVariableCostNet = 0;
+    let leisureVariableCostNet = 0;
 
     userItems.forEach(item => {
       const itemSubtotal = item.unitPrice * (item.quantity || 1);
@@ -479,11 +575,13 @@ export default function PackageGeneratorSimulator() {
       if (item.category === 'FNB') {
         fnbAllocatedTotal += itemSubtotal;
         fnbRetailTotal += retailSubtotal;
-        totalVariableCost += itemSubtotal * 0.35; // 식음 변동원가율 약 35%
+        // 식음(F&B) 변동원가: 순매출(VAT 제외) 기준 약 35% 원가율 적용
+        fnbVariableCostNet += Math.round((itemSubtotal / 1.1) * 0.35);
       } else {
         leisureAllocatedTotal += itemSubtotal;
         leisureRetailTotal += retailSubtotal;
-        totalVariableCost += itemSubtotal * 0.05; // 직영 레저 변동원가율 약 5%
+        // 직영 레저(LEISURE) 변동원가: 순매출(VAT 제외) 기준 약 5% 변동비율 적용
+        leisureVariableCostNet += Math.round((itemSubtotal / 1.1) * 0.05);
       }
     });
 
@@ -491,7 +589,18 @@ export default function PackageGeneratorSimulator() {
     const remainingBuffer = amenityBudget - allocatedAmenitiesTotal;
     const isOverBudget = remainingBuffer < 0;
 
-    // 5. 고객 체감 가치 분석
+    // 5. 🌟 [경영지원팀 SSOT 실측 콘도 객실 원가 연동]
+    // 16평: 28,194원 / 35평: 50,122원 / 51평: 78,316원 (VAT 별도)
+    const currentRoomCost = ROOM_COST_MASTER[selectedRoomTypeId] || ROOM_COST_MASTER['ROOM_16'];
+    const roomVariableCostNet = currentRoomCost.totalCostNet;
+    const roomVariableCostGross = currentRoomCost.totalCostGross;
+    const amenityVariableCostNet = fnbVariableCostNet + leisureVariableCostNet;
+
+    // 총 실질 한계 변동비용 (Total Marginal Cost = Room MC + Amenity MC)
+    const totalVariableCostNet = roomVariableCostNet + amenityVariableCostNet;
+    const totalVariableCostGross = Math.round(totalVariableCostNet * 1.1);
+
+    // 6. 고객 체감 가치 분석
     const roomRetailNormal = selectedRoomType.baseNormalPrice;
     const totalCustomerRetailValue = roomRetailNormal + fnbRetailTotal + leisureRetailTotal;
     const customerPerceivedSavings = Math.max(0, totalCustomerRetailValue - totalPkgGross);
@@ -499,14 +608,24 @@ export default function PackageGeneratorSimulator() {
       ? Number(((customerPerceivedSavings / totalCustomerRetailValue) * 100).toFixed(1))
       : 0;
 
-    // 6. GOPPAR 보존 & 한계이익 분석
-    const packageNetPrice = Math.round(totalPkgGross / 1.1); // VAT 제외 순매출
-    const packageContributionMargin = totalPkgGross - totalVariableCost;
-    const contributionMarginRate = totalPkgGross > 0
-      ? Number(((packageContributionMargin / totalPkgGross) * 100).toFixed(1))
+    // 7. 🌟 [노벨 경영학적 한계 공헌이익(Contribution Margin) & GOPPAR 보존 분석]
+    // 순 패키지 판매가 (VAT 10% 제외 Net Revenue)
+    const packageNetPrice = Math.round(totalPkgGross / 1.1);
+    
+    // 1실당 순 공헌이익 (Contribution Margin) = 순판매가 - 총 한계 변동비용
+    // (손님이 1박 투숙할 때마다 리조트 고정비 회수에 기여하는 순수 현금 창출액)
+    const packageContributionMargin = packageNetPrice - totalVariableCostNet;
+    
+    // 공헌이익률 (Contribution Margin Ratio, %)
+    const contributionMarginRate = packageNetPrice > 0
+      ? Number(((packageContributionMargin / packageNetPrice) * 100).toFixed(1))
       : 0;
 
-    // 7. 거시적 성과 시뮬레이션
+    // 역마진 손익분기 방어선 판정 (Marginal Cost Coverage Check)
+    const isNegativeMargin = packageContributionMargin < 0;
+    const breakEvenFloorGross = totalVariableCostGross; // 절대 손익분기 최저 판매가 (VAT 포함)
+
+    // 8. 거시적 성과 시뮬레이션
     const physicalRoomCount = 175; // 벨포레 전체 가용 객실수
     const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
     const monthlyPkgSoldTotal = dailyPackageSalesRooms * daysInMonth;
@@ -542,9 +661,19 @@ export default function PackageGeneratorSimulator() {
       customerPerceivedSavings,
       customerDiscountRate,
       packageNetPrice,
-      totalVariableCost: Math.round(totalVariableCost),
-      packageContributionMargin: Math.round(packageContributionMargin),
+      currentRoomCost,
+      roomVariableCostNet,
+      roomVariableCostGross,
+      fnbVariableCostNet,
+      leisureVariableCostNet,
+      amenityVariableCostNet,
+      totalVariableCost: totalVariableCostNet, // VAT 별도 기준 실질 한계원가
+      totalVariableCostNet,
+      totalVariableCostGross,
+      packageContributionMargin,
       contributionMarginRate,
+      isNegativeMargin,
+      breakEvenFloorGross,
       packageTrevPOR,
       physicalRoomCount,
       daysInMonth,
@@ -563,6 +692,7 @@ export default function PackageGeneratorSimulator() {
     liveSummary,
     userItems,
     selectedRoomType,
+    selectedRoomTypeId,
     selectedYear,
     selectedMonth,
     dailyPackageSalesRooms,
@@ -1339,23 +1469,38 @@ ${itemListText}
             />
           </div>
 
-          {/* Room Type Selector */}
+          {/* Room Type Selector with SSOT Cost Badge */}
           <div className="pt-3 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-600 block mb-1.5">대상 객실 타입:</span>
-            <div className="grid grid-cols-3 gap-1">
-              {ROOM_TYPES.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedRoomTypeId(r.id)}
-                  className={`py-1.5 px-1 rounded-xl text-[10px] font-bold transition-all text-center cursor-pointer border ${
-                    selectedRoomTypeId === r.id
-                      ? 'bg-slate-900 text-white border-slate-900 font-black'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {r.name.slice(0, 3)}평형
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold text-slate-600">대상 객실 타입:</span>
+              <span className="text-[10px] text-teal-700 font-extrabold flex items-center gap-1">
+                <FileSpreadsheet size={11} className="text-teal-600" />
+                실측 변동원가 연동
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {ROOM_TYPES.map(r => {
+                const cost = ROOM_COST_MASTER[r.id];
+                const isSelected = selectedRoomTypeId === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => setSelectedRoomTypeId(r.id)}
+                    className={`py-2 px-1 rounded-xl text-center cursor-pointer border transition-all flex flex-col items-center justify-center gap-0.5 ${
+                      isSelected
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="text-[11px] font-black">{r.name.slice(0, 3)}평형</span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
+                      isSelected ? 'bg-teal-500/20 text-teal-300' : 'bg-slate-200/70 text-slate-500'
+                    }`}>
+                      원가 {formatCurrency(cost?.totalCostNet)}원
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1776,43 +1921,243 @@ ${itemListText}
           </p>
         </div>
 
-        {/* 리조트 수익성 & GOPPAR 보존 분석 */}
+        {/* 🌟 리조트 실질 수익성 & 노벨 경영학적 한계 공헌이익(Contribution Margin) 분석 */}
         <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
               <Award size={16} className="text-teal-600" />
               리조트 실질 수익성 & GOPPAR 보존 (Financial SSOT)
             </h4>
-            <span className="text-[10px] bg-teal-50 text-teal-800 font-bold px-2 py-0.5 rounded-full border border-teal-200">
-              영업이익 방어
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-              <span className="text-slate-400 block text-[11px] mb-1">추정 변동원가 (린넨+식자재)</span>
-              <div className="text-xl font-black text-rose-700">
-                {formatCurrency(reverseCalculations.totalVariableCost)}원
-              </div>
-              <span className="text-[10px] text-slate-500 mt-1 block">
-                직영 레저는 한계비용 0원 수렴
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] bg-teal-50 text-teal-800 font-extrabold px-2 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
+                <FileSpreadsheet size={11} className="text-teal-600" />
+                원가 분석표 SSOT 연동
+              </span>
+              <span className="text-[10px] bg-indigo-50 text-indigo-800 font-extrabold px-2 py-0.5 rounded-full border border-indigo-200">
+                한계비용(MC) 원칙
               </span>
             </div>
+          </div>
 
-            <div className="bg-teal-50/60 p-3.5 rounded-xl border border-teal-200">
-              <span className="text-teal-900 block text-[11px] font-bold mb-1">1실당 공헌이익 (GOPPAR)</span>
-              <div className="text-xl font-black text-teal-950">
+          {/* 역마진 위험 경고 (Fail-Loudly) */}
+          {reverseCalculations.isNegativeMargin && (
+            <div className="bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 flex items-start gap-3 text-rose-900 shadow-sm">
+              <ShieldAlert size={20} className="text-rose-600 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <div className="font-black text-rose-800 text-sm flex items-center gap-1.5">
+                  🚨 [역마진 손익분기 방어선 붕괴 경고]
+                </div>
+                <p className="leading-relaxed text-slate-700">
+                  현재 설정된 패키지 판매가(<strong>{formatCurrency(reverseCalculations.totalPkgGross)}원</strong>)는 객실+부대시설의 실질 한계변동비(<strong>{formatCurrency(reverseCalculations.totalVariableCostGross)}원</strong>, VAT포함)에 미달합니다.
+                  투숙이 발생할 때마다 <strong>1실당 {formatCurrency(Math.abs(reverseCalculations.packageContributionMargin))}원의 현금 손실</strong>이 발생합니다.
+                </p>
+                <div className="text-[11px] font-bold text-rose-800 bg-rose-100/70 px-2.5 py-1 rounded-lg inline-block mt-1">
+                  절대 손익분기 마지노선: 최소 {formatCurrency(reverseCalculations.breakEvenFloorGross)}원 (VAT 포함) 이상으로 책정하십시오.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3대 한계원가 및 공헌이익 핵심 지표 카드 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            {/* 1. 객실 실측 변동원가 */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-slate-500 text-[11px] font-bold">객실 실측 변동원가 (Room MC)</span>
+                <Hotel size={13} className="text-slate-400" />
+              </div>
+              <div className="text-xl font-black text-slate-900">
+                {formatCurrency(reverseCalculations.roomVariableCostNet)}원
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1">
+                VAT포함 {formatCurrency(reverseCalculations.roomVariableCostGross)}원 ({selectedRoomType.name.slice(0, 3)}평형 SSOT)
+              </div>
+            </div>
+
+            {/* 2. 부대시설 변동원가 */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-slate-500 text-[11px] font-bold">부대시설 변동원가 (Amenity MC)</span>
+                <Utensils size={13} className="text-slate-400" />
+              </div>
+              <div className="text-xl font-black text-slate-900">
+                {formatCurrency(reverseCalculations.amenityVariableCostNet)}원
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1">
+                식음 {formatCurrency(reverseCalculations.fnbVariableCostNet)}원{'(35%)'} + 레저 {formatCurrency(reverseCalculations.leisureVariableCostNet)}원{'(5%)'}
+              </div>
+            </div>
+
+            {/* 3. 1실당 순 공헌이익 */}
+            <div className={`p-3.5 rounded-xl border ${
+              reverseCalculations.isNegativeMargin 
+                ? 'bg-rose-50 border-rose-300' 
+                : 'bg-teal-50/70 border-teal-200'
+            }`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[11px] font-bold ${reverseCalculations.isNegativeMargin ? 'text-rose-900' : 'text-teal-900'}`}>
+                  1실당 순 공헌이익 (CM / GOPPAR)
+                </span>
+                <Award size={13} className={reverseCalculations.isNegativeMargin ? 'text-rose-600' : 'text-teal-600'} />
+              </div>
+              <div className={`text-xl font-black ${reverseCalculations.isNegativeMargin ? 'text-rose-700' : 'text-teal-950'}`}>
                 {formatCurrency(reverseCalculations.packageContributionMargin)}원
               </div>
-              <span className="text-[10px] text-teal-800 font-bold mt-1 block">
-                공헌이익률: <strong>{reverseCalculations.contributionMarginRate}%</strong> (고수익 방어)
-              </span>
+              <div className={`text-[10px] font-bold mt-1 ${reverseCalculations.isNegativeMargin ? 'text-rose-700' : 'text-teal-800'}`}>
+                공헌이익률: <strong>{reverseCalculations.contributionMarginRate}%</strong> (순매출 대비)
+              </div>
             </div>
           </div>
 
-          <p className="text-xs text-teal-900 bg-teal-50/60 p-3 rounded-xl border border-teal-200 leading-relaxed">
-            🎯 <strong>수익성 원리:</strong> 변동비가 극히 낮은 <strong>직영 레저</strong>를 필수 포함할수록, 
-            고객 할인 체감도는 30%를 넘기면서도 리조트 실질 공헌이익률은 <strong>80% 이상</strong> 보존되어 <strong>GOPPAR</strong>를 확고히 방어합니다.
+          {/* 🌟 [경영지원팀 SSOT 콘도 객실 원가 분석 아코디언] */}
+          <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
+            <button
+              type="button"
+              onClick={() => setShowRoomCostDetail(!showRoomCostDetail)}
+              className="w-full px-4 py-3 bg-slate-100/80 hover:bg-slate-100 transition-colors flex items-center justify-between text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet size={15} className="text-teal-700" />
+                <span className="text-xs font-black text-slate-800">
+                  [경영지원팀 SSOT] 콘도 객실 원가 분석 5대 항목 실측 상세표 ({selectedRoomType.name.slice(0, 3)}평형)
+                </span>
+                <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full border border-teal-200">
+                  실측 합계 {formatCurrency(reverseCalculations.currentRoomCost.totalCostNet)}원 (VAT별도)
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
+                <span>{showRoomCostDetail ? '접기' : '상세보기'}</span>
+                {showRoomCostDetail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
+            </button>
+
+            {showRoomCostDetail && (
+              <div className="p-4 space-y-4 bg-white border-t border-slate-200 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+                  {/* 1. 청소비 */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">1. 청소비 (외주 용역)</div>
+                    <div className="text-sm font-black text-slate-900">
+                      {formatCurrency(reverseCalculations.currentRoomCost.cleaningCost)}원
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1">
+                      {selectedRoomTypeId === 'ROOM_16' ? '16평 외주단가' : selectedRoomTypeId === 'ROOM_35' ? '35평 외주단가' : '16평+35평 합산'}
+                    </div>
+                  </div>
+
+                  {/* 2. 린넨류 세탁비 */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">2. 린넨류 세탁비</div>
+                    <div className="text-sm font-black text-slate-900">
+                      {formatCurrency(reverseCalculations.currentRoomCost.linenLaunderingCost)}원
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1">
+                      시트, 베개피, 타올, 이불커버 등
+                    </div>
+                  </div>
+
+                  {/* 3. 어메니티 */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">3. 객실 어메니티</div>
+                    <div className="text-sm font-black text-slate-900">
+                      {formatCurrency(reverseCalculations.currentRoomCost.amenityCost)}원
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1">
+                      샴푸/린스/바디/로션+비누
+                    </div>
+                  </div>
+
+                  {/* 4. 소모품비 */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">4. 객실 소모품비</div>
+                    <div className="text-sm font-black text-slate-900">
+                      {formatCurrency(reverseCalculations.currentRoomCost.consumablesCost)}원
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1">
+                      롤휴지, 각티슈, 생수, 위생용품
+                    </div>
+                  </div>
+
+                  {/* 5. 수도광열비 */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">5. 수도광열비 (실측)</div>
+                    <div className="text-sm font-black text-slate-900">
+                      {formatCurrency(reverseCalculations.currentRoomCost.utilityCost)}원
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1">
+                      LPG 난방/온수 + 욕조 상수도
+                    </div>
+                  </div>
+                </div>
+
+                {/* 세부 명세 그리드 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-[11px]">
+                  {/* 린넨류 세부 */}
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-teal-600" />
+                      린넨류 세탁 규격 (단가×수량)
+                    </span>
+                    <div className="space-y-1">
+                      {reverseCalculations.currentRoomCost.linenDetail.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-slate-600">
+                          <span>{item.item} ({formatCurrency(item.unitPrice)}원 × {item.qty}EA)</span>
+                          <span className="font-semibold">{formatCurrency(item.amount)}원</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 소모품 세부 */}
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-teal-600" />
+                      객실 소모품 구성 내역
+                    </span>
+                    <div className="space-y-1">
+                      {reverseCalculations.currentRoomCost.consumableDetail.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-slate-600">
+                          <span>{item.item}</span>
+                          <span className="font-semibold">{formatCurrency(item.amount)}원</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 광열비 산출 근거 */}
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-teal-600" />
+                      수도광열비 실측 산출 기준
+                    </span>
+                    <div className="space-y-1">
+                      {reverseCalculations.currentRoomCost.utilityDetail.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-slate-600">
+                          <div>
+                            <div>{item.item}</div>
+                            <div className="text-[9px] text-slate-400">{item.note}</div>
+                          </div>
+                          <span className="font-semibold">{formatCurrency(item.amount)}원</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500">
+                  <span>* 출처: 경영지원팀 콘도 객실 원가 분석표 (구글 스프레드시트 SSOT 연동)</span>
+                  <span className="font-bold text-slate-700">
+                    총 변동원가: 순액 {formatCurrency(reverseCalculations.currentRoomCost.totalCostNet)}원 / 부가세 포함 {formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 leading-relaxed">
+            🎯 <strong>노벨 경영학적 한계 공헌이익(Contribution Margin) 원리:</strong> 비수기 유휴 객실은 당일이 지나면 가치가 소멸하는 소멸성 자산입니다.
+            건물 감가상각과 고정인건비는 이미 지출된 매몰비용(Sunk Cost)이므로, 패키지 순판매가가 실측 한계변동비(객실 실측원가 {formatCurrency(reverseCalculations.roomVariableCostNet)}원 + 부대시설 변동비)를 초과하기만 하면,
+            초과분인 <strong>{formatCurrency(reverseCalculations.packageContributionMargin)}원</strong> 전체가 리조트 고정비 회수에 기여하여 <strong>GOPPAR와 영업이익을 실질적으로 방어</strong>합니다.
           </p>
         </div>
       </div>

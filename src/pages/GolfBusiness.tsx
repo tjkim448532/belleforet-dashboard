@@ -7,7 +7,9 @@ import {
   TrendingUp, 
   Award,
   DollarSign,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Clock,
+  UserCheck
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
@@ -146,6 +148,9 @@ export default function GolfBusiness() {
 
   const courseCoreRatio = (summary as any).courseCoreRatio ?? Number(((greenFeeItem?.revenueSharePct || 0) + (cartFeeItem?.revenueSharePct || 0)).toFixed(1));
   const amenityRatio = (summary as any).amenityRatio ?? (Number(courseCoreRatio) > 0 ? Number((100 - Number(courseCoreRatio)).toFixed(1)) : 0);
+
+  const partAnalysis = data?.partAnalysis || (summary as any)?.partAnalysis;
+  const membershipAnalysis = data?.membershipAnalysis || (summary as any)?.membershipAnalysis;
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
@@ -319,6 +324,172 @@ export default function GolfBusiness() {
                 💡 라운딩 전후 식음 및 용품 구매를 통한 부가 매출이 전체 골프 부문 매출의 <strong>{amenityRatio}%</strong>를 차지하고 있습니다.
               </p>
             </div>
+
+            {/* 카드 3: 1부 · 2부 · 3부 티타임 성과 및 평균 그린피 */}
+            {partAnalysis && (
+              <div className="bg-gradient-to-br from-indigo-50/70 to-slate-50 p-6 rounded-2xl border border-indigo-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-indigo-600" /> 1부 · 2부 · 3부 티타임 성과 및 평균 그린피
+                    </span>
+                    <span className="text-[10px] font-extrabold bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full">
+                      전체 평균 {partAnalysis.overallAvgGreenFeeFormatted}원
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-indigo-950 my-1 font-financial">
+                    {partAnalysis.totalVisitedTeams.toLocaleString()}팀 내장 완료
+                    <span className="text-xs font-normal text-slate-500 ml-1.5">
+                      (총 예약 {partAnalysis.totalReservedTeams.toLocaleString()}팀 / 취소 {partAnalysis.totalCanceledTeams.toLocaleString()}팀)
+                    </span>
+                  </div>
+
+                  {/* 1부, 2부, 3부 3-Grid */}
+                  {partAnalysis.parts && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 my-3">
+                      {[
+                        { key: 'part1', data: partAnalysis.parts.part1, tag: '오전' },
+                        { key: 'part2', data: partAnalysis.parts.part2, tag: '오후' },
+                        { key: 'part3', data: partAnalysis.parts.part3, tag: '야간' }
+                      ].map(({ key, data: p, tag }) => (
+                        <div key={key} className="bg-white/95 p-3 rounded-xl border border-indigo-100/80 shadow-2xs flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-black text-slate-800 flex items-center gap-1">
+                                {p.name.slice(0, 2)}
+                                <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200/60">{tag}</span>
+                              </span>
+                              <span className="text-[9px] font-medium text-slate-400">{p.timeRange}</span>
+                            </div>
+                            <div className="text-base font-black text-indigo-900 font-financial mt-1">
+                              {p.avgGreenFeeFormatted}원
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                              평균 그린피 ({p.players.toLocaleString()}명)
+                            </div>
+                          </div>
+
+                          <div className="pt-2 mt-2 border-t border-slate-100 text-[10px] space-y-1 font-financial text-slate-600">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">내장팀:</span>
+                              <strong className="text-slate-800">
+                                {p.visitedTeams}팀
+                                {p.pendingTeams > 0 ? ` (진행 ${p.pendingTeams}팀)` : ''}
+                              </strong>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">예약팀:</span>
+                              <span>{p.reservedTeams}팀</span>
+                            </div>
+                            <div className="flex justify-between pt-0.5 border-t border-slate-100 text-indigo-950 font-bold">
+                              <span className="text-slate-400 font-normal">순매출:</span>
+                              <span>{Math.round(p.greenFeeRevenue).toLocaleString()}원</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-indigo-950 mt-4 pt-2 border-t border-indigo-200/50 leading-relaxed font-financial">
+                  💡 시간대별(1부·2부·3부) 실시간 예약/내장/진행 팀수와 실제 결제된 1인당 평균 그린피 실측치입니다.
+                </p>
+              </div>
+            )}
+
+            {/* 카드 4: 회원 vs 비회원 내장 비중 및 그린피 단가 분석 */}
+            {membershipAnalysis && (
+              <div className="bg-gradient-to-br from-teal-50/70 to-emerald-50/30 p-6 rounded-2xl border border-teal-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                      <UserCheck className="w-4 h-4 text-teal-600" /> 회원 vs 비회원 내장 비중 및 그린피 단가 분석
+                    </span>
+                    <span className="text-[10px] font-extrabold bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full">
+                      단가 격차 {membershipAnalysis.greenFeeGapFormatted}원
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-teal-950 my-1 font-financial">
+                    그린피 단가 격차: +{membershipAnalysis.greenFeeGapFormatted}원
+                    <span className="text-xs font-normal text-slate-500 ml-1.5">
+                      (비회원이 1인당 평균 {membershipAnalysis.greenFeeGapFormatted}원 추가 지불)
+                    </span>
+                  </div>
+
+                  {/* 회원 vs 비회원 2분할 카드 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+                    {/* 회원 카드 */}
+                    <div className="bg-white/95 p-3.5 rounded-xl border border-teal-200/80 shadow-2xs flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+                            회원 (정회원/무기명)
+                          </span>
+                          <span className="text-[10px] font-extrabold bg-teal-50 text-teal-800 px-2 py-0.5 rounded-md border border-teal-200">
+                            비중 {membershipAnalysis.member.playerRatio}%
+                          </span>
+                        </div>
+                        <div className="text-xl font-black text-teal-950 font-financial">
+                          {membershipAnalysis.member.avgGreenFeeFormatted}원
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          1인당 평균 그린피
+                        </div>
+                      </div>
+
+                      <div className="pt-2 mt-3 border-t border-slate-100 text-[11px] space-y-1 font-financial text-slate-600">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">내장 인원:</span>
+                          <strong className="text-slate-800">{membershipAnalysis.member.playersFormatted}명</strong>
+                        </div>
+                        <div className="flex justify-between pt-0.5 border-t border-slate-100 text-teal-950 font-bold">
+                          <span className="text-slate-400 font-normal">그린피 순매출:</span>
+                          <span>{membershipAnalysis.member.greenFeeRevenueFormatted}원</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 비회원 카드 */}
+                    <div className="bg-white/95 p-3.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                            비회원 (일반/대중)
+                          </span>
+                          <span className="text-[10px] font-extrabold bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-300">
+                            비중 {membershipAnalysis.nonMember.playerRatio}%
+                          </span>
+                        </div>
+                        <div className="text-xl font-black text-slate-900 font-financial">
+                          {membershipAnalysis.nonMember.avgGreenFeeFormatted}원
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          1인당 평균 그린피
+                        </div>
+                      </div>
+
+                      <div className="pt-2 mt-3 border-t border-slate-100 text-[11px] space-y-1 font-financial text-slate-600">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">내장 인원:</span>
+                          <strong className="text-slate-800">{membershipAnalysis.nonMember.playersFormatted}명</strong>
+                        </div>
+                        <div className="flex justify-between pt-0.5 border-t border-slate-100 text-slate-950 font-bold">
+                          <span className="text-slate-400 font-normal">그린피 순매출:</span>
+                          <span>{membershipAnalysis.nonMember.greenFeeRevenueFormatted}원</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-teal-950 mt-4 pt-2 border-t border-teal-200/50 leading-relaxed font-financial">
+                  💡 비회원 내장객 비중 <strong>{membershipAnalysis.nonMember.playerRatio}%</strong>이며, 비회원이 1인당 평균 <strong>+{membershipAnalysis.greenFeeGapFormatted}원</strong>의 그린피를 추가 지불하고 있습니다.
+                </p>
+              </div>
+            )}
 
           </div>
         </div>

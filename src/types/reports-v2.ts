@@ -95,7 +95,49 @@ export interface CorporateGroupSalesV2Response {
 
 // ============================================================================
 // ③ 골프 채널 및 티타임 분석 V2 (golf-channel-teetime-analysis-v2)
-// ============================================================================
+export interface GolfPartItem {
+  name: string;
+  timeRange: string;
+  reservedTeams: number;
+  visitedTeams: number;
+  pendingTeams: number;
+  players: number;
+  greenFeeRevenue: number;
+  avgGreenFee: number;
+  avgGreenFeeFormatted: string;
+}
+
+export interface GolfPartAnalysis {
+  totalReservedTeams: number;
+  totalVisitedTeams: number;
+  totalCanceledTeams: number;
+  totalPendingTeams: number;
+  overallAvgGreenFee: number;
+  overallAvgGreenFeeFormatted: string;
+  parts: {
+    part1: GolfPartItem;
+    part2: GolfPartItem;
+    part3: GolfPartItem;
+  };
+}
+
+export interface GolfMembershipItem {
+  players: number;
+  playersFormatted: string;
+  playerRatio: number;
+  greenFeeRevenue: number;
+  greenFeeRevenueFormatted: string;
+  avgGreenFee: number;
+  avgGreenFeeFormatted: string;
+}
+
+export interface GolfMembershipAnalysis {
+  member: GolfMembershipItem;
+  nonMember: GolfMembershipItem;
+  greenFeeGap: number;
+  greenFeeGapFormatted: string;
+}
+
 export interface GolfChannelAnalysisV2Response {
   success: boolean;
   meta: {
@@ -109,8 +151,17 @@ export interface GolfChannelAnalysisV2Response {
       totalTransactions: number;
       arpu: number;
       arpuFormatted: string;
+      courseCoreRevenue?: number;
+      courseCoreRatio?: number;
+      amenityRevenue?: number;
+      amenityQuantity?: number;
+      amenityRatio?: number;
+      partAnalysis?: GolfPartAnalysis;
+      membershipAnalysis?: GolfMembershipAnalysis;
     };
   };
+  partAnalysis?: GolfPartAnalysis;
+  membershipAnalysis?: GolfMembershipAnalysis;
   channels: Array<{
     venueName: string;
     ticketGroup: string;

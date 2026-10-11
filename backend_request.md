@@ -22,6 +22,8 @@
 | **P1 (높음)** | 정규 API | **[Ticket 19] 우천 토요일(10mm+) Matched Pairs 스트레스 테스트 마트 API** | 가짜 회귀식 제거, 실측 역사적 우천 토요일 기반 D-2/D-1 변동비(인건비·식자재) 방어 마트 신설 (`weather-stress-test`) |
 | **P1 (긴급)** | 데이터 적재 | **[Ticket 20] 2026년 10월 기상청 AWS 관측 데이터 및 마트 백필** | `fact_daily_weather` 10월 관측 데이터 부재로 인한 10월 상관관계 `totalDays: 0` 정상화 (증평/진천 AWS 관측치 적재) |
 | **P1 (신규)** | 정규 API | **[Ticket 22] 콘도(객실) 익일(D+1) 및 기간별 PMS 예약 현황 마트 API** | 오늘 기준 내일(D+1) 체크인 예정 고객의 전체 예약, 평수별(16/35/51평), 단체/세미나 예약 완제품 API (`condo-reservations`) |
+| **P1 (신규)** | API 보강 | **[Ticket 23] 골프 예약 현황 마트 API 내 1부/2부/3부 파트별 예약 팀수 필드 신설** | 대표님 지시: 실시간 및 익일 골프 예약 현황 하단에 1부(오전), 2부(오후), 3부(야간) 팀수 분할 제공 (`revenue-summary`) |
+
 
 ---
 
@@ -1940,5 +1942,66 @@ const reverseSpillover = totalRoomSales > 0
   1. **SSOT 준수**: 총 가용 객실수는 물리 고정 `175실`을 기준으로 산출하며, 조립형 커넥팅룸(51평) 소진에 따른 동적 분모 왜곡을 전면 배제합니다.
   2. **완제품 반환**: 평수별 점유율(`rate`) 및 단체 총 객실수(`totalGroupRooms`)는 백엔드가 완전히 연산하여 반환해야 합니다.
   3. **단체 예약 분류**: PMS 예약 마스터의 `group_code`, `company_name`, 또는 `market_type`이 단체/세미나/기업/휴양소에 해당하는 건들을 자동으로 필터링 및 1-depth 집계하여 제공합니다.
+
+---
+
+## 23. ⛳ [P1 신규] 골프 예약 현황 마트 API 내 1부/2부/3부 파트별 예약 팀수 필드 신설 (`[Ticket 23]`)
+
+### 23-1. 배경 및 요청 사유
+* **대표님 직접 지시**:
+  > *"예약팀수는 지금처럼 두고 밑에 1부2부3부로 나누어서 보여줘"*
+* **현황**:
+  * 현재 메인 대시보드 및 골프 예약 카드에서 `GET /api/v6/dashboard/revenue-summary?date=YYYY-MM-DD`를 통해 `totalGolfReservedTeams`(총 예약 132팀), `totalGolfVisitedTeams`(내장 44팀), `totalGolfCanceledTeams`(취소 20팀), `totalGolfPendingTeams`(대기 68팀)을 실시간으로 수신하고 있습니다.
+  * 그러나 도착 예약 총계를 티타임 파트별(1부 오전, 2부 오후, 3부 야간/라이트)로 구분하여 파악할 수 있는 세부 필드가 부재합니다.
+  * 프론트엔드는 자의적 판단 및 거짓 숫자 합성 금지(Fail-Stop) 원칙에 따라 UI 영역을 사전 구축하고 현재 `API 연동 대기`로 격리한 상태입니다.
+
+### 23-2. 요청 엔드포인트 및 응답 규격
+* **대상 엔드포인트**: `GET /api/v6/dashboard/revenue-summary?date=YYYY-MM-DD`
+* **추가 요청 필드 (`summary` 블록 내)**:
+```json
+{
+  "summary": {
+    "totalGolfReservedTeams": 132,
+    "totalGolfVisitedTeams": 44,
+    "totalGolfCanceledTeams": 20,
+    "totalGolfPendingTeams": 68,
+    "golfPart1ReservedTeams": 48,
+    "golfPart2ReservedTeams": 56,
+    "golfPart3ReservedTeams": 28,
+    "golfParts": {
+      "part1": {
+        "name": "1부 (오전)",
+        "timeRange": "06:00~11:00",
+        "reservedTeams": 48,
+        "visitedTeams": 44,
+        "pendingTeams": 4
+      },
+      "part2": {
+        "name": "2부 (오후)",
+        "timeRange": "11:00~14:00",
+        "reservedTeams": 56,
+        "visitedTeams": 0,
+        "pendingTeams": 56
+      },
+      "part3": {
+        "name": "3부 (야간)",
+        "timeRange": "14:00~마감",
+        "reservedTeams": 28,
+        "visitedTeams": 0,
+        "pendingTeams": 28
+      }
+    }
+  }
+}
+```
+
+### 23-3. 비즈니스 룰 및 무관용 통제 기준
+1. **0-Variance 보장**:
+   - $\text{golfPart1ReservedTeams} + \text{golfPart2ReservedTeams} + \text{golfPart3ReservedTeams} = \text{totalGolfReservedTeams}$ (오차 0원/0팀 일치 필수).
+2. **파트 분류 기준 (SSOT)**:
+   - 1부: 티오프 시간 기준 06:00 ~ 11:00 (얼리 06~08시 포함 또는 골프장 공식 1부 편성 기준)
+   - 2부: 티오프 시간 기준 11:00 ~ 14:00
+   - 3부: 티오프 시간 기준 14:00 이후 ~ 야간 라이트 마감
+3. **실시간 원장 연동**: 골프 ERP(스마트스코어) 실시간 예약 테이블에서 당일(D-Day) 및 익일(D+1) 티타임 슬롯별 예약 팀수를 직접 집계하여 반환.
 
 

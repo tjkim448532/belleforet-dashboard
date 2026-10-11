@@ -18,6 +18,9 @@ interface NextDayGolfData {
   visitedTeams: number;
   canceledTeams: number;
   pendingTeams: number;
+  part1Reserved: number | null;
+  part2Reserved: number | null;
+  part3Reserved: number | null;
 }
 
 interface GolfReservationCardProps {
@@ -71,12 +74,19 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
 
         if (res && res.success && res.summary) {
           const s = res.summary;
+          const p1 = s.golfPart1ReservedTeams ?? s.totalGolfPart1Teams ?? s.golfPart1Teams ?? s.golfParts?.part1ReservedTeams ?? s.golfParts?.part1 ?? null;
+          const p2 = s.golfPart2ReservedTeams ?? s.totalGolfPart2Teams ?? s.golfPart2Teams ?? s.golfParts?.part2ReservedTeams ?? s.golfParts?.part2 ?? null;
+          const p3 = s.golfPart3ReservedTeams ?? s.totalGolfPart3Teams ?? s.golfPart3Teams ?? s.golfParts?.part3ReservedTeams ?? s.golfParts?.part3 ?? null;
+
           setNextDayGolf({
             targetDate: nextDateStr,
             reservedTeams: parseNum(s.totalGolfReservedTeams || 0),
             visitedTeams: parseNum(s.totalGolfVisitedTeams || s.totalGolfTeams || 0),
             canceledTeams: parseNum(s.totalGolfCanceledTeams || 0),
-            pendingTeams: parseNum(s.totalGolfPendingTeams || 0)
+            pendingTeams: parseNum(s.totalGolfPendingTeams || 0),
+            part1Reserved: p1 !== null && p1 !== undefined ? parseNum(p1) : null,
+            part2Reserved: p2 !== null && p2 !== undefined ? parseNum(p2) : null,
+            part3Reserved: p3 !== null && p3 !== undefined ? parseNum(p3) : null
           });
         } else {
           setNextDayGolf({
@@ -84,7 +94,10 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
             reservedTeams: 0,
             visitedTeams: 0,
             canceledTeams: 0,
-            pendingTeams: 0
+            pendingTeams: 0,
+            part1Reserved: null,
+            part2Reserved: null,
+            part3Reserved: null
           });
         }
       } catch (err) {
@@ -192,9 +205,9 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
               </div>
             </div>
 
-            {/* 다음날 실제 입장 (내장/진행) */}
+            {/* 다음날 실제 체크인 (내장) */}
             <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">실제 입장 (내장)</div>
+              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">체크인 (내장)</div>
               <div className="text-2xl lg:text-3xl font-black text-teal-600 tabular-nums whitespace-nowrap">
                 {loading ? (
                   <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
@@ -205,7 +218,7 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
                 )}
               </div>
               <div className="text-[10px] text-teal-700 font-semibold mt-0.5">
-                {(nextDayGolf?.visitedTeams ?? 0) > 0 ? `${nextDayGolf?.visitedTeams}팀 진행/완료` : '내장 대기 중'}
+                {(nextDayGolf?.visitedTeams ?? 0) > 0 ? `체크인 ${nextDayGolf?.visitedTeams}팀 완료` : '내장 대기 중'}
               </div>
             </div>
 
@@ -223,6 +236,74 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
               </div>
               <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
                 {`취소 ${nextDayGolf?.canceledTeams ?? 0}팀 · 대기 ${nextDayGolf?.pendingTeams ?? 0}팀`}
+              </div>
+            </div>
+          </div>
+
+          {/* 🌟 2-B. 1부 / 2부 / 3부 티타임 파트별 예약 현황 (사용자 명시 요청) */}
+          <div className="mt-3.5 pt-3 border-t border-slate-200/80">
+            <div className="flex items-center justify-between text-xs mb-2 px-1">
+              <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                <span className="text-sm">⏰</span>
+                <span>티타임 파트별 예약 현황</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined
+                  ? '실시간 파트별 집계'
+                  : '1부·2부·3부 백엔드 API 연동 대기'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {/* 1부 */}
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
+                <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50/80 py-0.5 rounded-md mb-1">
+                  1부 (오전)
+                </div>
+                <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                  {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined ? (
+                    <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  06:00 ~ 11:00
+                </div>
+              </div>
+
+              {/* 2부 */}
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
+                <div className="text-[11px] font-bold text-teal-700 bg-teal-50/80 py-0.5 rounded-md mb-1">
+                  2부 (오후)
+                </div>
+                <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                  {nextDayGolf?.part2Reserved !== null && nextDayGolf?.part2Reserved !== undefined ? (
+                    <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  11:00 ~ 14:00
+                </div>
+              </div>
+
+              {/* 3부 */}
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
+                <div className="text-[11px] font-bold text-amber-700 bg-amber-50/80 py-0.5 rounded-md mb-1">
+                  3부 (야간/라이트)
+                </div>
+                <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                  {nextDayGolf?.part3Reserved !== null && nextDayGolf?.part3Reserved !== undefined ? (
+                    <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  14:00 ~ 마감
+                </div>
               </div>
             </div>
           </div>

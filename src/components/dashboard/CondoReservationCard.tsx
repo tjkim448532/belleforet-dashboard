@@ -34,8 +34,8 @@ interface CondoReservationCardProps {
 }
 
 export default function CondoReservationCard({ currentDate }: CondoReservationCardProps) {
-  // 모드: 'NEXT_DAY' (기본: 오늘이 10일이면 11일 익일 체크인 예약) vs 'TODAY' (당일 실측 체크인)
-  const [viewMode, setViewMode] = useState<'NEXT_DAY' | 'TODAY'>('NEXT_DAY');
+  // 모드: 기본 'TODAY' (당일 확정 실측) vs 'NEXT_DAY' (익일 D+1 체크인 예약)
+  const [viewMode, setViewMode] = useState<'TODAY' | 'NEXT_DAY'>('TODAY');
   const [loading, setLoading] = useState(false);
   const [resData, setResData] = useState<CondoReservationData | null>(null);
 
@@ -183,6 +183,11 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
     };
   }, [activeDate]);
 
+  // 단체 기업 예약의 전체 객실 대비 비중 (%)
+  const groupSharePct = (resData?.totalRooms && resData.totalRooms > 0 && resData.totalGroupRooms) 
+    ? ((resData.totalGroupRooms / resData.totalRooms) * 100).toFixed(1)
+    : '0.0';
+
   return (
     <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
       <div>
@@ -193,19 +198,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             <span>콘도(객실) 예약 및 체크인 현황</span>
           </div>
 
-          {/* Toggle: 익일(D+1) 예약 vs 당일(D-Day) 체크인 */}
+          {/* Toggle: 오늘(당일) 체크인 vs 내일(익일 D+1) 예약 */}
           <div className="flex items-center bg-slate-200/70 p-0.5 rounded-xl text-[11px] font-bold shrink-0 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode('NEXT_DAY')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                viewMode === 'NEXT_DAY'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              내일(익일 D+1) 예약
-            </button>
             <button
               type="button"
               onClick={() => setViewMode('TODAY')}
@@ -216,6 +210,17 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               }`}
             >
               오늘(당일) 체크인
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('NEXT_DAY')}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                viewMode === 'NEXT_DAY'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              내일(익일 D+1) 예약
             </button>
           </div>
         </div>
@@ -234,9 +239,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           </span>
         </div>
 
-        {/* Top 3 KPI Badges */}
+        {/* Top 3 KPI Badges - 실제 객실수 중심 */}
         <div className="grid grid-cols-3 gap-2.5">
-          {/* 1. 총 예약 객실수 */}
+          {/* 1. 총 예약 / 입실 객실수 */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">
               {viewMode === 'NEXT_DAY' ? '총 예약 객실' : '총 입실 객실'}
@@ -248,13 +253,13 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 <span className="text-lg text-slate-400 font-bold">-</span>
               ) : (
                 <>
-                  {resData?.totalRooms ?? 0}{' '}
-                  <span className="text-sm font-normal text-slate-500">실</span>
+                  {resData?.totalRooms ?? 0}
+                  <span className="text-sm font-normal text-slate-500 ml-1">실</span>
                 </>
               )}
             </div>
             <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-              전체 175실 가용
+              전체 {resData?.totalCapacity}실 가용
             </div>
           </div>
 
@@ -282,12 +287,12 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             </div>
           </div>
 
-          {/* 3. 단체 / 기업 예약 */}
+          {/* 3. 단체 / 기업 예약 객실수 및 전체 대비 비중 */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div className="text-xs text-purple-600 font-semibold mb-1 whitespace-nowrap flex items-center justify-between">
               <span>단체·기업 예약</span>
               {resData && resData.groups.length > 0 && (
-                <span className="text-[10px] bg-purple-50 text-purple-700 px-1 py-0.2 rounded-md font-bold">
+                <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-bold border border-purple-100">
                   {resData.groups.length}건
                 </span>
               )}
@@ -299,13 +304,13 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 <span className="text-lg text-slate-400 font-bold">-</span>
               ) : (
                 <>
-                  {resData?.totalGroupRooms ?? 0}{' '}
-                  <span className="text-sm font-normal text-purple-500">실</span>
+                  {resData?.totalGroupRooms ?? 0}
+                  <span className="text-sm font-normal text-purple-500 ml-1">실</span>
                 </>
               )}
             </div>
-            <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-              세미나 및 휴양소
+            <div className="text-[10px] text-purple-700 font-bold mt-0.5 truncate">
+              전체 대비 {groupSharePct}%
             </div>
           </div>
         </div>
@@ -339,25 +344,28 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           </div>
         ) : (
           <div className="space-y-3 mt-3.5">
-            {/* 평수별 예약 현황 (16평, 35평, 51평) */}
+            {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - %가 아닌 실제 객실숫자 중심) */}
             <div className="pt-3 border-t border-slate-200/80">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span className="flex items-center gap-1.5">
-                  <span>📐</span> 평수별 {viewMode === 'NEXT_DAY' ? '예약' : '입실'} 현황 (16평 / 35평 / 51평)
+                  <span>📐</span> 평수별 {viewMode === 'NEXT_DAY' ? '예약' : '입실'} 현황 (실제 객실수)
                 </span>
-                <span className="text-[11px] font-normal text-slate-400">가용 객실 대비</span>
+                <span className="text-[11px] font-normal text-slate-400">실제 객실수 기준</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-2">
                 {(resData?.byType || []).map((t, idx) => {
                   const pct = Math.min(100, Math.max(0, t.rate || 0));
                   return (
-                    <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-2xs text-center">
-                      <div className="text-[10px] font-bold text-slate-500">{t.roomType}</div>
-                      <div className="text-sm font-black text-slate-900 tabular-nums my-0.5">
-                        {t.roomsSold} <span className="text-[10px] font-normal text-slate-500">/ {t.capacity}실</span>
+                    <div key={idx} className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
+                      <div className="text-xs font-bold text-slate-600 mb-1">{t.roomType}</div>
+                      <div className="text-xl lg:text-2xl font-black text-slate-900 tabular-nums my-0.5">
+                        {t.roomsSold} <span className="text-xs font-bold text-slate-500">실</span>
                       </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden my-1">
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        가용 {t.capacity}실 중
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2 mb-1">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-indigo-500' : 'bg-slate-400'
@@ -365,8 +373,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <div className="text-[10px] font-bold text-indigo-700 tabular-nums">
-                        {pct.toFixed(0)}%
+                      <div className="text-[10px] text-slate-400 font-semibold">
+                        점유 {pct.toFixed(0)}%
                       </div>
                     </div>
                   );
@@ -374,42 +382,52 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               </div>
             </div>
 
-            {/* 단체 예약 현황 (Group Bookings) */}
-            <div className="pt-2.5 border-t border-slate-200/80">
+            {/* 단체 기업예약: 전체 객실대비 비중 및 단체 이름 리스트 */}
+            <div className="pt-3 border-t border-slate-200/80">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                 <span className="flex items-center gap-1.5 text-purple-900">
-                  <Users size={13} className="text-purple-600" />
-                  <span>단체 / 기업 / 세미나 예약 명단</span>
+                  <Users size={14} className="text-purple-600" />
+                  <span>단체 / 기업 예약 명단</span>
                 </span>
-                <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
-                  총 {resData?.totalGroupRooms ?? 0}실
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                    총 {resData?.totalGroupRooms ?? 0}실 ({groupSharePct}% 비중)
+                  </span>
+                </div>
               </div>
 
               {resData?.groups && resData.groups.length > 0 ? (
-                <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
-                  {resData.groups.map((grp, gIdx) => (
-                    <div
-                      key={gIdx}
-                      className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-purple-200 transition-all"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-bold text-slate-800 truncate flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></span>
-                          <span className="truncate">{grp.channelName}</span>
-                        </div>
-                        {grp.breakdown.length > 0 && (
-                          <div className="text-[10px] text-slate-500 truncate mt-0.5 ml-2.5">
-                            {grp.breakdown.join(' · ')}
+                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
+                  {resData.groups.map((grp, gIdx) => {
+                    const itemShare = (resData.totalRooms > 0)
+                      ? ((grp.totalRooms / resData.totalRooms) * 100).toFixed(1)
+                      : '0.0';
+                    return (
+                      <div
+                        key={gIdx}
+                        className="bg-white p-2.5 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-purple-200 transition-all"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-800 truncate flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+                            <span className="truncate text-sm">{grp.channelName}</span>
+                            <span className="text-[10px] bg-purple-100/70 text-purple-800 px-1.5 py-0.2 rounded-md font-bold shrink-0">
+                              비중 {itemShare}%
+                            </span>
                           </div>
-                        )}
+                          {grp.breakdown.length > 0 && (
+                            <div className="text-[11px] text-slate-500 truncate mt-1 ml-3.5 font-medium">
+                              {grp.breakdown.join(' · ')}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right whitespace-nowrap shrink-0 pl-2">
+                          <span className="text-base font-black text-purple-700">{grp.totalRooms}</span>
+                          <span className="text-xs font-bold text-slate-500 ml-0.5">실</span>
+                        </div>
                       </div>
-                      <div className="text-right whitespace-nowrap shrink-0">
-                        <span className="font-black text-purple-700">{grp.totalRooms}</span>
-                        <span className="text-[10px] text-slate-500 ml-0.5">실</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-3 bg-white rounded-xl border border-slate-200/70 text-center text-xs text-slate-500">

@@ -1015,22 +1015,6 @@ export default function StrategicSimulator() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('BUSINESS_PLAN')}
-          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'BUSINESS_PLAN'
-              ? 'bg-gradient-to-r from-indigo-700 to-indigo-900 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <FileSpreadsheet size={17} />
-          <span>📋 사업계획서 (영업장별 목표 & 엑셀)</span>
-          <span className="text-[10px] bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
-            다운로드 지원
-          </span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => setActiveTab('PACKAGE_GEN')}
           className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'PACKAGE_GEN'
@@ -1042,6 +1026,22 @@ export default function StrategicSimulator() {
           <span>📦 비수기 패키지 시뮬레이터</span>
           <span className="text-[10px] bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
             TrevPAR 기반
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('BUSINESS_PLAN')}
+          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'BUSINESS_PLAN'
+              ? 'bg-gradient-to-r from-indigo-700 to-indigo-900 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <FileSpreadsheet size={17} />
+          <span>📋 사업계획서 (영업장별 목표 & 엑셀)</span>
+          <span className="text-[10px] bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
+            다운로드 지원
           </span>
         </button>
       </div>

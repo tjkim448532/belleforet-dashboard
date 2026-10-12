@@ -29,9 +29,9 @@ const DIVISION_META: Record<string, { code: string; name: string; color: string;
 };
 
 const YEAR_PAIRS = [
-  { baseYear: 2024, targetYear: 2025, label: '2024년 실적 ➔ 2025년 목표' },
   { baseYear: 2025, targetYear: 2026, label: '2025년 실적 ➔ 2026년 목표' },
-  { baseYear: 2026, targetYear: 2027, label: '2026년 실적 ➔ 2027년 목표' }
+  { baseYear: 2026, targetYear: 2027, label: '2026년 실적 ➔ 2027년 목표 (기본)' },
+  { baseYear: 2027, targetYear: 2028, label: '2027년 실적 ➔ 2028년 목표 (미래 계획)' }
 ];
 
 const MONTH_NAMES = [
@@ -196,10 +196,10 @@ export default function StrategicSimulator() {
     });
   };
 
-  // Simulation Target Input State
+  // Simulation Target Input State (2026년 실적 기반 ➔ 2027년 사업계획 기본 설정)
   const [input, setInput] = useState<SimulationTargetInput>({
-    baseYear: 2025,
-    targetYear: 2026,
+    baseYear: 2026,
+    targetYear: 2027,
     selectedMonth: 1, // 기본값: 1월
     period: 'M01',
     metricInputMode: 'GROWTH_RATE',
@@ -1090,6 +1090,110 @@ export default function StrategicSimulator() {
                 </span>
               </button>
             </div>
+          </div>
+
+          {/* 🎛️ Business Plan Year & Growth Rate Simulator Control Bar */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-4 text-white shadow-md space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Year Selection */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Calendar size={14} className="text-indigo-400" />
+                  비교 연도 선택:
+                </span>
+                <div className="flex flex-wrap items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700 text-xs">
+                  {YEAR_PAIRS.map(yp => {
+                    const isSelected = input.baseYear === yp.baseYear && input.targetYear === yp.targetYear;
+                    return (
+                      <button
+                        key={`${yp.baseYear}-${yp.targetYear}`}
+                        type="button"
+                        onClick={() => setInput(prev => ({ ...prev, baseYear: yp.baseYear, targetYear: yp.targetYear }))}
+                        className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-xs font-black'
+                            : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                        }`}
+                      >
+                        {yp.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Growth Rate Controls */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-300">목표 성장률:</span>
+                  <div className="flex items-center gap-1 bg-slate-800/90 px-2.5 py-1 rounded-xl border border-slate-700">
+                    <input
+                      type="range"
+                      min={-20}
+                      max={30}
+                      step={0.5}
+                      value={input.targetGrowthRate}
+                      onChange={(e) => setInput(prev => ({ ...prev, targetGrowthRate: Number(e.target.value) }))}
+                      className="accent-teal-400 w-24 sm:w-32 cursor-pointer"
+                    />
+                    <span className="text-xs font-black text-teal-300 font-mono w-14 text-right">
+                      {input.targetGrowthRate > 0 ? `+${input.targetGrowthRate.toFixed(1)}` : input.targetGrowthRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="hidden sm:flex items-center gap-1">
+                  {[0, 3, 5, 7, 10].map(pct => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setInput(prev => ({ ...prev, targetGrowthRate: pct }))}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                        input.targetGrowthRate === pct
+                          ? 'bg-teal-500 text-slate-950 border-teal-400 font-black shadow-2xs'
+                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                      }`}
+                    >
+                      {pct > 0 ? `+${pct}%` : `${pct}%`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Include Golf Toggle */}
+                <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setInput(prev => ({ ...prev, includeGolf: true }))}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                      input.includeGolf ? 'bg-teal-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    골프 포함
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInput(prev => ({ ...prev, includeGolf: false }))}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                      !input.includeGolf ? 'bg-rose-500 text-white font-black' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    골프 제외
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {input.targetYear === 2027 && (
+              <div className="flex items-center justify-between text-[11px] text-slate-300 bg-indigo-900/40 px-3 py-1.5 rounded-xl border border-indigo-800/50">
+                <span>
+                  💡 <strong>연말 사업계획 수립 모드:</strong> {input.baseYear}년 실적 데이터를 기저로 목표 성장률({input.targetGrowthRate > 0 ? `+${input.targetGrowthRate}%` : `${input.targetGrowthRate}%`})을 적용하여 {input.targetYear}년 31개 영업장별 1~12월 목표를 자동 추산합니다.
+                </span>
+                <span className="text-[10px] text-amber-300 font-bold hidden md:inline-block">
+                  * 11~12월은 2026년 연말 결산 완료 시 실측치가 100% 자동 완결됩니다
+                </span>
+              </div>
+            )}
           </div>
 
           {/* DB Server Status / Error Alert Banner */}

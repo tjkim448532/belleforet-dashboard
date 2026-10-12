@@ -203,7 +203,8 @@ export default function PackageGeneratorSimulator() {
   // ==========================================
   // State: Step 2 (객실 우선 배분액)
   // ==========================================
-  const [isAutoRoomDeduction, setIsAutoRoomDeduction] = useState<boolean>(true); // 실측 RevPAR 자동 연동 여부
+  // 모드: 'COST' (경영지원팀 실측 객실원가 보전형) | 'REVPAR' (월별 실측 RevPAR 방어형) | 'CUSTOM' (직접 설정)
+  const [roomDeductionMode, setRoomDeductionMode] = useState<'COST' | 'REVPAR' | 'CUSTOM'>('COST');
   const [customRoomDeduction, setCustomRoomDeduction] = useState<number>(0);
 
   // ==========================================
@@ -502,13 +503,18 @@ export default function PackageGeneratorSimulator() {
     }
   }, [selectedMonth, targetType, activeMetrics.targetTrevpar]);
 
-  // Update room deduction when month or targetType changes (if auto)
+  // Update room deduction when month, targetType, roomType or mode changes
   useEffect(() => {
-    const baseRevpar = activeMetrics.targetRevpar;
-    if (isAutoRoomDeduction && baseRevpar > 0) {
-      setCustomRoomDeduction(Math.round(baseRevpar / 1000) * 1000);
+    if (roomDeductionMode === 'COST') {
+      const cost = ROOM_COST_MASTER[selectedRoomTypeId] || ROOM_COST_MASTER['ROOM_16'];
+      setCustomRoomDeduction(cost.totalCostGross);
+    } else if (roomDeductionMode === 'REVPAR') {
+      const baseRevpar = activeMetrics.targetRevpar;
+      if (baseRevpar > 0) {
+        setCustomRoomDeduction(Math.round(baseRevpar / 1000) * 1000);
+      }
     }
-  }, [selectedMonth, targetType, activeMetrics.targetRevpar, isAutoRoomDeduction]);
+  }, [selectedMonth, targetType, selectedRoomTypeId, roomDeductionMode, activeMetrics.targetRevpar]);
 
   // ==========================================
   // 3. RM Quota & Safe Allotment Math Engine
@@ -549,13 +555,25 @@ export default function PackageGeneratorSimulator() {
     // 1. 총 패키지 판매가
     const totalPkgGross = targetPackagePrice;
     
-    // 2. 객실 우선 배분액 (실측 target RevPAR 방어)
+    // 2. 🌟 [경영지원팀 SSOT 실측 콘도 객실 원가 연동]
+    // 16평: 28,194원 / 35평: 50,122원 / 51평: 78,316원 (VAT 별도)
+    const currentRoomCost = ROOM_COST_MASTER[selectedRoomTypeId] || ROOM_COST_MASTER['ROOM_16'];
+    const roomVariableCostNet = currentRoomCost.totalCostNet;
+    const roomVariableCostGross = currentRoomCost.totalCostGross;
+
+    // 객실 우선 배분액 (실측 원가 보전형 vs RevPAR 방어형 vs 직접 설정)
     const targetRevpar = activeMetrics.targetRevpar > 0
       ? activeMetrics.targetRevpar
       : (liveSummary?.revpar || currentMonthData.revpar);
-    const roomDeduction = isAutoRoomDeduction
-      ? (Math.round(targetRevpar / 1000) * 1000)
-      : customRoomDeduction;
+
+    let roomDeduction = roomVariableCostGross;
+    if (roomDeductionMode === 'COST') {
+      roomDeduction = roomVariableCostGross;
+    } else if (roomDeductionMode === 'REVPAR') {
+      roomDeduction = Math.round(targetRevpar / 1000) * 1000;
+    } else {
+      roomDeduction = customRoomDeduction > 0 ? customRoomDeduction : roomVariableCostGross;
+    }
 
     // 3. 부대시설 정해진 가용 예산 = 총 판매가 - 객실 배분액
     const amenityBudget = Math.max(0, totalPkgGross - roomDeduction);
@@ -589,11 +607,7 @@ export default function PackageGeneratorSimulator() {
     const remainingBuffer = amenityBudget - allocatedAmenitiesTotal;
     const isOverBudget = remainingBuffer < 0;
 
-    // 5. 🌟 [경영지원팀 SSOT 실측 콘도 객실 원가 연동]
-    // 16평: 28,194원 / 35평: 50,122원 / 51평: 78,316원 (VAT 별도)
-    const currentRoomCost = ROOM_COST_MASTER[selectedRoomTypeId] || ROOM_COST_MASTER['ROOM_16'];
-    const roomVariableCostNet = currentRoomCost.totalCostNet;
-    const roomVariableCostGross = currentRoomCost.totalCostGross;
+    // 5. 총 실질 한계 변동비용 (Total Marginal Cost = Room MC + Amenity MC)
     const amenityVariableCostNet = fnbVariableCostNet + leisureVariableCostNet;
 
     // 총 실질 한계 변동비용 (Total Marginal Cost = Room MC + Amenity MC)
@@ -686,7 +700,7 @@ export default function PackageGeneratorSimulator() {
     };
   }, [
     targetPackagePrice,
-    isAutoRoomDeduction,
+    roomDeductionMode,
     customRoomDeduction,
     currentMonthData,
     liveSummary,
@@ -756,12 +770,10 @@ export default function PackageGeneratorSimulator() {
     setSelectedMonth(1);
     setTargetType('WEEKDAY');
     const baseTrevpar = Math.round((liveSummary?.weekdayTrevpar || monthlyEfficiencyMap[1]?.weekdayTrevpar || activeMetrics.targetTrevpar || 0) / 1000) * 1000;
-    const baseRevpar = Math.round((liveSummary?.weekdayRevpar || monthlyEfficiencyMap[1]?.weekdayRevpar || activeMetrics.targetRevpar || 0) / 1000) * 1000;
     const effectiveTrev = baseTrevpar > 0 ? baseTrevpar : (liveSummary?.trevparWithoutGolf ?? 0);
-    const effectiveRev = baseRevpar > 0 ? baseRevpar : (liveSummary?.revpar ?? 0);
     setTargetPackagePrice(effectiveTrev);
-    setIsAutoRoomDeduction(true);
-    setCustomRoomDeduction(effectiveRev);
+    setRoomDeductionMode('COST');
+    setCustomRoomDeduction(ROOM_COST_MASTER['ROOM_16'].totalCostGross);
     setSelectedRoomTypeId('ROOM_16');
     setUserItems([]);
     setDailyPackageSalesRooms(0);
@@ -1505,7 +1517,7 @@ ${itemListText}
           </div>
         </div>
 
-        {/* Step 02: 객실 기준액 우선 공제 (RevPAR 방어) */}
+        {/* Step 02: 객실 기준액 우선 공제 (실측 원가 보전형 or RevPAR 방어형) */}
         <div className="bg-white p-5 rounded-2xl border-2 border-indigo-500/30 shadow-xs relative flex flex-col justify-between">
           <div className="absolute -top-3 left-4 bg-indigo-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
             Step 02
@@ -1519,55 +1531,126 @@ ${itemListText}
               − {formatCurrency(reverseCalculations.roomDeduction)}
               <span className="text-sm font-semibold text-slate-500 ml-1">원</span>
             </div>
-            <p className="text-[11px] text-slate-500 mb-3">
-              {selectedMonth}월 [{activeMetrics.targetLabel}] 실측 RevPAR({formatCurrency(activeMetrics.targetRevpar)}원)를 최소 방어 요금으로 선차감합니다.
+
+            {/* Mode Description */}
+            <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+              {roomDeductionMode === 'COST'
+                ? `경영지원팀 실측 객실 변동원가(${formatCurrency(reverseCalculations.roomDeduction)}원, VAT포함)를 선차감하여 객실 손실을 0원으로 완벽 방어합니다.`
+                : roomDeductionMode === 'REVPAR'
+                ? `${selectedMonth}월 [${activeMetrics.targetLabel}] 실측 RevPAR(${formatCurrency(activeMetrics.targetRevpar)}원)를 최소 방어 요금으로 선차감합니다.`
+                : `사용자 지정 객실 배분액(${formatCurrency(reverseCalculations.roomDeduction)}원)을 선차감합니다.`}
             </p>
 
-            {/* Toggle: Auto vs Manual */}
-            <div className="flex items-center gap-2 mb-3">
+            {/* 3 Mode Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mb-3">
               <button
-                onClick={() => setIsAutoRoomDeduction(true)}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                  isAutoRoomDeduction
-                    ? 'bg-indigo-600 text-white border-indigo-600 font-black'
-                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                type="button"
+                onClick={() => setRoomDeductionMode('COST')}
+                className={`py-2 px-1.5 rounded-xl text-[10.5px] font-bold border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                  roomDeductionMode === 'COST'
+                    ? 'bg-teal-700 text-white border-teal-700 font-black shadow-2xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                <CheckCircle2 size={12} />
-                실측 RevPAR 자동 연동 ({formatCurrency(reverseCalculations.roomDeduction)}원)
+                <div className="flex items-center gap-1">
+                  <CheckCircle2 size={11} className={roomDeductionMode === 'COST' ? 'text-teal-200' : 'text-slate-400'} />
+                  <span>실측 원가 보전형</span>
+                </div>
+                <span className={`text-[9px] ${roomDeductionMode === 'COST' ? 'text-teal-100' : 'text-slate-500'}`}>
+                  {formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원 (추천)
+                </span>
               </button>
               <button
-                onClick={() => setIsAutoRoomDeduction(false)}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                  !isAutoRoomDeduction
-                    ? 'bg-indigo-600 text-white border-indigo-600 font-black'
-                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                type="button"
+                onClick={() => setRoomDeductionMode('REVPAR')}
+                className={`py-2 px-1.5 rounded-xl text-[10.5px] font-bold border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                  roomDeductionMode === 'REVPAR'
+                    ? 'bg-indigo-600 text-white border-indigo-600 font-black shadow-2xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                직접 설정
+                <div className="flex items-center gap-1">
+                  <CheckCircle2 size={11} className={roomDeductionMode === 'REVPAR' ? 'text-indigo-200' : 'text-slate-400'} />
+                  <span>실측 RevPAR 방어형</span>
+                </div>
+                <span className={`text-[9px] ${roomDeductionMode === 'REVPAR' ? 'text-indigo-100' : 'text-slate-500'}`}>
+                  {formatCurrency(Math.round(activeMetrics.targetRevpar / 1000) * 1000)}원
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRoomDeductionMode('CUSTOM');
+                  if (customRoomDeduction === 0) setCustomRoomDeduction(reverseCalculations.currentRoomCost.totalCostGross);
+                }}
+                className={`py-2 px-1.5 rounded-xl text-[10.5px] font-bold border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                  roomDeductionMode === 'CUSTOM'
+                    ? 'bg-slate-800 text-white border-slate-800 font-black shadow-2xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <CheckCircle2 size={11} className={roomDeductionMode === 'CUSTOM' ? 'text-slate-300' : 'text-slate-400'} />
+                  <span>직접 설정</span>
+                </div>
+                <span className={`text-[9px] ${roomDeductionMode === 'CUSTOM' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  슬라이더 조절
+                </span>
               </button>
             </div>
 
-            {!isAutoRoomDeduction && (
-              <div className="space-y-1">
+            {/* 실측 원가 모드 세부 견적 요약 바 */}
+            {roomDeductionMode === 'COST' && (
+              <div className="bg-teal-50/80 border border-teal-200 rounded-xl p-2.5 mb-2 text-[11px] space-y-1">
+                <div className="flex items-center justify-between font-bold text-teal-950">
+                  <span className="flex items-center gap-1">
+                    <FileSpreadsheet size={12} className="text-teal-700" />
+                    경영지원팀 5대 원가 SSOT 연동
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowRoomCostDetail(true)}
+                    className="text-[10px] text-teal-800 underline hover:text-teal-950 cursor-pointer font-bold"
+                  >
+                    원가 상세표 보기 ↓
+                  </button>
+                </div>
+                <div className="text-[10px] text-teal-800 leading-tight">
+                  청소 {formatCurrency(reverseCalculations.currentRoomCost.cleaningCost)} · 린넨 {formatCurrency(reverseCalculations.currentRoomCost.linenLaunderingCost)} · 어메니티 {formatCurrency(reverseCalculations.currentRoomCost.amenityCost)} · 소모품 {formatCurrency(reverseCalculations.currentRoomCost.consumablesCost)} · 광열비 {formatCurrency(reverseCalculations.currentRoomCost.utilityCost)}
+                </div>
+                <div className="text-[10px] text-slate-500 pt-0.5">
+                  * 순원가 {formatCurrency(reverseCalculations.currentRoomCost.totalCostNet)}원 + 부가세 10% = <strong>{formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원</strong>
+                </div>
+              </div>
+            )}
+
+            {roomDeductionMode === 'CUSTOM' && (
+              <div className="space-y-1 mb-2">
                 <input
                   type="range"
-                  min={30000}
+                  min={Math.min(30000, reverseCalculations.currentRoomCost.totalCostGross)}
                   max={150000}
-                  step={2000}
+                  step={1000}
                   value={customRoomDeduction}
                   onChange={(e) => setCustomRoomDeduction(Number(e.target.value))}
                   className="w-full accent-indigo-600 cursor-pointer"
                 />
-                <div className="text-right text-[10px] text-indigo-800 font-bold">
-                  객실 배분액: {formatCurrency(customRoomDeduction)}원
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className={customRoomDeduction < reverseCalculations.currentRoomCost.totalCostGross ? 'text-rose-600 font-bold' : 'text-slate-500'}>
+                    {customRoomDeduction < reverseCalculations.currentRoomCost.totalCostGross 
+                      ? `⚠️ 실측 원가(${formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원) 미달 (역마진 위험)` 
+                      : `최소 실측 원가: ${formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원`}
+                  </span>
+                  <span className="text-indigo-800 font-bold">
+                    배분액: {formatCurrency(customRoomDeduction)}원
+                  </span>
                 </div>
               </div>
             )}
           </div>
 
           <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            💡 객실을 헐값에 파는 대신 최소 실현 매출을 먼저 락인(Lock-in)합니다.
+            💡 객실을 헐값에 파는 대신 최소 실현 매출 또는 실측 원가를 먼저 락인(Lock-in)합니다.
           </div>
         </div>
 

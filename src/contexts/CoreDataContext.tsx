@@ -39,7 +39,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   useEffect(() => {
-    let isCancelled = false;
+    const abortController = new AbortController();
 
     const fetchCoreData = async () => {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -59,31 +59,29 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         : `date=${validStart || todayStr}&_t=${Date.now()}`;
 
       try {
-        // [V6 SSOT Direct Call] Call V6 revenue-summary & revenue-by-org master endpoints (primary SSOT)
-        const [res, orgRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`).catch(() => null)
-        ]);
-        if (isCancelled) return;
+        // [V6 SSOT Direct Call] 1. Fetch primary SSOT revenue-summary first (~400ms fast path)
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`, {
+          signal: abortController.signal
+        });
+        if (abortController.signal.aborted) return;
 
         const payload = (res?.summary ? res : res?.data) || res || {};
-        const physicalMaster = orgRes?.data?.physicalRoomMaster || orgRes?.physicalRoomMaster || null;
 
-        const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false) => {
+        const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false, pm: any = null) => {
           // 100% SSOT Direct Binding: 프론트엔드 임의 키워드 필터링 및 reduce 클라이언트 합산 전면 철거
           const directAvg = Number(payloadSummary?.golfDirectAvgGreenFee || gs.golfDirectAvgGreenFee || 0);
           const otaAvg = Number(payloadSummary?.golfOtaAvgGreenFee || gs.golfOtaAvgGreenFee || 0);
           const memberAvg = Number(payloadSummary?.golfMemberAvgGreenFee || gs.golfMemberAvgGreenFee || 0);
 
-          const physicalOccRate = physicalMaster?.metrics?.physicalOccupancyRate !== undefined && physicalMaster?.metrics?.physicalOccupancyRate !== null
-            ? Number(physicalMaster.metrics.physicalOccupancyRate.toFixed(1))
+          const physicalOccRate = pm?.metrics?.physicalOccupancyRate !== undefined && pm?.metrics?.physicalOccupancyRate !== null
+            ? Number(pm.metrics.physicalOccupancyRate.toFixed(1))
             : undefined;
 
           return {
             ...payloadSummary,
             totalOcc: physicalOccRate ?? payloadSummary?.totalOcc,
             physicalOccRate: physicalOccRate ?? payloadSummary?.physicalOccRate,
-            physicalOccupiedUnits: physicalMaster?.metrics?.physicalOccupiedUnits ?? payloadSummary?.occupiedRooms,
+            physicalOccupiedUnits: pm?.metrics?.physicalOccupiedUnits ?? payloadSummary?.occupiedRooms,
             // TrevPAR 대소문자 호환성 (trevPar vs trevPAR)
             trevPAR: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
             trevPar: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
@@ -112,14 +110,14 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
                                    payload.summary?.golfOtaAvgGreenFee !== undefined && 
                                    payload.summary?.golfMemberAvgGreenFee !== undefined;
 
-        const initialSummary = buildCoreSummary(payload.summary, {}, [], hasFullGolfMetrics);
+        const initialSummary = buildCoreSummary(payload.summary, {}, [], hasFullGolfMetrics, null);
         const corePayload = {
           ...payload,
-          physicalRoomMaster: physicalMaster,
+          physicalRoomMaster: null,
           date: payload.targetDate || validStart || todayStr,
           salesByCategory: payload.salesByCategory || [],
           salesByFacility: payload.salesByFacility || [],
-          leisureVisitors: payload.leisureVisitors || {},
+          leisureVisitors: payload.summary?.leisureVisitors || payload.leisureVisitors || {},
           gridData: payload.gridData || [],
           weather: payload.weather || {},
           summary: initialSummary
@@ -134,17 +132,56 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           error: null
         });
 
-        // If master API already returned complete golf metrics via mat_v6_golf_daily, skip redundant 20s background fetch
+        // 2. Fetch secondary revenue-by-org asynchronously in background (doesn't block screen render or spike concurrent DB pool)
+        secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`, {
+          signal: abortController.signal
+        })
+          .then((orgRes) => {
+            if (abortController.signal.aborted || !orgRes) return;
+            const pm = orgRes?.data?.physicalRoomMaster || orgRes?.physicalRoomMaster || null;
+            if (!pm) return;
+
+            setState(prev => {
+              if (!prev.core) return prev;
+              const pOccRate = pm?.metrics?.physicalOccupancyRate !== undefined && pm?.metrics?.physicalOccupancyRate !== null
+                ? Number(pm.metrics.physicalOccupancyRate.toFixed(1))
+                : undefined;
+
+              const updatedSummary = {
+                ...prev.summary,
+                totalOcc: pOccRate ?? prev.summary?.totalOcc,
+                physicalOccRate: pOccRate ?? prev.summary?.physicalOccRate,
+                physicalOccupiedUnits: pm?.metrics?.physicalOccupiedUnits ?? prev.summary?.occupiedRooms,
+              };
+
+              return {
+                ...prev,
+                core: {
+                  ...prev.core,
+                  physicalRoomMaster: pm,
+                  summary: updatedSummary
+                },
+                summary: updatedSummary
+              };
+            });
+          })
+          .catch(() => {
+            // Secondary physical room master fetch failure ignored safely
+          });
+
+        // 3. If master API already returned complete golf metrics via mat_v6_golf_daily, skip redundant 20s background fetch
         if (!hasFullGolfMetrics) {
-          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`)
+          secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`, {
+            signal: abortController.signal
+          })
             .then((golfTeetimeRes) => {
-              if (isCancelled || !golfTeetimeRes) return;
+              if (abortController.signal.aborted || !golfTeetimeRes) return;
               const gs = golfTeetimeRes?.meta?.summary || golfTeetimeRes?.golfSummary || golfTeetimeRes?.summary || {};
               const channels = golfTeetimeRes?.channels || golfTeetimeRes?.salesByChannel || [];
               if (channels.length > 0 || Object.keys(gs).length > 0) {
                 setState(prev => {
                   if (!prev.core) return prev;
-                  const updatedSummary = buildCoreSummary(payload.summary, gs, channels, true);
+                  const updatedSummary = buildCoreSummary(payload.summary, gs, channels, true, prev.core?.physicalRoomMaster);
                   return {
                     ...prev,
                     core: {
@@ -157,7 +194,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
               }
             })
             .catch(() => {
-              if (isCancelled) return;
+              if (abortController.signal.aborted) return;
               setState(prev => {
                 if (!prev.core?.summary) return prev;
                 const nonLoadingSummary = { ...prev.core.summary, isGolfChannelsLoading: false };
@@ -170,10 +207,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             });
         }
 
-
-
-      } catch (error) {
-        if (isCancelled) return;
+      } catch (error: any) {
+        if (abortController.signal.aborted || error?.name === 'AbortError') return;
         console.error("[V6 Dashboard API Fetch Error]", error);
         setState(prev => ({ ...prev, isLoading: false, error: '데이터를 불러오는 데 실패했습니다.' }));
       }
@@ -182,7 +217,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     fetchCoreData();
 
     return () => {
-      isCancelled = true;
+      abortController.abort();
     };
   }, [startDate, endDate]);
 

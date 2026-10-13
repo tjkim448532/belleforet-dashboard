@@ -124,6 +124,8 @@ export default function ResortBusiness() {
   }, [startDate, endDate, isGlobalRange]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchSummary = async () => {
       setLoading(true);
       try {
@@ -159,15 +161,17 @@ export default function ResortBusiness() {
           : `date=${lyStartStr}&_t=${Date.now()}`;
           
         const [overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`),
-          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${lyQueryParams}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${lyQueryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${lyQueryParams}`).catch(() => null)
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`, { signal: controller.signal }),
+          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`, { signal: controller.signal }).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${lyQueryParams}`, { signal: controller.signal }).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${lyQueryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${lyQueryParams}`, { signal: controller.signal }).catch(() => null)
         ]);
+
+        if (controller.signal.aborted) return;
 
         const rawOverview = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes.data || overviewRes);
         const rawChannels = channelRes.data || channelRes;
@@ -205,14 +209,21 @@ export default function ResortBusiness() {
           setLyData(null);
           setLyPhysicalRoomMaster(null);
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (controller.signal.aborted || err?.name === 'AbortError') return;
         console.error('Error fetching resort data:', err);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSummary();
+
+    return () => {
+      controller.abort();
+    };
   }, [startDate, endDate, isGlobalRange]);
 
   const formatCurrency = (val: any) => {

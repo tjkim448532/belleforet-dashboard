@@ -12,7 +12,7 @@ import {
   Compass, Search, Flag,
   Umbrella, Sun, ChevronRight, Layers, BarChart3,
   PieChart as PieChartIcon, CheckCircle2, ChevronDown,
-  AlertTriangle
+  AlertTriangle, UtensilsCrossed
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -32,7 +32,7 @@ const formatCurrency = (val: any) => {
   return new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
-const getTomorrowDateStr = (offsetDays = 1): string => {
+const getForecastDateStr = (offsetDays = 0): string => {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
   const yyyy = d.getFullYear();
@@ -42,7 +42,8 @@ const getTomorrowDateStr = (offsetDays = 1): string => {
 };
 
 export default function TomorrowRevenueForecast() {
-  const defaultTargetDate = getTomorrowDateStr(1);
+  // 경영진의 실시간 의사결정을 위해 '오늘 (당일 D-Day)'을 기본값으로 표출 (어제 실적 마감 기준 당일 예상)
+  const defaultTargetDate = getForecastDateStr(0);
   const [targetDate, setTargetDate] = useState<string>(defaultTargetDate);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export default function TomorrowRevenueForecast() {
   const [showBookingDetails, setShowBookingDetails] = useState<boolean>(false);
 
   // Fetch forecast data with optional weather override
-  const fetchForecast = async (dateStr: string, simulateRain: boolean) => {
+  const fetchForecast = async (dateStr: string, simulateRain: boolean, signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
@@ -68,22 +69,29 @@ export default function TomorrowRevenueForecast() {
       if (simulateRain) {
         url += '&overridePrecipitation=15&overrideWeather=RAIN';
       }
-      const res = await secureFetcher(url);
+      const res = await secureFetcher(url, { signal });
       if (res && res.success) {
         setForecastData(res);
       } else {
         throw new Error(res?.error || res?.message || '익일 예상 매출 데이터를 불러오지 못했습니다.');
       }
     } catch (err: any) {
+      if (signal?.aborted || err?.name === 'AbortError') return;
       console.error('Failed to load ancillary revenue forecast:', err);
       setError(err?.message || '네트워크 통신 중 오류가 발생했습니다.');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchForecast(targetDate, isRainSimulation);
+    const controller = new AbortController();
+    fetchForecast(targetDate, isRainSimulation, controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [targetDate, isRainSimulation]);
 
   // Categories extracted from venues
@@ -338,7 +346,7 @@ export default function TomorrowRevenueForecast() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="bg-emerald-400/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide">
-                BESM v6.3 계량경제학 예측 엔진
+                계량경제학 예측 엔진
               </span>
               <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
                 <ShieldCheck size={14} className="text-emerald-400" /> 전사 31개 공식 정규 업장 100% 통합
@@ -355,10 +363,10 @@ export default function TomorrowRevenueForecast() {
             
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 flex-wrap break-keep">
               <TrendingUp className="text-emerald-400 shrink-0" size={32} />
-              <span className="break-keep">벨포레 전사 일일 예상 매출 엔진 (BESM v6.3)</span>
+              <span className="break-keep">벨포레 전사 일일 예상 매출 엔진</span>
             </h1>
-            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-3xl leading-relaxed break-keep">
-              골프·콘도·식음·레저·모토아레나 전사 31개 업장을 100% 통합하고, 3단 시계열 승법 분해(계절 배수 S<sub>m</sub> × 요일 배수 D<sub>d</sub>)와 경험적 베이즈 모델을 결합하여 업장별 일일 예상 매출과 수요를 과학적으로 산출합니다.
+            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-4xl leading-relaxed break-keep">
+              골프·콘도·식음·레저·모토아레나 전사 31개 정규 업장을 100% 통합하고, 내일 확정된 객실 평형별(16·35·52평) 파생 숙박객수와 골프 파트별(1·2·3부) 예약 원장을 기상청 기온·강수 탄력성, 3개년 시계열 분해 모델(S<sub>m</sub> × D<sub>d</sub>)과 결합하여 전사 일일 예상 매출과 부대시설 스필오버 수요를 과학적으로 산출합니다.
             </p>
 
             {/* 4 Navigation Sub-Tabs Bar */}
@@ -395,13 +403,13 @@ export default function TomorrowRevenueForecast() {
                 to="/synergy/forecast" 
                 className="px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap bg-teal-500 text-white shadow-md ring-2 ring-teal-400/30"
               >
-                <TrendingUp size={13} className="shrink-0" /> 4. 🔮 내일 매출 예상
+                <TrendingUp size={13} className="shrink-0" /> 4. 🔮 당일·익일 매출 예상
               </NavLink>
             </div>
           </div>
 
           {/* Right Header Controls (Target Date Picker & Weather Simulation Mode) */}
-          <div className="bg-black/35 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 w-full 2xl:w-auto 2xl:min-w-[380px]">
+          <div className="bg-black/35 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 w-full 2xl:w-auto 2xl:min-w-[400px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <span className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
                 <Calendar size={14} /> 예측 대상 일자 및 시뮬레이션
@@ -415,22 +423,23 @@ export default function TomorrowRevenueForecast() {
               </button>
             </div>
 
-            {/* Quick Offset Buttons */}
-            <div className="grid grid-cols-3 gap-1.5">
+            {/* Quick Offset Buttons (오늘 당일 + 미래 D+1, D+2, D+3) */}
+            <div className="grid grid-cols-4 gap-1.5">
               {[
+                { label: '오늘 (당일)', offset: 0 },
                 { label: '내일 (D+1)', offset: 1 },
                 { label: '모레 (D+2)', offset: 2 },
                 { label: '글피 (D+3)', offset: 3 },
               ].map(({ label, offset }) => {
-                const dStr = getTomorrowDateStr(offset);
+                const dStr = getForecastDateStr(offset);
                 const isSelected = targetDate === dStr;
                 return (
                   <button
                     key={offset}
                     onClick={() => setTargetDate(dStr)}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center ${
+                    className={`py-1.5 px-1.5 rounded-lg text-xs font-semibold transition-all text-center ${
                       isSelected
-                        ? 'bg-teal-500 text-white shadow-sm ring-1 ring-white/30'
+                        ? 'bg-teal-500 text-white shadow-sm ring-1 ring-white/30 font-bold'
                         : 'bg-white/10 text-slate-300 hover:bg-white/20'
                     }`}
                   >
@@ -451,7 +460,7 @@ export default function TomorrowRevenueForecast() {
                 className="w-full bg-white/10 border border-white/20 text-white px-3 py-1.5 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-400"
               />
               <span className="text-xs text-teal-200 font-bold whitespace-nowrap">
-                {calendar?.dayName || ''} {calendar?.isWeekend ? '(주말)' : '(평일)'}
+                {targetDate === getForecastDateStr(0) ? '[오늘/당일]' : targetDate === getForecastDateStr(1) ? '[내일/D+1]' : ''} {calendar?.dayName || ''} {calendar?.isWeekend ? '(주말)' : '(평일)'}
               </span>
             </div>
 
@@ -500,8 +509,8 @@ export default function TomorrowRevenueForecast() {
 
       {forecastData && !loading && (
         <>
-          {/* 2. Top 5 Bento KPI Summary Cards (Company-wide SSOT) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+          {/* 2. Top 6 Bento KPI Summary Cards (Company-wide SSOT) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
             {/* KPI 1: Grand Total Forecast */}
             <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
               <div>
@@ -551,7 +560,7 @@ export default function TomorrowRevenueForecast() {
               <div>
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <span className="font-bold flex items-center gap-1.5 text-slate-800">
-                    <Hotel size={16} className="text-teal-600" /> 식음 부문 (FNB)
+                    <UtensilsCrossed size={16} className="text-teal-600" /> 식음 부문 (FNB)
                   </span>
                   <span className="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-200/60">
                     비중 {summary?.grandTotalForecastRevenue ? (((summary.totalFnbForecastRevenue || 0) / summary.grandTotalForecastRevenue) * 100).toFixed(1) + '%' : '-'}
@@ -590,25 +599,47 @@ export default function TomorrowRevenueForecast() {
               </div>
             </div>
 
-            {/* KPI 5: Room & Moto Forecast */}
+            {/* KPI 5: Condo / Room Forecast */}
             <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <span className="font-bold flex items-center gap-1.5 text-slate-800">
-                    <Zap size={16} className="text-indigo-600" /> 콘도(ROOM) & 모토
+                    <Hotel size={16} className="text-indigo-600" /> 콘도 부문 (ROOM)
                   </span>
                   <span className="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-200/60">
-                    비중 {summary?.grandTotalForecastRevenue ? ((((summary.totalRoomForecastRevenue || 0) + (summary.totalMotoForecastRevenue || 0)) / summary.grandTotalForecastRevenue) * 100).toFixed(1) + '%' : '-'}
+                    비중 {summary?.grandTotalForecastRevenue ? (((summary.totalRoomForecastRevenue || 0) / summary.grandTotalForecastRevenue) * 100).toFixed(1) + '%' : '-'}
                   </span>
                 </div>
                 <div className="text-2xl xl:text-3xl font-black text-indigo-700 tabular-nums">
-                  {formatCurrency((summary?.totalRoomForecastRevenue || 0) + (summary?.totalMotoForecastRevenue || 0))}
+                  {summary?.totalRoomForecastFormatted || formatCurrency(summary?.totalRoomForecastRevenue)}
                   <span className="text-xs font-normal text-slate-500 ml-1">원</span>
                 </div>
               </div>
               <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-                <span>객실 {summary?.totalRoomForecastFormatted || formatCurrency(summary?.totalRoomForecastRevenue)}원</span>
-                <span className="text-slate-400">모토 {summary?.totalMotoForecastFormatted || formatCurrency(summary?.totalMotoForecastRevenue)}원</span>
+                <span>객실 및 콘도 기타</span>
+                <span className="text-indigo-600 font-semibold">{condo?.totalReservedRooms !== undefined ? `${condo.totalReservedRooms}실 (${condo.occupancyRate}%)` : '2개 업장'}</span>
+              </div>
+            </div>
+
+            {/* KPI 6: Moto Forecast */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                  <span className="font-bold flex items-center gap-1.5 text-slate-800">
+                    <Zap size={16} className="text-amber-600" /> 모토아레나 (MOTO)
+                  </span>
+                  <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200/60">
+                    비중 {summary?.grandTotalForecastRevenue ? (((summary.totalMotoForecastRevenue || 0) / summary.grandTotalForecastRevenue) * 100).toFixed(1) + '%' : '-'}
+                  </span>
+                </div>
+                <div className="text-2xl xl:text-3xl font-black text-amber-700 tabular-nums">
+                  {summary?.totalMotoForecastFormatted || formatCurrency(summary?.totalMotoForecastRevenue)}
+                  <span className="text-xs font-normal text-slate-500 ml-1">원</span>
+                </div>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+                <span>서킷·카트체험·렌탈</span>
+                <span className="text-amber-600 font-semibold">단독 카테고리</span>
               </div>
             </div>
           </div>

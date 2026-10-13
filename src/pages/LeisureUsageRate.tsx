@@ -25,6 +25,8 @@ const FACILITY_COLORS: Record<string, string> = {
   '벨포레 목장': '#10b981', // Teal/Green
   '사계절썰매장': '#f59e0b', // Amber
   '마운틴카트': '#ef4444', // Red
+  '마운틴카트(그랜드포렛)': '#ef4444', // Red
+  '마운틴카트(미니포렛)': '#f97316', // Orange
   '벨포레 목장(체험)': '#14b8a6', // Teal
   '썸머랜드': '#06b6d4', // Cyan
   '원더풀': '#6366f1', // Indigo
@@ -43,7 +45,9 @@ export const SEVEN_KEY_FACILITIES = [
   { key: '놀이동산', label: '놀이동산', color: '#3b82f6' },
   { key: '벨포레 목장', label: '벨포레 목장', color: '#10b981' },
   { key: '벨포레 목장(체험)', label: '목장체험', color: '#14b8a6' },
-  { key: '마운틴카트', label: '마운틴카트', color: '#ef4444' },
+  { key: '마운틴카트', label: '마운틴카트(전체)', color: '#ef4444' },
+  { key: '마운틴카트(그랜드포렛)', label: '카트(그랜드)', color: '#ef4444' },
+  { key: '마운틴카트(미니포렛)', label: '카트(미니)', color: '#f97316' },
   { key: '사계절썰매장', label: '사계절썰매장', color: '#f59e0b' },
   { key: '미디어아트센터', label: '미디어아트센터', color: '#8b5cf6' },
   { key: '마리나 클럽', label: '마리나 클럽', color: '#0284c7' },

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Building2, Users, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { parseNum } from '../../lib/dataTransformers';
+import { formatDate, getKSTNow } from '../../lib/dateUtils';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://belleforet-data.vercel.app';
 
@@ -67,6 +68,11 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
   // 사용자가 요구한 타겟: "내일(실제로는 오늘) 예약자"
   const targetCheckInDate = getNextDateStr(currentDate);
   const targetDayOfWeek = getDayOfWeek(targetCheckInDate);
+
+  // KST 오늘 기준 과거 마감 영업일 판별 (이미 체크인/퇴실 및 마감 완료된 일자)
+  const todayStr = formatDate(getKSTNow());
+  const isPastClosedDate = Boolean(targetCheckInDate && targetCheckInDate < todayStr);
+  const isClosedHistory = isPastClosedDate && (!resData || resData.totalRooms === 0 || (resData.byType || []).length === 0);
 
   // 단체명 정제 헬퍼 (실제 기업/단체 이름 강조)
   const cleanGroupName = (raw: string) => {
@@ -156,23 +162,42 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             <span>콘도(객실) 체크인 예약 현황</span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 shrink-0 self-start sm:self-auto">
-            <Calendar size={13} className="text-indigo-600" />
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 self-start sm:self-auto border ${
+            isClosedHistory 
+              ? 'bg-slate-100 border-slate-200 text-slate-700' 
+              : 'bg-indigo-50 border-indigo-100 text-indigo-900'
+          }`}>
+            <Calendar size={13} className={isClosedHistory ? 'text-slate-500' : 'text-indigo-600'} />
             <span>{targetCheckInDate} ({targetDayOfWeek}) 도착 예약</span>
+            {isClosedHistory && (
+              <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                마감 완료
+              </span>
+            )}
           </div>
         </div>
 
         {/* Date Context Badge: 실제 오늘/익일 체크인 안내 */}
-        <div className="flex items-center justify-between text-xs mb-3 bg-indigo-50/60 border border-indigo-100 rounded-xl px-3 py-1.5">
-          <div className="flex items-center gap-1.5 text-indigo-900 font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>체크인 예정 예약 고객 현황</span>
-            <span className="text-indigo-600 text-[10px] font-semibold bg-indigo-100/80 px-1.5 py-0.5 rounded-md">
-              PMS 실시간 예약 원장
+        <div className={`flex items-center justify-between text-xs mb-3 border rounded-xl px-3 py-1.5 ${
+          isClosedHistory 
+            ? 'bg-slate-100/80 border-slate-200 text-slate-700' 
+            : 'bg-indigo-50/60 border-indigo-100 text-indigo-900'
+        }`}>
+          <div className="flex items-center gap-1.5 font-bold">
+            <span className={`w-2 h-2 rounded-full ${isClosedHistory ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'}`}></span>
+            <span>{isClosedHistory ? '영업 마감 완료 일자' : '체크인 예정 예약 고객 현황'}</span>
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+              isClosedHistory 
+                ? 'bg-slate-200 text-slate-700' 
+                : 'bg-indigo-100/80 text-indigo-600'
+            }`}>
+              {isClosedHistory ? '투숙 및 정산 마감' : 'PMS 실시간 예약 원장'}
             </span>
           </div>
-          <span className="text-[11px] text-indigo-700/80 font-medium hidden sm:inline">
-            물리 고정 175실 기준 SSOT
+          <span className={`text-[11px] font-medium hidden sm:inline ${
+            isClosedHistory ? 'text-slate-500' : 'text-indigo-700/80'
+          }`}>
+            {isClosedHistory ? '확정 실적은 상단 객실 실적 지표 참조' : '물리 고정 175실 기준 SSOT'}
           </span>
         </div>
 
@@ -188,6 +213,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
               ) : resData?.isBackendMartPending ? (
                 <span className="text-lg text-slate-400 font-bold">-</span>
+              ) : isClosedHistory ? (
+                <span className="text-xl font-bold text-slate-500">마감</span>
               ) : (
                 <>
                   {resData?.totalRooms ?? 0}
@@ -196,7 +223,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               )}
             </div>
             <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-              전체 {resData?.totalCapacity ?? 0}실 가용
+              {isClosedHistory ? '상단 확정 객실 실적 참조' : `전체 ${resData?.totalCapacity ?? 0}실 가용`}
             </div>
           </div>
 
@@ -204,8 +231,12 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap flex items-center justify-between">
               <span>예약 점유율</span>
-              <span className="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-1 py-0.2 rounded-sm border border-indigo-100">
-                체크인 예정
+              <span className={`text-[10px] font-bold px-1 py-0.2 rounded-sm border ${
+                isClosedHistory 
+                  ? 'bg-slate-100 text-slate-600 border-slate-200' 
+                  : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+              }`}>
+                {isClosedHistory ? '마감' : '체크인 예정'}
               </span>
             </div>
             <div className="text-2xl lg:text-3xl font-black text-indigo-600 tabular-nums whitespace-nowrap">
@@ -213,6 +244,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
               ) : resData?.isBackendMartPending ? (
                 <span className="text-lg text-slate-400 font-bold">-</span>
+              ) : isClosedHistory ? (
+                <span className="text-xl font-bold text-slate-500">마감</span>
               ) : resData?.occupancyRate !== null && resData?.occupancyRate !== undefined ? (
                 <>
                   {resData.occupancyRate.toFixed(1)}
@@ -223,7 +256,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               )}
             </div>
             <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
-              총 예약 {resData?.totalRooms ?? 0}실 / 175실 기준
+              {isClosedHistory ? '상단 확정 점유율 참조' : `총 예약 ${resData?.totalRooms ?? 0}실 / 175실 기준`}
             </div>
           </div>
 
@@ -231,7 +264,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div className="text-xs text-purple-600 font-semibold mb-1 whitespace-nowrap flex items-center justify-between">
               <span>단체·기업 예약</span>
-              {resData && resData.groups.length > 0 && (
+              {!isClosedHistory && resData && resData.groups.length > 0 && (
                 <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-bold border border-purple-100">
                   {resData.groups.length}개사
                 </span>
@@ -242,6 +275,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
               ) : resData?.isBackendMartPending ? (
                 <span className="text-lg text-slate-400 font-bold">-</span>
+              ) : isClosedHistory ? (
+                <span className="text-xl font-bold text-slate-500">마감</span>
               ) : (
                 <>
                   {resData?.totalGroupRooms ?? 0}
@@ -250,7 +285,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               )}
             </div>
             <div className="text-[10px] text-purple-700 font-bold mt-0.5 truncate">
-              전체 대비 {groupSharePct}%
+              {isClosedHistory ? '정산 마감 완료' : `전체 대비 ${groupSharePct}%`}
             </div>
           </div>
         </div>
@@ -260,6 +295,23 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           <div className="py-10 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
             <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             <span>체크인 예약 데이터를 불러오는 중입니다...</span>
+          </div>
+        ) : isClosedHistory ? (
+          <div className="mt-3.5 p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 text-xs space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
+              <CheckCircle2 size={18} className="text-indigo-600 shrink-0" />
+              <span>{targetCheckInDate} ({targetDayOfWeek}) 일일 투숙 및 정산 마감 완료</span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              선택하신 일자는 이미 체크인 및 일마감(Night Audit)이 완료된 <strong>과거 영업일</strong>입니다.<br />
+              해당 일자의 확정된 객실 투숙 실적과 매출은 <strong>상단 메인 대시보드 지표(객실 판매 실적)</strong>에서 확인하실 수 있습니다.
+            </p>
+            <div className="pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 flex items-start gap-1.5 leading-relaxed">
+              <span className="text-indigo-600 font-bold shrink-0">💡</span>
+              <span>
+                <strong>PMS 실시간 예약 원장 안내:</strong> 본 카드는 당일 및 익일 입실 예정 고객을 위한 실시간 대기 원장입니다. 마감 완료된 과거 일자는 예약 버퍼가 자동 이관되므로 상단 마감 실적을 단일 진실 공급원(SSOT)으로 삼습니다.
+              </span>
+            </div>
           </div>
         ) : resData?.isBackendMartPending ? (
           <div className="mt-3.5 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs space-y-2">

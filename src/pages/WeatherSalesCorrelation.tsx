@@ -696,7 +696,7 @@ export default function WeatherSalesCorrelation() {
                 }`}
               >
                 <TrendingUp size={14} className="shrink-0" />
-                <span>4. 🔮 내일 매출 예상</span>
+                <span>4. 🔮 당일·익일 매출 예상</span>
               </NavLink>
             </div>
           </div>

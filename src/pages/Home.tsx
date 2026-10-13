@@ -76,10 +76,9 @@ export default function Home() {
   }, [coreData.core?.salesByCategory]);
 
   const leisureVisitorsMap = React.useMemo(() => {
-    if (coreData.core?.leisureVisitors && Object.keys(coreData.core.leisureVisitors).length > 0) {
-      return coreData.core.leisureVisitors;
-    }
     const map: Record<string, number> = {};
+
+    // 1. salesByFacility 원천 목록 기반 적재
     const list = coreData.core?.salesByFacility || [];
     if (Array.isArray(list)) {
       list.forEach((fac: any) => {
@@ -90,8 +89,64 @@ export default function Home() {
         }
       });
     }
+
+    // 2. 백엔드 summary.leisureVisitors / leisureVisitors 완제품 병합 및 한글/영문 양방향 정규화
+    const lv = (coreData.core?.summary?.leisureVisitors || coreData.core?.leisureVisitors) as Record<string, any> | undefined;
+    if (lv && typeof lv === 'object') {
+      Object.entries(lv).forEach(([k, v]) => {
+        map[k] = parseNum(v);
+      });
+
+      if (lv.mediaArt !== undefined) {
+        const val = parseNum(lv.mediaArt);
+        map['미디어아트센터'] = val;
+        map['미디어아트'] = val;
+      }
+      if (lv.ranch !== undefined) {
+        const val = parseNum(lv.ranch);
+        map['벨포레 목장'] = val;
+        map['목장'] = val;
+      }
+      if (lv.sled !== undefined) {
+        const val = parseNum(lv.sled);
+        map['사계절썰매장'] = val;
+        map['사계절썰매'] = val;
+      }
+      if (lv.marina !== undefined) {
+        const val = parseNum(lv.marina);
+        map['마리나 클럽'] = val;
+        map['마리나'] = val;
+      }
+      if (lv.motoArena !== undefined) {
+        map['모토아레나'] = parseNum(lv.motoArena);
+      }
+      if (lv.mountainCartGrand !== undefined) {
+        const val = parseNum(lv.mountainCartGrand);
+        map['마운틴카트(그랜드포렛)'] = val;
+        map['카트(그랜드포렛)'] = val;
+        map['그랜드포렛'] = val;
+      }
+      if (lv.mountainCartMini !== undefined) {
+        const val = parseNum(lv.mountainCartMini);
+        map['마운틴카트(미니포렛)'] = val;
+        map['카트(미니포렛)'] = val;
+        map['미니포렛'] = val;
+      }
+      if (lv.mountainCartTotal !== undefined) {
+        map['마운틴카트'] = parseNum(lv.mountainCartTotal);
+      }
+      if (lv.summerland !== undefined) {
+        const val = parseNum(lv.summerland);
+        map['[썸머랜드 전체 소계]'] = val;
+        map['썸머랜드'] = val;
+      }
+      if (lv.wonderful !== undefined) {
+        map['원더풀'] = parseNum(lv.wonderful);
+      }
+    }
+
     return map;
-  }, [coreData.core?.leisureVisitors, coreData.core?.salesByFacility]);
+  }, [coreData.core?.summary?.leisureVisitors, coreData.core?.leisureVisitors, coreData.core?.salesByFacility]);
 
   // [모토아레나 숙박객/회원 수 연동] 백엔드에서 전달받은 숙박객/회원 숫자 바인딩
   const { motoGuestCount, motoMemberCount, motoTotalCount } = React.useMemo(() => {
@@ -696,43 +751,44 @@ export default function Home() {
                     <span>주요 레저/어트랙션 이용객 수</span>
                     <span className="text-[11px] text-slate-400 font-normal">{isRangeMode ? '(선택 기간 누적)' : '(당일 실적)'}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 text-xs">
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🎨 미디어아트</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['미디어아트센터'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🏊 썸머랜드</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['[썸머랜드 전체 소계]'] || leisureVisitorsMap['썸머랜드'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🐑 벨포레 목장</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['벨포레 목장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🎡 원더풀</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['원더풀'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🛷 사계절썰매</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['사계절썰매장'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🚤 마리나 클럽</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마리나 클럽'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🏎️ 마운틴카트</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">{new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['마운틴카트'] || 0)}<span className="text-xs font-normal text-slate-500 ml-0.5">명</span></span>
-                    </div>
-                    <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                      <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
-                      <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
-                        {new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}
-                        <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
-                      </span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const lv = (coreData.core?.summary?.leisureVisitors || coreData.core?.leisureVisitors) as Record<string, number> | undefined;
+                    const attractionItems = [
+                      { label: '🎨 미디어아트', val: lv?.mediaArt ?? (leisureVisitorsMap['미디어아트센터'] || 0), isSeasonal: false },
+                      { label: '🐑 벨포레 목장', val: lv?.ranch ?? (leisureVisitorsMap['벨포레 목장'] || 0), isSeasonal: false },
+                      { label: '🛷 사계절썰매', val: lv?.sled ?? (leisureVisitorsMap['사계절썰매장'] || 0), isSeasonal: false },
+                      { label: '🚤 마리나 클럽', val: lv?.marina ?? (leisureVisitorsMap['마리나 클럽'] || 0), isSeasonal: false },
+                      { label: '🏎️ 카트(그랜드포렛)', title: '마운틴카트(그랜드포렛)', val: lv?.mountainCartGrand ?? (leisureVisitorsMap['마운틴카트(그랜드포렛)'] || leisureVisitorsMap['그랜드포렛'] || 0), isSeasonal: false },
+                      { label: '🏎️ 카트(미니포렛)', title: '마운틴카트(미니포렛)', val: lv?.mountainCartMini ?? (leisureVisitorsMap['마운틴카트(미니포렛)'] || leisureVisitorsMap['미니포렛'] || 0), isSeasonal: false },
+                      { label: '🏊 썸머랜드', val: lv?.summerland ?? (leisureVisitorsMap['[썸머랜드 전체 소계]'] || leisureVisitorsMap['썸머랜드'] || 0), isSeasonal: true },
+                      { label: '🎡 원더풀', val: lv?.wonderful ?? (leisureVisitorsMap['원더풀'] || 0), isSeasonal: true },
+                    ].filter(item => !(item.isSeasonal && (!item.val || item.val <= 0)));
+
+                    const motoCount = lv?.motoArena ?? (leisureVisitorsMap['모토아레나'] || 0);
+
+                    return (
+                      <div className="grid grid-cols-2 gap-1.5 text-xs">
+                        {attractionItems.map((item, idx) => (
+                          <div key={idx} className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                            <span className="text-slate-700 font-semibold truncate" title={item.title || item.label}>
+                              {item.label}
+                            </span>
+                            <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
+                              {new Intl.NumberFormat('ko-KR').format(item.val)}
+                              <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                            </span>
+                          </div>
+                        ))}
+                        <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs col-span-2">
+                          <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
+                          <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
+                            {new Intl.NumberFormat('ko-KR').format(motoCount)}
+                            <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* 모토아레나 숙박/회원 세부 내역 (하단 전용 바) */}
                   <div className="mt-2 px-3 py-2 rounded-xl bg-slate-50/90 border border-slate-200/70 flex items-center justify-between text-xs text-slate-600">

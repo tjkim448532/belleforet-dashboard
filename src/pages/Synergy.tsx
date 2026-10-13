@@ -492,7 +492,7 @@ export default function Synergy() {
                   isActive ? 'bg-teal-500 text-white shadow-md ring-2 ring-teal-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
-                <TrendingUp size={14} className="shrink-0" /> <span className="whitespace-nowrap">4. 🔮 내일 매출 예상</span>
+                <TrendingUp size={14} className="shrink-0" /> <span className="whitespace-nowrap">4. 🔮 당일·익일 매출 예상</span>
               </NavLink>
             </div>
           </div>

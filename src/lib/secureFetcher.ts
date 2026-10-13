@@ -132,14 +132,14 @@ const sanitizePayloadNumbers = (node: any) => {
 };
 
 
-export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) => {
+export const secureFetcher = async (rawUrl: string, options: RequestInit = {}, maxRetries: number = 2): Promise<any> => {
   if (rawUrl.includes('/api/v5/')) { throw new Error('[Zero-Proxy] V5 구버전 API 호출이 감지되었습니다. V6 엔드포인트로 즉시 교체하십시오.'); }
 
   // URL 단위 타임스탬프 쿼리 자동 부착 (CORS 헤더 간섭 없이 100% 캐시 무효화)
   const separator = rawUrl.includes('?') ? '&' : '?';
   const url = rawUrl.includes('_t=') ? rawUrl : `${rawUrl}${separator}_t=${Date.now()}`;
 
-  const isV6Api = url.includes('/api/v6/') ;
+  const isV6Api = url.includes('/api/v6/');
   const token = isV6Api ? 'belleforet-m2m-secret' : await getAuthToken();
 
   const headers = {
@@ -148,80 +148,130 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}) =
     ...options.headers,
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
+  const executeFetch = async (retriesLeft: number): Promise<any> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-  const startTime = Date.now();
-  let response;
-  
-  try {
-    response = await fetch(url, {
-      ...options,
-      cache: 'no-store',
-      headers,
-      signal: controller.signal,
-    });
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      throw new Error('API 응답 시간이 초과되었습니다 (25초). 백엔드 서버 상태를 확인해주세요.', { cause: err });
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const details = errorData.details || errorData.message || errorData.error || '';
-    if (typeof details === 'string' && (
-      details.includes('심야 절전 운영') || 
-      details.includes('수면 모드') || 
-      details.includes('절전') || 
-      details.includes('중지') || 
-      details.includes('STOPPED') || 
-      details.includes('데이터베이스')
-    )) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
+    // Link caller's abort signal if provided
+    if (options.signal) {
+      if (options.signal.aborted) {
+        controller.abort();
+      } else {
+        options.signal.addEventListener('abort', () => controller.abort(), { once: true });
       }
     }
-    const error = new Error(errorData.error || errorData.message || 'API 요청 중 오류가 발생했습니다.') as Error & { status?: number; details?: string };
-    error.status = response.status;
-    error.details = details;
-    throw error;
-  }
 
-  const data = await response.json();
-  
-  // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
-  if (data && (data.status === 'error' || data.success === false)) {
-    const details = data.details || data.message || data.error || '';
-    if (typeof details === 'string' && (
-      details.includes('심야 절전 운영') || 
-      details.includes('수면 모드') || 
-      details.includes('절전') || 
-      details.includes('중지') || 
-      details.includes('STOPPED') || 
-      details.includes('데이터베이스')
-    )) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
+    const startTime = Date.now();
+    let response;
+    
+    try {
+      response = await fetch(url, {
+        ...options,
+        cache: 'no-store',
+        headers,
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        if (options.signal?.aborted) {
+          throw err;
+        }
+        throw new Error('API 응답 시간이 초과되었습니다 (25초). 백엔드 서버 상태를 확인해주세요.', { cause: err });
       }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    const errorMsg = details || data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';
-    const error = new Error(errorMsg) as Error & { status?: number; details?: string };
-    error.status = 200;
-    error.details = details;
-    throw error;
-  }
-  
-  // 데이터 정합성 QA 전수 검증 인터셉터 호출 (백엔드 계약 위반 감지)
-  validatePayloadIntegrity(data, url, startTime, response.status);
-  
-  // UI 런타임 안정성을 위한 방어적 정규화 (문자열 숫자를 안전한 Number로 보정)
-  sanitizePayloadNumbers(data);
-  
-  return data;
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const details = errorData.details || errorData.message || errorData.error || '';
+
+      const isConnectionExhaustion =
+        response.status === 500 && (
+          String(details).includes('ER_CON_COUNT_ERROR') ||
+          String(details).includes('Too many connections') ||
+          String(errorData.error).includes('ER_CON_COUNT_ERROR') ||
+          String(errorData.message).includes('ER_CON_COUNT_ERROR')
+        );
+
+      if (isConnectionExhaustion && retriesLeft > 0 && !options.signal?.aborted) {
+        const backoffMs = 1200 + (2 - retriesLeft) * 600;
+        console.warn(`⚠️ [DB Connection Saturation] ER_CON_COUNT_ERROR 감지됨 (${url.split('?')[0]}). ${backoffMs}ms 후 자동 재시도합니다... (남은 재시도: ${retriesLeft}회)`);
+        await new Promise(r => setTimeout(r, backoffMs));
+        if (options.signal?.aborted) {
+          throw new Error('요청이 취소되었습니다.');
+        }
+        return executeFetch(retriesLeft - 1);
+      }
+
+      if (typeof details === 'string' && (
+        details.includes('심야 절전 운영') || 
+        details.includes('수면 모드') || 
+        details.includes('절전') || 
+        details.includes('중지') || 
+        details.includes('STOPPED') || 
+        details.includes('데이터베이스')
+      )) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
+        }
+      }
+      const error = new Error(errorData.error || errorData.message || 'API 요청 중 오류가 발생했습니다.') as Error & { status?: number; details?: string };
+      error.status = response.status;
+      error.details = details;
+      throw error;
+    }
+
+    const data = await response.json();
+    
+    // 백엔드 내부 로직 크래시 (HTTP 200 이지만 error 인 경우) 방어
+    if (data && (data.status === 'error' || data.success === false)) {
+      const details = data.details || data.message || data.error || '';
+
+      const isConnectionExhaustion =
+        String(details).includes('ER_CON_COUNT_ERROR') ||
+        String(details).includes('Too many connections');
+
+      if (isConnectionExhaustion && retriesLeft > 0 && !options.signal?.aborted) {
+        const backoffMs = 1200 + (2 - retriesLeft) * 600;
+        console.warn(`⚠️ [DB Connection Saturation] ER_CON_COUNT_ERROR 감지됨 (${url.split('?')[0]}). ${backoffMs}ms 후 자동 재시도합니다... (남은 재시도: ${retriesLeft}회)`);
+        await new Promise(r => setTimeout(r, backoffMs));
+        if (options.signal?.aborted) {
+          throw new Error('요청이 취소되었습니다.');
+        }
+        return executeFetch(retriesLeft - 1);
+      }
+
+      if (typeof details === 'string' && (
+        details.includes('심야 절전 운영') || 
+        details.includes('수면 모드') || 
+        details.includes('절전') || 
+        details.includes('중지') || 
+        details.includes('STOPPED') || 
+        details.includes('데이터베이스')
+      )) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('belleforet:sleep-mode', { detail: details }));
+        }
+      }
+      const errorMsg = details || data.message || data.error || '백엔드 처리 중 치명적인 오류가 발생했습니다.';
+      const error = new Error(errorMsg) as Error & { status?: number; details?: string };
+      error.status = 200;
+      error.details = details;
+      throw error;
+    }
+    
+    // 데이터 정합성 QA 전수 검증 인터셉터 호출 (백엔드 계약 위반 감지)
+    validatePayloadIntegrity(data, url, startTime, response.status);
+    
+    // UI 런타임 안정성을 위한 방어적 정규화 (문자열 숫자를 안전한 Number로 보정)
+    sanitizePayloadNumbers(data);
+    
+    return data;
+  };
+
+  return executeFetch(maxRetries);
 };
 
 

@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
-import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
+import { getPresetDateRange, getClosedBusinessDate, formatDate, type DatePresetType } from '../lib/dateUtils';
 import { useMapping } from '../contexts/MappingContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import type { SynergyStoreCorrelationV2Response } from '../types/reports-v2';
@@ -26,6 +26,11 @@ export default function SynergyCorrelation() {
   const [error, setError] = useState<string | null>(null);
   
   const [data, setData] = useState<SynergyStoreCorrelationV2Response | null>(null);
+
+  const isInitialMount = useRef<boolean>(true);
+  const [autoSwitchedNotice, setAutoSwitchedNotice] = useState<string | null>(null);
+
+  const isSingleDay = !isRangeMode || !endDate || startDate === endDate;
 
   const fetchData = async (overrideStart?: string, overrideEnd?: string, overrideIsRange?: boolean, overrideSortBy?: 'elasticity' | 'totalSales') => {
     let sDate = overrideStart || startDate;
@@ -65,6 +70,38 @@ export default function SynergyCorrelation() {
   };
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // 만약 전역 설정이 단일 일자(1일)인 경우, 시계열 통계 유효성(N >= 7)을 위해
+      // 금월 누적(MTD) 또는 최근 30일로 자동 전환하여 빈 수치/NONE 화면 방지
+      const isSingleDayInitial = !globalIsRange || !globalEndDate || globalStartDate === globalEndDate;
+      if (isSingleDayInitial) {
+        const yesterday = getClosedBusinessDate(1);
+        const dayOfMonth = yesterday.getDate();
+        let targetStart: string;
+        let targetEnd = formatDate(yesterday);
+        let noticeText: string;
+
+        if (dayOfMonth >= 7) {
+          const mtd = getPresetDateRange('MTD');
+          targetStart = mtd.startDate;
+          targetEnd = mtd.endDate || targetEnd;
+          noticeText = `💡 매장 시너지 상관분석은 시계열 상관관계 분석이므로, [금월 누적(${targetStart} ~ ${targetEnd})]으로 자동 설정되었습니다. (통계 표본 N=${dayOfMonth}일)`;
+        } else {
+          const thirtyDaysAgo = new Date(yesterday.getTime() - 29 * 24 * 60 * 60 * 1000);
+          targetStart = formatDate(thirtyDaysAgo);
+          noticeText = `💡 매장 시너지 상관분석을 위해 분석 기간이 [최근 30일(${targetStart} ~ ${targetEnd})]으로 자동 설정되었습니다. (통계 표본 N=30일)`;
+        }
+
+        setIsRangeMode(true);
+        setStartDate(targetStart);
+        setEndDate(targetEnd);
+        setAutoSwitchedNotice(noticeText);
+        fetchData(targetStart, targetEnd, true);
+        return;
+      }
+    }
+
     setIsRangeMode(globalIsRange);
     setStartDate(globalStartDate);
     setEndDate(globalEndDate || globalStartDate);
@@ -102,6 +139,32 @@ export default function SynergyCorrelation() {
     setEndDate(res.endDate || res.startDate);
     setDateRange(res.startDate, res.endDate, res.isRange);
     fetchData(res.startDate, res.endDate || res.startDate, res.isRange);
+  };
+
+  const applyRecent30Days = () => {
+    const yesterday = getClosedBusinessDate(1);
+    const endStr = formatDate(yesterday);
+    const startStr = formatDate(new Date(yesterday.getTime() - 29 * 24 * 60 * 60 * 1000));
+    setIsRangeMode(true);
+    setStartDate(startStr);
+    setEndDate(endStr);
+    setDateRange(startStr, endStr, true);
+    fetchData(startStr, endStr, true);
+  };
+
+  const applyLastMonth = () => {
+    const yesterday = getClosedBusinessDate(1);
+    const yyyy = yesterday.getMonth() === 0 ? yesterday.getFullYear() - 1 : yesterday.getFullYear();
+    const mm = yesterday.getMonth() === 0 ? 12 : yesterday.getMonth();
+    const mmStr = String(mm).padStart(2, '0');
+    const lastDay = new Date(yyyy, mm, 0).getDate();
+    const startStr = `${yyyy}-${mmStr}-01`;
+    const endStr = `${yyyy}-${mmStr}-${String(lastDay).padStart(2, '0')}`;
+    setIsRangeMode(true);
+    setStartDate(startStr);
+    setEndDate(endStr);
+    setDateRange(startStr, endStr, true);
+    fetchData(startStr, endStr, true);
   };
 
   const getQuadrantBadge = (quadrant?: string) => {
@@ -169,7 +232,7 @@ export default function SynergyCorrelation() {
                 to="/synergy/forecast" 
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-white/10 text-slate-300 hover:bg-white/20"
               >
-                <TrendingUp size={14} /> 4. 🔮 내일 매출 예상
+                <TrendingUp size={14} /> 4. 🔮 당일·익일 매출 예상
               </NavLink>
             </div>
           </div>
@@ -200,9 +263,11 @@ export default function SynergyCorrelation() {
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap">
-              <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">오늘</button>
+              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-indigo-500/80 hover:bg-indigo-500 rounded-lg text-xs text-white font-semibold shadow-sm">금월 누적(추천)</button>
+              <button onClick={applyRecent30Days} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">최근 30일</button>
               <button onClick={() => applyPreset('WEEK')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">최근 7일</button>
-              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">금월</button>
+              <button onClick={applyLastMonth} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-indigo-200 font-medium">전월</button>
+              <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-slate-400 font-normal">단일 1일</button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -242,15 +307,46 @@ export default function SynergyCorrelation() {
         </div>
       )}
 
-      {startDate === endDate && !loading && !error && (
-        <div className="bg-amber-50 text-amber-700 p-4 rounded-xl border border-amber-200 mb-6 font-medium flex items-start gap-3">
-          <Zap className="shrink-0 mt-0.5" size={18} />
-          <div>
-            <strong>Econometric Guard 작동 중:</strong>
-            <p className="text-sm mt-1">
-              단일 일자(1일) 조회 시 분산(Variance)이 존재하지 않아 시너지 상관계수(Correlation) 도출이 수학적으로 불가능합니다. (모든 값이 0.00 처리됨)<br/>
-              의미 있는 인과 관계 및 시너지 지표를 확인하시려면 <strong>분석 기간을 최소 14일 이상(또는 최근 7일/1개월)</strong>으로 설정해 주십시오.
-            </p>
+      {autoSwitchedNotice && (
+        <div className="bg-indigo-50 border border-indigo-200 text-indigo-900 p-4 rounded-2xl mb-6 font-medium flex items-center justify-between gap-3 text-xs lg:text-sm shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="shrink-0 text-indigo-600" size={18} />
+            <span>{autoSwitchedNotice}</span>
+          </div>
+          <button
+            onClick={() => setAutoSwitchedNotice(null)}
+            className="text-xs text-indigo-600 hover:text-indigo-900 underline font-semibold shrink-0 ml-2"
+          >
+            확인
+          </button>
+        </div>
+      )}
+
+      {isSingleDay && !loading && !error && (
+        <div className="bg-amber-50 text-amber-900 p-5 rounded-2xl border border-amber-200 mb-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <Zap className="shrink-0 text-amber-600 mt-1" size={20} />
+            <div>
+              <strong className="text-amber-950 font-bold text-sm lg:text-base">⚠️ 단일 일자(1일) 조회 중: 시계열 상관분석 지표 비활성화 안내</strong>
+              <p className="text-xs lg:text-sm text-amber-800 mt-1.5 leading-relaxed">
+                객실 투숙객 변화(X)와 매장 매출(Y) 간의 <strong>상관계수(r), 객실 탄력도, RevPAS 기울기, 낙수율</strong>은 일별 시계열 분산(Variance)을 기반으로 산출되는 계량경제 지표입니다.<br className="hidden md:inline"/>
+                단일 일자(1일)에는 분모(N-1)가 0이 되어 통계적 인과관계 도출이 불가능하므로, <strong>최소 7일 이상의 기간 조회(N ≥ 7)</strong>를 권장합니다. (현재 매출/수량/방문객만 표시됨)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
+            <button
+              onClick={() => applyPreset('MTD')}
+              className="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <TrendingUp size={14} /> 금월 누적 분석
+            </button>
+            <button
+              onClick={applyRecent30Days}
+              className="bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <Calendar size={14} /> 최근 30일 분석
+            </button>
           </div>
         </div>
       )}
@@ -437,21 +533,27 @@ export default function SynergyCorrelation() {
                     <td className="px-4 py-3 text-right text-slate-600">{store.quantityFormatted}</td>
                     <td className="px-4 py-3 text-right text-slate-600">{store.visitorCountFormatted}</td>
                     <td className="px-4 py-3 text-center">
-                      {store.interactionGrade && (
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.interactionGrade ? (
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getInteractionColor(store.interactionGrade)}`}>
                           {store.interactionGrade}
                         </span>
-                      )}
+                      ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
-                      {store.synergyQuadrant && (
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.synergyQuadrant ? (
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${getQuadrantBadge(store.synergyQuadrant).color}`}>
                           {getQuadrantBadge(store.synergyQuadrant).text}
                         </span>
-                      )}
+                      ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
-                      {store.elasticity != null ? (
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.elasticity != null ? (
                         <div className="flex flex-col items-end">
                           <div className="flex items-center gap-1.5">
                             <span className="text-slate-800">{store.elasticity}배</span>
@@ -470,16 +572,24 @@ export default function SynergyCorrelation() {
                       ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-slate-700 whitespace-nowrap">
-                      {store.swingMultiplier != null ? `${store.swingMultiplier}배` : '-'}
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.swingMultiplier != null ? `${store.swingMultiplier}배` : '-'}
                     </td>
                     <td className="px-4 py-3 text-right text-indigo-600 font-medium">
-                      {store.revPasSlope ? `${store.revPasSlope > 0 ? '+' : ''}${Math.round(store.revPasSlope).toLocaleString()}원` : '-'}
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.revPasSlope ? `${store.revPasSlope > 0 ? '+' : ''}${Math.round(store.revPasSlope).toLocaleString()}원` : '-'}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-600">
-                      {store.correlationCoefficient != null ? store.correlationCoefficient.toFixed(2) : '-'}
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.correlationCoefficient != null ? store.correlationCoefficient.toFixed(2) : '-'}
                     </td>
                     <td className="px-4 py-3 text-right text-rose-600 font-medium">
-                      {store.spilloverRate != null ? `${store.spilloverRate}%` : '-'}
+                      {isSingleDay ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : store.spilloverRate != null ? `${store.spilloverRate}%` : '-'}
                     </td>
                   </tr>
                 ))}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Sparkles, Lock, Unlock, RotateCcw, AlertTriangle, 
-  CheckCircle2, Sliders, BarChart2
+  CheckCircle2, Sliders, BarChart2, HelpCircle
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -16,6 +16,8 @@ interface MonthlyDynamicRebalancerProps {
   baseYear: number;
   includeGolf: boolean;
   onMonthlyTargetsChange?: (targets: Record<number, number>) => void;
+  monthlyGrowthRates?: Record<number, number>;
+  onMonthlyGrowthRatesChange?: (rates: Record<number, number>) => void;
 }
 
 interface MonthMeta {
@@ -41,7 +43,9 @@ export default function MonthlyDynamicRebalancer({
   targetYear,
   baseYear,
   includeGolf,
-  onMonthlyTargetsChange
+  onMonthlyTargetsChange,
+  monthlyGrowthRates,
+  onMonthlyGrowthRatesChange
 }: MonthlyDynamicRebalancerProps) {
   
   const [trendsData, setTrendsData] = useState<any[]>([]);
@@ -107,17 +111,34 @@ export default function MonthlyDynamicRebalancer({
   const [growthRates, setGrowthRates] = useState<Record<number, number>>(() => {
     const initial: Record<number, number> = {};
     for (let m = 1; m <= 12; m++) {
-      initial[m] = annualGrowthRate;
+      initial[m] = monthlyGrowthRates?.[m] ?? annualGrowthRate;
     }
     return initial;
   });
+
+  // Sync if monthlyGrowthRates prop changes externally from Month Selector Bar
+  useEffect(() => {
+    if (monthlyGrowthRates && Object.keys(monthlyGrowthRates).length > 0) {
+      setGrowthRates(prev => {
+        let changed = false;
+        const next = { ...prev };
+        for (let m = 1; m <= 12; m++) {
+          if (monthlyGrowthRates[m] !== undefined && monthlyGrowthRates[m] !== prev[m]) {
+            next[m] = monthlyGrowthRates[m];
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }
+  }, [monthlyGrowthRates]);
 
   // Reset all months to annual average when annualGrowthRate changes
   useEffect(() => {
     setGrowthRates(prev => {
       const updated: Record<number, number> = {};
       for (let m = 1; m <= 12; m++) {
-        if (lockedMonths[m]) {
+        if (lockedMonths[m] || (monthlyGrowthRates && monthlyGrowthRates[m] !== undefined)) {
           updated[m] = prev[m] ?? annualGrowthRate;
         } else {
           updated[m] = annualGrowthRate;
@@ -125,7 +146,7 @@ export default function MonthlyDynamicRebalancer({
       }
       return updated;
     });
-  }, [annualGrowthRate, lockedMonths]);
+  }, [annualGrowthRate, lockedMonths, monthlyGrowthRates]);
 
   // 4. Calculate Final 12-Month Targets with Zero-Sum Largest Remainder Allocation
   const calculatedMonthlyTargets = useMemo(() => {
@@ -233,9 +254,13 @@ export default function MonthlyDynamicRebalancer({
         });
       }
 
+      if (onMonthlyGrowthRatesChange) {
+        onMonthlyGrowthRatesChange(updated);
+      }
+
       return updated;
     });
-  }, [monthlyMetaList, lockedMonths, annualGrowthRate, annualTargetRevenue]);
+  }, [monthlyMetaList, lockedMonths, annualGrowthRate, annualTargetRevenue, onMonthlyGrowthRatesChange]);
 
   // Toggle Lock
   const toggleLock = (month: number) => {
@@ -277,6 +302,9 @@ export default function MonthlyDynamicRebalancer({
 
     setLockedMonths(updatedLocks);
     setGrowthRates(updatedRates);
+    if (onMonthlyGrowthRatesChange) {
+      onMonthlyGrowthRatesChange(updatedRates);
+    }
   };
 
   // Preset 2: Even Distribution Reset
@@ -289,6 +317,9 @@ export default function MonthlyDynamicRebalancer({
     }
     setLockedMonths(resetLocks);
     setGrowthRates(resetRates);
+    if (onMonthlyGrowthRatesChange) {
+      onMonthlyGrowthRatesChange({});
+    }
   };
 
   // 12-Month Bar Chart Options (Base vs Dynamic Target)
@@ -382,22 +413,116 @@ export default function MonthlyDynamicRebalancer({
         </div>
 
         {/* Action Preset Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={applyAiSmartOptimization}
-            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-          >
-            <Sparkles size={15} />
-            ✨ AI 시즌 스마트 최적화
-          </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <div className="flex flex-col items-start sm:items-end">
+            <button
+              onClick={applyAiSmartOptimization}
+              className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-800 text-white rounded-2xl text-xs font-bold transition-all shadow-sm hover:shadow-indigo-200 active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
+              title="성수기 한계 제한 및 비수기 가중 배분 자동 실행"
+            >
+              <Sparkles size={15} />
+              <span>✨ AI 시즌 스마트 최적화</span>
+            </button>
+            <span className="text-[10px] text-purple-700 font-bold mt-1 px-1">
+              성수기 Cap 제한 ➔ 비수기 가중 전이
+            </span>
+          </div>
           
-          <button
-            onClick={resetEvenDistribution}
-            className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <RotateCcw size={14} />
-            균등 배분 리셋
-          </button>
+          <div className="flex flex-col items-start sm:items-end">
+            <button
+              onClick={resetEvenDistribution}
+              className="w-full sm:w-auto px-3.5 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs hover:border-slate-300"
+              title="모든 월을 연간 목표 성장률로 균일하게 리셋"
+            >
+              <RotateCcw size={14} className="text-slate-500" />
+              <span>🔄 균등 배분 리셋</span>
+            </button>
+            <span className="text-[10px] text-slate-500 font-bold mt-1 px-1">
+              12개월 일괄 균등 적용 ({annualGrowthRate > 0 ? `+${annualGrowthRate}%` : `${annualGrowthRate}%`})
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 💡 버튼 기능 가이드 (직관적 이해를 위한 동작 원리 안내) */}
+      <div className="bg-slate-900/[0.03] border border-slate-200/90 rounded-2xl p-4.5 space-y-3">
+        <div className="flex items-center gap-2 text-xs font-black text-slate-800">
+          <HelpCircle size={15} className="text-indigo-600" />
+          <span>각 버튼의 기능 및 엔진 조작 원리</span>
+          <span className="text-[11px] font-normal text-slate-500 ml-1">
+            원하는 전략에 맞춰 버튼을 누르면 연간 목표 총액 손실 없이 월별 목표치가 즉시 재계산됩니다.
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Guide Card 1: AI 시즌 스마트 최적화 */}
+          <div className="bg-white rounded-xl p-3.5 border border-purple-100/80 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[11px] font-black border border-purple-200/70">
+                  <Sparkles size={12} />
+                  ✨ AI 시즌 스마트 최적화
+                </span>
+                <span className="text-[10px] font-bold text-purple-600 bg-purple-50/50 px-1.5 py-0.5 rounded">
+                  추천 시나리오
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+                <strong>성수기 과포화 방지 및 비수기 집중 성장</strong>:
+                객실/골프 가동률이 85%를 넘는 성수기(5·8·10월)는 수용 한계에 도달하여 더 늘릴 수 없으므로 성장률을 낮게(0~15%) 제한하고 <strong>[🔒 잠금]</strong>합니다. 
+                대신 부족한 목표액을 여유 여력이 많은 비수기·숄더 월로 자동 전이(Spillover)하여 <strong>연간 목표를 현실적으로 100% 달성</strong>합니다.
+              </p>
+            </div>
+            <div className="text-[10px] text-purple-700/90 font-medium bg-purple-50/40 px-2 py-1 rounded border border-purple-100">
+              💡 <em>사용 시점: 성수기 만실 한계를 인정하고 비수기 마케팅으로 승부할 때 클릭</em>
+            </div>
+          </div>
+
+          {/* Guide Card 2: 균등 배분 리셋 */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-black border border-slate-200">
+                  <RotateCcw size={12} />
+                  🔄 균등 배분 리셋
+                </span>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                  초기화 기준선
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+                <strong>12개월 전체 동일 비율 일괄 복원</strong>:
+                사용자가 개별적으로 조정한 모든 월별 슬라이더와 잠금을 일괄 해제하고, 1월부터 12월까지 전체 월에 연간 목표 성장률(<strong>+{annualGrowthRate}%</strong>)을 <strong>동일한 비율로 1:1 일괄 적용</strong>합니다. 
+                처음부터 다시 계획을 설계하고 싶을 때 기준 상태로 되돌립니다.
+              </p>
+            </div>
+            <div className="text-[10px] text-slate-600 font-medium bg-slate-50 px-2 py-1 rounded border border-slate-100">
+              💡 <em>사용 시점: 개별 조정을 모두 지우고 균등한 성장률에서 새로 시작할 때 클릭</em>
+            </div>
+          </div>
+
+          {/* Guide Card 3: 월별 잠금/연동 제어 */}
+          <div className="bg-white rounded-xl p-3.5 border border-indigo-100/80 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-black border border-indigo-200/70">
+                  <Lock size={12} />
+                  🔒 월별 잠금 / 🔓 연동 제어
+                </span>
+                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 px-1.5 py-0.5 rounded">
+                  Zero-Sum 보존
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+                <strong>실시간 동적 밸런싱 (Zero-Sum 100%)</strong>:
+                각 월 카드의 <strong>[🔒 잠금]</strong>을 누르면 그 달의 목표치가 동결되어 변하지 않습니다. 
+                이후 <strong>[🔓 연동]</strong> 상태인 임의의 월 슬라이더를 올리거나 내리면, 잠금되지 않은 나머지 월들이 <strong>실시간으로 반비례 자동 가감되어 연간 총목표액이 1원의 오차도 없이 완벽히 유지</strong>됩니다.
+              </p>
+            </div>
+            <div className="text-[10px] text-indigo-700/90 font-medium bg-indigo-50/40 px-2 py-1 rounded border border-indigo-100">
+              💡 <em>사용 시점: 특정 월(예: 행사/성수기) 목표를 고정해 두고 나머지 달을 조율할 때 활용</em>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -426,7 +551,7 @@ export default function MonthlyDynamicRebalancer({
           return (
             <div 
               key={meta.month}
-              className={`rounded-2xl p-4 transition-all border ${
+              className={`rounded-2xl p-4 transition-all border min-h-[195px] flex flex-col justify-between ${
                 isLocked 
                   ? 'bg-indigo-50/50 border-indigo-200 shadow-2xs' 
                   : isCapacityWarning
@@ -436,16 +561,16 @@ export default function MonthlyDynamicRebalancer({
             >
               {/* Card Top: Month & Lock Button */}
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-base font-black text-slate-900">{meta.label}</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-base font-black text-slate-900 shrink-0">{meta.label}</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 truncate max-w-[105px]" title={meta.seasonTag}>
                     {meta.seasonTag}
                   </span>
                 </div>
 
                 <button
                   onClick={() => toggleLock(meta.month)}
-                  className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                  className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
                     isLocked 
                       ? 'bg-indigo-600 text-white shadow-2xs' 
                       : 'bg-slate-100 text-slate-400 hover:text-slate-700'
@@ -453,23 +578,23 @@ export default function MonthlyDynamicRebalancer({
                   title={isLocked ? '목표가 고정되어 타 월 조정 시 변하지 않습니다.' : '타 월 조정 시 자동으로 연동 리밸런싱됩니다.'}
                 >
                   {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
-                  <span className="text-[10px]">{isLocked ? '잠금' : '연동'}</span>
+                  <span className="text-[10px] font-bold">{isLocked ? '잠금' : '연동'}</span>
                 </button>
               </div>
 
               {/* Card Middle: Target Revenue & Growth Rate */}
-              <div className="py-2.5 flex items-baseline justify-between">
+              <div className="py-2 flex items-baseline justify-between">
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400">목표 매출액</div>
-                  <div className="text-lg font-black text-slate-900 tabular-nums">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">목표 매출액</div>
+                  <div className="text-lg font-black text-slate-900 font-mono tabular-nums">
                     {(targetAmount / 100000000).toFixed(2)}
-                    <span className="text-xs font-normal text-slate-500 ml-0.5">억원</span>
+                    <span className="text-xs font-normal text-slate-500 ml-0.5 font-sans">억원</span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-[10px] font-bold text-slate-400">성장률 설정</div>
-                  <div className={`text-base font-black tabular-nums ${rate >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">성장률 설정</div>
+                  <div className={`text-base font-black font-mono tabular-nums ${rate >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
                     {rate > 0 ? '+' : ''}{rate}%
                   </div>
                 </div>
@@ -494,7 +619,7 @@ export default function MonthlyDynamicRebalancer({
                   }`}
                 />
                 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium pt-0.5">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium font-mono pt-0.5">
                   <span>-10%</span>
                   <span>0%</span>
                   <span>+15%</span>
@@ -503,24 +628,24 @@ export default function MonthlyDynamicRebalancer({
               </div>
 
               {/* Card Bottom: Smart Warnings / Headroom */}
-              <div className="pt-2 mt-2 border-t border-slate-100/80 flex items-center justify-between text-[10px]">
+              <div className="pt-2 mt-1 border-t border-slate-100/80 flex items-center justify-between text-[10px]">
                 {isCapacityWarning ? (
                   <span className="text-amber-700 font-bold flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80">
                     <AlertTriangle size={11} />
                     ADR 레버리지 필요
                   </span>
                 ) : meta.isPeak ? (
-                  <span className="text-indigo-600 font-semibold">
-                    성수기 (매출 강도 ~{Math.round(meta.estimatedOcc * 100)}%)
+                  <span className="text-indigo-600 font-semibold truncate">
+                    성수기 (~{Math.round(meta.estimatedOcc * 100)}%)
                   </span>
                 ) : (
-                  <span className="text-teal-700 font-semibold flex items-center gap-1">
+                  <span className="text-teal-700 font-semibold flex items-center gap-1 truncate">
                     <CheckCircle2 size={11} />
                     여유 여력: {Math.round(meta.headroom * 100)}%
                   </span>
                 )}
 
-                <span className="text-slate-400 tabular-nums">
+                <span className="text-slate-400 font-mono tabular-nums shrink-0">
                   기준: {(meta.baseRevenue / 100000000).toFixed(2)}억
                 </span>
               </div>

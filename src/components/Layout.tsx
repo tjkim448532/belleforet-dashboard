@@ -408,14 +408,14 @@ export default function Layout() {
               로그아웃
             </button>
 
-            {/* 최고경영진 어드민 (맨 아래로 이동) */}
+            {/* 관리자어드민 (맨 아래로 이동) */}
             {isAdmin && (
               <NavLink
                 to="/admin/roles"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-md hover:bg-slate-800 mt-2"
               >
                 <ShieldCheck size={20} className="text-brand-mint" />
-                최고경영진 어드민
+                관리자어드민
               </NavLink>
             )}
         </div>

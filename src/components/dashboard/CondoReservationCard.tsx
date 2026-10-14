@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, Users, Calendar, CheckCircle2, AlertCircle, Coins } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { parseNum } from '../../lib/dataTransformers';
 import { formatDate, getKSTNow } from '../../lib/dateUtils';
@@ -30,6 +30,8 @@ interface CondoReservationData {
   groups: GroupBookingItem[];
   totalGroupRooms: number;
   isBackendMartPending: boolean;
+  estimatedRevenue?: number | null;
+  estimatedTotalRevenue?: number | null;
 }
 
 interface CondoReservationCardProps {
@@ -39,6 +41,11 @@ interface CondoReservationCardProps {
 export default function CondoReservationCard({ currentDate }: CondoReservationCardProps) {
   const [loading, setLoading] = useState(false);
   const [resData, setResData] = useState<CondoReservationData | null>(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastData, setForecastData] = useState<{
+    roomRevenue: number | null;
+    totalRevenue: number | null;
+  } | null>(null);
 
   // 날짜 계산: 마감일(D-1) 기준 익일(D+1, 실제로는 오늘 도착) 체크인 날짜
   const getNextDateStr = (dateStr: string) => {
@@ -122,7 +129,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             byType,
             groups: parsedGroups,
             totalGroupRooms: parseNum(s.totalGroupRooms || 0),
-            isBackendMartPending: false
+            isBackendMartPending: false,
+            estimatedRevenue: s.estimatedRevenue !== undefined && s.estimatedRevenue !== null ? parseNum(s.estimatedRevenue) : null,
+            estimatedTotalRevenue: s.estimatedTotalRevenue !== undefined && s.estimatedTotalRevenue !== null ? parseNum(s.estimatedTotalRevenue) : null
           });
         } else {
           setResData({
@@ -133,7 +142,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             byType: [],
             groups: [],
             totalGroupRooms: 0,
-            isBackendMartPending: true
+            isBackendMartPending: true,
+            estimatedRevenue: null,
+            estimatedTotalRevenue: null
           });
         }
       } catch (err) {
@@ -146,6 +157,37 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
     loadReservationData();
     return () => { isCancelled = true; };
   }, [targetCheckInDate]);
+
+  // 체크인 당일 예상 매출액 연동 (BESM v6.3 예측 모델 SSOT)
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadForecast() {
+      if (isClosedHistory) return;
+      setForecastLoading(true);
+      try {
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/ancillary-revenue-forecast?date=${targetCheckInDate}`).catch(() => null);
+        if (isCancelled || !res) return;
+
+        if (res.success && res.forecastSummary) {
+          setForecastData({
+            roomRevenue: res.forecastSummary.totalRoomForecastRevenue ?? null,
+            totalRevenue: res.forecastSummary.grandTotalForecastRevenue ?? null
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load ancillary revenue forecast:', err);
+      } finally {
+        if (!isCancelled) setForecastLoading(false);
+      }
+    }
+
+    loadForecast();
+    return () => { isCancelled = true; };
+  }, [targetCheckInDate, isClosedHistory]);
+
+  const roomEstRev = resData?.estimatedRevenue ?? forecastData?.roomRevenue ?? null;
+  const totalEstRev = resData?.estimatedTotalRevenue ?? forecastData?.totalRevenue ?? null;
 
   // 단체 기업 예약의 전체 객실 대비 비중 (%)
   const groupSharePct = (resData?.totalRooms && resData.totalRooms > 0 && resData.totalGroupRooms) 
@@ -421,6 +463,71 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                   <span>확정된 단체 예약이 없습니다. (전원 일반/개별 고객 예약)</span>
                 </div>
               )}
+            </div>
+
+            {/* 🌟 체크인 당일 예상 매출액 (Estimated Revenue) */}
+            <div className="pt-3 border-t border-slate-200/80">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                <span className="flex items-center gap-1.5 text-emerald-900">
+                  <Coins size={14} className="text-emerald-600" />
+                  <span>체크인 당일 예상 매출액</span>
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  실시간 예약 원장 &amp; BESM 모델 SSOT
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* 1. 객실 부문 예상 매출액 */}
+                <div className="bg-white p-3 rounded-2xl border border-emerald-200/80 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-emerald-800 flex items-center justify-between">
+                    <span>🛏️ 객실 예상 매출</span>
+                    <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">
+                      {resData?.totalRooms ?? 0}실 확정
+                    </span>
+                  </div>
+                  <div className="text-xl lg:text-2xl font-black text-slate-900 tabular-nums my-1">
+                    {forecastLoading ? (
+                      <span className="text-xs text-slate-400 font-normal animate-pulse">산출 중...</span>
+                    ) : roomEstRev !== null && roomEstRev !== undefined ? (
+                      <>
+                        {new Intl.NumberFormat('ko-KR').format(roomEstRev)}
+                        <span className="text-xs font-bold text-slate-500 ml-0.5">원</span>
+                      </>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-medium truncate">
+                    PMS 예약 확정 및 기저 단가 연동
+                  </div>
+                </div>
+
+                {/* 2. 리조트 전체 파급 예상 매출액 */}
+                <div className="bg-white p-3 rounded-2xl border border-indigo-200/80 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-indigo-900 flex items-center justify-between">
+                    <span>🌐 전체 예상 매출</span>
+                    <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100">
+                      부대·스필오버
+                    </span>
+                  </div>
+                  <div className="text-xl lg:text-2xl font-black text-indigo-600 tabular-nums my-1">
+                    {forecastLoading ? (
+                      <span className="text-xs text-slate-400 font-normal animate-pulse">산출 중...</span>
+                    ) : totalEstRev !== null && totalEstRev !== undefined ? (
+                      <>
+                        {new Intl.NumberFormat('ko-KR').format(totalEstRev)}
+                        <span className="text-xs font-bold text-indigo-500 ml-0.5">원</span>
+                      </>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-medium truncate">
+                    투숙객 식음·레저 파급 합산
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

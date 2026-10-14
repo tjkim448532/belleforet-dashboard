@@ -25,6 +25,7 @@
 | **P1 (완료)** | API 보강 | **[Ticket 23] 골프 예약 현황 마트 API 내 1부/2부/3부 파트별 예약 팀수 필드 신설** | [배포완료] 실시간 및 익일 골프 예약 현황 하단에 1부(오전), 2부(오후), 3부(야간) 팀수 분할 제공 (`revenue-summary`) |
 | **P0 (긴급)** | 데이터 로직 | **[Ticket 24] 미래(익일 D+1) 골프 1·2·3부 평균 그린피(ERP 예약 단가) 집계 정상화** | 미래 도착 예약일(10/11)의 `avgGreenFee`가 POS 미정산(매출 0원)으로 인해 `0원(- 원)`으로 출력되는 결함 해결: ERP 예약 원장 예약단가 기준 산출 요청 |
 | **P1 (긴급)** | 데이터 정합성 | **[Ticket 25] 마운틴카트 2025년 1~9월 레거시 실적(2.45억 원) 그랜드포렛 이관** | 미니포렛 개장(2025-09-19) 이전 레거시 실적이 '마운틴카트'에 방치되어 YTD +800%~900% 왜곡 및 -100% 행 노출 발생. 그랜드포렛 과거 실적으로 이관 요청 |
+| **P1 (신규)** | API 보강 | **[Ticket 26] 콘도 체크인 예약 현황 API 내 예상 매출액(`estimatedRevenue`) 필드 추가** | 콘도 예약 현황 카드 하단에 PMS 예약 원장 기반 체크인 당일 예상 매출액(객실 및 전체 파급) 1-Call 완제품 제공 요청 (`condo-reservations`) |
 
 
 ---
@@ -2127,6 +2128,43 @@ const reverseSpillover = totalRoomSales > 0
      * 증감률: **`+3.58%`** (기존 단일 코스 대비 정상적이고 안정적인 성장률로 복원)
   3. `마운틴카트(미니포렛)`:
      * 작년 9/19 신설 코스이므로 MTD(당월) 증감률 `+3.5%`가 정상 반영되며, YTD는 신설 코스 추가 매출 효과로 온전히 설명 가능.
+
+---
+
+## 26. 🛏️ [P1 신규] 콘도 체크인 예약 현황 API 내 예상 매출액(`estimatedRevenue`) 필드 추가
+
+### 26-1. 현상 및 대표님 지시사항
+* **지시사항**: *"콘도 체크인 예약 현황 카드 맨 밑 빈공간에 예상 매출액도 기입."*
+* **대상 엔드포인트**: `GET /api/v6/dashboard/condo-reservations?date=YYYY-MM-DD`
+* **요청 배경**:
+  * 현재 대시보드 메인 콘도 체크인 예약 현황 카드 하단에 단체 명단 이후 빈 공간이 발생하고 있음.
+  * 체크인 예정 객실수(예: 102실)뿐만 아니라, 해당 체크인 일자에 발생할 **객실 예상 매출액**과 **리조트 전체 파급 예상 매출액**을 한눈에 파악하고자 함.
+
+### 26-2. 백엔드 조치 요청 (1-Call 완제품 제공)
+* `condo-reservations` 응답의 `summary` 객체에 다음 2개 필드를 공식 추가해 주시기 바랍니다:
+  ```json
+  {
+    "summary": {
+      "totalReservedRooms": 102,
+      "totalCapacity": 175,
+      "occupancyRate": 58.3,
+      "totalGroupRooms": 72,
+      "groupCount": 6,
+      "estimatedRevenue": 11994753,
+      "estimatedRevenueFormatted": "11,994,753",
+      "estimatedTotalRevenue": 81441371,
+      "estimatedTotalRevenueFormatted": "81,441,371"
+    }
+  }
+  ```
+* **필드 설명**:
+  * `estimatedRevenue`: 해당 도착일 예약 객실들의 PMS 예약 금액 합산 또는 기 구축된 BESM v6.3 모델 기반 객실 예상 매출액 (정수형 원화)
+  * `estimatedTotalRevenue`: 객실 투숙객들의 식음·레저 스필오버를 포함한 리조트 전체 파급 예상 매출액 (정수형 원화)
+
+### 26-3. 프론트엔드 연동 현황
+* 프론트엔드는 현재 기 구축된 `GET /api/v6/dashboard/ancillary-revenue-forecast` (BESM v6.3 SSOT)와 즉시 연동하여 실시간으로 예상 매출액을 노출하고 있습니다.
+* 백엔드에서 `condo-reservations`의 `summary.estimatedRevenue`에 완제품을 탑재해 주시면, 1회의 초고속 API 호출로 자동 전환되도록 구현을 완료했습니다.
+
 
 
 

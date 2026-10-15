@@ -84,40 +84,40 @@ export default function LeisureFacility() {
     };
   }, [startDate, endDate, isRange]);
 
-  // 모토아레나 판매채널(OTA/홈페이지/POS/PMS) 비중 — 백엔드 완제품(summary, channels) 그대로 바인딩
-  const [motoChannel, setMotoChannel] = useState<{ summary: any; channels: any[] } | null>(null);
-  const [motoChannelLoading, setMotoChannelLoading] = useState<boolean>(true);
-  const [motoChannelError, setMotoChannelError] = useState<string | null>(null);
+  // 레저본부 전체 영업장 판매채널(자사·OTA·POS·PMS) 비중 — 백엔드 완제품(summary, venues) 그대로 바인딩
+  const [channelData, setChannelData] = useState<{ summary: any; venues: any[] } | null>(null);
+  const [channelLoading, setChannelLoading] = useState<boolean>(true);
+  const [channelError, setChannelError] = useState<string | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
-    const fetchMotoChannel = async () => {
-      setMotoChannelLoading(true);
-      setMotoChannelError(null);
+    const fetchChannels = async () => {
+      setChannelLoading(true);
+      setChannelError(null);
       try {
         const isRangeQuery = Boolean(endDate && startDate !== endDate);
         const queryParams = isRangeQuery
           ? `startDate=${startDate}&endDate=${endDate}`
           : `date=${startDate}`;
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/moto-channel-sales?${queryParams}`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-channel-sales?${queryParams}`);
         if (isCancelled) return;
         const payload = res?.data ?? res;
-        if (payload?.summary && Array.isArray(payload?.channels)) {
-          setMotoChannel({ summary: payload.summary, channels: payload.channels });
+        if (payload?.summary && Array.isArray(payload?.venues)) {
+          setChannelData({ summary: payload.summary, venues: payload.venues });
         } else {
-          setMotoChannel(null);
-          setMotoChannelError('API 응답에 summary/channels 완제품이 없습니다.');
+          setChannelData(null);
+          setChannelError('API 응답에 summary/venues 완제품 데이터가 없습니다.');
         }
       } catch (err: any) {
         if (!isCancelled) {
-          setMotoChannel(null);
-          setMotoChannelError(err?.message || 'moto-channel-sales API 호출 실패');
+          setChannelData(null);
+          setChannelError(err?.message || 'leisure-channel-sales API 호출 실패');
         }
       } finally {
-        if (!isCancelled) setMotoChannelLoading(false);
+        if (!isCancelled) setChannelLoading(false);
       }
     };
-    fetchMotoChannel();
+    fetchChannels();
     return () => {
       isCancelled = true;
     };
@@ -337,100 +337,171 @@ export default function LeisureFacility() {
         </div>
       </div>
 
-      {/* 모토아레나 판매채널(OTA) 매출 비중 — GET /api/v6/report/moto-channel-sales */}
+      {/* 레저본부 전체 영업장 판매채널(자사·OTA·POS·PMS) 매출 비중 — GET /api/v6/report/leisure-channel-sales */}
       <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
-              <Globe className="w-5 h-5 text-indigo-500" /> 모토아레나 판매채널별 매출 비중 (OTA)
+              <Globe className="w-5 h-5 text-indigo-500" /> 레저본부 전체 영업장별 판매채널 비중 (자사·OTA·POS·PMS)
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1 break-keep">
-              순수 외부 OTA · 자사 홈페이지 · 현장 POS · 객실연계(PMS) 채널별 매출과 비중 (백엔드 완제품 그대로 표시)
+              놀이동산, 마운틴카트, 목장, 사계절썰매장, 모토아레나 등 레저본부 전체 영업장의 채널별(현장 POS · 자사 홈페이지 · 외부 OTA · 객실연계 PMS) 매출 및 비중
             </p>
           </div>
-          <span className="text-[11px] font-mono text-slate-400">API: /api/v6/report/moto-channel-sales</span>
+          <span className="text-[11px] font-mono text-slate-400">API: /api/v6/report/leisure-channel-sales</span>
         </div>
 
-        {motoChannelLoading ? (
+        {channelLoading ? (
           <div className="py-10 flex items-center justify-center text-slate-400 text-xs">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-mint mr-2"></div>
-            채널별 매출 비중을 불러오는 중입니다...
+            레저본부 전체 영업장 채널별 매출 비중을 불러오는 중입니다...
           </div>
-        ) : motoChannelError || !motoChannel ? (
-          <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-5 text-sm flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">OTA 채널 비중 데이터를 불러오지 못했습니다.</p>
-              <p className="text-xs mt-1 text-rose-700">{motoChannelError}</p>
-              <p className="text-xs mt-1 text-rose-700">백엔드 API 배포 상태를 확인해 주십시오. (프론트엔드는 임의 수치를 생성하지 않습니다)</p>
+        ) : channelError || !channelData ? (
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 text-sm flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-indigo-500 shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-bold text-slate-900">전체 영업장 판매채널(자사·OTA·POS·PMS) API 배포 대기 중</p>
+                <span className="text-[11px] font-mono bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full border border-indigo-200/60">
+                  Ticket 30 대기
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed break-keep">
+                모토아레나를 포함한 레저본부 전체 영업장(놀이동산, 마운틴카트, 목장, 사계절썰매장, 모토아레나, 마리나클럽, 미디어아트, 썸머랜드 등)의 자사 홈페이지 · 외부 OTA · 현장 POS · 객실 PMS 판매 비중 집계 API(<code className="font-mono text-slate-800">/api/v6/report/leisure-channel-sales</code>)가 백엔드에 정식 요청되었습니다.
+              </p>
+              <p className="text-xs text-slate-500 font-medium">
+                백엔드 Vercel 프로덕션 배포 완료 즉시 실시간으로 전체 영업장 채널 비중 표가 자동 렌더링됩니다. (프론트엔드 무결성 원칙에 따라 임의의 가짜 숫자를 합성하지 않습니다)
+              </p>
             </div>
           </div>
         ) : (
           <>
-            {/* 요약 KPI (summary) */}
+            {/* 4대 채널 요약 KPI 카드 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 tabular-nums">
-              <div className="p-5 rounded-2xl bg-indigo-950 text-white">
-                <div className="text-xs font-bold text-indigo-200">순수 외부 OTA 매출 비중</div>
-                <div className="text-3xl font-black text-amber-300 mt-1">{showPct(motoChannel.summary.otaSharePct)}</div>
-                <div className="text-xs text-indigo-200/90 mt-1">OTA 매출 {showWon(motoChannel.summary.otaRevenue)}</div>
-              </div>
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="text-xs font-bold text-slate-600">서킷 본체 대비 OTA 비중</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">{showPct(motoChannel.summary.otaShareOfCircuitPct)}</div>
-                <div className="text-xs text-slate-500 mt-1">서킷 매출 {showWon(motoChannel.summary.circuitOnlyRevenue)}</div>
-              </div>
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="text-xs font-bold text-slate-600">온라인 예매 내 OTA 비중</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">{showPct(motoChannel.summary.otaShareWithinOnlinePct)}</div>
-                <div className="text-xs text-slate-500 mt-1">온라인 합계 {showWon(motoChannel.summary.onlineTotalRevenue)}</div>
-              </div>
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="text-xs font-bold text-slate-600">모토아레나 총매출</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">{showWon(motoChannel.summary.totalRevenue)}</div>
-                <div className="text-xs text-slate-500 mt-1">
-                  홈페이지 {showPct(motoChannel.summary.homepageSharePct)} · POS {showPct(motoChannel.summary.posSharePct)} · PMS {showPct(motoChannel.summary.pmsSharePct)}
+              <div className="p-5 rounded-2xl bg-slate-900 text-white shadow-sm">
+                <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                  <span>현장 POS (현장발권)</span>
+                  <span className="text-[11px] bg-slate-800 px-2 py-0.5 rounded-full">현장 결제</span>
                 </div>
+                <div className="text-3xl font-black text-amber-300 mt-2">{showPct(channelData.summary?.posSharePct)}</div>
+                <div className="text-xs text-slate-300/90 mt-1">매출 {showWon(channelData.summary?.posRevenue)}</div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="text-xs font-bold text-slate-600 flex items-center justify-between">
+                  <span>자사 홈페이지 (Direct)</span>
+                  <span className="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full">수수료 0%</span>
+                </div>
+                <div className="text-3xl font-black text-emerald-600 mt-2">{showPct(channelData.summary?.homepageSharePct)}</div>
+                <div className="text-xs text-slate-500 mt-1">매출 {showWon(channelData.summary?.homepageRevenue)}</div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
+                <div className="text-xs font-bold text-indigo-900 flex items-center justify-between">
+                  <span>순수 외부 OTA (대행사)</span>
+                  <span className="text-[11px] bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-full">야놀자/네이버 등</span>
+                </div>
+                <div className="text-3xl font-black text-indigo-600 mt-2">{showPct(channelData.summary?.otaSharePct)}</div>
+                <div className="text-xs text-indigo-700/90 mt-1">매출 {showWon(channelData.summary?.otaRevenue)}</div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="text-xs font-bold text-slate-600 flex items-center justify-between">
+                  <span>객실 연계 (PMS)</span>
+                  <span className="text-[11px] bg-slate-200/80 text-slate-700 font-semibold px-2 py-0.5 rounded-full">패키지/부대</span>
+                </div>
+                <div className="text-3xl font-black text-slate-900 mt-2">{showPct(channelData.summary?.pmsSharePct)}</div>
+                <div className="text-xs text-slate-500 mt-1">매출 {showWon(channelData.summary?.pmsRevenue)}</div>
               </div>
             </div>
 
-            {/* 채널 테이블 (channels: 소계/총계 백엔드 제공) */}
+            {/* 전체 영업장별 채널 비중 매트릭스 테이블 */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm tabular-nums min-w-[900px]">
+              <table className="w-full text-left text-sm tabular-nums min-w-[960px]">
                 <thead>
                   <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
-                    <th className="py-3 px-4">판매 채널</th>
-                    <th className="py-3 px-3 text-right">조회기간 매출</th>
-                    <th className="py-3 px-3 text-right">전체 대비</th>
-                    <th className="py-3 px-3 text-right">서킷 대비</th>
-                    <th className="py-3 px-3 text-right">당월(MTD) 매출</th>
-                    <th className="py-3 px-3 text-right">MTD 비중</th>
-                    <th className="py-3 px-3 text-right">연간(YTD) 매출</th>
-                    <th className="py-3 px-4 text-right">YTD 비중</th>
+                    <th className="py-3 px-4">영업장명</th>
+                    <th className="py-3 px-3 text-right">총매출</th>
+                    <th className="py-3 px-3 text-right">현장 POS</th>
+                    <th className="py-3 px-3 text-right">자사 홈페이지</th>
+                    <th className="py-3 px-3 text-right">외부 OTA</th>
+                    <th className="py-3 px-3 text-right">객실연계(PMS)</th>
+                    <th className="py-3 px-4 text-center">주력 채널</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {motoChannel.channels.map((c: any, idx: number) => {
-                    const rowCls = c.isGrandTotal
-                      ? 'bg-slate-900 text-white font-bold'
-                      : c.isSubtotal
-                      ? 'bg-slate-100 font-bold text-slate-900'
-                      : c.channelCode === 'OTA'
-                      ? 'bg-indigo-50/60 text-slate-900'
-                      : 'text-slate-800';
+                  {channelData.venues?.map((v: any, idx: number) => {
+                    const dominantTag = v.dominantChannel || (
+                      v.posSharePct >= 60 ? '현장 POS 주력' :
+                      v.homepageSharePct >= 30 ? '자사 채널 활성' :
+                      v.otaSharePct >= 10 ? 'OTA 비중 높음' : '다채널 혼합'
+                    );
+                    const tagCls = dominantTag.includes('OTA') 
+                      ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                      : dominantTag.includes('자사')
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-200';
+
                     return (
-                      <tr key={c.channelCode || idx} className={rowCls}>
-                        <td className="py-3 px-4 whitespace-nowrap font-semibold">{c.channelName ?? '-'}</td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">{showWon(c.periodRevenue)}</td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">{showPct(c.revenueSharePct)}</td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">{showPct(c.circuitSharePct)}</td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">{showWon(c.mtdRevenue)}</td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">{showPct(c.mtdSharePct)}</td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">{showWon(c.ytdRevenue)}</td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">{showPct(c.ytdSharePct)}</td>
+                      <tr key={v.venueName || idx} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-900">
+                          {v.venueName ?? '-'}
+                        </td>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap font-black text-slate-900">
+                          {showWon(v.totalRevenue)}
+                        </td>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                          <span className="font-semibold text-slate-800 block">{showWon(v.posRevenue)}</span>
+                          <span className="text-[11px] text-slate-500 font-medium">{showPct(v.posSharePct)}</span>
+                        </td>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                          <span className="font-semibold text-emerald-700 block">{showWon(v.homepageRevenue)}</span>
+                          <span className="text-[11px] text-emerald-600 font-medium">{showPct(v.homepageSharePct)}</span>
+                        </td>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap bg-indigo-50/30">
+                          <span className="font-semibold text-indigo-700 block">{showWon(v.otaRevenue)}</span>
+                          <span className="text-[11px] text-indigo-600 font-bold">{showPct(v.otaSharePct)}</span>
+                        </td>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                          <span className="font-semibold text-slate-700 block">{showWon(v.pmsRevenue)}</span>
+                          <span className="text-[11px] text-slate-500 font-medium">{showPct(v.pmsSharePct)}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${tagCls}`}>
+                            {dominantTag}
+                          </span>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
+                <tfoot>
+                  <tr className="bg-slate-900 text-white font-bold text-sm border-t-2 border-slate-950">
+                    <td className="py-4 px-4 whitespace-nowrap">레저본부 전체 총합계</td>
+                    <td className="py-4 px-3 text-right whitespace-nowrap text-amber-300 font-black">
+                      {showWon(channelData.summary?.totalRevenue)}
+                    </td>
+                    <td className="py-4 px-3 text-right whitespace-nowrap">
+                      <span className="block">{showWon(channelData.summary?.posRevenue)}</span>
+                      <span className="text-[11px] text-slate-300 font-normal">({showPct(channelData.summary?.posSharePct)})</span>
+                    </td>
+                    <td className="py-4 px-3 text-right whitespace-nowrap">
+                      <span className="block text-emerald-300">{showWon(channelData.summary?.homepageRevenue)}</span>
+                      <span className="text-[11px] text-emerald-200/90 font-normal">({showPct(channelData.summary?.homepageSharePct)})</span>
+                    </td>
+                    <td className="py-4 px-3 text-right whitespace-nowrap bg-indigo-950/80">
+                      <span className="block text-indigo-200">{showWon(channelData.summary?.otaRevenue)}</span>
+                      <span className="text-[11px] text-amber-300 font-bold">({showPct(channelData.summary?.otaSharePct)})</span>
+                    </td>
+                    <td className="py-4 px-3 text-right whitespace-nowrap">
+                      <span className="block">{showWon(channelData.summary?.pmsRevenue)}</span>
+                      <span className="text-[11px] text-slate-300 font-normal">({showPct(channelData.summary?.pmsSharePct)})</span>
+                    </td>
+                    <td className="py-4 px-4 text-center whitespace-nowrap text-slate-400 text-xs font-normal">
+                      전체 합계
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </>

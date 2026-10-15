@@ -29,6 +29,7 @@
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 27] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화** | 산하 PMS 미배정 원천 코드('ROOM')가 한글 평형 대신 영문 코드로 직접 노출되는 결함 해결 (`room-channel-sales`) |
 | **P1 (신규)** | 정규 API | **[Ticket 28] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API 신설** | 통합 회원관리 대시보드 고도화를 위한 분양구좌 마스터 소진율, 평형별 회원 이용 내역, 개인별 크로스 소비 LTV 원장 제공 요청 (`membership-ledger-intelligence`) |
 | **P0 (긴급)** | 배포/정합성 | **[Ticket 29] `moto-channel-sales` 프로덕션 미배포(404) 및 OTA 분류 LIKE 휴리스틱 제거** | 레저 영업장 현황 OTA 비중 섹션 연동 완료, API 404로 Fail-Stop 표출 중. OTA/HOMEPAGE 분류를 상품명 LIKE 추론 대신 사전 HITL 승인 기준으로 전환 요청 |
+| **P0 (긴급)** | 정규 API | **[Ticket 30] 레저본부 전체 영업장별 판매채널(자사·OTA·POS·PMS) 매출/비중 완제품 API 배포** | 모토아레나 단독이 아닌 놀이동산, 카트, 목장, 썰매장 등 전체 영업장의 채널별 매출 및 비중 완제품 제공 (`leisure-channel-sales`) |
 
 
 ---
@@ -2283,3 +2284,86 @@ const reverseSpillover = totalRoomSales > 0
    * 원천 필드(`매출경로명 = 'CRS'`, `온라인구매처명`) 기준 분류는 유지하되, 텍스트 LIKE 추론 분기는 제거하고 미분류 상품은 `log_mapping_candidates`로 격리 → 관리자 포털 HITL 승인 후 반영해 주십시오.
    * 대시보드 반영 전 OTA 분류 결과(상품별 OTA/HOMEPAGE 판정 목록)를 운영팀이 검수할 수 있도록 공유 요청.
 3. **API 응답 시 `summary` 합계 0-Variance 검증 결과**(OTA+HOMEPAGE+POS+PMS = totalRevenue) 함께 회신 요청.
+
+---
+
+## 30. 🎡 [P0 긴급] 레저본부 전체 영업장별 판매채널(자사 홈페이지·외부 OTA·현장 POS·객실 PMS) 매출/비중 완제품 API (`leisure-channel-sales`)
+
+### 30-1. 요청 배경 및 대표님 절대 지시사항
+* **대표님 직접 지시**:
+  * *"모토아레나 단독 아니고 영업장들에 자사 채널과 외부 ota POS등 판매 채널 비중을 전부 보여줘"*
+* **배경 및 현상**:
+  * 모토아레나 단독 카드는 전체 레저 부문의 채널 믹스를 대변하지 못하며, 놀이동산, 마운틴카트, 목장, 사계절썰매장, 썸머랜드, 미디어아트 등 레저본부 산하 모든 영업장별로 자사 홈페이지 / 외부 OTA / 현장 POS / 객실 PMS 4대 채널 비중이 투명하게 조회되어야 함.
+* **프론트엔드 연동 현황**:
+  * `LeisureFacility.tsx`(`레저 영업장 대시보드`) 하단에 **[레저본부 전체 영업장별 판매채널 비중 (자사·OTA·POS·PMS)]** 전용 UI(4대 채널 KPI 카드 + 전체 영업장 매트릭스 테이블 + 총합계 푸터) 완벽 구현 완료.
+  * 백엔드 API(`GET /api/v6/report/leisure-channel-sales`) 배포 즉시 실시간 자동 노출되도록 Fail-Stop 가드 적용.
+
+### 30-2. 백엔드 구현 요구사항 (Next.js Route)
+* **엔드포인트**: `GET /api/v6/report/leisure-channel-sales`
+* **파라미터**: `startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (또는 `date=YYYY-MM-DD`)
+* **데이터 원천**: `fact_ticket_sales_v6` (모토아레나 포함 레저본부 전체 티켓 팩트)
+* **권장 SQL (1원 단위 정수 집계)**:
+  ```sql
+  SELECT 
+      venue_name AS venueName,
+      ROUND(SUM(revenue), 0) AS totalRevenue,
+      ROUND(SUM(CASE WHEN source_channel = 'POS' THEN revenue ELSE 0 END), 0) AS posRevenue,
+      ROUND(SUM(CASE WHEN source_channel = 'ONLINE' AND (product_name NOT LIKE '%[%' AND product_name NOT LIKE '%@%' AND product_name NOT LIKE '%야놀자%' AND product_name NOT LIKE '%네이버%' AND product_name NOT LIKE '%쿠팡%' AND product_name NOT LIKE '%여행사%') THEN revenue ELSE 0 END), 0) AS homepageRevenue,
+      ROUND(SUM(CASE WHEN source_channel = 'ONLINE' AND (product_name LIKE '%[%' OR product_name LIKE '%@%' OR product_name LIKE '%야놀자%' OR product_name LIKE '%네이버%' OR product_name LIKE '%쿠팡%' OR product_name LIKE '%여행사%') THEN revenue ELSE 0 END), 0) AS otaRevenue,
+      ROUND(SUM(CASE WHEN source_channel = 'PMS' THEN revenue ELSE 0 END), 0) AS pmsRevenue
+  FROM fact_ticket_sales_v6
+  WHERE date_id BETWEEN REPLACE(?, '-', '') AND REPLACE(?, '-', '')
+  GROUP BY venue_name
+  ORDER BY totalRevenue DESC;
+  ```
+
+### 30-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "totalRevenue": 11109586012,
+    "posRevenue": 8763451602,
+    "posSharePct": 78.9,
+    "homepageRevenue": 1280817555,
+    "homepageSharePct": 11.5,
+    "otaRevenue": 843232111,
+    "otaSharePct": 7.6,
+    "pmsRevenue": 222084744,
+    "pmsSharePct": 2.0
+  },
+  "venues": [
+    {
+      "venueName": "모토아레나",
+      "totalRevenue": 3384082329,
+      "posRevenue": 2536766295,
+      "posSharePct": 75.0,
+      "homepageRevenue": 530319711,
+      "homepageSharePct": 15.7,
+      "otaRevenue": 316996323,
+      "otaSharePct": 9.4,
+      "pmsRevenue": 0,
+      "pmsSharePct": 0.0,
+      "dominantChannel": "현장 POS 주력"
+    },
+    {
+      "venueName": "놀이동산",
+      "totalRevenue": 1281366494,
+      "posRevenue": 1234723645,
+      "posSharePct": 96.4,
+      "homepageRevenue": 18116139,
+      "homepageSharePct": 1.4,
+      "otaRevenue": 2190553,
+      "otaSharePct": 0.2,
+      "pmsRevenue": 26336157,
+      "pmsSharePct": 2.1,
+      "dominantChannel": "현장 POS 주력"
+    }
+  ]
+}
+```
+* **필수 검증 요건**:
+  1. 각 영업장 행의 `posRevenue + homepageRevenue + otaRevenue + pmsRevenue = totalRevenue` (오차 0원).
+  2. `summary`의 4대 채널 합계가 `totalRevenue`와 1원 단위까지 100% 일치.
+  3. 소수점은 퍼센트(`SharePct`)에만 1자리(`.toFixed(1)`) 허용, 매출액은 순수 정수(Integer)로 반환.
+

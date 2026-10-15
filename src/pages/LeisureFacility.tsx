@@ -289,20 +289,25 @@ export default function LeisureFacility() {
         </div>
 
         {/* 레저본부 영업장별 전체 실적 랭킹 */}
-        <div className="lg:col-span-8">
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 h-full">
-            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 flex-wrap break-keep">
-              <span className="flex items-center gap-2 whitespace-nowrap">
-                <Trophy className="w-6 h-6 text-amber-400" /> 전체 영업장 실적 (레저본부)
+        <div className="lg:col-span-8 flex flex-col">
+          <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 flex flex-col h-[520px] lg:h-[644px]">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2 shrink-0">
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap break-keep">
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <Trophy className="w-6 h-6 text-amber-400" /> 전체 영업장 실적 (레저본부)
+                </span>
+                <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg whitespace-nowrap">매출액 기준 내림차순</span>
+              </h2>
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+                총 {topTickets.length}개 업장 (스크롤 지원)
               </span>
-              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg whitespace-nowrap">매출액 기준 내림차순</span>
-            </h2>
+            </div>
 
             {topTickets.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
                 {topTickets.map((ticket, idx) => (
-                  <div key={idx} className="flex items-center p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:shadow-md transition-all duration-300">
-                    <div className="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-xs flex items-center justify-center font-bold text-xl mr-4 border border-slate-200 tabular-nums">
+                  <div key={idx} className="flex items-center p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:shadow-md transition-all duration-300">
+                    <div className="w-10 h-10 flex-shrink-0 bg-white rounded-xl shadow-xs flex items-center justify-center font-bold text-base mr-3 border border-slate-200 tabular-nums">
                       {idx === 0 ? <span className="text-amber-500 font-bold">1</span> :
                        idx === 1 ? <span className="text-slate-500 font-bold">2</span> :
                        idx === 2 ? <span className="text-amber-700 font-bold">3</span> :
@@ -310,8 +315,8 @@ export default function LeisureFacility() {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 px-3 py-0.5 rounded-full whitespace-nowrap">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 px-2.5 py-0.5 rounded-full whitespace-nowrap">
                           {ticket.name}
                         </span>
                       </div>
@@ -319,7 +324,7 @@ export default function LeisureFacility() {
                     </div>
                     
                     <div className="text-right ml-4 tabular-nums whitespace-nowrap shrink-0">
-                      <div className="font-bold text-lg text-slate-900">{formatCurrency(ticket.sales)}원</div>
+                      <div className="font-bold text-base text-slate-900">{formatCurrency(ticket.sales)}원</div>
                       <div className="text-xs font-semibold text-slate-500">
                         ({totalSales > 0 ? ((ticket.sales / totalSales) * 100).toFixed(1) : 0}%)
                       </div>

@@ -28,6 +28,7 @@
 | **P1 (신규)** | API 보강 | **[Ticket 26] 콘도 체크인 예약 현황 API 내 예상 매출액(`estimatedRevenue`) 필드 추가** | 콘도 예약 현황 카드 하단에 PMS 예약 원장 기반 체크인 당일 예상 매출액(객실 및 전체 파급) 1-Call 완제품 제공 요청 (`condo-reservations`) |
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 27] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화** | 산하 PMS 미배정 원천 코드('ROOM')가 한글 평형 대신 영문 코드로 직접 노출되는 결함 해결 (`room-channel-sales`) |
 | **P1 (신규)** | 정규 API | **[Ticket 28] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API 신설** | 통합 회원관리 대시보드 고도화를 위한 분양구좌 마스터 소진율, 평형별 회원 이용 내역, 개인별 크로스 소비 LTV 원장 제공 요청 (`membership-ledger-intelligence`) |
+| **P0 (긴급)** | 배포/정합성 | **[Ticket 29] `moto-channel-sales` 프로덕션 미배포(404) 및 OTA 분류 LIKE 휴리스틱 제거** | 레저 영업장 현황 OTA 비중 섹션 연동 완료, API 404로 Fail-Stop 표출 중. OTA/HOMEPAGE 분류를 상품명 LIKE 추론 대신 사전 HITL 승인 기준으로 전환 요청 |
 
 
 ---
@@ -2261,3 +2262,24 @@ const reverseSpillover = totalRoomSales > 0
 
 
 
+
+---
+
+## 29. 🏍️ [P0 긴급] `moto-channel-sales` 프로덕션 미배포(404) 및 OTA 분류 규칙 정규화
+
+### 29-1. 현상 (2026-10-15 14:38 실측)
+* `GET https://belleforet-data.vercel.app/api/v6/report/moto-channel-sales?startDate=2026-09-01&endDate=2026-10-14` → **HTTP 404 (Next.js HTML 404 페이지)**
+* 백엔드 보고서상 route.ts는 작성되었으나 프로덕션(Vercel)에 배포되지 않은 상태.
+
+### 29-2. 프론트엔드 연동 현황
+* `레저본부 > 레저 영업장 현황`(`/leisure`) 하단에 **[모토아레나 판매채널별 매출 비중 (OTA)]** 섹션 연동 완료.
+* 바인딩 필드: `summary.otaSharePct`, `otaRevenue`, `otaShareOfCircuitPct`, `otaShareWithinOnlinePct`, `circuitOnlyRevenue`, `onlineTotalRevenue`, `totalRevenue`, `homepageSharePct`, `posSharePct`, `pmsSharePct` / `channels[]`(`channelCode`, `channelName`, `isSubtotal`, `isGrandTotal`, `periodRevenue`, `revenueSharePct`, `circuitSharePct`, `mtdRevenue`, `mtdSharePct`, `ytdRevenue`, `ytdSharePct`)
+* 프론트는 비중(%)을 재계산하지 않으며, 응답이 없으면 Fail-Stop 오류 배너를 표출합니다. **배포 즉시 자동 반영됩니다.**
+
+### 29-3. 요청 조치 사항
+1. **프로덕션 배포**: `src/app/api/v6/report/moto-channel-sales/route.ts`를 Vercel 프로덕션에 배포.
+2. **OTA 분류 규칙 정규화 (프랑켄슈타인 방어 3원칙 위반 소지)**:
+   * 현재 `dim_moto_product_dictionary_v6.online_channel_type` 및 `fact_moto_sales_v6.channel_detail`이 상품명 `LIKE '%[%' / '%@%' / '%야놀자%' / '%네이버%' / '%쿠팡%' / '%여행사%'` 텍스트 추론으로 일괄 UPDATE 되었습니다.
+   * 원천 필드(`매출경로명 = 'CRS'`, `온라인구매처명`) 기준 분류는 유지하되, 텍스트 LIKE 추론 분기는 제거하고 미분류 상품은 `log_mapping_candidates`로 격리 → 관리자 포털 HITL 승인 후 반영해 주십시오.
+   * 대시보드 반영 전 OTA 분류 결과(상품별 OTA/HOMEPAGE 판정 목록)를 운영팀이 검수할 수 있도록 공유 요청.
+3. **API 응답 시 `summary` 합계 0-Variance 검증 결과**(OTA+HOMEPAGE+POS+PMS = totalRevenue) 함께 회신 요청.

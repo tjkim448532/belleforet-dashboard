@@ -428,10 +428,30 @@ export default function LeisureFacility() {
                   <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
                     <th className="py-3 px-4">영업장명</th>
                     <th className="py-3 px-3 text-right">총매출</th>
-                    <th className="py-3 px-3 text-right">현장 POS</th>
-                    <th className="py-3 px-3 text-right">자사 홈페이지</th>
-                    <th className="py-3 px-3 text-right">외부 OTA</th>
-                    <th className="py-3 px-3 text-right">객실연계(PMS)</th>
+                    <th className="py-3 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>현장 POS</span>
+                        <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-1.5 py-0.5 rounded">비중 %</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-3 text-right bg-emerald-50/50">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="text-emerald-900">자사 홈페이지</span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">비중 %</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-3 text-right bg-indigo-50/60">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="text-indigo-900">외부 OTA</span>
+                        <span className="text-[10px] font-bold text-indigo-800 bg-indigo-100 px-1.5 py-0.5 rounded">비중 %</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>객실연계(PMS)</span>
+                        <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">비중 %</span>
+                      </div>
+                    </th>
                     <th className="py-3 px-4 text-center">주력 채널</th>
                   </tr>
                 </thead>
@@ -457,20 +477,36 @@ export default function LeisureFacility() {
                           {showWon(v.totalRevenue)}
                         </td>
                         <td className="py-3.5 px-3 text-right whitespace-nowrap">
-                          <span className="font-semibold text-slate-800 block">{showWon(v.posRevenue)}</span>
-                          <span className="text-[11px] text-slate-500 font-medium">{showPct(v.posSharePct)}</span>
+                          <span className="text-base lg:text-lg font-black text-slate-900 block leading-tight">
+                            {showPct(v.posSharePct)}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
+                            {showWon(v.posRevenue)}
+                          </span>
                         </td>
-                        <td className="py-3.5 px-3 text-right whitespace-nowrap">
-                          <span className="font-semibold text-emerald-700 block">{showWon(v.homepageRevenue)}</span>
-                          <span className="text-[11px] text-emerald-600 font-medium">{showPct(v.homepageSharePct)}</span>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap bg-emerald-50/20">
+                          <span className="text-base lg:text-lg font-black text-emerald-700 block leading-tight">
+                            {showPct(v.homepageSharePct)}
+                          </span>
+                          <span className="text-[11px] text-emerald-600/80 font-medium block mt-0.5">
+                            {showWon(v.homepageRevenue)}
+                          </span>
                         </td>
                         <td className="py-3.5 px-3 text-right whitespace-nowrap bg-indigo-50/30">
-                          <span className="font-semibold text-indigo-700 block">{showWon(v.otaRevenue)}</span>
-                          <span className="text-[11px] text-indigo-600 font-bold">{showPct(v.otaSharePct)}</span>
+                          <span className="text-base lg:text-lg font-black text-indigo-700 block leading-tight">
+                            {showPct(v.otaSharePct)}
+                          </span>
+                          <span className="text-[11px] text-indigo-600/80 font-medium block mt-0.5">
+                            {showWon(v.otaRevenue)}
+                          </span>
                         </td>
                         <td className="py-3.5 px-3 text-right whitespace-nowrap">
-                          <span className="font-semibold text-slate-700 block">{showWon(v.pmsRevenue)}</span>
-                          <span className="text-[11px] text-slate-500 font-medium">{showPct(v.pmsSharePct)}</span>
+                          <span className="text-base lg:text-lg font-black text-purple-700 block leading-tight">
+                            {showPct(v.pmsSharePct)}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
+                            {showWon(v.pmsRevenue)}
+                          </span>
                         </td>
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${tagCls}`}>
@@ -488,20 +524,36 @@ export default function LeisureFacility() {
                       {showWon(channelData.summary?.totalRevenue)}
                     </td>
                     <td className="py-4 px-3 text-right whitespace-nowrap">
-                      <span className="block">{showWon(channelData.summary?.posRevenue)}</span>
-                      <span className="text-[11px] text-slate-300 font-normal">({showPct(channelData.summary?.posSharePct)})</span>
+                      <span className="text-base lg:text-lg font-black text-amber-300 block leading-tight">
+                        {showPct(channelData.summary?.posSharePct)}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-normal block mt-0.5">
+                        {showWon(channelData.summary?.posRevenue)}
+                      </span>
                     </td>
-                    <td className="py-4 px-3 text-right whitespace-nowrap">
-                      <span className="block text-emerald-300">{showWon(channelData.summary?.homepageRevenue)}</span>
-                      <span className="text-[11px] text-emerald-200/90 font-normal">({showPct(channelData.summary?.homepageSharePct)})</span>
+                    <td className="py-4 px-3 text-right whitespace-nowrap bg-emerald-950/40">
+                      <span className="text-base lg:text-lg font-black text-emerald-300 block leading-tight">
+                        {showPct(channelData.summary?.homepageSharePct)}
+                      </span>
+                      <span className="text-[11px] text-emerald-200/70 font-normal block mt-0.5">
+                        {showWon(channelData.summary?.homepageRevenue)}
+                      </span>
                     </td>
                     <td className="py-4 px-3 text-right whitespace-nowrap bg-indigo-950/80">
-                      <span className="block text-indigo-200">{showWon(channelData.summary?.otaRevenue)}</span>
-                      <span className="text-[11px] text-amber-300 font-bold">({showPct(channelData.summary?.otaSharePct)})</span>
+                      <span className="text-base lg:text-lg font-black text-indigo-200 block leading-tight">
+                        {showPct(channelData.summary?.otaSharePct)}
+                      </span>
+                      <span className="text-[11px] text-indigo-300/80 font-normal block mt-0.5">
+                        {showWon(channelData.summary?.otaRevenue)}
+                      </span>
                     </td>
                     <td className="py-4 px-3 text-right whitespace-nowrap">
-                      <span className="block">{showWon(channelData.summary?.pmsRevenue)}</span>
-                      <span className="text-[11px] text-slate-300 font-normal">({showPct(channelData.summary?.pmsSharePct)})</span>
+                      <span className="text-base lg:text-lg font-black text-purple-200 block leading-tight">
+                        {showPct(channelData.summary?.pmsSharePct)}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-normal block mt-0.5">
+                        {showWon(channelData.summary?.pmsRevenue)}
+                      </span>
                     </td>
                     <td className="py-4 px-4 text-center whitespace-nowrap text-slate-400 text-xs font-normal">
                       전체 합계

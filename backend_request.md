@@ -29,7 +29,7 @@
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 27] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화** | 산하 PMS 미배정 원천 코드('ROOM')가 한글 평형 대신 영문 코드로 직접 노출되는 결함 해결 (`room-channel-sales`) |
 | **P1 (신규)** | 정규 API | **[Ticket 28] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API 신설** | 통합 회원관리 대시보드 고도화를 위한 분양구좌 마스터 소진율, 평형별 회원 이용 내역, 개인별 크로스 소비 LTV 원장 제공 요청 (`membership-ledger-intelligence`) |
 | **P0 (긴급)** | 배포/정합성 | **[Ticket 29] `moto-channel-sales` 프로덕션 미배포(404) 및 OTA 분류 LIKE 휴리스틱 제거** | 레저 영업장 현황 OTA 비중 섹션 연동 완료, API 404로 Fail-Stop 표출 중. OTA/HOMEPAGE 분류를 상품명 LIKE 추론 대신 사전 HITL 승인 기준으로 전환 요청 |
-| **P0 (완료)** | 정규 API | **[Ticket 30] 레저본부 전체 영업장별 판매채널(자사·OTA·POS·PMS) 매출/비중 완제품 API 배포** | [배포/검증완료] 모토아레나 포함 전체 레저 영업장의 채널별 매출 및 비중 완제품 제공 (`leisure-channel-sales`) |
+| **P0 (긴급보강)** | 정규 API | **[Ticket 30-Fix] `leisure-channel-sales` 모토아레나 중복 제거 및 단일 영업장 통합** | `VenueAgg` 쿼리 내 `GROUP BY domain_code, venue_name` ➔ `GROUP BY venue_name` 전환으로 모토아레나 2개 중복 행 제거 및 0-Variance 단일 행 완제품 제공 (`leisure-channel-sales`) |
 | **P1 (완료)** | 정규 API | **[Ticket 31] 판촉 영업담당자(`영업직원명`)별 B2B·연회 수주 순기여도 및 세미나홀 가동 효율 API** | [배포/검증완료] 객실(23,616건)·연회(1,252건) 실명 영업직원 순기여도(Net Contribution) 리더보드 및 세미나 A~E홀·아트홀 인원 이행률·RevPASH 마트 구축 완료 (`sales-rep-banquet-intelligence`) |
 | **P1 (완료)** | 정규 API | **[Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 배정 편차 감사 API** | [배포/검증완료] 리드타임(평균 36.9일) 구간별 취소(15,546건, 28.8%)·대기(1,508건) 전환 및 169개 호실 배정 편차 마트 구축 완료 (`room-leadtime-unit-wear`, 성인/아이수 제외) |
 | **P1 (완료)** | 정규 API | **[Ticket 33] 골프 내장객 성비 · 회원권 타인 위임 내장 CRM · 코스별 취소율 · 라운딩 체류시간 API** | [배포/검증완료] 내장객 성별(남 51,780명/68.4% / 여 23,883명/31.6%), 회원권 위임 내장(12,408건, 21.5%) VIP 타겟, 취소율(22.2%) 및 체류시간 마트 구축 완료 (`golf-visitor-behavior-crm`) |
@@ -2751,6 +2751,65 @@ const reverseSpillover = totalRoomSales > 0
     }
   ]
 }
+```
+
+---
+
+## 37. 🏎️ [P0 긴급보강 - Ticket 30-Fix] `leisure-channel-sales` 모토아레나 중복 제거 및 영업장 단일 통합 집계 (0-Variance)
+
+### 37-1. 현상 및 원인 분석
+* **엔드포인트**: `GET /api/v6/report/leisure-channel-sales`
+* **이상 현상**: 레저본부 영업장별 판매채널 비중 표에서 **`모토아레나`가 2개 행으로 분리 출력**됨 (대표님/경영진 현장 지적 사항).
+* **원인**:
+  - `fact_ticket_sales_v6` (`domain_code = 'TICKET'`)와 `fact_moto_sales_v6` (`domain_code = 'MOTO'`) 양쪽 모두 `venue_name = '모토아레나'` 데이터를 보유하고 있음.
+  - 기존 백엔드 라우트 쿼리(`venueSql`)의 집계 구문이 `GROUP BY domain_code, venue_name`으로 설정되어 있어, 동일한 영업장인 모토아레나가 도메인별 2개 행으로 분할 집계됨:
+    1. `TICKET 모토아레나`: 1,300,585,976원 (POS 77.86%, 자사 16.93%, OTA 5.21%, PMS 0.00%)
+    2. `MOTO 모토아레나`: 1,520,280,199원 (POS 76.24%, 자사 18.82%, OTA 4.87%, PMS 0.07%)
+
+### 37-2. 백엔드 수정 요청 (1-Line SQL Fix)
+* **파일**: `src/app/api/v6/report/leisure-channel-sales/route.ts`
+* **수정 내용**: `VenueAgg` CTE 내의 `GROUP BY domain_code, venue_name`을 **`GROUP BY venue_name`**으로 변경하고, `domainCode`는 `MAX(domain_code) AS domainCode`로 통합합니다.
+
+```sql
+-- [변경 전]
+VenueAgg AS (
+  SELECT
+    domain_code AS domainCode,
+    venue_name AS venueName,
+    ...
+  FROM RawPeriod
+  GROUP BY domain_code, venue_name
+  HAVING totalRevenue != 0 OR totalVisitors != 0
+)
+
+-- [변경 후: 단일 영업장 통합 SSOT]
+VenueAgg AS (
+  SELECT
+    MAX(domain_code) AS domainCode,
+    venue_name AS venueName,
+    CAST(COALESCE(ROUND(SUM(revenue)), 0) AS SIGNED) AS totalRevenue,
+    CAST(COALESCE(SUM(eff_visitors), 0) AS SIGNED) AS totalVisitors,
+    CAST(COALESCE(ROUND(SUM(CASE WHEN channel_detail = 'OTA' THEN revenue ELSE 0 END)), 0) AS SIGNED) AS otaRevenue,
+    CAST(COALESCE(ROUND(SUM(CASE WHEN channel_detail = 'HOMEPAGE' THEN revenue ELSE 0 END)), 0) AS SIGNED) AS homepageRevenue,
+    CAST(COALESCE(ROUND(SUM(CASE WHEN source_channel = 'ONLINE' THEN revenue ELSE 0 END)), 0) AS SIGNED) AS onlineTotalRevenue,
+    CAST(COALESCE(ROUND(SUM(CASE WHEN channel_detail = 'POS' THEN revenue ELSE 0 END)), 0) AS SIGNED) AS posRevenue,
+    CAST(COALESCE(ROUND(SUM(CASE WHEN channel_detail = 'PMS' THEN revenue ELSE 0 END)), 0) AS SIGNED) AS pmsRevenue
+  FROM RawPeriod
+  GROUP BY venue_name
+  HAVING totalRevenue != 0 OR totalVisitors != 0
+)
+```
+
+### 37-3. DB 실측 Stdout 검증 결과 (0-Variance 100.00% 일치)
+RDS MariaDB 실측 쿼리 검증 결과:
+- 모토아레나 단일 통합 매출: **`2,820,866,175원`** (방문객 `48,585명`)
+- 채널별 실측 비중 (합계 정확히 **100.00%**):
+  - **현장 POS**: `2,171,677,308원` (**76.99%**)
+  - **자사 홈페이지**: `506,431,592원` (**17.95%**)
+  - **외부 OTA**: `141,728,918원` (**5.02%**)
+  - **객실 연계 PMS**: `1,028,357원` (**0.04%**)
+  - `76.99% + 17.95% + 5.02% + 0.04% = 100.00%` (오차 0.00% 수학적 무결성 확인)
+- 전체 고유 영업장 수: 24개 ➔ **21개** (중복 분할되었던 모토아레나, 핏스탑, 얼룩말카페가 단일 영업장으로 정상 통합)
 ```
 
 

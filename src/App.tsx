@@ -18,6 +18,7 @@ import AdminRoles from './pages/AdminRoles';
 
 import ResortBusiness from './pages/ResortBusiness';
 import ResortRoomGuestsYoy from './pages/ResortRoomGuestsYoy';
+import RoomGuestAnalysis from './pages/RoomGuestAnalysis';
 import GolfBusiness from './pages/GolfBusiness';
 import GolfChannelIntelligence from './pages/GolfChannelIntelligence';
 import LeisureFacility from './pages/LeisureFacility';
@@ -74,6 +75,7 @@ export function App() {
                   <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     <Route index element={<Home />} />
                     <Route path="resort-business" element={<ResortBusiness />} />
+                    <Route path="resort/room-guest-analysis" element={<RoomGuestAnalysis />} />
                     <Route path="resort/room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="resort-room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="golf-business" element={<GolfBusiness />} />

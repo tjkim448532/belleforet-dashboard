@@ -27,6 +27,7 @@
 | **P1 (긴급)** | 데이터 정합성 | **[Ticket 25] 마운틴카트 2025년 1~9월 레거시 실적(2.45억 원) 그랜드포렛 이관** | 미니포렛 개장(2025-09-19) 이전 레거시 실적이 '마운틴카트'에 방치되어 YTD +800%~900% 왜곡 및 -100% 행 노출 발생. 그랜드포렛 과거 실적으로 이관 요청 |
 | **P1 (신규)** | API 보강 | **[Ticket 26] 콘도 체크인 예약 현황 API 내 예상 매출액(`estimatedRevenue`) 필드 추가** | 콘도 예약 현황 카드 하단에 PMS 예약 원장 기반 체크인 당일 예상 매출액(객실 및 전체 파급) 1-Call 완제품 제공 요청 (`condo-reservations`) |
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 27] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화** | 산하 PMS 미배정 원천 코드('ROOM')가 한글 평형 대신 영문 코드로 직접 노출되는 결함 해결 (`room-channel-sales`) |
+| **P1 (신규)** | 정규 API | **[Ticket 28] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API 신설** | 통합 회원관리 대시보드 고도화를 위한 분양구좌 마스터 소진율, 평형별 회원 이용 내역, 개인별 크로스 소비 LTV 원장 제공 요청 (`membership-ledger-intelligence`) |
 
 
 ---
@@ -2197,6 +2198,63 @@ const reverseSpillover = totalRoomSales > 0
 * **프론트엔드 선제 대응 완료**:
   * 프론트엔드는 0-Variance 수칙에 따라 1실/458,182원을 누락하지 않고 온전히 보존하면서, 화면 레이블을 `미지정(배정대기)` 및 `[PMS 호실 배정대기]` 뱃지로 긴급 방어 처리하였습니다.
   * 백엔드 API 단에서 '미지정'으로 정규화 배포 시 완전한 통일성이 확보됩니다.
+
+---
+
+## 28. 🏆 [P1 정규 API 신설] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API (`membership-ledger-intelligence`)
+
+### 28-1. 요청 배경 및 대표님 지시사항
+* **대표님 지시사항**:
+  * *"회원관리 페이지에서 현재 API를 통해 받는 데이터를 최대한 활용하고, 추가로 필요한 API는 백엔드에 요청하여 회원 관련 모든 정보를 얻을 수 있게 만들어라."*
+* **프론트엔드 선제 구축 완료 현황**:
+  1. 기존 `/members`에 잘못 매핑되어 있던 일반 숙박객/업장 집계 리포트(`daily-member-visitors-v2`)를 `리조트사업본부 > 일일 숙박객/방문객 분석`(`/resort/room-guest-analysis`) 메뉴로 깔끔하게 분리 보존.
+  2. `/members` (`회원관리`) 페이지를 **통합 회원권 및 멤버십 분석 대시보드**로 전면 개편하여 현재 가용한 4대 V6 API 데이터를 100% 실시간 연동 완료:
+     * **콘도 회원권 실적**: `room-rate-sales` 기반 `기명/구좌회원`, `무기명회원`, `기업영업(휴양소)`, `임직원/협약` vs 비회원 객실수·매출·ADR (조회기간 / 당월 MTD / 연간 YTD / 전년 동기 LY 비교)
+     * **골프 분양회원 & 동반 앵커 시너지**: `golf-channel-intelligence` 및 `golf-channel-teetime-analysis-v2` 기반 법인 풀구좌 분양회원, 콘도 구좌 분양회원 내장객·매출·단가 우대 혜택 및 회원이 동반 유치한 비회원 앵커 매출(`totalAnchorRevenue`)
+     * **기업 휴양소 협약 회원사**: `corporate-group-sales` 기반 기업 하계/연중 휴양소(`CORP_FIT`) 이용 법인 명단 및 실적
+     * **온라인·모바일 통합 회원**: `online-members` 기반 다부문 교차 이용 VIP(`multiChannel`), 부문별 회원 분포, 최근 활동 회원 원장
+
+### 28-2. 백엔드 추가 구축 요청 사항 (3대 핵심 데이터)
+회원관리 대시보드의 최종 완성을 위해 현재 기존 API에 포함되어 있지 않은 아래 3가지 분양회원 원장 데이터를 신규 엔드포인트(`GET /api/v6/report/membership-ledger-intelligence?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`) 및 기존 API 확장으로 제공해 주시기 바랍니다.
+
+#### ① 분양구좌 마스터 및 연간 부여 박수(Quota) 소진율 (`accountQuotaSummary`)
+* 산하 PMS / 분양 ERP 원장 기준 회원권 종류별(창립구좌, 기명 1/6구좌, 무기명구좌, 법인 풀구좌 등):
+  * 총 유효 구좌 수 (`totalAccounts`)
+  * 연간 총 부여 가능 박수 (`annualQuotaNights`, 예: 구좌당 30박/60박 × 구좌수)
+  * 당해연도(YTD) 실 사용 박수 (`usedNights`) 및 잔여 박수 (`remainingNights`)
+  * 연간 박수 소진율 (`exhaustionRate`: %)
+
+#### ② `room-rate-sales` 내 회원권별 평형(16평 / 35평 / 51평) 2-Depth 상세 행 추가
+* 현재 `GET /api/v6/report/room-rate-sales`는 각 `rateName`별로 `roomType: "전체"`(`isSegmentSubtotal: true`) 소계 행만 반환하고 있습니다.
+* `기명/구좌회원 (Member)` 및 `무기명회원 (Bearer)`이 실제로 **16평, 35평, 51평(빌라)** 중 어떤 평형을 몇 실 이용했는지 2-Depth 평형별 상세 행(`isSegmentSubtotal: false`)을 함께 반환해 주시기 바랍니다.
+
+#### ③ 조회기간 방문 분양회원 명단 및 연간 리조트 통합 소비액(LTV) 원장 (`visitedMembersLedger`)
+* 조회기간(당일 또는 기간)에 콘도 또는 골프장을 이용한 분양회원 리스트:
+  ```json
+  {
+    "visitedMembersLedger": [
+      {
+        "memberNo": "M-2021-0104",
+        "memberName": "홍*동 (또는 (주)벨포레파트너스)",
+        "membershipType": "기명 1/6구좌 (35평형)",
+        "visitDate": "2026-10-14",
+        "usedFacility": "콘도 35평 + 골프CC",
+        "periodSpend": 485000,
+        "ytdVisitCount": 8,
+        "ytdUsedNights": 14,
+        "remainingQuotaNights": 16,
+        "ytdTotalLtvSpend": 6420000,
+        "ytdSpendBreakdown": {
+          "room": 2100000,
+          "golf": 3200000,
+          "fnb": 850000,
+          "leisure": 270000
+        }
+      }
+    ]
+  }
+  ```
+
 
 
 

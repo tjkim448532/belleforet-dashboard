@@ -215,6 +215,15 @@ export default function Layout() {
                   경영 현황 대시보드
                 </NavLink>
                 <NavLink
+                  to="/resort/room-guest-analysis"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  일일 숙박객/방문객 분석
+                </NavLink>
+                <NavLink
                   to="/resort/room-guests-yoy"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                     isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'

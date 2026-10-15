@@ -166,25 +166,6 @@ export default function LeisureFacility() {
     };
   }, [core]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-mint"></div>
-      </div>
-    );
-  }
-
-  if (topTickets.length === 0 && !isLoading) {
-    return (
-      <div className="p-8">
-        <div className="bg-slate-50 text-slate-500 p-6 rounded-2xl flex items-center gap-3">
-          <AlertCircle size={24} />
-          <p className="font-medium">조회된 레저 영업장 데이터가 없습니다.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-8">
       {/* Header */}
@@ -221,7 +202,11 @@ export default function LeisureFacility() {
               <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal text-slate-400">({endDate && startDate !== endDate ? '조회기간' : '조회일'})</span>
             </h2>
             <div className="text-3xl font-black text-slate-900 mb-2 tracking-tight relative z-10 tabular-nums whitespace-nowrap">
-              {formatCurrency(totalSales)} <span className="text-base font-normal text-slate-500">원</span>
+              {isLoading ? (
+                <span className="text-slate-300 animate-pulse text-2xl font-bold">집계 중...</span>
+              ) : (
+                <>{formatCurrency(totalSales)} <span className="text-base font-normal text-slate-500">원</span></>
+              )}
             </div>
             <p className="text-slate-500 text-xs relative z-10 font-medium whitespace-nowrap">순매출 기준 합산 (부가세 별도)</p>
           </div>
@@ -304,7 +289,12 @@ export default function LeisureFacility() {
               </span>
             </div>
 
-            {topTickets.length > 0 ? (
+            {isLoading ? (
+              <div className="py-24 flex flex-col items-center justify-center text-slate-400 text-xs flex-1">
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-brand-mint mb-3"></div>
+                영업장별 실적 데이터를 집계 중입니다...
+              </div>
+            ) : topTickets.length > 0 ? (
               <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
                 {topTickets.map((ticket, idx) => (
                   <div key={idx} className="flex items-center p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:shadow-md transition-all duration-300">
@@ -334,7 +324,7 @@ export default function LeisureFacility() {
                 ))}
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
+              <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200 border-dashed flex-1">
                 <AlertCircle size={32} className="mb-3 text-slate-300" />
                 <p className="text-sm font-medium">선택하신 기간 내 그룹 영업장의 판매 데이터가 없습니다.</p>
               </div>

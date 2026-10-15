@@ -603,13 +603,13 @@ export default function LeisureFacility() {
                   {showWon(discountLeakageIntel.summary?.totalDiscountAmount)}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  할인율: {showPct(discountLeakageIntel.summary?.discountRatePct)}
+                  할인율: {showPct(discountLeakageIntel.summary?.discountRatePct ?? discountLeakageIntel.summary?.overallDiscountRate)}
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">정가 실현율 (Price Realization)</div>
                 <div className="text-xl font-black text-emerald-700 mt-1">
-                  {showPct(discountLeakageIntel.summary?.realizationRatePct)}
+                  {showPct(discountLeakageIntel.summary?.realizationRatePct ?? discountLeakageIntel.summary?.overallRealizationRate)}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
                   정상가 대비 실수취 비율
@@ -618,10 +618,10 @@ export default function LeisureFacility() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">티켓출력 · 미사용 잔여 금액</div>
                 <div className="text-xl font-black text-amber-700 mt-1">
-                  {showWon(discountLeakageIntel.summary?.unusedTicketAmount)}
+                  {showWon(discountLeakageIntel.summary?.unusedTicketAmount ?? discountLeakageIntel.summary?.totalUnusedAmount)}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  미사용 건수: {discountLeakageIntel.summary?.unusedTicketCount != null ? `${Number(discountLeakageIntel.summary.unusedTicketCount).toLocaleString()}건` : '-'}
+                  미사용 건수: {(discountLeakageIntel.summary?.unusedTicketCount ?? discountLeakageIntel.summary?.totalUnusedCount) != null ? `${Number(discountLeakageIntel.summary?.unusedTicketCount ?? discountLeakageIntel.summary?.totalUnusedCount).toLocaleString()}건` : '-'}
                 </div>
               </div>
             </div>
@@ -641,20 +641,20 @@ export default function LeisureFacility() {
                       <th className="py-2.5 px-3 text-right font-bold">할인 금액</th>
                       <th className="py-2.5 px-3 text-right font-bold">실매출액</th>
                       <th className="py-2.5 px-3 text-right font-bold">정가 실현율</th>
-                      <th className="py-2.5 px-3 text-right font-bold">미사용 건수</th>
+                      <th className="py-2.5 px-3 text-right font-bold">판매(건수)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {(discountLeakageIntel.items || []).map((item: any, idx: number) => (
+                    {(discountLeakageIntel.topDiscountMenus || discountLeakageIntel.items || discountLeakageIntel.shops || []).map((item: any, idx: number) => (
                       <tr key={idx} className="hover:bg-slate-50/80">
                         <td className="py-2.5 px-3 font-bold text-slate-800">{item.shopName ?? '-'}</td>
-                        <td className="py-2.5 px-3 text-slate-700">{item.menuName ?? '-'}</td>
+                        <td className="py-2.5 px-3 text-slate-700">{item.menuName ?? item.shopName ?? '-'}</td>
                         <td className="py-2.5 px-3 text-right text-slate-600">{showWon(item.listAmount)}</td>
                         <td className="py-2.5 px-3 text-right text-rose-600 font-semibold">{showWon(item.discountAmount)}</td>
                         <td className="py-2.5 px-3 text-right font-bold text-slate-900">{showWon(item.netAmount)}</td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-emerald-700">{showPct(item.realizationRatePct)}</td>
-                        <td className="py-2.5 px-3 text-right text-amber-700">
-                          {item.unusedCount != null ? `${Number(item.unusedCount).toLocaleString()}건` : '-'}
+                        <td className="py-2.5 px-3 text-right font-semibold text-emerald-700">{showPct(item.realizationRatePct ?? item.realizationRate)}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-700">
+                          {item.salesCount != null ? `${Number(item.salesCount).toLocaleString()}건` : (item.unusedCount != null ? `${Number(item.unusedCount).toLocaleString()}건` : '-')}
                         </td>
                       </tr>
                     ))}

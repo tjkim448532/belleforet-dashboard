@@ -1614,16 +1614,16 @@ export default function Members() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">전체 온라인 통합 회원</div>
                 <div className="text-xl font-black text-slate-900 mt-1">
-                  {onlineDormancyIntel.summary?.totalMembers != null ? `${formatNum(onlineDormancyIntel.summary.totalMembers)}명` : '-'}
+                  {(onlineDormancyIntel.summary?.totalOnlineMembers ?? onlineDormancyIntel.summary?.totalMembers) != null ? `${formatNum(onlineDormancyIntel.summary?.totalOnlineMembers ?? onlineDormancyIntel.summary?.totalMembers)}명` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  최근 6개월 활성: {onlineDormancyIntel.summary?.activeWithin6m != null ? `${formatNum(onlineDormancyIntel.summary.activeWithin6m)}명` : '-'}
+                  최근 6개월 활성: {(onlineDormancyIntel.summary?.activeMembers ?? onlineDormancyIntel.summary?.activeWithin6m) != null ? `${formatNum(onlineDormancyIntel.summary?.activeMembers ?? onlineDormancyIntel.summary?.activeWithin6m)}명` : '-'}
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">단골 회원 (4~9회 방문) 휴면율</div>
                 <div className="text-xl font-black text-rose-600 mt-1">
-                  {onlineDormancyIntel.summary?.regularDormantRatePct != null ? `${onlineDormancyIntel.summary.regularDormantRatePct}%` : '-'}
+                  {(onlineDormancyIntel.summary?.regularDormantRatePct ?? onlineDormancyIntel.tiers?.[2]?.dormancyRate ?? onlineDormancyIntel.tiers?.[2]?.dormantRatePct) != null ? `${onlineDormancyIntel.summary?.regularDormantRatePct ?? onlineDormancyIntel.tiers?.[2]?.dormancyRate ?? onlineDormancyIntel.tiers?.[2]?.dormantRatePct}%` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
                   휴면 단골: {onlineDormancyIntel.summary?.regularDormantCount != null ? `${formatNum(onlineDormancyIntel.summary.regularDormantCount)}명` : '-'}
@@ -1632,7 +1632,7 @@ export default function Members() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">충성 고객 (10회+ 방문) 휴면율</div>
                 <div className="text-xl font-black text-amber-600 mt-1">
-                  {onlineDormancyIntel.summary?.loyalDormantRatePct != null ? `${onlineDormancyIntel.summary.loyalDormantRatePct}%` : '-'}
+                  {(onlineDormancyIntel.summary?.loyalDormantRatePct ?? onlineDormancyIntel.tiers?.[3]?.dormancyRate ?? onlineDormancyIntel.tiers?.[3]?.dormantRatePct) != null ? `${onlineDormancyIntel.summary?.loyalDormantRatePct ?? onlineDormancyIntel.tiers?.[3]?.dormancyRate ?? onlineDormancyIntel.tiers?.[3]?.dormantRatePct}%` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
                   휴면 충성고객: {onlineDormancyIntel.summary?.loyalDormantCount != null ? `${formatNum(onlineDormancyIntel.summary.loyalDormantCount)}명` : '-'}
@@ -1641,7 +1641,7 @@ export default function Members() {
               <div className="p-4 rounded-2xl bg-violet-50/70 border border-violet-200">
                 <div className="text-xs font-bold text-violet-700">핵심 단골 Win-back 핀셋 타겟</div>
                 <div className="text-xl font-black text-violet-900 mt-1">
-                  {onlineDormancyIntel.summary?.winbackTargetCount != null ? `${formatNum(onlineDormancyIntel.summary.winbackTargetCount)}명` : '-'}
+                  {(onlineDormancyIntel.summary?.winbackTargetsTotal ?? onlineDormancyIntel.summary?.winbackTargetCount) != null ? `${formatNum(onlineDormancyIntel.summary?.winbackTargetsTotal ?? onlineDormancyIntel.summary?.winbackTargetCount)}명` : '-'}
                 </div>
                 <div className="text-[11px] text-violet-600 mt-1">
                   4회 이상 방문 이력 보유 · 6개월 미방문

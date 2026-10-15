@@ -969,41 +969,41 @@ export default function Synergy() {
                   {stayDurationIntel.summary?.totalJourneys != null ? `${Number(stayDurationIntel.summary.totalJourneys).toLocaleString()}건` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  복합 방문 여정: {stayDurationIntel.summary?.multiStopJourneys != null ? `${Number(stayDurationIntel.summary.multiStopJourneys).toLocaleString()}건` : '-'}
+                  복합 소비 여정: {(stayDurationIntel.summary?.multiStopJourneys ?? stayDurationIntel.summary?.totalSynergyJourneys) != null ? `${Number(stayDurationIntel.summary?.multiStopJourneys ?? stayDurationIntel.summary?.totalSynergyJourneys).toLocaleString()}건` : '-'}
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">단발 결제(0분) 평균 객단가</div>
+                <div className="text-xs font-bold text-slate-500">고객 평균 체류시간</div>
                 <div className="text-xl font-black text-slate-700 mt-1">
-                  {stayDurationIntel.summary?.singleStopAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.singleStopAvgSpent)}원` : '-'}
+                  {stayDurationIntel.summary?.avgStayMinutes != null ? `${stayDurationIntel.summary.avgStayMinutes}분` : (stayDurationIntel.summary?.singleStopAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.singleStopAvgSpent)}원` : '-')}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  단일 업장 결제 기준
+                  최초 결제 ➔ 최종 결제 구간
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">3~6시간 체류 평균 객단가</div>
+                <div className="text-xs font-bold text-slate-500">복합 소비 시너지 비중</div>
                 <div className="text-xl font-black text-teal-700 mt-1">
-                  {stayDurationIntel.summary?.midStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.midStayAvgSpent)}원` : '-'}
+                  {stayDurationIntel.summary?.synergySharePct != null ? `${stayDurationIntel.summary.synergySharePct}%` : (stayDurationIntel.summary?.midStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.midStayAvgSpent)}원` : '-')}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  체류 연장 시 객단가 점프 구간
+                  2개 이상 업장 복합 결제율
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200">
-                <div className="text-xs font-bold text-indigo-700">6시간+ 종일·숙박 평균 객단가</div>
-                <div className="text-xl font-black text-indigo-900 mt-1">
-                  {stayDurationIntel.summary?.longStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.longStayAvgSpent)}원` : '-'}
+                <div className="text-xs font-bold text-indigo-700">단독 업장 소비 여정</div>
+                <div className="text-lg font-black text-indigo-900 mt-1">
+                  {(stayDurationIntel.summary?.golfOnlyJourneys != null && stayDurationIntel.summary?.roomOnlyJourneys != null) ? `골프 ${Number(stayDurationIntel.summary.golfOnlyJourneys).toLocaleString()} / 객실 ${Number(stayDurationIntel.summary.roomOnlyJourneys).toLocaleString()}건` : (stayDurationIntel.summary?.longStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.longStayAvgSpent)}원` : '-')}
                 </div>
                 <div className="text-[11px] text-indigo-600 mt-1">
-                  단발 대비 배수: {stayDurationIntel.summary?.longStayLiftMultiple != null ? `${stayDurationIntel.summary.longStayLiftMultiple}배` : '-'}
+                  단일 시설 집중 고객군
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 overflow-hidden">
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-800">체류시간 구간별 여정 수 · 평균 객단가 · 총 매출액 분포</span>
+                <span className="text-xs font-extrabold text-slate-800">체류시간 구간별 여정 수 · 비중 · 복합 시너지 분석</span>
                 <span className="text-[11px] text-slate-500">fact_customer_journeys 기준</span>
               </div>
               <div className="overflow-x-auto">
@@ -1012,26 +1012,26 @@ export default function Synergy() {
                     <tr>
                       <th className="py-2.5 px-4 text-left font-bold">체류시간 구간</th>
                       <th className="py-2.5 px-4 text-right font-bold">여정 건수</th>
-                      <th className="py-2.5 px-4 text-right font-bold">평균 방문 업장수</th>
-                      <th className="py-2.5 px-4 text-right font-bold">1인(여정) 평균 객단가</th>
-                      <th className="py-2.5 px-4 text-right font-bold">구간 총 매출액</th>
+                      <th className="py-2.5 px-4 text-right font-bold">구간 비중</th>
+                      <th className="py-2.5 px-4 text-right font-bold">복합 소비 건수</th>
+                      <th className="py-2.5 px-4 text-right font-bold">복합 시너지율</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {(stayDurationIntel.durationBuckets || []).map((b: any, idx: number) => (
-                      <tr key={b.stayBucket || idx} className="hover:bg-slate-50/80">
-                        <td className="py-3 px-4 font-bold text-slate-800">{b.stayBucket ?? '-'}</td>
+                    {(stayDurationIntel.durationTiers || stayDurationIntel.durationBuckets || []).map((b: any, idx: number) => (
+                      <tr key={b.durationTier || b.stayBucket || idx} className="hover:bg-slate-50/80">
+                        <td className="py-3 px-4 font-bold text-slate-800">{b.durationTierName ?? b.stayBucket ?? '-'}</td>
                         <td className="py-3 px-4 text-right text-slate-700">
-                          {b.journeys != null ? `${Number(b.journeys).toLocaleString()}건` : '-'}
+                          {(b.journeyCount ?? b.journeys) != null ? `${Number(b.journeyCount ?? b.journeys).toLocaleString()}건` : '-'}
                         </td>
                         <td className="py-3 px-4 text-right text-slate-600">
-                          {b.avgStops != null ? `${b.avgStops}곳` : '-'}
+                          {b.sharePct != null ? `${b.sharePct}%` : (b.avgStops != null ? `${b.avgStops}곳` : '-')}
                         </td>
                         <td className="py-3 px-4 text-right font-bold text-teal-700">
-                          {b.avgSpent != null ? `${formatCurrency(b.avgSpent)}원` : '-'}
+                          {b.roomGolfSynergyCount != null ? `${Number(b.roomGolfSynergyCount).toLocaleString()}건` : (b.avgSpent != null ? `${formatCurrency(b.avgSpent)}원` : '-')}
                         </td>
                         <td className="py-3 px-4 text-right font-extrabold text-slate-900">
-                          {b.totalRevenue != null ? `${formatCurrency(b.totalRevenue)}원` : '-'}
+                          {b.synergyRate != null ? `${b.synergyRate}%` : (b.totalRevenue != null ? `${formatCurrency(b.totalRevenue)}원` : '-')}
                         </td>
                       </tr>
                     ))}

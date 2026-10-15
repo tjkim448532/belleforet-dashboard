@@ -902,16 +902,16 @@ export default function OnlineMembers() {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                     <div className="text-xs font-bold text-slate-500">전체 온라인 통합 회원</div>
                     <div className="text-xl font-black text-slate-900 mt-1">
-                      {dormancyIntel.summary?.totalMembers != null ? `${Number(dormancyIntel.summary.totalMembers).toLocaleString()}명` : '-'}
+                      {(dormancyIntel.summary?.totalOnlineMembers ?? dormancyIntel.summary?.totalMembers) != null ? `${Number(dormancyIntel.summary?.totalOnlineMembers ?? dormancyIntel.summary?.totalMembers).toLocaleString()}명` : '-'}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      최근 6개월 활성: {dormancyIntel.summary?.activeWithin6m != null ? `${Number(dormancyIntel.summary.activeWithin6m).toLocaleString()}명` : '-'}
+                      최근 6개월 활성: {(dormancyIntel.summary?.activeMembers ?? dormancyIntel.summary?.activeWithin6m) != null ? `${Number(dormancyIntel.summary?.activeMembers ?? dormancyIntel.summary?.activeWithin6m).toLocaleString()}명` : '-'}
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                     <div className="text-xs font-bold text-slate-500">단골 회원 (4~9회 방문) 휴면율</div>
                     <div className="text-xl font-black text-rose-600 mt-1">
-                      {dormancyIntel.summary?.regularDormantRatePct != null ? `${dormancyIntel.summary.regularDormantRatePct}%` : '-'}
+                      {(dormancyIntel.summary?.regularDormantRatePct ?? dormancyIntel.tiers?.[2]?.dormancyRate ?? dormancyIntel.tiers?.[2]?.dormantRatePct) != null ? `${dormancyIntel.summary?.regularDormantRatePct ?? dormancyIntel.tiers?.[2]?.dormancyRate ?? dormancyIntel.tiers?.[2]?.dormantRatePct}%` : '-'}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
                       휴면 단골: {dormancyIntel.summary?.regularDormantCount != null ? `${Number(dormancyIntel.summary.regularDormantCount).toLocaleString()}명` : '-'}
@@ -920,7 +920,7 @@ export default function OnlineMembers() {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                     <div className="text-xs font-bold text-slate-500">충성 고객 (10회+ 방문) 휴면율</div>
                     <div className="text-xl font-black text-amber-600 mt-1">
-                      {dormancyIntel.summary?.loyalDormantRatePct != null ? `${dormancyIntel.summary.loyalDormantRatePct}%` : '-'}
+                      {(dormancyIntel.summary?.loyalDormantRatePct ?? dormancyIntel.tiers?.[3]?.dormancyRate ?? dormancyIntel.tiers?.[3]?.dormantRatePct) != null ? `${dormancyIntel.summary?.loyalDormantRatePct ?? dormancyIntel.tiers?.[3]?.dormancyRate ?? dormancyIntel.tiers?.[3]?.dormantRatePct}%` : '-'}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
                       휴면 충성고객: {dormancyIntel.summary?.loyalDormantCount != null ? `${Number(dormancyIntel.summary.loyalDormantCount).toLocaleString()}명` : '-'}
@@ -929,7 +929,7 @@ export default function OnlineMembers() {
                   <div className="p-4 rounded-2xl bg-violet-50/70 border border-violet-200">
                     <div className="text-xs font-bold text-violet-700">핵심 단골 Win-back 핀셋 타겟</div>
                     <div className="text-xl font-black text-violet-900 mt-1">
-                      {dormancyIntel.summary?.winbackTargetCount != null ? `${Number(dormancyIntel.summary.winbackTargetCount).toLocaleString()}명` : '-'}
+                      {(dormancyIntel.summary?.winbackTargetsTotal ?? dormancyIntel.summary?.winbackTargetCount) != null ? `${Number(dormancyIntel.summary?.winbackTargetsTotal ?? dormancyIntel.summary?.winbackTargetCount).toLocaleString()}명` : '-'}
                     </div>
                     <div className="text-[11px] text-violet-600 mt-1">
                       4회 이상 방문 이력 보유 · 6개월 미방문
@@ -948,7 +948,7 @@ export default function OnlineMembers() {
                         <tr>
                           <th className="py-2.5 px-4 text-left font-bold">이용 횟수 등급</th>
                           <th className="py-2.5 px-4 text-right font-bold">전체 회원수</th>
-                          <th className="py-2.5 px-4 text-right font-bold">평균 이용횟수</th>
+                          <th className="py-2.5 px-4 text-right font-bold">회원 비중</th>
                           <th className="py-2.5 px-4 text-right font-bold">최근 6개월 활성</th>
                           <th className="py-2.5 px-4 text-right font-bold">6개월+ 미방문 휴면</th>
                           <th className="py-2.5 px-4 text-right font-bold">휴면 전환율</th>
@@ -959,19 +959,19 @@ export default function OnlineMembers() {
                           <tr key={tier.tierName || idx} className="hover:bg-slate-50/80">
                             <td className="py-3 px-4 font-bold text-slate-800">{tier.tierName ?? '-'}</td>
                             <td className="py-3 px-4 text-right font-semibold text-slate-900">
-                              {tier.memberCount != null ? `${Number(tier.memberCount).toLocaleString()}명` : '-'}
+                              {(tier.totalMembers ?? tier.memberCount) != null ? `${Number(tier.totalMembers ?? tier.memberCount).toLocaleString()}명` : '-'}
                             </td>
                             <td className="py-3 px-4 text-right text-slate-600">
-                              {tier.avgActivities != null ? `${tier.avgActivities}회` : '-'}
+                              {(tier.memberShare ?? tier.avgActivities) != null ? `${tier.memberShare ?? tier.avgActivities}%` : '-'}
                             </td>
                             <td className="py-3 px-4 text-right text-emerald-700 font-semibold">
-                              {tier.active6mCount != null ? `${Number(tier.active6mCount).toLocaleString()}명` : '-'}
+                              {(tier.activeMembers ?? tier.active6mCount) != null ? `${Number(tier.activeMembers ?? tier.active6mCount).toLocaleString()}명` : '-'}
                             </td>
                             <td className="py-3 px-4 text-right text-rose-600 font-bold">
-                              {tier.dormant6mCount != null ? `${Number(tier.dormant6mCount).toLocaleString()}명` : '-'}
+                              {(tier.dormantMembers ?? tier.dormant6mCount) != null ? `${Number(tier.dormantMembers ?? tier.dormant6mCount).toLocaleString()}명` : '-'}
                             </td>
                             <td className="py-3 px-4 text-right font-black text-rose-600">
-                              {tier.dormantRatePct != null ? `${tier.dormantRatePct}%` : '-'}
+                              {(tier.dormancyRate ?? tier.dormantRatePct) != null ? `${tier.dormancyRate ?? tier.dormantRatePct}%` : '-'}
                             </td>
                           </tr>
                         ))}

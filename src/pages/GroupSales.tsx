@@ -333,9 +333,19 @@ export default function GroupSales() {
     const channelMap = new Map<string, RawChannelRoomItem[]>();
     const roomTypeSet = new Set<string>();
 
+    const normalizeRoomTypeName = (raw: string): string => {
+      const trimmed = raw.trim();
+      // 산하 PMS 미배정 원천 코드('ROOM')를 비즈니스 표준 명칭인 '미지정(배정대기)'으로 정규화
+      if (trimmed.toUpperCase() === 'ROOM') {
+        return '미지정(배정대기)';
+      }
+      return trimmed;
+    };
+
     channelRawData.forEach(item => {
       const channel = String(item.channelName || item.channel_name || item.channel || '기타채널').trim();
-      const room = String(item.roomType || item.room_type || '기타').trim();
+      const rawRoom = String(item.roomType || item.room_type || '기타').trim();
+      const room = normalizeRoomTypeName(rawRoom);
 
       // 전체 소계 레코드(isGrandTotal, isChannelSubtotal)는 제외하고 세부 조합 항목만 파싱
       if (channel === '총합계' || room === '전체') return;
@@ -369,7 +379,8 @@ export default function GroupSales() {
       const segItems: SegmentItem[] = [];
 
       items.forEach(raw => {
-        const rType = String(raw.roomType || raw.room_type || '기타').trim();
+        const rawRType = String(raw.roomType || raw.room_type || '기타').trim();
+        const rType = normalizeRoomTypeName(rawRType);
         const rooms = Number(raw.todayRooms ?? raw.mtdRooms ?? 0);
         const rev = Number(raw.todayRevenue ?? raw.mtdRevenue ?? 0);
         const adr = Number(raw.todayAdr ?? raw.adr ?? 0);
@@ -1548,6 +1559,11 @@ export default function GroupSales() {
                     <td className="py-4 px-6 whitespace-nowrap">
                       <div className="flex items-center gap-2.5">
                         <span className="font-extrabold text-slate-900 text-base">{item.roomType}</span>
+                        {item.roomType.includes('미지정') && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                            PMS 호실 배정대기
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right font-medium text-slate-700 whitespace-nowrap">
@@ -1833,7 +1849,16 @@ export default function GroupSales() {
                     <tbody className="divide-y divide-slate-100">
                       {group.items.map((item, idx) => (
                         <tr key={idx} className="hover:bg-slate-50">
-                          <td className="py-2 px-4 font-bold text-slate-800">{item.roomType}</td>
+                          <td className="py-2 px-4 font-bold text-slate-800">
+                            <span className="inline-flex items-center gap-1.5">
+                              {item.roomType}
+                              {item.roomType.includes('미지정') && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                  호실 배정대기
+                                </span>
+                              )}
+                            </span>
+                          </td>
                           <td className="py-2 px-4 text-right">{item.roomsSold}실</td>
                           <td className="py-2 px-4 text-right font-bold text-slate-900">{formatRevenue(item.revenue)}원</td>
                           <td className="py-2 px-4 text-right">{item.adr > 0 ? `${formatRevenue(item.adr)}원` : '-'}</td>

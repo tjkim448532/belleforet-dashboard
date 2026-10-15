@@ -26,6 +26,7 @@
 | **P0 (긴급)** | 데이터 로직 | **[Ticket 24] 미래(익일 D+1) 골프 1·2·3부 평균 그린피(ERP 예약 단가) 집계 정상화** | 미래 도착 예약일(10/11)의 `avgGreenFee`가 POS 미정산(매출 0원)으로 인해 `0원(- 원)`으로 출력되는 결함 해결: ERP 예약 원장 예약단가 기준 산출 요청 |
 | **P1 (긴급)** | 데이터 정합성 | **[Ticket 25] 마운틴카트 2025년 1~9월 레거시 실적(2.45억 원) 그랜드포렛 이관** | 미니포렛 개장(2025-09-19) 이전 레거시 실적이 '마운틴카트'에 방치되어 YTD +800%~900% 왜곡 및 -100% 행 노출 발생. 그랜드포렛 과거 실적으로 이관 요청 |
 | **P1 (신규)** | API 보강 | **[Ticket 26] 콘도 체크인 예약 현황 API 내 예상 매출액(`estimatedRevenue`) 필드 추가** | 콘도 예약 현황 카드 하단에 PMS 예약 원장 기반 체크인 당일 예상 매출액(객실 및 전체 파급) 1-Call 완제품 제공 요청 (`condo-reservations`) |
+| **P1 (높음)** | 데이터 정합성 | **[Ticket 27] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화** | 산하 PMS 미배정 원천 코드('ROOM')가 한글 평형 대신 영문 코드로 직접 노출되는 결함 해결 (`room-channel-sales`) |
 
 
 ---
@@ -2164,6 +2165,39 @@ const reverseSpillover = totalRoomSales > 0
 ### 26-3. 프론트엔드 연동 현황
 * 프론트엔드는 현재 기 구축된 `GET /api/v6/dashboard/ancillary-revenue-forecast` (BESM v6.3 SSOT)와 즉시 연동하여 실시간으로 예상 매출액을 노출하고 있습니다.
 * 백엔드에서 `condo-reservations`의 `summary.estimatedRevenue`에 완제품을 탑재해 주시면, 1회의 초고속 API 호출로 자동 전환되도록 구현을 완료했습니다.
+
+---
+
+## 27. 🏢 [P1 데이터 정합성] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화
+
+### 27-1. 현상 및 대표님 지시사항
+* **엔드포인트**: `GET /api/v6/report/room-channel-sales?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **문제 현상**:
+  * [단체영업(세미나) 각 평형별 실적 상세] 화면에서 `16평`, `35평` 등 정상적인 평형 외에 **`ROOM` (1실, 458,182원, ADR 458,182원)**이라는 영문 로우가 불쑥 노출됨.
+  * 대표님 지적: *"버그 room이 갑자기 뭐지"*
+
+### 27-2. 원인 포렌식 결과 (PMS 미배정 호실 원천 코드 누출)
+* **데이터 원천 검증**:
+  * 2026-10-14 단체영업 실적: `44실 (16평) + 16실 (35평) + 1실 (ROOM) = 총 61실` (순매출 6,201,829원)
+  * `GET /api/v6/dashboard/condo-reservations?date=2026-10-14` 단체 예약 명단 확인:
+    * `포레시아코리아`: 총 21실 예약 중 세부 내역이 **"35평 15실, 16평 5실, 미지정 1실"**로 등록됨.
+  * 산하 PMS에서 단체 예약 접수 시 아직 구체적인 동/호수를 배정하지 않은 객실의 원천 `room_type` 코드가 영문 **`ROOM`**으로 적재됨.
+* **백엔드 API 간 처리 불일치**:
+  * `condo-reservations` API: `CASE WHEN room_type = 'ROOM' THEN '미지정'`으로 한글 정규화하여 프론트에 전달함.
+  * `room-channel-sales` API: 정규화 매핑 없이 DB의 `room_type` 원천 코드를 `GROUP BY`하여 영문 `ROOM` 문자열이 그대로 반환됨.
+
+### 27-3. 백엔드 조치 요청 사항
+* `room-channel-sales` 집계 쿼리 또는 선행 마트 뷰에서 산하 PMS 미배정 코드(`ROOM`, `UNASSIGNED`, `NULL` 등)를 **`미지정`**으로 일관되게 정규화 변환하여 응답하도록 수정 요청:
+  ```sql
+  CASE 
+    WHEN UPPER(TRIM(room_type)) IN ('ROOM', 'UNASSIGNED', '') OR room_type IS NULL THEN '미지정'
+    ELSE room_type 
+  END AS roomType
+  ```
+* **프론트엔드 선제 대응 완료**:
+  * 프론트엔드는 0-Variance 수칙에 따라 1실/458,182원을 누락하지 않고 온전히 보존하면서, 화면 레이블을 `미지정(배정대기)` 및 `[PMS 호실 배정대기]` 뱃지로 긴급 방어 처리하였습니다.
+  * 백엔드 API 단에서 '미지정'으로 정규화 배포 시 완전한 통일성이 확보됩니다.
+
 
 
 

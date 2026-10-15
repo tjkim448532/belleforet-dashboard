@@ -30,12 +30,12 @@
 | **P1 (신규)** | 정규 API | **[Ticket 28] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API 신설** | 통합 회원관리 대시보드 고도화를 위한 분양구좌 마스터 소진율, 평형별 회원 이용 내역, 개인별 크로스 소비 LTV 원장 제공 요청 (`membership-ledger-intelligence`) |
 | **P0 (긴급)** | 배포/정합성 | **[Ticket 29] `moto-channel-sales` 프로덕션 미배포(404) 및 OTA 분류 LIKE 휴리스틱 제거** | 레저 영업장 현황 OTA 비중 섹션 연동 완료, API 404로 Fail-Stop 표출 중. OTA/HOMEPAGE 분류를 상품명 LIKE 추론 대신 사전 HITL 승인 기준으로 전환 요청 |
 | **P0 (완료)** | 정규 API | **[Ticket 30] 레저본부 전체 영업장별 판매채널(자사·OTA·POS·PMS) 매출/비중 완제품 API 배포** | [배포/검증완료] 모토아레나 포함 전체 레저 영업장의 채널별 매출 및 비중 완제품 제공 (`leisure-channel-sales`) |
-| **P1 (신규)** | 정규 API | **[Ticket 31] 판촉 영업담당자(`영업직원명`)별 B2B·연회 수주 순기여도 및 세미나홀 가동 효율 API** | 객실(23,616건)·연회(1,252건) 실명 영업직원 순기여도(Net Contribution) 리더보드 및 세미나 A~E홀·아트홀 인원 이행률·RevPASH 마트 신설 (`sales-rep-banquet-intelligence`) |
-| **P1 (신규)** | 정규 API | **[Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 배정 편차 감사 API** | 리드타임(평균 45.5일) 구간별 취소(38,239건, 24.5%)·대기(2,966건) 전환 및 175개 호실(동·층·베드타입·커넥팅룸) 배정 편차 마트 신설 (`room-leadtime-unit-wear`, 성인/아이수 제외) |
-| **P1 (신규)** | 정규 API | **[Ticket 33] 골프 내장객 성비 · 회원권 타인 위임 내장 CRM · 코스별 취소율 · 라운딩 체류시간 API** | 내장객 성별(남 68.3% / 여 31.4%), 회원권 위임 내장(18,142건, 20.1%) VIP 타겟, 코스별 취소율(20.7%) 및 체크인➔티업➔체크아웃 체류시간 마트 신설 (`golf-visitor-behavior-crm`) |
-| **P1 (신규)** | 정규 API | **[Ticket 34] 레저 티켓·POS 업장/권종별 정가 대비 할인 누수율(Price Realization) 및 미사용 티켓 감사 API** | 티켓(할인 3,758만원)·POS(할인 3,810만원) 정가 실현율 및 `티켓출력,티켓미사용`(3,984건 / 9,903만원) 감사 마트 신설 (`leisure-discount-leakage`) |
-| **P1 (신규)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | `dim_online_members_v6`(26,221명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 신설 (`online-member-dormancy`) |
-| **P1 (신규)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | `fact_customer_journeys`(258,287건) 체류시간 구간별(단발 0분 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 객단가 점프 및 동선 결합 마트 신설 (`customer-stay-duration-synergy`) |
+| **P1 (완료)** | 정규 API | **[Ticket 31] 판촉 영업담당자(`영업직원명`)별 B2B·연회 수주 순기여도 및 세미나홀 가동 효율 API** | [배포/검증완료] 객실(23,616건)·연회(1,252건) 실명 영업직원 순기여도(Net Contribution) 리더보드 및 세미나 A~E홀·아트홀 인원 이행률·RevPASH 마트 구축 완료 (`sales-rep-banquet-intelligence`) |
+| **P1 (완료)** | 정규 API | **[Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 배정 편차 감사 API** | [배포/검증완료] 리드타임(평균 36.9일) 구간별 취소(15,546건, 28.8%)·대기(1,508건) 전환 및 169개 호실 배정 편차 마트 구축 완료 (`room-leadtime-unit-wear`, 성인/아이수 제외) |
+| **P1 (완료)** | 정규 API | **[Ticket 33] 골프 내장객 성비 · 회원권 타인 위임 내장 CRM · 코스별 취소율 · 라운딩 체류시간 API** | [배포/검증완료] 내장객 성별(남 51,780명/68.4% / 여 23,883명/31.6%), 회원권 위임 내장(12,408건, 21.5%) VIP 타겟, 취소율(22.2%) 및 체류시간 마트 구축 완료 (`golf-visitor-behavior-crm`) |
+| **P1 (완료)** | 정규 API | **[Ticket 34] 레저 티켓·POS 업장/권종별 정가 대비 할인 누수율(Price Realization) 및 미사용 티켓 감사 API** | [배포/검증완료] 티켓·POS 정가 실현율(96.2%), 할인 공제액(7,568만원) 및 `티켓출력,티켓미사용`(3,983건 / 9,899만원) 감사 마트 구축 완료 (`leisure-discount-leakage`) |
+| **P1 (완료)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | [배포/검증완료] `dim_online_members_v6`(26,922명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 구축 완료 (`online-member-dormancy`) |
+| **P1 (완료)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | [배포/검증완료] `fact_customer_journeys`(7,540건) 체류시간 구간별(0분 단발 1,253건 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 복합 소비 시너지 마트 구축 완료 (`customer-stay-duration-synergy`) |
 
 
 ---

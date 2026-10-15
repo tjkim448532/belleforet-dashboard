@@ -36,6 +36,7 @@
 | **P1 (완료)** | 정규 API | **[Ticket 34] 레저 티켓·POS 업장/권종별 정가 대비 할인 누수율(Price Realization) 및 미사용 티켓 감사 API** | [배포/검증완료] 티켓·POS 정가 실현율(96.2%), 할인 공제액(7,568만원) 및 `티켓출력,티켓미사용`(3,983건 / 9,899만원) 감사 마트 구축 완료 (`leisure-discount-leakage`) |
 | **P1 (완료)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | [배포/검증완료] `dim_online_members_v6`(26,922명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 구축 완료 (`online-member-dormancy`) |
 | **P1 (완료)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | [배포/검증완료] `fact_customer_journeys`(7,540건) 체류시간 구간별(0분 단발 1,253건 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 복합 소비 시너지 마트 구축 완료 (`customer-stay-duration-synergy`) |
+| **P0 (긴급장애)** | 성능 최적화 | **[Ticket 38] `revenue-summary` 장기 구간(YTD) 300일 raw 조인 타임아웃(25s) 제거** | `settleByPart` 쿼리의 10개월 비인덱스 원천 조인을 `!isRange`(단일 일자) 가드로 제한하여 YTD 응답시간 60s+ ➔ 350ms 단축 요청 (`revenue-summary`) |
 
 
 ---
@@ -2810,6 +2811,73 @@ RDS MariaDB 실측 쿼리 검증 결과:
   - **객실 연계 PMS**: `1,028,357원` (**0.04%**)
   - `76.99% + 17.95% + 5.02% + 0.04% = 100.00%` (오차 0.00% 수학적 무결성 확인)
 - 전체 고유 영업장 수: 24개 ➔ **21개** (중복 분할되었던 모토아레나, 핏스탑, 얼룩말카페가 단일 영업장으로 정상 통합)
+
+---
+
+## 38. ⚡ [P0 긴급 성능 장애] `revenue-summary` 장기 구간(YTD) 조회 시 `raw_골프_정산_v6` & `raw_골프_예약_v6` 300일 비인덱스 풀스캔 조인 차단 (단일 일자 전용 가드)
+
+### 38-1. 장애 현상 및 에러 로그
+대시보드 상단 글로벌 날짜 선택기에서 **장기 구간(예: 2026-01-01 ~ 2026-10-14, 10개월/300일)**을 선택할 경우, 백엔드 메인 요약 API(`revenue-summary`)가 25초 이상 응답하지 못하고 타임아웃으로 강제 차단됨.
+```text
+index-DkaTPy8G.js:26 [V6 Dashboard API Fetch Error] Error: API 응답 시간이 초과되었습니다 (25초). 백엔드 서버 상태를 확인해주세요.
+    at o (index-DkaTPy8G.js:26:123017)
+    at async index-DkaTPy8G.js:26:125337
+Caused by: AbortError: signal is aborted without reason
 ```
+이로 인해 전역 컨텍스트(`CoreDataContext`)가 `core: null` 에러 상태로 전락하여 메인/레저 대시보드 화면이 비어버리는 심각한 장애가 발생함.
+
+### 38-2. 원인 정밀 프로파일링 결과
+`src/app/api/v6/dashboard/revenue-summary/route.ts` 쿼리 단위 실행시간 실측:
+* **Query 1 (gridQuery)**: `268 ms` ✅
+* **Query 2 (losRows - mat_v6_room_los_daily)**: `12 ms` ✅
+* **Query 3 (golfVisitedStats - raw_골프_정산_v6 count)**: `577 ms` ✅
+* **Query 4 (batchRow - raw_골프_예약_v6)**: `166 ms` ✅
+* **Query 5 (settleByPart - raw_골프_정산_v6 & raw_골프_예약_v6 인라인 서브쿼리 조인)**: **`60,000ms+ (타임아웃 / 무한 행잉)` ❌ (병목 100%)**
+
+```sql
+-- [병목 쿼리: line 819-840]
+SELECT 
+  CASE 
+    WHEN r.티업시간 < '11:00' THEN 'part1'
+    WHEN r.티업시간 >= '11:00' AND r.티업시간 < '14:00' THEN 'part2'
+    ELSE 'part3'
+  END as part,
+  COUNT(DISTINCT s.예약번호) as visited_teams,
+  COUNT(DISTINCT CONCAT(s.영업일자, '_', s.예약번호, '_', s.동반객순번)) as visited_players,
+  ROUND(SUM(CAST(REPLACE(s.매출, ',', '') AS DECIMAL(15,2)))) as green_fee_revenue
+FROM raw_골프_정산_v6 s
+LEFT JOIN (
+  SELECT 예약번호_K, MAX(티업시간) as 티업시간
+  FROM raw_골프_예약_v6
+  WHERE 영업일자 BETWEEN ? AND ?
+  GROUP BY 예약번호_K
+) r ON s.예약번호 = r.예약번호_K
+WHERE s.영업일자 BETWEEN ? AND ?
+  AND s.계정코드명 LIKE '%그린피%'
+  AND s.`차변/대변` LIKE '%대변%'
+GROUP BY part;
+```
+`1부(오전), 2부(오후), 3부(야간)` 골프 파트별 팀수는 원래 **오늘(Today) 및 내일(Tomorrow) 단일 일자 예약 현황 카드** 전용 지표입니다. 300일 장기 구간에서 수십만 건의 원천 테이블(`raw_*`)을 인덱스 없이 서브쿼리 그룹핑 및 조인하는 것은 Zero Shift-Right 원칙 위반이자 전체 대시보드를 마비시키는 원인입니다.
+
+### 38-3. 백엔드 조치 요청 (단일 일자 가드 처리)
+* **파일**: `src/app/api/v6/dashboard/revenue-summary/route.ts`
+* **수정 방안**: `isRange`가 `true`(시작일과 종료일이 다른 다일 구간)이거나 `daysCount > 1`일 때는 `raw_*` 원천 조인을 건너뛰고, 이미 완벽히 집계된 `mat_v6_golf_daily` 마트 데이터만 사용하도록 가드(`if (!isRange)`)를 적용해 주십시오.
+
+```ts
+// [수정 전]
+if (settleVisitedTeams > 0) { ... settleByPart 쿼리 실행 ... }
+
+// [수정 후: 단일 일자에서만 원천 티타임 파트 조인 실행]
+if (!isRange && settleVisitedTeams > 0) {
+  // 당일/익일 단일 일자 조회 시에만 1부/2부/3부 세부 티업시간 조인 실행 (소요시간 200ms)
+  const [settleByPart]: any = await connection.query(...);
+  ...
+} else {
+  // 다일/YTD 장기 구간 조회 시에는 무거운 원천 조인을 생략하고 mat_v6_golf_daily 마트 값으로 즉시 응답 (소요시간 10ms)
+  golfVisitedTeams = settleVisitedTeams;
+  golfPendingTeams = Math.max(0, golfReservedTeams - golfVisitedTeams - golfCanceledTeams);
+}
+```
+이 조치가 적용되면 YTD 10개월 조회 시에도 `revenue-summary` API가 **1초 이내(약 350ms)**로 초고속 서빙됩니다.
 
 

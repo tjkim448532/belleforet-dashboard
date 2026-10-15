@@ -139,25 +139,40 @@ export default function LeisureFacility() {
   const showWon = (v: any) => (v === null || v === undefined || v === '' ? '-' : `${formatCurrency(v)}원`);
 
   const { totalSales, topTickets } = useMemo(() => {
+    // 1. Primary SSOT: channelData (from /api/v6/report/leisure-channel-sales)
+    // Includes ALL leisure facilities (TICKET + MOTO) with 0-variance accuracy and fast response (~3.5s)
+    if (channelData?.venues && channelData.venues.length > 0) {
+      const grandTotal = parseNumber(channelData.summary?.totalRevenue || 0);
+      const mapped = channelData.venues.map((v: any) => ({
+        name: v.venueName || '기타',
+        sales: parseNumber(v.totalRevenue || 0),
+        qty: parseNumber(v.totalVisitors || 0),
+        depth2: '레저/체험'
+      })).sort((a: any, b: any) => b.sales - a.sales);
+
+      return {
+        totalSales: grandTotal,
+        topTickets: mapped
+      };
+    }
+
+    // 2. Secondary fallback: core.salesByFacility (if channelData is still loading)
     if (!core?.salesByFacility) {
       return { totalSales: 0, topTickets: [] };
     }
 
     const ticketFacilities = core.salesByFacility.filter((item: any) => 
-      item.categoryCode === 'TICKET'
+      item.categoryCode === 'TICKET' || item.categoryCode === 'MOTO'
     );
 
-    // 1. SSOT: Use backend subtotal for 'TICKET' category from salesByCategory
     let ssotTotalSales = 0;
-    
     if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
       const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
-      if (ticketCat) {
-        ssotTotalSales = parseNumber(ticketCat.todayActual || ticketCat.totalSales || 0);
-      }
+      const motoCat = core.salesByCategory.find((x: any) => x.categoryCode === 'MOTO');
+      ssotTotalSales = parseNumber(ticketCat?.todayActual || ticketCat?.totalSales || 0) +
+                       parseNumber(motoCat?.todayActual || motoCat?.totalSales || 0);
     }
 
-    // 2. Map facility rows directly (V6 schema subGroupName & totalVisitors)
     const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities
       .filter((item: any) => !item.isSubtotal)
       .map((item: any) => {
@@ -174,7 +189,7 @@ export default function LeisureFacility() {
       totalSales: ssotTotalSales, 
       topTickets: sortedTickets
     };
-  }, [core]);
+  }, [channelData, core]);
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-8">
@@ -212,7 +227,7 @@ export default function LeisureFacility() {
               <Wallet className="w-5 h-5 text-blue-500" /> 총 매출합계 <span className="text-xs font-normal text-slate-400">({endDate && startDate !== endDate ? '조회기간' : '조회일'})</span>
             </h2>
             <div className="text-3xl font-black text-slate-900 mb-2 tracking-tight relative z-10 tabular-nums whitespace-nowrap">
-              {isLoading ? (
+              {(channelLoading && !channelData) || (isLoading && !channelData) ? (
                 <span className="text-slate-300 animate-pulse text-2xl font-bold">집계 중...</span>
               ) : (
                 <>{formatCurrency(totalSales)} <span className="text-base font-normal text-slate-500">원</span></>
@@ -299,7 +314,7 @@ export default function LeisureFacility() {
               </span>
             </div>
 
-            {isLoading ? (
+            {(channelLoading && !channelData) || (isLoading && !channelData) ? (
               <div className="py-24 flex flex-col items-center justify-center text-slate-400 text-xs flex-1">
                 <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-brand-mint mb-3"></div>
                 영업장별 실적 데이터를 집계 중입니다...

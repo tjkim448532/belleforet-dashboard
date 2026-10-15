@@ -74,6 +74,9 @@ export default function ResortBusiness() {
   const [losMetricMode, setLosMetricMode] = useState<'revpas' | 'total'>('revpas');
   const [dayTypeFilter, setDayTypeFilter] = useState<'holiday_eve' | 'pure_weekday' | 'all'>('holiday_eve');
 
+  // 💡 [Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 배정 편차 감사 상태
+  const [leadtimeWearIntel, setLeadtimeWearIntel] = useState<any>(null);
+
   // 💡 [방안 1 + 방안 2] 결합 및 [익일 휴일군 vs 순수 주중군] 분리 연산
   const analytics = useMemo(() => {
     if (!losTrendData || losTrendData.length === 0) return null;
@@ -160,7 +163,7 @@ export default function ResortBusiness() {
           ? `startDate=${lyStartStr}&endDate=${lyEndStr}&_t=${Date.now()}`
           : `date=${lyStartStr}&_t=${Date.now()}`;
           
-        const [overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes] = await Promise.all([
+        const [overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes, leadtimeWearRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`, { signal: controller.signal }),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
@@ -168,10 +171,17 @@ export default function ResortBusiness() {
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${lyQueryParams}`, { signal: controller.signal }).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${lyQueryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${lyQueryParams}`, { signal: controller.signal }).catch(() => null)
+          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${lyQueryParams}`, { signal: controller.signal }).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/room-leadtime-unit-wear?${queryParams}`, { signal: controller.signal }).catch(() => null)
         ]);
 
         if (controller.signal.aborted) return;
+
+        if (leadtimeWearRes && (leadtimeWearRes.summary || leadtimeWearRes.data)) {
+          setLeadtimeWearIntel(leadtimeWearRes.data || leadtimeWearRes);
+        } else {
+          setLeadtimeWearIntel(null);
+        }
 
         const rawOverview = (overviewRes?.summary || overviewRes?.gridData) ? overviewRes : (overviewRes.data || overviewRes);
         const rawChannels = channelRes.data || channelRes;
@@ -1944,6 +1954,199 @@ export default function ResortBusiness() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* 5. [Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 물리적 배정 편차 감사 */}
+          <div className="bg-white rounded-[24px] border border-slate-200 shadow-xs overflow-hidden mt-8">
+            <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-sky-50/50 via-white to-indigo-50/30">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-sky-600 text-white shadow-xs shrink-0 mt-0.5">
+                  <KeyRound size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg font-extrabold text-slate-900">
+                      객실 예약 리드타임 · 사전 취소 임계점(Cancellation Cliff) 및 호실별 배정 편차 감사
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
+                      V6 SSOT · Ticket 32
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    예약 등록일 대비 도착일 리드타임 구간별 사전 취소(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Cancelled Reservation</code>) 및 대기 예약(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Waiting Reservation</code>) 전환율과 175개 물리 호실(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">객실번호</code> · 동 · 층 · 베드타입 · 커넥팅룸) 간 배정 편차(감가상각 불균형)를 추적합니다.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {leadtimeWearIntel ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    정규 마트 연동 완료
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/room-leadtime-unit-wear)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!leadtimeWearIntel ? (
+              <div className="p-8 bg-slate-50/60">
+                <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+                  <h4 className="text-sm font-extrabold text-slate-800">
+                    [Zero-Fake / Fail-Stop] 객실 리드타임 취소 방어 및 호실별 배정 편차 감사 정규 마트 API 연동 대기 중
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/room-leadtime-unit-wear</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">평균 예약 리드타임</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">등록일자➔도착일자 일수 집계 대기</div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">사전 예약 취소율 (Cancelled)</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">리드타임 구간별 취소 임계점 대기</div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">대기 예약(Waiting) 수</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">취소 방어 자동 승계 타겟 대기</div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">호실별 배정 편차 지수</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">동·층·베드타입별 회전율 집계 대기</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">평균 예약 리드타임</div>
+                    <div className="text-xl font-black text-slate-900 mt-1">
+                      {leadtimeWearIntel.summary?.avgLeadDays != null ? `${leadtimeWearIntel.summary.avgLeadDays}일` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      총 원천 예약: {leadtimeWearIntel.summary?.totalReservations != null ? `${Number(leadtimeWearIntel.summary.totalReservations).toLocaleString()}건` : '-'}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">사전 예약 취소 (Cancelled)</div>
+                    <div className="text-xl font-black text-rose-600 mt-1">
+                      {leadtimeWearIntel.summary?.cancelRate != null ? `${leadtimeWearIntel.summary.cancelRate}%` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      취소 건수: {leadtimeWearIntel.summary?.cancelledCount != null ? `${Number(leadtimeWearIntel.summary.cancelledCount).toLocaleString()}건` : '-'}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">대기 예약 (Waiting)</div>
+                    <div className="text-xl font-black text-amber-600 mt-1">
+                      {leadtimeWearIntel.summary?.waitingCount != null ? `${Number(leadtimeWearIntel.summary.waitingCount).toLocaleString()}건` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      취소 발생 시 우선 승계 대상
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">물리 호실 마스터 가동 범위</div>
+                    <div className="text-xl font-black text-sky-700 mt-1">
+                      {leadtimeWearIntel.summary?.activeUnitCount != null ? `${leadtimeWearIntel.summary.activeUnitCount}실` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      최대/최소 배정 편차: {leadtimeWearIntel.summary?.unitWearSpreadRatio != null ? `${leadtimeWearIntel.summary.unitWearSpreadRatio}배` : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 좌측: 리드타임 구간별 예약·취소·대기 분포 */}
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-800">리드타임 구간별 예약 · 취소율(Cancellation Cliff) 분포</span>
+                      <span className="text-[11px] text-slate-500">등록일자 ➔ 도착일자</span>
+                    </div>
+                    <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50/80 text-slate-500 sticky top-0 border-b border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-3 text-left font-bold">리드타임 구간</th>
+                            <th className="py-2.5 px-3 text-right font-bold">총 예약</th>
+                            <th className="py-2.5 px-3 text-right font-bold">투숙 완료</th>
+                            <th className="py-2.5 px-3 text-right font-bold">사전 취소</th>
+                            <th className="py-2.5 px-3 text-right font-bold">취소율</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {(leadtimeWearIntel.leadtimeBuckets || []).map((b: any, idx: number) => (
+                            <tr key={b.bucketLabel || idx} className="hover:bg-slate-50/80">
+                              <td className="py-2.5 px-3 font-bold text-slate-800">{b.bucketLabel ?? '-'}</td>
+                              <td className="py-2.5 px-3 text-right text-slate-700">
+                                {b.totalCount != null ? `${Number(b.totalCount).toLocaleString()}건` : '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-emerald-700 font-semibold">
+                                {b.checkedOutCount != null ? `${Number(b.checkedOutCount).toLocaleString()}건` : '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-rose-600">
+                                {b.cancelledCount != null ? `${Number(b.cancelledCount).toLocaleString()}건` : '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-bold text-rose-600">
+                                {b.cancelRate != null ? `${b.cancelRate}%` : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 우측: 호실별 물리적 배정 편차 (Over-used vs Under-used Units) */}
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-800">호실별(객실번호) 물리적 배정 횟수 및 감가상각 편차</span>
+                      <span className="text-[11px] text-slate-500">동 · 층 · 베드타입 기준</span>
+                    </div>
+                    <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50/80 text-slate-500 sticky top-0 border-b border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-3 text-left font-bold">호실번호</th>
+                            <th className="py-2.5 px-3 text-left font-bold">동 · 층 · 타입</th>
+                            <th className="py-2.5 px-3 text-right font-bold">배정 횟수</th>
+                            <th className="py-2.5 px-3 text-right font-bold">누적 매출</th>
+                            <th className="py-2.5 px-3 text-right font-bold">평균 대비 편차</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {(leadtimeWearIntel.unitWearRanking || []).map((u: any, idx: number) => (
+                            <tr key={u.roomNo || idx} className="hover:bg-slate-50/80">
+                              <td className="py-2.5 px-3 font-bold text-slate-800">{u.roomNo ?? '-'}</td>
+                              <td className="py-2.5 px-3 text-slate-600">
+                                {[u.buildingName, u.floorLabel, u.bedType].filter(Boolean).join(' · ') || '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-bold text-slate-900">
+                                {u.assignedCount != null ? `${Number(u.assignedCount).toLocaleString()}회` : '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-slate-700">
+                                {u.totalRevenue != null ? `${formatCurrency(u.totalRevenue)}원` : '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-semibold text-sky-700">
+                                {u.wearIndexPct != null ? `${u.wearIndexPct}%` : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

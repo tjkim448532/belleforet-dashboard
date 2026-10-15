@@ -88,6 +88,8 @@ export default function LeisureFacility() {
   const [channelData, setChannelData] = useState<{ summary: any; venues: any[] } | null>(null);
   const [channelLoading, setChannelLoading] = useState<boolean>(true);
   const [channelError, setChannelError] = useState<string | null>(null);
+  // [Ticket 34] 업장·권종별 정가 대비 할인 누수율 및 미사용 티켓 감사
+  const [discountLeakageIntel, setDiscountLeakageIntel] = useState<any>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -99,8 +101,16 @@ export default function LeisureFacility() {
         const queryParams = isRangeQuery
           ? `startDate=${startDate}&endDate=${endDate}`
           : `date=${startDate}`;
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-channel-sales?${queryParams}`);
+        const [res, discountRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/report/leisure-channel-sales?${queryParams}`),
+          secureFetcher(`${API_BASE}/api/v6/report/leisure-discount-leakage?${queryParams}`).catch(() => null)
+        ]);
         if (isCancelled) return;
+        if (discountRes && (discountRes.summary || discountRes.data)) {
+          setDiscountLeakageIntel(discountRes.data || discountRes);
+        } else {
+          setDiscountLeakageIntel(null);
+        }
         const summary = res?.summary || (res?.data && !Array.isArray(res.data) ? res.data.summary : null);
         const venues = res?.venues || res?.venueBreakdown || (res?.data && !Array.isArray(res.data) ? res.data.venues : null);
         if (summary && Array.isArray(venues)) {
@@ -501,6 +511,158 @@ export default function LeisureFacility() {
               </table>
             </div>
           </>
+        )}
+      </div>
+
+      {/* 3. [Ticket 34] 레저 티켓·POS 업장/권종별 정가 대비 할인 누수율(Price Realization Rate) 및 미사용 티켓 감사 */}
+      <div className="bg-white rounded-[28px] border border-slate-200 shadow-xs overflow-hidden mt-8">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-amber-50/40 via-white to-rose-50/30">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-600 text-white shadow-xs shrink-0 mt-0.5">
+              <Wallet size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  업장·권종별 정가 대비 할인 누수율(Price Realization Rate) 및 미사용 티켓 감사
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  V6 SSOT · Ticket 34
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                티켓(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">정상가격·할인금액·판매금액</code>) 및 POS(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">판매가·할인금액·판매금액</code>) 정가 실현율과 발권 후 미검표(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">티켓출력,티켓미사용</code>) 대기 물량을 정밀 감사합니다.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {discountLeakageIntel ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                정규 마트 연동 완료
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                <AlertCircle size={14} />
+                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/leisure-discount-leakage)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!discountLeakageIntel ? (
+          <div className="p-8 bg-slate-50/60">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                <AlertCircle size={20} />
+              </div>
+              <h4 className="text-sm font-extrabold text-slate-800">
+                [Zero-Fake / Fail-Stop] 레저·POS 할인 누수율 및 미사용 티켓 감사 정규 마트 API 연동 대기 중
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/leisure-discount-leakage</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">정상가 총액 (List Price)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">정상가격 × 판매수량 집계 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">총 할인 누수액 (Discount)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">티켓·POS 할인금액 합산 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">정가 실현율 (Realization)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">실매출 / 정상가 총액 비율 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">발권 후 미사용 티켓 잔액</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">티켓출력,티켓미사용 상태 집계 대기</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">정상가 총액 (List Price)</div>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {showWon(discountLeakageIntel.summary?.totalListAmount)}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  실매출액: {showWon(discountLeakageIntel.summary?.totalNetAmount)}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">총 할인 공제액 (Discount Leakage)</div>
+                <div className="text-xl font-black text-rose-600 mt-1">
+                  {showWon(discountLeakageIntel.summary?.totalDiscountAmount)}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  할인율: {showPct(discountLeakageIntel.summary?.discountRatePct)}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">정가 실현율 (Price Realization)</div>
+                <div className="text-xl font-black text-emerald-700 mt-1">
+                  {showPct(discountLeakageIntel.summary?.realizationRatePct)}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  정상가 대비 실수취 비율
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">티켓출력 · 미사용 잔여 금액</div>
+                <div className="text-xl font-black text-amber-700 mt-1">
+                  {showWon(discountLeakageIntel.summary?.unusedTicketAmount)}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  미사용 건수: {discountLeakageIntel.summary?.unusedTicketCount != null ? `${Number(discountLeakageIntel.summary.unusedTicketCount).toLocaleString()}건` : '-'}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-extrabold text-slate-800">업장 · 권종별 정가 대비 할인 누수 및 미사용 티켓 상세</span>
+                <span className="text-[11px] text-slate-500">단위: 건 / 원 / %</span>
+              </div>
+              <div className="overflow-x-auto max-h-[360px] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50/80 text-slate-500 sticky top-0 border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3 text-left font-bold">영업장명</th>
+                      <th className="py-2.5 px-3 text-left font-bold">권종 · 메뉴명</th>
+                      <th className="py-2.5 px-3 text-right font-bold">정상가 합계</th>
+                      <th className="py-2.5 px-3 text-right font-bold">할인 금액</th>
+                      <th className="py-2.5 px-3 text-right font-bold">실매출액</th>
+                      <th className="py-2.5 px-3 text-right font-bold">정가 실현율</th>
+                      <th className="py-2.5 px-3 text-right font-bold">미사용 건수</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(discountLeakageIntel.items || []).map((item: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/80">
+                        <td className="py-2.5 px-3 font-bold text-slate-800">{item.shopName ?? '-'}</td>
+                        <td className="py-2.5 px-3 text-slate-700">{item.menuName ?? '-'}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-600">{showWon(item.listAmount)}</td>
+                        <td className="py-2.5 px-3 text-right text-rose-600 font-semibold">{showWon(item.discountAmount)}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-slate-900">{showWon(item.netAmount)}</td>
+                        <td className="py-2.5 px-3 text-right font-semibold text-emerald-700">{showPct(item.realizationRatePct)}</td>
+                        <td className="py-2.5 px-3 text-right text-amber-700">
+                          {item.unusedCount != null ? `${Number(item.unusedCount).toLocaleString()}건` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -17,6 +17,7 @@ const formatCurrency = (val: any) => {
 export default function OnlineMembers() {
   const { startDate, endDate, isRange } = useDate();
   const [data, setData] = useState<any>(null);
+  const [dormancyIntel, setDormancyIntel] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [monthlyViewMode, setMonthlyViewMode] = useState<'table' | 'chart'>('table');
 
@@ -29,12 +30,21 @@ export default function OnlineMembers() {
         ? `startDate=${startDate}&endDate=${endDate}`
         : `date=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/online-members?${queryParams}`).catch(() => null);
+      const [res, dormancyRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/online-members?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/online-member-dormancy?${queryParams}`).catch(() => null)
+      ]);
       const payload = res?.data ?? res;
       setData(payload);
+      if (dormancyRes && (dormancyRes.summary || dormancyRes.data)) {
+        setDormancyIntel(dormancyRes.data || dormancyRes);
+      } else {
+        setDormancyIntel(null);
+      }
     } catch (err) {
       console.error('Online Members Fetch Error:', err);
       setData(null);
+      setDormancyIntel(null);
     } finally {
       setLoading(false);
     }
@@ -817,6 +827,160 @@ export default function OnlineMembers() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* [Ticket 35] 온라인 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back 타겟) 리텐션 분석 */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden mb-8">
+            <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-violet-50/40 via-white to-cyan-50/30">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-violet-600 text-white shadow-xs shrink-0 mt-0.5">
+                  <Activity size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg font-extrabold text-slate-900">
+                      온라인 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 분석
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-100 text-violet-800 border border-violet-200">
+                      V6 SSOT · Ticket 35
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    통합 온라인 회원 마스터(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">dim_online_members_v6</code>)의 누적 활동 횟수 등급(단발 · 재방문 · 단골 · 충성고객)과 최종 방문일(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">last_activity_date</code>) 기준 6개월 이상 미방문 휴면 전환 단골을 핀셋 추출합니다.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {dormancyIntel ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    정규 마트 연동 완료
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/online-member-dormancy)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!dormancyIntel ? (
+              <div className="p-8 bg-slate-50/60">
+                <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+                  <h4 className="text-sm font-extrabold text-slate-800">
+                    [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 정규 마트 API 연동 대기 중
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">단골 등급 회원 (4~9회)</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">6개월 미방문 휴면 비율 집계 대기</div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">충성 등급 회원 (10회+)</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">최상위 VIP 이탈 감지 대기</div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">핀셋 Win-back 타겟 모수</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">4회 이상 방문 후 6개월 휴면 단골</div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="text-[11px] font-bold text-slate-400">복합 채널(2+) 이용 VIP</div>
+                      <div className="text-base font-black text-slate-400 mt-1">-</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">객실·골프·티켓 교차 회원 집계 대기</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">전체 온라인 통합 회원</div>
+                    <div className="text-xl font-black text-slate-900 mt-1">
+                      {dormancyIntel.summary?.totalMembers != null ? `${Number(dormancyIntel.summary.totalMembers).toLocaleString()}명` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      최근 6개월 활성: {dormancyIntel.summary?.activeWithin6m != null ? `${Number(dormancyIntel.summary.activeWithin6m).toLocaleString()}명` : '-'}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">단골 회원 (4~9회 방문) 휴면율</div>
+                    <div className="text-xl font-black text-rose-600 mt-1">
+                      {dormancyIntel.summary?.regularDormantRatePct != null ? `${dormancyIntel.summary.regularDormantRatePct}%` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      휴면 단골: {dormancyIntel.summary?.regularDormantCount != null ? `${Number(dormancyIntel.summary.regularDormantCount).toLocaleString()}명` : '-'}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="text-xs font-bold text-slate-500">충성 고객 (10회+ 방문) 휴면율</div>
+                    <div className="text-xl font-black text-amber-600 mt-1">
+                      {dormancyIntel.summary?.loyalDormantRatePct != null ? `${dormancyIntel.summary.loyalDormantRatePct}%` : '-'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      휴면 충성고객: {dormancyIntel.summary?.loyalDormantCount != null ? `${Number(dormancyIntel.summary.loyalDormantCount).toLocaleString()}명` : '-'}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-violet-50/70 border border-violet-200">
+                    <div className="text-xs font-bold text-violet-700">핵심 단골 Win-back 핀셋 타겟</div>
+                    <div className="text-xl font-black text-violet-900 mt-1">
+                      {dormancyIntel.summary?.winbackTargetCount != null ? `${Number(dormancyIntel.summary.winbackTargetCount).toLocaleString()}명` : '-'}
+                    </div>
+                    <div className="text-[11px] text-violet-600 mt-1">
+                      4회 이상 방문 이력 보유 · 6개월 미방문
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-slate-800">이용 횟수 등급별 회원 분포 및 6개월 미방문 휴면 전환율</span>
+                    <span className="text-[11px] text-slate-500">dim_online_members_v6 기준</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200">
+                        <tr>
+                          <th className="py-2.5 px-4 text-left font-bold">이용 횟수 등급</th>
+                          <th className="py-2.5 px-4 text-right font-bold">전체 회원수</th>
+                          <th className="py-2.5 px-4 text-right font-bold">평균 이용횟수</th>
+                          <th className="py-2.5 px-4 text-right font-bold">최근 6개월 활성</th>
+                          <th className="py-2.5 px-4 text-right font-bold">6개월+ 미방문 휴면</th>
+                          <th className="py-2.5 px-4 text-right font-bold">휴면 전환율</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(dormancyIntel.tiers || []).map((tier: any, idx: number) => (
+                          <tr key={tier.tierName || idx} className="hover:bg-slate-50/80">
+                            <td className="py-3 px-4 font-bold text-slate-800">{tier.tierName ?? '-'}</td>
+                            <td className="py-3 px-4 text-right font-semibold text-slate-900">
+                              {tier.memberCount != null ? `${Number(tier.memberCount).toLocaleString()}명` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right text-slate-600">
+                              {tier.avgActivities != null ? `${tier.avgActivities}회` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right text-emerald-700 font-semibold">
+                              {tier.active6mCount != null ? `${Number(tier.active6mCount).toLocaleString()}명` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right text-rose-600 font-bold">
+                              {tier.dormant6mCount != null ? `${Number(tier.dormant6mCount).toLocaleString()}명` : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right font-black text-rose-600">
+                              {tier.dormantRatePct != null ? `${tier.dormantRatePct}%` : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

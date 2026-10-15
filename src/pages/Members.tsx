@@ -55,6 +55,8 @@ export default function Members() {
   } | null>(null);
   const [memberLedgerSearch, setMemberLedgerSearch] = useState<string>('');
   const [memberLedgerFilter, setMemberLedgerFilter] = useState<string>('ALL');
+  // 6. [Ticket 35] 온라인 단골 회원 이용횟수 등급 및 6개월 미방문 휴면(Win-back) 분석
+  const [onlineDormancyIntel, setOnlineDormancyIntel] = useState<any>(null);
 
   const fetchAllMemberIntelligence = async () => {
     setLoading(true);
@@ -65,14 +67,15 @@ export default function Members() {
       const lyEnd = shiftYearStr(effectiveEnd, -1);
       const lyQueryParams = `startDate=${lyStart}&endDate=${lyEnd}`;
 
-      const [rateRes, lyRateRes, golfIntelRes, golfV2Res, corpRes, onlineRes, quotaLtvRes] = await Promise.all([
+      const [rateRes, lyRateRes, golfIntelRes, golfV2Res, corpRes, onlineRes, quotaLtvRes, dormancyRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/online-members?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/member-quota-ltv?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/member-quota-ltv?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/online-member-dormancy?${queryParams}`).catch(() => null)
       ]);
 
       const parsedRates = rateRes?.data ?? rateRes;
@@ -96,6 +99,12 @@ export default function Members() {
 
       const parsedOnline = onlineRes?.data ?? onlineRes;
       setOnlineData(parsedOnline || null);
+
+      if (dormancyRes && (dormancyRes.summary || dormancyRes.data)) {
+        setOnlineDormancyIntel(dormancyRes.data || dormancyRes);
+      } else {
+        setOnlineDormancyIntel(null);
+      }
 
       const parsedQuotaLtv = quotaLtvRes?.data ?? quotaLtvRes;
       if (parsedQuotaLtv && (parsedQuotaLtv.accountQuotaSummary || parsedQuotaLtv.accountQuotaOverview)) {
@@ -1527,6 +1536,118 @@ export default function Members() {
         ) : (
           <div className="py-12 text-center text-slate-400 text-xs">
             분양회원 구좌별 소진율 및 통합 LTV 데이터를 불러오는 중입니다...
+          </div>
+        )}
+      </div>
+
+      {/* [Ticket 35] 디지털 온라인 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 분석 */}
+      <div className="bg-white rounded-[32px] border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-violet-50/50 via-white to-cyan-50/30">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-violet-600 text-white shadow-xs shrink-0 mt-0.5">
+              <Smartphone size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-100 text-violet-800 border border-violet-200">
+                  V6 SSOT · Ticket 35
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                디지털 온라인 회원(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">dim_online_members_v6</code>)의 누적 방문 횟수 등급(1회 단발 · 2~3회 재방문 · 4~9회 단골 · 10회+ 충성고객)과 최근 6개월 이상 미방문 휴면 단골(Win-back 핀셋 타겟)을 추적합니다.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {onlineDormancyIntel ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle2 size={14} />
+                정규 마트 연동 완료
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/online-member-dormancy)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!onlineDormancyIntel ? (
+          <div className="p-8 bg-slate-50/60">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+              <h4 className="text-sm font-extrabold text-slate-800">
+                [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 정규 마트 API 연동 대기 중
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">단골 회원 (4~9회 방문)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">6개월 미방문 휴면 비율 집계 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">충성 고객 (10회+ 방문)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">최상위 VIP 이탈 감지 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">핀셋 Win-back 타겟 모수</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">4회+ 방문 후 6개월 미방문 단골</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">최근 6개월 활성 유지율</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">등급별 리텐션 코호트 집계 대기</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">전체 온라인 통합 회원</div>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {onlineDormancyIntel.summary?.totalMembers != null ? `${formatNum(onlineDormancyIntel.summary.totalMembers)}명` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  최근 6개월 활성: {onlineDormancyIntel.summary?.activeWithin6m != null ? `${formatNum(onlineDormancyIntel.summary.activeWithin6m)}명` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">단골 회원 (4~9회 방문) 휴면율</div>
+                <div className="text-xl font-black text-rose-600 mt-1">
+                  {onlineDormancyIntel.summary?.regularDormantRatePct != null ? `${onlineDormancyIntel.summary.regularDormantRatePct}%` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  휴면 단골: {onlineDormancyIntel.summary?.regularDormantCount != null ? `${formatNum(onlineDormancyIntel.summary.regularDormantCount)}명` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">충성 고객 (10회+ 방문) 휴면율</div>
+                <div className="text-xl font-black text-amber-600 mt-1">
+                  {onlineDormancyIntel.summary?.loyalDormantRatePct != null ? `${onlineDormancyIntel.summary.loyalDormantRatePct}%` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  휴면 충성고객: {onlineDormancyIntel.summary?.loyalDormantCount != null ? `${formatNum(onlineDormancyIntel.summary.loyalDormantCount)}명` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-violet-50/70 border border-violet-200">
+                <div className="text-xs font-bold text-violet-700">핵심 단골 Win-back 핀셋 타겟</div>
+                <div className="text-xl font-black text-violet-900 mt-1">
+                  {onlineDormancyIntel.summary?.winbackTargetCount != null ? `${formatNum(onlineDormancyIntel.summary.winbackTargetCount)}명` : '-'}
+                </div>
+                <div className="text-[11px] text-violet-600 mt-1">
+                  4회 이상 방문 이력 보유 · 6개월 미방문
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

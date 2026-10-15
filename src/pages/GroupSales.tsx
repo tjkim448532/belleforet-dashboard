@@ -226,6 +226,9 @@ export default function GroupSales() {
   const [selectedVenueFilter, setSelectedVenueFilter] = useState<string>('ALL');
   const [venueSearchKeyword, setVenueSearchKeyword] = useState<string>('');
 
+  // 🏆 [Ticket 31] 판촉 영업담당자(영업직원명)별 B2B·연회 수주 순기여도 및 세미나홀 가동 데이터
+  const [salesRepIntel, setSalesRepIntel] = useState<any>(null);
+
   const toggleGroupExpand = (name: string) => {
     setExpandedGroupNames(prev => {
       const next = new Set(prev);
@@ -264,11 +267,13 @@ export default function GroupSales() {
 
       // 1. 판매방식 × 평형별 세그먼트 교차 데이터 (SSOT API)
       // 2. 단체영업(세미나) 실제 예약 단체 명부 및 복수 방문 내역 (SSOT API)
-      // 3. [NEW] 세일즈본부 연회/세미나실 장소별(Venue) 판매 분석 및 단체 명부 (SSOT API)
-      const [channelRes, corporateRes, venueRes] = await Promise.all([
+      // 3. 세일즈본부 연회/세미나실 장소별(Venue) 판매 분석 및 단체 명부 (SSOT API)
+      // 4. [Ticket 31] 판촉 영업담당자별 객실·연회 수주 순기여도 및 세미나홀 가동 효율 (SSOT API)
+      const [channelRes, corporateRes, venueRes, repIntelRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/sales-venue-performance?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/sales-venue-performance?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/sales-rep-banquet-intelligence?${queryParams}`).catch(() => null)
       ]);
 
       if (channelRes?.data && Array.isArray(channelRes.data)) {
@@ -307,6 +312,18 @@ export default function GroupSales() {
       } else {
         setVenuePerformanceData(null);
       }
+
+      // [Ticket 31] 판촉 담당자 수주 및 세미나홀 가동률 데이터 연동
+      const parsedRepIntel = repIntelRes?.data && !Array.isArray(repIntelRes.data) ? repIntelRes.data : repIntelRes;
+      if (parsedRepIntel && (parsedRepIntel.summary || parsedRepIntel.salesReps || parsedRepIntel.salesRepPerformance)) {
+        setSalesRepIntel({
+          summary: parsedRepIntel.summary || {},
+          salesReps: Array.isArray(parsedRepIntel.salesReps) ? parsedRepIntel.salesReps : (Array.isArray(parsedRepIntel.salesRepPerformance) ? parsedRepIntel.salesRepPerformance : []),
+          banquetHalls: Array.isArray(parsedRepIntel.banquetHalls) ? parsedRepIntel.banquetHalls : (Array.isArray(parsedRepIntel.banquetHallUtilization) ? parsedRepIntel.banquetHallUtilization : [])
+        });
+      } else {
+        setSalesRepIntel(null);
+      }
     } catch (err) {
       console.error('Channel Room / Corporate Group Sales / Venue Fetch Error:', err);
       setChannelRawData([]);
@@ -314,6 +331,7 @@ export default function GroupSales() {
       setRawGroupData([]);
       setCorporateSummary(null);
       setVenuePerformanceData(null);
+      setSalesRepIntel(null);
     } finally {
       setLoading(false);
       setVenueLoading(false);
@@ -2598,6 +2616,217 @@ export default function GroupSales() {
                 <span>명부 접기</span>
                 <ChevronUp size={14} />
               </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 5.5. [Ticket 31] 판촉 영업담당자별 B2B·연회 수주 순기여도(Net Contribution) 및 세미나홀 가동 효율 분석 */}
+      <div className="bg-white rounded-[24px] border border-slate-200 shadow-xs overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-indigo-50/40 via-white to-emerald-50/30">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-xs shrink-0 mt-0.5">
+              <Briefcase size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  판촉 영업담당자별 B2B 수주 순기여도(Net Contribution) 및 연회장 가동 효율
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                  V6 SSOT · Ticket 31
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                객실·연회 원천 예약의 <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">영업직원명</code> 실명 귀속 실적(유치 건수, 평균 ADR, 연회 결합 매출, 사전 취소율)과 세미나홀·아트홀별 예상➔보장➔확정 인원 이행률 및 시간당 공간 수익성(RevPASH)을 추적합니다.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {salesRepIntel ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle2 size={14} />
+                정규 마트 연동 완료
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                <AlertCircle size={14} />
+                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/sales-rep-banquet-intelligence)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!salesRepIntel ? (
+          <div className="p-8 bg-slate-50/60">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                <AlertCircle size={20} />
+              </div>
+              <h4 className="text-sm font-extrabold text-slate-800">
+                [Zero-Fake / Fail-Stop] 판촉 영업담당자 순기여도 및 세미나홀 RevPASH 정규 마트 API 연동 대기 중
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/sales-rep-banquet-intelligence</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">판촉 담당자 총 유치 객실</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">영업직원명 귀속 예약 집계 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">판촉 담당자 귀속 연회 행사</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">연회 예약 담당자 매핑 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">보장 대비 확정 인원 이행률</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">예상➔보장➔확정 인원 검증 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">세미나홀 공간 수익(RevPASH)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">세미나 A~E홀·아트홀 집계 대기</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            {/* 상단 요약 KPI */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">판촉 담당자 귀속 객실 예약</div>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {salesRepIntel.summary?.totalRepRoomBookings != null
+                    ? `${Number(salesRepIntel.summary.totalRepRoomBookings).toLocaleString()}건`
+                    : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  활동 담당자: {salesRepIntel.summary?.activeSalesReps != null ? `${salesRepIntel.summary.activeSalesReps}명` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">판촉 담당자 귀속 연회 수주</div>
+                <div className="text-xl font-black text-indigo-700 mt-1">
+                  {salesRepIntel.summary?.totalRepBanquetEvents != null
+                    ? `${Number(salesRepIntel.summary.totalRepBanquetEvents).toLocaleString()}건`
+                    : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  수주 총액: {salesRepIntel.summary?.totalRepRevenue != null ? formatRevenue(salesRepIntel.summary.totalRepRevenue) : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">연회 보장인원 이행률 (보장/예상)</div>
+                <div className="text-xl font-black text-emerald-700 mt-1">
+                  {salesRepIntel.summary?.guaranteeFulfillmentRate != null
+                    ? `${salesRepIntel.summary.guaranteeFulfillmentRate}%`
+                    : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  예상 {salesRepIntel.summary?.totalExpectedGuests != null ? `${Number(salesRepIntel.summary.totalExpectedGuests).toLocaleString()}명` : '-'} / 보장 {salesRepIntel.summary?.totalGuaranteedGuests != null ? `${Number(salesRepIntel.summary.totalGuaranteedGuests).toLocaleString()}명` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">B2B 단체 사전 취소율</div>
+                <div className="text-xl font-black text-rose-600 mt-1">
+                  {salesRepIntel.summary?.repCancelRate != null
+                    ? `${salesRepIntel.summary.repCancelRate}%`
+                    : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  취소 건수: {salesRepIntel.summary?.cancelledCount != null ? `${Number(salesRepIntel.summary.cancelledCount).toLocaleString()}건` : '-'}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 좌측: 영업담당자 리더보드 */}
+              <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-800">판촉 영업담당자별 B2B 수주 리더보드 (Net Contribution)</span>
+                  <span className="text-[11px] text-slate-500">단위: 건 / 원</span>
+                </div>
+                <div className="overflow-x-auto max-h-[360px] overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50/80 text-slate-500 sticky top-0 border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 text-left font-bold">영업담당자</th>
+                        <th className="py-2.5 px-3 text-right font-bold">객실 유치</th>
+                        <th className="py-2.5 px-3 text-right font-bold">연회 수주</th>
+                        <th className="py-2.5 px-3 text-right font-bold">평균 ADR</th>
+                        <th className="py-2.5 px-3 text-right font-bold">총 결합매출</th>
+                        <th className="py-2.5 px-3 text-right font-bold">취소율</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(salesRepIntel.salesReps || []).map((rep: any, idx: number) => (
+                        <tr key={rep.salesRepName || idx} className="hover:bg-slate-50/80">
+                          <td className="py-2.5 px-3 font-bold text-slate-800">{rep.salesRepName ?? '-'}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-700">
+                            {rep.roomBookingCount != null ? `${Number(rep.roomBookingCount).toLocaleString()}건` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-indigo-700 font-semibold">
+                            {rep.banquetEventCount != null ? `${Number(rep.banquetEventCount).toLocaleString()}건` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-700">
+                            {rep.avgRoomAdr != null ? formatRevenue(rep.avgRoomAdr) : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">
+                            {rep.totalNetRevenue != null ? formatRevenue(rep.totalNetRevenue) : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-rose-600 font-semibold">
+                            {rep.cancelRate != null ? `${rep.cancelRate}%` : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 우측: 연회장(세미나홀/아트홀) 가동 효율 및 인원 이행률 */}
+              <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-800">연회장(세미나홀·아트홀)별 가동 건수 및 인원 이행 분석</span>
+                  <span className="text-[11px] text-slate-500">예상 ➔ 보장 ➔ 확정</span>
+                </div>
+                <div className="overflow-x-auto max-h-[360px] overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50/80 text-slate-500 sticky top-0 border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 text-left font-bold">연회장명</th>
+                        <th className="py-2.5 px-3 text-right font-bold">대관 건수</th>
+                        <th className="py-2.5 px-3 text-right font-bold">예상 인원</th>
+                        <th className="py-2.5 px-3 text-right font-bold">보장 인원</th>
+                        <th className="py-2.5 px-3 text-right font-bold">대관·식음 매출</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(salesRepIntel.banquetHalls || []).map((hall: any, idx: number) => (
+                        <tr key={hall.hallName || idx} className="hover:bg-slate-50/80">
+                          <td className="py-2.5 px-3 font-bold text-slate-800">{hall.hallName ?? '-'}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-700">
+                            {hall.eventCount != null ? `${Number(hall.eventCount).toLocaleString()}건` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-600">
+                            {hall.expectedGuests != null ? `${Number(hall.expectedGuests).toLocaleString()}명` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-emerald-700 font-semibold">
+                            {hall.guaranteedGuests != null ? `${Number(hall.guaranteedGuests).toLocaleString()}명` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">
+                            {hall.hallRevenue != null ? formatRevenue(hall.hallRevenue) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         )}

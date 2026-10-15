@@ -129,6 +129,7 @@ export default function GolfChannelIntelligence() {
   const [channelSortBy, setChannelSortBy] = useState<'AVG_GREEN_FEE' | 'PLAYERS'>('AVG_GREEN_FEE');
   const [tableSortKey, setTableSortKey] = useState<'avgGreenFee' | 'revenue' | 'players' | 'teams'>('avgGreenFee');
   const [tableSortDesc, setTableSortDesc] = useState<boolean>(true);
+  const [visitorBehaviorIntel, setVisitorBehaviorIntel] = useState<any>(null);
 
   const fetchIntelligenceData = async () => {
     setLoading(true);
@@ -150,12 +151,19 @@ export default function GolfChannelIntelligence() {
       }
       queryParams.append('_t', String(Date.now()));
 
-      // Parallel fetch: 1) Golf channel intelligence SSOT, 2) Facility monthly trend (그린피)
+      // Parallel fetch: 1) Golf channel intelligence SSOT, 2) Facility monthly trend (그린피), 3) Ticket 33 Visitor Behavior CRM
       const queryDateStr = endDate || startDate || latestClosed;
-      const [res, trendRes] = await Promise.all([
+      const [res, trendRes, behaviorRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${queryDateStr}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/report/facility-monthly-trend?facility=${encodeURIComponent('그린피')}&endDate=${queryDateStr}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/golf-visitor-behavior-crm?${queryParams}`).catch(() => null)
       ]);
+
+      if (behaviorRes && (behaviorRes.summary || behaviorRes.data)) {
+        setVisitorBehaviorIntel(behaviorRes.data || behaviorRes);
+      } else {
+        setVisitorBehaviorIntel(null);
+      }
 
       // Process Monthly YoY from real DB facility-monthly-trend
       const monthlyList = Array.isArray(trendRes?.data?.monthlyData) ? trendRes.data.monthlyData : [];
@@ -1595,6 +1603,190 @@ export default function GolfChannelIntelligence() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Section 7: [Ticket 33] 골프 내장객 성비 · 회원권 위임 내장 CRM · 코스별 취소율 · 라운딩 체류시간 분석 */}
+      <div className="bg-white rounded-[24px] border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30">
+          <div className="flex items-start gap-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  골프 내장객 성비 · 회원권 위임 내장 CRM · 코스별 취소율 및 라운딩 체류시간 분석
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  V6 SSOT · Ticket 33
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                골프 내장객 <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">성별</code>(남성/여성 시간대별 피크 분포), 분양회원 <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">위임여부</code>·<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">위임고객명</code> 전환 타겟, <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">MOUNTAIN / LAKE</code> 코스별 사전 취소율 및 <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">체크인➔티업➔체크아웃</code> 체류시간을 통합 분석합니다.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {visitorBehaviorIntel ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                정규 마트 연동 완료
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/golf-visitor-behavior-crm)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!visitorBehaviorIntel ? (
+          <div className="p-8 bg-slate-50/60">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+              <h4 className="text-sm font-extrabold text-slate-800">
+                [Zero-Fake / Fail-Stop] 골프 내장객 성비 · 회원 위임 내장 CRM · 체류시간 정규 마트 API 연동 대기 중
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/golf-visitor-behavior-crm</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">내장객 남성 / 여성 성비</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">시간대별 여성 골퍼 피크 분석 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">회원권 타인 위임 내장</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">위임여부 Y · 위임고객명 CRM 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">코스별(M/L) 사전 취소율</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">MOUNTAIN / LAKE 취소 비교 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">평균 클럽하우스 체류시간</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">체크인➔티업➔체크아웃 집계 대기</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">여성 골퍼 내장 비중</div>
+                <div className="text-xl font-black text-emerald-700 mt-1">
+                  {visitorBehaviorIntel.summary?.femaleSharePct != null ? `${visitorBehaviorIntel.summary.femaleSharePct}%` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  남성 {visitorBehaviorIntel.summary?.malePlayers != null ? `${Number(visitorBehaviorIntel.summary.malePlayers).toLocaleString()}명` : '-'} / 여성 {visitorBehaviorIntel.summary?.femalePlayers != null ? `${Number(visitorBehaviorIntel.summary.femalePlayers).toLocaleString()}명` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">회원권 타인 위임 내장 비중</div>
+                <div className="text-xl font-black text-indigo-700 mt-1">
+                  {visitorBehaviorIntel.summary?.delegatedRatioPct != null ? `${visitorBehaviorIntel.summary.delegatedRatioPct}%` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  위임 내장: {visitorBehaviorIntel.summary?.delegatedBookings != null ? `${Number(visitorBehaviorIntel.summary.delegatedBookings).toLocaleString()}건` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">사전 예약 취소율 (전체)</div>
+                <div className="text-xl font-black text-rose-600 mt-1">
+                  {visitorBehaviorIntel.summary?.cancelRatePct != null ? `${visitorBehaviorIntel.summary.cancelRatePct}%` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  취소 건수: {visitorBehaviorIntel.summary?.cancelledBookings != null ? `${Number(visitorBehaviorIntel.summary.cancelledBookings).toLocaleString()}건` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">평균 총 체류시간 (체크인~아웃)</div>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {visitorBehaviorIntel.summary?.avgTotalStayMinutes != null ? `${visitorBehaviorIntel.summary.avgTotalStayMinutes}분` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  티업 전 대기 평균: {visitorBehaviorIntel.summary?.avgPreTeeMinutes != null ? `${visitorBehaviorIntel.summary.avgPreTeeMinutes}분` : '-'}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 좌측: 코스별 예약·취소·위임 현황 */}
+              <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-800">코스별(MOUNTAIN / LAKE) 예약 · 취소 · 위임 내장 비교</span>
+                  <span className="text-[11px] text-slate-500">원천 예약 마트 기준</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 text-left font-bold">코스 구분</th>
+                        <th className="py-2.5 px-3 text-right font-bold">총 예약</th>
+                        <th className="py-2.5 px-3 text-right font-bold">위임 내장</th>
+                        <th className="py-2.5 px-3 text-right font-bold">취소 건수</th>
+                        <th className="py-2.5 px-3 text-right font-bold">취소율</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(visitorBehaviorIntel.courseBreakdown || []).map((c: any, idx: number) => (
+                        <tr key={c.courseCode || idx} className="hover:bg-slate-50/80">
+                          <td className="py-2.5 px-3 font-bold text-slate-800">{c.courseName || c.courseCode || '-'}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-700">
+                            {c.totalBookings != null ? `${Number(c.totalBookings).toLocaleString()}건` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-indigo-700 font-semibold">
+                            {c.delegatedCount != null ? `${Number(c.delegatedCount).toLocaleString()}건` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-rose-600">
+                            {c.cancelledCount != null ? `${Number(c.cancelledCount).toLocaleString()}건` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-rose-600">
+                            {c.cancelRatePct != null ? `${c.cancelRatePct}%` : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 우측: 회원권 다빈도 위임 내장 VIP 타겟 */}
+              <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-800">회원권 다빈도 위임 내장 고객 (신규 회원권/온라인 가입 타겟)</span>
+                  <span className="text-[11px] text-slate-500">위임여부 Y 기준</span>
+                </div>
+                <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50/80 text-slate-500 sticky top-0 border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 text-left font-bold">위임고객명</th>
+                        <th className="py-2.5 px-3 text-left font-bold">원회원(위임자)</th>
+                        <th className="py-2.5 px-3 text-right font-bold">위임 라운딩</th>
+                        <th className="py-2.5 px-3 text-right font-bold">동반 총인원</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(visitorBehaviorIntel.topDelegatedGuests || []).map((g: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/80">
+                          <td className="py-2.5 px-3 font-bold text-slate-800">{g.delegatedGuestName ?? '-'}</td>
+                          <td className="py-2.5 px-3 text-slate-600">{g.memberOwnerName ?? '-'}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-indigo-700">
+                            {g.visitCount != null ? `${Number(g.visitCount).toLocaleString()}회` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-700">
+                            {g.totalPlayers != null ? `${Number(g.totalPlayers).toLocaleString()}명` : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

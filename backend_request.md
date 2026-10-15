@@ -29,7 +29,13 @@
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 27] `room-channel-sales` API 내 PMS 원천 코드 'ROOM' ➔ '미지정' 정규화** | 산하 PMS 미배정 원천 코드('ROOM')가 한글 평형 대신 영문 코드로 직접 노출되는 결함 해결 (`room-channel-sales`) |
 | **P1 (신규)** | 정규 API | **[Ticket 28] 분양회원 구좌별 연간 잔여박수 소진율 및 개인별 통합 LTV 원장 API 신설** | 통합 회원관리 대시보드 고도화를 위한 분양구좌 마스터 소진율, 평형별 회원 이용 내역, 개인별 크로스 소비 LTV 원장 제공 요청 (`membership-ledger-intelligence`) |
 | **P0 (긴급)** | 배포/정합성 | **[Ticket 29] `moto-channel-sales` 프로덕션 미배포(404) 및 OTA 분류 LIKE 휴리스틱 제거** | 레저 영업장 현황 OTA 비중 섹션 연동 완료, API 404로 Fail-Stop 표출 중. OTA/HOMEPAGE 분류를 상품명 LIKE 추론 대신 사전 HITL 승인 기준으로 전환 요청 |
-| **P0 (긴급)** | 정규 API | **[Ticket 30] 레저본부 전체 영업장별 판매채널(자사·OTA·POS·PMS) 매출/비중 완제품 API 배포** | 모토아레나 단독이 아닌 놀이동산, 카트, 목장, 썰매장 등 전체 영업장의 채널별 매출 및 비중 완제품 제공 (`leisure-channel-sales`) |
+| **P0 (완료)** | 정규 API | **[Ticket 30] 레저본부 전체 영업장별 판매채널(자사·OTA·POS·PMS) 매출/비중 완제품 API 배포** | [배포/검증완료] 모토아레나 포함 전체 레저 영업장의 채널별 매출 및 비중 완제품 제공 (`leisure-channel-sales`) |
+| **P1 (신규)** | 정규 API | **[Ticket 31] 판촉 영업담당자(`영업직원명`)별 B2B·연회 수주 순기여도 및 세미나홀 가동 효율 API** | 객실(23,616건)·연회(1,252건) 실명 영업직원 순기여도(Net Contribution) 리더보드 및 세미나 A~E홀·아트홀 인원 이행률·RevPASH 마트 신설 (`sales-rep-banquet-intelligence`) |
+| **P1 (신규)** | 정규 API | **[Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 배정 편차 감사 API** | 리드타임(평균 45.5일) 구간별 취소(38,239건, 24.5%)·대기(2,966건) 전환 및 175개 호실(동·층·베드타입·커넥팅룸) 배정 편차 마트 신설 (`room-leadtime-unit-wear`, 성인/아이수 제외) |
+| **P1 (신규)** | 정규 API | **[Ticket 33] 골프 내장객 성비 · 회원권 타인 위임 내장 CRM · 코스별 취소율 · 라운딩 체류시간 API** | 내장객 성별(남 68.3% / 여 31.4%), 회원권 위임 내장(18,142건, 20.1%) VIP 타겟, 코스별 취소율(20.7%) 및 체크인➔티업➔체크아웃 체류시간 마트 신설 (`golf-visitor-behavior-crm`) |
+| **P1 (신규)** | 정규 API | **[Ticket 34] 레저 티켓·POS 업장/권종별 정가 대비 할인 누수율(Price Realization) 및 미사용 티켓 감사 API** | 티켓(할인 3,758만원)·POS(할인 3,810만원) 정가 실현율 및 `티켓출력,티켓미사용`(3,984건 / 9,903만원) 감사 마트 신설 (`leisure-discount-leakage`) |
+| **P1 (신규)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | `dim_online_members_v6`(26,221명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 신설 (`online-member-dormancy`) |
+| **P1 (신규)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | `fact_customer_journeys`(258,287건) 체류시간 구간별(단발 0분 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 객단가 점프 및 동선 결합 마트 신설 (`customer-stay-duration-synergy`) |
 
 
 ---
@@ -2366,4 +2372,385 @@ const reverseSpillover = totalRoomSales > 0
   1. 각 영업장 행의 `posRevenue + homepageRevenue + otaRevenue + pmsRevenue = totalRevenue` (오차 0원).
   2. `summary`의 4대 채널 합계가 `totalRevenue`와 1원 단위까지 100% 일치.
   3. 소수점은 퍼센트(`SharePct`)에만 1자리(`.toFixed(1)`) 허용, 매출액은 순수 정수(Integer)로 반환.
+
+---
+
+## 31. 💼 [P1 신규] 판촉 영업담당자(`영업직원명`)별 B2B·연회 수주 순기여도(Net Contribution) 및 세미나홀 가동 효율 API (`[Ticket 31]`)
+
+### 31-1. 배경 및 DB 실측 자산 (Verified MariaDB Stdout)
+* **연동 프론트엔드 화면**: `/group-sales` (`src/pages/GroupSales.tsx` — 세일즈본부 단체영업 대시보드 5.5 섹션)
+* **발굴된 미활용 DB 컬럼 실측 현황**:
+  1. `raw_객실_예약_v6.영업직원명`: 전체 156,016건 중 판촉 영업직원 실명 귀속 예약 **23,616건** (활동 담당자 7명: 박혁 6,036건, 김환길 5,417건, 임태환 4,847건, 장창명 2,270건, 조현진 1,841건, 박중훈 1,689건, 신다용 1,516건).
+  2. `raw_연회_예약_v6`: 전체 1,259건 중 영업직원 귀속 수주 **1,252건** (김환길 319건, 임태환 248건, 박혁 228건, 장창명 187건, 신다용 152건 등), 취소 6건, `예상인원` 합계 **126,955명**, `보장인원` 합계 **107,087명**.
+  3. `raw_연회_상세_v6` (`행사장명`, `예상인원`, `보장인원`, `확정인원`, `대관료`, `음식매출`, `기타매출`, `시작시간`, `종료시간`): 세미나 C홀(280건), 세미나 D홀(243건), 아트홀(66건), 세미나 A/B/E홀 등 공간별 가동 및 수익 데이터 보유.
+
+### 31-2. 백엔드 V6 5대 철칙 준수 및 구현 요구사항
+* **엔드포인트**: `GET /api/v6/report/sales-rep-banquet-intelligence?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **아키텍처 통제 기준 (Zero Shift-Right & Zero-Proxy)**:
+  1. API 라우트에서 `raw_객실_예약_v6`나 `raw_연회_예약_v6`를 직접 풀스캔하지 않고, 공식 ETL 프로시저(`sp_etl_v6_mat_sales_rep_banquet`)를 통해 정규 골드 마트(`mat_v6_sales_rep_contribution`, `mat_v6_banquet_hall_efficiency`)에 사전 집계합니다.
+  2. 모든 비율(`guaranteeFulfillmentRate`, `cancelRate`) 및 합계는 DB 레벨에서 연산 완료된 순수 정수/소수점 1자리 완제품으로 반환합니다.
+
+### 31-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "totalRepRoomBookings": 23616,
+    "activeSalesReps": 7,
+    "totalRepBanquetEvents": 1252,
+    "totalRepRevenue": 4850000000,
+    "totalExpectedGuests": 126955,
+    "totalGuaranteedGuests": 107087,
+    "guaranteeFulfillmentRate": 84.3,
+    "cancelledCount": 6,
+    "repCancelRate": 0.5
+  },
+  "salesReps": [
+    {
+      "salesRepName": "박혁",
+      "roomBookingCount": 6036,
+      "banquetEventCount": 228,
+      "avgRoomAdr": 112000,
+      "totalNetRevenue": 1420000000,
+      "cancelRate": 8.4
+    },
+    {
+      "salesRepName": "김환길",
+      "roomBookingCount": 5417,
+      "banquetEventCount": 319,
+      "avgRoomAdr": 118500,
+      "totalNetRevenue": 1395000000,
+      "cancelRate": 7.9
+    }
+  ],
+  "banquetHalls": [
+    {
+      "hallName": "세미나 C홀",
+      "eventCount": 280,
+      "expectedGuests": 28400,
+      "guaranteedGuests": 24900,
+      "hallRevenue": 412000000
+    },
+    {
+      "hallName": "세미나 D홀",
+      "eventCount": 243,
+      "expectedGuests": 24100,
+      "guaranteedGuests": 21200,
+      "hallRevenue": 368000000
+    }
+  ]
+}
+```
+
+---
+
+## 32. 🏨 [P1 신규] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 배정 편차 감사 API (`[Ticket 32]`)
+
+### 32-1. 배경 및 DB 실측 자산 (Verified MariaDB Stdout)
+* **연동 프론트엔드 화면**: `/resort-business` (`src/pages/ResortBusiness.tsx` — 리조트사업본부 객실 대시보드 하단 5번 섹션)
+* **🚨 절대 제외 지침 엄수**:
+  * 경영진 지시(*"객실 어린이 숫자와 성인 숫자는 제외하자 믿을수 있는 숫자가 아니다"*)에 따라, `raw_객실_예약_v6`의 `성인수` 및 `아이수` 컬럼은 본 마트 및 API 스키마에서 **100% 영구 제외**합니다.
+* **발굴된 미활용 DB 컬럼 실측 현황**:
+  1. `raw_객실_예약_v6`: 전체 **156,016건** 중 투숙 완료(`Checked Out`) **112,248건**, 사전 예약 취소(`Cancelled Reservation`) **38,239건 (24.5%)**, 대기 예약(`Waiting Reservation`) **2,966건**, 예약 등록일(`등록일자`) 대비 도착일(`도착일자`) **평균 리드타임 45.5일**.
+  2. `raw_객실_예약_v6.객실번호` × `ai_room_inventory_summary` (175개 물리 호실 마스터: `building_name`, `floor`, `bed_type`, `is_connecting`, `is_pet_friendly`, `is_accessible`): 특정 동·층·호실에 배정이 편중되어 가구/침구 감가상각이 불균형해지는 현상을 감사할 수 있음.
+
+### 32-2. 백엔드 V6 5대 철칙 준수 및 구현 요구사항
+* **엔드포인트**: `GET /api/v6/report/room-leadtime-unit-wear?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **아키텍처 통제 기준**:
+  1. 공식 ETL 프로시저(`sp_etl_v6_mat_room_leadtime_wear`)를 통해 리드타임 구간(`당일 0일`, `1~3일`, `4~7일`, `8~14일`, `15~30일`, `31~60일`, `61일+`)별 예약·투숙·취소·대기 건수 및 175개 물리 호실별 배정 횟수(`assignedCount`)와 평균 대비 편차 지수(`wearIndexPct`)를 정규 마트(`mat_v6_room_leadtime_wear`)에 사전 집계합니다.
+
+### 32-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "totalReservations": 156016,
+    "avgLeadDays": 45.5,
+    "cancelledCount": 38239,
+    "cancelRate": 24.5,
+    "waitingCount": 2966,
+    "activeUnitCount": 175,
+    "unitWearSpreadRatio": 1.8
+  },
+  "leadtimeBuckets": [
+    {
+      "bucketLabel": "당일~3일 전 (0~3일)",
+      "totalCount": 18420,
+      "checkedOutCount": 16850,
+      "cancelledCount": 1410,
+      "cancelRate": 7.7
+    },
+    {
+      "bucketLabel": "31~60일 전",
+      "totalCount": 42150,
+      "checkedOutCount": 28900,
+      "cancelledCount": 12450,
+      "cancelRate": 29.5
+    }
+  ],
+  "unitWearRanking": [
+    {
+      "roomNo": "101-201",
+      "buildingName": "101동",
+      "floorLabel": "2층",
+      "bedType": "한실(온돌)",
+      "assignedCount": 248,
+      "totalRevenue": 34200000,
+      "wearIndexPct": 134.2
+    }
+  ]
+}
+```
+
+---
+
+## 33. ⛳ [P1 신규] 골프 내장객 성비 · 회원권 타인 위임 내장 CRM · 코스별 취소율 · 라운딩 체류시간 API (`[Ticket 33]`)
+
+### 33-1. 배경 및 DB 실측 자산 (Verified MariaDB Stdout)
+* **연동 프론트엔드 화면**: `/golf/channel-intelligence` (`src/pages/GolfChannelIntelligence.tsx` — 골프사업본부 채널&예약 7번 섹션)
+* **발굴된 미활용 DB 컬럼 실측 현황**:
+  1. `raw_골프_내장객_v6.성별`: 남성(`M`) **53,564명 (68.3%)** vs 여성(`W`) **24,644명 (31.4%)**, 미상 261명.
+  2. `raw_골프_예약_v6`: 전체 **90,377건** 중 본인 내장(`위임여부 = 'N'`) **72,235건 (79.9%)** vs **회원권 타인 위임 내장(`위임여부 = 'Y'`, `위임고객명`) 18,142건 (20.1%)**.
+  3. 코스별 사전 예약 취소: 전체 취소 **18,741건 (20.7%)** — `MOUNTAIN` 코스 취소 **9,410건 (20.9%)**, `LAKE` 코스 취소 **9,331건 (20.5%)**.
+  4. 클럽하우스 체류시간: `체크인시간`➔`티업시간`➔`체크아웃시간` 실측 타임스탬프 보유 **16,265건**.
+
+### 33-2. 백엔드 V6 5대 철칙 준수 및 구현 요구사항
+* **엔드포인트**: `GET /api/v6/report/golf-visitor-behavior-crm?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **아키텍처 통제 기준**:
+  1. 정규 마트(`mat_v6_golf_visitor_behavior`)에 기간별 남/여 내장객 수, 코스별(`MOUNTAIN`/`LAKE`) 예약·위임·취소 건수, 다빈도 위임 내장 고객(`위임고객명` Top 리스트) 및 평균 클럽하우스 체류시간(분)을 사전 집계하여 반환합니다.
+
+### 33-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "malePlayers": 53564,
+    "femalePlayers": 24644,
+    "femaleSharePct": 31.4,
+    "delegatedBookings": 18142,
+    "delegatedRatioPct": 20.1,
+    "cancelledBookings": 18741,
+    "cancelRatePct": 20.7,
+    "avgPreTeeMinutes": 42,
+    "avgTotalStayMinutes": 318
+  },
+  "courseBreakdown": [
+    {
+      "courseCode": "MOUNTAIN",
+      "courseName": "마운틴 코스 (MOUNTAIN)",
+      "totalBookings": 45017,
+      "delegatedCount": 9120,
+      "cancelledCount": 9410,
+      "cancelRatePct": 20.9
+    },
+    {
+      "courseCode": "LAKE",
+      "courseName": "레이크 코스 (LAKE)",
+      "totalBookings": 45360,
+      "delegatedCount": 9022,
+      "cancelledCount": 9331,
+      "cancelRatePct": 20.5
+    }
+  ],
+  "topDelegatedGuests": [
+    {
+      "delegatedGuestName": "김*수",
+      "memberOwnerName": "(주)벨포레파트너스",
+      "visitCount": 14,
+      "totalPlayers": 56
+    }
+  ]
+}
+```
+
+---
+
+## 34. 🎟️ [P1 신규] 레저 티켓·POS 업장/권종별 정가 대비 할인 누수율(Price Realization Rate) 및 미사용 티켓 감사 API (`[Ticket 34]`)
+
+### 34-1. 배경 및 DB 실측 자산 (Verified MariaDB Stdout)
+* **연동 프론트엔드 화면**: `/leisure` (`src/pages/LeisureFacility.tsx` — 레저본부 대시보드 하단 3번 섹션)
+* **발굴된 미활용 DB 컬럼 실측 현황**:
+  1. `raw_티켓_메뉴_v6` (전체 223,125건):
+     * 정상가 총액(`정상가격 × 판매수량`): **4,492,282,500원**
+     * 총 할인 공제액(`할인금액`): **37,580,600원**
+     * 실매출액(`판매금액`): **4,454,701,900원** (정가 실현율 99.2%)
+     * 발권 후 미검표(`상태 = '티켓출력,티켓미사용'`): **3,984건 / 99,035,776원** (정상 검표 완료 `티켓출력,티켓사용` 219,094건 / 4,354,678,124원)
+  2. `raw_포스_메뉴_v6` (전체 356,081건):
+     * 정상가 총액: **9,108,875,410원**
+     * 총 할인 공제액(`할인금액`): **38,103,449원**
+     * 실매출액(`판매금액`): **9,070,771,961원**
+
+### 34-2. 백엔드 V6 5대 철칙 준수 및 구현 요구사항
+* **엔드포인트**: `GET /api/v6/report/leisure-discount-leakage?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **아키텍처 통제 기준**:
+  1. 선행 ETL 프로시저(`sp_etl_v6_fact_ticket_sales` 및 `sp_etl_v6_mat_discount_audit`)에서 영업장·권종별 `list_amount`(정상가 합계), `discount_amount`(할인금액 합계), `net_amount`(실매출 합계), `unused_count`(티켓미사용 건수), `unused_amount`(티켓미사용 금액)를 정규 마트(`mat_v6_leisure_discount_audit`)에 사전 집계합니다.
+
+### 34-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "totalListAmount": 4492282500,
+    "totalDiscountAmount": 37580600,
+    "totalNetAmount": 4454701900,
+    "discountRatePct": 0.8,
+    "realizationRatePct": 99.2,
+    "unusedTicketCount": 3984,
+    "unusedTicketAmount": 99035776
+  },
+  "items": [
+    {
+      "shopName": "루지매표소",
+      "menuName": "익스트림루지 2회권",
+      "listAmount": 1250000000,
+      "discountAmount": 14200000,
+      "netAmount": 1235800000,
+      "realizationRatePct": 98.9,
+      "unusedCount": 620
+    }
+  ]
+}
+```
+
+---
+
+## 35. 📱 [P1 신규] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API (`[Ticket 35]`)
+
+### 35-1. 배경 및 DB 실측 자산 (Verified MariaDB Stdout)
+* **연동 프론트엔드 화면**: `/online-members` (`src/pages/OnlineMembers.tsx`) 및 `/members` (`src/pages/Members.tsx`)
+* **발굴된 미활용 DB 컬럼 실측 현황**:
+  * `dim_online_members_v6` (총 **26,221명** — `total_activities`, `first_activity_date`, `last_activity_date`, `room_count`, `golf_count`, `ticket_count`):
+    1. **1회 이용 (단발)**: 총 **14,551명** (평균 1.0회) — 최근 6개월 활성 2,265명 / **6개월+ 미방문 휴면 12,286명 (84.4%)**
+    2. **2~3회 이용 (재방문)**: 총 **6,674명** (평균 2.4회) — 최근 6개월 활성 1,158명 / **6개월+ 미방문 휴면 5,516명 (82.6%)**
+    3. **4~9회 이용 (단골)**: 총 **3,868명** (평균 5.5회) — 최근 6개월 활성 783명 / **6개월+ 미방문 휴면 3,085명 (79.8%)**
+    4. **10회 이상 (충성고객)**: 총 **1,128명** (평균 18.6회) — 최근 6개월 활성 549명 / **6개월+ 미방문 휴면 579명 (51.3%)**
+  * **핵심 인사이트**: 4회 이상 방문 이력이 검증된 진성 단골/충성고객 중 최근 6개월간 발길을 끊은 **3,664명 (`3,085 + 579명`)**이 최우선 핀셋 리텐션(Win-back 쿠폰/알림톡) 타겟임.
+
+### 35-2. 백엔드 V6 5대 철칙 준수 및 구현 요구사항
+* **엔드포인트**: `GET /api/v6/report/online-member-dormancy?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **아키텍처 통제 기준**:
+  1. 기준일(`endDate` 또는 최신 영업 마감일) 대비 `DATEDIFF(ref_date, last_activity_date) > 180` 기준으로 등급별 활성/휴면 회원수와 휴면 전환율(`dormantRatePct`)을 DB에서 직접 산출하여 반환합니다.
+
+### 35-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "totalMembers": 26221,
+    "activeWithin6m": 4755,
+    "regularDormantCount": 3085,
+    "regularDormantRatePct": 79.8,
+    "loyalDormantCount": 579,
+    "loyalDormantRatePct": 51.3,
+    "winbackTargetCount": 3664
+  },
+  "tiers": [
+    {
+      "tierName": "1. 1회 이용 (단발)",
+      "memberCount": 14551,
+      "avgActivities": 1.0,
+      "active6mCount": 2265,
+      "dormant6mCount": 12286,
+      "dormantRatePct": 84.4
+    },
+    {
+      "tierName": "2. 2~3회 이용 (재방문)",
+      "memberCount": 6674,
+      "avgActivities": 2.4,
+      "active6mCount": 1158,
+      "dormant6mCount": 5516,
+      "dormantRatePct": 82.6
+    },
+    {
+      "tierName": "3. 4~9회 이용 (단골)",
+      "memberCount": 3868,
+      "avgActivities": 5.5,
+      "active6mCount": 783,
+      "dormant6mCount": 3085,
+      "dormantRatePct": 79.8
+    },
+    {
+      "tierName": "4. 10회 이상 (충성고객)",
+      "memberCount": 1128,
+      "avgActivities": 18.6,
+      "active6mCount": 549,
+      "dormant6mCount": 579,
+      "dormantRatePct": 51.3
+    }
+  ]
+}
+```
+
+---
+
+## 36. ⚡ [P1 신규] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API (`[Ticket 36]`)
+
+### 36-1. 배경 및 DB 실측 자산 (Verified MariaDB Stdout)
+* **연동 프론트엔드 화면**: `/synergy` (`src/pages/Synergy.tsx` — 시너지 분석 대시보드 하단 섹션)
+* **발굴된 미활용 DB 컬럼 실측 현황**:
+  * `fact_customer_journeys` (총 **258,287건** — `duration_minutes`, `stop_count`, `total_spent`, `has_golf`, `has_fnb`, `has_leisure`, `journey_path`):
+    1. **0. 단발 결제 (0분 · 단일업장)**: 여정 **213,182건** / 평균 소비액 **115,356원** / 총 매출 **24,591,899,496원**
+    2. **1. 1시간 이내**: 여정 **17,507건** / 평균 소비액 **111,010원** / 총 매출 **1,943,453,489원**
+    3. **2. 1~3시간 체류**: 여정 **14,507건** / 평균 소비액 **125,088원** / 총 매출 **1,814,655,216원**
+    4. **3. 3~6시간 체류**: 여정 **10,803건** / 평균 소비액 **259,984원** / 총 매출 **2,808,608,425원**
+    5. **4. 6시간 이상 (숙박/종일)**: 여정 **2,288건** / 평균 소비액 **314,918원** / 총 매출 **720,532,487원**
+  * **핵심 인사이트**: 체류시간이 **3시간을 돌파하는 순간 1인(여정)당 평균 객단가가 12.5만 원 ➔ 26.0만 원으로 2.08배 점프**하며, 6시간 이상 종일 체류 시 **31.5만 원(단발 대비 2.73배)**으로 급증함.
+
+### 36-2. 백엔드 V6 5대 철칙 준수 및 구현 요구사항
+* **엔드포인트**: `GET /api/v6/report/customer-stay-duration-synergy?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+* **아키텍처 통제 기준**:
+  1. `fact_customer_journeys`를 기반으로 일자별·체류시간 구간별 여정 건수(`journeys`), 평균 방문 업장수(`avgStops`), 평균 소비액(`avgSpent`), 구간 총 매출(`totalRevenue`)을 정규 마트(`mat_v6_customer_stay_synergy`)에 사전 집계하여 반환합니다.
+
+### 36-3. 응답 JSON 규격 (100% camelCase 완제품)
+```json
+{
+  "success": true,
+  "summary": {
+    "totalJourneys": 258287,
+    "multiStopJourneys": 45105,
+    "singleStopAvgSpent": 115356,
+    "midStayAvgSpent": 259984,
+    "longStayAvgSpent": 314918,
+    "longStayLiftMultiple": 2.7
+  },
+  "durationBuckets": [
+    {
+      "stayBucket": "0. 단발 결제 (0분)",
+      "journeys": 213182,
+      "avgStops": 1.0,
+      "avgSpent": 115356,
+      "totalRevenue": 24591899496
+    },
+    {
+      "stayBucket": "1. 1시간 이내",
+      "journeys": 17507,
+      "avgStops": 2.1,
+      "avgSpent": 111010,
+      "totalRevenue": 1943453489
+    },
+    {
+      "stayBucket": "2. 1~3시간 체류",
+      "journeys": 14507,
+      "avgStops": 2.4,
+      "avgSpent": 125088,
+      "totalRevenue": 1814655216
+    },
+    {
+      "stayBucket": "3. 3~6시간 체류",
+      "journeys": 10803,
+      "avgStops": 2.8,
+      "avgSpent": 259984,
+      "totalRevenue": 2808608425
+    },
+    {
+      "stayBucket": "4. 6시간 이상 (숙박/종일)",
+      "journeys": 2288,
+      "avgStops": 3.4,
+      "avgSpent": 314918,
+      "totalRevenue": 720532487
+    }
+  ]
+}
+```
+
 

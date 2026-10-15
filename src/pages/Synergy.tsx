@@ -95,6 +95,7 @@ export default function Synergy() {
     salesByFacility?: any[];
   } | null>(null);
   const [matrixData, setMatrixData] = useState<any[]>([]);
+  const [stayDurationIntel, setStayDurationIntel] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
 
@@ -139,16 +140,23 @@ export default function Synergy() {
         ? `startDate=${sDate}&endDate=${eDate}`
         : `date=${sDate}`;
 
-      // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. Matrix Report (Category SSOT)
-      const [channelRes, summaryRes, matrixRes] = await Promise.all([
+      // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. Matrix Report (Category SSOT), 4. Ticket 36 Stay Duration Synergy
+      const [channelRes, summaryRes, matrixRes, stayRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${summaryQueryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/dashboard/matrix-report?${queryParams}`).catch(() => null)
+        secureFetcher(`${API_BASE}/api/v6/dashboard/matrix-report?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/customer-stay-duration-synergy?${queryParams}`).catch(() => null)
       ]);
 
       const channelPayload = channelRes?.data ?? channelRes;
       const summaryPayload = summaryRes?.data ?? summaryRes;
       const matrixPayload = matrixRes?.data ?? matrixRes;
+
+      if (stayRes && (stayRes.summary || stayRes.data)) {
+        setStayDurationIntel(stayRes.data || stayRes);
+      } else {
+        setStayDurationIntel(null);
+      }
 
       if (Array.isArray(channelPayload)) {
         setChannelData(channelPayload);
@@ -883,6 +891,156 @@ export default function Synergy() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* [Ticket 36] 고객 여정 체류시간(duration_minutes) 구간별 객단가 및 복합 소비 시너지 분석 */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden mt-8">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-teal-50/50 via-white to-indigo-50/30">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-teal-600 text-white shadow-xs shrink-0 mt-0.5">
+              <Zap size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  고객 여정 체류시간(Stay Duration) 구간별 1인당 객단가 및 복합 소비 시너지
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                  V6 SSOT · Ticket 36
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                통합 카드 결제 여정 마트(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">fact_customer_journeys</code>)의 최초 결제➔최종 결제 체류시간(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">duration_minutes</code>) 구간별 평균 소비액(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">avg_spent</code>)과 동선 결합 시너지를 분석합니다.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {stayDurationIntel ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                정규 마트 연동 완료
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/customer-stay-duration-synergy)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!stayDurationIntel ? (
+          <div className="p-8 bg-slate-50/60">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
+              <h4 className="text-sm font-extrabold text-slate-800">
+                [Zero-Fake / Fail-Stop] 고객 여정 체류시간 구간별 객단가 시너지 정규 마트 API 연동 대기 중
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/customer-stay-duration-synergy</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">단발 결제 (0분 · 단일업장)</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">단일 업장 평균 객단가 집계 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">1~3시간 체류 여정</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">레저+식음 연계 객단가 상승폭 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">3~6시간 체류 여정</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">반나절 체류 고객 평균 소비액 대기</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[11px] font-bold text-slate-400">6시간+ 숙박·종일 체류</div>
+                  <div className="text-base font-black text-slate-400 mt-1">-</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">종일 체류 VIP 객단가 배수 대기</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">총 분석 고객 여정 수</div>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {stayDurationIntel.summary?.totalJourneys != null ? `${Number(stayDurationIntel.summary.totalJourneys).toLocaleString()}건` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  복합 방문 여정: {stayDurationIntel.summary?.multiStopJourneys != null ? `${Number(stayDurationIntel.summary.multiStopJourneys).toLocaleString()}건` : '-'}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">단발 결제(0분) 평균 객단가</div>
+                <div className="text-xl font-black text-slate-700 mt-1">
+                  {stayDurationIntel.summary?.singleStopAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.singleStopAvgSpent)}원` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  단일 업장 결제 기준
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-bold text-slate-500">3~6시간 체류 평균 객단가</div>
+                <div className="text-xl font-black text-teal-700 mt-1">
+                  {stayDurationIntel.summary?.midStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.midStayAvgSpent)}원` : '-'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  체류 연장 시 객단가 점프 구간
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200">
+                <div className="text-xs font-bold text-indigo-700">6시간+ 종일·숙박 평균 객단가</div>
+                <div className="text-xl font-black text-indigo-900 mt-1">
+                  {stayDurationIntel.summary?.longStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.longStayAvgSpent)}원` : '-'}
+                </div>
+                <div className="text-[11px] text-indigo-600 mt-1">
+                  단발 대비 배수: {stayDurationIntel.summary?.longStayLiftMultiple != null ? `${stayDurationIntel.summary.longStayLiftMultiple}배` : '-'}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-extrabold text-slate-800">체류시간 구간별 여정 수 · 평균 객단가 · 총 매출액 분포</span>
+                <span className="text-[11px] text-slate-500">fact_customer_journeys 기준</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-4 text-left font-bold">체류시간 구간</th>
+                      <th className="py-2.5 px-4 text-right font-bold">여정 건수</th>
+                      <th className="py-2.5 px-4 text-right font-bold">평균 방문 업장수</th>
+                      <th className="py-2.5 px-4 text-right font-bold">1인(여정) 평균 객단가</th>
+                      <th className="py-2.5 px-4 text-right font-bold">구간 총 매출액</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(stayDurationIntel.durationBuckets || []).map((b: any, idx: number) => (
+                      <tr key={b.stayBucket || idx} className="hover:bg-slate-50/80">
+                        <td className="py-3 px-4 font-bold text-slate-800">{b.stayBucket ?? '-'}</td>
+                        <td className="py-3 px-4 text-right text-slate-700">
+                          {b.journeys != null ? `${Number(b.journeys).toLocaleString()}건` : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-right text-slate-600">
+                          {b.avgStops != null ? `${b.avgStops}곳` : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-teal-700">
+                          {b.avgSpent != null ? `${formatCurrency(b.avgSpent)}원` : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-right font-extrabold text-slate-900">
+                          {b.totalRevenue != null ? `${formatCurrency(b.totalRevenue)}원` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

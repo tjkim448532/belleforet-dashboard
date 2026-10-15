@@ -101,9 +101,10 @@ export default function LeisureFacility() {
           : `date=${startDate}`;
         const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-channel-sales?${queryParams}`);
         if (isCancelled) return;
-        const payload = res?.data ?? res;
-        if (payload?.summary && Array.isArray(payload?.venues)) {
-          setChannelData({ summary: payload.summary, venues: payload.venues });
+        const summary = res?.summary || (res?.data && !Array.isArray(res.data) ? res.data.summary : null);
+        const venues = res?.venues || res?.venueBreakdown || (res?.data && !Array.isArray(res.data) ? res.data.venues : null);
+        if (summary && Array.isArray(venues)) {
+          setChannelData({ summary, venues });
         } else {
           setChannelData(null);
           setChannelError('API 응답에 summary/venues 완제품 데이터가 없습니다.');

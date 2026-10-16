@@ -25,6 +25,7 @@ const FACILITY_COLORS: Record<string, string> = {
   '벨포레 목장': '#10b981', // Teal/Green
   '사계절썰매장': '#f59e0b', // Amber
   '마운틴카트': '#ef4444', // Red
+  '마운틴카트(전체)': '#ef4444', // Red
   '마운틴카트(그랜드포렛)': '#ef4444', // Red
   '마운틴카트(미니포렛)': '#f97316', // Orange
   '벨포레 목장(체험)': '#14b8a6', // Teal
@@ -45,7 +46,7 @@ export const SEVEN_KEY_FACILITIES = [
   { key: '놀이동산', label: '놀이동산', color: '#3b82f6' },
   { key: '벨포레 목장', label: '벨포레 목장', color: '#10b981' },
   { key: '벨포레 목장(체험)', label: '목장체험', color: '#14b8a6' },
-  { key: '마운틴카트', label: '마운틴카트(전체)', color: '#ef4444' },
+  { key: '마운틴카트(전체)', label: '마운틴카트(전체)', color: '#ef4444' },
   { key: '마운틴카트(그랜드포렛)', label: '카트(그랜드)', color: '#ef4444' },
   { key: '마운틴카트(미니포렛)', label: '카트(미니)', color: '#f97316' },
   { key: '사계절썰매장', label: '사계절썰매장', color: '#f59e0b' },
@@ -153,13 +154,77 @@ export default function LeisureUsageRate() {
       const payloadYoy: LeisureYoyMatrixResponse = resYoy?.data ?? resYoy;
 
       if (payloadUsage?.success && payloadYoy?.success) {
+        // [Mountain Cart Consolidation SSOT]
+        // 2024: 레거시 '마운틴카트' / 2025·2026: '마운틴카트(그랜드포렛)' + '마운틴카트(미니포렛)'
+        // 백엔드 leisure-usage-rate의 '마운틴카트(전체)' 완제품 실측치로 yoyData.pivotData 통합 생성
+        const cartTotalSeries = payloadUsage.series?.find((s) => s.facilityName === '마운틴카트(전체)');
+        const years = payloadYoy.years && payloadYoy.years.length > 0 ? [...payloadYoy.years].sort() : ['2024', '2025', '2026'];
+
+        if (cartTotalSeries && payloadYoy.pivotData) {
+          const cartTotalPivotRows = Array.from({ length: 12 }, (_, i) => {
+            const m = i + 1;
+            const mPad = String(m).padStart(2, '0');
+            const row: any = { month: m };
+            years.forEach((yr) => {
+              const mKey = `${yr}-${mPad}`;
+              const pt = cartTotalSeries.data.find((d) => d.month === mKey);
+              if (pt) {
+                row[yr] = {
+                  usageRate: pt.usageRate,
+                  visitors: pt.visitors,
+                  roomGuests: pt.totalRoomGuests,
+                };
+              } else {
+                row[yr] = { usageRate: 0, visitors: 0, roomGuests: 0 };
+              }
+            });
+            return row;
+          });
+
+          // '마운틴카트(전체)' 및 '마운틴카트' 모두에 통합 pivotData 연결
+          payloadYoy.pivotData['마운틴카트(전체)'] = cartTotalPivotRows;
+          payloadYoy.pivotData['마운틴카트'] = cartTotalPivotRows;
+
+          // facilityPeriodCumulative 보강
+          if (payloadYoy.facilityPeriodCumulative) {
+            const cartCum: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {};
+            years.forEach((yr) => {
+              const grand = payloadYoy.facilityPeriodCumulative?.['마운틴카트(그랜드포렛)']?.[yr];
+              const mini = payloadYoy.facilityPeriodCumulative?.['마운틴카트(미니포렛)']?.[yr];
+              const legacy = payloadYoy.facilityPeriodCumulative?.['마운틴카트']?.[yr];
+
+              const vGrand = grand?.visitors || 0;
+              const vMini = mini?.visitors || 0;
+              const vLegacy = legacy?.visitors || 0;
+              const roomG = grand?.roomGuests || mini?.roomGuests || legacy?.roomGuests || 0;
+              const totalV = (vGrand + vMini) > 0 ? (vGrand + vMini) : vLegacy;
+              const rate = roomG > 0 ? Math.round((totalV / roomG) * 1000) / 10 : 0;
+              cartCum[yr] = { visitors: totalV, roomGuests: roomG, usageRate: rate };
+            });
+            payloadYoy.facilityPeriodCumulative['마운틴카트(전체)'] = cartCum;
+            payloadYoy.facilityPeriodCumulative['마운틴카트'] = cartCum;
+          }
+
+          // facilities 목록 정리: '마운틴카트'를 '마운틴카트(전체)'로 대체하고 그랜드/미니 유지
+          if (payloadYoy.facilities) {
+            const facSet = new Set(payloadYoy.facilities);
+            facSet.delete('마운틴카트');
+            facSet.add('마운틴카트(전체)');
+            payloadYoy.facilities = Array.from(facSet).sort();
+          }
+        }
+
         setUsageData(payloadUsage);
         setYoyData(payloadYoy);
 
         // Set default facility if available
         if (payloadYoy.facilities && payloadYoy.facilities.length > 0) {
           if (!payloadYoy.facilities.includes(selectedFacility)) {
-            setSelectedFacility(payloadYoy.facilities[0]);
+            if ((selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)') && payloadYoy.facilities.includes('마운틴카트(전체)')) {
+              setSelectedFacility('마운틴카트(전체)');
+            } else {
+              setSelectedFacility(payloadYoy.facilities[0]);
+            }
           }
         }
 
@@ -259,9 +324,13 @@ export default function LeisureUsageRate() {
   const currentSummary = useMemo(() => {
     if (!usageData?.series) return null;
 
+    const isCartTotal = selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)';
+    const targetFacilityName = isCartTotal ? '마운틴카트(전체)' : selectedFacility;
+
     if (isPeriodTotalMode) {
       // 1. Calculate Period Cumulative across selectedPeriodMonths
-      const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
+      const selSeries = usageData.series.find((s) => s.facilityName === targetFacilityName)
+        || usageData.series.find((s) => s.facilityName === selectedFacility);
       let selVisitors = 0;
       let selDenominator = 0;
       for (const m of selectedPeriodMonths) {
@@ -296,7 +365,7 @@ export default function LeisureUsageRate() {
         label: `${startMonthStr} ~ ${endMonthStr} (${selectedPeriodMonths.length}개월 누적)`,
         roomGuests: selDenominator,
         selectedVenue: {
-          name: selectedFacility,
+          name: isCartTotal ? '마운틴카트(전체)' : selectedFacility,
           usageRate: selRate,
           visitors: selVisitors,
         },
@@ -305,7 +374,8 @@ export default function LeisureUsageRate() {
     } else {
       // 2. Single Month Metrics
       const m = activeSingleMonth;
-      const selSeries = usageData.series.find((s) => s.facilityName === selectedFacility);
+      const selSeries = usageData.series.find((s) => s.facilityName === targetFacilityName)
+        || usageData.series.find((s) => s.facilityName === selectedFacility);
       const selPoint = selSeries?.data.find((d) => d.month === m);
       const selRate = selPoint?.usageRate ?? 0;
       const selVisitors = selPoint?.visitors ?? 0;
@@ -328,7 +398,7 @@ export default function LeisureUsageRate() {
         label: `${m} 기준 실적`,
         roomGuests,
         selectedVenue: {
-          name: selectedFacility,
+          name: isCartTotal ? '마운틴카트(전체)' : selectedFacility,
           usageRate: selRate,
           visitors: selVisitors,
         },
@@ -345,9 +415,14 @@ export default function LeisureUsageRate() {
 
   // YoY Chart Option (for selected facility: 2024 vs 2025 vs 2026 across 1~12월)
   const yoyChartOption = useMemo(() => {
-    if (!yoyData?.pivotData || !yoyData.pivotData[selectedFacility]) return {};
+    const isCart = selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)';
+    const pivotKey = (isCart && !yoyData?.pivotData?.[selectedFacility])
+      ? (yoyData?.pivotData?.['마운틴카트(전체)'] ? '마운틴카트(전체)' : '마운틴카트')
+      : selectedFacility;
 
-    const rows = yoyData.pivotData[selectedFacility];
+    if (!yoyData?.pivotData || !yoyData.pivotData[pivotKey]) return {};
+
+    const rows = yoyData.pivotData[pivotKey];
     const years = availableYears;
 
     const baseColors = ['#94a3b8', '#3b82f6', '#10b981', '#06b6d4', '#8b5cf6', '#ef4444', '#f59e0b'];
@@ -401,6 +476,8 @@ export default function LeisureUsageRate() {
       };
     });
 
+    const displayFac = isCart ? '마운틴카트(전체)' : (selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility);
+
     return {
       tooltip: {
         trigger: 'axis',
@@ -411,7 +488,7 @@ export default function LeisureUsageRate() {
           if (!params || params.length === 0) return '';
           const monthLabel = params[0].axisValue;
           let html = `<div style="font-weight: bold; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.15); color: #38bdf8;">
-            🎡 ${selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility} · ${monthLabel} 연도별 비교
+            🎡 ${displayFac} · ${monthLabel} 연도별 비교
             ${selectedFacility === '벨포레 목장(체험)' ? '<span style="font-size: 10px; color: #a7f3d0; margin-left: 6px;">(목장입장객 대비 체험전환율)</span>' : ''}
           </div>`;
 
@@ -576,9 +653,14 @@ export default function LeisureUsageRate() {
 
   // Cumulative numbers for the selected period across availableYears in the matrix table
   const periodCumulative = useMemo(() => {
-    if (!yoyData?.pivotData || !yoyData.pivotData[selectedFacility]) return null;
+    const isCart = selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)';
+    const pivotKey = (isCart && !yoyData?.pivotData?.[selectedFacility])
+      ? (yoyData?.pivotData?.['마운틴카트(전체)'] ? '마운틴카트(전체)' : '마운틴카트')
+      : selectedFacility;
 
-    const rows = yoyData.pivotData[selectedFacility];
+    if (!yoyData?.pivotData || !yoyData.pivotData[pivotKey]) return null;
+
+    const rows = yoyData.pivotData[pivotKey];
     const targetRows = rows.filter((r) => selectedPeriodMonthNumbers.has(r.month));
 
     const result: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {};
@@ -915,7 +997,11 @@ export default function LeisureUsageRate() {
     );
   }
 
-  const currentPivotRows = yoyData.pivotData[selectedFacility] || [];
+  const isCart = selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)';
+  const currentPivotKey = (isCart && !yoyData.pivotData[selectedFacility])
+    ? (yoyData.pivotData['마운틴카트(전체)'] ? '마운틴카트(전체)' : '마운틴카트')
+    : selectedFacility;
+  const currentPivotRows = yoyData.pivotData[currentPivotKey] || [];
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-12 max-w-[1600px] mx-auto">
@@ -994,20 +1080,23 @@ export default function LeisureUsageRate() {
               {/* 빠른 선택 칩 버튼들 */}
               <div className="hidden xl:flex items-center gap-1.5 pl-3 border-l border-slate-200">
                 <span className="text-xs text-slate-400 font-medium">빠른선택:</span>
-                {['놀이동산', '벨포레 목장', '사계절썰매장', '미디어아트센터', '마운틴카트'].map((fac) => (
-                  <button
-                    key={fac}
-                    type="button"
-                    onClick={() => setSelectedFacility(fac)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      selectedFacility === fac
-                        ? 'bg-emerald-600 text-white shadow-2xs'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                    }`}
-                  >
-                    {fac}
-                  </button>
-                ))}
+                {['놀이동산', '벨포레 목장', '사계절썰매장', '미디어아트센터', '마운틴카트(전체)'].map((fac) => {
+                  const isSelected = selectedFacility === fac || (fac === '마운틴카트(전체)' && selectedFacility === '마운틴카트');
+                  return (
+                    <button
+                      key={fac}
+                      type="button"
+                      onClick={() => setSelectedFacility(fac)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {fac}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1054,7 +1143,7 @@ export default function LeisureUsageRate() {
               <div>
                 <div className="flex items-center justify-between mb-4 relative z-10">
                   <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                    [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {selectedFacility === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
+                    [{currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? '목장체험' : currentSummary.selectedVenue.name}] {currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
                   </span>
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
                     <Ticket size={20} />
@@ -1077,7 +1166,7 @@ export default function LeisureUsageRate() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
-                    [{selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
+                    [{currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? '목장체험' : currentSummary.selectedVenue.name}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
                   </span>
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
                     <Users size={20} />
@@ -1100,7 +1189,7 @@ export default function LeisureUsageRate() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">
-                    {selectedFacility === '벨포레 목장(체험)'
+                    {currentSummary.selectedVenue.name === '벨포레 목장(체험)'
                       ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
                       : (isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)')}
                   </span>
@@ -1116,7 +1205,7 @@ export default function LeisureUsageRate() {
                 </div>
               </div>
               <div className="text-xs text-slate-400 mt-auto pt-2 font-medium whitespace-nowrap">
-                {selectedFacility === '벨포레 목장(체험)'
+                {currentSummary.selectedVenue.name === '벨포레 목장(체험)'
                   ? '목장 입장객 대비 실질 체험 전환율 산출 기준'
                   : '관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등) 반영'}
               </div>
@@ -1160,7 +1249,7 @@ export default function LeisureUsageRate() {
             <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-emerald-600" />
               {chartMode === 'YOY' 
-                ? `[${selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility}] 연도별(24·25·26) 월별 ${selectedFacility === '벨포레 목장(체험)' ? '체험 전환율' : '이용률'} 비교 추이`
+                ? `[${(selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)') ? '마운틴카트(전체)' : (selectedFacility === '벨포레 목장(체험)' ? '목장체험' : selectedFacility)}] 연도별(24·25·26) 월별 ${selectedFacility === '벨포레 목장(체험)' ? '체험 전환율' : '이용률'} 비교 추이`
                 : '레저본부 전 영업장 시계열 추이'}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -1374,7 +1463,7 @@ export default function LeisureUsageRate() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-slate-400 mr-1">빠른 선택:</span>
               {SEVEN_KEY_FACILITIES.map(({ key, label }) => {
-                const isSelected = selectedFacility === key;
+                const isSelected = selectedFacility === key || (key === '마운틴카트(전체)' && selectedFacility === '마운틴카트');
                 return (
                   <button
                     key={key}

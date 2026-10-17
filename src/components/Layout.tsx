@@ -379,7 +379,7 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   <Tag size={14} className="shrink-0 text-emerald-600" />
-                  체험·어트랙션 이용요금 안내
+                  종합 이용요금 안내 (골프·객실·레져·식음)
                 </NavLink>
               </div>
             )}

@@ -37,7 +37,7 @@
 | **P1 (완료)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | [배포/검증완료] `dim_online_members_v6`(26,922명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 구축 완료 (`online-member-dormancy`) |
 | **P1 (완료)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | [배포/검증완료] `fact_customer_journeys`(7,540건) 체류시간 구간별(0분 단발 1,253건 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 복합 소비 시너지 마트 구축 완료 (`customer-stay-duration-synergy`) |
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 39] `leisure-yoy-matrix` API 내 `마운틴카트(전체)` 통합 행 제공 및 분리 정합성 확립** | 마운틴카트 2025/2026년 그랜드포렛·미니포렛 분리로 인한 YoY 0% 왜곡 방지: `leisure-usage-rate`와 동일하게 2024(레거시)+2025(그랜드+미니)+2026(그랜드+미니) 통합 행 제공 요청 |
-| **P1 (신규/인프라)** | 파이프라인 | **[Ticket 41] 매일 밤 자정(00:00) 체험 시설 이용요금 자동 스크래핑 Lambda 및 S3 정적 서빙 파이프라인 구축** | [방안 A 채택] DB 수면 모드(20:00~08:00) 100% 보존형: 매일 자정 홈페이지/PMS 티켓 실측 스크래핑 후 서버리스 S3(`latest_tickets.json`) 저장 및 API 서빙 (`leisure/pricing-catalog`) |
+| **P1 (신규/인프라)** | 파이프라인 | **[Ticket 41] 매일 밤 자정(00:00) 전 부문(골프·객실·레져·식음) 이용요금 및 스페셜 오퍼 자동 수집 Lambda & S3 파이프라인** | [방안 A 채택] DB 수면 모드(20:00~08:00) 100% 보존형: 매일 자정 4대 부문 및 스페셜오퍼 스크래핑 후 서버리스 S3(`resort_pricing_catalog.json`) 저장 및 API 서빙 (`leisure/pricing-catalog`) |
 
 
 ---
@@ -2919,10 +2919,10 @@ if (!isRange && settleVisitedTeams > 0) {
 
 ---
 
-## 41. 🎟️ [P1 신규/인프라] [Ticket 41] 매일 밤 자정(00:00) 체험 시설 이용요금 자동 스크래핑 Lambda 및 S3 정적 서빙 파이프라인 구축 (방안 A: DB 슬립모드 100% 보존형)
+## 41. 🎟️ [P1 신규/인프라] [Ticket 41] 매일 밤 자정(00:00) 전 부문(골프·객실·레져·식음) 이용요금 및 스페셜 오퍼 자동 수집 Lambda & S3 정적 서빙 파이프라인 구축 (방안 A: DB 슬립모드 100% 보존형)
 
 ### 41-1. 배경 및 경영진 승인 의사결정 (방안 A 확정)
-- **대표님/경영진 요구사항**: 벨포레 공식 웹사이트(`https://belleforetresort.com/`) 및 PMS 온라인 예매 시스템의 체험·어트랙션 요금/패키지 변경 사항을 **매일 밤 자동으로 감지하고 대시보드에 업데이트**하도록 파이프라인 구축 지시.
+- **대표님/경영진 요구사항**: 벨포레 공식 웹사이트(`https://belleforetresort.com/`) 및 PMS 온라인 예매 시스템의 **골프, 객실, 레져, 식음 4대 전 부문 및 스페셜 오퍼(메가 딜 등) 요금/구성 변경 사항**을 **매일 밤 자정 자동으로 감지하고 대시보드에 업데이트**하도록 파이프라인 구축 지시.
 - **DB 슬립모드(20:00 ~ 08:00) 보존 절대 원칙**:
   - 벨포레 리조트 DB(Aurora/MariaDB RDS)는 야간 비용 절감을 위해 매일 20:00부터 익일 08:00까지 **수면(Sleep) 모드**로 전원이 차단됩니다.
   - 야간 크롤링 데이터를 위해 DB를 강제로 깨우면(Wake-up) 인스턴스 비용이 불필요하게 발생하며, 자고 있는 DB에 접속 시 연결 장애가 발생합니다.
@@ -2934,10 +2934,10 @@ if (!isRange && settleVisitedTeams > 0) {
 
 ```mermaid
 flowchart LR
-    A["AWS EventBridge<br>(매일 00:00 KST)"] --> B["AWS Lambda<br>(ticket-scraper-nightly)"]
-    B --> C["1) 공식 웹 어트랙션 스크래핑<br>2) PMS 티켓 API 실측 호출"]
-    C --> D["JSON 완제품 생성<br>(latest_tickets.json)"]
-    D --> E["AWS S3 버킷 업로드<br>(s3://.../catalog/latest_tickets.json)"]
+    A["AWS EventBridge<br>(매일 00:00 KST)"] --> B["AWS Lambda<br>(resort-pricing-scraper-nightly)"]
+    B --> C["1) 공식 웹 스페셜오퍼(/package)<br>2) 골프 요금(/content/golf_fee)<br>3) 식음 매장(/dining/*)<br>4) 객실/레저 페이지 및 PMS API"]
+    C --> D["JSON 완제품 생성<br>(resort_pricing_catalog.json)"]
+    D --> E["AWS S3 버킷 업로드<br>(s3://.../catalog/resort_pricing_catalog.json)"]
     E --> F["Vercel 백엔드 API<br>GET /api/v6/leisure/pricing-catalog"]
     F --> G["프론트엔드 대시보드<br>/leisure/pricing 자동 갱신"]
 ```
@@ -2948,30 +2948,65 @@ flowchart LR
 
 #### 1) 스케줄러 (AWS EventBridge Rule)
 - **일정**: 매일 자정 00:00 KST (`cron(0 15 * * ? *)` - UTC 기준 15:00)
-- **대상**: AWS Lambda 함수 (`arn:aws:lambda:...:function:belleforet-ticket-scraper-nightly`)
+- **대상**: AWS Lambda 함수 (`arn:aws:lambda:...:function:belleforet-resort-pricing-scraper-nightly`)
 
-#### 2) 수집 Lambda 함수 (`ticket-scraper-nightly`)
-- **런타임**: Python 3.11 또는 Node.js 20
-- **수집 대상 소스**:
-  1. **공식 웹사이트 HTML 어트랙션 페이지**:
-     - `https://belleforetresort.com/attraction/10` (마운틴카트)
-     - `https://belleforetresort.com/attraction/4` (사계절썰매장)
-     - `https://belleforetresort.com/attraction/7` (벨포레목장 & 승마)
-     - `https://belleforetresort.com/attraction/6` (미디어아트센터)
-     - `https://belleforetresort.com/attraction/1` (놀이동산 기종별 단품)
-     - `https://belleforetresort.com/attraction/16` (어린이 공연)
-     - `https://belleforetresort.com/content/moto_cart` (모토아레나 레저카트)
-     - `https://belleforetresort.com/travel/11` (마리나클럽 제트/스피드보트, 오리배)
-     - `https://belleforetresort.com/travel/8` (펫포레)
-     - `https://belleforetresort.com/travel/7` / `6` (원더풀, 썸머랜드)
-  2. **공식 PMS 티켓 예매 API**:
-     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpStList` (영업장별 최저가)
-     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpPkgItemList` (온라인 패키지 티켓)
-     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpNotPkgItemGrpList` (대분류)
-     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpNotPkgItemList` (단품 티켓)
+#### 2) 수집 Lambda 함수 (`resort-pricing-scraper-nightly`)
+- **런타임**: Node.js 20 또는 Python 3.11
+- **완성형 레퍼런스 스크립트 제공**: 프론트엔드 레포지토리 `scripts/nightly_resort_pricing_scraper.cjs`에 검증 완료된 스크래퍼 소스 코드가 포함되어 있어, Lambda 핸들러에 즉시 복사하여 등록 가능.
+- **수집 대상 소스 (4대 전 부문)**:
+  1. **스페셜 오퍼 (SPECIAL OFFER)**:
+     - `https://belleforetresort.com/package` (메가딜 조식 2인 PKG, 썰매·버거 PKG, 씽씽한끼, 달맞이, 조이풀 패밀리, 패밀리 5종/4종 패스 등 8종 전수)
+  2. **골프 (GOLF)**:
+     - `https://belleforetresort.com/content/golf_fee` (주중 19.7만 / 주말 25.8만, 카트피 10만, 캐디피 8만~16만, 단체 규정)
+  3. **객실 (ROOM & STAY)**:
+     - `https://belleforetresort.com/content/resort_stay` (16평/35평/51평 일반 객실 규정 및 기준인원)
+     - `https://belleforetresort.com/content/resort_pets` (16평/35평/51평 펫룸 반려견 규정)
+  4. **식음 (F&B / DINING)**:
+     - `https://belleforetresort.com/dining` 및 `/dining/1`~`16` (쿠치나 조식 뷔페 3.3만/사전할인 2.8만, 브리스킷 346, 남도예담 떡갈비 정식 2.8만~3.9만, 딜라이트, 밤밤테이블 등 10개 매장)
+  5. **레져 (LEISURE & ATTRACTION)**:
+     - `https://belleforetresort.com/attraction/*` (카트, 썰매, 목장, 미디어, 모토아레나, 마리나 등) 및 PMS 티켓 API
 
-#### 3) 저장소 및 서빙 (AWS S3)
-- **S3 업로드 경로**: `s3://belleforet-public-assets/catalog/latest_tickets.json`
+#### 3) 안전 가드 1: 빈 값 덮어쓰기 방지 (Fail-Safe Guard)
+- **배경**: 자정 크롤링 시점 공식 웹사이트 임시 점검, 네트워크 타임아웃, 또는 웹페이지 DOM 구조 개편으로 인해 스페셜 오퍼나 골프 요금이 `0건` 또는 `null`로 파싱되는 예외 상황 발생 가능.
+- **방어 로직**:
+  - 스페셜 오퍼 수집 결과가 `0건`일 경우: 기존 정상 `resort_pricing_catalog.json`의 `specialOffers` 블록을 자동 보존하여 덮어쓰지 않음.
+  - 골프 요금 실측 검증 실패(`verified === false`) 또는 평일/주말 요금 누락 시: 직전 정상 `golfSnapshot`을 보존하고 로그에 `[SAFEGUARD] Golf fee parsing failed, preserving fallback` 경고 출력.
+  - 식음 매장 목록이 `0건`일 경우: 직전 식음 매장 정상 스냅샷 보존.
+  - 전체 수집 파싱 실패 시: S3 파일 업로드를 중단(Abort)하고 에러 알림 발송하여 프론트엔드가 빈 화면으로 깨지는 장애(White-out) 원천 차단.
+
+#### 4) 안전 가드 2: MariaDB 공식 표준 매장명(SSOT) 정규화 매핑
+크롤링된 텍스트가 백엔드 데이터 마트(`dim_facility_team_mapping`) 및 회계 정산 기준 표준명과 100% 일치하도록 파싱 단계에서 정규화 매핑 함수(`normalizeFacilityName`)를 강제 적용합니다:
+```javascript
+const FACILITY_NAME_SSOT_MAP = {
+  // 식음 (F&B)
+  '브리스킷 346': '브리스킷346',
+  '남도예담 인 벨포레': '남도예담',
+  '투썸 인 벨포레': '투썸플레이스',
+  '쿠치나뷔페': '쿠치나',
+  'BHC치킨': 'BHC 치킨',
+  'CU편의점': 'CU 편의점',
+
+  // 레저 & 어트랙션
+  '마운틴 카트': '마운틴카트(그랜드포렛)',
+  '사계절 썰매': '사계절썰매장',
+  '사계절 썰매장': '사계절썰매장',
+  '벨포레 목장': '벨포레목장',
+  '미디어아트': '미디어아트센터',
+  '마리나 클럽': '마리나클럽',
+  '인터내셔널 모토아레나': '모토아레나',
+  '디노 시네마': '디노시네마',
+
+  // 골프 & 객실
+  '블랙스톤 벨포레 CC': '블랙스톤 벨포레 CC',
+  '벨라포레 16평형': '16평형 (Studio)',
+  '벨라포레 35평형': '35평형 (Suite)',
+  '벨라포레 51평형': '51평형 (Grand Suite)',
+  '펫룸': '펫포레 하우스 (펫룸)'
+};
+```
+
+#### 5) 저장소 및 서빙 (AWS S3)
+- **S3 업로드 경로**: `s3://belleforet-public-assets/catalog/resort_pricing_catalog.json`
 - **캐시 설정**: `Cache-Control: public, max-age=3600, s-maxage=86400`
 - **보안/권한**: Public Read 또는 CloudFront Origin Access Identity(OAI)
 
@@ -2988,41 +3023,36 @@ flowchart LR
   "status": "success",
   "data": {
     "lastUpdated": "2026-10-18T00:02:15+09:00",
-    "source": "belleforetresort.com & PMS API",
-    "facilities": [
+    "source": "belleforetresort.com, PMS API & Official SSOT",
+    "summary": {
+      "categories": ["golf", "room", "leisure", "dining"],
+      "specialOffersCount": 8,
+      "diningVenuesCount": 10,
+      "golfVerified": true,
+      "safeguardActive": true
+    },
+    "specialOffers": [
       {
-        "id": "mountain-kart",
-        "name": "마운틴 카트",
-        "category": "racing",
-        "categoryLabel": "육상·스피드",
-        "summary": "두타산 자연 경사로를 주행하는 약 3km 스릴 레이싱",
-        "representativePrice": "그랜드 30,000원 / 미니 5,000원",
-        "operatingHours": "하절기 10:00~18:00 / 동절기 10:00~17:00",
-        "closedDay": "매주 월요일 휴장",
-        "contact": "043-926-1000",
-        "ageRequirement": "그랜드포렛: 키 150cm 이상 / 미니포렛: 단독 130cm 이상",
-        "discountBadges": ["도민·군인 25%", "숙박객 25%", "회원 최대 50%"],
-        "regularPrices": [
-          { "name": "그랜드포렛 코스", "priceWeekday": "30,000원", "priceWeekend": "30,000원", "note": "스릴 코스" },
-          { "name": "미니포렛 코스", "priceWeekday": "5,000원", "priceWeekend": "5,000원", "note": "어린이 전용" }
-        ],
-        "discounts": [
-          { "target": "콘도 분양회원 (레드/화이트)", "rate": "50% 할인", "discountPrice": "15,000원", "condition": "회원카드 지참" },
-          { "target": "충북도민", "rate": "25% 할인", "discountPrice": "22,500원", "condition": "신분증 제시" }
-        ],
-        "requirements": ["키 150cm 이상 탑승 가능", "운동화 필수 착용"],
-        "notes": ["전기고카트 최고 속도 30km/h 제한", "온라인 예매 QR코드 즉시 입장"]
+        "id": "88",
+        "category": "leisure",
+        "categoryLabel": "레져",
+        "title": "패밀리 올데이 5종 패스",
+        "normalizedName": "패밀리 올데이 5종 패스",
+        "period": "2026-04-24 ~ 2026-11-30",
+        "link": "https://belleforetresort.com/package/88"
       }
     ],
-    "packages": [
-      {
-        "itemCd": "0000000257",
-        "itemNm": "패밀리 4종 패스_대인(14세이상)",
-        "regularPrice": 82000,
-        "salePrice": 49000,
-        "discountRate": 40,
-        "salePeriod": "2026-02-28 ~ 2026-11-30"
-      }
+    "golfSnapshot": {
+      "verified": true,
+      "facilityName": "블랙스톤 벨포레 CC",
+      "greenFeeWeekday": "197,000원",
+      "greenFeeWeekend": "258,000원",
+      "cartFee": "100,000원",
+      "caddieFee": "150,000원~160,000원 (교육캐디 80,000원~130,000원)"
+    },
+    "diningVenues": [
+      { "rawName": "브리스킷346", "normalizedName": "브리스킷346" },
+      { "rawName": "남도예담 인 벨포레", "normalizedName": "남도예담" }
     ]
   }
 }
@@ -3032,9 +3062,9 @@ flowchart LR
 
 ### 41-5. 프론트엔드 연동 및 안전망 (Fail-Safe)
 1. **정적 SSOT 안전망**:
-   - 프론트엔드(`src/pages/LeisurePricing.tsx`)에는 이미 오늘 전수 실측한 마스터 카탈로그(`src/data/leisurePricingData.ts`)가 안전망(Default SSOT)으로 탑재되어 즉시 서빙 중입니다.
+   - 프론트엔드(`src/pages/LeisurePricing.tsx`)에는 이미 전수 실측한 마스터 카탈로그(`src/data/leisurePricingData.ts`)가 안전망(Default SSOT)으로 탑재되어 즉시 서빙 중입니다.
 2. **동적 연동 훅**:
-   - 백엔드에서 `/api/v6/leisure/pricing-catalog`가 배포되는 즉시, S3 최신 데이터를 우선 반영하고 최상단에 **"매일 밤 자동 업데이트: 2026-10-18 00:02"** 실시간 배지를 자동 표출하도록 처리됩니다.
+   - 백엔드에서 `/api/v6/leisure/pricing-catalog`가 배포되는 즉시, S3 최신 데이터를 우선 반영하고 최상단에 **"S3 자동 동기화: 2026-10-18 00:02"** 실시간 배지를 자동 표출하도록 처리 완료되었습니다.
 
 
 

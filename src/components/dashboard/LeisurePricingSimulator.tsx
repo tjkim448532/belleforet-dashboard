@@ -19,7 +19,8 @@ interface FacilityOption {
 
 const DEFAULT_FACILITIES: FacilityOption[] = [
   { key: '놀이동산', label: '놀이동산', color: '#3b82f6' },
-  { key: '마운틴카트', label: '마운틴카트', color: '#ef4444' },
+  { key: '마운틴카트(그랜드포렛)', label: '마운틴카트(그랜드)', color: '#ef4444' },
+  { key: '마운틴카트(미니포렛)', label: '마운틴카트(미니)', color: '#f97316' },
   { key: '사계절썰매장', label: '사계절썰매장', color: '#f59e0b' },
   { key: '벨포레 목장', label: '벨포레 목장', color: '#10b981' },
   { key: '벨포레 목장(체험)', label: '목장체험', color: '#14b8a6' },
@@ -36,7 +37,7 @@ const DEMAND_PRESETS = [
 ];
 
 export default function LeisurePricingSimulator() {
-  const [selectedFacility, setSelectedFacility] = useState<string>('마운틴카트');
+  const [selectedFacility, setSelectedFacility] = useState<string>('마운틴카트(그랜드포렛)');
   // 가장 마지막 연도 (현재는 2026년) 실적 누적 기준
   const [baseYear, setBaseYear] = useState<number>(2026);
   const [isLoading, setIsLoading] = useState<boolean>(false);

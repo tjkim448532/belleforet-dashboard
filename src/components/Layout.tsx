@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Tag
+  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Tag,
+  Palette
 } from 'lucide-react';
 
 export default function Layout() {
@@ -16,9 +17,10 @@ export default function Layout() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [golfOpen, setGolfOpen] = useState(true);
-  const [leisureOpen, setLeisureOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
-  const [synergyOpen, setSynergyOpen] = useState(true);
+  const [leisureOpen, setLeisureOpen] = useState(false);
+  const [contentOpen, setContentOpen] = useState(false);
+  const [synergyOpen, setSynergyOpen] = useState(false);
 
   const togglePin = () => {
     const next = !isPinned;
@@ -189,12 +191,12 @@ export default function Layout() {
             </div>
           )}
 
-          {/* 1. 리조트사업본부 Accordion (위치 상향) */}
+          {/* 2. 리조트사업본부 Accordion */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'resort') && (
             <div className="mt-2">
             <button
               onClick={() => setResortOpen(!resortOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <Hotel size={20} />
@@ -246,11 +248,118 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 2. 시너지 분석 Accordion (리조트사업본부 아래로 스위치) */}
+          {/* 3. 레저본부 Accordion (리조트사업본부 바로 아래) */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
+          <div className="mt-2">
+            <button
+              onClick={() => setLeisureOpen(!leisureOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <Ticket size={20} />
+                레저본부
+              </div>
+              {leisureOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            
+            {leisureOpen && (
+              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                <NavLink
+                  to="/leisure"
+                  end
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  레저 영업장 현황
+                </NavLink>
+                <NavLink
+                  to="/leisure/organization"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  조직도 및 인력 현황
+                </NavLink>
+                <NavLink
+                  to="/leisure/usage-rate"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  영업장별 이용률 추이
+                </NavLink>
+                <NavLink
+                  to="/leisure/simulator"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  티켓 가격 & 수요 시뮬레이터
+                </NavLink>
+                <NavLink
+                  to="/leisure/pricing"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Tag size={14} className="shrink-0 text-emerald-600" />
+                  종합 이용요금 안내 (골프·객실·레져·식음)
+                </NavLink>
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* 4. 컨텐츠기획본부 Accordion (신규 추가) */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'content' || userRole === 'leisure') && (
+            <div className="mt-2">
+              <button
+                onClick={() => setContentOpen(!contentOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <Palette size={20} />
+                  컨텐츠기획본부
+                </div>
+                {contentOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+              
+              {contentOpen && (
+                <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                  <NavLink
+                    to="/leisure/pricing"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    미디어아트·전시 기획
+                  </NavLink>
+                  <NavLink
+                    to="/facility-trend"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    문화예술·이벤트 실적
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 5. 시너지 분석 Accordion (컨텐츠기획본부 아래) */}
           <div className="mt-2">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <MonitorPlay size={20} />
@@ -318,75 +427,7 @@ export default function Layout() {
             )}
           </div>
 
-          {/* 3. 레저본부 Accordion */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
-          <div className="mt-2">
-            <button
-              onClick={() => setLeisureOpen(!leisureOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
-            >
-              <div className="flex items-center gap-3">
-                <Ticket size={20} />
-                레저본부
-              </div>
-              {leisureOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
-            
-            {leisureOpen && (
-              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
-                <NavLink
-                  to="/leisure"
-                  end
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  레저 영업장 현황
-                </NavLink>
-                <NavLink
-                  to="/leisure/organization"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  조직도 및 인력 현황
-                </NavLink>
-                <NavLink
-                  to="/leisure/usage-rate"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  영업장별 이용률 추이
-                </NavLink>
-                <NavLink
-                  to="/leisure/simulator"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  티켓 가격 & 수요 시뮬레이터
-                </NavLink>
-                <NavLink
-                  to="/leisure/pricing"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  <Tag size={14} className="shrink-0 text-emerald-600" />
-                  종합 이용요금 안내 (골프·객실·레져·식음)
-                </NavLink>
-              </div>
-            )}
-          </div>
-          )}
-
-          {/* 4. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
+          {/* 6. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
             <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
               <NavLink
@@ -413,7 +454,7 @@ export default function Layout() {
         <div className="p-4 space-y-2 border-t border-slate-100">
             <button
               onClick={() => setPwdModalOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm cursor-pointer"
             >
               <Key size={20} />
               비밀번호 변경
@@ -421,20 +462,20 @@ export default function Layout() {
             
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm cursor-pointer"
             >
               <LogOut size={20} />
               로그아웃
             </button>
 
-            {/* 관리자어드민 (맨 아래로 이동) */}
+            {/* 관리자 (맨 아래) */}
             {isAdmin && (
               <NavLink
                 to="/admin/roles"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-md hover:bg-slate-800 mt-2"
               >
                 <ShieldCheck size={20} className="text-brand-mint" />
-                관리자어드민
+                관리자
               </NavLink>
             )}
         </div>

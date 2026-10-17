@@ -498,7 +498,7 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
   },
   {
     id: 'media-art',
-    name: '미디어아트센터 (빛과 미디어 전시)',
+    name: '미디어아트센터',
     mainCategory: 'leisure',
     mainCategoryLabel: '레져',
     subCategory: '문화·전시',

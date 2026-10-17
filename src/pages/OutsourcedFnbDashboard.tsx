@@ -410,7 +410,7 @@ export default function OutsourcedFnbDashboard() {
         {!isDedicatedApiLive && !loading && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
             <AlertCircle size={14} className="text-amber-600 shrink-0" />
-            <span>[Ticket 42] 점유비율(%) 및 POS 메뉴 Top 3 백엔드 전용 API 배포 대기 중 (클라이언트 임의 연산 차단)</span>
+            <span>점유비율(%) 및 POS 실매출 Top 3 메뉴 데이터 연동 준비 중 (공식 홈페이지 대표 메뉴 임시 연동)</span>
           </div>
         )}
       </div>
@@ -876,7 +876,7 @@ export default function OutsourcedFnbDashboard() {
                   <th className="py-3.5 px-4 text-right">
                     <div>외주식음 내 비율(%)</div>
                     {!isDedicatedApiLive && (
-                      <div className="text-[10px] text-amber-600 font-normal">Ticket 42 대기</div>
+                      <div className="text-[10px] text-slate-400 font-normal">비율 집계 준비 중</div>
                     )}
                   </th>
                   <th className="py-3.5 px-4">매출 상위 메뉴 Top 3</th>
@@ -947,7 +947,7 @@ export default function OutsourcedFnbDashboard() {
                         {getActiveSharePct(v) !== null && getActiveSharePct(v) !== undefined ? (
                           <span className="font-extrabold text-emerald-700">{showPct(getActiveSharePct(v))}</span>
                         ) : (
-                          <span className="text-slate-400 font-normal" title="Ticket 42 백엔드 API 배포 대기 중">-</span>
+                          <span className="text-slate-400 font-normal" title="백엔드 점유비율 집계 연동 준비 중">-</span>
                         )}
                       </td>
                       <td className="py-3.5 px-4">
@@ -968,19 +968,19 @@ export default function OutsourcedFnbDashboard() {
                               <span
                                 key={cIdx}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-medium text-[11px]"
-                                title={`공식 홈페이지 크롤링 대표 메뉴 (${cm.price})`}
+                                title={`공식 홈페이지 대표 메뉴 (${cm.price})`}
                               >
                                 <span className="text-slate-400 font-bold">{cIdx + 1}</span> {cm.name}
                                 <span className="text-slate-400 font-mono text-[10px]">({cm.price})</span>
                               </span>
                             ))}
-                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded">
-                              웹 크롤링 메뉴 (Ticket 42 POS 집계 대기)
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded font-semibold">
+                              공식 홈페이지 대표 메뉴
                             </span>
                           </div>
                         ) : (
                           <span className="text-slate-400 font-medium text-[11px]">
-                            [Ticket 42] 백엔드 Top 3 메뉴 API 연동 대기
+                            POS 메뉴 집계 준비 중
                           </span>
                         )}
                       </td>

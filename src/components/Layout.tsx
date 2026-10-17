@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
-  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen
+  Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Tag
 } from 'lucide-react';
 
 export default function Layout() {
@@ -370,6 +370,16 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   티켓 가격 & 수요 시뮬레이터
+                </NavLink>
+                <NavLink
+                  to="/leisure/pricing"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Tag size={14} className="shrink-0 text-emerald-600" />
+                  체험·어트랙션 이용요금 안내
                 </NavLink>
               </div>
             )}

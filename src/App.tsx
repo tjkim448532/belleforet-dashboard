@@ -25,6 +25,7 @@ import LeisureFacility from './pages/LeisureFacility';
 import LeisureOrganization from './pages/LeisureOrganization';
 import LeisureUsageRate from './pages/LeisureUsageRate';
 import LeisureSimulator from './pages/LeisureSimulator';
+import LeisurePricing from './pages/LeisurePricing';
 import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 
@@ -89,6 +90,8 @@ export function App() {
                     <Route path="leisure-usage-rate" element={<LeisureUsageRate />} />
                     <Route path="leisure/simulator" element={<LeisureSimulator />} />
                     <Route path="leisure-simulator" element={<LeisureSimulator />} />
+                    <Route path="leisure/pricing" element={<LeisurePricing />} />
+                    <Route path="leisure-pricing" element={<LeisurePricing />} />
                     <Route path="target-simulator" element={<Navigate to="/strategic-simulator" replace />} />
                     <Route path="strategic-simulator" element={<StrategicSimulator />} />
                     <Route path="target-simulator/strategic" element={<Navigate to="/strategic-simulator" replace />} />

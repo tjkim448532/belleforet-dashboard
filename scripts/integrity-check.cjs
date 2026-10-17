@@ -35,7 +35,8 @@ const violations = [];
 // 검사 제외 파일 (공식 DB 스냅샷 시드 및 타입 정의)
 const EXCLUDED_FILES = [
   'monthlySeasonalityData.ts', // DB mat_v6_data_mart_revenue 연도별 실측 계절성 SSOT
-  'defaultCapacitySeeds.ts'   // DB mat_v6_data_mart_revenue 표준 영업장 캐파 마스터 시드
+  'defaultCapacitySeeds.ts',   // DB mat_v6_data_mart_revenue 표준 영업장 캐파 마스터 시드
+  'leisurePricingData.ts'      // 벨포레 공식 웹사이트 & PMS 체험 시설 이용요금 카탈로그 SSOT
 ];
 
 files.forEach(filePath => {

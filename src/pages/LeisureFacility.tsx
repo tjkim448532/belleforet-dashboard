@@ -114,7 +114,9 @@ export default function LeisureFacility() {
         const summary = res?.summary || (res?.data && !Array.isArray(res.data) ? res.data.summary : null);
         const venues = res?.venues || res?.venueBreakdown || (res?.data && !Array.isArray(res.data) ? res.data.venues : null);
         if (summary && Array.isArray(venues)) {
-          setChannelData({ summary, venues });
+          // Guard: '벨포레 리조트'(콘도/객실) 오매핑 항목 제외
+          const validVenues = venues.filter((v: any) => v.venueName !== '벨포레 리조트');
+          setChannelData({ summary, venues: validVenues });
         } else {
           setChannelData(null);
           setChannelError('API 응답에 summary/venues 완제품 데이터가 없습니다.');
@@ -139,16 +141,51 @@ export default function LeisureFacility() {
   const showWon = (v: any) => (v === null || v === undefined || v === '' ? '-' : `${formatCurrency(v)}원`);
 
   const { totalSales, topTickets } = useMemo(() => {
-    // 1. Primary SSOT: channelData (from /api/v6/report/leisure-channel-sales)
-    // Includes ALL leisure facilities (TICKET + MOTO) with 0-variance accuracy and fast response (~3.5s)
+    // 1. Primary SSOT: core.salesByFacility (from /api/v6/dashboard/revenue-summary)
+    // Official Gold Mart SSOT: contains 100% complete POS + PMS sales and proper category mapping
+    if (core?.salesByFacility && core.salesByFacility.length > 0) {
+      const ticketFacilities = core.salesByFacility.filter((item: any) => 
+        (item.categoryCode === 'TICKET' || item.categoryCode === 'MOTO') && !item.isSubtotal
+      );
+
+      let ssotTotalSales = 0;
+      if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
+        const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
+        const motoCat = core.salesByCategory.find((x: any) => x.categoryCode === 'MOTO');
+        ssotTotalSales = parseNumber(ticketCat?.todayActual || ticketCat?.totalSales || 0) +
+                         parseNumber(motoCat?.todayActual || motoCat?.totalSales || 0);
+      }
+
+      const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities
+        .map((item: any) => {
+          const name = item.shopName || item.facilityName || '기타';
+          const sales = parseNumber(item.todayActual || item.totalSales || 0);
+          const qty = parseNumber(item.totalVisitors || item.visitors || 0);
+          const depth2 = item.partName || '티켓/레저';
+          return { name, sales, qty, depth2 };
+        })
+        .filter((item: any) => item.sales > 0 || item.qty > 0)
+        .sort((a: any, b: any) => b.sales - a.sales);
+
+      return { 
+        totalSales: ssotTotalSales, 
+        topTickets: mappedTickets
+      };
+    }
+
+    // 2. Secondary fallback: channelData (from /api/v6/report/leisure-channel-sales)
     if (channelData?.venues && channelData.venues.length > 0) {
       const grandTotal = parseNumber(channelData.summary?.totalRevenue || 0);
-      const mapped = channelData.venues.map((v: any) => ({
-        name: v.venueName || '기타',
-        sales: parseNumber(v.totalRevenue || 0),
-        qty: parseNumber(v.totalVisitors || 0),
-        depth2: '레저/체험'
-      })).sort((a: any, b: any) => b.sales - a.sales);
+      const mapped = channelData.venues
+        .filter((v: any) => v.venueName !== '벨포레 리조트') // Guard against room/resort mistagging
+        .map((v: any) => ({
+          name: v.venueName || '기타',
+          sales: parseNumber(v.totalRevenue || 0),
+          qty: parseNumber(v.totalVisitors || 0),
+          depth2: '레저/체험'
+        }))
+        .filter((v: any) => v.sales > 0 || v.qty > 0)
+        .sort((a: any, b: any) => b.sales - a.sales);
 
       return {
         totalSales: grandTotal,
@@ -156,40 +193,8 @@ export default function LeisureFacility() {
       };
     }
 
-    // 2. Secondary fallback: core.salesByFacility (if channelData is still loading)
-    if (!core?.salesByFacility) {
-      return { totalSales: 0, topTickets: [] };
-    }
-
-    const ticketFacilities = core.salesByFacility.filter((item: any) => 
-      item.categoryCode === 'TICKET' || item.categoryCode === 'MOTO'
-    );
-
-    let ssotTotalSales = 0;
-    if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
-      const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
-      const motoCat = core.salesByCategory.find((x: any) => x.categoryCode === 'MOTO');
-      ssotTotalSales = parseNumber(ticketCat?.todayActual || ticketCat?.totalSales || 0) +
-                       parseNumber(motoCat?.todayActual || motoCat?.totalSales || 0);
-    }
-
-    const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string }> = ticketFacilities
-      .filter((item: any) => !item.isSubtotal)
-      .map((item: any) => {
-        const name = item.shopName || item.facilityName || '기타';
-        const sales = parseNumber(item.todayActual || item.totalSales || 0);
-        const qty = parseNumber(item.totalVisitors || item.visitors || 0);
-        const depth2 = item.partName || '티켓/레저';
-        return { name, sales, qty, depth2 };
-      });
-
-    const sortedTickets = mappedTickets.sort((a, b) => b.sales - a.sales);
-
-    return { 
-      totalSales: ssotTotalSales, 
-      topTickets: sortedTickets
-    };
-  }, [channelData, core]);
+    return { totalSales: 0, topTickets: [] };
+  }, [core, channelData]);
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-8">

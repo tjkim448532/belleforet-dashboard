@@ -7,6 +7,7 @@ export interface SimulationTargetInput {
   targetTrevpar: number; // 원 / 175실·월
   targetGrowthRate: number; // 전년 대비 성장률 (%)
   targetTotalRevenue: number; // 전사 총매출 목표 (원)
+  targetGoal?: number; // 전사 총매출 목표 동의어 (원)
   strategyMode?: 'BALANCED' | 'PRICE_LEVERAGE' | 'VOLUME_MAXIMIZE';
   includeGolf: boolean;
   totalRoomCapacity?: number;

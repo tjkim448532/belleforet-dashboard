@@ -1,10 +1,11 @@
 import { useState, useEffect, Fragment } from 'react';
 import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
-import { Store, TrendingUp, Calendar, AlertCircle, RefreshCw, Scale, TreePine } from 'lucide-react';
+import { Store, TrendingUp, Calendar, AlertCircle, RefreshCw, Scale, TreePine, Sparkles, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useDate } from '../contexts/DateContext';
 import { getLatestClosedMonthStr } from '../lib/dateUtils';
 import HolidayComparison from '../components/dashboard/HolidayComparison';
+import type { MonthlySeasonalityMatrixResponse, MonthlySeasonalityMonthRow } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -42,6 +43,30 @@ export default function FacilityTrend() {
     golfRevenue?: number;
     visitors?: number;
   }>>({});
+
+  // 🌟 V6 2026 vs 2025 월별 시즌성 매트릭스 (monthly-seasonality-matrix 완제품 바인딩)
+  const [activeTab, setActiveTab] = useState<'TREND' | 'SEASONALITY'>('TREND');
+  const [seasonalityData, setSeasonalityData] = useState<MonthlySeasonalityMatrixResponse | null>(null);
+  const [loadingSeasonality, setLoadingSeasonality] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSeasonality = async () => {
+      setLoadingSeasonality(true);
+      try {
+        const res: MonthlySeasonalityMatrixResponse = await secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix`);
+        if (isMounted) {
+          setSeasonalityData((res as any)?.data ?? res);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch monthly seasonality matrix:', e);
+      } finally {
+        if (isMounted) setLoadingSeasonality(false);
+      }
+    };
+    fetchSeasonality();
+    return () => { isMounted = false; };
+  }, []);
 
   const fetchFacilityTrend = async () => {
     setLoading(true);
@@ -587,6 +612,337 @@ export default function FacilityTrend() {
     );
   };
 
+  // 🌟 V6 2026 vs 2025 월별 시즌성 매트릭스 렌더링 함수
+  const renderSeasonalityView = () => {
+    if (loadingSeasonality) {
+      return (
+        <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
+          <RefreshCw className="w-10 h-10 animate-spin mb-4 text-blue-600" />
+          <p className="font-bold text-slate-700">2026 vs 2025 시즌성 매트릭스 데이터를 불러오는 중입니다...</p>
+        </div>
+      );
+    }
+
+    if (!seasonalityData || (!seasonalityData.months && !seasonalityData.monthly)) {
+      return (
+        <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
+          <AlertCircle className="w-12 h-12 mb-4 text-slate-300" />
+          <p className="font-bold text-slate-600 text-lg mb-2">시즌성 데이터가 존재하지 않습니다.</p>
+        </div>
+      );
+    }
+
+    const monthsList: MonthlySeasonalityMonthRow[] = seasonalityData.months || seasonalityData.monthly || [];
+    const annual = seasonalityData.annual || seasonalityData.totals || {};
+
+    const rev2026 = annual.revenue2026 ?? annual.tyRevenue ?? 0;
+    const rev2025 = annual.revenue2025 ?? annual.lyRevenue ?? 0;
+    const revDiff = annual.yoyRevenueDiff ?? annual.yoyRevDiff ?? annual.revenueDiff ?? (rev2026 - rev2025);
+    const revPct = annual.yoyRevenuePct ?? annual.yoyRevPct ?? annual.revenueYoyPct ?? annual.revenueGrowthRate ?? 0;
+
+    const vis2026 = annual.visitors2026 ?? annual.tyVisitors ?? 0;
+    const vis2025 = annual.visitors2025 ?? annual.lyVisitors ?? 0;
+    const visDiff = annual.yoyVisitorsDiff ?? annual.visitorsDiff ?? (vis2026 - vis2025);
+    const visPct = annual.yoyVisitorsPct ?? annual.visitorsYoyPct ?? annual.visitorsGrowthRate ?? 0;
+
+    const trev2026 = annual.trevpar2026 ?? 0;
+    const trev2025 = annual.trevpar2025 ?? 0;
+    const trevDiff = annual.yoyTrevparDiff ?? (trev2026 - trev2025);
+    const trevPct = annual.yoyTrevparPct ?? 0;
+
+    // ECharts Seasonality Option
+    const monthLabels = monthsList.map(m => m.monthName || `${m.month}월`);
+    const chartRev2025 = monthsList.map(m => m.revenue2025 ?? m.lyRevenue ?? 0);
+    const chartRev2026 = monthsList.map(m => m.revenue2026 ?? m.tyRevenue ?? 0);
+    const chartTrev2025 = monthsList.map(m => m.trevpar2025 ?? 0);
+    const chartTrev2026 = monthsList.map(m => m.trevpar2026 ?? 0);
+
+    const seasonalityChartOption = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' }
+      },
+      legend: {
+        data: ['2025년 매출', '2026년 매출', '2025 TRevPAR', '2026 TRevPAR'],
+        bottom: 0
+      },
+      grid: { left: '3%', right: '3%', bottom: '15%', containLabel: true },
+      xAxis: [{ type: 'category', data: monthLabels, axisPointer: { type: 'shadow' } }],
+      yAxis: [
+        {
+          type: 'value',
+          name: '매출액 (원)',
+          axisLabel: { formatter: (v: number) => `${Math.round(v / 100000000)}억` }
+        },
+        {
+          type: 'value',
+          name: 'TRevPAR (원)',
+          axisLabel: { formatter: (v: number) => `${Math.round(v / 10000)}만` }
+        }
+      ],
+      series: [
+        {
+          name: '2025년 매출',
+          type: 'bar',
+          data: chartRev2025,
+          itemStyle: { color: '#94a3b8', borderRadius: [4, 4, 0, 0] },
+          barMaxWidth: 18
+        },
+        {
+          name: '2026년 매출',
+          type: 'bar',
+          data: chartRev2026,
+          itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
+          barMaxWidth: 18
+        },
+        {
+          name: '2025 TRevPAR',
+          type: 'line',
+          yAxisIndex: 1,
+          data: chartTrev2025,
+          itemStyle: { color: '#f59e0b' },
+          lineStyle: { width: 2, type: 'dashed' }
+        },
+        {
+          name: '2026 TRevPAR',
+          type: 'line',
+          yAxisIndex: 1,
+          data: chartTrev2026,
+          itemStyle: { color: '#10b981' },
+          lineStyle: { width: 2.5 }
+        }
+      ]
+    };
+
+    return (
+      <div className="space-y-8">
+        {/* Top Annual Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Revenue YoY */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 누적 매출 (YoY)</span>
+              <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold">2026 vs 2025</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl lg:text-3xl font-black font-financial text-slate-900">
+                {rev2026 > 0 ? `${formatCurrency(rev2026)}원` : '-'}
+              </span>
+              <span className={`text-xs font-black font-financial inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg ${
+                revPct >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+              }`}>
+                {revPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                {revPct >= 0 ? '+' : ''}{revPct}%
+              </span>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-financial">
+              <span>2025년: {rev2025 > 0 ? `${formatCurrency(rev2025)}원` : '-'}</span>
+              <span className={revDiff >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
+                증감 {revDiff >= 0 ? '+' : ''}{formatCurrency(revDiff)}원
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Visitors YoY */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 총이용객 (YoY)</span>
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">2026 vs 2025</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl lg:text-3xl font-black font-financial text-slate-900">
+                {vis2026 > 0 ? `${formatCurrency(vis2026)}명` : '-'}
+              </span>
+              <span className={`text-xs font-black font-financial inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg ${
+                visPct >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+              }`}>
+                {visPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                {visPct >= 0 ? '+' : ''}{visPct}%
+              </span>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-financial">
+              <span>2025년: {vis2025 > 0 ? `${formatCurrency(vis2025)}명` : '-'}</span>
+              <span className={visDiff >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
+                증감 {visDiff >= 0 ? '+' : ''}{formatCurrency(visDiff)}명
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: TRevPAR YoY */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 TRevPAR (YoY)</span>
+              <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-bold">총체류매출</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl lg:text-3xl font-black font-financial text-slate-900">
+                {trev2026 > 0 ? `${formatCurrency(trev2026)}원` : '-'}
+              </span>
+              <span className={`text-xs font-black font-financial inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg ${
+                trevPct >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+              }`}>
+                {trevPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                {trevPct >= 0 ? '+' : ''}{trevPct}%
+              </span>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-financial">
+              <span>2025년: {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}</span>
+              <span className={trevDiff >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
+                증감 {trevDiff >= 0 ? '+' : ''}{formatCurrency(trevDiff)}원
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 12-Month YoY EChart */}
+        <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <span>2026 vs 2025 월별 매출 & TRevPAR 시즌성 대조 차트</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                월별 매출 실적과 TRevPAR(가용 객실당 총체류매출)의 시즌성 변화 추이를 전년 동월과 1:1 대조합니다.
+              </p>
+            </div>
+          </div>
+          <ReactECharts option={seasonalityChartOption} style={{ height: '360px', width: '100%' }} />
+        </div>
+
+        {/* 12-Month Seasonality Grid Table */}
+        <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              <span>2026 vs 2025 월별 시즌성 종합 매트릭스 (100% 사전 연산 완제품)</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              프론트엔드 인라인 연산 없이 백엔드에서 0-Variance로 사전 연산된 증감액과 증감률을 1:1 바인딩합니다.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+                  <th className="px-4 py-3 text-center">월</th>
+                  <th className="px-4 py-3 text-right">2026년 매출</th>
+                  <th className="px-4 py-3 text-right">2025년 매출</th>
+                  <th className="px-4 py-3 text-right">매출 증감액</th>
+                  <th className="px-4 py-3 text-right">매출 증감률</th>
+                  <th className="px-4 py-3 text-right">2026년 이용객</th>
+                  <th className="px-4 py-3 text-right">2025년 이용객</th>
+                  <th className="px-4 py-3 text-right">인원 증감</th>
+                  <th className="px-4 py-3 text-right">인원 증감률</th>
+                  <th className="px-4 py-3 text-right">2026 TRevPAR</th>
+                  <th className="px-4 py-3 text-right">2025 TRevPAR</th>
+                  <th className="px-4 py-3 text-right">TRevPAR 증감률</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-financial">
+                {monthsList.map((m) => {
+                  const mRev2026 = m.revenue2026 ?? m.tyRevenue ?? 0;
+                  const mRev2025 = m.revenue2025 ?? m.lyRevenue ?? 0;
+                  const mRevDiff = m.yoyRevenueDiff ?? m.yoyRevDiff ?? m.revenueDiff ?? (mRev2026 - mRev2025);
+                  const mRevPct = m.yoyRevenuePct ?? m.yoyRevPct ?? m.revenueYoyPct ?? m.revenueGrowthRate ?? 0;
+
+                  const mVis2026 = m.visitors2026 ?? m.tyVisitors ?? 0;
+                  const mVis2025 = m.visitors2025 ?? m.lyVisitors ?? 0;
+                  const mVisDiff = m.yoyVisitorsDiff ?? m.visitorsDiff ?? (mVis2026 - mVis2025);
+                  const mVisPct = m.yoyVisitorsPct ?? m.visitorsYoyPct ?? m.visitorsGrowthRate ?? 0;
+
+                  const mTrev2026 = m.trevpar2026 ?? 0;
+                  const mTrev2025 = m.trevpar2025 ?? 0;
+                  const mTrevPct = m.yoyTrevparPct ?? 0;
+
+                  return (
+                    <tr key={m.month} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3 text-center font-bold text-slate-800 bg-slate-50/50">
+                        {m.monthName || `${m.month}월`}
+                      </td>
+                      <td className="px-4 py-3 text-right font-black text-slate-900">
+                        {mRev2026 > 0 ? `${formatCurrency(mRev2026)}원` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">
+                        {mRev2025 > 0 ? `${formatCurrency(mRev2025)}원` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-bold ${mRevDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {mRevDiff !== 0 ? `${mRevDiff > 0 ? '+' : ''}${formatCurrency(mRevDiff)}원` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-black ${mRevPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {mRevPct !== 0 ? `${mRevPct > 0 ? '+' : ''}${mRevPct}%` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-slate-800">
+                        {mVis2026 > 0 ? `${formatCurrency(mVis2026)}명` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">
+                        {mVis2025 > 0 ? `${formatCurrency(mVis2025)}명` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-bold ${mVisDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {mVisDiff !== 0 ? `${mVisDiff > 0 ? '+' : ''}${formatCurrency(mVisDiff)}명` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-black ${mVisPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {mVisPct !== 0 ? `${mVisPct > 0 ? '+' : ''}${mVisPct}%` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-purple-900">
+                        {mTrev2026 > 0 ? `${formatCurrency(mTrev2026)}원` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">
+                        {mTrev2025 > 0 ? `${formatCurrency(mTrev2025)}원` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-black ${mTrevPct >= 0 ? 'text-purple-700' : 'text-rose-700'}`}>
+                        {mTrevPct !== 0 ? `${mTrevPct > 0 ? '+' : ''}${mTrevPct}%` : '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot className="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900">
+                <tr>
+                  <td className="px-4 py-3 text-center">연간 총계</td>
+                  <td className="px-4 py-3 text-right font-black text-slate-900">
+                    {rev2026 > 0 ? `${formatCurrency(rev2026)}원` : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {rev2025 > 0 ? `${formatCurrency(rev2025)}원` : '-'}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-black ${revDiff >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {revDiff !== 0 ? `${revDiff > 0 ? '+' : ''}${formatCurrency(revDiff)}원` : '-'}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-black ${revPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {revPct !== 0 ? `${revPct > 0 ? '+' : ''}${revPct}%` : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-black text-slate-900">
+                    {vis2026 > 0 ? `${formatCurrency(vis2026)}명` : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {vis2025 > 0 ? `${formatCurrency(vis2025)}명` : '-'}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-black ${visDiff >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {visDiff !== 0 ? `${visDiff > 0 ? '+' : ''}${formatCurrency(visDiff)}명` : '-'}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-black ${visPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {visPct !== 0 ? `${visPct > 0 ? '+' : ''}${visPct}%` : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-black text-purple-950">
+                    {trev2026 > 0 ? `${formatCurrency(trev2026)}원` : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-black ${trevPct >= 0 ? 'text-purple-700' : 'text-rose-700'}`}>
+                    {trevPct !== 0 ? `${trevPct > 0 ? '+' : ''}${trevPct}%` : '-'}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8">
       {/* Header */}
@@ -682,76 +1038,114 @@ export default function FacilityTrend() {
         </div>
       </div>
 
+      {/* 🌟 V6 탭 전환기: 영업장별 월별 추이 vs 2026 vs 2025 월별 시즌성 매트릭스 */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('TREND')}
+          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'TREND'
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <TrendingUp size={17} />
+          <span>📈 영업장별 월별 실적 추이 (2024~현재)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('SEASONALITY')}
+          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'SEASONALITY'
+              ? 'bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Sparkles size={17} />
+          <span>📅 2026 vs 2025 월별 시즌성 매트릭스 & TRevPAR (사전 연산 완제품)</span>
+          <span className="text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
+            V6 신규
+          </span>
+        </button>
+      </div>
+
       {/* Content Area */}
-      {loading ? (
-        <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
-          <RefreshCw className="w-10 h-10 animate-spin mb-4 text-[#00ae95]" />
-          <p className="font-bold">데이터를 불러오는 중입니다...</p>
-        </div>
-      ) : data?.monthlyData && data.monthlyData.length > 0 ? (
-        <div className="space-y-6">
-          {/* Chart Card */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
-              <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[#00ae95]" />
-                <span>
-                  {selectedFacility === '전체' ? '벨포레 전체' : selectedFacility} 월별 매출 추이
-                </span>
-                {selectedFacility === '전체' && (
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    {golfViewMode === 'COMPARE' ? '포함 vs 제외 듀얼 바 대조' : golfViewMode === 'TOTAL' ? '골프포함 전사 단일 뷰' : '골프제외 순수 리조트 뷰'}
-                  </span>
-                )}
-              </h2>
-
-              {selectedFacility === '전체' && golfViewMode === 'COMPARE' && (
-                <div className="text-xs text-slate-500 font-medium flex items-center gap-3">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-xs bg-slate-900 inline-block"></span> 골프포함 총매출
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-xs bg-indigo-500 inline-block"></span> 골프제외 순매출
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="h-[400px] w-full">
-              <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
-            </div>
-          </div>
-
-          {/* Data Table Card */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Store className="w-5 h-5 text-blue-500" />
-                <span>월별 상세 실적 {selectedFacility === '전체' ? '(벨포레 전체 종합)' : ''}</span>
-              </h2>
-              {selectedFacility === '전체' && (
-                <span className="text-xs font-bold text-slate-500">
-                  {golfViewMode === 'COMPARE' ? '3단 비교: [골프포함 | 골프제외 | 객실투숙객]' : '2단 표출: [매출액 | 객실투숙객]'}
-                </span>
-              )}
-            </div>
-            <div className="overflow-x-auto">
-              {renderPivotTable()}
-            </div>
-          </div>
-        </div>
+      {activeTab === 'SEASONALITY' ? (
+        renderSeasonalityView()
       ) : (
-        <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
-          <AlertCircle className="w-12 h-12 mb-4 text-slate-300" />
-          <p className="font-bold text-slate-600 text-lg mb-2">데이터가 존재하지 않습니다.</p>
-          <p className="text-sm text-slate-400 text-center max-w-md">
-            <b>{selectedFacility}</b>의 2024년 이후 집계된 매출 데이터가 없습니다.
-          </p>
-        </div>
-      )}
+        <>
+          {loading ? (
+            <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
+              <RefreshCw className="w-10 h-10 animate-spin mb-4 text-[#00ae95]" />
+              <p className="font-bold">데이터를 불러오는 중입니다...</p>
+            </div>
+          ) : data?.monthlyData && data.monthlyData.length > 0 ? (
+            <div className="space-y-6">
+              {/* Chart Card */}
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
+                  <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-[#00ae95]" />
+                    <span>
+                      {selectedFacility === '전체' ? '벨포레 전체' : selectedFacility} 월별 매출 추이
+                    </span>
+                    {selectedFacility === '전체' && (
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {golfViewMode === 'COMPARE' ? '포함 vs 제외 듀얼 바 대조' : golfViewMode === 'TOTAL' ? '골프포함 전사 단일 뷰' : '골프제외 순수 리조트 뷰'}
+                      </span>
+                    )}
+                  </h2>
 
-      {/* 신규: 명절/연휴 비교 (API V6 연동) - 맨 아래 배치 */}
-      <HolidayComparison />
+                  {selectedFacility === '전체' && golfViewMode === 'COMPARE' && (
+                    <div className="text-xs text-slate-500 font-medium flex items-center gap-3">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-slate-900 inline-block"></span> 골프포함 총매출
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-indigo-500 inline-block"></span> 골프제외 순매출
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="h-[400px] w-full">
+                  <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
+                </div>
+              </div>
+
+              {/* Data Table Card */}
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
+                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Store className="w-5 h-5 text-blue-500" />
+                    <span>월별 상세 실적 {selectedFacility === '전체' ? '(벨포레 전체 종합)' : ''}</span>
+                  </h2>
+                  {selectedFacility === '전체' && (
+                    <span className="text-xs font-bold text-slate-500">
+                      {golfViewMode === 'COMPARE' ? '3단 비교: [골프포함 | 골프제외 | 객실투숙객]' : '2단 표출: [매출액 | 객실투숙객]'}
+                    </span>
+                  )}
+                </div>
+                <div className="overflow-x-auto">
+                  {renderPivotTable()}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-[32px] p-16 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-slate-400">
+              <AlertCircle className="w-12 h-12 mb-4 text-slate-300" />
+              <p className="font-bold text-slate-600 text-lg mb-2">데이터가 존재하지 않습니다.</p>
+              <p className="text-sm text-slate-400 text-center max-w-md">
+                <b>{selectedFacility}</b>의 2024년 이후 집계된 매출 데이터가 없습니다.
+              </p>
+            </div>
+          )}
+
+          {/* 신규: 명절/연휴 비교 (API V6 연동) - 맨 아래 배치 */}
+          <HolidayComparison />
+        </>
+      )}
     </div>
   );
 }

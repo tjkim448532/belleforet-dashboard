@@ -10,6 +10,7 @@ import {
 import ReactECharts from 'echarts-for-react';
 import * as XLSX from 'xlsx';
 import type { SimulationTargetInput } from '../types/simulation';
+import type { StrategicForecastResponse } from '../types/reports-v2';
 import { secureFetcher } from '../lib/secureFetcher';
 import MonthlyDynamicRebalancer from '../components/dashboard/MonthlyDynamicRebalancer';
 import PackageGeneratorSimulator from '../components/dashboard/PackageGeneratorSimulator';
@@ -324,6 +325,53 @@ export default function StrategicSimulator() {
     fetchBusinessPlan();
     return () => { isMounted = false; };
   }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf, retryTrigger, monthlyGrowthRates]);
+
+  // Server Simulator Integration: POST /api/v6/simulator/strategic-forecast
+  const [serverForecastData, setServerForecastData] = useState<StrategicForecastResponse | null>(null);
+  const [isForecastComputing, setIsForecastComputing] = useState<boolean>(false);
+  const [forecastNotice, setForecastNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const runStrategicForecast = async () => {
+      setIsForecastComputing(true);
+      try {
+        const res: StrategicForecastResponse = await secureFetcher(`${API_BASE}/api/v6/simulator/strategic-forecast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            selectedYear: input.targetYear,
+            customCapacities: {},
+            monthMultipliers: monthlyGrowthRates,
+            selectedMonth: input.selectedMonth,
+            dayFilter: 'ALL',
+            simMode: 'BALANCED',
+            targetGoal: input.targetGoal ?? input.targetTotalRevenue
+          })
+        });
+
+        if (!isMounted) return;
+
+        if ((res as any)?.isPowerSaving || res?.error?.includes('심야 절전')) {
+          setForecastNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
+          setServerForecastData(null);
+        } else if (res?.success || res?.annualTotal !== undefined) {
+          setServerForecastData(res);
+          setForecastNotice(null);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        if (err?.message?.includes('심야 절전') || String(err).includes('500')) {
+          setForecastNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
+        }
+      } finally {
+        if (isMounted) setIsForecastComputing(false);
+      }
+    };
+
+    runStrategicForecast();
+    return () => { isMounted = false; };
+  }, [input.targetYear, input.selectedMonth, input.targetTotalRevenue, monthlyGrowthRates, retryTrigger]);
 
   // Fetch All 12 Months Matrix Data for Business Plan (Fast parallel fetch of base actuals)
   useEffect(() => {
@@ -1197,6 +1245,56 @@ export default function StrategicSimulator() {
           </span>
         </button>
       </div>
+
+      {/* Server Power-saving / Operational Notice */}
+      {forecastNotice && (
+        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 text-xs font-semibold text-amber-900 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+            <span>{forecastNotice}</span>
+          </div>
+          <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-mono">
+            절전 모드 대기
+          </span>
+        </div>
+      )}
+
+      {/* Server Forecast Summary Bar */}
+      {serverForecastData && (
+        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-indigo-400" />
+            <span className="text-xs font-bold text-white">서버리스 전사 매출 시뮬레이터 실시간 완제품</span>
+            {isForecastComputing && <span className="text-[11px] text-indigo-300 font-semibold animate-pulse">연산 중...</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-5 text-xs">
+            {serverForecastData.annualTotal !== undefined && (
+              <div>
+                <span className="text-slate-300">연간 총예측: </span>
+                <b className="font-mono text-emerald-400 font-bold">{serverForecastData.annualTotal.toLocaleString()}원</b>
+              </div>
+            )}
+            {serverForecastData.annualMaxCapacity !== undefined && (
+              <div>
+                <span className="text-slate-300">물리 최대 Capa: </span>
+                <b className="font-mono text-slate-200">{serverForecastData.annualMaxCapacity.toLocaleString()}원</b>
+              </div>
+            )}
+            {serverForecastData.utilizationRate !== undefined && (
+              <div>
+                <span className="text-slate-300">가동률: </span>
+                <b className="font-mono text-indigo-300">{serverForecastData.utilizationRate}%</b>
+              </div>
+            )}
+            {serverForecastData.goalAchievementPct !== undefined && (
+              <div>
+                <span className="text-slate-300">목표 달성률: </span>
+                <b className="font-mono text-amber-400 font-black">{serverForecastData.goalAchievementPct}%</b>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'PACKAGE_GEN' ? (
         <PackageGeneratorSimulator />

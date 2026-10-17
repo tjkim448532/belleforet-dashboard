@@ -13,6 +13,7 @@ import ReactECharts from 'echarts-for-react';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { transformResortData } from '../lib/dataTransformers';
 import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
+import type { ResortBusinessSummaryResponse } from '../types/reports-v2';
 
 // 🌟 대한민국 법정 공휴일 마스터 (2025~2026)
 const KOREAN_HOLIDAYS_SET = new Set([
@@ -66,6 +67,7 @@ export default function ResortBusiness() {
   const { startDate, endDate, isRange: isGlobalRange } = useDate();
   const [showLyCompareTable, setShowLyCompareTable] = useState<boolean>(true);
   const [channelCompareView, setChannelCompareView] = useState<'compare' | 'single'>('compare');
+  const [resortSummary, setResortSummary] = useState<ResortBusinessSummaryResponse | null>(null);
 
   // 💡 LOS (연박) 체류 시너지 분석 데이터 상태
   const [losTrendData, setLosTrendData] = useState<any[]>([]);
@@ -163,7 +165,8 @@ export default function ResortBusiness() {
           ? `startDate=${lyStartStr}&endDate=${lyEndStr}&_t=${Date.now()}`
           : `date=${lyStartStr}&_t=${Date.now()}`;
           
-        const [overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes, leadtimeWearRes] = await Promise.all([
+        const [resortSummaryRes, overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes, leadtimeWearRes] = await Promise.all([
+          secureFetcher(`${API_BASE}/api/v6/report/resort-business-summary?${queryParams}`, { signal: controller.signal }).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`, { signal: controller.signal }),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
@@ -176,6 +179,12 @@ export default function ResortBusiness() {
         ]);
 
         if (controller.signal.aborted) return;
+
+        if (resortSummaryRes) {
+          setResortSummary(resortSummaryRes?.data ?? resortSummaryRes);
+        } else {
+          setResortSummary(null);
+        }
 
         if (leadtimeWearRes && (leadtimeWearRes.summary || leadtimeWearRes.data)) {
           setLeadtimeWearIntel(leadtimeWearRes.data || leadtimeWearRes);
@@ -933,6 +942,156 @@ export default function ResortBusiness() {
               </div>
             )}
           </div>
+
+          {/* 🏛️ V6 리조트 종합 요약 (resort-business-summary 완제품 바인딩) */}
+          {resortSummary && (
+            <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 border border-slate-100 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                      V6 리조트 종합 요약
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500 font-financial">
+                      단일 진실 공급원 (SSOT)
+                    </span>
+                  </div>
+                  <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-blue-600" />
+                    <span>주중·주말 및 평형별 전년 대비 핵심 성장률 요약</span>
+                  </h2>
+                </div>
+                {resortSummary.lodgingStats && (
+                  <div className="flex items-center gap-2 text-xs font-semibold">
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl">
+                      물리 실가동률: <b className="text-blue-700">{resortSummary.lodgingStats.physicalOccRate}%</b>
+                    </span>
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl">
+                      커넥티드 비중: <b className="text-emerald-700">{resortSummary.lodgingStats.connectingOccRate}%</b>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Day Type Comparison (주중 vs 주말·공휴일) */}
+              {resortSummary.dayTypeComparison && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+                    <CalendarDays size={14} className="text-blue-600" />
+                    <span>주중 vs 주말·공휴일 전년 동기 대비 성장률</span>
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 매출 성장</span>
+                      <span className={`text-base font-black font-financial ${
+                        (resortSummary.dayTypeComparison.weekdayRevenueGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {(resortSummary.dayTypeComparison.weekdayRevenueGrowth ?? 0) >= 0 ? '+' : ''}
+                        {resortSummary.dayTypeComparison.weekdayRevenueGrowth ?? '-'}%
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 매출 성장</span>
+                      <span className={`text-base font-black font-financial ${
+                        (resortSummary.dayTypeComparison.weekendRevenueGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {(resortSummary.dayTypeComparison.weekendRevenueGrowth ?? 0) >= 0 ? '+' : ''}
+                        {resortSummary.dayTypeComparison.weekendRevenueGrowth ?? '-'}%
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 판매실수 성장</span>
+                      <span className={`text-base font-black font-financial ${
+                        (resortSummary.dayTypeComparison.weekdayRoomsGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {(resortSummary.dayTypeComparison.weekdayRoomsGrowth ?? 0) >= 0 ? '+' : ''}
+                        {resortSummary.dayTypeComparison.weekdayRoomsGrowth ?? '-'}%
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 판매실수 성장</span>
+                      <span className={`text-base font-black font-financial ${
+                        (resortSummary.dayTypeComparison.weekendRoomsGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {(resortSummary.dayTypeComparison.weekendRoomsGrowth ?? 0) >= 0 ? '+' : ''}
+                        {resortSummary.dayTypeComparison.weekendRoomsGrowth ?? '-'}%
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 ADR 성장</span>
+                      <span className={`text-base font-black font-financial ${
+                        (resortSummary.dayTypeComparison.weekdayAdrGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {(resortSummary.dayTypeComparison.weekdayAdrGrowth ?? 0) >= 0 ? '+' : ''}
+                        {resortSummary.dayTypeComparison.weekdayAdrGrowth ?? '-'}%
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 ADR 성장</span>
+                      <span className={`text-base font-black font-financial ${
+                        (resortSummary.dayTypeComparison.weekendAdrGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {(resortSummary.dayTypeComparison.weekendAdrGrowth ?? 0) >= 0 ? '+' : ''}
+                        {resortSummary.dayTypeComparison.weekendAdrGrowth ?? '-'}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Pyeong Comparison (16평, 35평, 51평) */}
+              {resortSummary.pyeongComparison?.items && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+                    <Hotel size={14} className="text-blue-600" />
+                    <span>평형별 전년 대비 종합 성장률 & 매출 비중 (사전 연산 완제품)</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {resortSummary.pyeongComparison.items.map((item) => (
+                      <div key={item.roomType} className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                          <span className="font-extrabold text-sm text-slate-900">{item.roomType}</span>
+                          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                            비중 {item.sharePct ?? item.todaySharePct ?? '-'}%
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-medium block">매출 성장</span>
+                            <span className={`font-bold font-financial ${
+                              (item.revGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            }`}>
+                              {(item.revGrowth ?? 0) >= 0 ? '+' : ''}{item.revGrowth ?? '-'}%
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-medium block">객실수 성장</span>
+                            <span className={`font-bold font-financial ${
+                              (item.roomsGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            }`}>
+                              {(item.roomsGrowth ?? 0) >= 0 ? '+' : ''}{item.roomsGrowth ?? '-'}%
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-medium block">ADR 성장</span>
+                            <span className={`font-bold font-financial ${
+                              (item.adrGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            }`}>
+                              {(item.adrGrowth ?? 0) >= 0 ? '+' : ''}{item.adrGrowth ?? '-'}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 font-financial">
+                          <span>판매실수: <b className="text-slate-800">{item.todayRooms?.toLocaleString()}실</b></span>
+                          <span>ADR: <b className="text-slate-800">{item.todayAdr ? formatCurrency(item.todayAdr) + '원' : '-'}</b></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 🌟 기간 선택 시: 전년 동일기간 객실 실적 정밀 대조 매트릭스 */}
           {isRange && lyStats && (

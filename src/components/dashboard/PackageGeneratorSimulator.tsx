@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
+import type { PackageGeneratorResponse } from '../../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -224,6 +225,55 @@ export default function PackageGeneratorSimulator() {
     if (val === null || val === undefined || isNaN(val)) return '-';
     return new Intl.NumberFormat('ko-KR').format(Math.round(val));
   };
+
+  // Server Simulator Integration: POST /api/v6/simulator/package-generator
+  const [serverPackageData, setServerPackageData] = useState<PackageGeneratorResponse | null>(null);
+  const [isPackageComputing, setIsPackageComputing] = useState<boolean>(false);
+  const [packageNotice, setPackageNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const runPackageSim = async () => {
+      setIsPackageComputing(true);
+      try {
+        const roomKey = selectedRoomTypeId.replace('ROOM_', '');
+        const res: PackageGeneratorResponse = await secureFetcher(`${API_BASE}/api/v6/simulator/package-generator`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            month: selectedMonth,
+            targetType,
+            roomTypeId: roomKey,
+            nights: 1,
+            adults: 2,
+            children: 0,
+            selectedFacilityIds: userItems.map(i => i.id),
+            targetDiscountPct: 10
+          })
+        });
+
+        if (!isMounted) return;
+
+        if ((res as any)?.isPowerSaving || res?.error?.includes('심야 절전')) {
+          setPackageNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
+          setServerPackageData(null);
+        } else if (res?.success || res?.recommendedSellingPrice !== undefined) {
+          setServerPackageData(res);
+          setPackageNotice(null);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        if (err?.message?.includes('심야 절전') || String(err).includes('500')) {
+          setPackageNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
+        }
+      } finally {
+        if (isMounted) setIsPackageComputing(false);
+      }
+    };
+
+    runPackageSim();
+    return () => { isMounted = false; };
+  }, [selectedMonth, targetType, selectedRoomTypeId, userItems]);
 
   // ==========================================
   // 1. Fetch 12-Month Efficiency Table from DB (Deployed SSOT)
@@ -1370,6 +1420,59 @@ ${itemListText}
         </div>
 
       </div>
+
+      {/* Server Power-saving / Operational Notice */}
+      {packageNotice && (
+        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 text-xs font-semibold text-amber-900 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+            <span>{packageNotice}</span>
+          </div>
+          <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-mono">
+            절전 모드 대기
+          </span>
+        </div>
+      )}
+
+      {/* Server Package Generator Summary Bar */}
+      {serverPackageData && (
+        <div className="bg-teal-50/80 border border-teal-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-teal-700" />
+            <span className="text-xs font-bold text-teal-950">서버리스 패키지 원가·마진 생성기 연동</span>
+            {isPackageComputing && <span className="text-[11px] text-teal-600 font-semibold animate-pulse">연산 중...</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            {serverPackageData.recommendedSellingPrice !== undefined && (
+              <div>
+                <span className="text-slate-500 font-medium">서버 추천 판매가: </span>
+                <b className="font-mono text-teal-900 font-black">{serverPackageData.recommendedSellingPrice.toLocaleString()}원</b>
+                <button
+                  onClick={() => setTargetPackagePrice(serverPackageData.recommendedSellingPrice!)}
+                  className="ml-2 px-2 py-0.5 bg-teal-600 text-white rounded text-[10px] font-bold hover:bg-teal-700"
+                >
+                  적용
+                </button>
+              </div>
+            )}
+            {serverPackageData.estimatedMarginAmount !== undefined && (
+              <div>
+                <span className="text-slate-500 font-medium">예상 마진: </span>
+                <b className="font-mono text-emerald-800 font-bold">{serverPackageData.estimatedMarginAmount.toLocaleString()}원</b>
+                {serverPackageData.estimatedMarginPct !== undefined && (
+                  <span className="ml-1 text-[11px] text-emerald-700 font-bold">({serverPackageData.estimatedMarginPct}%)</span>
+                )}
+              </div>
+            )}
+            {serverPackageData.breakEvenRooms !== undefined && (
+              <div>
+                <span className="text-slate-500 font-medium">손익분기: </span>
+                <b className="font-mono text-slate-800">{serverPackageData.breakEvenRooms}실</b>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* 4. The 3-Step Top-Down Reverse Allocation Console             */}

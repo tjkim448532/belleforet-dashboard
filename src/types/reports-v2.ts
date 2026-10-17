@@ -409,6 +409,7 @@ export interface MonthlySeasonalityMonthRow {
   yoyVisitorsPct?: number | null;
   yoyGuestsPct?: number | null;
   visitorsYoyPct?: number | null;
+  visitorsGrowthRate?: number | null;
   trevpar2026?: number;
   trevpar2025?: number;
   yoyTrevparDiff?: number | null;
@@ -800,6 +801,235 @@ export interface AncillaryRevenueForecastResponse {
   venues: AncillaryForecastVenue[];
   error?: string;
 }
+
+// ============================================================================
+// ⑭ 리조트 종합 요약 (GET /api/v6/report/resort-business-summary)
+// ============================================================================
+export interface ResortLodgingStats {
+  standardOccRate: number;
+  connectingOccRate: number;
+  remainingOccRate: number;
+  physicalOccRate: number;
+  fixedCapacity: number;
+  fixedOccupancyRate: number;
+  physicalInventory: number;
+  todayRoomsSold: number;
+  mtdRoomsSold: number;
+  ytdRoomsSold: number;
+  todayRevenue: number;
+  mtdRevenue: number;
+  ytdRevenue: number;
+  todayAdr: number;
+  mtdAdr: number;
+  ytdAdr: number;
+}
+
+export interface ResortPyeongItem {
+  roomType: string;
+  todayRooms: number;
+  todayRevenue: number;
+  todayAdr: number;
+  mtdRooms: number;
+  mtdRevenue: number;
+  mtdAdr: number;
+  ytdRooms: number;
+  ytdRevenue: number;
+  ytdAdr: number;
+  lyRooms: number;
+  lyRevenue: number;
+  lyAdr: number;
+  revGrowth?: number | null;
+  roomsGrowth?: number | null;
+  adrGrowth?: number | null;
+  todaySharePct?: number | null;
+  mtdSharePct?: number | null;
+  ytdSharePct?: number | null;
+  sharePct?: number | null;
+}
+
+export interface ResortPyeongComparison {
+  adrGrowth16: number;
+  adrGrowth35: number;
+  adrGrowth51: number;
+  revGrowth16: number;
+  revGrowth35: number;
+  revGrowth51: number;
+  roomsGrowth16: number;
+  roomsGrowth35: number;
+  roomsGrowth51: number;
+  items: ResortPyeongItem[];
+}
+
+export interface ResortDayTypeComparisonSummary {
+  weekdayRevenueGrowth: number;
+  weekendRevenueGrowth: number;
+  weekdayRoomsGrowth: number;
+  weekendRoomsGrowth: number;
+  weekdayAdrGrowth: number;
+  weekendAdrGrowth: number;
+}
+
+export interface ResortDayTypeComparison {
+  summary?: ResortDayTypeComparisonSummary;
+  weekdayRevenueGrowth?: number;
+  weekendRevenueGrowth?: number;
+  weekdayRoomsGrowth?: number;
+  weekendRoomsGrowth?: number;
+  weekdayAdrGrowth?: number;
+  weekendAdrGrowth?: number;
+}
+
+export interface ResortBusinessSummaryResponse {
+  success: boolean;
+  lodgingStats: ResortLodgingStats;
+  rooms?: Array<{
+    roomType: string;
+    sharePct?: number;
+    revGrowth?: number;
+    [key: string]: any;
+  }>;
+  channels?: Array<{
+    channelName: string;
+    revGrowth?: number;
+    [key: string]: any;
+  }>;
+  rates?: Array<{
+    rateName: string;
+    revGrowth?: number;
+    [key: string]: any;
+  }>;
+  dayTypeComparison?: ResortDayTypeComparison;
+  pyeongComparison?: ResortPyeongComparison;
+  data?: any;
+  error?: string;
+}
+
+// ============================================================================
+// ⑮ 신규 4대 시뮬레이터 응답 규격 (POST /api/v6/simulator/*)
+// ============================================================================
+
+// 1. 전사 12개월 매출 시뮬레이터 (POST /api/v6/simulator/strategic-forecast)
+export interface StrategicForecastResponse {
+  success: boolean;
+  selectedYear?: number;
+  baseYear?: number;
+  selectedMonth?: string | number;
+  dayFilter?: string;
+  simMode?: string;
+  targetGoal?: number;
+  annualTotal?: number;
+  baselineAnnualTotal?: number;
+  annualMaxCapacity?: number;
+  utilizationRate?: number;
+  shareOfTotal?: number;
+  rebalanceRequiredDelta?: number;
+  goalAchievementPct?: number;
+  totals?: Record<string, any>;
+  divisions?: any[];
+  departments?: any[];
+  categories?: any[];
+  venues?: any[];
+  monthly?: any[];
+  data?: any;
+  error?: string;
+}
+
+// 2. 객실×부대시설 패키지 원가·마진 생성기 (POST /api/v6/simulator/package-generator)
+export interface PackageGeneratorResponse {
+  success: boolean;
+  month?: number;
+  targetType?: string;
+  roomTypeId?: string;
+  roomTypeName?: string;
+  nights?: number;
+  adults?: number;
+  children?: number;
+  selectedFacilityIds?: string[];
+  targetDiscountPct?: number;
+  totalListPrice?: number;
+  totalInternalCost?: number;
+  recommendedSellingPrice?: number;
+  discountAmount?: number;
+  estimatedMarginAmount?: number;
+  estimatedMarginPct?: number;
+  breakEvenRooms?: number;
+  targetRevpar?: number;
+  components?: Array<{
+    id?: string;
+    name?: string;
+    category?: string;
+    listPrice?: number;
+    cost?: number;
+    sellingPrice?: number;
+    margin?: number;
+    [key: string]: any;
+  }>;
+  data?: any;
+  error?: string;
+}
+
+// 3. 레저 결합상품 가격·수익 시뮬레이터 (POST /api/v6/simulator/leisure-pricing)
+export interface LeisurePricingSimResponse {
+  success: boolean;
+  selectedItemIds?: string[];
+  bundleDiscountPct?: number;
+  expectedVolumeIncreasePct?: number;
+  startDate?: string;
+  endDate?: string;
+  totalNormalPrice?: number;
+  bundleSellingPrice?: number;
+  discountAmount?: number;
+  baselineRevenue?: number;
+  projectedRevenue?: number;
+  netRevenueDelta?: number;
+  revenueGrowthPct?: number;
+  allocatedUnitPrices?: Array<{
+    itemId?: string;
+    name?: string;
+    normalPrice?: number;
+    allocatedPrice?: number;
+    [key: string]: any;
+  }>;
+  data?: any;
+  error?: string;
+}
+
+// 4. 월별 동적 목표 리밸런싱 시뮬레이터 (POST /api/v6/simulator/monthly-rebalancer)
+export interface MonthlyRebalanceMonthItem {
+  month: number;
+  monthLabel?: string;
+  isClosed?: boolean;
+  lyRevenue?: number;
+  actualRevenue?: number;
+  originalTarget?: number;
+  rebalancedTarget?: number;
+  targetDelta?: number;
+  requiredYoYGrowthPct?: number;
+}
+
+export interface MonthlyRebalancerResponse {
+  success: boolean;
+  baseYear?: number;
+  targetYear?: number;
+  annualTargetRevenue?: number;
+  lyTotalRevenue?: number;
+  closedTotalRevenue?: number;
+  remainingRequiredRevenue?: number;
+  closedMonthsCount?: number;
+  remainingMonthsCount?: number;
+  requiredYoYGrowthPct?: number;
+  monthly?: MonthlyRebalanceMonthItem[];
+  months?: MonthlyRebalanceMonthItem[];
+  departmentTargets?: Array<{
+    departmentName?: string;
+    targetRevenue?: number;
+    sharePct?: number;
+    [key: string]: any;
+  }>;
+  data?: any;
+  error?: string;
+}
+
 
 
 

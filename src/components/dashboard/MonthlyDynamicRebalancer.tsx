@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
+import type { MonthlyRebalancerResponse } from '../../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -148,8 +149,61 @@ export default function MonthlyDynamicRebalancer({
     });
   }, [annualGrowthRate, lockedMonths, monthlyGrowthRates]);
 
-  // 4. Calculate Final 12-Month Targets with Zero-Sum Largest Remainder Allocation
+  // Server Simulator Integration: POST /api/v6/simulator/monthly-rebalancer
+  const [serverRebalanceData, setServerRebalanceData] = useState<MonthlyRebalancerResponse | null>(null);
+  const [isRebalancing, setIsRebalancing] = useState<boolean>(false);
+  const [rebalanceNotice, setRebalanceNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServerRebalance = async () => {
+      setIsRebalancing(true);
+      try {
+        const res: MonthlyRebalancerResponse = await secureFetcher(`${API_BASE}/api/v6/simulator/monthly-rebalancer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            annualTargetRevenue,
+            closedMonthActuals: {},
+            remainingMonthWeights: growthRates
+          })
+        });
+
+        if (!isMounted) return;
+
+        if ((res as any)?.isPowerSaving || res?.error?.includes('심야 절전')) {
+          setRebalanceNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
+          setServerRebalanceData(null);
+        } else if (res?.success || res?.monthly || res?.remainingRequiredRevenue !== undefined) {
+          setServerRebalanceData(res);
+          setRebalanceNotice(null);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        if (err?.message?.includes('심야 절전') || String(err).includes('500')) {
+          setRebalanceNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
+        }
+      } finally {
+        if (isMounted) setIsRebalancing(false);
+      }
+    };
+
+    fetchServerRebalance();
+    return () => { isMounted = false; };
+  }, [annualTargetRevenue, growthRates]);
+
+  // 4. Calculate Final 12-Month Targets (Prefer 100% Server Rebalancer Response)
   const calculatedMonthlyTargets = useMemo(() => {
+    // 1순위: 서버 시뮬레이터 완제품 타겟 바인딩 (Zero-Proxy)
+    const serverList = serverRebalanceData?.monthly || serverRebalanceData?.months;
+    if (serverList && serverList.length > 0) {
+      const sTargets: Record<number, number> = {};
+      serverList.forEach(item => {
+        sTargets[item.month] = item.rebalancedTarget ?? item.originalTarget ?? 0;
+      });
+      return sTargets;
+    }
+
     const targets: Record<number, number> = {};
     let sumFixed = 0;
     const unlockedMonths: number[] = [];
@@ -169,11 +223,9 @@ export default function MonthlyDynamicRebalancer({
     const remainTarget = annualTargetRevenue - sumFixed;
 
     if (unlockedMonths.length === 0) {
-      // All locked: keep as is
       return targets;
     }
 
-    // Proportional weight for unlocked months: BaseRevenue * Headroom
     let totalUnlockedWeight = 0;
     for (const mNum of unlockedMonths) {
       const meta = monthlyMetaList.find(m => m.month === mNum);
@@ -188,7 +240,6 @@ export default function MonthlyDynamicRebalancer({
       targets[mNum] = tgt;
     });
 
-    // Largest Remainder Method: 0-Variance Alignment with Annual Target
     let currentTotal = 0;
     for (const val of Object.values(targets)) {
       currentTotal += (val || 0);
@@ -196,13 +247,12 @@ export default function MonthlyDynamicRebalancer({
     const diff = annualTargetRevenue - currentTotal;
 
     if (diff !== 0 && unlockedMonths.length > 0) {
-      // Add remainder to the unlocked month with largest target
       const sortedUnlocked = [...unlockedMonths].sort((a, b) => (targets[b] || 0) - (targets[a] || 0));
       targets[sortedUnlocked[0]] += diff;
     }
 
     return targets;
-  }, [monthlyMetaList, lockedMonths, growthRates, annualGrowthRate, annualTargetRevenue]);
+  }, [serverRebalanceData, monthlyMetaList, lockedMonths, growthRates, annualGrowthRate, annualTargetRevenue]);
 
   // Notify parent on change
   useEffect(() => {
@@ -525,6 +575,50 @@ export default function MonthlyDynamicRebalancer({
           </div>
         </div>
       </div>
+
+      {/* Server Power-saving / Operational Notice */}
+      {rebalanceNotice && (
+        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 text-xs font-semibold text-amber-900 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+            <span>{rebalanceNotice}</span>
+          </div>
+          <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-mono">
+            절전 모드 대기
+          </span>
+        </div>
+      )}
+
+      {/* Server Dynamic Rebalancing Summary Bar */}
+      {serverRebalanceData && (
+        <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-indigo-600" />
+            <span className="text-xs font-bold text-indigo-950">서버리스 리밸런싱 엔진 연동</span>
+            {isRebalancing && <span className="text-[11px] text-indigo-600 font-semibold animate-pulse">연산 중...</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            {serverRebalanceData.closedTotalRevenue !== undefined && (
+              <div>
+                <span className="text-slate-500 font-medium">마감월 누적: </span>
+                <b className="font-mono text-slate-800">{serverRebalanceData.closedTotalRevenue.toLocaleString()}원</b>
+              </div>
+            )}
+            {serverRebalanceData.remainingRequiredRevenue !== undefined && (
+              <div>
+                <span className="text-slate-500 font-medium">잔여월 필요: </span>
+                <b className="font-mono text-indigo-700">{serverRebalanceData.remainingRequiredRevenue.toLocaleString()}원</b>
+              </div>
+            )}
+            {serverRebalanceData.requiredYoYGrowthPct !== undefined && (
+              <div>
+                <span className="text-slate-500 font-medium">필요 성장률: </span>
+                <b className="font-mono text-emerald-700">{serverRebalanceData.requiredYoYGrowthPct}%</b>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 12-Month Bar Chart */}
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-2xs">

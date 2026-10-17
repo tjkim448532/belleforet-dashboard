@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { HelpCircle, X, Calculator, Lightbulb, BookOpen } from 'lucide-react';
+import { HelpCircle, AlertCircle, X, Calculator, Lightbulb, BookOpen } from 'lucide-react';
 
 export type MetricPresetKey = 
   | 'netRevenue' 
@@ -12,7 +12,11 @@ export type MetricPresetKey =
   | 'golfRevenuePerTeam'
   | 'arpu'
   | 'mtdRevenue'
-  | 'ytdRevenue';
+  | 'ytdRevenue'
+  | 'leadTime'
+  | 'cancellationRate'
+  | 'waitingReservation'
+  | 'unitWearSpread';
 
 interface MetricExplainerData {
   title: string;
@@ -99,6 +103,34 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
     definition: '골프장을 방문한 실제 내장객 1인이 그린피, 카트비, 식음료(그늘집/레스토랑), 프로샵 등에서 지출한 평균 소비 금액입니다.',
     formula: '골프 총 순매출액 ÷ 실제 총 내장객 수 (명)',
     insight: '단순 내장객 수 증가를 넘어, 고부가가치 내장객 유치 및 부대시설(식음료, 용품) 소비 시너지를 정밀하게 진단하는 핵심 수익성 지표입니다.'
+  },
+  leadTime: {
+    title: '평균 예약 리드타임 (Booking Lead Time)',
+    badge: '예약 선행 지표',
+    definition: '고객이 객실을 예약 접수(등록일자)한 시점부터 실제 체크인(도착일자)하기까지 걸린 평균 사전 예약 일수입니다.',
+    formula: 'Σ(체크인 도착일자 - 예약 등록일자) ÷ 전체 원천 예약 건수 (일)',
+    insight: '리드타임이 길수록 조기 예약(얼리버드·회원 선점) 수요가 높음을 뜻하며, 성수기·주말 가격 인상(Yield Management) 및 프로모션 투입 시점을 결정하는 핵심 기준입니다.'
+  },
+  cancellationRate: {
+    title: '사전 예약 취소율 (Cancellation Rate)',
+    badge: '공실 방어 지표',
+    definition: '전체 접수된 원천 객실 예약 중 투숙 전에 취소(Cancelled Reservation)된 예약 건수의 비율입니다.',
+    formula: '(사전 취소 예약 건수 ÷ 총 원천 예약 건수) × 100 (%)',
+    insight: '장기 리드타임(31일 이상) 구간은 가수요 선점으로 인해 취소율이 급증(Cancellation Cliff)합니다. 취소 집중 구간의 위약금 정책 강화 및 오버부킹·대기예약 전환율 관리가 필수적입니다.'
+  },
+  waitingReservation: {
+    title: '대기 예약 (Waiting Reservation)',
+    badge: '수익 방어 버퍼',
+    definition: '만실이거나 희망 객실 마감 시 취소 객실이 발생할 경우 우선 배정받기 위해 대기 등록한 예약 건수입니다.',
+    formula: 'PMS 원천 예약 상태가 대기(Waiting Reservation)인 건수 합계',
+    insight: '사전 취소 발생 시 공실 손실(Spoilage)을 즉시 방어할 수 있는 잠재 수요층입니다. 취소 임계 시점에 대기 고객에게 알림톡·전화를 즉시 발송하여 실투숙 전환율을 극대화해야 합니다.'
+  },
+  unitWearSpread: {
+    title: '물리 호실 마스터 가동 범위 및 배정 편차',
+    badge: '시설 감가상각 감사',
+    definition: '조회 기간 중 실제 투숙객이 배정되어 가동된 물리 호실(객실번호)의 수와, 최다 배정 호실 대비 최소 배정 호실 간의 회전율 격차(배수)입니다.',
+    formula: '가동 호실 수 = 배정 1회 이상 고유 호실 수 / 편차 = 최다 배정 호실 횟수 ÷ 최소 배정 호실 횟수',
+    insight: '특정 선호 동·층·뷰 호실에만 배정이 집중되면 침구·가구·설비 노후화(감가상각)가 편중됩니다. 프런트 자동 배정 로테이션을 통해 175개 전 호실의 컨디션을 균등하게 유지해야 합니다.'
   }
 };
 
@@ -109,6 +141,7 @@ interface MetricExplainerTooltipProps {
   align?: 'left' | 'center' | 'right';
   className?: string;
   iconSize?: number;
+  iconType?: 'question' | 'exclamation';
 }
 
 export default function MetricExplainerTooltip({
@@ -117,7 +150,8 @@ export default function MetricExplainerTooltip({
   position = 'bottom',
   align = 'left',
   className = '',
-  iconSize = 15
+  iconSize = 15,
+  iconType = 'question'
 }: MetricExplainerTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -226,7 +260,11 @@ export default function MetricExplainerTooltip({
         aria-label={`${data.title} 지표 설명 보기`}
         title={`${data.title} 설명`}
       >
-        <HelpCircle size={iconSize} className="transition-transform duration-200 hover:scale-110" />
+        {iconType === 'exclamation' ? (
+          <AlertCircle size={iconSize} className="transition-transform duration-200 hover:scale-110" />
+        ) : (
+          <HelpCircle size={iconSize} className="transition-transform duration-200 hover:scale-110" />
+        )}
       </button>
 
       {isOpen && (

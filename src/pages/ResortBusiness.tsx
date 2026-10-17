@@ -1957,8 +1957,8 @@ export default function ResortBusiness() {
           </div>
 
           {/* 5. [Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 물리적 배정 편차 감사 */}
-          <div className="bg-white rounded-[24px] border border-slate-200 shadow-xs overflow-hidden mt-8">
-            <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-sky-50/50 via-white to-indigo-50/30">
+          <div className="bg-white rounded-[24px] border border-slate-200 shadow-xs mt-8">
+            <div className="p-6 border-b border-slate-100 rounded-t-[24px] flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-sky-50/50 via-white to-indigo-50/30">
               <div className="flex items-start gap-3">
                 <div className="p-2.5 rounded-xl bg-sky-600 text-white shadow-xs shrink-0 mt-0.5">
                   <KeyRound size={20} />
@@ -2001,22 +2001,34 @@ export default function ResortBusiness() {
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                      <div className="text-[11px] font-bold text-slate-400">평균 예약 리드타임</div>
+                      <div className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                        <span>평균 예약 리드타임</span>
+                        <MetricExplainerTooltip presetKey="leadTime" iconType="exclamation" align="left" iconSize={14} />
+                      </div>
                       <div className="text-base font-black text-slate-400 mt-1">-</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">등록일자➔도착일자 일수 집계 대기</div>
                     </div>
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                      <div className="text-[11px] font-bold text-slate-400">사전 예약 취소율 (Cancelled)</div>
+                      <div className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                        <span>사전 예약 취소율 (Cancelled)</span>
+                        <MetricExplainerTooltip presetKey="cancellationRate" iconType="exclamation" align="center" iconSize={14} />
+                      </div>
                       <div className="text-base font-black text-slate-400 mt-1">-</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">리드타임 구간별 취소 임계점 대기</div>
                     </div>
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                      <div className="text-[11px] font-bold text-slate-400">대기 예약(Waiting) 수</div>
+                      <div className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                        <span>대기 예약(Waiting) 수</span>
+                        <MetricExplainerTooltip presetKey="waitingReservation" iconType="exclamation" align="center" iconSize={14} />
+                      </div>
                       <div className="text-base font-black text-slate-400 mt-1">-</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">취소 방어 자동 승계 타겟 대기</div>
                     </div>
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                      <div className="text-[11px] font-bold text-slate-400">호실별 배정 편차 지수</div>
+                      <div className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                        <span>호실별 배정 편차 지수</span>
+                        <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="right" iconSize={14} />
+                      </div>
                       <div className="text-base font-black text-slate-400 mt-1">-</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">동·층·베드타입별 회전율 집계 대기</div>
                     </div>
@@ -2027,7 +2039,10 @@ export default function ResortBusiness() {
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-xs font-bold text-slate-500">평균 예약 리드타임</div>
+                    <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <span>평균 예약 리드타임</span>
+                      <MetricExplainerTooltip presetKey="leadTime" iconType="exclamation" align="left" iconSize={15} />
+                    </div>
                     <div className="text-xl font-black text-slate-900 mt-1">
                       {leadtimeWearIntel.summary?.avgLeadDays != null ? `${leadtimeWearIntel.summary.avgLeadDays}일` : '-'}
                     </div>
@@ -2036,7 +2051,10 @@ export default function ResortBusiness() {
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-xs font-bold text-slate-500">사전 예약 취소 (Cancelled)</div>
+                    <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <span>사전 예약 취소 (Cancelled)</span>
+                      <MetricExplainerTooltip presetKey="cancellationRate" iconType="exclamation" align="center" iconSize={15} />
+                    </div>
                     <div className="text-xl font-black text-rose-600 mt-1">
                       {leadtimeWearIntel.summary?.cancelRate != null ? `${leadtimeWearIntel.summary.cancelRate}%` : '-'}
                     </div>
@@ -2045,7 +2063,10 @@ export default function ResortBusiness() {
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-xs font-bold text-slate-500">대기 예약 (Waiting)</div>
+                    <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <span>대기 예약 (Waiting)</span>
+                      <MetricExplainerTooltip presetKey="waitingReservation" iconType="exclamation" align="center" iconSize={15} />
+                    </div>
                     <div className="text-xl font-black text-amber-600 mt-1">
                       {leadtimeWearIntel.summary?.waitingCount != null ? `${Number(leadtimeWearIntel.summary.waitingCount).toLocaleString()}건` : '-'}
                     </div>
@@ -2054,7 +2075,10 @@ export default function ResortBusiness() {
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                    <div className="text-xs font-bold text-slate-500">물리 호실 마스터 가동 범위</div>
+                    <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <span>물리 호실 마스터 가동 범위</span>
+                      <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="right" iconSize={15} />
+                    </div>
                     <div className="text-xl font-black text-sky-700 mt-1">
                       {leadtimeWearIntel.summary?.activeUnitCount != null ? `${leadtimeWearIntel.summary.activeUnitCount}실` : '-'}
                     </div>

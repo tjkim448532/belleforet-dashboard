@@ -596,8 +596,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           <table className="w-full text-left text-sm text-slate-600 border-collapse">
             <thead className="bg-slate-50/80 text-slate-700 font-bold text-xs uppercase tracking-wider border-y border-slate-200">
               <tr>
-                <th className="px-4 py-3.5 w-1/3">부서 / 파트 / 영업장</th>
-                <th className="px-4 py-3.5">상세 분류 (티켓그룹)</th>
+                <th className="px-4 py-3.5 w-1/2">부서 / 파트 / 영업장</th>
                 <th className="px-4 py-3.5 text-right">매출액</th>
                 <th className="px-4 py-3.5 text-right">대분류 내 비중</th>
               </tr>
@@ -615,7 +614,6 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                         {isOrgExpanded ? <ChevronDown size={17} className="text-emerald-600" /> : <ChevronRight size={17} className="text-slate-400" />}
                         {org.orgDivision}
                       </td>
-                      <td className="px-4 py-3.5 text-slate-400">-</td>
                       <td className="px-4 py-3.5 text-right font-bold text-slate-900 text-base">{org.revenueFormatted}</td>
                       <td className="px-4 py-3.5 text-right font-bold text-slate-800">{org.sharePctFormatted}</td>
                     </tr>
@@ -633,37 +631,17 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                               {isPartExpanded ? <ChevronDown size={15} className="text-emerald-500" /> : <ChevronRight size={15} className="text-slate-400" />}
                               {part.partName}
                             </td>
-                            <td className="px-4 py-3 text-slate-400">-</td>
                             <td className="px-4 py-3 text-right font-bold text-slate-700">{part.revenueFormatted}</td>
                             <td className="px-4 py-3 text-right text-slate-400">-</td>
                           </tr>
 
-                          {isPartExpanded && (part.venues || []).map((venue: any) => {
-                            if (!venue.ticketGroups || venue.ticketGroups.length === 0) {
-                              return (
-                                <tr key={`${partKey}|${venue.venueName}`} className="border-b border-slate-50 bg-white hover:bg-slate-50/60 transition-colors">
-                                  <td className="px-4 py-2.5 text-slate-600 pl-14 font-medium">{venue.venueName}</td>
-                                  <td className="px-4 py-2.5 text-slate-400">-</td>
-                                  <td className="px-4 py-2.5 text-right font-medium text-slate-600">{venue.revenueFormatted}</td>
-                                  <td className="px-4 py-2.5"></td>
-                                </tr>
-                              );
-                            }
-                            return venue.ticketGroups.map((group: any, gIdx: number) => (
-                              <tr key={`${partKey}|${venue.venueName}|${group.groupName}`} className="border-b border-slate-50 bg-white hover:bg-slate-50/60 transition-colors">
-                                {gIdx === 0 ? (
-                                  <td className="px-4 py-2.5 text-slate-600 pl-14 font-medium align-top" rowSpan={venue.ticketGroups.length}>
-                                    <div className="pt-0.5">{venue.venueName}</div>
-                                  </td>
-                                ) : null}
-                                <td className="px-4 py-2.5 text-slate-500 text-xs align-middle">
-                                  <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 border border-slate-200/60">{group.groupName}</span>
-                                </td>
-                                <td className="px-4 py-2.5 text-right font-medium text-slate-600">{group.revenueFormatted}</td>
-                                <td className="px-4 py-2.5"></td>
-                              </tr>
-                            ));
-                          })}
+                          {isPartExpanded && (part.venues || []).map((venue: any) => (
+                            <tr key={`${partKey}|${venue.venueName}`} className="border-b border-slate-50 bg-white hover:bg-slate-50/60 transition-colors">
+                              <td className="px-4 py-2.5 text-slate-600 pl-14 font-medium">{venue.venueName}</td>
+                              <td className="px-4 py-2.5 text-right font-medium text-slate-600">{venue.revenueFormatted}</td>
+                              <td className="px-4 py-2.5 text-right text-slate-400">-</td>
+                            </tr>
+                          ))}
                         </React.Fragment>
                       );
                     })}

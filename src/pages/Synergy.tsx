@@ -338,7 +338,7 @@ export default function Synergy() {
           const cleanName = (item.channelName || '').trim();
           const rooms = parseNum(isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0));
           const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
-          const backendShare = (item as any).sharePct ?? (item as any).revenueSharePct ?? null;
+          const backendShare = (item as any).sharePct ?? (item as any).revenueSharePct ?? (item as any).sharePercent ?? (item as any).pct ?? (item as any).percent ?? (item as any).weight ?? null;
 
           return {
             name: cleanName,
@@ -359,7 +359,7 @@ export default function Synergy() {
 
     return cats.map((c: any) => {
       const rev = parseNum(c.totalSales || c.todayActual || 0);
-      const backendShare = c.sharePct ?? c.todaySharePct ?? null;
+      const backendShare = c.sharePct ?? c.todaySharePct ?? c.sharePercent ?? c.pct ?? c.percent ?? c.weight ?? null;
       const rooms = grandTotal.rooms || 0;
       const revpas = parseNum(summaryData?.summary?.totalRevPAS || 0);
       return {
@@ -742,7 +742,7 @@ export default function Synergy() {
                         <div className={`w-7 h-7 rounded-xl ${meta.iconBg} ${meta.iconColor} flex items-center justify-center flex-shrink-0 border border-slate-100`}>
                           <ChannelIcon size={15} />
                         </div>
-                        <h3 className="font-bold text-base text-slate-900 truncate">
+                        <h3 className="font-bold text-base text-slate-900 truncate" title={item.name}>
                           {item.name}
                         </h3>
                       </div>
@@ -830,7 +830,7 @@ export default function Synergy() {
           <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[950px]">
             <thead className="whitespace-nowrap">
               <tr className="border-b border-slate-200/80 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/80 whitespace-nowrap">
-                <th className="py-3.5 px-6 rounded-l-2xl whitespace-nowrap">판매 채널명</th>
+                <th className="py-3.5 px-6 text-left rounded-l-2xl whitespace-nowrap">판매 채널명</th>
                 <th className="py-3.5 px-6 text-right whitespace-nowrap">조회기간 판매 객실수</th>
                 <th className="py-3.5 px-6 text-right whitespace-nowrap">조회기간 객실 순매출</th>
                 <th className="py-3.5 px-6 text-right whitespace-nowrap">객실 단가 (ADR)</th>
@@ -902,11 +902,11 @@ export default function Synergy() {
                   고객 여정 체류시간(Stay Duration) 구간별 1인당 객단가 및 복합 소비 시너지
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
-                  V6 SSOT · Ticket 36
+                  체류시간 및 소비 분석
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                통합 카드 결제 여정 마트(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">fact_customer_journeys</code>)의 최초 결제➔최종 결제 체류시간(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">duration_minutes</code>) 구간별 평균 소비액(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">avg_spent</code>)과 동선 결합 시너지를 분석합니다.
+                고객 결제 여정의 최초 결제➔최종 결제 체류시간 구간별 평균 소비액과 동선 결합 시너지를 분석합니다.
               </p>
             </div>
           </div>
@@ -917,7 +917,7 @@ export default function Synergy() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/customer-stay-duration-synergy)
+                Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/customer-stay-duration-synergy)
               </span>
             )}
           </div>
@@ -927,10 +927,10 @@ export default function Synergy() {
           <div className="p-8 bg-slate-50/60">
             <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
               <h4 className="text-sm font-extrabold text-slate-800">
-                [Zero-Fake / Fail-Stop] 고객 여정 체류시간 구간별 객단가 시너지 정규 마트 API 연동 대기 중
+                [Zero-Fake / Fail-Stop] 고객 여정 체류시간 구간별 객단가 시너지 데이터 미수신 또는 조회 구간 내역 없음
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/customer-stay-duration-synergy</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/customer-stay-duration-synergy</code> 응답이 없거나 선택 구간 데이터가 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">

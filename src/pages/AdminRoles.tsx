@@ -443,9 +443,9 @@ export default function AdminRoles() {
             <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 uppercase tracking-wider">
-                  <th className="px-6 py-3.5 font-semibold whitespace-nowrap">임직원 성명</th>
-                  <th className="px-6 py-3.5 font-semibold whitespace-nowrap">회사 이메일 계정</th>
-                  <th className="px-6 py-3.5 font-semibold whitespace-nowrap">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
+                  <th className="px-6 py-3.5 font-semibold text-left whitespace-nowrap">임직원 성명</th>
+                  <th className="px-6 py-3.5 font-semibold text-left whitespace-nowrap">회사 이메일 계정</th>
+                  <th className="px-6 py-3.5 font-semibold text-left whitespace-nowrap">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
                   <th className="px-6 py-3.5 font-semibold text-right whitespace-nowrap">수정 / 삭제</th>
                 </tr>
               </thead>

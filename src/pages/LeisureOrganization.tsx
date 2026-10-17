@@ -85,7 +85,7 @@ export default function LeisureOrganization() {
 
   if (error || !data) {
     return (
-      <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+      <div className="p-6 lg:p-10 max-w-[1600px] mx-auto">
         <div className="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-3xl flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-6 h-6 text-rose-500 flex-shrink-0" />
@@ -301,12 +301,12 @@ export default function LeisureOrganization() {
                   <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                     <thead className="whitespace-nowrap">
                       <tr className="bg-slate-50/80 border-b border-slate-200/80 text-xs font-bold text-slate-500 tracking-wider uppercase whitespace-nowrap">
-                        <th className="py-3.5 px-5 lg:px-6 whitespace-nowrap">영업장명</th>
-                        <th className="py-3.5 px-4 whitespace-nowrap">선임 / 책임자</th>
+                        <th className="py-3.5 px-5 lg:px-6 text-left whitespace-nowrap">영업장명</th>
+                        <th className="py-3.5 px-4 text-left whitespace-nowrap">선임 / 책임자</th>
                         <th className="py-3.5 px-4 text-center whitespace-nowrap">정규직</th>
                         <th className="py-3.5 px-4 text-center whitespace-nowrap">주중 투입</th>
                         <th className="py-3.5 px-4 text-center whitespace-nowrap">주말 투입</th>
-                        <th className="py-3.5 px-5 lg:px-6 min-w-[200px] whitespace-nowrap">특이사항 및 운영 메모</th>
+                        <th className="py-3.5 px-5 lg:px-6 text-left min-w-[200px] whitespace-nowrap">특이사항 및 운영 메모</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">

@@ -454,7 +454,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           <table className="w-full text-left text-sm text-slate-600 border-collapse">
             <thead className="bg-slate-50/80 text-slate-700 text-xs font-bold uppercase tracking-wider border-y border-slate-200">
               <tr>
-                <th className="px-4 py-3.5 w-24">요일</th>
+                <th className="px-4 py-3.5 text-left w-24">요일</th>
                 <th className="px-4 py-3.5 text-right">매출액 (Share)</th>
                 <th className="px-4 py-3.5 text-right">전년 동기간 매출액</th>
                 <th className="px-4 py-3.5 text-right">증감률</th>
@@ -596,7 +596,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           <table className="w-full text-left text-sm text-slate-600 border-collapse">
             <thead className="bg-slate-50/80 text-slate-700 font-bold text-xs uppercase tracking-wider border-y border-slate-200">
               <tr>
-                <th className="px-4 py-3.5 w-1/2">부서 / 파트 / 영업장</th>
+                <th className="px-4 py-3.5 text-left w-1/2">부서 / 파트 / 영업장</th>
                 <th className="px-4 py-3.5 text-right">매출액</th>
                 <th className="px-4 py-3.5 text-right">대분류 내 비중</th>
               </tr>

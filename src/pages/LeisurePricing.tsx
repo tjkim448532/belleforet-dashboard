@@ -44,7 +44,7 @@ export default function LeisurePricing() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>(LEISURE_FACILITIES);
-  const [lastUpdated, setLastUpdated] = useState<string>('2026-10-17 (공식 실측 SSOT)');
+  const [lastUpdated, setLastUpdated] = useState<string>('2026-10-17 (공식 실측 기준)');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // Fetch nightly S3 snapshot via backend API when available

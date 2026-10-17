@@ -884,7 +884,7 @@ export default function StrategicSimulator() {
       const matrixRows: any[][] = [
         [`[벨포레 리조트] ${input.targetYear}년 1~12월 영업장별 월별 매출목표`],
         [`시뮬레이션 조건: 비교연도 ${input.baseYear}년 ➔ ${input.targetYear}년 목표 | 전사 목표성장률: +${input.targetGrowthRate}% | 골프: ${input.includeGolf ? '포함(전사)' : '제외(순수 리조트)'} | 선택 대분류: ${selectedCategoryFilter === 'ALL' ? '전체 부문' : categoryLabel}`],
-        [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출 SSOT)`],
+        [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출)`],
         [],
         [
           'No', 
@@ -958,7 +958,7 @@ export default function StrategicSimulator() {
       const detailRows: any[][] = [
         [`[벨포레 리조트] ${input.targetYear}년 ${targetMonthLabel} 영업장별 매출목표`],
         [`시뮬레이션 조건: 비교연도 ${input.baseYear}년 실적 ➔ ${input.targetYear}년 목표 | 대상기간: ${targetMonthLabel} | 전사 목표성장률: +${input.targetGrowthRate}% | 골프: ${input.includeGolf ? '포함(전사)' : '제외(순수 리조트)'} | 선택 대분류: ${selectedCategoryFilter === 'ALL' ? '전체 부문' : categoryLabel}`],
-        [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출 SSOT)`],
+        [`추출일시: ${new Date().toLocaleString('ko-KR')} | 통화 단위: 원 (VAT 별도 순매출)`],
         [],
         [
           'No', 
@@ -999,7 +999,7 @@ export default function StrategicSimulator() {
         businessPlanTotals.targetRevenueSum,
         businessPlanTotals.diffSum,
         `${businessPlanTotals.growthRateSum > 0 ? '+' : ''}${businessPlanTotals.growthRateSum}%`,
-        'Zero-Variance 보존 완료'
+        '정합성 검증 완료'
       ]);
 
       const ws2 = XLSX.utils.aoa_to_sheet(detailRows);
@@ -1108,7 +1108,7 @@ export default function StrategicSimulator() {
   }, [effectiveCategories]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
       
       {/* 1. Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-[32px] p-8 lg:p-10 text-white relative overflow-hidden shadow-xl border border-indigo-900/50">
@@ -1120,7 +1120,7 @@ export default function StrategicSimulator() {
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-teal-400 animate-pulse" />
               <span className="font-bold tracking-wider text-xs lg:text-sm text-teal-300 uppercase">
-                BELLE FORET AI STRATEGIC REBALANCING & TARGET ENGINE [PRO]
+                BELLE FORET STRATEGIC TARGET ENGINE [PRO]
               </span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3 break-keep whitespace-nowrap">
@@ -1130,7 +1130,7 @@ export default function StrategicSimulator() {
               </span>
             </h1>
             <p className="text-slate-300 text-xs lg:text-sm mt-2 font-normal max-w-3xl">
-              경영진이 부서별 전략 승수(β_f)를 가동하여 <strong>Zero-Sum 실시간 리밸런싱</strong>을 수행하고, <strong>1원 단위 Zero-Variance 정합성</strong> 및 <strong>다년도 WMA 기상 보정</strong>을 적용하는 차세대 전사 경영 계획 엔진입니다.
+              경영진이 부서별 전략 승수를 적용하여 <strong>실시간 시뮬레이션</strong>을 수행하고, <strong>1원 단위 정합성</strong> 및 <strong>다년도 기상 보정</strong>을 적용하는 전사 경영 계획 엔진입니다.
             </p>
           </div>
 
@@ -1213,11 +1213,11 @@ export default function StrategicSimulator() {
                   {input.targetYear}년 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '1~12월 월별' : selectedMonthLabel} 영업장별 매출목표
                 </h2>
                 <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-black rounded-lg">
-                  {isLoadingMatrix ? '12개월 동기화 중...' : 'Zero-Variance 정규 시뮬레이션'}
+                  {isLoadingMatrix ? '12개월 동기화 중...' : '목표 정규 시뮬레이션'}
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                시뮬레이터 설정 성장률(+{input.targetGrowthRate}%) 및 Zero-Variance 안분이 적용된 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '12개월 월별 전체 목표 매트릭스' : `${selectedMonthLabel} 상세 목표치`}입니다.
+                시뮬레이터 설정 성장률(+{input.targetGrowthRate}%) 및 비례 배분이 적용된 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '12개월 월별 전체 목표 매트릭스' : `${selectedMonthLabel} 상세 목표치`}입니다.
               </p>
             </div>
 
@@ -1625,7 +1625,7 @@ export default function StrategicSimulator() {
                   </div>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">
-                  순매출 (VAT 별도 SSOT)
+                  순매출 (VAT 별도)
                 </div>
               </div>
 
@@ -1705,8 +1705,8 @@ export default function StrategicSimulator() {
                   <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
                     <tr>
                       <th className="py-2.5 px-1 text-center w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-slate-100 z-30 border-b border-slate-200">No</th>
-                      <th className="py-2.5 px-2.5 w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-slate-100 z-30 border-b border-slate-200">대분류(본부)</th>
-                      <th className="py-2.5 px-3 w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-slate-100 z-30 border-b border-r border-slate-300 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">영업장명 (파트)</th>
+                      <th className="py-2.5 px-2.5 text-left w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-slate-100 z-30 border-b border-slate-200">대분류(본부)</th>
+                      <th className="py-2.5 px-3 text-left w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-slate-100 z-30 border-b border-r border-slate-300 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">영업장명 (파트)</th>
                       {Array.from({ length: 12 }, (_, i) => {
                         const m = i + 1;
                         const hasCustom = monthlyGrowthRates[m] !== undefined;
@@ -1849,9 +1849,9 @@ export default function StrategicSimulator() {
                   <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
                     <tr>
                       <th className="py-2.5 px-1 text-center w-[48px]">No</th>
-                      <th className="py-2.5 px-3">대분류(본부)</th>
-                      <th className="py-2.5 px-3">중분류(파트)</th>
-                      <th className="py-2.5 px-3">영업장명</th>
+                      <th className="py-2.5 px-3 text-left">대분류(본부)</th>
+                      <th className="py-2.5 px-3 text-left">중분류(파트)</th>
+                      <th className="py-2.5 px-3 text-left">영업장명</th>
                       <th className="py-2.5 px-3 text-right">전략 비중</th>
                       <th className="py-2.5 px-3 text-right">{input.baseYear}년 실적</th>
                       <th className="py-2.5 px-3 text-right text-indigo-950 bg-indigo-50/70 border-l border-slate-200">
@@ -1964,7 +1964,7 @@ export default function StrategicSimulator() {
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
                             <CheckCircle2 size={12} />
-                            Zero-Variance 안분 완료
+                            정합성 배분 완료
                           </span>
                         </td>
                       </tr>
@@ -2073,7 +2073,7 @@ export default function StrategicSimulator() {
                   }`}
                 >
                   <span className="text-[12px] font-black leading-none">{m.shortLabel}</span>
-                  <span className={`text-[9px] font-medium leading-none truncate max-w-full px-0.5 ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}`}>
+                  <span className={`text-[9px] font-medium leading-none truncate max-w-full px-0.5 ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}`} title={m.season}>
                     {m.season}
                   </span>
                   <span className={`text-[10px] font-mono font-black leading-none px-1.5 py-0.5 rounded ${
@@ -2309,7 +2309,7 @@ export default function StrategicSimulator() {
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
               기준선 산출 방식
             </div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 truncate">
+            <div className="text-xl sm:text-2xl font-black text-slate-900 truncate" title={baselineMode === 'WMA_2YEAR' ? '2개년 WMA 가중평균' : `${input.baseYear}년 실측 단독`}>
               {baselineMode === 'WMA_2YEAR' ? '🌧️ 2개년 WMA 가중평균' : `📊 ${input.baseYear}년 실측 단독`}
             </div>
           </div>
@@ -2638,7 +2638,7 @@ export default function StrategicSimulator() {
                                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
                                   <tr>
                                     <th className="py-2.5 px-2 w-[48px] text-center whitespace-nowrap">No</th>
-                                    <th className="py-2.5 px-4 whitespace-nowrap">영업장명 및 전략 뱃지</th>
+                                    <th className="py-2.5 px-4 text-left whitespace-nowrap">영업장명 및 전략 뱃지</th>
                                     <th className="py-2.5 px-4 text-right whitespace-nowrap">전략 비중 (%)</th>
                                     <th className="py-2.5 px-4 text-right whitespace-nowrap">{input.baseYear}년 실적</th>
                                     <th className="py-2.5 px-4 text-right font-black text-indigo-950 whitespace-nowrap bg-indigo-50/50">{input.targetYear}년 목표 매출</th>

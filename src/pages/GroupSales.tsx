@@ -67,8 +67,8 @@ interface SegmentItem {
   revenue: number;
   adr: number;
   guests: number;
-  channelSharePct: number;
-  grandSharePct: number;
+  channelSharePct: number | null;
+  grandSharePct: number | null;
 }
 
 interface ChannelGroup {
@@ -79,7 +79,7 @@ interface ChannelGroup {
   totalRevenue: number;
   totalGuests: number;
   averageAdr: number;
-  revenueSharePct: number;
+  revenueSharePct: number | null;
   items: SegmentItem[];
 }
 
@@ -167,11 +167,11 @@ export interface GroupOrganizationSummary {
   name: string;
   corporateName: string;
   categoryName: string;
-  visitCount: number;
+  visitCount: number | null;
   isRepeatCustomer: boolean;
-  totalRooms: number;
-  totalPax: number;
-  totalRevenue: number;
+  totalRooms: number | null;
+  totalPax: number | null;
+  totalRevenue: number | null;
   roomTypesSummary: string[];
   firstCheckIn: string;
   lastCheckIn: string;
@@ -272,20 +272,32 @@ export default function GroupSales() {
       // 2. 단체영업(세미나) 실제 예약 단체 명부 및 복수 방문 내역 (SSOT API)
       // 3. 세일즈본부 연회/세미나실 장소별(Venue) 판매 분석 및 단체 명부 (SSOT API)
       // 4. [Ticket 31] 판촉 영업담당자별 객실·연회 수주 순기여도 및 세미나홀 가동 효율 (SSOT API)
-      const [channelRes, corporateRes, venueRes, repIntelRes] = await Promise.all([
+      const [channelRes, channelSummaryRes, corporateRes, venueRes, repIntelRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-channel-sales?${queryParams}`).catch(() => null),
+        secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/sales-venue-performance?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/sales-rep-banquet-intelligence?${queryParams}`).catch(() => null)
       ]);
 
-      if (channelRes?.data && Array.isArray(channelRes.data)) {
-        setChannelRawData(channelRes.data);
-      } else if (Array.isArray(channelRes)) {
-        setChannelRawData(channelRes);
-      } else {
-        setChannelRawData([]);
-      }
+      const detailRows: RawChannelRoomItem[] = Array.isArray(channelRes?.data)
+        ? channelRes.data
+        : Array.isArray(channelRes)
+        ? channelRes
+        : [];
+
+      const summaryRows: RawChannelRoomItem[] = Array.isArray(channelSummaryRes?.data)
+        ? channelSummaryRes.data.filter(
+            (r: any) =>
+              r.isChannelSubtotal ||
+              r.isSubtotal ||
+              r.isGrandTotal ||
+              r.roomType === '전체' ||
+              r.channelName === '총합계'
+          )
+        : [];
+
+      setChannelRawData([...detailRows, ...summaryRows]);
 
       if (channelRes?.seminarShare) {
         setSeminarShare(channelRes.seminarShare);
@@ -391,6 +403,7 @@ export default function GroupSales() {
         const rev = Number(raw.todayRevenue ?? raw.mtdRevenue ?? 0);
         const adr = Number(raw.todayAdr ?? raw.adr ?? 0);
         const guests = Number(raw.todayGuests ?? raw.guests ?? raw.mtdGuests ?? 0);
+        const rawChShare = raw.channelSharePct ?? raw.sharePct;
 
         segItems.push({
           roomType: rType,
@@ -398,8 +411,8 @@ export default function GroupSales() {
           revenue: rev,
           adr,
           guests,
-          channelSharePct: Number(raw.channelSharePct ?? raw.sharePct ?? 0),
-          grandSharePct: Number(raw.grandSharePct ?? 0)
+          channelSharePct: rawChShare != null ? Number(rawChShare) : null,
+          grandSharePct: raw.grandSharePct != null ? Number(raw.grandSharePct) : null
         });
       });
 
@@ -413,7 +426,8 @@ export default function GroupSales() {
       const subtotalRev = Number((subtotalItem as any)?.todayRevenue ?? (subtotalItem as any)?.mtdRevenue ?? (subtotalItem as any)?.totalRevenue ?? 0);
       const subtotalGuests = Number((subtotalItem as any)?.todayGuests ?? (subtotalItem as any)?.guests ?? (subtotalItem as any)?.mtdGuests ?? (subtotalItem as any)?.totalGuests ?? 0);
       const subtotalAdr = Number(subtotalItem?.adr ?? (subtotalItem as any)?.todayAdr ?? (subtotalItem as any)?.averageAdr ?? 0);
-      const channelSharePct = Number((subtotalItem as any)?.revenueSharePct ?? (subtotalItem as any)?.sharePct ?? 0);
+      const rawSubtotalShare = (subtotalItem as any)?.revenueSharePct ?? (subtotalItem as any)?.sharePct;
+      const channelSharePct = rawSubtotalShare != null ? Number(rawSubtotalShare) : null;
 
       groups.push({
         channelName: chName,
@@ -554,13 +568,13 @@ export default function GroupSales() {
     if (isAllMode) {
       const pax = corporateSummary?.totalPax ? Number(corporateSummary.totalPax) : 0;
       const micePax = corporateSummary?.mice?.totalPax ? Number(corporateSummary.mice.totalPax) : 0;
-      const corpPax = corporateSummary?.corpFit?.totalPax ? Number(corporateSummary.corpFit.totalPax) : Math.max(0, pax - micePax);
+      const corpPax = corporateSummary?.corpFit?.totalPax != null ? Number(corporateSummary.corpFit.totalPax) : null;
       return {
         title: '전사 B2B 유치 총인원',
         badge: 'B2B 종합',
         pax: pax > 0 ? pax : null,
         subtext: pax > 0 
-          ? `MICE ${micePax.toLocaleString()}명 + 법인휴양소 등 ${corpPax.toLocaleString()}명`
+          ? (corpPax != null ? `MICE ${micePax.toLocaleString()}명 + 법인휴양소 등 ${corpPax.toLocaleString()}명` : `MICE ${micePax.toLocaleString()}명 포함 B2B 종합`)
           : 'B2B 유치 단체 데이터 연동 기준'
       };
     }
@@ -638,16 +652,21 @@ export default function GroupSales() {
         isWeekend
       };
 
+      const backendVisitCount = (g as any).visitCount != null ? Number((g as any).visitCount) : null;
+      const backendOrgRooms = (g as any).organizationTotalRooms != null ? Number((g as any).organizationTotalRooms) : null;
+      const backendOrgPax = (g as any).organizationTotalPax != null ? Number((g as any).organizationTotalPax) : null;
+      const backendOrgRev = (g as any).organizationTotalRevenue != null ? Number((g as any).organizationTotalRevenue) : null;
+
       if (!orgMap.has(name)) {
         orgMap.set(name, {
           name,
           corporateName: g.corporateName || name,
           categoryName: g.categoryName || '기업 세미나/워크샵',
-          visitCount: Number((g as any).visitCount ?? 1),
-          isRepeatCustomer: Boolean((g as any).isRepeatCustomer ?? ((g as any).visitCount > 1)),
-          totalRooms: Number((g as any).organizationTotalRooms ?? rooms),
-          totalPax: Number((g as any).organizationTotalPax ?? pax),
-          totalRevenue: Number((g as any).organizationTotalRevenue ?? rev),
+          visitCount: backendVisitCount,
+          isRepeatCustomer: Boolean((g as any).isRepeatCustomer ?? (backendVisitCount != null && backendVisitCount > 1)),
+          totalRooms: backendOrgRooms ?? rooms,
+          totalPax: backendOrgPax ?? pax,
+          totalRevenue: backendOrgRev ?? rev,
           roomTypesSummary: [...types],
           firstCheckIn: (g as any).firstCheckIn || checkIn,
           lastCheckIn: (g as any).lastCheckIn || checkIn,
@@ -659,6 +678,9 @@ export default function GroupSales() {
       } else {
         const org = orgMap.get(name)!;
         org.visits.push(visit);
+        if (backendOrgRooms == null) org.totalRooms = null;
+        if (backendOrgPax == null) org.totalPax = null;
+        if (backendOrgRev == null) org.totalRevenue = null;
         if (checkIn && (!org.firstCheckIn || checkIn < org.firstCheckIn)) {
           org.firstCheckIn = checkIn;
         }
@@ -680,7 +702,7 @@ export default function GroupSales() {
       if (b.isRepeatCustomer !== a.isRepeatCustomer) {
         return b.isRepeatCustomer ? 1 : -1;
       }
-      return b.totalRooms - a.totalRooms;
+      return (b.totalRooms ?? 0) - (a.totalRooms ?? 0);
     });
 
     const repeats = Number((corporateSummary as any)?.repeatGroupsCount ?? (corporateSummary as any)?.seminar?.repeatGroupsCount ?? 0);
@@ -700,7 +722,7 @@ export default function GroupSales() {
       // 탭 필터
       if (groupFilterTab === 'REPEAT' && !org.isRepeatCustomer) return false;
       if (groupFilterTab === 'SINGLE' && org.isRepeatCustomer) return false;
-      if (groupFilterTab === 'LARGE' && org.totalRooms < 20) return false;
+      if (groupFilterTab === 'LARGE' && (org.totalRooms ?? 0) < 20) return false;
 
       // 검색어 필터
       if (groupSearchKeyword) {
@@ -747,7 +769,7 @@ export default function GroupSales() {
   }, [venuePerformanceData, selectedVenueFilter, venueSearchKeyword]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
       
       {/* 1. Header with Institutional Polish */}
       <div className="bg-white p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -865,8 +887,8 @@ export default function GroupSales() {
                       {seminarDayTypeStats.total.growth.sharePctDiff > 0 ? '+' : ''}{seminarDayTypeStats.total.growth.sharePctDiff.toFixed(1)}%p YoY
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="백엔드 완제품 연동 대기 (backend_request.md 요청 6)">
-                      YoY 대기
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="전년 동기 비교 데이터 확인 중">
+                      YoY 미집계
                     </span>
                   )}
                 </div>
@@ -922,7 +944,7 @@ export default function GroupSales() {
                 ) : (
                   <div className="text-slate-400 text-[11px] pt-1 border-t border-slate-800 flex items-center justify-between">
                     <span>전년 동기 비교:</span>
-                    <span className="text-slate-400">백엔드 마트 연동 대기 (요청 6)</span>
+                    <span className="text-slate-400">전년 동기 데이터 없음</span>
                   </div>
                 )}
               </div>
@@ -1007,8 +1029,8 @@ export default function GroupSales() {
                       {seminarDayTypeStats.weekday.growth.sharePctDiff > 0 ? '+' : ''}{seminarDayTypeStats.weekday.growth.sharePctDiff.toFixed(1)}%p YoY
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="백엔드 완제품 연동 대기 (backend_request.md 요청 6)">
-                      YoY 대기
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="전년 동기 비교 데이터 확인 중">
+                      YoY 미집계
                     </span>
                   )}
                 </div>
@@ -1064,7 +1086,7 @@ export default function GroupSales() {
                 ) : (
                   <div className="text-slate-400 text-[11px] pt-1 border-t border-indigo-900/50 flex items-center justify-between">
                     <span>전년 동기 비교:</span>
-                    <span className="text-slate-400">백엔드 마트 연동 대기 (요청 6)</span>
+                    <span className="text-slate-400">전년 동기 데이터 없음</span>
                   </div>
                 )}
               </div>
@@ -1148,8 +1170,8 @@ export default function GroupSales() {
                       {seminarDayTypeStats.weekend.growth.sharePctDiff > 0 ? '+' : ''}{seminarDayTypeStats.weekend.growth.sharePctDiff.toFixed(1)}%p YoY
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="백엔드 완제품 연동 대기 (backend_request.md 요청 6)">
-                      YoY 대기
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-700/40 px-1.5 py-0.5 rounded border border-slate-600/40" title="전년 동기 비교 데이터 확인 중">
+                      YoY 미집계
                     </span>
                   )}
                 </div>
@@ -1205,7 +1227,7 @@ export default function GroupSales() {
                 ) : (
                   <div className="text-slate-400 text-[11px] pt-1 border-t border-slate-800 flex items-center justify-between">
                     <span>전년 동기 비교:</span>
-                    <span className="text-slate-400">백엔드 마트 연동 대기 (요청 6)</span>
+                    <span className="text-slate-400">전년 동기 데이터 없음</span>
                   </div>
                 )}
               </div>
@@ -1402,7 +1424,7 @@ export default function GroupSales() {
               <span className="font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md">
                 {displayRevenueFinancial.formatted}
               </span>
-              {!isAllMode && activeChannelGroup && (
+              {!isAllMode && activeChannelGroup && activeChannelGroup.revenueSharePct != null && (
                 <span className="text-slate-400 font-medium">
                   (전사 {grandRevenueFinancial.formatted} 중 <strong className="text-slate-700 font-bold">{activeChannelGroup.revenueSharePct.toFixed(1)}%</strong> 점유)
                 </span>
@@ -1552,7 +1574,7 @@ export default function GroupSales() {
             <table className="w-full text-left border-collapse font-financial">
               <thead>
                 <tr className="border-b-2 border-slate-800 text-sm font-bold text-slate-900">
-                  <th className="py-4 px-6 whitespace-nowrap">평형 (세그먼트)</th>
+                  <th className="py-4 px-6 text-left whitespace-nowrap">평형 (세그먼트)</th>
                   <th className="py-4 px-4 text-right whitespace-nowrap">판매 객실</th>
                   <th className="py-4 px-4 text-right whitespace-nowrap">매출액 (순매출)</th>
                   <th className="py-4 px-4 text-right whitespace-nowrap">예상 투숙객</th>
@@ -1589,18 +1611,22 @@ export default function GroupSales() {
                       {item.adr > 0 ? `${formatRevenue(item.adr)}원` : '-'}
                     </td>
                     <td className="py-4 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden hidden sm:block">
-                          <div 
-                            className="bg-brand-mint h-full rounded-full" 
-                            style={{ width: `${Math.min(100, Math.max(0, item.channelSharePct))}%` }} 
-                          />
+                      {item.channelSharePct != null ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden hidden sm:block">
+                            <div 
+                              className="bg-brand-mint h-full rounded-full" 
+                              style={{ width: `${Math.min(100, Math.max(0, item.channelSharePct))}%` }} 
+                            />
+                          </div>
+                          <span>{item.channelSharePct.toFixed(1)}%</span>
                         </div>
-                        <span>{item.channelSharePct.toFixed(1)}%</span>
-                      </div>
+                      ) : (
+                        <span className="text-slate-400 font-normal">-</span>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-right font-medium text-slate-500 whitespace-nowrap">
-                      {item.grandSharePct.toFixed(1)}%
+                      {item.grandSharePct != null ? `${item.grandSharePct.toFixed(1)}%` : '-'}
                     </td>
                   </tr>
                 ))}
@@ -1626,7 +1652,7 @@ export default function GroupSales() {
                     100.0%
                   </td>
                   <td className="py-4 px-6 text-sm text-right text-emerald-700 font-extrabold">
-                    {activeChannelGroup.revenueSharePct.toFixed(1)}%
+                    {activeChannelGroup.revenueSharePct != null ? `${activeChannelGroup.revenueSharePct.toFixed(1)}%` : '-'}
                   </td>
                 </tr>
               </tbody>
@@ -1663,7 +1689,7 @@ export default function GroupSales() {
             <table className="w-full text-left border-collapse font-financial text-xs">
               <thead>
                 <tr className="bg-slate-100 border-b-2 border-slate-300 text-slate-700 font-bold">
-                  <th className="py-3.5 px-4 sticky left-0 bg-slate-100 z-10 whitespace-nowrap min-w-[160px]">
+                  <th className="py-3.5 px-4 text-left sticky left-0 bg-slate-100 z-10 whitespace-nowrap min-w-[160px]">
                     판매방식 (채널)
                   </th>
                   {uniqueRoomTypes.map(rt => (
@@ -1811,7 +1837,7 @@ export default function GroupSales() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-400">
-                        전사 기여도: <strong className="text-slate-700 font-semibold">{group.revenueSharePct.toFixed(1)}%</strong>
+                        전사 기여도: <strong className="text-slate-700 font-semibold">{group.revenueSharePct != null ? `${group.revenueSharePct.toFixed(1)}%` : '-'}</strong>
                       </p>
                     </div>
                   </div>
@@ -1847,7 +1873,7 @@ export default function GroupSales() {
                   <table className="w-full text-left border-collapse text-xs font-financial">
                     <thead>
                       <tr className="border-b border-slate-100 text-slate-500 font-bold">
-                        <th className="py-2.5 px-4">평형</th>
+                        <th className="py-2.5 px-4 text-left">평형</th>
                         <th className="py-2.5 px-4 text-right">판매 객실</th>
                         <th className="py-2.5 px-4 text-right">매출액</th>
                         <th className="py-2.5 px-4 text-right">ADR</th>
@@ -1870,7 +1896,7 @@ export default function GroupSales() {
                           <td className="py-2 px-4 text-right">{item.roomsSold}실</td>
                           <td className="py-2 px-4 text-right font-bold text-slate-900">{formatRevenue(item.revenue)}원</td>
                           <td className="py-2 px-4 text-right">{item.adr > 0 ? `${formatRevenue(item.adr)}원` : '-'}</td>
-                          <td className="py-2 px-4 text-right font-bold text-brand-mint">{item.channelSharePct.toFixed(1)}%</td>
+                          <td className="py-2 px-4 text-right font-bold text-brand-mint">{item.channelSharePct != null ? `${item.channelSharePct.toFixed(1)}%` : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1908,7 +1934,7 @@ export default function GroupSales() {
 
           <div className="flex items-center gap-2 self-start md:self-auto">
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-              SSOT 연회 대관 원장 연동
+              연회 대관 원장 연동
             </span>
           </div>
         </div>
@@ -1929,19 +1955,18 @@ export default function GroupSales() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="font-extrabold text-base text-amber-950">
-                    [백엔드 ETL 마트 연동 대기] 연회/세미나실 장소별 대관 판매 현황 및 평균가격 API
+                    [Fail-Stop] 연회/세미나실 장소별 대관 판매 현황 조회 구간 데이터 없음
                   </h4>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-200 text-amber-900 border border-amber-300">
                     Fail-Stop 모드 가동 중
                   </span>
                 </div>
                 <p className="text-xs text-amber-800 leading-relaxed">
-                  대표님/경영진의 <strong>'절대 가짜 숫자 날조 금지(Zero Fake Numbers)'</strong> 헌법에 따라, 백엔드 데이터 마트에서 공식 산출된 완제품이 도착하기 전까지 임의의 더미/Mock 데이터를 화면에 표시하지 않습니다.<br />
-                  현재 백엔드 개발팀에 <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">GET /api/v6/report/sales-venue-performance</code> 신설 요청(backend_request.md [요청 7])이 전달되었으며, 원천 PMS 연회 예약 원장 매핑이 완료되는 즉시 실시간 데이터가 자동 표출됩니다.
+                  <strong>'절대 가짜 숫자 날조 금지(Zero Fake Numbers)'</strong> 헌법에 따라, 백엔드 <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">GET /api/v6/report/sales-venue-performance</code> 응답이 없거나 해당 조회 구간 데이터가 비어 있을 때 임의의 더미/Mock 데이터를 화면에 표시하지 않습니다.
                 </p>
                 <div className="pt-2 text-xs font-semibold text-amber-700 flex items-center gap-2">
                   <CheckCircle2 size={14} className="text-amber-600" />
-                  <span>요청 스펙: 장소별(세미나A, 세미나B, 벨포레홀 등) 판매건수, 총매출, 건당 평균가격, 연도별×월별 추이, 이용 단체명 명부</span>
+                  <span>연동 스펙: 장소별(세미나A, 세미나B, 벨포레홀 등) 판매건수, 총매출, 건당 평균가격, 연도별×월별 추이, 이용 단체명 명부</span>
                 </div>
               </div>
             </div>
@@ -2119,7 +2144,7 @@ export default function GroupSales() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                       <tr>
-                        <th className="py-3 px-4 whitespace-nowrap">조회 월 (Year-Month)</th>
+                        <th className="py-3 px-4 text-left whitespace-nowrap">조회 월 (Year-Month)</th>
                         {uniqueVenueNames.map(vName => (
                           <th key={vName} className="py-3 px-4 text-center whitespace-nowrap">{vName}</th>
                         ))}
@@ -2211,14 +2236,14 @@ export default function GroupSales() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                       <tr>
-                        <th className="py-3 px-4 whitespace-nowrap">행사 일자</th>
-                        <th className="py-3 px-4 whitespace-nowrap">이용 장소</th>
-                        <th className="py-3 px-4 whitespace-nowrap">이용 단체명 (행사명)</th>
+                        <th className="py-3 px-4 text-left whitespace-nowrap">행사 일자</th>
+                        <th className="py-3 px-4 text-left whitespace-nowrap">이용 장소</th>
+                        <th className="py-3 px-4 text-left whitespace-nowrap">이용 단체명 (행사명)</th>
                         <th className="py-3 px-4 text-center whitespace-nowrap">참석 인원</th>
                         <th className="py-3 px-4 text-right whitespace-nowrap">대관료 (원)</th>
                         <th className="py-3 px-4 text-center whitespace-nowrap">예약 번호</th>
-                        <th className="py-3 px-4 whitespace-nowrap">영업 담당자</th>
-                        <th className="py-3 px-4 whitespace-nowrap">비고</th>
+                        <th className="py-3 px-4 text-left whitespace-nowrap">영업 담당자</th>
+                        <th className="py-3 px-4 text-left whitespace-nowrap">비고</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-financial">
@@ -2263,7 +2288,7 @@ export default function GroupSales() {
                             <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
                               {b.salesManager || '-'}
                             </td>
-                            <td className="py-3 px-4 text-slate-400 text-[11px] truncate max-w-xs">
+                            <td className="py-3 px-4 text-slate-400 text-[11px] truncate max-w-xs" title={b.remarks || undefined}>
                               {b.remarks || '-'}
                             </td>
                           </tr>
@@ -2421,13 +2446,13 @@ export default function GroupSales() {
               <table className="w-full text-left border-collapse font-financial">
                 <thead>
                   <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50/50">
-                    <th className="py-3.5 px-6 whitespace-nowrap">단체 / 기업명</th>
+                    <th className="py-3.5 px-6 text-left whitespace-nowrap">단체 / 기업명</th>
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">방문 횟수</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">총 대여 객실수</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">행사 인원수</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">이용 평형 (객실 타입)</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">방문 기간 (체크인)</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">담당자 / 연락처</th>
+                    <th className="py-3.5 px-4 text-left whitespace-nowrap">이용 평형 (객실 타입)</th>
+                    <th className="py-3.5 px-4 text-left whitespace-nowrap">방문 기간 (체크인)</th>
+                    <th className="py-3.5 px-4 text-left whitespace-nowrap">담당자 / 연락처</th>
                     <th className="py-3.5 px-6 text-center whitespace-nowrap">차수별 상세</th>
                   </tr>
                 </thead>
@@ -2451,10 +2476,10 @@ export default function GroupSales() {
                                 {org.isRepeatCustomer && (
                                   <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-2xs">
                                     <RotateCcw size={10} />
-                                    ★ 복수 방문 ({org.visitCount}회차)
+                                    ★ 복수 방문 {org.visitCount != null ? `(${org.visitCount}회차)` : ''}
                                   </span>
                                 )}
-                                {org.totalRooms >= 30 && (
+                                {(org.totalRooms ?? 0) >= 30 && (
                                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                                     대규모
                                   </span>
@@ -2466,27 +2491,43 @@ export default function GroupSales() {
                             </td>
 
                             <td className="py-4 px-4 text-center">
-                              <span className={`inline-flex items-center justify-center font-bold px-2.5 py-1 rounded-lg text-xs ${
-                                org.visitCount > 1 
-                                  ? 'bg-emerald-500 text-white font-black' 
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}>
-                                {org.visitCount}회
-                              </span>
+                              {org.visitCount != null ? (
+                                <span className={`inline-flex items-center justify-center font-bold px-2.5 py-1 rounded-lg text-xs ${
+                                  org.visitCount > 1 
+                                    ? 'bg-emerald-500 text-white font-black' 
+                                    : 'bg-slate-100 text-slate-700'
+                                }`}>
+                                  {org.visitCount}회
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
                             </td>
 
                             <td className="py-4 px-4 text-right">
-                              <span className="text-base font-black text-slate-900 font-financial">
-                                {org.totalRooms.toLocaleString()}
-                              </span>
-                              <span className="text-xs font-semibold text-slate-400 ml-1">실</span>
+                              {org.totalRooms != null ? (
+                                <>
+                                  <span className="text-base font-black text-slate-900 font-financial">
+                                    {org.totalRooms.toLocaleString()}
+                                  </span>
+                                  <span className="text-xs font-semibold text-slate-400 ml-1">실</span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
                             </td>
 
                             <td className="py-4 px-4 text-right">
-                              <span className="font-bold text-slate-700 font-financial">
-                                {org.totalPax.toLocaleString()}
-                              </span>
-                              <span className="text-xs text-slate-400 ml-1">명</span>
+                              {org.totalPax != null ? (
+                                <>
+                                  <span className="font-bold text-slate-700 font-financial">
+                                    {org.totalPax.toLocaleString()}
+                                  </span>
+                                  <span className="text-xs text-slate-400 ml-1">명</span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
                             </td>
 
                             <td className="py-4 px-4">
@@ -2624,7 +2665,7 @@ export default function GroupSales() {
                   판촉 영업담당자별 B2B 수주 순기여도(Net Contribution) 및 연회장 가동 효율
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
-                  V6 SSOT · Ticket 31
+                  단체 판촉 실적 분석
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
@@ -2641,7 +2682,7 @@ export default function GroupSales() {
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                 <AlertCircle size={14} />
-                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/sales-rep-banquet-intelligence)
+                Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/sales-rep-banquet-intelligence)
               </span>
             )}
           </div>
@@ -2654,10 +2695,10 @@ export default function GroupSales() {
                 <AlertCircle size={20} />
               </div>
               <h4 className="text-sm font-extrabold text-slate-800">
-                [Zero-Fake / Fail-Stop] 판촉 영업담당자 순기여도 및 세미나홀 RevPASH 정규 마트 API 연동 대기 중
+                [Zero-Fake / Fail-Stop] 판촉 영업담당자 순기여도 및 세미나홀 RevPASH 데이터 미수신 또는 조회 구간 내역 없음
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/sales-rep-banquet-intelligence</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/sales-rep-banquet-intelligence</code> 응답이 없거나 선택 구간 데이터가 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -2837,7 +2878,7 @@ export default function GroupSales() {
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
           <span className="text-[11px] font-semibold bg-white/10 px-3 py-1.5 rounded-lg border border-white/15 text-slate-200">
-            세일즈본부 SSOT Ver 6.0
+            세일즈본부 공식 집계 Ver 6.0
           </span>
         </div>
       </div>

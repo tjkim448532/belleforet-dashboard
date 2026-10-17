@@ -577,7 +577,7 @@ export default function ResortBusiness() {
   })();
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8">
       {/* Top Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div>
@@ -750,7 +750,7 @@ export default function ResortBusiness() {
                 <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                   <Coins className="w-5 h-5 text-[#00ae95]" /> 
                   <span>객실 평균 단가 (ADR)</span>
-                  <MetricExplainerTooltip presetKey="adr" align="right" />
+                  <MetricExplainerTooltip presetKey="adr" align="left" />
                 </h2>
                 <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight whitespace-nowrap font-financial">
                   {adrCurrent && adrCurrent > 0 ? (
@@ -941,7 +941,7 @@ export default function ResortBusiness() {
                 <div>
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                      YoY 동일기간 비교 SSOT
+                      전년 동기 비교
                     </span>
                     <span className="text-xs font-semibold text-slate-500 font-financial">
                       당해 ({startDate} ~ {endDate}) vs 전년 동기 ({lyStart} ~ {lyEnd})
@@ -969,7 +969,7 @@ export default function ResortBusiness() {
                   <table className="w-full border-collapse text-left whitespace-nowrap min-w-[720px]">
                     <thead>
                       <tr className="border-b border-slate-200 text-xs font-bold text-slate-500 bg-slate-50/80 uppercase tracking-wider">
-                        <th className="py-3.5 px-4">경영 지표 구분</th>
+                        <th className="py-3.5 px-4 text-left">경영 지표 구분</th>
                         <th className="py-3.5 px-4 text-right">당해 실적 ({startDate} ~ {endDate})</th>
                         <th className="py-3.5 px-4 text-right">전년 동기 ({lyStart} ~ {lyEnd})</th>
                         <th className="py-3.5 px-4 text-right">YoY 증감 (Delta)</th>
@@ -1965,7 +1965,7 @@ export default function ResortBusiness() {
                       객실 예약 리드타임 · 사전 취소 임계점(Cancellation Cliff) 및 호실별 배정 편차 감사
                     </h3>
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
-                      V6 SSOT · Ticket 32
+                      객실 예약 패턴 분석
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
@@ -1980,7 +1980,7 @@ export default function ResortBusiness() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                    Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/room-leadtime-unit-wear)
+                    Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/room-leadtime-unit-wear)
                   </span>
                 )}
               </div>
@@ -1990,10 +1990,10 @@ export default function ResortBusiness() {
               <div className="p-8 bg-slate-50/60">
                 <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
                   <h4 className="text-sm font-extrabold text-slate-800">
-                    [Zero-Fake / Fail-Stop] 객실 리드타임 취소 방어 및 호실별 배정 편차 감사 정규 마트 API 연동 대기 중
+                    [Zero-Fake / Fail-Stop] 객실 리드타임 취소 방어 및 호실별 배정 편차 감사 조회 데이터 없음
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/room-leadtime-unit-wear</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                    백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/room-leadtime-unit-wear</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -2023,7 +2023,7 @@ export default function ResortBusiness() {
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
                       <div className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
                         <span>호실별 배정 편차 지수</span>
-                        <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="right" iconSize={14} />
+                        <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="left" iconSize={14} />
                       </div>
                       <div className="text-base font-black text-slate-400 mt-1">-</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">동·층·베드타입별 회전율 집계 대기</div>
@@ -2073,7 +2073,7 @@ export default function ResortBusiness() {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                     <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
                       <span>물리 호실 마스터 가동 범위</span>
-                      <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="right" iconSize={15} />
+                      <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="left" iconSize={15} />
                     </div>
                     <div className="text-xl font-black text-sky-700 mt-1">
                       {leadtimeWearIntel.summary?.activeUnitCount != null ? `${leadtimeWearIntel.summary.activeUnitCount}실` : '-'}
@@ -2130,7 +2130,7 @@ export default function ResortBusiness() {
                     <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-extrabold text-slate-800">호실별(객실번호) 물리적 배정 횟수 및 감가상각 편차</span>
-                        <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="right" iconSize={14} />
+                        <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="left" iconSize={14} />
                       </div>
                       <div className="flex items-center gap-2 text-[11px]">
                         <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200 font-bold">

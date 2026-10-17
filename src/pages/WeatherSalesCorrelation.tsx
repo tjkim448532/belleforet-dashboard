@@ -643,7 +643,7 @@ export default function WeatherSalesCorrelation() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="bg-sky-400/20 text-sky-300 text-xs font-bold px-3 py-1 rounded-full border border-sky-400/30 tracking-wide">
-                벨포레 기상-매출 결합 인텔리전스 (V6 SSOT)
+                벨포레 기상-매출 결합 분석
               </span>
               <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
                 <ShieldCheck size={14} className="text-sky-400" /> 영업시간(06~20시) 실측 데이터 연동
@@ -850,7 +850,7 @@ export default function WeatherSalesCorrelation() {
                 <div className="space-y-2 mt-3">
                   {data.summary?.topVulnerableVenues?.filter(v => !isExcludedVenue(v.venueName)).slice(0, 3).map((v, i) => (
                     <div key={v.venueName} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
-                      <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate" title={v.venueName}>
                         <span className="w-4 h-4 rounded-full bg-red-100 text-red-700 text-[10px] flex items-center justify-center font-bold">{i + 1}</span>
                         {v.venueName}
                       </span>
@@ -881,7 +881,7 @@ export default function WeatherSalesCorrelation() {
                 <div className="space-y-2 mt-3">
                   {topBeneficiaryVenues.map((v, i) => (
                     <div key={v.venueName} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
-                      <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate" title={v.venueName}>
                         <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px] flex items-center justify-center font-bold">{i + 1}</span>
                         {v.venueName}
                       </span>
@@ -1031,7 +1031,7 @@ export default function WeatherSalesCorrelation() {
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-6 text-center">
                   <CloudRain className="w-10 h-10 text-slate-300 mb-2" />
                   <p className="text-sm font-semibold text-slate-600">선택하신 기간({startDate || '조회 기간'})의 일자별 기상 연동 데이터가 없습니다.</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-md">기상청 AWS 관측 데이터 및 일별 매출 결합 배치(ETL)가 완료된 기간(예: 최근 7일, 전월 MTD 등)을 선택해 주세요.</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md">기상청 관측 데이터 및 일별 매출 결합 집계가 완료된 기간(예: 최근 7일, 전월 MTD 등)을 선택해 주세요.</p>
                   <button
                     type="button"
                     onClick={handleSwitchToLatestMonth}
@@ -1050,7 +1050,7 @@ export default function WeatherSalesCorrelation() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-indigo-500" /> 업장별 기상 탄력성 및 매출 변동 매트릭스 (SSOT)
+                  <Layers className="w-5 h-5 text-indigo-500" /> 업장별 기상 탄력성 및 매출 변동 매트릭스
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
                   맑은 날 대비 우천 시 일평균 매출 변동액과 증감률을 전 영업장 1:1 전수 비교합니다.
@@ -1135,8 +1135,8 @@ export default function WeatherSalesCorrelation() {
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-bold border-y border-slate-200">
-                    <th className="py-3 px-4 rounded-l-xl">부문</th>
-                    <th className="py-3 px-4">영업장명</th>
+                    <th className="py-3 px-4 text-left rounded-l-xl">부문</th>
+                    <th className="py-3 px-4 text-left">영업장명</th>
                     <th className="py-3 px-4 text-center">기상 민감도</th>
                     <th className="py-3 px-4 text-right">☀️ 맑은 날 일평균</th>
                     <th className="py-3 px-4 text-right">🌧️ 비 온 날 일평균</th>
@@ -1224,7 +1224,7 @@ export default function WeatherSalesCorrelation() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="bg-sky-50 text-sky-700 text-xs font-bold px-3 py-1 rounded-full border border-sky-200 inline-flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-sky-600" /> V6 공식 기상 예측 시뮬레이터 (Zero-Variance SSOT)
+                    <Sparkles size={14} className="text-sky-600" /> 공식 기상 예측 시뮬레이터
                   </span>
                   {simData?.lyMonth && (
                     <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full border border-slate-200">
@@ -1236,7 +1236,7 @@ export default function WeatherSalesCorrelation() {
                   <Sliders className="w-5 h-5 text-sky-600" /> 기상 시뮬레이션: 강수·적설 대비 업장별 예상 매출 분석
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  선택한 대상 연월의 전년도(LY) 실측 주중·휴일 매출과 공식 기상 탄력성 모델(SSOT)을 대입하여 산출된 예측치입니다.
+                  선택한 대상 연월의 전년도(LY) 실측 주중·휴일 매출과 공식 기상 탄력성 모델을 대입하여 산출된 예측치입니다.
                 </p>
               </div>
 
@@ -1483,7 +1483,7 @@ export default function WeatherSalesCorrelation() {
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       {simData.categories.filter(cat => cat.categoryCode !== 'ROOM').map(cat => (
                         <div key={cat.categoryCode} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
-                          <div className="text-xs font-bold text-slate-800 truncate mb-1">{cat.categoryName}</div>
+                          <div className="text-xs font-bold text-slate-800 truncate mb-1" title={cat.categoryName}>{cat.categoryName}</div>
                           <div className="text-[11px] text-slate-500 flex justify-between font-financial">
                             <span>주중:</span>
                             <span className={cat.weekdayRevenueDelta >= 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
@@ -1584,8 +1584,8 @@ export default function WeatherSalesCorrelation() {
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-100 text-[11px]">
-                          <th className="py-2.5 px-3 font-bold">부문</th>
-                          <th className="py-2.5 px-3 font-bold">영업장명</th>
+                          <th className="py-2.5 px-3 font-bold text-left">부문</th>
+                          <th className="py-2.5 px-3 font-bold text-left">영업장명</th>
                           <th className="py-2.5 px-3 font-bold text-center">민감도</th>
                           <th className="py-2.5 px-3 font-bold text-right">주중 LY 실측</th>
                           <th className="py-2.5 px-3 font-bold text-right text-sky-800">주중 기상 예측</th>

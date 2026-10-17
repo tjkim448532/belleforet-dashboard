@@ -21,7 +21,7 @@ export default function AdminLayout() {
               if (Math.abs(gap) >= 1 || unmappedCount > 0) {
                 setEtlAlert({
                   gap,
-                  msg: `[Zero-Variance 무결성 경고] 원천 POS와 DB 마트 간 ${Math.abs(gap).toLocaleString()}원의 불일치 또는 미매핑 ${unmappedCount}건이 감지되었습니다. 매핑 통제 센터에서 룰셋을 즉시 확인하십시오.`
+                  msg: `[데이터 정합성 경고] 원천 POS와 데이터 마트 간 ${Math.abs(gap).toLocaleString()}원의 불일치 또는 미매핑 ${unmappedCount}건이 감지되었습니다. 매핑 설정에서 룰셋을 즉시 확인하십시오.`
                 });
               } else {
                 setEtlAlert(null);

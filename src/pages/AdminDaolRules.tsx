@@ -250,9 +250,9 @@ export default function AdminDaolRules() {
           <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                <th className="px-6 py-4 font-semibold whitespace-nowrap">종류</th>
-                <th className="px-6 py-4 font-semibold whitespace-nowrap">원본 (계정코드명 / 티켓상품명)</th>
-                <th className="px-6 py-4 font-semibold whitespace-nowrap">분배 대상 (Target)</th>
+                <th className="px-6 py-4 font-semibold text-left whitespace-nowrap">종류</th>
+                <th className="px-6 py-4 font-semibold text-left whitespace-nowrap">원본 (계정코드명 / 티켓상품명)</th>
+                <th className="px-6 py-4 font-semibold text-left whitespace-nowrap">분배 대상 (Target)</th>
                 <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">삭제</th>
               </tr>
             </thead>

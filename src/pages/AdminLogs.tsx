@@ -92,7 +92,7 @@ export default function AdminLogs() {
       </div>
 
       {/* Table List */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-auto bg-white">
         {loadingLogin ? (
           <div className="flex items-center justify-center h-64 text-slate-400 font-medium animate-pulse">
             접속 로그를 불러오는 중입니다...
@@ -107,7 +107,7 @@ export default function AdminLogs() {
             <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 text-slate-500 text-xs font-semibold">
               <tr>
                 <th className="p-4 w-20 text-center whitespace-nowrap">번호</th>
-                <th className="p-4 whitespace-nowrap">접속 임직원 이메일 계정</th>
+                <th className="p-4 text-left whitespace-nowrap">접속 임직원 이메일 계정</th>
                 <th className="p-4 w-64 text-right whitespace-nowrap">접속 일시 (KST)</th>
               </tr>
             </thead>

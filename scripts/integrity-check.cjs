@@ -243,12 +243,23 @@ files.forEach(filePath => {
     }
 
     // 15. 대시보드/리포트 내 클라이언트 단가·팀수·전년비·RevPAR 인라인 나눗셈/곱셈 합성 차단
-    const inlineKpiDivisionMatch = codeOnly.match(/Math\.round\(visitors\s*\/\s*4\)|Math\.round\(rev\s*\/\s*visitors\)|\(row\.revenue\s*-\s*row\.lyRev\)\s*\/\s*row\.lyRev|yoyPrimaryDiff\s*\/\s*prev(?:Guests|Rooms)|yoyRevDiff\s*\/\s*prevRev|Math\.round\((?:weekdayAdr|weekendAdr)\s*\*\s*\((?:weekdayOcc|weekendOcc)\s*\/\s*100\)\)/);
+    const inlineKpiDivisionMatch = codeOnly.match(/Math\.round\(visitors\s*\/\s*4\)|Math\.round\(rev\s*\/\s*visitors\)|\(row\.revenue\s*-\s*row\.lyRev\)\s*\/\s*row\.lyRev|yoyPrimaryDiff\s*\/\s*prev(?:Guests|Rooms)|yoyRevDiff\s*\/\s*prevRev|Math\.round\((?:weekdayAdr|weekendAdr|targetAdr)\s*\*\s*\((?:weekdayOcc|weekendOcc|targetOccPct)\s*\/\s*100\)\)/);
     if (inlineKpiDivisionMatch) {
       violations.push({
         file: relPath,
         line: lineNum,
         rule: 'Inline Client-Side KPI Arithmetic Forbidden (클라이언트 인라인 단가/팀수/전년비/RevPAR 사칙연산 금지)',
+        code: codeOnly
+      });
+    }
+
+    // 16. 하드코딩된 휴무일 문구, 낡은 배포 대기 배너, 가짜 순위/방문횟수 폴백, 인라인 차감/가산 차단
+    const auditRule16Match = codeOnly.match(/딜라이트\(월~수 휴장\)|밤밤테이블\(화요일 휴무\)|백엔드 API 배포 대기|백엔드 ETL 마트 연동 대기|m\.rank\s*\?\?\s*idx\s*\+\s*1|menu\.rank\s*\|\|\s*mIdx\s*\+\s*1|directAvg\s*-\s*otaAvg|member1Non3\.teams\s*\+\s*member2Non2\.teams|Math\.max\(0,\s*pax\s*-\s*micePax\)/);
+    if (auditRule16Match) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Hardcoded Closed-Day Text / Stale Banner / Fake Rank or Inline Arithmetic Forbidden (Rule 16 위반)',
         code: codeOnly
       });
     }

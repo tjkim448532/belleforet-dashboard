@@ -533,7 +533,7 @@ export default function HolidayComparison() {
                 <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[600px]">
                   <thead className="bg-slate-100/80 text-slate-700 font-bold">
                     <tr>
-                      <th className="py-3 px-4">구간 (D-Day 기준)</th>
+                      <th className="py-3 px-4 text-left">구간 (D-Day 기준)</th>
                       {years.map(year => (
                         <th key={year} className="py-3 px-4 text-center">{year}년 일자 및 실적</th>
                       ))}

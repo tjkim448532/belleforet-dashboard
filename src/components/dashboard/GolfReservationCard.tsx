@@ -183,7 +183,12 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
               <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums whitespace-nowrap">
                 {todayCanceledAndPending} <span className="text-sm font-normal text-slate-500">팀</span>
               </div>
-              <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
+              <div 
+                className="text-[10px] text-slate-500 font-medium mt-0.5 truncate"
+                title={todaySummary.pendingTeams > 0
+                  ? `취소 ${todaySummary.canceledTeams}팀 · 미내장 ${todaySummary.pendingTeams}팀`
+                  : `취소 ${todaySummary.canceledTeams}팀`}
+              >
                 {todaySummary.pendingTeams > 0
                   ? `취소 ${todaySummary.canceledTeams}팀 · 미내장 ${todaySummary.pendingTeams}팀`
                   : `취소 ${todaySummary.canceledTeams}팀`}
@@ -293,7 +298,10 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
                   </>
                 )}
               </div>
-              <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
+              <div 
+                className="text-[10px] text-slate-500 font-medium mt-0.5 truncate"
+                title={`취소율 ${(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}`}
+              >
                 취소율 {(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}
               </div>
             </div>
@@ -309,7 +317,7 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
               <span className="text-[10px] text-slate-400 font-medium">
                 {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined
                   ? '실시간 파트별 집계'
-                  : '1부·2부·3부 백엔드 API 연동 대기'}
+                  : '1부·2부·3부 예약 내역 없음'}
               </span>
             </div>
 

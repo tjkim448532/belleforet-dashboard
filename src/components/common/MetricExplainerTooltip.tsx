@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { HelpCircle, AlertCircle, X, Calculator, Lightbulb, BookOpen } from 'lucide-react';
 
 export type MetricPresetKey = 
@@ -32,7 +33,7 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
     badge: '회계 표준',
     definition: '고객이 결제한 총매출(Gross Sales)에서 부가가치세(10%)를 제외하고 벨포레에 실질적으로 귀속되는 실제 순수익입니다.',
     formula: '총 결제 금액 (Gross) ÷ 1.1 = 순매출 (원단위 절사)',
-    insight: '모든 대시보드의 매출 집계는 본 순매출(VAT 제외)을 SSOT 단일 기준으로 삼아 부서 간 실적 왜곡을 원천 방지합니다.'
+    insight: '모든 대시보드의 매출 집계는 본 순매출(VAT 제외)을 공식 기준으로 삼아 부서 간 실적 왜곡을 원천 방지합니다.'
   },
   mtdRevenue: {
     title: '월별 누적 매출 (MTD Revenue)',
@@ -56,7 +57,7 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
     insight: '단순 객실 판매단가(ADR)를 넘어, 투숙객이 리조트 내 다른 시설(루지, 미디어아트, F&B)에서 소비한 시너지 총량을 측정하는 최상위 경영 지표입니다.'
   },
   visitorCount: {
-    title: '진성 방문객 수 (is_visitor_count)',
+    title: '진성 방문객 수 (순수 입장객 기준)',
     badge: '집계 무결성',
     definition: '리조트에 실제로 발을 디딘 순수 사람(Person)의 수입니다. 식음료 단품 주문이나 연회 식수 등 상품 수량은 엄격히 배제됩니다.',
     formula: '객실 투숙객수(정원 기반) + 골프 내장객수 + 레저 입장객수 (식음 단품 판매량 제외)',
@@ -156,13 +157,65 @@ export default function MetricExplainerTooltip({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [boundaryShift, setBoundaryShift] = useState<{ left?: string; right?: string; transform?: string }>({});
+  const [fixedStyle, setFixedStyle] = useState<{ top: number; left: number; opacity: number }>({
+    top: 0,
+    left: 0,
+    opacity: 0
+  });
 
   const data: MetricExplainerData | undefined = customData || (presetKey ? METRIC_PRESETS[presetKey] : undefined);
 
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const triggerRect = containerRef.current.getBoundingClientRect();
+    const tooltipEl = tooltipRef.current;
+    const tooltipWidth = tooltipEl ? tooltipEl.offsetWidth : Math.min(384, window.innerWidth - 32);
+    const tooltipHeight = tooltipEl ? tooltipEl.offsetHeight : 260;
+    const padding = 16;
+
+    let left = triggerRect.left;
+    if ( position === 'left') {
+      left = triggerRect.left - tooltipWidth - 8;
+    } else if (position === 'right') {
+      left = triggerRect.right + 8;
+    } else if (align === 'right') {
+      left = triggerRect.right - tooltipWidth;
+    } else if (align === 'center') {
+      left = triggerRect.left + triggerRect.width / 2 - tooltipWidth / 2;
+    } else {
+      left = triggerRect.left;
+    }
+
+    left = Math.max(padding, Math.min(left, window.innerWidth - tooltipWidth - padding));
+
+    let top = triggerRect.bottom + 8;
+    if (position === 'top') {
+      top = triggerRect.top - tooltipHeight - 8;
+      if (top < padding) {
+        top = triggerRect.bottom + 8;
+      }
+    } else if (position === 'left' || position === 'right') {
+      top = triggerRect.top + triggerRect.height / 2 - tooltipHeight / 2;
+    } else {
+      top = triggerRect.bottom + 8;
+      if (top + tooltipHeight > window.innerHeight - padding && triggerRect.top - tooltipHeight - 8 >= padding) {
+        top = triggerRect.top - tooltipHeight - 8;
+      }
+    }
+
+    top = Math.max(padding, Math.min(top, window.innerHeight - tooltipHeight - padding));
+
+    setFixedStyle({ top, left, opacity: 1 });
+  }, [align, position]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!tooltipRef.current || !tooltipRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     }
@@ -182,70 +235,24 @@ export default function MetricExplainerTooltip({
     };
   }, [isOpen]);
 
-  // 뷰포트 좌우 경계 자동 보정 (화면 잘림 100% 방지)
   useEffect(() => {
-    if (!isOpen || !tooltipRef.current || !containerRef.current) {
-      setBoundaryShift({});
+    if (!isOpen) {
+      setFixedStyle((prev) => ({ ...prev, opacity: 0 }));
       return;
     }
 
-    const checkBoundary = () => {
-      if (!tooltipRef.current || !containerRef.current) return;
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const padding = 16; // 화면 좌우 최소 안전 마진 (16px)
-
-      // 1. 왼쪽 화면 바깥으로 삐져나간 경우
-      if (tooltipRect.left < padding) {
-        const shiftX = padding - containerRect.left;
-        setBoundaryShift({
-          left: `${shiftX}px`,
-          right: 'auto',
-          transform: 'none'
-        });
-      } 
-      // 2. 오른쪽 화면 바깥으로 삐져나간 경우
-      else if (tooltipRect.right > window.innerWidth - padding) {
-        const shiftX = containerRect.right - (window.innerWidth - padding);
-        setBoundaryShift({
-          right: `${shiftX}px`,
-          left: 'auto',
-          transform: 'none'
-        });
-      } else {
-        setBoundaryShift({});
-      }
-    };
-
-    // 렌더링 직후 및 윈도우 리사이즈 시 경계 검사
-    const timer = setTimeout(checkBoundary, 0);
-    window.addEventListener('resize', checkBoundary);
+    updatePosition();
+    const rafId = requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', checkBoundary);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   if (!data) return null;
-
-  // 위치 및 정렬 스타일 계산
-  const getPositionClasses = () => {
-    if (position === 'top') {
-      if (align === 'right') return 'bottom-full right-0 mb-2';
-      if (align === 'left') return 'bottom-full left-0 mb-2';
-      return 'bottom-full left-1/2 -translate-x-1/2 mb-2';
-    }
-    if (position === 'left') {
-      return 'right-full top-1/2 -translate-y-1/2 mr-2';
-    }
-    if (position === 'right') {
-      return 'left-full top-1/2 -translate-y-1/2 ml-2';
-    }
-    // bottom (default)
-    if (align === 'right') return 'top-full right-0 mt-2';
-    if (align === 'left') return 'top-full left-0 mt-2';
-    return 'top-full left-1/2 -translate-x-1/2 mt-2';
-  };
 
   return (
     <div className={`relative inline-flex items-center align-middle ${className}`} ref={containerRef}>
@@ -267,74 +274,82 @@ export default function MetricExplainerTooltip({
         )}
       </button>
 
-      {isOpen && (
-        <div
-          ref={tooltipRef}
-          style={boundaryShift}
-          className={`absolute z-[9999] w-[calc(100vw-32px)] max-w-sm sm:max-w-md sm:w-96 max-h-[85vh] overflow-y-auto p-4 bg-white rounded-2xl border border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.22)] text-slate-800 text-left animate-in fade-in zoom-in-95 duration-150 ${getPositionClasses()}`}
-          onClick={(e) => e.stopPropagation()}
-          onMouseLeave={() => setIsOpen(false)}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-mint ring-4 ring-brand-mint/20" />
-              <h4 className="font-bold text-sm text-slate-900 tracking-tight">{data.title}</h4>
-              {data.badge && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60">
-                  {data.badge}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100 cursor-pointer"
-              aria-label="닫기"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          {/* 3-Section Content */}
-          <div className="space-y-3 text-xs leading-relaxed">
-            {/* 1. 정의 */}
-            <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-              <div className="flex items-center gap-1.5 text-slate-600 font-semibold mb-1">
-                <BookOpen size={12} className="text-brand-mint" />
-                <span>지표 정의</span>
+      {isOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            style={{
+              position: 'fixed',
+              top: `${fixedStyle.top}px`,
+              left: `${fixedStyle.left}px`,
+              opacity: fixedStyle.opacity
+            }}
+            className="z-[99999] w-[calc(100vw-32px)] max-w-sm sm:max-w-md sm:w-96 max-h-[85vh] overflow-y-auto p-4 bg-white rounded-2xl border border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.22)] text-slate-800 text-left transition-opacity duration-100"
+            onClick={(e) => e.stopPropagation()}
+            onMouseLeave={() => setIsOpen(false)}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5 mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-brand-mint ring-4 ring-brand-mint/20 shrink-0" />
+                <h4 className="font-bold text-sm text-slate-900 tracking-tight">{data.title}</h4>
+                {data.badge && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60">
+                    {data.badge}
+                  </span>
+                )}
               </div>
-              <p className="text-slate-700 font-normal">{data.definition}</p>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100 cursor-pointer shrink-0"
+                aria-label="닫기"
+              >
+                <X size={14} />
+              </button>
             </div>
 
-            {/* 2. 산출 공식 */}
-            <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100/70">
-              <div className="flex items-center gap-1.5 text-emerald-800 font-semibold mb-1">
-                <Calculator size={12} className="text-brand-mint" />
-                <span>산출 공식</span>
+            {/* 3-Section Content */}
+            <div className="space-y-3 text-xs leading-relaxed">
+              {/* 1. 정의 */}
+              <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-1.5 text-slate-600 font-semibold mb-1">
+                  <BookOpen size={12} className="text-brand-mint" />
+                  <span>지표 정의</span>
+                </div>
+                <p className="text-slate-700 font-normal">{data.definition}</p>
               </div>
-              <code className="block font-mono text-[11px] font-semibold text-emerald-900 bg-white/80 px-2 py-1 rounded border border-emerald-100 break-words">
-                {data.formula}
-              </code>
-            </div>
 
-            {/* 3. 경영진 의사결정 포인트 */}
-            <div className="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/70">
-              <div className="flex items-center gap-1.5 text-amber-800 font-semibold mb-1">
-                <Lightbulb size={12} className="text-amber-500" />
-                <span>경영진 의사결정 포인트</span>
+              {/* 2. 산출 공식 */}
+              <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100/70">
+                <div className="flex items-center gap-1.5 text-emerald-800 font-semibold mb-1">
+                  <Calculator size={12} className="text-brand-mint" />
+                  <span>산출 공식</span>
+                </div>
+                <code className="block font-mono text-[11px] font-semibold text-emerald-900 bg-white/80 px-2 py-1 rounded border border-emerald-100 break-words">
+                  {data.formula}
+                </code>
               </div>
-              <p className="text-amber-900/90 font-normal leading-normal">{data.insight}</p>
-            </div>
-          </div>
 
-          {/* Footer note */}
-          <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
-            <span>벨포레 데이터 표준 관리 시스템</span>
-            <span className="font-semibold text-brand-mint">SSOT Ver 6.0</span>
-          </div>
-        </div>
-      )}
+              {/* 3. 경영진 의사결정 포인트 */}
+              <div className="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/70">
+                <div className="flex items-center gap-1.5 text-amber-800 font-semibold mb-1">
+                  <Lightbulb size={12} className="text-amber-500" />
+                  <span>경영진 의사결정 포인트</span>
+                </div>
+                <p className="text-amber-900/90 font-normal leading-normal">{data.insight}</p>
+              </div>
+            </div>
+
+            {/* Footer note */}
+            <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
+              <span>벨포레 데이터 표준 관리 시스템</span>
+              <span className="font-semibold text-brand-mint">공식 집계 Ver 6.0</span>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

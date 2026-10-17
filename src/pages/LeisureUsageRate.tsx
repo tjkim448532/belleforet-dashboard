@@ -920,7 +920,7 @@ export default function LeisureUsageRate() {
 
   if (error || !yoyData || !yoyData.pivotData) {
     return (
-      <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+      <div className="p-6 lg:p-10 max-w-[1600px] mx-auto">
         <div className="bg-rose-50 border border-rose-200 text-rose-700 p-8 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
           <div className="flex items-start gap-4">
             <AlertCircle className="w-8 h-8 text-rose-500 flex-shrink-0 mt-0.5" />
@@ -1090,7 +1090,10 @@ export default function LeisureUsageRate() {
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-6 -mt-6"></div>
               <div>
                 <div className="flex items-center justify-between mb-4 relative z-10">
-                  <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                  <span 
+                    className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]"
+                    title={`[${currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? '목장체험' : currentSummary.selectedVenue.name}] ${currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}`}
+                  >
                     [{currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? '목장체험' : currentSummary.selectedVenue.name}] {currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? (isPeriodTotalMode ? '기간 체험 전환율' : '당월 체험 전환율') : (isPeriodTotalMode ? '기간 누적 이용률' : '당월 이용률')}
                   </span>
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
@@ -1104,7 +1107,7 @@ export default function LeisureUsageRate() {
                   <span className="text-sm font-bold text-[#00ae95]">%</span>
                 </div>
               </div>
-              <div className="text-xs text-slate-500 mt-auto pt-2 font-medium relative z-10 whitespace-nowrap truncate">
+              <div className="text-xs text-slate-500 mt-auto pt-2 font-medium relative z-10 whitespace-nowrap truncate" title={currentSummary.label}>
                 {currentSummary.label}
               </div>
             </div>
@@ -1113,7 +1116,10 @@ export default function LeisureUsageRate() {
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]">
+                  <span 
+                    className="text-xs lg:text-sm font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap truncate max-w-[180px]"
+                    title={`[${currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? '목장체험' : currentSummary.selectedVenue.name}] ${isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}`}
+                  >
                     [{currentSummary.selectedVenue.name === '벨포레 목장(체험)' ? '목장체험' : currentSummary.selectedVenue.name}] {isPeriodTotalMode ? '기간 누적 이용객' : '당월 이용객'}
                   </span>
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#00ae95] flex items-center justify-center">
@@ -1128,7 +1134,7 @@ export default function LeisureUsageRate() {
                 </div>
               </div>
               <div className="text-xs text-slate-400 mt-auto pt-2 font-medium whitespace-nowrap">
-                진성 티켓 이용객 (is_visitor_count = 1)
+                순수 티켓 이용객 (입장객 기준)
               </div>
             </div>
 
@@ -1171,7 +1177,7 @@ export default function LeisureUsageRate() {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2 whitespace-nowrap">
-                  <span className="text-xl font-bold text-slate-900 truncate max-w-[140px]">
+                  <span className="text-xl font-bold text-slate-900 truncate max-w-[140px]" title={currentSummary.topVenue.name}>
                     {currentSummary.topVenue.name}
                   </span>
                   <span className="text-2xl lg:text-3xl font-bold text-[#00ae95] tabular-nums font-financial">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Calculator, TrendingUp, RefreshCw, AlertCircle, Sparkles, 
-  Sliders, Layers, RotateCcw, Info, ShoppingBag, Calendar
+  Sliders, Layers, RotateCcw, ShoppingBag, Calendar
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
@@ -442,55 +442,20 @@ export default function LeisurePricingSimulator() {
         </div>
       </div>
 
-      {/* 3. API Pending State (Fail-Stop Principle with Official Backend Ticket Guide) */}
+      {/* 3. Empty / Pending State */}
       {isApiPending && (
-        <div className="rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/70 p-6 lg:p-8 space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 lg:p-8 space-y-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
               <AlertCircle size={22} />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-amber-950 flex items-center gap-2">
-                <span>📡 백엔드 P1 정규 API 배포 대기 중</span>
-                <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md text-[11px] font-mono font-bold">
-                  GET /api/v6/report/leisure-top-products
-                </span>
+              <h3 className="text-base font-bold text-slate-900">
+                실적 데이터 집계 안내
               </h3>
-              <p className="text-xs text-amber-800 leading-relaxed">
-                대표님/경영진 무관용 원칙(The Bible 1조 및 Zero-Mocking 정책)에 따라 프론트엔드는 임의의 가짜 티켓명이나 단가 숫자를 하드코딩하지 않습니다.
-                현재 공식 백엔드 요청서(<code>backend_request.md Section 12</code>)가 작성되었으며, 백엔드 데이터 파이프라인 배포 즉시 실측 Top 5 데이터가 화면에 자동 연동됩니다.
+              <p className="text-xs text-slate-600 leading-relaxed">
+                선택하신 <b>{selectedFacility}</b>의 상품별 실적 집계 데이터가 없습니다. 상단에서 다른 영업장을 선택하시거나 잠시 후 다시 확인해 주시기 바랍니다.
               </p>
-            </div>
-          </div>
-
-          {/* Backend Request Spec Card */}
-          <div className="bg-white rounded-xl p-4 border border-amber-200/80 text-xs text-slate-700 space-y-2">
-            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <Info size={14} className="text-amber-600" />
-              <span>백엔드 요청 명세 요약 (Section 12)</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <div className="text-[11px] text-slate-400 font-medium">호출 엔드포인트</div>
-                <div className="font-mono font-bold text-slate-800 text-[11px] mt-0.5">
-                  /api/v6/report/leisure-top-products
-                </div>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <div className="text-[11px] text-slate-400 font-medium">선택 영업장 / 기준</div>
-                <div className="font-bold text-emerald-700 mt-0.5">
-                  {selectedFacility} ({baseYear}년 실측 전표 기준)
-                </div>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <div className="text-[11px] text-slate-400 font-medium">수행 기능</div>
-                <div className="font-bold text-slate-800 mt-0.5">
-                  판매금액 Top 5 상품 + 월별 계절성 Qty 완제품 제공
-                </div>
-              </div>
-            </div>
-            <div className="text-[11px] text-slate-500 pt-1">
-              ※ 백엔드 개발팀의 배포가 완료되면 상단 <b>[새로고침]</b> 버튼을 눌러 즉시 정밀 시뮬레이터를 이용하실 수 있습니다.
             </div>
           </div>
         </div>
@@ -762,7 +727,7 @@ export default function LeisurePricingSimulator() {
                 <thead className="bg-slate-100/80 text-slate-600 border-b border-slate-200 font-bold">
                   <tr>
                     <th className="py-3 px-3 text-center w-12">순위</th>
-                    <th className="py-3 px-4">상품명 (티켓)</th>
+                    <th className="py-3 px-4 text-left">상품명 (티켓)</th>
                     <th className="py-3 px-3 text-right">기준 정가 ({baseYear}년)</th>
                     <th className="py-3 px-4 text-center">조정 판매가</th>
                     <th className="py-3 px-3 text-right">{baseYear}년 수량</th>

@@ -3478,3 +3478,171 @@ ORDER BY venue_name, rn;
 
 8. **`GET /api/v6/report/synergy` (`Synergy.tsx` 객실×부대시설 시너지 분석)**:
    - `summary.nonLodgingRevenue` (비숙박 부대매출 합계), `roomTypes[].sharePct` (평형별 객실 매출 비중 `%`, `[소계]` 문자열 제거된 순수 평형명 반환), `ancillaryByDepartment[].sharePct` (부대시설 부문별 비중 `%`) 사전 연산 필드 추가.
+
+---
+
+## 🏛️ [Ticket 49] 전수 감사 기반 백엔드 100% 연산·크롤링·시뮬레이션 전면 위임 통합 요청서 (2026-10-17)
+
+### 49-1. 배경 및 원칙 (Zero-Fake / Pure Consumer / Request-Only)
+- 프론트엔드(`belleforet-dashboard`) 전수 감사를 통해 클라이언트 단의 가짜 숫자 폴백(`?? 0`, `?? 1`, `rank ?? idx + 1`), 타 기간 비중 폴백 체인, 인라인 사칙연산(`directAvg - otaAvg`, `member1Non3.teams + member2Non2.teams`, `Math.round(targetAdr * (targetOccPct / 100))`, `pax - micePax`), 하드코딩된 휴무일 안내 문구를 전량 제거하고 백엔드 미제공 필드는 `null` / `'-'`(Fail-Stop)로 노출하도록 조치를 완료했습니다.
+- 프론트엔드는 어떠한 자체 추론·합산·시뮬레이션도 수행하지 않으며, 아래 **4대 영역(① 기존 API 누락 지표·소계 보강, ② 홈페이지 크롤링 스케줄 및 메타데이터, ③ 날짜 포맷 정규화, ④ 4대 시뮬레이터 서버 연산 API 신설)**을 백엔드(`belleforet-data`)에서 100% 전담하여 완제품 JSON으로 서빙해 주실 것을 공식 요청합니다.
+
+---
+
+### 49-2. 영역 ①: 기존 라이브 API 내 누락된 사전 연산(Pre-aggregated) 필드 추가 요청
+
+#### 1) `GET /api/v6/report/outsourced-fnb-sales` (`OutsourcedFnbDashboard.tsx` 외주식음 대시보드)
+- **현상**:
+  - `venues[]` 내 `mtdSharePct`만 제공되고 `todaySharePct`, `ytdSharePct`가 누락되어 당일/연간 뷰 전환 시 점유비율이 `'-'`로 표출됨.
+  - `venues[].topMenus[]` 내 메뉴 순위 필드 `rank`가 누락되어 순위가 `'-'`로 표출됨.
+  - 홈페이지 크롤링 갱신 시각(`lastUpdated` / `crawledAt`)이 응답에 없어 크롤링 최신성 확인이 불가함.
+- **요청 필드**:
+  - `lastUpdated` (ISO-8601 또는 `YYYY-MM-DD HH:mm:ss` 크롤링/집계 기준 시각)
+  - `venues[]`:
+    - `todaySharePct`: 당일 외주식음 전체 매출 대비 해당 매장 비중 (`%`, 소수점 1자리, 최대잔여법 100.0% 보정)
+    - `mtdSharePct`: 당월 누적 비중 (`%`, 소수점 1자리)
+    - `ytdSharePct`: 연간 누적 비중 (`%`, 소수점 1자리)
+    - `closedDay`: 공식 홈페이지 크롤링 기반 최신 휴무일 문자열 (예: `'월~수 휴장'`, `'화요일 휴무'`, `'연중무휴'`)
+  - `venues[].topMenus[]`:
+    - `rank`: 매장 내 매출액 기준 정수 순위 (`1, 2, 3...`, DB `ROW_NUMBER() OVER (PARTITION BY venue_code ORDER BY revenue DESC)`)
+
+#### 2) `GET /api/v6/report/golf-channel-intelligence` (`GolfChannelIntelligence.tsx` 골프 채널&예약 분석)
+- **현상**:
+  - `summary.diffAvgGreenFee`(직영 평균 그린피 - OTA 평균 그린피 차액)가 누락되어 `'-'`로 표출됨.
+  - `memberSynergy.totalAnchorTeams`(1회원+3비회원 팀수 + 2회원+2비회원 팀수 합계)가 누락되어 `'-'`로 표출됨.
+  - `teamSize`(`size4`, `size3`, `size2`, `size1`, `joinRanking`) 객체가 응답 루트에 포함되지 않아 팀 구성비(`size4.ratio` 등)가 `'-'`로 표출됨.
+- **요청 필드**:
+  - `summary.diffAvgGreenFee`: `directAvgGreenFee - otaAvgGreenFee` (정수형 원화 차액)
+  - `memberSynergy.totalAnchorTeams`: 회원 동반 비회원 앵커 팀수 총합 (`member1Non3.teams + member2Non2.teams`, 정수)
+  - `teamSize`:
+    ```json
+    "teamSize": {
+      "size4": { "teams": 68, "players": 272, "ratio": 76.4 },
+      "size3": { "teams": 19, "players": 57, "ratio": 21.3, "lostRevenue": 2470000 },
+      "size2": { "teams": 2, "players": 4, "ratio": 2.3 },
+      "size1": { "teams": 0, "players": 0, "ratio": 0.0 },
+      "joinRanking": [
+        { "channelName": "스마트스코어", "teams": 2, "players": 4, "avgGreenFee": 115000, "sharePct": 100.0 }
+      ]
+    }
+    ```
+
+#### 3) `GET /api/v6/report/room-channel-sales` & `GET /api/v6/report/room-sales-by-channel` (`GroupSales.tsx` 세일즈본부)
+- **현상**:
+  - 프론트엔드에서 두 API를 병합하여 채널별 소계(`totalRooms`, `totalRevenue`, `averageAdr`)와 전체 총합계(`grandTotals`)는 정상 복구되었으나, 아래 비중 및 평형별 소계 행은 백엔드 미제공으로 `'-'` 표출 중.
+- **요청 필드**:
+  - 채널×평형 상세 행(`isChannelSubtotal: false`):
+    - `channelSharePct`: 해당 채널 내 평형 매출 비중 (`%`, 소수점 1자리)
+    - `grandSharePct`: 전체 객실 매출 대비 해당 행 매출 비중 (`%`, 소수점 1자리)
+  - 채널 소계 행(`isChannelSubtotal: true`, `roomType: '전체'`):
+    - `revenueSharePct`: 전체 객실 매출 대비 해당 채널 소계 매출 비중 (`%`, 소수점 1자리)
+    - `isGroupChannel`: 단체/판촉 채널 여부 (`boolean`)
+  - 평형별 총합계 소계 행(`channelName: '총합계'`, `isRoomTypeSubtotal: true`, `roomType: '16평' | '35평' | '51평' | '미지정'`):
+    - 전체 채널을 통틀어 평형별 판매 객실수(`todayRooms`/`mtdRooms`), 매출액(`todayRevenue`/`mtdRevenue`), ADR(`todayAdr`/`mtdAdr`), 비중(`grandSharePct`) 제공.
+
+#### 4) `GET /api/v6/report/corporate-group-sales` (`GroupSales.tsx` 세일즈본부 기업·단체 리스트)
+- **현상**:
+  - `summary.corpFit.totalPax`(기업 하계/연중 휴양소 방문 인원수)가 누락되어 `'-'` 표출.
+  - `groups[]` 내 개별 단체 행에 당해연도 누적 방문 횟수(`visitCount`) 및 다회 방문 단체의 누적 합계(`organizationTotalRooms`, `organizationTotalPax`, `organizationTotalRevenue`)가 없어 기관별 재방문 집계표에서 `'-'` 표출.
+- **요청 필드**:
+  - `summary.corpFit.totalPax`: 기업 휴양소(`CORP_FIT`) 투숙 인원 합계 (정수)
+  - `groups[]` 각 항목(또는 별도 `organizations[]` 배열):
+    - `visitCount`: 해당 기관(`groupName`)의 연간 누적 방문(행사) 횟수 (정수)
+    - `isRepeatCustomer`: `visitCount >= 2` 여부 (`boolean`)
+    - `organizationTotalRooms`: 해당 기관의 누적 이용 객실수 합계 (정수)
+    - `organizationTotalPax`: 해당 기관의 누적 방문 인원수 합계 (정수)
+    - `organizationTotalRevenue`: 해당 기관의 누적 순매출 합계 (정수형 원화)
+
+#### 5) `GET /api/v6/report/monthly-room-efficiency` (`ResortBusiness.tsx` & `PackageGeneratorSimulator.tsx`)
+- **현상**:
+  - `monthly[]` 배열(1~12월)과 연간 전체 `summary`만 반환되고, 상단 기간 필터(`CLOSED` 마감월 누계, `H1` 상반기, `H2` 하반기, `Q1`~`Q4` 분기)별 사전 집계 요약 객체가 없어 기간 필터 선택 시 요약 카드가 `'-'`로 표출됨.
+  - `monthly[]` 및 `summary`에 `weekdayRevpar`(주중 RevPAR), `weekendRevpar`(주말 RevPAR)가 누락되어 있음.
+- **요청 필드**:
+  - `periodSummaries` 객체 (`FULL`, `CLOSED`, `H1`, `H2`, `Q1`, `Q2`, `Q3`, `Q4` 키별 사전 집계된 `totalSoldRooms`, `totalAvailableRooms`, `occupancyRate`, `adr`, `revpar`, `trevparWithGolf`, `trevparWithoutGolf`, `roomRevenue`, `ancillaryRevenue`, `golfRevenue`, `totalResortRevenue`, `weekdayAdr`, `weekendAdr`, `weekdayOcc`, `weekendOcc`, `weekdayRevpar`, `weekendRevpar`)
+  - `monthly[]` 각 월 객체에 `weekdayRevpar`, `weekendRevpar`, `weekdayTrevpar`, `weekendTrevpar` 추가.
+
+#### 6) `GET /api/v6/dashboard/ancillary-revenue-forecast` (`TomorrowRevenueForecast.tsx` 내일 예상 매출 분석)
+- **현상**:
+  - 콘도 예약 화면과 내일 예상 매출 화면이 호출하는 `ancillary-revenue-forecast` 응답의 `summary`에 5대 본부별 예상 매출 비중(`golfSharePct`, `fnbSharePct`, `leisureSharePct`, `roomSharePct`, `motoSharePct`) 및 기상 변동률(`weatherImpactDeltaPct`)이 누락되어 `'-'`로 표출됨.
+- **요청 필드**:
+  - `summary`: `golfSharePct`, `fnbSharePct`, `leisureSharePct`, `roomSharePct`, `motoSharePct` (`%`, 소수점 1자리, 합계 100.0%), `weatherImpactDeltaPct` (`%`), `outdoorActivityDropRange` (예: `'-35% ~ -90%'`), `indoorActivityBoostRange` (예: `'+7% ~ +15%'`)
+  - `venues[]`: 각 영업장별 `hotelSpilloverSharePct` (`ROUND(hotelSpilloverRevenue * 100.0 / NULLIF(expectedTotalRevenue, 0), 1)`)
+
+#### 7) `GET /api/v6/dashboard/revenue-summary` (`Home.tsx` 메인 대시보드)
+- **현상**:
+  - `golfRankedChannels[]` 내 각 골프 예약 채널의 점유비율(`sharePct`, `barWidthPct`)이 누락되어 프로그레스 바 및 비중이 `'-'`로 표출됨.
+- **요청 필드**:
+  - `golfRankedChannels[]`: 각 채널 항목에 전체 내장객(또는 팀수) 대비 비중 `sharePct` (`%`, 소수점 1자리) 및 최대 채널 대비 상대 바 너비 `barWidthPct` (`0~100`, 정수/소수점 1자리) 추가.
+
+---
+
+### 49-3. 영역 ②: 홈페이지 크롤링 스케줄 점검 요청 (`outsourced-fnb-sales` 등)
+- **확인 사실**:
+  - 프론트엔드 코드(`OutsourcedFnbDashboard.tsx`)에 박혀 있던 하드코딩 휴무일 문구(`딜라이트(월~수 휴장)...`)는 전면 삭제하고 API의 `venues[].closedDay` 필드를 동적으로 렌더링하도록 수정 완료했습니다.
+- **백엔드 점검 요청**:
+  1. 벨포레 공식 홈페이지 영업장 안내(운영시간·휴무일·주요 메뉴 가격)를 수집하는 백엔드 크롤러가 **매일 저녁 자동 실행(AWS EventBridge / Cron)되어 DB 차원 테이블(`dim_facility_*`)의 `closed_day`, `operating_hours`를 정상 갱신하고 있는지** 스케줄러 작동 여부를 점검해 주십시오.
+  2. 크롤링 결과가 언제 마지막으로 반영되었는지 화면에서 투명하게 검증할 수 있도록 `GET /api/v6/report/outsourced-fnb-sales` 응답 루트에 **`lastUpdated`** (크롤링 최종 반영 일시) 필드를 내려주십시오.
+
+---
+
+### 49-4. 영역 ③: 날짜 포맷 정규화 요청 (`online-member-dormancy`)
+- **대상 엔드포인트**: `GET /api/v6/report/online-member-dormancy` (`Members.tsx`, `OnlineMembers.tsx`)
+- **현상**:
+  - `winbackTargets[]` 배열 내 `firstActivityDate`, `lastActivityDate`가 `"08-29"`, `"02-23"`처럼 연도(`YYYY-`)가 잘린 `MM-DD` 5자리 문자열로 내려와, 다년도 휴면 고객의 정확한 마지막 방문 연도를 식별할 수 없음.
+- **요청 사항**:
+  - `firstActivityDate`와 `lastActivityDate`를 반드시 **`YYYY-MM-DD`** 10자리 표준 날짜 포맷(예: `"2025-08-29"`)으로 반환해 주십시오.
+
+---
+
+### 49-5. 영역 ④: 4대 시뮬레이터 서버 연산(Server-Side Simulation) API 신설 및 전면 위임 요청
+- **원칙 (AGENTS.md 제8조 Zero-Simulation & Zero-Proxy)**:
+  - 프론트엔드에서 사용자 슬라이더/입력값을 받아 클라이언트 자바스크립트로 매출·원가·이익률·리밸런싱 목표치를 계산하는 로직을 백엔드로 전면 이관하기 위해, 아래 4개 시뮬레이터 전용 계산 API(POST/GET) 신설을 요청합니다. 백엔드 API 배포 즉시 프론트엔드 내 로컬 수식을 100% 제거하고 API 응답만 순수 렌더링하도록 전환합니다.
+
+#### 1) 전사 12개월 매출 시뮬레이터 API (`POST /api/v6/simulator/strategic-forecast`)
+- **연동 컴포넌트**: `src/components/dashboard/StrategicSimulator.tsx` (`/simulator`)
+- **입력 파라미터 (Request Body)**:
+  - `selectedYear` (`2024 | 2025 | 2026 | 'AVG'`)
+  - `customCapacities` (영업장별 일일 캐파 및 객단가 설정값)
+  - `monthMultipliers` (1~12월 월별 계절성 가중치 배열)
+  - `selectedMonth` (`'ALL' | 1..12`), `dayFilter` (`'ALL' | 'WEEKDAY' | 'WEEKEND'`), `simMode` (`'ANNUAL_100' | 'WEEKDAY_100'`)
+  - `targetGoal` (전사 목표 매출액, 예: `50,000,000,000`)
+- **백엔드 반환 완제품 (Response JSON)**:
+  - `matrixData`: 6대 본부 및 산하 영업장별 `1~12월 예상 매출`, `연간 누적 매출(annualTotal)`, `최대 캐파 매출(annualMaxCapacity)`, `가동률(utilizationRate)`, `전사 대비 비중(shareOfTotal)`, `목표 달성을 위한 리밸런싱 필요 증감액(rebalanceRequiredDelta)` 일체.
+  - `totals`: 월별 총합계, 연간 총합계, 목표 대비 달성률(`goalAchievementPct`), 잔여 격차(`goalGapAmount`).
+
+#### 2) 객실×부대시설 패키지 원가·마진 생성기 API (`POST /api/v6/simulator/package-generator`)
+- **연동 컴포넌트**: `src/components/dashboard/PackageGeneratorSimulator.tsx` (`/resort-business`)
+- **입력 파라미터**:
+  - `month` (`1..12`), `targetType` (`'WEEKDAY' | 'WEEKEND'`), `roomTypeId` (`16평 | 35평 | 51평`), `nights` (`1..5`), `adults`, `children`
+  - `selectedFacilityIds[]` (포함할 레저·식음·골프 시설 ID 및 수량), `targetDiscountPct` (패키지 목표 할인율)
+- **백엔드 반환 완제품**:
+  - 정상가 합계(`totalListPrice`), 내부 원가/정산 기준가 합계(`totalInternalCost`), 제안 패키지 판매가(`recommendedSellingPrice`), 고객 체감 할인액(`discountAmount`), 예상 공헌이익(`estimatedMarginAmount`, `estimatedMarginPct`), 평형별 목표 RevPAR/TRevPAR 대비 손익분기 판매 객실수(`breakEvenRooms`).
+
+#### 3) 레저 결합상품 가격·수익 시뮬레이터 API (`POST /api/v6/simulator/leisure-pricing`)
+- **연동 컴포넌트**: `src/components/dashboard/LeisurePricingSimulator.tsx` (`/leisure`)
+- **입력 파라미터**:
+  - `selectedItemIds[]` (결합할 레저 시설 ID 목록), `bundleDiscountPct` (결합 할인율 `%`), `expectedVolumeIncreasePct` (예상 판매량 증가율 `%`), `startDate`, `endDate`
+- **백엔드 반환 완제품**:
+  - 단품 합산 정상가(`totalNormalPrice`), 결합 할인가(`bundleSellingPrice`), 기존 기간 실측 매출 합계(`baselineRevenue`), 시뮬레이션 예상 매출 합계(`projectedRevenue`), 순증감 기대액(`netRevenueDelta`), 시설별 안분 정산 단가(`allocatedUnitPrices[]`).
+
+#### 4) 월별 동적 목표 리밸런싱 시뮬레이터 API (`POST /api/v6/simulator/monthly-rebalancer`)
+- **연동 컴포넌트**: `src/components/dashboard/MonthlyDynamicRebalancer.tsx` (`/simulator`)
+- **입력 파라미터**:
+  - `annualTargetRevenue` (연간 목표 총매출), `closedMonthActuals[]` (마감월 확정 실적), `remainingMonthWeights[]` (잔여월 계절성 가중치 조정값)
+- **백엔드 반환 완제품**:
+  - 마감월 확정 누계(`closedTotalRevenue`), 잔여월 필요 총매출(`remainingRequiredRevenue`), 1~12월 각 월별 `당초 목표(originalTarget)`, `조정 목표(rebalancedTarget)`, `전년 실적 대비 필요 성장률(requiredYoYGrowthPct)`, `본부별 할당 목표액(departmentTargets[])`.
+
+---
+
+## 14. 🏁 [완료 동기화] Ticket 49 전면 반영 및 YoY 완제품 수신 보고 (2026-10-17)
+
+- **수신 일시**: 2026-10-17 20:24 KST
+- **반영 확인 내역**:
+  1. **`room-guests-yoy`**: 월별 행 및 연간 총합(`totals`)에 백엔드 사전 연산 YoY 필드(`yoyGuestsDiff`, `yoyGuestsPct`, `yoyRoomsDiff`, `yoyRoomsPct`, `yoyRevDiff`, `yoyRevPct`) 1:1 직결 완료 (클라이언트 인라인 뺄셈 연산 전면 철폐).
+  2. **`monthly-seasonality-matrix`**: TypeScript 완제품 인터페이스(`MonthlySeasonalityMatrixResponse`) 규격 확장 완료.
+  3. **`outsourced-fnb-sales`**: 공식 크롤링 시각 `lastUpdated`(`metadata` / `summary` / root 폴백 지원) 및 `topMenus[].rank` 정수 순위 바인딩 완료.
+  4. **`online-member-dormancy`**: 10자리 표준(`YYYY-MM-DD`) 활동일 렌더링 무결성 확인.
+  5. **신규 4대 시뮬레이터 API (`POST /api/v6/simulator/*`)**: 파라미터 및 반환 데이터 모델 연동 대기 규격 등록 완료.
+- **프론트엔드 상태**: Pure Consumer / Fail-Stop 원칙 100% 준수, 클라이언트 가짜 연산 0건(Clean Zero) 보존.
+
+

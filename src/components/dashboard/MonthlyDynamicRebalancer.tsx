@@ -531,7 +531,7 @@ export default function MonthlyDynamicRebalancer({
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <BarChart2 className="w-4 h-4 text-teal-600" />
-            12개월 실적 기준선 대비 동적 목표선 실시간 대조 (Zero-Variance 검증)
+            12개월 실적 기준선 대비 동적 목표선 실시간 대조 (정합성 검증)
           </span>
           <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
             연간 총목표: {(annualTargetRevenue / 100000000).toFixed(2)}억원 (연평균 +{annualGrowthRate}%) 고정
@@ -635,11 +635,11 @@ export default function MonthlyDynamicRebalancer({
                     ADR 레버리지 필요
                   </span>
                 ) : meta.isPeak ? (
-                  <span className="text-indigo-600 font-semibold truncate">
+                  <span className="text-indigo-600 font-semibold truncate" title={`성수기 (~${Math.round(meta.estimatedOcc * 100)}%)`}>
                     성수기 (~{Math.round(meta.estimatedOcc * 100)}%)
                   </span>
                 ) : (
-                  <span className="text-teal-700 font-semibold flex items-center gap-1 truncate">
+                  <span className="text-teal-700 font-semibold flex items-center gap-1 truncate" title={`여유 여력: ${Math.round(meta.headroom * 100)}%`}>
                     <CheckCircle2 size={11} />
                     여유 여력: {Math.round(meta.headroom * 100)}%
                   </span>

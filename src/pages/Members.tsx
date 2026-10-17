@@ -289,7 +289,7 @@ export default function Members() {
               </span>
             </h1>
             <p className="text-sm text-white/85 mt-2 font-normal max-w-4xl break-keep">
-              콘도 분양회원(기명·구좌 / 무기명), 법인 휴양소 협약 회원사, 골프장 분양회원(법인 풀구좌·콘도 구좌) 및 동반 앵커 효과, 디지털 온라인 멤버십까지 벨포레 전 부문의 회원 데이터를 SSOT 기준으로 통합 분석합니다.
+              콘도 분양회원(기명·구좌 / 무기명), 법인 휴양소 협약 회원사, 골프장 분양회원(법인 풀구좌·콘도 구좌) 및 동반 앵커 효과, 디지털 온라인 멤버십까지 벨포레 전 부문의 회원 데이터를 통합 분석합니다.
             </p>
           </div>
 
@@ -501,10 +501,7 @@ export default function Members() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                CONDO MEMBERSHIP & RATE TYPE SSOT
-              </span>
-              <span className="text-xs text-slate-400 font-mono">
-                API: /api/v6/report/room-rate-sales
+                콘도 분양회원 및 요금 유형 분석
               </span>
             </div>
             <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
@@ -571,7 +568,7 @@ export default function Members() {
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[1050px]">
             <thead>
               <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
-                <th className="py-3.5 px-5">구분 (회원권 / 요금타입)</th>
+                <th className="py-3.5 px-5 text-left">구분 (회원권 / 요금타입)</th>
                 <th className="py-3.5 px-3 text-center">분류</th>
                 <th className="py-3.5 px-4 text-right bg-emerald-50/40">조회기간 객실</th>
                 <th className="py-3.5 px-4 text-right bg-emerald-50/40">조회기간 순매출</th>
@@ -651,10 +648,10 @@ export default function Members() {
               {/* 백엔드 공식 총합계 Row (isGrandTotal) */}
               {grandTotalRoomRow && (
                 <tr className="bg-slate-900 text-white font-bold border-t-2 border-slate-900">
-                  <td className="py-4 px-5 whitespace-nowrap">전체 객실 총합계 (SSOT)</td>
+                  <td className="py-4 px-5 whitespace-nowrap">전체 객실 총합계</td>
                   <td className="py-4 px-3 text-center whitespace-nowrap">
                     <span className="text-[10px] px-2 py-0.5 rounded bg-white/15 text-emerald-300">
-                      0-Variance
+                      공식 합계
                     </span>
                   </td>
                   <td className="py-4 px-4 text-right text-emerald-300 whitespace-nowrap">
@@ -773,7 +770,7 @@ export default function Members() {
             <table className="w-full border-collapse text-left text-sm font-financial">
               <thead>
                 <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
-                  <th className="py-3 px-4">회원권 구분</th>
+                  <th className="py-3 px-4 text-left">회원권 구분</th>
                   <th className="py-3 px-3 text-right">라운딩 팀수</th>
                   <th className="py-3 px-3 text-right">내장 인원</th>
                   <th className="py-3 px-3 text-right">인원 점유율</th>
@@ -870,7 +867,7 @@ export default function Members() {
                 +{formatNum(golfMemberSynergy?.totalAnchorRevenue || 0)}원
               </div>
               <p className="text-[11px] text-slate-300 mt-1.5">
-                회원 1~2인이 포함된 팀에서 동반 비회원(2~3인)이 지불한 순수 그린피 합계 (SSOT)
+                회원 1~2인이 포함된 팀에서 동반 비회원(2~3인)이 지불한 순수 그린피 합계
               </p>
             </div>
 
@@ -1000,8 +997,8 @@ export default function Members() {
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[950px]">
             <thead className="sticky top-0 z-10 bg-slate-50">
               <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700">
-                <th className="py-3 px-4">입실일 ~ 퇴실일</th>
-                <th className="py-3 px-4">법인 / 휴양소 협약 회원사명</th>
+                <th className="py-3 px-4 text-left">입실일 ~ 퇴실일</th>
+                <th className="py-3 px-4 text-left">법인 / 휴양소 협약 회원사명</th>
                 <th className="py-3 px-3 text-center">회원사 분류</th>
                 <th className="py-3 px-3 text-center">결제/정산 방식</th>
                 <th className="py-3 px-3 text-right">객실수 (평형)</th>
@@ -1158,13 +1155,13 @@ export default function Members() {
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[850px]">
             <thead className="sticky top-0 z-10 bg-slate-50">
               <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700">
-                <th className="py-3 px-4">고객번호</th>
-                <th className="py-3 px-4">회원명</th>
-                <th className="py-3 px-4">온라인 ID</th>
-                <th className="py-3 px-4">연락처</th>
+                <th className="py-3 px-4 text-left">고객번호</th>
+                <th className="py-3 px-4 text-left">회원명</th>
+                <th className="py-3 px-4 text-left">온라인 ID</th>
+                <th className="py-3 px-4 text-left">연락처</th>
                 <th className="py-3 px-3 text-center">주력 이용 부문</th>
-                <th className="py-3 px-4">최초 이용일</th>
-                <th className="py-3 px-4">최근 이용일</th>
+                <th className="py-3 px-4 text-left">최초 이용일</th>
+                <th className="py-3 px-4 text-left">최근 이용일</th>
                 <th className="py-3 px-4 text-right">누적 예약/결제 건수</th>
               </tr>
             </thead>
@@ -1206,9 +1203,8 @@ export default function Members() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 size={12} /> V6 SSOT 마트 완제품
+                <CheckCircle2 size={12} /> 회원 분석 집계 완료
               </span>
-              <span className="text-[11px] font-mono text-slate-400">API: /api/v6/report/member-quota-ltv</span>
             </div>
             <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-emerald-600" />
@@ -1284,7 +1280,7 @@ export default function Members() {
                   <div className="text-2xl font-black text-amber-900 mt-1.5 tabular-nums">
                     {formatNum(quotaLtvData.accountQuotaOverview.ytdTotalSpend)}원
                   </div>
-                  <div className="text-[11px] text-amber-800/80 mt-1 truncate">
+                  <div className="text-[11px] text-amber-800/80 mt-1 truncate" title={`골프 ${formatNum(quotaLtvData.accountQuotaOverview.ytdGolfSpend)}원 · 객실 ${formatNum(quotaLtvData.accountQuotaOverview.ytdRoomSpend)}원`}>
                     골프 {formatNum(quotaLtvData.accountQuotaOverview.ytdGolfSpend)}원 · 객실 {formatNum(quotaLtvData.accountQuotaOverview.ytdRoomSpend)}원
                   </div>
                 </div>
@@ -1304,7 +1300,7 @@ export default function Members() {
                 <table className="w-full border-collapse text-left text-sm font-financial min-w-[960px]">
                   <thead>
                     <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
-                      <th className="py-3 px-4">회원권 구분</th>
+                      <th className="py-3 px-4 text-left">회원권 구분</th>
                       <th className="py-3 px-3 text-right">총 구좌수</th>
                       <th className="py-3 px-3 text-right">실이용 구좌</th>
                       <th className="py-3 px-3 text-right">연간 부여박수</th>
@@ -1446,8 +1442,8 @@ export default function Members() {
                 <table className="w-full border-collapse text-left text-sm font-financial min-w-[980px]">
                   <thead className="sticky top-0 z-10 bg-slate-50 shadow-2xs">
                     <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700">
-                      <th className="py-3 px-4">구좌번호</th>
-                      <th className="py-3 px-4">회원명</th>
+                      <th className="py-3 px-4 text-left">구좌번호</th>
+                      <th className="py-3 px-4 text-left">회원명</th>
                       <th className="py-3 px-3 text-center">회원 구분</th>
                       <th className="py-3 px-3 text-center">구좌 형태</th>
                       <th className="py-3 px-3 text-center">객실 평형</th>
@@ -1553,11 +1549,11 @@ export default function Members() {
                   온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-100 text-violet-800 border border-violet-200">
-                  V6 SSOT · Ticket 35
+                  온라인 회원 분석
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                디지털 온라인 회원(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">dim_online_members_v6</code>)의 누적 방문 횟수 등급(1회 단발 · 2~3회 재방문 · 4~9회 단골 · 10회+ 충성고객)과 최근 6개월 이상 미방문 휴면 단골(Win-back 핀셋 타겟)을 추적합니다.
+                디지털 온라인 회원 데이터베이스의 누적 방문 횟수 등급(1회 단발 · 2~3회 재방문 · 4~9회 단골 · 10회+ 충성고객)과 최근 6개월 이상 미방문 휴면 단골(Win-back 핀셋 타겟)을 추적합니다.
               </p>
             </div>
           </div>
@@ -1569,7 +1565,7 @@ export default function Members() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/online-member-dormancy)
+                Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/online-member-dormancy)
               </span>
             )}
           </div>
@@ -1579,10 +1575,10 @@ export default function Members() {
           <div className="p-8 bg-slate-50/60">
             <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
               <h4 className="text-sm font-extrabold text-slate-800">
-                [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 정규 마트 API 연동 대기 중
+                [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 조회 데이터 없음
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">

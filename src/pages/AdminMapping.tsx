@@ -174,7 +174,7 @@ export default function AdminMapping() {
   }
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-8 space-y-8 max-w-[1600px] mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-medium text-slate-800 tracking-tight break-keep whitespace-nowrap">V6 통합 매핑 관리 센터</h1>
@@ -221,8 +221,8 @@ export default function AdminMapping() {
               <table className="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                    <th className="px-6 py-4 font-semibold w-1/2 whitespace-nowrap">원천 매장명 (POS 기준)</th>
-                    <th className="px-6 py-4 font-semibold w-1/2 whitespace-nowrap">소속 본부 (대시보드 표시 카테고리)</th>
+                    <th className="px-6 py-4 font-semibold text-left w-1/2 whitespace-nowrap">원천 매장명 (POS 기준)</th>
+                    <th className="px-6 py-4 font-semibold text-left w-1/2 whitespace-nowrap">소속 본부 (대시보드 표시 카테고리)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -367,11 +367,11 @@ export default function AdminMapping() {
 
                                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-1">
                                   {rec.segment !== '미분류' ? (
-                                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium border border-emerald-100 flex items-center gap-0.5 truncate">
+                                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium border border-emerald-100 flex items-center gap-0.5 truncate" title={`AI: ${rec.segment}`}>
                                       <Sparkles size={10} /> AI: {rec.segment}
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium border border-amber-200 flex items-center gap-0.5 truncate">
+                                    <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium border border-amber-200 flex items-center gap-0.5 truncate" title="수동 배정">
                                       <AlertCircle size={10} /> 수동 배정
                                     </span>
                                   )}
@@ -433,8 +433,8 @@ export default function AdminMapping() {
                 <table className="w-full text-left border-collapse text-sm whitespace-nowrap min-w-[700px]">
                   <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
                     <tr>
-                      <th className="px-6 py-3 font-semibold whitespace-nowrap">원천 테이블 / 출처</th>
-                      <th className="px-6 py-3 font-semibold whitespace-nowrap">원천 마켓타입 / 상품명 (Market Type)</th>
+                      <th className="px-6 py-3 font-semibold text-left whitespace-nowrap">원천 테이블 / 출처</th>
+                      <th className="px-6 py-3 font-semibold text-left whitespace-nowrap">원천 마켓타입 / 상품명 (Market Type)</th>
                       <th className="px-6 py-3 font-semibold text-center whitespace-nowrap">AI 추천 세그먼트</th>
                       <th className="px-6 py-3 font-semibold text-right whitespace-nowrap">정식 세그먼트 지정 및 승인</th>
                     </tr>
@@ -518,8 +518,8 @@ export default function AdminMapping() {
               <table className="w-full text-left border-collapse text-sm whitespace-nowrap min-w-[500px]">
                 <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 font-semibold whitespace-nowrap">원천 마켓타입 (Market Type)</th>
-                    <th className="px-6 py-3 font-semibold whitespace-nowrap">배정된 정식 세그먼트</th>
+                    <th className="px-6 py-3 font-semibold text-left whitespace-nowrap">원천 마켓타입 (Market Type)</th>
+                    <th className="px-6 py-3 font-semibold text-left whitespace-nowrap">배정된 정식 세그먼트</th>
                     <th className="px-6 py-3 font-semibold text-right whitespace-nowrap">변경</th>
                   </tr>
                 </thead>

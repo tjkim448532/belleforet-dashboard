@@ -61,10 +61,10 @@ export interface GolfIntelligenceData {
   };
   channels: ChannelSummaryItem[];
   teamSize: {
-    size1: { teams: number; ratio: number };
-    size2: { teams: number; ratio: number };
-    size3: { teams: number; ratio: number; lostRevenue: number };
-    size4: { teams: number; ratio: number };
+    size1: { teams: number; ratio: number | null };
+    size2: { teams: number; ratio: number | null };
+    size3: { teams: number; ratio: number | null; lostRevenue: number };
+    size4: { teams: number; ratio: number | null };
     joinRanking: JoinChannelRankItem[];
   };
   memberSynergy: {
@@ -102,10 +102,10 @@ const EMPTY_INTELLIGENCE_DATA: GolfIntelligenceData = {
   },
   channels: [],
   teamSize: {
-    size1: { teams: 0, ratio: 0 },
-    size2: { teams: 0, ratio: 0 },
-    size3: { teams: 0, ratio: 0, lostRevenue: 0 },
-    size4: { teams: 0, ratio: 0 },
+    size1: { teams: 0, ratio: null },
+    size2: { teams: 0, ratio: null },
+    size3: { teams: 0, ratio: null, lostRevenue: 0 },
+    size4: { teams: 0, ratio: null },
     joinRanking: []
   },
   memberSynergy: {
@@ -208,9 +208,12 @@ export default function GolfChannelIntelligence() {
         const joinRankingList = Array.isArray(payload.joinRanking) ? payload.joinRanking : [];
         const normalFourTeams = Number(liveSummary.normalFourTeams ?? liveSummary.fourPlayerTeamsCount ?? 0);
 
-        const size4Ratio = Number(liveSummary.size4Ratio ?? liveSummary.fourPlayerRatio ?? 0);
-        const size3Ratio = Number(liveSummary.size3Ratio ?? liveSummary.threePlayerRatio ?? 0);
-        const size2Ratio = Number(liveSummary.size2Ratio ?? liveSummary.joinRatio ?? 0);
+        const rawSize4Ratio = liveSummary.size4Ratio ?? liveSummary.fourPlayerRatio;
+        const size4Ratio = rawSize4Ratio != null ? Number(rawSize4Ratio) : null;
+        const rawSize3Ratio = liveSummary.size3Ratio ?? liveSummary.threePlayerRatio;
+        const size3Ratio = rawSize3Ratio != null ? Number(rawSize3Ratio) : null;
+        const rawSize2Ratio = liveSummary.size2Ratio ?? liveSummary.joinRatio;
+        const size2Ratio = rawSize2Ratio != null ? Number(rawSize2Ratio) : null;
 
         const realMonthlyYoy = buildMonthlyYoy(totalTeams, averageGreenFee);
 
@@ -227,10 +230,10 @@ export default function GolfChannelIntelligence() {
           },
           channels: liveChannels,
           teamSize: {
-            size1: payload.teamSize?.size1 || { teams: 0, ratio: 0 },
-            size2: { teams: Number(payload.teamSize?.size2?.teams ?? joinTeamsCount), ratio: Number(payload.teamSize?.size2?.ratio || size2Ratio) },
-            size3: { teams: Number(payload.teamSize?.size3?.teams ?? threePlayerTeamsCount), ratio: Number(payload.teamSize?.size3?.ratio || size3Ratio), lostRevenue: Number(payload.teamSize?.size3?.lostRevenue ?? threePlayerLostRevenue) },
-            size4: { teams: Number(payload.teamSize?.size4?.teams ?? normalFourTeams), ratio: Number(payload.teamSize?.size4?.ratio || size4Ratio) },
+            size1: payload.teamSize?.size1 || { teams: 0, ratio: null },
+            size2: { teams: Number(payload.teamSize?.size2?.teams ?? joinTeamsCount), ratio: payload.teamSize?.size2?.ratio != null ? Number(payload.teamSize.size2.ratio) : size2Ratio },
+            size3: { teams: Number(payload.teamSize?.size3?.teams ?? threePlayerTeamsCount), ratio: payload.teamSize?.size3?.ratio != null ? Number(payload.teamSize.size3.ratio) : size3Ratio, lostRevenue: Number(payload.teamSize?.size3?.lostRevenue ?? threePlayerLostRevenue) },
+            size4: { teams: Number(payload.teamSize?.size4?.teams ?? normalFourTeams), ratio: payload.teamSize?.size4?.ratio != null ? Number(payload.teamSize.size4.ratio) : size4Ratio },
             joinRanking: payload.teamSize?.joinRanking || joinRankingList
           },
           memberSynergy: payload.memberSynergy || {
@@ -757,16 +760,16 @@ export default function GolfChannelIntelligence() {
 
   const directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
   const otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
-  const diffAvg = Number((data.summary as any)?.diffAvgGreenFee ?? ((directAvg > 0 && otaAvg > 0) ? directAvg - otaAvg : 0));
+  const diffAvg = (data.summary as any)?.diffAvgGreenFee != null ? Number((data.summary as any).diffAvgGreenFee) : null;
 
   const validSlots = data.timeSlotYield.filter(s => s.occupancy > 0);
   const bestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => b.occupancy - a.occupancy)[0] : null;
   const lowestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => a.occupancy - b.occupancy)[0] : null;
 
-  const memberSynergyTeams = data.memberSynergy.member1Non3.teams + data.memberSynergy.member2Non2.teams;
+  const memberSynergyTeams = (data.memberSynergy as any)?.totalAnchorTeams != null ? Number((data.memberSynergy as any).totalAnchorTeams) : null;
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-300">
       
       {/* 🌟 Header Section */}
       <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
@@ -907,7 +910,7 @@ export default function GolfChannelIntelligence() {
             <span>직영 <strong>{directAvg > 0 ? `${formatCurrency(directAvg)}원` : '-'}</strong></span>
             <span className="text-slate-300">|</span>
             <span>OTA <strong>{otaAvg > 0 ? `${formatCurrency(otaAvg)}원` : '-'}</strong></span>
-            {(directAvg > 0 && otaAvg > 0) && (
+            {diffAvg != null && (
               <span className={diffAvg >= 0 ? "text-emerald-700 font-bold" : "text-rose-600 font-bold"}>
                 ({diffAvg >= 0 ? `+${formatCurrency(diffAvg)}원` : `-${formatCurrency(Math.abs(diffAvg))}원`})
               </span>
@@ -963,7 +966,7 @@ export default function GolfChannelIntelligence() {
             </div>
           </div>
           <p className="text-[11px] text-teal-950/70 border-t border-teal-100 pt-2">
-            회원 동반 팀 합계: {memberSynergyTeams.toLocaleString()}팀 (1회원 3비회원 / 2회원 2비회원)
+            회원 동반 팀 합계: {memberSynergyTeams != null ? `${memberSynergyTeams.toLocaleString()}팀` : '-'} (1회원 3비회원 / 2회원 2비회원)
           </p>
         </div>
 
@@ -1120,7 +1123,7 @@ export default function GolfChannelIntelligence() {
               <strong className="text-slate-900">{formatCurrency(data.summary.threePlayerLostRevenue)}원</strong>
             </div>
             <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
-              💡 4인 플레이가 {data.teamSize.size4.ratio !== undefined ? `${data.teamSize.size4.ratio}%` : '-'}로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동할 경우 최대 {formatCurrency(data.summary.threePlayerLostRevenue)}원의 공실 손실을 회수할 수 있습니다.
+              💡 4인 플레이가 {data.teamSize.size4.ratio != null ? `${data.teamSize.size4.ratio}%` : '-'}로 대부분을 차지하나, 3인 플레이가 {data.summary.threePlayerTeamsCount.toLocaleString()}팀 발생했습니다. 비수기 조인 시스템을 가동할 경우 최대 {formatCurrency(data.summary.threePlayerLostRevenue)}원의 공실 손실을 회수할 수 있습니다.
             </div>
           </div>
         </div>
@@ -1466,7 +1469,7 @@ export default function GolfChannelIntelligence() {
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
-                <th className="py-3.5 px-4 rounded-tl-xl">판매 채널명</th>
+                <th className="py-3.5 px-4 text-left rounded-tl-xl">판매 채널명</th>
                 <th className="py-3.5 px-3 text-center">채널 구분</th>
                 <th 
                   onClick={() => {
@@ -1571,7 +1574,7 @@ export default function GolfChannelIntelligence() {
                   골프 내장객 성비 · 회원권 위임 내장 CRM · 코스별 취소율 및 라운딩 체류시간 분석
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  V6 SSOT · Ticket 33
+                  골프 고객 행동 분석
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
@@ -1586,7 +1589,7 @@ export default function GolfChannelIntelligence() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/golf-visitor-behavior-crm)
+                Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/golf-visitor-behavior-crm)
               </span>
             )}
           </div>
@@ -1596,10 +1599,10 @@ export default function GolfChannelIntelligence() {
           <div className="p-8 bg-slate-50/60">
             <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
               <h4 className="text-sm font-extrabold text-slate-800">
-                [Zero-Fake / Fail-Stop] 골프 내장객 성비 · 회원 위임 내장 CRM · 체류시간 정규 마트 API 연동 대기 중
+                [Zero-Fake / Fail-Stop] 골프 내장객 성비 · 회원 위임 내장 CRM · 체류시간 조회 데이터 없음
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/golf-visitor-behavior-crm</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/golf-visitor-behavior-crm</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">

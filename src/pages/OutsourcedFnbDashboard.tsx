@@ -22,7 +22,7 @@ import { getLatestClosedDateStr } from '../lib/dateUtils';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export interface TopMenuItem {
-  rank: number;
+  rank: number | null;
   menuName: string;
   sales: number;
   quantity: number;
@@ -94,7 +94,7 @@ export default function OutsourcedFnbDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isDedicatedApiLive, setIsDedicatedApiLive] = useState<boolean>(false);
-  const [catalogLastUpdated, setCatalogLastUpdated] = useState<string>('공식 웹 크롤링 SSOT');
+  const [catalogLastUpdated, setCatalogLastUpdated] = useState<string>('공식 웹 정보 기준');
 
   const [summary, setSummary] = useState<OutsourcedFnbSummary | null>(null);
   const [venues, setVenues] = useState<OutsourcedFnbVenueData[]>([]);
@@ -117,8 +117,9 @@ export default function OutsourcedFnbDashboard() {
         if (isCancelled) return;
 
         const dedicatedPayload = dedicatedRes?.data ?? dedicatedRes;
-        if (dedicatedPayload?.metadata?.lastUpdated || dedicatedPayload?.lastUpdated) {
-          setCatalogLastUpdated(`${String(dedicatedPayload.metadata?.lastUpdated || dedicatedPayload.lastUpdated).replace('T', ' ').substring(0, 16)} (S3 크롤링 동기화)`);
+        const rawUpdated = dedicatedPayload?.metadata?.lastUpdated || dedicatedPayload?.lastUpdated || dedicatedPayload?.summary?.lastUpdated;
+        if (rawUpdated) {
+          setCatalogLastUpdated(`${String(rawUpdated).replace('T', ' ').substring(0, 16)} (공식 웹 정보 동기화)`);
         }
 
         if (
@@ -159,12 +160,12 @@ export default function OutsourcedFnbDashboard() {
               ytdLy: Number(v.ytdLy ?? 0),
               ytdGrowth: v.ytdGrowth ?? null,
               ytdQuantity: Number(v.ytdQuantity ?? 0),
-              todaySharePct: v.todaySharePct ?? v.periodSharePct ?? v.sharePct ?? null,
-              mtdSharePct: v.mtdSharePct ?? v.sharePct ?? null,
-              ytdSharePct: v.ytdSharePct ?? v.sharePct ?? null,
-              sharePct: v.sharePct ?? v.ytdSharePct ?? null,
-              topMenus: rawTopMenus.map((m: any, idx: number) => ({
-                rank: Number(m.rank ?? idx + 1),
+              todaySharePct: v.todaySharePct ?? v.periodSharePct ?? null,
+              mtdSharePct: v.mtdSharePct ?? null,
+              ytdSharePct: v.ytdSharePct ?? null,
+              sharePct: v.sharePct ?? null,
+              topMenus: rawTopMenus.map((m: any) => ({
+                rank: m.rank != null ? Number(m.rank) : null,
                 menuName: m.menuName || m.itemName || '-',
                 sales: Number(m.sales ?? m.totalSales ?? 0),
                 quantity: Number(m.quantity ?? m.qty ?? 0),
@@ -233,8 +234,8 @@ export default function OutsourcedFnbDashboard() {
   };
 
   const getActiveSharePct = (v: OutsourcedFnbVenueData) => {
-    if (metricTab === 'today') return v.todaySharePct ?? v.sharePct;
-    if (metricTab === 'mtd') return v.mtdSharePct ?? v.sharePct;
+    if (metricTab === 'today') return v.todaySharePct;
+    if (metricTab === 'mtd') return v.mtdSharePct;
     return v.ytdSharePct ?? v.sharePct;
   };
 
@@ -269,18 +270,27 @@ export default function OutsourcedFnbDashboard() {
             <CheckCircle2 size={14} className="text-emerald-600" />
             휴무일 크롤링 동기화: {catalogLastUpdated}
           </span>
-          <span className="text-slate-600 font-medium">
-            정기 휴무 매장:
-            <strong className="text-rose-600 ml-1.5">딜라이트(월~수 휴장)</strong> ·
-            <strong className="text-rose-600 ml-1">밤밤테이블(화요일 휴무)</strong>
-            <span className="text-slate-400 ml-1.5">(그 외 남도예담·브리스킷346·쿠치나·투썸·BHC·CU 연중무휴 / 푸드트럭 2곳 시즌운영)</span>
+          <span className="text-slate-600 font-medium flex flex-wrap items-center gap-1.5">
+            <span>정기 휴무 매장 (API 실시간):</span>
+            {venues.filter(v => v.closedDay && (v.closedDay.includes('휴무') || v.closedDay.includes('휴장'))).length > 0 ? (
+              venues
+                .filter(v => v.closedDay && (v.closedDay.includes('휴무') || v.closedDay.includes('휴장')))
+                .map((v, i, arr) => (
+                  <span key={v.venueName} className="inline-flex items-center">
+                    <strong className="text-rose-600">{v.venueName}({v.closedDay})</strong>
+                    {i < arr.length - 1 && <span className="text-slate-400 mx-1">·</span>}
+                  </span>
+                ))
+            ) : (
+              <span className="text-slate-400">-</span>
+            )}
           </span>
         </div>
 
         {isDedicatedApiLive && !loading ? (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
             <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-            <span>정규 외주식음 API 연동 완료 (Ticket 42 SSOT · 0-Variance 점유비율 & Top 3 메뉴)</span>
+            <span>외주식음 매출 현황 및 Top 3 메뉴</span>
           </div>
         ) : !loading ? (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
@@ -512,7 +522,7 @@ export default function OutsourcedFnbDashboard() {
                           {venue.location && (
                             <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <MapPin size={11} className="text-slate-400 shrink-0" />
-                              <span className="truncate">{venue.location}</span>
+                              <span className="truncate" title={venue.location}>{venue.location}</span>
                             </p>
                           )}
                         </div>
@@ -555,7 +565,7 @@ export default function OutsourcedFnbDashboard() {
                           <Clock size={12} className="text-slate-400" />
                           운영시간
                         </span>
-                        <span className="font-mono font-semibold text-slate-800 truncate">
+                        <span className="font-mono font-semibold text-slate-800 truncate" title={venue.operatingHours}>
                           {venue.operatingHours}
                         </span>
                       </div>
@@ -601,7 +611,7 @@ export default function OutsourcedFnbDashboard() {
                       ) : (
                         <div className="text-[11px] text-amber-300/90 flex items-center justify-between pt-1 border-t border-slate-800">
                           <span>전년 실적: {formatNum(activeLyRev)}원</span>
-                          <span>비율(%): 백엔드 [Ticket 42] 산출 대기</span>
+                          <span>비율(%): 집계 데이터 없음</span>
                         </div>
                       )}
                     </div>
@@ -633,7 +643,7 @@ export default function OutsourcedFnbDashboard() {
                                     ? 'bg-slate-300 text-slate-800'
                                     : 'bg-amber-700/20 text-amber-900'
                                 }`}>
-                                  {menu.rank || mIdx + 1}
+                                  {menu.rank ?? '-'}
                                 </span>
                                 <span className="font-bold text-slate-800 truncate" title={menu.menuName}>
                                   {menu.menuName}
@@ -659,7 +669,7 @@ export default function OutsourcedFnbDashboard() {
                               </div>
                               {venue.crawledMenus.slice(0, 3).map((cm, cIdx) => (
                                 <div key={cIdx} className="flex items-center justify-between text-[11px] text-slate-600">
-                                  <span className="truncate">• {cm.name}</span>
+                                  <span className="truncate" title={cm.name}>• {cm.name}</span>
                                   <span className="font-mono text-slate-500 shrink-0 ml-2">{cm.price}</span>
                                 </div>
                               ))}
@@ -674,7 +684,7 @@ export default function OutsourcedFnbDashboard() {
                   <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-[11px]">
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <div className="text-slate-400 font-medium">{isRangeMode ? '기간' : '당일'}</div>
-                      <div className="font-bold text-slate-800 font-mono mt-0.5 truncate">{formatNum(venue.todayActual)}원</div>
+                      <div className="font-bold text-slate-800 font-mono mt-0.5 truncate" title={`${formatNum(venue.todayActual)}원`}>{formatNum(venue.todayActual)}원</div>
                       {venue.todayGrowth !== null && venue.todayGrowth !== undefined ? (
                         <div className={`text-[10px] font-bold mt-0.5 ${venue.todayGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           전년비 {venue.todayGrowth >= 0 ? '▲' : '▼'}{Math.abs(venue.todayGrowth).toFixed(1)}%
@@ -685,7 +695,7 @@ export default function OutsourcedFnbDashboard() {
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <div className="text-slate-400 font-medium">당월(MTD)</div>
-                      <div className="font-bold text-blue-800 font-mono mt-0.5 truncate">{formatNum(venue.mtdActual)}원</div>
+                      <div className="font-bold text-blue-800 font-mono mt-0.5 truncate" title={`${formatNum(venue.mtdActual)}원`}>{formatNum(venue.mtdActual)}원</div>
                       {venue.mtdGrowth !== null && venue.mtdGrowth !== undefined ? (
                         <div className={`text-[10px] font-bold mt-0.5 ${venue.mtdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           전년비 {venue.mtdGrowth >= 0 ? '▲' : '▼'}{Math.abs(venue.mtdGrowth).toFixed(1)}%
@@ -696,7 +706,7 @@ export default function OutsourcedFnbDashboard() {
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <div className="text-slate-400 font-medium">연간(YTD)</div>
-                      <div className="font-bold text-indigo-800 font-mono mt-0.5 truncate">{formatNum(venue.ytdActual)}원</div>
+                      <div className="font-bold text-indigo-800 font-mono mt-0.5 truncate" title={`${formatNum(venue.ytdActual)}원`}>{formatNum(venue.ytdActual)}원</div>
                       {venue.ytdGrowth !== null && venue.ytdGrowth !== undefined ? (
                         <div className={`text-[10px] font-bold mt-0.5 ${venue.ytdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           전년비 {venue.ytdGrowth >= 0 ? '▲' : '▼'}{Math.abs(venue.ytdGrowth).toFixed(1)}%
@@ -723,7 +733,7 @@ export default function OutsourcedFnbDashboard() {
                 외주식음 영업장별 매출 · 점유비율 · Top 3 메뉴 · 휴무일 종합 일람표
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                모든 수치는 백엔드 정산 마트(SSOT) 완제품 및 공식 홈페이지 자정 크롤러 데이터를 그대로 표출합니다.
+                모든 수치는 정산 집계 데이터 및 공식 홈페이지 안내 정보를 기준으로 표출합니다.
               </p>
             </div>
           </div>
@@ -733,9 +743,9 @@ export default function OutsourcedFnbDashboard() {
               <thead>
                 <tr className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
                   <th className="py-3.5 px-4 text-center">순위</th>
-                  <th className="py-3.5 px-4">영업장명</th>
-                  <th className="py-3.5 px-4">휴무일 (크롤링)</th>
-                  <th className="py-3.5 px-4">운영시간</th>
+                  <th className="py-3.5 px-4 text-left">영업장명</th>
+                  <th className="py-3.5 px-4 text-left">휴무일 (크롤링)</th>
+                  <th className="py-3.5 px-4 text-left">운영시간</th>
                   <th className="py-3.5 px-4 text-right">
                     <div>{isRangeMode ? '선택기간 매출' : '당일 매출'}</div>
                     <div className="text-[10px] text-slate-400 font-normal">금액 / 전년비(%)</div>
@@ -754,7 +764,7 @@ export default function OutsourcedFnbDashboard() {
                       <div className="text-[10px] text-slate-400 font-normal">비율 집계 준비 중</div>
                     )}
                   </th>
-                  <th className="py-3.5 px-4">매출 상위 메뉴 Top 3</th>
+                  <th className="py-3.5 px-4 text-left">매출 상위 메뉴 Top 3</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -833,7 +843,7 @@ export default function OutsourcedFnbDashboard() {
                                 key={idx2}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-semibold text-[11px]"
                               >
-                                <strong>{idx2 + 1}위</strong> {m.menuName} ({formatNum(m.sales)}원)
+                                <strong>{m.rank != null ? `${m.rank}위` : '-'}</strong> {m.menuName} ({formatNum(m.sales)}원)
                               </span>
                             ))}
                           </div>
@@ -858,7 +868,7 @@ export default function OutsourcedFnbDashboard() {
                 <tfoot>
                   <tr className="bg-slate-900 text-white font-extrabold text-xs">
                     <td colSpan={4} className="py-4 px-4 text-center">
-                      [콘텐츠기획본부 외주식음 전체 총합 (SSOT 완제품)]
+                      [콘텐츠기획본부 외주식음 전체 총합]
                     </td>
                     <td className="py-4 px-4 text-right font-mono">
                       <div>{formatNum(summary.todayActual)}원</div>

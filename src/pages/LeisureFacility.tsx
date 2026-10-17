@@ -282,9 +282,9 @@ export default function LeisureFacility() {
                           {idx + 1}
                         </span>
                         <div className="min-w-0">
-                          <span className="font-bold text-slate-800 text-sm block truncate">{itemName}</span>
+                          <span className="font-bold text-slate-800 text-sm block truncate" title={itemName}>{itemName}</span>
                           {venueName && (
-                            <span className="text-xs text-slate-500 font-medium block truncate">
+                            <span className="text-xs text-slate-500 font-medium block truncate" title={venueName}>
                               {venueName}
                             </span>
                           )}
@@ -308,7 +308,7 @@ export default function LeisureFacility() {
 
         {/* 레저본부 영업장별 전체 실적 랭킹 */}
         <div className="lg:col-span-8 flex flex-col">
-          <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 flex flex-col h-[520px] lg:h-[644px]">
+          <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 flex flex-col h-[520px] lg:h-[644px] overflow-hidden">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2 shrink-0">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap break-keep">
                 <span className="flex items-center gap-2 whitespace-nowrap">
@@ -393,16 +393,13 @@ export default function LeisureFacility() {
             <AlertCircle className="w-6 h-6 text-indigo-500 shrink-0 mt-0.5" />
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-bold text-slate-900">전체 영업장 판매채널(자사·OTA·POS·PMS) API 배포 대기 중</p>
+                <p className="font-bold text-slate-900">전체 영업장 판매채널 집계 내역 없음</p>
                 <span className="text-[11px] font-mono bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full border border-indigo-200/60">
-                  Ticket 30 대기
+                  채널별 데이터 확인 중
                 </span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed break-keep">
-                모토아레나를 포함한 레저본부 전체 영업장(놀이동산, 마운틴카트, 목장, 사계절썰매장, 모토아레나, 마리나클럽, 미디어아트, 썸머랜드 등)의 자사 홈페이지 · 외부 OTA · 현장 POS · 객실 PMS 판매 비중 집계 API(<code className="font-mono text-slate-800">/api/v6/report/leisure-channel-sales</code>)가 백엔드에 정식 요청되었습니다.
-              </p>
-              <p className="text-xs text-slate-500 font-medium">
-                백엔드 Vercel 프로덕션 배포 완료 즉시 실시간으로 전체 영업장 채널 비중 표가 자동 렌더링됩니다. (프론트엔드 무결성 원칙에 따라 임의의 가짜 숫자를 합성하지 않습니다)
+                모토아레나를 포함한 레저본부 전체 영업장(놀이동산, 마운틴카트, 목장, 사계절썰매장, 모토아레나, 마리나클럽, 미디어아트, 썸머랜드 등)의 판매채널(자사 홈페이지 · 외부 OTA · 현장 POS · 객실 PMS) 집계 데이터를 확인하고 있습니다. 공식 데이터 적재 완료 시 실시간으로 표출됩니다.
               </p>
             </div>
           </div>
@@ -452,7 +449,7 @@ export default function LeisureFacility() {
               <table className="w-full text-left text-sm tabular-nums min-w-[960px]">
                 <thead>
                   <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
-                    <th className="py-3 px-4">영업장명</th>
+                    <th className="py-3 px-4 text-left">영업장명</th>
                     <th className="py-3 px-3 text-right">총매출</th>
                     <th className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -605,7 +602,7 @@ export default function LeisureFacility() {
                   업장·권종별 정가 대비 할인 누수율(Price Realization Rate) 및 미사용 티켓 감사
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                  V6 SSOT · Ticket 34
+                  할인 누수 및 미사용 티켓 분석
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
@@ -621,7 +618,7 @@ export default function LeisureFacility() {
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                 <AlertCircle size={14} />
-                Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/leisure-discount-leakage)
+                Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/leisure-discount-leakage)
               </span>
             )}
           </div>
@@ -634,10 +631,10 @@ export default function LeisureFacility() {
                 <AlertCircle size={20} />
               </div>
               <h4 className="text-sm font-extrabold text-slate-800">
-                [Zero-Fake / Fail-Stop] 레저·POS 할인 누수율 및 미사용 티켓 감사 정규 마트 API 연동 대기 중
+                [Zero-Fake / Fail-Stop] 레저·POS 할인 누수율 및 미사용 티켓 감사 조회 데이터 없음
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/leisure-discount-leakage</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/leisure-discount-leakage</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">

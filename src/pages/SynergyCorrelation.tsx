@@ -452,8 +452,8 @@ export default function SynergyCorrelation() {
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">매장명</th>
-                  <th className="px-4 py-3">카테고리</th>
+                  <th className="px-4 py-3 text-left">매장명</th>
+                  <th className="px-4 py-3 text-left">카테고리</th>
                   <th className="px-4 py-3 text-right">매출액</th>
                   <th className="px-4 py-3 text-right">수량</th>
                   <th className="px-4 py-3 text-right">진성 방문객</th>

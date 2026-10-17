@@ -716,13 +716,13 @@ export default function TomorrowRevenueForecast() {
                       <div className="mt-2 pt-2 border-t border-indigo-100 space-y-1 max-h-40 overflow-y-auto">
                         {condo?.segments?.trueGroup?.bookingList?.map((b, idx) => (
                           <div key={`tg-${idx}`} className="flex items-center justify-between text-[11px] bg-white p-1.5 rounded-lg border border-indigo-100/70">
-                            <span className="font-semibold text-slate-800 truncate max-w-[140px]">{b.name}</span>
+                            <span className="font-semibold text-slate-800 truncate max-w-[140px]" title={b.name}>{b.name}</span>
                             <span className="text-[10px] text-indigo-700 font-bold shrink-0">{b.rooms}실 / {b.guests}명</span>
                           </div>
                         ))}
                         {condo?.segments?.corpWelfare?.bookingList?.map((b, idx) => (
                           <div key={`cw-${idx}`} className="flex items-center justify-between text-[11px] bg-white p-1.5 rounded-lg border border-indigo-100/70">
-                            <span className="font-medium text-slate-700 truncate max-w-[140px]">{b.name}</span>
+                            <span className="font-medium text-slate-700 truncate max-w-[140px]" title={b.name}>{b.name}</span>
                             <span className="text-[10px] text-emerald-700 font-bold shrink-0">{b.rooms}실 / {b.guests}명</span>
                           </div>
                         ))}
@@ -786,7 +786,7 @@ export default function TomorrowRevenueForecast() {
 
               <div className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
                 <span>라운딩 후 식음 파급: <strong className="text-slate-700">{golf?.golfPostRoundDiningSpilloverFormatted || formatCurrency(golf?.golfPostRoundDiningSpilloverTotal)}원</strong></span>
-                <span className="text-emerald-700 font-semibold">스마트ERP 연동 SSOT</span>
+                <span className="text-emerald-700 font-semibold">스마트ERP 연동 기준</span>
               </div>
             </div>
 
@@ -856,7 +856,7 @@ export default function TomorrowRevenueForecast() {
               </div>
 
               <div className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                <span className="truncate">출처: KMA AWS / Open-Meteo Ensemble</span>
+                <span className="truncate" title="출처: KMA AWS / Open-Meteo Ensemble">출처: KMA AWS / Open-Meteo Ensemble</span>
                 <span className="text-sky-600 font-semibold shrink-0">1시간 실시간 갱신</span>
               </div>
             </div>
@@ -990,8 +990,8 @@ export default function TomorrowRevenueForecast() {
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200">
                     <th className="py-3 px-3 w-12 text-center">순위</th>
-                    <th className="py-3 px-3">업장명</th>
-                    <th className="py-3 px-3">부문</th>
+                    <th className="py-3 px-3 text-left">업장명</th>
+                    <th className="py-3 px-3 text-left">부문</th>
                     <th className="py-3 px-3 text-right">예상 매출</th>
                     <th className="py-3 px-3 text-right">예상 고객/팀수</th>
                     <th className="py-3 px-3 text-right">비투숙 기저</th>
@@ -999,7 +999,7 @@ export default function TomorrowRevenueForecast() {
                     <th className="py-3 px-3 text-right">투숙 기여율</th>
                     <th className="py-3 px-3 text-center">3단 시계열 승수</th>
                     <th className="py-3 px-3 text-center">날씨 민감도</th>
-                    <th className="py-3 px-4">예측 인사이트</th>
+                    <th className="py-3 px-4 text-left">예측 인사이트</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1217,8 +1217,8 @@ export default function TomorrowRevenueForecast() {
 
       {/* Footer Note */}
       <div className="text-xs text-slate-400 mt-8 pt-4 border-t border-slate-200 flex items-center justify-between">
-        <span>벨포레 리조트 데이터 통제 센터 · BESM v6.3 전사 31개 업장 100% 통합 (Zero-Simulation SSOT)</span>
-        <span className="font-mono">API: /api/v6/dashboard/ancillary-revenue-forecast</span>
+        <span>벨포레 리조트 경영정보 시스템 · 전사 31개 업장 공식 통합</span>
+        <span className="font-semibold text-slate-500">공식 예측 집계</span>
       </div>
     </div>
   );

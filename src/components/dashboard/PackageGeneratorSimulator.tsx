@@ -461,8 +461,8 @@ export default function PackageGeneratorSimulator() {
       : (liveSummary?.weekendOcc ?? currentMonthData.weekendOcc ?? 0);
 
     const targetRevpar = isWd
-      ? (liveSummary?.weekdayRevpar || currentMonthData.weekdayRevpar || (targetAdr > 0 && targetOccPct > 0 ? Math.round(targetAdr * (targetOccPct / 100)) : 0))
-      : (liveSummary?.weekendRevpar || currentMonthData.weekendRevpar || (targetAdr > 0 && targetOccPct > 0 ? Math.round(targetAdr * (targetOccPct / 100)) : 0));
+      ? (liveSummary?.weekdayRevpar || currentMonthData.weekdayRevpar || 0)
+      : (liveSummary?.weekendRevpar || currentMonthData.weekendRevpar || 0);
 
     const targetTrevpar = isWd
       ? (liveSummary?.weekdayTrevpar || currentMonthData.weekdayTrevpar || liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf || 0)
@@ -772,7 +772,7 @@ export default function PackageGeneratorSimulator() {
       ? userItems.map(it => `  - [${it.category === 'FNB' ? '식음' : '레저/체험'}] ${it.name} (${it.quantity}개): ${formatCurrency(it.unitPrice * it.quantity)}원 (정상가 ${formatCurrency((it.retailPrice || Math.round(it.unitPrice * 1.25)) * it.quantity)}원)`).join('\n')
       : '  - (등록된 부대시설 항목 없음)';
 
-    const summaryText = `[벨포레 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 기획안 (SSOT)]
+    const summaryText = `[벨포레 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 기획안]
 ■ 적용 대상: ${selectedYear}년 ${selectedMonth}월 (${liveSummary?.isBenchmarkLy ? `${liveSummary.benchmarkYear}년 동월 벤치마크 적용` : `${selectedYear}년 실적 기준`})
 ■ 패키지 타겟 구분: ${allotmentCalculations.targetFullLabel}
 ■ 목표 패키지 판매가: ${formatCurrency(reverseCalculations.totalPkgGross)}원 (VAT 포함)
@@ -784,7 +784,7 @@ export default function PackageGeneratorSimulator() {
 - 패키지 최대 할당 마지노선: 하루 최대 ${allotmentCalculations.maxPackageAllotment}실
 - 권고 사항: "${allotmentCalculations.recommendationText}"
 
-[2. 기준 월 실적 지표 (주중/주말 분리 SSOT)]
+[2. 기준 월 실적 지표 (주중/주말 분리)]
 - 객실 ADR: ${formatCurrency(activeMetrics.targetAdr)}원 (주중: ${formatCurrency(liveSummary?.weekdayAdr)}원 / 주말: ${formatCurrency(liveSummary?.weekendAdr)}원)
 - 객실 RevPAR: ${formatCurrency(activeMetrics.targetRevpar)}원 (주중: ${formatCurrency(liveSummary?.weekdayRevpar)}원 / 주말: ${formatCurrency(liveSummary?.weekendRevpar)}원)
 - 순수 리조트 TRevPAR: ${formatCurrency(activeMetrics.targetTrevpar)}원 (주중: ${formatCurrency(liveSummary?.weekdayTrevpar)}원 / 주말: ${formatCurrency(liveSummary?.weekendTrevpar)}원)
@@ -957,7 +957,7 @@ ${itemListText}
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/30 flex items-center gap-1.5 uppercase">
                 <Sparkles size={13} />
-                RM & REVERSE ALLOTMENT ENGINE (V6 SSOT)
+                수익 관리 & 패키지 쿼터 기획 엔진
               </span>
               <span className="text-xs text-slate-300 font-medium bg-white/10 px-2.5 py-0.5 rounded-full">
                 물리 가용 객실수 175실 고정 · 일반 정가 판매 잠식(Cannibalization) 방지
@@ -1047,7 +1047,7 @@ ${itemListText}
               {selectedYear}년 {selectedMonth}월 기본 실적 지표 & 점유율(OCC) 3분할
             </span>
             <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
-              {liveSummary?.isBenchmarkLy ? `${liveSummary.benchmarkYear}년 동월 벤치마크 적용` : '실측 DB SSOT'}
+              {liveSummary?.isBenchmarkLy ? `${liveSummary.benchmarkYear}년 동월 벤치마크 적용` : '실측 DB 기준'}
             </span>
           </div>
 
@@ -1171,7 +1171,7 @@ ${itemListText}
               </div>
             </div>
             <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600">
-              <span>가용 175실 SSOT</span>
+              <span>가용 175실 기준</span>
               <span className="font-bold text-slate-700">선택: {activeMetrics.targetLabel} ({activeMetrics.targetOccPct.toFixed(1)}%)</span>
             </div>
           </div>
@@ -1589,7 +1589,7 @@ ${itemListText}
                 <div className="flex items-center justify-between font-bold text-teal-950">
                   <span className="flex items-center gap-1">
                     <FileSpreadsheet size={12} className="text-teal-700" />
-                    경영지원팀 5대 원가 SSOT 연동
+                    경영지원팀 5대 원가 기준 연동
                   </span>
                   <button
                     type="button"
@@ -1993,12 +1993,12 @@ ${itemListText}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
               <Award size={16} className="text-teal-600" />
-              리조트 실질 수익성 & GOPPAR 보존 (Financial SSOT)
+              리조트 실질 수익성 & GOPPAR 보존
             </h4>
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] bg-teal-50 text-teal-800 font-extrabold px-2 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
                 <FileSpreadsheet size={11} className="text-teal-600" />
-                원가 분석표 SSOT 연동
+                원가 분석표 기준 연동
               </span>
               <span className="text-[10px] bg-indigo-50 text-indigo-800 font-extrabold px-2 py-0.5 rounded-full border border-indigo-200">
                 한계비용(MC) 원칙
@@ -2037,7 +2037,7 @@ ${itemListText}
                 {formatCurrency(reverseCalculations.roomVariableCostNet)}원
               </div>
               <div className="text-[10px] text-slate-500 mt-1">
-                VAT포함 {formatCurrency(reverseCalculations.roomVariableCostGross)}원 ({selectedRoomType.name.slice(0, 3)}평형 SSOT)
+                VAT포함 {formatCurrency(reverseCalculations.roomVariableCostGross)}원 ({selectedRoomType.name.slice(0, 3)}평형 기준)
               </div>
             </div>
 
@@ -2086,7 +2086,7 @@ ${itemListText}
               <div className="flex items-center gap-2">
                 <FileSpreadsheet size={15} className="text-teal-700" />
                 <span className="text-xs font-black text-slate-800">
-                  [경영지원팀 SSOT] 콘도 객실 원가 분석 5대 항목 실측 상세표 ({selectedRoomType.name.slice(0, 3)}평형)
+                  [경영지원팀] 콘도 객실 원가 분석 5대 항목 실측 상세표 ({selectedRoomType.name.slice(0, 3)}평형)
                 </span>
                 <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full border border-teal-200">
                   실측 합계 {formatCurrency(reverseCalculations.currentRoomCost.totalCostNet)}원 (VAT별도)
@@ -2212,7 +2212,7 @@ ${itemListText}
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500">
-                  <span>* 출처: 경영지원팀 콘도 객실 원가 분석표 (구글 스프레드시트 SSOT 연동)</span>
+                  <span>* 출처: 경영지원팀 콘도 객실 원가 분석표</span>
                   <span className="font-bold text-slate-700">
                     총 변동원가: 순액 {formatCurrency(reverseCalculations.currentRoomCost.totalCostNet)}원 / 부가세 포함 {formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원
                   </span>

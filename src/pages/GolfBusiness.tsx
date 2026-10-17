@@ -131,7 +131,7 @@ export default function GolfBusiness() {
     return {
       success: true,
       meta: {
-        engine: 'mat_v6_data_mart_revenue (SSOT)',
+        engine: '골프 정규 실적 집계',
         period: {
           startDate: startDate || getLatestClosedDateStr(),
           endDate: endDate || startDate || getLatestClosedDateStr()
@@ -347,7 +347,7 @@ export default function GolfBusiness() {
               <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-[#00ae95]" /> 
                 <span>1인당 객단가 (ARPU)</span>
-                <MetricExplainerTooltip presetKey="arpu" align="right" />
+                <MetricExplainerTooltip presetKey="arpu" align="left" />
               </h2>
               <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
                 {summary.arpuFormatted && summary.arpuFormatted !== '-' ? `${summary.arpuFormatted}원` : '-'}
@@ -704,8 +704,8 @@ export default function GolfBusiness() {
             <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[900px]">
               <thead className="bg-slate-100/80 text-slate-600 font-bold">
                 <tr>
-                  <th className="py-3 px-4">영업장 / 시설명</th>
-                  <th className="py-3 px-4">상품 분류</th>
+                  <th className="py-3 px-4 text-left">영업장 / 시설명</th>
+                  <th className="py-3 px-4 text-left">상품 분류</th>
                   <th className="py-3 px-4 text-center">매출 점유율</th>
                   <th className="py-3 px-4 text-right text-emerald-700 font-bold">실제 내장객 (명)</th>
                   <th className="py-3 px-4 text-right">판매 수량 (건/대)</th>

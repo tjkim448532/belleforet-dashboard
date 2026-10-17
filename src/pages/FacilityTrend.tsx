@@ -432,7 +432,8 @@ export default function FacilityTrend() {
     }
     
     return (
-      <table className="w-full text-left text-sm whitespace-nowrap">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm whitespace-nowrap">
         <thead>
           <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
             <th className="px-6 py-4 rounded-tl-xl text-center border-b border-slate-200">월 (Month)</th>
@@ -582,11 +583,12 @@ export default function FacilityTrend() {
           </tfoot>
         )}
       </table>
+      </div>
     );
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8">
       {/* Header */}
       <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

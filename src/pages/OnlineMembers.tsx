@@ -296,7 +296,7 @@ export default function OnlineMembers() {
               <div className="text-3xl font-extrabold text-slate-900 my-1 whitespace-nowrap flex items-baseline">
                 {formatCurrency(summary.totalActiveMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
               </div>
-              <div className="text-[11px] mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
+              <div className="text-[11px] mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between flex-wrap gap-1">
                 <span>실활동 <strong className="text-emerald-600 font-bold">{formatCurrency(summary.recentActiveMembers || 0)}명</strong> ({summary.recentActiveRate !== undefined && summary.recentActiveRate !== null ? `${summary.recentActiveRate}%` : '-'})</span>
                 <span className="text-slate-300">·</span>
                 <span className="text-slate-400">휴면 <strong className="text-slate-600 font-bold">{formatCurrency(summary.dormantMembers || 0)}명</strong> ({summary.dormantRate !== undefined && summary.dormantRate !== null ? `${summary.dormantRate}%` : '-'})</span>
@@ -326,7 +326,7 @@ export default function OnlineMembers() {
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
+              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between flex-wrap gap-1">
                 <span>조회 기간 내 신규 유입 회원 수</span>
                 {summary.todayJoinedMembers !== undefined && (
                   <span className="text-emerald-600 font-semibold">당일 {formatCurrency(summary.todayJoinedMembers)}명</span>
@@ -360,7 +360,7 @@ export default function OnlineMembers() {
               <div className="text-3xl font-extrabold text-slate-900 my-1 whitespace-nowrap flex items-baseline">
                 {formatCurrency(summary.lyPeriodJoinedMembers)}<span className="text-lg font-bold text-slate-400 ml-1">명</span>
               </div>
-              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium truncate">
+              <div className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium" title="전년 동기간 신규 유입 대비 성장 추이">
                 전년 동기간 신규 유입 대비 성장 추이
               </div>
             </div>
@@ -386,7 +386,7 @@ export default function OnlineMembers() {
                   객실
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between truncate">
+              <div className="text-[11px] text-slate-500 mt-2 leading-relaxed border-t border-slate-100 pt-2.5 font-medium flex items-center justify-between flex-wrap gap-1">
                 <span>티켓 <strong className="text-slate-700">{formatCurrency(summary.periodTicketJoined || 0)}명</strong></span>
                 <span className="text-slate-300">·</span>
                 <span>골프 <strong className="text-slate-700">{formatCurrency(summary.periodGolfJoined || 0)}명</strong></span>
@@ -608,11 +608,11 @@ export default function OnlineMembers() {
                     <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-xs">
                       <th className="px-4 py-3 text-left sticky left-0 bg-slate-50 z-10 w-36">구분 (연도)</th>
                       {Array.from({ length: 12 }, (_, i) => (
-                        <th key={i} className="px-2 py-3 font-extrabold text-slate-700">
+                        <th key={i} className="px-2 py-3 font-extrabold text-slate-700 text-center">
                           {i + 1}월
                         </th>
                       ))}
-                      <th className="px-4 py-3 bg-emerald-50/80 text-emerald-900 font-black sticky right-0 z-10 w-28">
+                      <th className="px-4 py-3 bg-emerald-50/80 text-emerald-900 font-black sticky right-0 z-10 w-28 text-center">
                         {startDate && startDate.endsWith('-01-01') ? '누적 합계 (YTD)' : '조회 기간 합계'}
                       </th>
                     </tr>
@@ -630,7 +630,7 @@ export default function OnlineMembers() {
                         const val = item?.joined ?? 0;
                         const isPastOrCurrent = (i + 1) <= currentMonthNum;
                         return (
-                          <td key={i} className="px-2 py-3.5 font-bold text-slate-800 font-mono">
+                          <td key={i} className="px-2 py-3.5 font-bold text-slate-800 font-mono text-center">
                             {isPastOrCurrent ? (
                               <span className="text-slate-900">{formatCurrency(val)}<span className="text-[10px] text-slate-400 ml-0.5">명</span></span>
                             ) : (
@@ -640,7 +640,7 @@ export default function OnlineMembers() {
                         );
                       })}
                       {/* Cur YTD Total */}
-                      <td className="px-4 py-3.5 bg-emerald-50/50 font-black text-emerald-950 sticky right-0 font-mono text-sm">
+                      <td className="px-4 py-3.5 bg-emerald-50/50 font-black text-emerald-950 sticky right-0 font-mono text-sm text-center">
                         {summary.periodJoinedMembers !== undefined ? (
                           <>
                             {formatCurrency(summary.periodJoinedMembers)}
@@ -796,11 +796,11 @@ export default function OnlineMembers() {
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-50 text-slate-500">
                   <tr>
-                    <th className="px-4 py-3 rounded-l-lg">고객명</th>
-                    <th className="px-4 py-3">연락처</th>
-                    <th className="px-4 py-3">가입 채널</th>
-                    <th className="px-4 py-3">최초 활동일</th>
-                    <th className="px-4 py-3 rounded-r-lg">최근 활동일</th>
+                    <th className="px-4 py-3 text-left rounded-l-lg">고객명</th>
+                    <th className="px-4 py-3 text-left">연락처</th>
+                    <th className="px-4 py-3 text-left">가입 채널</th>
+                    <th className="px-4 py-3 text-left">최초 활동일</th>
+                    <th className="px-4 py-3 text-left rounded-r-lg">최근 활동일</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -842,11 +842,11 @@ export default function OnlineMembers() {
                       온라인 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 분석
                     </h3>
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-100 text-violet-800 border border-violet-200">
-                      V6 SSOT · Ticket 35
+                      온라인 회원 분석
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    통합 온라인 회원 마스터(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">dim_online_members_v6</code>)의 누적 활동 횟수 등급(단발 · 재방문 · 단골 · 충성고객)과 최종 방문일(<code className="px-1 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">last_activity_date</code>) 기준 6개월 이상 미방문 휴면 전환 단골을 핀셋 추출합니다.
+                    통합 온라인 회원 데이터베이스의 누적 활동 횟수 등급(단발 · 재방문 · 단골 · 충성고객)과 최종 활동일 기준 6개월 이상 미방문 휴면 전환 단골을 핀셋 추출합니다.
                   </p>
                 </div>
               </div>
@@ -857,7 +857,7 @@ export default function OnlineMembers() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                    Fail-Stop · 백엔드 API 배포 대기 (/api/v6/report/online-member-dormancy)
+                    Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/online-member-dormancy)
                   </span>
                 )}
               </div>
@@ -867,10 +867,10 @@ export default function OnlineMembers() {
               <div className="p-8 bg-slate-50/60">
                 <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
                   <h4 className="text-sm font-extrabold text-slate-800">
-                    [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 정규 마트 API 연동 대기 중
+                    [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 조회 데이터 없음
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 배포 전까지 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+                    백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">

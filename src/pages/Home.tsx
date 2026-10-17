@@ -780,7 +780,7 @@ export default function Home() {
                           </div>
                         ))}
                         <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs col-span-2">
-                          <span className="text-slate-700 font-semibold truncate">🏁 모토아레나</span>
+                          <span className="text-slate-700 font-semibold truncate" title="모토아레나">🏁 모토아레나</span>
                           <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
                             {new Intl.NumberFormat('ko-KR').format(motoCount)}
                             <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
@@ -824,7 +824,7 @@ export default function Home() {
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {/* 1. 객실 점유율 (Occ) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="text-xs font-bold text-slate-700">객실 점유율 (Occ)</span>
                     <MetricExplainerTooltip presetKey="occupancy" />
@@ -856,14 +856,14 @@ export default function Home() {
                       </>
                     ) : (
                       <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        전체 객실 재고 데이터 산출 불가<br/>(API 연동 대기)
+                        전체 객실 재고 데이터 산출 불가
                       </div>
                     );
                   })()}
                 </div>
                 
                 {/* 2. 객단가 (ADR) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="text-xs font-bold text-slate-700">객단가 (ADR)</span>
                     <MetricExplainerTooltip presetKey="adr" />
@@ -889,14 +889,14 @@ export default function Home() {
                       </>
                     ) : (
                       <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        ADR 산출 불가<br/>(API 연동 대기)
+                        ADR 산출 불가
                       </div>
                     );
                   })()}
                 </div>
                 
                 {/* 3. 객실당 매출 (RevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="text-xs font-bold text-slate-700">객실당 매출 (RevPAR)</span>
                     <MetricExplainerTooltip 
@@ -929,14 +929,14 @@ export default function Home() {
                       </>
                     ) : (
                       <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        RevPAR 산출 불가<br/>(API 연동 대기)
+                        RevPAR 산출 불가
                       </div>
                     );
                   })()}
                 </div>
                 
                 {/* 4. 가용객실당 총매출 (TrevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between h-[170px] shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
+                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
                   <div className="flex items-center justify-between text-slate-700">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-bold text-emerald-800">
@@ -947,7 +947,7 @@ export default function Home() {
                           ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                           : 'bg-slate-100 text-slate-700 border-slate-300'
                       }`}>
-                        {trevparViewMode === 'EX_GOLF' ? '골프제외 SSOT' : '전사 총합'}
+                        {trevparViewMode === 'EX_GOLF' ? '골프제외' : '전사 총합'}
                       </span>
                       <MetricExplainerTooltip presetKey="trevpar" />
                     </div>
@@ -1016,7 +1016,7 @@ export default function Home() {
                       </>
                     ) : (
                       <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        TrevPAR 산출 불가<br/>(API 연동 대기)
+                        TrevPAR 산출 불가
                       </div>
                     );
                   })()}
@@ -1052,7 +1052,7 @@ export default function Home() {
                     <div className="grid grid-cols-3 gap-2.5">
                       {/* 자사 평균 */}
                       <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-indigo-700 bg-indigo-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap">
+                        <div className="text-xs font-bold text-indigo-700 bg-indigo-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap" title="자사 평균 (홈페이지 직접 예약)">
                           자사 평균
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
@@ -1062,14 +1062,14 @@ export default function Home() {
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
+                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap" title="홈페이지 예약">
                           홈페이지 예약
                         </div>
                       </div>
 
                       {/* OTA 평균 */}
                       <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-amber-700 bg-amber-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap">
+                        <div className="text-xs font-bold text-amber-700 bg-amber-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap" title="OTA 제휴사 평균">
                           OTA 평균
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
@@ -1079,14 +1079,14 @@ export default function Home() {
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
+                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap" title="대행사 제휴처 (골프존·스마트스코어·골프몬 등)">
                           대행사 제휴처
                         </div>
                       </div>
 
                       {/* 회원 평균 */}
                       <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-purple-700 bg-purple-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap">
+                        <div className="text-xs font-bold text-purple-700 bg-purple-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap" title="회원 우대 평균 단가">
                           회원 평균
                         </div>
                         <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
@@ -1096,7 +1096,7 @@ export default function Home() {
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap">
+                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap" title="회원 우대 단가">
                           회원 우대 단가
                         </div>
                       </div>
@@ -1113,10 +1113,11 @@ export default function Home() {
                         </div>
                         <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                           {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
-                            const pct = Number(item.sharePct ?? item.barWidthPct ?? 0);
+                            const rawPct = item.sharePct ?? item.barWidthPct;
+                            const pct = rawPct != null ? Number(rawPct) : null;
                             return (
                               <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-emerald-200 transition-all">
-                                <div className="flex items-center gap-1.5 min-w-[120px] truncate">
+                                <div className="flex items-center gap-1.5 min-w-[120px] truncate" title={item.name}>
                                   <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
                                     idx === 0 ? 'bg-amber-100 text-amber-800' :
                                     idx === 1 ? 'bg-slate-200 text-slate-700' :
@@ -1126,14 +1127,16 @@ export default function Home() {
                                   </span>
                                   <span className="font-semibold text-slate-800 truncate" title={item.name}>{item.name}</span>
                                 </div>
-                                <div className="flex-1 mx-2 hidden sm:block">
-                                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                                      style={{ width: `${pct}%` }}
-                                    />
+                                {pct != null && (
+                                  <div className="flex-1 mx-2 hidden sm:block">
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                        style={{ width: `${pct}%` }}
+                                      />
+                                    </div>
                                   </div>
-                                </div>
+                                )}
                                 <div className="text-right whitespace-nowrap shrink-0">
                                   <span className="font-black text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
                                   <span className="text-[10px] text-slate-400 ml-1.5">({item.players}명)</span>

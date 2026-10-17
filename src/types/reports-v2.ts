@@ -319,15 +319,120 @@ export interface LeisureYoyMatrixResponse {
 export interface RoomGuestsYoyRow {
   month: number;
   rowTotal?: number;
-  [year: string]: number | undefined;
+  // 2026 vs 2025 YoY pre-calculated fields (Ticket 49)
+  yoyGuestsDiff?: number | null;
+  guestsDiff?: number | null;
+  yoyGuestsDelta?: number | null;
+  diffGuests?: number | null;
+  yoyGuestsPct?: number | null;
+  guestsYoyPct?: number | null;
+  guestsGrowthRate?: number | null;
+  yoyRoomsDiff?: number | null;
+  roomsDiff?: number | null;
+  yoyRoomsDelta?: number | null;
+  yoyRoomsPct?: number | null;
+  roomsYoyPct?: number | null;
+  roomsGrowthRate?: number | null;
+  yoyRevDiff?: number | null;
+  revenueDiff?: number | null;
+  yoyRevenueDiff?: number | null;
+  yoyRevPct?: number | null;
+  revenueYoyPct?: number | null;
+  revenueGrowthRate?: number | null;
+  yoy?: {
+    guestsDiff?: number | null;
+    guestsPct?: number | null;
+    roomsDiff?: number | null;
+    roomsPct?: number | null;
+    revenueDiff?: number | null;
+    revenuePct?: number | null;
+  };
+  [year: string]: any;
 }
 
 export interface RoomGuestsYoyResponse {
   success: boolean;
   years: string[];
   matrix: RoomGuestsYoyRow[];
-  totals?: Record<string, number>;
+  totals?: Record<string, any> & {
+    yoyGuestsDiff?: number | null;
+    guestsDiff?: number | null;
+    yoyGuestsPct?: number | null;
+    guestsYoyPct?: number | null;
+    yoyRoomsDiff?: number | null;
+    roomsDiff?: number | null;
+    yoyRoomsPct?: number | null;
+    roomsYoyPct?: number | null;
+    yoyRevDiff?: number | null;
+    revenueDiff?: number | null;
+    yoyRevPct?: number | null;
+    revenueYoyPct?: number | null;
+    yoy?: {
+      guestsDiff?: number | null;
+      guestsPct?: number | null;
+      roomsDiff?: number | null;
+      roomsPct?: number | null;
+      revenueDiff?: number | null;
+      revenuePct?: number | null;
+    };
+  };
+  summary?: Record<string, any>;
+  annual?: Record<string, any>;
   grandTotal?: number;
+  error?: string;
+}
+
+// ============================================================================
+// ⑩-B 월별 시즌성 매트릭스 (monthly-seasonality-matrix)
+// ============================================================================
+export interface MonthlySeasonalityMonthRow {
+  month: number;
+  monthName?: string;
+  revenue2026?: number;
+  revenue2025?: number;
+  tyRevenue?: number;
+  lyRevenue?: number;
+  yoyRevenueDiff?: number | null;
+  yoyRevDiff?: number | null;
+  revenueDiff?: number | null;
+  yoyRevenuePct?: number | null;
+  yoyRevPct?: number | null;
+  revenueYoyPct?: number | null;
+  revenueGrowthRate?: number | null;
+  visitors2026?: number;
+  visitors2025?: number;
+  tyVisitors?: number;
+  lyVisitors?: number;
+  yoyVisitorsDiff?: number | null;
+  yoyGuestsDiff?: number | null;
+  visitorsDiff?: number | null;
+  yoyVisitorsPct?: number | null;
+  yoyGuestsPct?: number | null;
+  visitorsYoyPct?: number | null;
+  trevpar2026?: number;
+  trevpar2025?: number;
+  yoyTrevparDiff?: number | null;
+  yoyTrevparPct?: number | null;
+  yoy?: {
+    revenueDiff?: number | null;
+    revenuePct?: number | null;
+    visitorsDiff?: number | null;
+    visitorsPct?: number | null;
+  };
+}
+
+export interface MonthlySeasonalityMatrixResponse {
+  success: boolean;
+  months?: MonthlySeasonalityMonthRow[];
+  monthly?: MonthlySeasonalityMonthRow[];
+  annual?: Record<string, any>;
+  totals?: Record<string, any>;
+  facilities?: Array<{
+    facilityId: string;
+    facilityName: string;
+    divisionName: string;
+    months: MonthlySeasonalityMonthRow[];
+  }>;
   error?: string;
 }
 

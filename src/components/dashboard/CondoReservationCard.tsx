@@ -237,7 +237,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           <span className={`text-[11px] font-medium hidden sm:inline ${
             isClosedHistory ? 'text-slate-500' : 'text-indigo-700/80'
           }`}>
-            {isClosedHistory ? '확정 실적은 상단 객실 실적 지표 참조' : '물리 고정 175실 기준 SSOT'}
+            {isClosedHistory ? '확정 실적은 상단 객실 실적 지표 참조' : '물리 고정 175실 기준'}
           </span>
         </div>
 
@@ -295,7 +295,10 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 '-'
               )}
             </div>
-            <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
+            <div 
+              className="text-[10px] text-slate-500 font-medium mt-0.5 truncate"
+              title={isClosedHistory ? '상단 확정 점유율 참조' : `총 예약 ${resData?.totalRooms ?? 0}실 / 175실 기준`}
+            >
               {isClosedHistory ? '상단 확정 점유율 참조' : `총 예약 ${resData?.totalRooms ?? 0}실 / 175실 기준`}
             </div>
           </div>
@@ -324,7 +327,10 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 </>
               )}
             </div>
-            <div className="text-[10px] text-purple-700 font-bold mt-0.5 truncate">
+            <div 
+              className="text-[10px] text-purple-700 font-bold mt-0.5 truncate"
+              title={isClosedHistory ? '정산 마감 완료' : `전체 대비 ${groupSharePct}%`}
+            >
               {isClosedHistory ? '정산 마감 완료' : `전체 대비 ${groupSharePct}%`}
             </div>
           </div>
@@ -349,7 +355,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             <div className="pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 flex items-start gap-1.5 leading-relaxed">
               <span className="text-indigo-600 font-bold shrink-0">💡</span>
               <span>
-                <strong>PMS 실시간 예약 원장 안내:</strong> 본 카드는 당일 및 익일 입실 예정 고객을 위한 실시간 대기 원장입니다. 마감 완료된 과거 일자는 예약 버퍼가 자동 이관되므로 상단 마감 실적을 단일 진실 공급원(SSOT)으로 삼습니다.
+                <strong>PMS 실시간 예약 원장 안내:</strong> 본 카드는 당일 및 익일 입실 예정 고객을 위한 실시간 대기 원장입니다. 마감 완료된 과거 일자는 예약 버퍼가 자동 이관되므로 상단 마감 실적을 공식 집계 기준으로 삼습니다.
               </span>
             </div>
           </div>
@@ -357,10 +363,10 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           <div className="mt-3.5 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-amber-900">
               <AlertCircle size={15} className="text-amber-600 shrink-0" />
-              <span>{targetCheckInDate} 산하 PMS 예약 원장 동기화 대기 중</span>
+              <span>{targetCheckInDate} 사전 예약 내역 확인 중</span>
             </div>
             <p className="text-[11px] text-amber-800 leading-relaxed">
-              선택하신 일자의 체크인 사전 예약 데이터가 PMS로부터 연동 대기 중입니다.
+              선택하신 일자의 체크인 사전 예약 데이터가 없습니다.
             </p>
           </div>
         ) : (
@@ -429,7 +435,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                         <div className="min-w-0">
                           <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
-                            <span className="truncate text-sm font-extrabold">{grp.channelName}</span>
+                            <span className="truncate text-sm font-extrabold" title={grp.channelName}>{grp.channelName}</span>
                             {itemShare != null && (
                               <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-semibold shrink-0 border border-purple-100">
                                 비중 {itemShare}%
@@ -443,7 +449,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                           </div>
                           {grp.breakdown.length > 0 && (
                             <div className="text-[11px] text-slate-600 truncate mt-1 ml-3.5 font-medium flex items-center gap-2">
-                              <span className="text-purple-600 font-semibold">{grp.breakdown.join(' · ')}</span>
+                              <span className="text-purple-600 font-semibold" title={grp.breakdown.join(' · ')}>{grp.breakdown.join(' · ')}</span>
                             </div>
                           )}
                         </div>
@@ -471,7 +477,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                   <span>체크인 당일 예상 매출액</span>
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  실시간 예약 원장 &amp; BESM 모델 SSOT
+                  실시간 예약 원장 &amp; 운영 모델 기준
                 </span>
               </div>
 
@@ -496,7 +502,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                       <span className="text-slate-400">-</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400 font-medium truncate">
+                  <div className="text-[10px] text-slate-400 font-medium truncate" title="PMS 예약 확정 및 기저 단가 연동">
                     PMS 예약 확정 및 기저 단가 연동
                   </div>
                 </div>
@@ -521,7 +527,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                       <span className="text-slate-400">-</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400 font-medium truncate">
+                  <div className="text-[10px] text-slate-400 font-medium truncate" title="투숙객 식음·레저 파급 합산">
                     투숙객 식음·레저 파급 합산
                   </div>
                 </div>

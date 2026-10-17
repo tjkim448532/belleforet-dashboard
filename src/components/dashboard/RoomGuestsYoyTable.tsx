@@ -323,32 +323,18 @@ export default function RoomGuestsYoyTable() {
                 let yoyRevPct: number | null = null;
 
                 if (prevYear) {
-                  const rawLatest = row[latestYear];
-                  const rawPrev = row[prevYear];
-                  const latestGuests = typeof rawLatest === 'number' ? rawLatest : 0;
-                  const prevGuests = typeof rawPrev === 'number' ? rawPrev : 0;
-
-                  const latestRooms = getRoomsSold(latestYear, monthNum);
-                  const prevRooms = getRoomsSold(prevYear, monthNum);
 
                   if (metricMode === 'GUESTS') {
-                    if (latestGuests > 0 && prevGuests > 0) {
-                      yoyPrimaryDiff = Math.round((latestGuests - prevGuests) * 10) / 10;
-                      yoyPrimaryPct = (row as any).yoyGuestsPct ?? (row as any).yoyPct ?? null;
-                    }
+                    // Backend pre-calculated YoY fields (Ticket 49 - Zero Client Subtraction)
+                    yoyPrimaryDiff = row.yoyGuestsDiff ?? row.guestsDiff ?? row.yoyGuestsDelta ?? row.yoy?.guestsDiff ?? null;
+                    yoyPrimaryPct = row.yoyGuestsPct ?? row.guestsYoyPct ?? row.guestsGrowthRate ?? row.yoyGrowthRate ?? row.yoyPct ?? row.yoy?.guestsPct ?? null;
                   } else {
-                    if (latestRooms > 0 && prevRooms > 0) {
-                      yoyPrimaryDiff = latestRooms - prevRooms;
-                      yoyPrimaryPct = (row as any).yoyRoomsPct ?? null;
-                    }
+                    yoyPrimaryDiff = row.yoyRoomsDiff ?? row.roomsDiff ?? row.yoyRoomsDelta ?? row.yoy?.roomsDiff ?? null;
+                    yoyPrimaryPct = row.yoyRoomsPct ?? row.roomsYoyPct ?? row.roomsGrowthRate ?? row.yoy?.roomsPct ?? null;
                   }
 
-                  const latestRev = getRevenue(latestYear, monthNum, row);
-                  const prevRev = getRevenue(prevYear, monthNum, row);
-                  if (latestRev > 0 && prevRev > 0) {
-                    yoyRevDiff = Math.round(latestRev - prevRev);
-                    yoyRevPct = (row as any).yoyRevPct ?? null;
-                  }
+                  yoyRevDiff = row.yoyRevDiff ?? row.revenueDiff ?? row.yoyRevenueDiff ?? row.yoy?.revenueDiff ?? null;
+                  yoyRevPct = row.yoyRevPct ?? row.revenueYoyPct ?? row.revenueGrowthRate ?? row.yoyRevenuePct ?? row.yoy?.revenuePct ?? null;
                 }
 
                 return (
@@ -498,7 +484,7 @@ export default function RoomGuestsYoyTable() {
                   <td className="py-4 px-6 text-center font-black text-sm bg-indigo-100/60 sticky left-0 z-10 border-r border-indigo-200">
                     <div>연간 총합</div>
                     <div className="text-[10px] text-indigo-700 font-semibold">
-                      {metricMode === 'GUESTS' ? '(공식 SSOT)' : '(월별 실측 제공)'}
+                      {metricMode === 'GUESTS' ? '(공식 집계)' : '(월별 실측 제공)'}
                     </div>
                   </td>
                   {years.map((yr) => {
@@ -524,9 +510,10 @@ export default function RoomGuestsYoyTable() {
                   })}
                   {prevYear && latestYear && (
                     <td className="py-4 px-6 text-center bg-indigo-50/50">
-                      {metricMode === 'GUESTS' && data.totals?.[latestYear] !== undefined && data.totals?.[prevYear] !== undefined ? (() => {
-                        const diff = data.totals[latestYear] - data.totals[prevYear];
-                        const pct: number | null = (data.totals as any)?.yoyGuestsPct ?? (data.totals as any)?.yoyPct ?? null;
+                      {metricMode === 'GUESTS' ? (() => {
+                        const diff = (data.totals as any)?.yoyGuestsDiff ?? (data.totals as any)?.guestsDiff ?? (data.totals as any)?.yoy?.guestsDiff ?? null;
+                        const pct: number | null = (data.totals as any)?.yoyGuestsPct ?? (data.totals as any)?.guestsYoyPct ?? (data.totals as any)?.yoyPct ?? (data.totals as any)?.yoy?.guestsPct ?? null;
+                        if (diff === null || diff === undefined) return <span className="text-slate-300 font-mono">-</span>;
                         return (
                           <div className="flex flex-col items-center gap-1 font-mono text-xs">
                             <div className="flex items-center gap-1">
@@ -534,12 +521,12 @@ export default function RoomGuestsYoyTable() {
                               {diff > 0 ? (
                                 <span className="inline-flex items-center gap-0.5 text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-lg font-bold">
                                   <ArrowUpRight size={12} className="stroke-[2.5]" />
-                                  +{diff.toLocaleString()}명 {pct !== null ? `(+${pct.toFixed(1)}%)` : ''}
+                                  +{diff.toLocaleString()}명 {pct !== null && pct !== undefined ? `(+${pct.toFixed(1)}%)` : ''}
                                 </span>
                               ) : diff < 0 ? (
                                 <span className="inline-flex items-center gap-0.5 text-rose-800 bg-rose-100/90 px-2 py-0.5 rounded-lg font-bold">
                                   <ArrowDownRight size={12} className="stroke-[2.5]" />
-                                  {diff.toLocaleString()}명 {pct !== null ? `(${pct.toFixed(1)}%)` : ''}
+                                  {diff.toLocaleString()}명 {pct !== null && pct !== undefined ? `(${pct.toFixed(1)}%)` : ''}
                                 </span>
                               ) : (
                                 <span className="text-slate-500 font-bold">0명 (0.0%)</span>

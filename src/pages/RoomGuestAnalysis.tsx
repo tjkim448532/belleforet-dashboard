@@ -168,7 +168,7 @@ export default function RoomGuestAnalysis() {
         <div className="text-xs text-emerald-950 space-y-1">
           <div className="font-bold text-emerald-900 flex items-center gap-2">
             <span>숙박객(Room Guests) 산출 기준 및 집계 무결성 원칙</span>
-            <span className="text-[10px] bg-emerald-200/70 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">SSOT 공식 기준</span>
+            <span className="text-[10px] bg-emerald-200/70 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">공식 기준</span>
           </div>
           <p className="text-emerald-800/90 leading-relaxed break-keep">
             단순 티켓 발권 수량이나 식음 결제 건수는 중복 이용 및 단순 동행 구분이 불가하여 방문객 집계에서 제외합니다.
@@ -205,7 +205,7 @@ export default function RoomGuestAnalysis() {
           <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-4 rounded-b-[28px]">
             <div className="flex items-center gap-1 text-[11px] font-bold text-slate-700 mb-1">
               <HelpCircle size={13} className="text-emerald-600 shrink-0" />
-              <span>숙박객 계산 기준 (SSOT)</span>
+              <span>숙박객 계산 기준</span>
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed break-keep">
               실 판매 객실 수 × 객실별 기준 정원<br />
@@ -273,7 +273,7 @@ export default function RoomGuestAnalysis() {
           <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-4 rounded-b-[28px]">
             <div className="flex items-center gap-1 text-[11px] font-bold text-slate-700 mb-1">
               <HelpCircle size={13} className="text-indigo-600 shrink-0" />
-              <span>회계 집계 기준 (SSOT)</span>
+              <span>회계 집계 기준</span>
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed break-keep">
               리조트 전사 발생 순매출 (VAT 10% 제외)<br />
@@ -306,7 +306,7 @@ export default function RoomGuestAnalysis() {
       <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Building className="w-5 h-5 text-emerald-500" /> 업장별 실적 집계 (SSOT)
+            <Building className="w-5 h-5 text-emerald-500" /> 업장별 실적 집계
           </h2>
           <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
             총 {venueVisitors.length}개 업장
@@ -317,9 +317,9 @@ export default function RoomGuestAnalysis() {
           <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[800px]">
             <thead>
               <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                <th className="py-3.5 px-6 rounded-l-xl whitespace-nowrap">분류 코드</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">업장 명칭</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">티켓 그룹</th>
+                <th className="py-3.5 px-6 text-left rounded-l-xl whitespace-nowrap">분류 코드</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">업장 명칭</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">티켓 그룹</th>
                 <th className="py-3.5 px-6 text-right whitespace-nowrap">순 이용/방문 수량</th>
                 <th className="py-3.5 px-4 text-right whitespace-nowrap">수량 점유율 (%)</th>
                 <th className="py-3.5 px-6 text-right rounded-r-xl whitespace-nowrap">발생 매출액 (원)</th>

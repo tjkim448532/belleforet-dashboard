@@ -3264,4 +3264,28 @@ ORDER BY venue_name, rn;
 3. **프론트엔드 선제 방어 완료**:
    - 프론트엔드(`src/pages/GolfBusiness.tsx`)는 `/api/v6/report/golf-channel-teetime-analysis-v2`가 지연되거나 25초 타임아웃되더라도 화면이 멈추지 않도록 에러를 격리하고, 0.6초 만에 응답하는 공식 SSOT 마트 API(`revenue-summary` + `revenue-by-org`)의 골프본부 완제품 데이터를 즉시 바인딩하여 렌더링하도록 조치 완료했습니다.
 
+---
+
+## 🏨 [Ticket 44] 객실 리드타임·호실별 배정 편차 API(`GET /api/v6/report/room-leadtime-unit-wear`) 팩트 체크 결함 보고 및 호실 평균 배정 횟수 필드 추가 요청 (2026-10-17)
+
+### 44-1. 실측 Stdout 팩트 체크 결과 (4대 데이터 무결성 결함 적발)
+1. **[결함 1] `summary.avgStayCountPerUnit` / `summary.avgAssignedCountPerUnit` (호실당 평균 배정/실투숙 횟수) 필드 누락**:
+   - 우측 테이블의 `평균 대비 편차(wearIndexPct)` 기준점(100%)이 되는 **전체 가동 호실의 평균 배정/실투숙 횟수**가 `summary` 객체에 포함되어 있지 않습니다.
+   - 예: `2026-01-01 ~ 2026-04-16` 구간에서 `105-412`호(`stayCount: 47`, `wearIndexPct: 217.3%`)는 `47 / 21.63 = 217.3%`로 계산되었으나, 정작 분모인 `21.6회`가 `summary`에 내려오지 않아 사용자가 평균이 몇 회인지 알 수 없습니다.
+2. **[결함 2] `totalRevenue` 가짜 균등 단가(`roomNights × 123,498원`) 주입 적발**:
+   - `unitWearRanking` 배열의 모든 호실을 전수 대조한 결과, 평형(16평/35평/51평)이나 실제 결제 금액과 무관하게 **모든 호실의 `totalRevenue`가 정확히 `roomNights × 123,498원`**(`1박 = 123,498원`, `2박 = 246,996원`, `70박 = 8,644,860원`)으로 일괄 곱셈되어 내려오고 있습니다.
+   - 호실별 실제 투숙 매출을 원천/정산 마트에서 매핑할 수 없다면 가짜 단가(`123,498원`)를 곱하지 말고 `null`로 반환하거나, 실제 호실별 객실료 실적을 집계해 주십시오.
+3. **[결함 3] `stayCount === 0` (전량 취소된 호실)일 때 `wearIndexPct: 100`으로 잘못 반환되는 나눗셈 폴백 버그**:
+   - `date=2026-10-16` 조회 시 아직 체크아웃 완료(`stayCount`) 건수가 0건인 상태에서, 사전 취소된 예약에 임시 배정되었던 `103-406`호(`assignedCount: 33, stayCount: 0, totalRevenue: 0`)와 `105-412`호(`assignedCount: 27, stayCount: 0, totalRevenue: 0`) 2개 호실만 반환되며, 분모(`avgStayCount = 0`)가 0일 때 백엔드가 `wearIndexPct: 100`으로 하드코딩 폴백을 내려주고 있습니다.
+   - `stayCount === 0`인 취소 건은 물리적 감가상각(실투숙 마모) 대상이 아니므로 `unitWearRanking` 모수에서 제외하거나, `wearIndexPct: null`로 반환해 주십시오.
+4. **[결함 4] 단일 일자(`date=2026-10-16`) 조회 시 `totalReservations: 3,026건` 과집계 의심**:
+   - 175실 리조트의 단일 일자(`2026-10-16`) 조회임에도 `totalReservations: 3026`, `cancelledCount: 1108`이 반환되고 있습니다(원천 엑셀 덤프 중복 적재 또는 날짜 필터 조건 점검 필요).
+
+### 44-2. 백엔드 수정 요청 명세 (`summary` 필드 추가)
+- `GET /api/v6/report/room-leadtime-unit-wear` 응답의 `summary`에 아래 필드를 추가해 주십시오:
+  - `avgStayCountPerUnit`: 가동 호실당 평균 실투숙 횟수 (예: `21.6`)
+  - `avgAssignedCountPerUnit`: 가동 호실당 평균 배정 횟수 (예: `23.4`)
+  - `avgRoomNightsPerUnit`: 가동 호실당 평균 투숙 박수 (예: `26.8`)
+
+
 

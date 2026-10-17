@@ -2131,9 +2131,22 @@ export default function ResortBusiness() {
 
                   {/* 우측: 호실별 물리적 배정 편차 (Over-used vs Under-used Units) */}
                   <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                      <span className="text-xs font-extrabold text-slate-800">호실별(객실번호) 물리적 배정 횟수 및 감가상각 편차</span>
-                      <span className="text-[11px] text-slate-500">동 · 층 · 베드타입 기준</span>
+                    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-extrabold text-slate-800">호실별(객실번호) 물리적 배정 횟수 및 감가상각 편차</span>
+                        <MetricExplainerTooltip presetKey="unitWearSpread" iconType="exclamation" align="right" iconSize={14} />
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200 font-bold">
+                          호실당 평균 실투숙(기준 100%):{' '}
+                          {leadtimeWearIntel.summary?.avgStayCountPerUnit != null
+                            ? `${leadtimeWearIntel.summary.avgStayCountPerUnit}회`
+                            : leadtimeWearIntel.summary?.avgAssignedCountPerUnit != null
+                              ? `${leadtimeWearIntel.summary.avgAssignedCountPerUnit}회`
+                              : '미제공 (백엔드 요청됨)'}
+                        </span>
+                        <span className="text-slate-500">동 · 층 · 베드타입 기준</span>
+                      </div>
                     </div>
                     <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
                       <table className="w-full text-xs">
@@ -2141,7 +2154,7 @@ export default function ResortBusiness() {
                           <tr>
                             <th className="py-2.5 px-3 text-left font-bold">호실번호</th>
                             <th className="py-2.5 px-3 text-left font-bold">동 · 층 · 타입</th>
-                            <th className="py-2.5 px-3 text-right font-bold">배정 횟수</th>
+                            <th className="py-2.5 px-3 text-right font-bold">실투숙 / 총배정(취소포함)</th>
                             <th className="py-2.5 px-3 text-right font-bold">누적 매출</th>
                             <th className="py-2.5 px-3 text-right font-bold">평균 대비 편차</th>
                           </tr>
@@ -2154,13 +2167,16 @@ export default function ResortBusiness() {
                                 {[u.buildingName, u.floorLabel, u.bedType].filter(Boolean).join(' · ') || '-'}
                               </td>
                               <td className="py-2.5 px-3 text-right font-bold text-slate-900">
-                                {u.assignedCount != null ? `${Number(u.assignedCount).toLocaleString()}회` : '-'}
+                                {u.stayCount != null ? `${Number(u.stayCount).toLocaleString()}회` : '-'}
+                                <span className="text-[11px] font-normal text-slate-400 ml-1">
+                                  (배정 {u.assignedCount != null ? `${Number(u.assignedCount).toLocaleString()}건` : '-'})
+                                </span>
                               </td>
                               <td className="py-2.5 px-3 text-right text-slate-700">
-                                {u.totalRevenue != null ? `${formatCurrency(u.totalRevenue)}원` : '-'}
+                                {u.totalRevenue != null && u.totalRevenue > 0 ? `${formatCurrency(u.totalRevenue)}원` : '-'}
                               </td>
                               <td className="py-2.5 px-3 text-right font-semibold text-sky-700">
-                                {u.wearIndexPct != null ? `${u.wearIndexPct}%` : '-'}
+                                {u.wearIndexPct != null && (u.stayCount === undefined || u.stayCount > 0) ? `${u.wearIndexPct}%` : '-'}
                               </td>
                             </tr>
                           ))}

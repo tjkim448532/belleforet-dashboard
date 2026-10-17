@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { secureFetcher } from '../lib/secureFetcher';
 import {
   Search,
   X,
@@ -23,12 +24,15 @@ import {
   CheckCircle2,
   Ticket,
   Maximize2,
-  Minimize2
+  Minimize2,
+  RefreshCw
 } from 'lucide-react';
 import {
   LEISURE_FACILITIES,
   LEISURE_CATEGORIES
 } from '../data/leisurePricingData';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function LeisurePricing() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +40,35 @@ export default function LeisurePricing() {
   const [selectedDiscountFilter, setSelectedDiscountFilter] = useState<string>('all');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [facilities, setFacilities] = useState(LEISURE_FACILITIES);
+  const [lastUpdated, setLastUpdated] = useState<string>('2026-10-17 (공식 실측 SSOT)');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  // Fetch nightly S3 snapshot via backend API when available
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchLatestCatalog = async () => {
+      try {
+        setIsSyncing(true);
+        const res = await secureFetcher(`${API_BASE}/api/v6/leisure/pricing-catalog`).catch(() => null);
+        if (isCancelled || !res) return;
+        const payload = res?.data ?? res;
+        if (payload?.facilities && Array.isArray(payload.facilities) && payload.facilities.length > 0) {
+          setFacilities(payload.facilities);
+          if (payload.lastUpdated) {
+            setLastUpdated(payload.lastUpdated.replace('T', ' ').substring(0, 16));
+          }
+        }
+      } catch {
+        // Fallback to static SSOT safely
+      } finally {
+        if (!isCancelled) setIsSyncing(false);
+      }
+    };
+
+    fetchLatestCatalog();
+    return () => { isCancelled = true; };
+  }, []);
 
   // Fast Discount Filter Badges
   const discountFilterTags = [
@@ -49,7 +82,7 @@ export default function LeisurePricing() {
 
   // Filtering Logic
   const filteredFacilities = useMemo(() => {
-    return LEISURE_FACILITIES.filter((facility) => {
+    return facilities.filter((facility) => {
       // Category filter
       if (selectedCategory !== 'all' && facility.category !== selectedCategory) {
         return false;
@@ -93,7 +126,7 @@ export default function LeisurePricing() {
 
       return true;
     });
-  }, [searchTerm, selectedCategory, selectedDiscountFilter]);
+  }, [facilities, searchTerm, selectedCategory, selectedDiscountFilter]);
 
   // Expand / Collapse Handlers
   const toggleExpand = (id: string) => {
@@ -130,11 +163,16 @@ export default function LeisurePricing() {
       {/* 1. Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
-              공식 웹사이트 & PMS 실측 SSOT
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+              공식 웹 & PMS 실측 SSOT
             </span>
-            <span className="text-xs text-slate-400">최종 확인: 2026-10-17</span>
+            <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
+              S3 서버리스 매일 밤 자동 업데이트
+              {isSyncing && <RefreshCw size={11} className="animate-spin text-blue-600" />}
+            </span>
+            <span className="text-xs text-slate-400">기준: {lastUpdated}</span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
             <Ticket className="text-brand-mint" size={26} />

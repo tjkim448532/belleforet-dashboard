@@ -37,6 +37,7 @@
 | **P1 (완료)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | [배포/검증완료] `dim_online_members_v6`(26,922명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 구축 완료 (`online-member-dormancy`) |
 | **P1 (완료)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | [배포/검증완료] `fact_customer_journeys`(7,540건) 체류시간 구간별(0분 단발 1,253건 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 복합 소비 시너지 마트 구축 완료 (`customer-stay-duration-synergy`) |
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 39] `leisure-yoy-matrix` API 내 `마운틴카트(전체)` 통합 행 제공 및 분리 정합성 확립** | 마운틴카트 2025/2026년 그랜드포렛·미니포렛 분리로 인한 YoY 0% 왜곡 방지: `leisure-usage-rate`와 동일하게 2024(레거시)+2025(그랜드+미니)+2026(그랜드+미니) 통합 행 제공 요청 |
+| **P1 (신규/인프라)** | 파이프라인 | **[Ticket 41] 매일 밤 자정(00:00) 체험 시설 이용요금 자동 스크래핑 Lambda 및 S3 정적 서빙 파이프라인 구축** | [방안 A 채택] DB 수면 모드(20:00~08:00) 100% 보존형: 매일 자정 홈페이지/PMS 티켓 실측 스크래핑 후 서버리스 S3(`latest_tickets.json`) 저장 및 API 서빙 (`leisure/pricing-catalog`) |
 
 
 ---
@@ -2915,6 +2916,126 @@ if (!isRange && settleVisitedTeams > 0) {
 
 ### 39-4. 프론트엔드 선제 조치 내역
 - 백엔드 배포 전까지 화면 0% 결함 노출을 방지하기 위해, 프론트엔드에서는 `leisure-usage-rate`가 이미 완제품으로 제공하는 `마운틴카트(전체)` 월별 실측 시계열 데이터(31개월분)를 `yoyData.pivotData['마운틴카트(전체)']` 및 `['마운틴카트']`에 직접 바인딩하여 2024(53.9%), 2025(21.5%), 2026(39.1%)이 즉시 정상 표출되도록 조치 완료함.
+
+---
+
+## 41. 🎟️ [P1 신규/인프라] [Ticket 41] 매일 밤 자정(00:00) 체험 시설 이용요금 자동 스크래핑 Lambda 및 S3 정적 서빙 파이프라인 구축 (방안 A: DB 슬립모드 100% 보존형)
+
+### 41-1. 배경 및 경영진 승인 의사결정 (방안 A 확정)
+- **대표님/경영진 요구사항**: 벨포레 공식 웹사이트(`https://belleforetresort.com/`) 및 PMS 온라인 예매 시스템의 체험·어트랙션 요금/패키지 변경 사항을 **매일 밤 자동으로 감지하고 대시보드에 업데이트**하도록 파이프라인 구축 지시.
+- **DB 슬립모드(20:00 ~ 08:00) 보존 절대 원칙**:
+  - 벨포레 리조트 DB(Aurora/MariaDB RDS)는 야간 비용 절감을 위해 매일 20:00부터 익일 08:00까지 **수면(Sleep) 모드**로 전원이 차단됩니다.
+  - 야간 크롤링 데이터를 위해 DB를 강제로 깨우면(Wake-up) 인스턴스 비용이 불필요하게 발생하며, 자고 있는 DB에 접속 시 연결 장애가 발생합니다.
+  - 따라서 **방안 A [서버리스 S3 저장 방식]**을 최종 채택하여, **DB를 100% 온전히 재운 상태(추가 비용 0원)로 매일 밤 자정(00:00) 최신 요금을 수집·서빙**하도록 파이프라인을 구축합니다.
+
+---
+
+### 41-2. 데이터 파이프라인 아키텍처 (방안 A)
+
+```mermaid
+flowchart LR
+    A["AWS EventBridge<br>(매일 00:00 KST)"] --> B["AWS Lambda<br>(ticket-scraper-nightly)"]
+    B --> C["1) 공식 웹 어트랙션 스크래핑<br>2) PMS 티켓 API 실측 호출"]
+    C --> D["JSON 완제품 생성<br>(latest_tickets.json)"]
+    D --> E["AWS S3 버킷 업로드<br>(s3://.../catalog/latest_tickets.json)"]
+    E --> F["Vercel 백엔드 API<br>GET /api/v6/leisure/pricing-catalog"]
+    F --> G["프론트엔드 대시보드<br>/leisure/pricing 자동 갱신"]
+```
+
+---
+
+### 41-3. 세부 엔지니어링 구현 명세
+
+#### 1) 스케줄러 (AWS EventBridge Rule)
+- **일정**: 매일 자정 00:00 KST (`cron(0 15 * * ? *)` - UTC 기준 15:00)
+- **대상**: AWS Lambda 함수 (`arn:aws:lambda:...:function:belleforet-ticket-scraper-nightly`)
+
+#### 2) 수집 Lambda 함수 (`ticket-scraper-nightly`)
+- **런타임**: Python 3.11 또는 Node.js 20
+- **수집 대상 소스**:
+  1. **공식 웹사이트 HTML 어트랙션 페이지**:
+     - `https://belleforetresort.com/attraction/10` (마운틴카트)
+     - `https://belleforetresort.com/attraction/4` (사계절썰매장)
+     - `https://belleforetresort.com/attraction/7` (벨포레목장 & 승마)
+     - `https://belleforetresort.com/attraction/6` (미디어아트센터)
+     - `https://belleforetresort.com/attraction/1` (놀이동산 기종별 단품)
+     - `https://belleforetresort.com/attraction/16` (어린이 공연)
+     - `https://belleforetresort.com/content/moto_cart` (모토아레나 레저카트)
+     - `https://belleforetresort.com/travel/11` (마리나클럽 제트/스피드보트, 오리배)
+     - `https://belleforetresort.com/travel/8` (펫포레)
+     - `https://belleforetresort.com/travel/7` / `6` (원더풀, 썸머랜드)
+  2. **공식 PMS 티켓 예매 API**:
+     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpStList` (영업장별 최저가)
+     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpPkgItemList` (온라인 패키지 티켓)
+     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpNotPkgItemGrpList` (대분류)
+     - POST `https://pms-api.belleforetresort.com/api/tp/hpgSearchTpNotPkgItemList` (단품 티켓)
+
+#### 3) 저장소 및 서빙 (AWS S3)
+- **S3 업로드 경로**: `s3://belleforet-public-assets/catalog/latest_tickets.json`
+- **캐시 설정**: `Cache-Control: public, max-age=3600, s-maxage=86400`
+- **보안/권한**: Public Read 또는 CloudFront Origin Access Identity(OAI)
+
+---
+
+### 41-4. Vercel 백엔드 API 명세 (`GET /api/v6/leisure/pricing-catalog`)
+
+백엔드는 DB를 찌르지 않고, S3에 적재된 최신 JSON을 읽어 프론트엔드로 전달하는 가벼운 파스스루(Passthrough) 파이프 역할을 수행합니다.
+
+- **엔드포인트**: `GET /api/v6/leisure/pricing-catalog`
+- **응답 규격 (100% camelCase)**:
+```json
+{
+  "status": "success",
+  "data": {
+    "lastUpdated": "2026-10-18T00:02:15+09:00",
+    "source": "belleforetresort.com & PMS API",
+    "facilities": [
+      {
+        "id": "mountain-kart",
+        "name": "마운틴 카트",
+        "category": "racing",
+        "categoryLabel": "육상·스피드",
+        "summary": "두타산 자연 경사로를 주행하는 약 3km 스릴 레이싱",
+        "representativePrice": "그랜드 30,000원 / 미니 5,000원",
+        "operatingHours": "하절기 10:00~18:00 / 동절기 10:00~17:00",
+        "closedDay": "매주 월요일 휴장",
+        "contact": "043-926-1000",
+        "ageRequirement": "그랜드포렛: 키 150cm 이상 / 미니포렛: 단독 130cm 이상",
+        "discountBadges": ["도민·군인 25%", "숙박객 25%", "회원 최대 50%"],
+        "regularPrices": [
+          { "name": "그랜드포렛 코스", "priceWeekday": "30,000원", "priceWeekend": "30,000원", "note": "스릴 코스" },
+          { "name": "미니포렛 코스", "priceWeekday": "5,000원", "priceWeekend": "5,000원", "note": "어린이 전용" }
+        ],
+        "discounts": [
+          { "target": "콘도 분양회원 (레드/화이트)", "rate": "50% 할인", "discountPrice": "15,000원", "condition": "회원카드 지참" },
+          { "target": "충북도민", "rate": "25% 할인", "discountPrice": "22,500원", "condition": "신분증 제시" }
+        ],
+        "requirements": ["키 150cm 이상 탑승 가능", "운동화 필수 착용"],
+        "notes": ["전기고카트 최고 속도 30km/h 제한", "온라인 예매 QR코드 즉시 입장"]
+      }
+    ],
+    "packages": [
+      {
+        "itemCd": "0000000257",
+        "itemNm": "패밀리 4종 패스_대인(14세이상)",
+        "regularPrice": 82000,
+        "salePrice": 49000,
+        "discountRate": 40,
+        "salePeriod": "2026-02-28 ~ 2026-11-30"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 41-5. 프론트엔드 연동 및 안전망 (Fail-Safe)
+1. **정적 SSOT 안전망**:
+   - 프론트엔드(`src/pages/LeisurePricing.tsx`)에는 이미 오늘 전수 실측한 마스터 카탈로그(`src/data/leisurePricingData.ts`)가 안전망(Default SSOT)으로 탑재되어 즉시 서빙 중입니다.
+2. **동적 연동 훅**:
+   - 백엔드에서 `/api/v6/leisure/pricing-catalog`가 배포되는 즉시, S3 최신 데이터를 우선 반영하고 최상단에 **"매일 밤 자동 업데이트: 2026-10-18 00:02"** 실시간 배지를 자동 표출하도록 처리됩니다.
+
 
 
 

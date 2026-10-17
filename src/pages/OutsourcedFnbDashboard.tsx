@@ -773,9 +773,9 @@ export default function OutsourcedFnbDashboard() {
                         </div>
                       ) : (
                         <div className="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-300 text-xs space-y-2">
-                          <div className="text-amber-800 font-semibold flex items-center gap-1.5">
-                            <Sparkles size={13} className="text-amber-600 shrink-0" />
-                            <span>POS 메뉴별 매출 Top 3 집계 대기 ([Ticket 42])</span>
+                          <div className="text-slate-700 font-semibold flex items-center gap-1.5">
+                            <Sparkles size={13} className="text-amber-500 shrink-0" />
+                            <span>{isDedicatedApiLive ? '수수료 입점 매장 (POS 메뉴 미제공)' : 'POS 메뉴별 매출 Top 3 집계 대기'}</span>
                           </div>
                           {venue.crawledMenus && venue.crawledMenus.length > 0 && (
                             <div className="pt-1.5 border-t border-slate-200/80 space-y-1">
@@ -980,7 +980,7 @@ export default function OutsourcedFnbDashboard() {
                           </div>
                         ) : (
                           <span className="text-slate-400 font-medium text-[11px]">
-                            POS 메뉴 집계 준비 중
+                            {isDedicatedApiLive ? '수수료 입점 매장 (POS 품목 미연동)' : 'POS 메뉴 집계 준비 중'}
                           </span>
                         )}
                       </td>

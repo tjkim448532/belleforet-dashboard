@@ -12,31 +12,23 @@ import {
   ExternalLink,
   Tag,
   Percent,
-  Sparkles,
-  Zap,
-  Heart,
-  Smile,
-  Palette,
-  Waves,
-  PackageCheck,
   LayoutGrid,
   Table as TableIcon,
   CheckCircle2,
   Ticket,
   Maximize2,
   Minimize2,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import {
-  LEISURE_FACILITIES,
-  LEISURE_CATEGORIES
+  LEISURE_FACILITIES
 } from '../data/leisurePricingData';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function LeisurePricing() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDiscountFilter, setSelectedDiscountFilter] = useState<string>('all');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
@@ -70,24 +62,19 @@ export default function LeisurePricing() {
     return () => { isCancelled = true; };
   }, []);
 
-  // Fast Discount Filter Badges
+  // Quick Discount Filter Badges
   const discountFilterTags = [
-    { key: 'all', label: '전체 보기' },
+    { key: 'all', label: '전체 시설' },
     { key: 'resident', label: '충북도민/증평군민 우대' },
-    { key: 'hotel', label: '콘도 숙박객 할인' },
+    { key: 'hotel', label: '콘도 투숙객 할인' },
     { key: 'member', label: '분양회원(레드/화이트/그린) 우대' },
     { key: 'military', label: '군인/유공자 우대' },
-    { key: 'free', label: '영유아 무료' },
+    { key: 'free', label: '36개월 미만 무료' },
   ];
 
-  // Filtering Logic
+  // Filtering Logic (No arbitrary categories - pure facility list + search & discount filter)
   const filteredFacilities = useMemo(() => {
     return facilities.filter((facility) => {
-      // Category filter
-      if (selectedCategory !== 'all' && facility.category !== selectedCategory) {
-        return false;
-      }
-
       // Discount tag filter
       if (selectedDiscountFilter === 'resident') {
         const hasResident = facility.discounts.some(d => d.target.includes('도민') || d.target.includes('군민')) ||
@@ -117,16 +104,15 @@ export default function LeisurePricing() {
         const q = searchTerm.toLowerCase().trim();
         const matchName = facility.name.toLowerCase().includes(q);
         const matchSummary = facility.summary.toLowerCase().includes(q);
-        const matchCat = facility.categoryLabel.toLowerCase().includes(q);
         const matchPrices = facility.regularPrices.some(p => p.name.toLowerCase().includes(q) || p.note?.toLowerCase().includes(q));
         const matchDiscounts = facility.discounts.some(d => d.target.toLowerCase().includes(q) || d.condition.toLowerCase().includes(q));
         const matchBadges = facility.discountBadges.some(b => b.toLowerCase().includes(q));
-        return matchName || matchSummary || matchCat || matchPrices || matchDiscounts || matchBadges;
+        return matchName || matchSummary || matchPrices || matchDiscounts || matchBadges;
       }
 
       return true;
     });
-  }, [facilities, searchTerm, selectedCategory, selectedDiscountFilter]);
+  }, [facilities, searchTerm, selectedDiscountFilter]);
 
   // Expand / Collapse Handlers
   const toggleExpand = (id: string) => {
@@ -146,18 +132,6 @@ export default function LeisurePricing() {
     setExpandedIds(new Set());
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'racing': return <Zap size={18} className="text-amber-500" />;
-      case 'farm': return <Heart size={18} className="text-emerald-500" />;
-      case 'play': return <Smile size={18} className="text-blue-500" />;
-      case 'culture': return <Palette size={18} className="text-purple-500" />;
-      case 'water': return <Waves size={18} className="text-cyan-500" />;
-      case 'package': return <PackageCheck size={18} className="text-rose-500" />;
-      default: return <Sparkles size={18} className="text-brand-mint" />;
-    }
-  };
-
   return (
     <div className="space-y-6 pb-16">
       {/* 1. Header Section */}
@@ -174,12 +148,12 @@ export default function LeisurePricing() {
             </span>
             <span className="text-xs text-slate-400">기준: {lastUpdated}</span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1.5 flex items-center gap-2">
             <Ticket className="text-brand-mint" size={26} />
             체험·어트랙션 종합 이용요금 안내
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            벨포레 리조트 전체 레저 시설의 정상가, 우대할인(도민·회원·투숙객) 규정 및 이용 조건을 한눈에 검색하고 조회합니다.
+            벨포레 리조트 전체 체험 시설의 정상가, 우대할인(도민·회원·투숙객) 규정 및 이용 조건을 한눈에 검색하고 조회합니다.
           </p>
         </div>
 
@@ -235,14 +209,14 @@ export default function LeisurePricing() {
         </div>
       </div>
 
-      {/* 2. Quick Search & Category Filters (핵심: "쉽게 체험을 찾을 수 있는게 제일 중요") */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-        {/* Search Bar */}
+      {/* 2. Simplified Clean Search Bar & Discount Filter (불필요한 카테고리 분류 전면 배제) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+        {/* Wide Direct Search Bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input
             type="text"
-            placeholder="체험명, 카테고리, 요금, 키워드 검색 (예: 마운틴카트, 썰매, 도민할인, 목장, 보트, 패키지...)"
+            placeholder="체험 시설명 또는 할인 대상 검색 (예: 마운틴카트, 썰매, 목장, 보트, 도민할인, 숙박객, 패키지...)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-10 py-3 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-mint/50 focus:border-brand-mint transition-all placeholder:text-slate-400"
@@ -257,29 +231,8 @@ export default function LeisurePricing() {
           )}
         </div>
 
-        {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          {LEISURE_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.key;
-            return (
-              <button
-                key={cat.key}
-                onClick={() => setSelectedCategory(cat.key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
-                  isSelected
-                    ? 'bg-brand-mint text-white shadow-xs'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                {getCategoryIcon(cat.key)}
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Quick Discount Filter Tags */}
-        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 mr-1">
             <Percent size={13} />
             우대혜택 필터:
@@ -290,21 +243,20 @@ export default function LeisurePricing() {
               <button
                 key={tag.key}
                 onClick={() => setSelectedDiscountFilter(tag.key)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-all ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all ${
                   isSelected
                     ? 'bg-emerald-600 text-white font-semibold shadow-xs'
-                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
                 {tag.label}
               </button>
             );
           })}
-          {(searchTerm || selectedCategory !== 'all' || selectedDiscountFilter !== 'all') && (
+          {(searchTerm || selectedDiscountFilter !== 'all') && (
             <button
               onClick={() => {
                 setSearchTerm('');
-                setSelectedCategory('all');
                 setSelectedDiscountFilter('all');
               }}
               className="text-xs font-semibold text-rose-500 hover:text-rose-700 ml-auto flex items-center gap-1 py-1 px-2"
@@ -326,9 +278,9 @@ export default function LeisurePricing() {
         </span>
       </div>
 
-      {/* 4-A. CARD VIEW: Clean, Scannable & Interactive */}
+      {/* 4-A. CARD VIEW: Clean, Simple & Direct (분류 태그 없이 시설명과 요금에 집중) */}
       {viewMode === 'card' && (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3.5">
           {filteredFacilities.map((facility) => {
             const isExpanded = expandedIds.has(facility.id);
 
@@ -341,28 +293,25 @@ export default function LeisurePricing() {
                     : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
                 }`}
               >
-                {/* Clean Top Card Header (항상 보이는 영역) */}
+                {/* Clean Top Card Header (항상 보이는 영역: 시설명 중심) */}
                 <div
                   onClick={() => toggleExpand(facility.id)}
                   className="p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 select-none hover:bg-slate-50/50 transition-colors"
                 >
-                  <div className="flex items-start gap-3.5">
-                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-700 shrink-0 mt-0.5">
-                      {getCategoryIcon(facility.category)}
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0 mt-0.5 border border-slate-200/80">
+                      <Sparkles size={18} className="text-brand-mint" />
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
-                          {facility.categoryLabel}
-                        </span>
+                        <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                          {facility.name}
+                        </h2>
                         {facility.closedDay && (
                           <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
                             {facility.closedDay}
                           </span>
                         )}
-                        <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                          {facility.name}
-                        </h2>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 line-clamp-1">
                         {facility.summary}
@@ -450,7 +399,7 @@ export default function LeisurePricing() {
                       </div>
                     </div>
 
-                    {/* 2. 핵심 우대 할인 규정 (★ 사용자가 클릭했을 때 보고 싶어하는 핵심!) */}
+                    {/* 2. 핵심 우대 할인 규정 (클릭 시 표시) */}
                     {facility.discounts.length > 0 && (
                       <div>
                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5 mb-2.5">
@@ -565,14 +514,13 @@ export default function LeisurePricing() {
         </div>
       )}
 
-      {/* 4-B. COMPACT TABLE VIEW: Quick Comparison */}
+      {/* 4-B. COMPACT TABLE VIEW: Quick Comparison (분류 컬럼 배제) */}
       {viewMode === 'table' && (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                  <th className="py-3 px-4">분류</th>
                   <th className="py-3 px-4">시설명</th>
                   <th className="py-3 px-4">대표 요금</th>
                   <th className="py-3 px-4">운영시간 / 휴장일</th>
@@ -590,11 +538,6 @@ export default function LeisurePricing() {
                       onClick={() => toggleExpand(facility.id)}
                       className="hover:bg-slate-50/80 cursor-pointer transition-colors"
                     >
-                      <td className="py-3 px-4">
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
-                          {facility.categoryLabel}
-                        </span>
-                      </td>
                       <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
                         {facility.name}
                       </td>

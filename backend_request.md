@@ -39,6 +39,8 @@
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 39] `leisure-yoy-matrix` API 내 `마운틴카트(전체)` 통합 행 제공 및 분리 정합성 확립** | 마운틴카트 2025/2026년 그랜드포렛·미니포렛 분리로 인한 YoY 0% 왜곡 방지: `leisure-usage-rate`와 동일하게 2024(레거시)+2025(그랜드+미니)+2026(그랜드+미니) 통합 행 제공 요청 |
 | **P1 (완료)** | 파이프라인 | **[Ticket 41] 매일 밤 자정(00:00) 전 부문(골프·객실·레져·식음) 이용요금 및 스페셜 오퍼 자동 수집 Lambda & S3 파이프라인** | [배포/연동완료] DB 수면 모드(20:00~08:00) 100% 보존형: 매일 자정 4대 부문 및 스페셜오퍼 스크래핑 후 서버리스 S3(`resort_pricing_catalog.json`) 저장 및 API 서빙 (`leisure/pricing-catalog`) |
 | **P1 (신규)** | 정규 API | **[Ticket 42] 컨텐츠기획본부(외주식음) 영업장별 매출·점유비율(%)·매출 상위 Top 3 메뉴 및 크롤링 휴무일 통합 API** | 외주식음 전체 대비 각 영업장 매출 비중(`sharePct`), 각 영업장 POS 매출 상위 3개 메뉴(`topMenus`), S3 크롤링 휴무일(`closedDay`) 완제품 제공 요청 (`outsourced-fnb-sales`) |
+| **P0 (긴급)** | 데이터 정합성 | **[Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) 판매수량의 레저 이용객수 둔갑 및 가짜 숫자 적재 시정** | [긴급] 카페 음료 70잔·스낵 4개가 이용객수로 둔갑된 결함: `dim_pos_menu_visitor_rule` 배수 0(`is_visitor_count = 0`) 적용 및 마트 백필 |
+
 
 
 ---
@@ -3364,6 +3366,65 @@ ORDER BY venue_name, rn;
 2. **백엔드 시정 요청**:
    - 마트 적재 프로시저에 `dim_facility_team_mapping.org_division = '레저본부'` (또는 레저본부 산하 6대 파트 + 모토아레나) 조건절을 강제하여, **외주식음(밤밤테이블 등) 및 골프본부 POS 데이터가 레저 마트에 혼입되지 않도록 원천 격리**해 주십시오.
    - 격리 쿼리 반영 후 2026-10-01 ~ 2026-10-16 전체 구간 마트 테이블을 재집계(Backfill)해 주십시오.
+
+---
+
+## 🚨 [Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) POS 판매 수량의 레저 이용객수(방문객) 둔갑 및 가짜 숫자 적재 결함 긴급 시정 요청 (2026-10-17)
+
+### 47-1. 실측 적발 현황 (Zero-Hallucination Terminal Stdout)
+- **화면 위치**: 레저본부 대시보드 (`/leisure` — `src/pages/LeisureFacility.tsx` 상단 1번 섹션 "전체 영업장 실적")
+- **증상**: 이용객수 판별이 불가능한 식음·카페 매장(얼룩말카페, 핏스탑)에 **'이용객수 70명'**, **'이용객수 4명'**이라는 명백한 거짓 숫자가 집계·노출됨.
+- **`GET /api/v6/dashboard/revenue-summary?date=2026-10-16` 실측치 (`salesByFacility`)**:
+  ```json
+  [
+    {
+      "categoryCode": "TICKET",
+      "facilityName": "얼룩말카페",
+      "todayActual": 263182,
+      "todayQuantity": 70,
+      "todayVisitors": 70,
+      "mtdVisitors": 1170
+    },
+    {
+      "categoryCode": "MOTO",
+      "facilityName": "핏스탑",
+      "todayActual": 238183,
+      "todayQuantity": 4,
+      "todayVisitors": 4,
+      "mtdVisitors": 11
+    },
+    {
+      "categoryCode": "TICKET",
+      "facilityName": "미디어-뮤지엄카페",
+      "todayActual": 186818,
+      "todayQuantity": 63,
+      "todayVisitors": 0,
+      "mtdVisitors": 0
+    }
+  ]
+  ```
+- **수학적 팩트 검증**:
+  - `얼룩말카페`: 오늘 매출 263,182원 ÷ 수량 70건 = **건당 약 3,760원** (커피/아이스티 1잔 단가와 정확히 일치).
+  - 즉, 손님이 주문한 **커피/음료 70잔 판매 수량이 그대로 '이용객 70명'으로 둔갑**한 것임.
+  - 대조군인 `미디어-뮤지엄카페`는 63잔이 팔렸어도 `todayVisitors: 0명`으로 정상 처리되고 있음.
+
+### 47-2. 근본 원인 분석
+1. **식음 품목 방문객 배수 룰 누락 (`dim_pos_menu_visitor_rule`)**:
+   - 벨포레 헌법 제4조: *"FNB(식음료), BANQUET(연회) 판매 수량은 메뉴/아이템 개수이므로 무조건 `is_visitor_count = 0`이어야 한다."*
+   - `얼룩말카페`와 `핏스탑`은 메뉴별 방문객 산출 룰(`dim_pos_menu_visitor_rule`)에서 식음료 예외 처리(`visitor_multiplier = 0`)가 누락되어 있어, POS 판매 수량(커피 70잔, 스낵 4개)이 그대로 골드 마트(`mat_v6_data_mart_revenue`)에 방문객 수(1:1)로 전면 이관됨.
+2. **단말기 조직 분류의 비식음 매핑 (`dim_terminal_mapping` / `dim_facility_team_mapping`)**:
+   - `얼룩말카페`가 `TICKET(레저본부 목장 파트)`, `핏스탑`이 `MOTO(모토아레나 모토서킷 파트)`로 등록되어 있어, 티켓 시설 기본 로직을 타고 방문객 수가 자동 부여됨.
+
+### 47-3. 백엔드 조치 요청 사항
+1. **`dim_pos_menu_visitor_rule` 내 방문객 배수 0 처리 (`visitor_multiplier = 0`)**:
+   - `얼룩말카페`와 `핏스탑`의 모든 POS 판매 메뉴에 대해 `is_visitor_count = 0` 및 `visitor_multiplier = 0`을 등록해 주십시오.
+2. **골드 마트(`mat_v6_data_mart_revenue`) 방문객 수 백필(재집계)**:
+   - `얼룩말카페`와 `핏스탑`의 과거(2025~2026년) 및 금일 `visitors`, `todayVisitors`, `totalVisitors`를 모두 `0`으로 재집계(Backfill)해 주십시오.
+
+### 47-4. 프론트엔드 방어 조치 내역
+- `src/pages/LeisureFacility.tsx`:
+  - 식음·편의 시설(`얼룩말카페`, `핏스탑`, `미디어-뮤지엄카페`, `모토아레나 렌탈샵` 등)을 식별하여, 가짜 이용객 수(`이용객수 70명`) 노출을 차단하고 **`식음·편의 (이용객 미집계)`** 라벨로 안전하게 분리 표출 완료.
+
 
 
 

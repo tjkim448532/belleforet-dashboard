@@ -38,6 +38,7 @@ import GroupSales from './pages/GroupSales';
 import StrategicSimulator from './pages/StrategicSimulator';
 import WeatherSalesCorrelation from './pages/WeatherSalesCorrelation';
 import TomorrowRevenueForecast from './pages/TomorrowRevenueForecast';
+import OutsourcedFnbDashboard from './pages/OutsourcedFnbDashboard';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
@@ -92,6 +93,8 @@ export function App() {
                     <Route path="leisure-simulator" element={<LeisureSimulator />} />
                     <Route path="leisure/pricing" element={<LeisurePricing />} />
                     <Route path="leisure-pricing" element={<LeisurePricing />} />
+                    <Route path="content/outsourced-fnb" element={<OutsourcedFnbDashboard />} />
+                    <Route path="outsourced-fnb" element={<OutsourcedFnbDashboard />} />
                     <Route path="target-simulator" element={<Navigate to="/strategic-simulator" replace />} />
                     <Route path="strategic-simulator" element={<StrategicSimulator />} />
                     <Route path="target-simulator/strategic" element={<Navigate to="/strategic-simulator" replace />} />

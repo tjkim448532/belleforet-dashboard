@@ -846,8 +846,8 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
     summary: '매표소 2층에서 즐기는 돈까스, 버거, 제육덮밥, 우동, 떡볶이 등 온 가족 간편 식사',
     representativePrice: '식사류 10,000원~13,000원 / 스낵 5,000원~',
     operatingHours: '10:00 ~ 17:30 (라스트오더 17:00)',
-    closedDay: '연중무휴',
-    contact: '043-926-1000',
+    closedDay: '매주 월~수 휴장 (목~일 운영)',
+    contact: '043-926-1073',
     location: '티켓 매표소 2층',
     discountBadges: ['매표소 바로 위', '빠른 식사 지원'],
     regularPrices: [
@@ -872,14 +872,16 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
     summary: '프라이빗 글램핑 텐트에서 즐기는 낭만적인 야외 바비큐 파티 (반려견 동반 가능)',
     representativePrice: '개인 텐트(12인 정원) / 단체 텐트(42인) 100% 사전 예약제',
     operatingHours: '주중 16:00~22:30 / 주말 11:00~22:30 (브레이크타임 14:30~16:00)',
-    closedDay: '연중무휴 (예약제)',
-    contact: '043-926-1000',
+    closedDay: '매주 화요일 휴무 (공휴일·공휴일 전일 정상 운영)',
+    contact: '043-926-1076',
     location: '콘도 103동 맞은편 벨포레홀 주차장 좌측 내리막길 (도보 3분)',
     discountBadges: ['100% 사전예약제', '반려동물 동반가능 (리드줄 필수)'],
     regularPrices: [
       { name: '개인 텐트 (12인 정원)', priceWeekday: '현장/유선 예약 문의', priceWeekend: '현장/유선 예약 문의', note: '프라이빗 독립 텐트' },
       { name: '단체 텐트 (42인 정원)', priceWeekday: '현장/유선 예약 문의', priceWeekend: '현장/유선 예약 문의', note: '기업/워크숍/동호회 대관' },
-      { name: '공용 텐트 (금·토 한정)', priceWeekday: '-', priceWeekend: '무료', note: '금·토 한정 공용 공간 오픈' }
+      { name: '공용 텐트 (금·토 한정)', priceWeekday: '-', priceWeekend: '무료', note: '금·토 한정 공용 공간 오픈' },
+      { name: '한돈 삼겹살 / 목살 / 꼬들살 (100g)', priceWeekday: '12,000원', priceWeekend: '12,000원', note: '바비큐 구이용 정육' },
+      { name: '부대찌개 / 오뎅탕 밀키트', priceWeekday: '25,000원~30,000원', priceWeekend: '25,000원~30,000원', note: '캠핑 전골 밀키트' }
     ],
     discounts: [],
     requirements: ['외부 음식 및 주류 반입 금지', '반려견 동반 시 리드줄 필수 착용'],
@@ -895,8 +897,8 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
     summary: '모토아레나 서킷을 한눈에 조망하며 즐기는 핫도그 세트 및 시원한 음료',
     representativePrice: '핫도그 세트 8,000원~ / 커피·음료 4,000원~',
     operatingHours: '11:00 ~ 17:00 (식사류 주문마감 16:00, 음료마감 17:00)',
-    closedDay: '모토아레나 일정에 따름 (화요일 휴무)',
-    contact: '043-926-1000',
+    closedDay: '매주 월요일 휴무 (화~일·공휴일·연휴 운영)',
+    contact: '1566-0162',
     location: '모토아레나 내 모토플라자 3층 (주차 가능)',
     discountBadges: ['서킷 파노라마 뷰', '식사&음료'],
     regularPrices: [
@@ -917,8 +919,8 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
     summary: '벨포레 목장 안 돔하우스 앞! 제조 음료 주문 시 양 먹이 무료 증정',
     representativePrice: '시그니처 바닐라클라우드 라떼 7,000원 / 아메리카노 5,500원',
     operatingHours: '10:00 ~ 17:30 (라스트오더 17:00)',
-    closedDay: '목장 운영일과 동일',
-    contact: '043-926-1098',
+    closedDay: '연중무휴 (상시운영)',
+    contact: '043-926-1083',
     location: '벨포레 목장 내 돔하우스 앞',
     discountBadges: ['음료 구매시 양 먹이 무료', '시그니처 라떼'],
     regularPrices: [
@@ -940,7 +942,7 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
     summary: '원남호 전망을 바라보며 즐기는 프리미엄 디저트 & 스페셜티 커피',
     representativePrice: '아메리카노 4,500원 / 조각 케이크 6,500원~',
     operatingHours: '09:00 ~ 20:00',
-    closedDay: '연중무휴',
+    closedDay: '연중무휴 (상시운영)',
     contact: '043-926-1080',
     location: '투썸플레이스 정류장 앞 단독 매장',
     discountBadges: ['투썸 정품 멤버십 적립 가능', '테라스 호수 전망'],
@@ -954,25 +956,46 @@ export const LEISURE_FACILITIES: LeisureFacilityPricing[] = [
     officialUrl: 'https://belleforetresort.com/dining/1'
   },
   {
-    id: 'dining-bhc-cu',
-    name: 'BHC 치킨 & CU 편의점',
+    id: 'dining-bhc',
+    name: 'BHC 치킨 (BHC(멕시카나))',
     mainCategory: 'dining',
     mainCategoryLabel: '식음',
-    subCategory: '치킨·편의점',
-    summary: '야식 치맥을 책임지는 BHC 치킨과 24시간 편리한 CU 편의점',
-    representativePrice: '뿌링클 치킨 21,000원~ / 편의점 간편식',
-    operatingHours: 'BHC 치킨: 17:00~21:30 / CU 편의점: 24시간 운영 (22:00~13:00 무인)',
-    closedDay: '연중무휴',
-    contact: '1566-0162',
-    location: '콘도미니엄 104동 앞 (101~102동 연결 통로 도보 2분)',
-    discountBadges: ['야식 치킨 테이크아웃', '24시간 편의점'],
+    subCategory: '치킨·야식',
+    summary: '신선한 원재료와 차별화된 레시피로 콘도 투숙객의 야식 치맥을 책임지는 치킨 전문점',
+    representativePrice: '뿌링클 / 맛초킹 / 후라이드 20,000원~22,000원',
+    operatingHours: '17:00 ~ 21:30 (상시운영)',
+    closedDay: '연중무휴 (상시운영)',
+    contact: '043-926-1082',
+    location: '콘도미니엄 104동 앞 / CU편의점 옆 (101~103동 연결 통로 도보 2~3분)',
+    discountBadges: ['야식 치킨 테이크아웃', '상시운영'],
     regularPrices: [
-      { name: 'BHC 뿌링클 / 맛초킹 / 후라이드', priceWeekday: '20,000원~22,000원', priceWeekend: '20,000원~22,000원', note: '생맥주 및 콜라 세트' },
-      { name: 'CU 편의점 스낵 & 음료 & 생활용품', priceWeekday: '정가', priceWeekend: '정가', note: '주류/담배는 유인 운영 시간(13~22시)에만 구매 가능' }
+      { name: 'BHC 뿌링클 / 맛초킹 / 골드킹', priceWeekday: '21,000원~22,000원', priceWeekend: '21,000원~22,000원', note: '인기 시그니처 치킨' },
+      { name: '후라이드 / 양념 치킨', priceWeekday: '20,000원~21,000원', priceWeekend: '20,000원~21,000원', note: '기본 치킨 메뉴' }
     ],
     discounts: [],
-    requirements: ['야간 무인 시간(22:00~13:00)에는 신용카드/카카오페이 인증 후 출입 가능'],
-    notes: ['104동 앞 위치로 투숙객들의 늦은 시간 야식과 생필품 구매에 가장 편리'],
+    requirements: ['픽업만 가능 (홀 이용 및 배달 불가)'],
+    notes: ['104동 앞 위치로 투숙객들의 늦은 시간 야식 테이크아웃에 최적'],
     officialUrl: 'https://belleforetresort.com/dining/15'
+  },
+  {
+    id: 'dining-cu',
+    name: 'CU 편의점',
+    mainCategory: 'dining',
+    mainCategoryLabel: '식음',
+    subCategory: '편의점',
+    summary: '다양한 상품과 합리적 가격의 리조트 내 가장 가까운 24시간 하이브리드 편의점',
+    representativePrice: '편의점 정가 판매',
+    operatingHours: '13:00 ~ 22:00 유인 운영 / 22:00 ~ 13:00 무인 운영',
+    closedDay: '연중무휴 (24시간 상시운영)',
+    contact: '043-926-1081',
+    location: '콘도미니엄 104동 앞 / BHC 치킨 옆',
+    discountBadges: ['24시간 편의점', '유·무인 복합운영'],
+    regularPrices: [
+      { name: '스낵 / 음료 / 간편식 / 생활용품', priceWeekday: '정가', priceWeekend: '정가', note: '무인 시간대(22:00~13:00) 주류 및 담배 구매 불가' }
+    ],
+    discounts: [],
+    requirements: ['야간 무인 시간(22:00~13:00)에는 주류 및 담배 구매 불가'],
+    notes: ['콘도 101~104동에서 도보 2~3분 거리 위치'],
+    officialUrl: 'https://belleforetresort.com/dining/16'
   }
 ];

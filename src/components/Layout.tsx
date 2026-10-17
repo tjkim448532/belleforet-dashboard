@@ -316,8 +316,8 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 4. 컨텐츠기획본부 Accordion (신규 추가) */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'content' || userRole === 'leisure') && (
+          {/* 4. 컨텐츠기획본부 Accordion (외주식음 영업장 매출 현황) */}
+          {(userRole === 'admin' || userRole === 'executive' || userRole === 'content' || userRole === 'fnb' || userRole === 'leisure') && (
             <div className="mt-2">
               <button
                 onClick={() => setContentOpen(!contentOpen)}
@@ -333,22 +333,13 @@ export default function Layout() {
               {contentOpen && (
                 <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
                   <NavLink
-                    to="/leisure/pricing"
+                    to="/content/outsourced-fnb"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                       isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
                     }`}
                     onClick={handleNavClick}
                   >
-                    미디어아트·전시 기획
-                  </NavLink>
-                  <NavLink
-                    to="/facility-trend"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
-                    }`}
-                    onClick={handleNavClick}
-                  >
-                    문화예술·이벤트 실적
+                    외주식음 영업장 매출 현황
                   </NavLink>
                 </div>
               )}

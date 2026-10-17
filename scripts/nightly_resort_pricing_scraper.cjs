@@ -218,27 +218,72 @@ async function scrapeGolfFees() {
 }
 
 /**
- * 3. 식음 매장 목록 수집 (/dining) + 명칭 정규화
+ * 3. 식음 매장 목록 및 상세 휴무일·운영시간 수집 (/dining & /dining/*) + 명칭 정규화
  */
 async function scrapeDiningList() {
-  console.log('[3/5] Scraping Dining list from /dining ...');
+  console.log('[3/5] Scraping Dining list & closed days from /dining ...');
   const diningHtml = await fetchUrl('https://belleforetresort.com/dining');
-  const cardRegex = /<a[^>]+href="([^"]*dining\/\d+[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+  const cardRegex = /<a[^>]+href="([^"]*dining\/(\d+)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
   let m;
-  const rawVenues = new Set();
+  const venueMap = new Map();
   while ((m = cardRegex.exec(diningHtml)) !== null) {
-    const rawText = m[2].replace(/<[^>]+>/g, '').replace(/VIEW MORE/gi, '').trim();
-    if (rawText && rawText.length > 1) {
-      rawVenues.add(rawText);
+    const rawHref = m[1];
+    const fullUrl = rawHref.startsWith('http') ? rawHref : `https://belleforetresort.com${rawHref}`;
+    const rawText = m[3].replace(/<[^>]+>/g, '').replace(/VIEW MORE/gi, '').trim();
+    if (rawText && rawText.length > 1 && !venueMap.has(rawText)) {
+      venueMap.set(rawText, fullUrl);
     }
   }
 
-  const venues = Array.from(rawVenues).map(name => ({
-    rawName: name,
-    normalizedName: normalizeFacilityName(name)
-  }));
+  const venues = [];
+  for (const [name, detailUrl] of venueMap.entries()) {
+    const detailHtml = await fetchUrl(detailUrl);
+    const startIdx = detailHtml.indexOf('bo_v">');
+    const endIdx = detailHtml.indexOf('function board_move');
+    const bodyText = startIdx >= 0
+      ? detailHtml
+          .substring(startIdx, endIdx > startIdx ? endIdx : startIdx + 4000)
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      : '';
 
-  console.log(` -> Found ${venues.length} Dining Venues.`);
+    // 휴무일(운영일) 추출
+    let closedDay = '연중무휴 (상시운영)';
+    if (bodyText.includes('월~수 휴장') || bodyText.includes('목~일')) {
+      closedDay = '매주 월~수 휴장 (목~일 운영)';
+    } else if (bodyText.includes('화요일 휴무')) {
+      closedDay = '매주 화요일 휴무 (공휴일·전일 정상운영)';
+    } else if (bodyText.includes('월요일 휴무')) {
+      closedDay = '매주 월요일 휴무 (화~일·공휴일 운영)';
+    } else if (bodyText.includes('연중무휴')) {
+      closedDay = '연중무휴';
+    } else if (bodyText.includes('상시운영') || bodyText.includes('상시')) {
+      closedDay = '연중무휴 (상시운영)';
+    }
+
+    // 운영시간 추출
+    const timeMatch = bodyText.match(/(?:주중\s*)?\d{2}:\d{2}\s*~\s*\d{2}:\d{2}(?:[^0-9]{0,40}\))?/);
+    const operatingHours = timeMatch ? timeMatch[0].trim() : null;
+
+    // 연락처 추출
+    const telMatch = bodyText.match(/(?:043-\d{3}-\d{4}|1566-\d{4})/);
+    const contact = telMatch ? telMatch[0] : null;
+
+    venues.push({
+      rawName: name,
+      normalizedName: normalizeFacilityName(name),
+      closedDay,
+      operatingHours,
+      contact,
+      officialUrl: detailUrl
+    });
+  }
+
+  console.log(` -> Found ${venues.length} Dining Venues with closedDay metadata.`);
   return venues;
 }
 

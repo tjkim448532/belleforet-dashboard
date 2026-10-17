@@ -37,7 +37,8 @@
 | **P1 (완료)** | 정규 API | **[Ticket 35] 온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 API** | [배포/검증완료] `dim_online_members_v6`(26,922명) 중 4~9회 단골 휴면(3,085명, 79.8%) 및 10회+ 충성고객 휴면(579명, 51.3%) 등 핵심 Win-back 타겟 3,664명 마트 구축 완료 (`online-member-dormancy`) |
 | **P1 (완료)** | 정규 API | **[Ticket 36] 고객 여정 체류시간(`duration_minutes`) 구간별 1인당 객단가 및 복합 소비 시너지 API** | [배포/검증완료] `fact_customer_journeys`(7,540건) 체류시간 구간별(0분 단발 1,253건 ➔ 1~3시간 ➔ 3~6시간 ➔ 6시간+ 종일) 복합 소비 시너지 마트 구축 완료 (`customer-stay-duration-synergy`) |
 | **P1 (높음)** | 데이터 정합성 | **[Ticket 39] `leisure-yoy-matrix` API 내 `마운틴카트(전체)` 통합 행 제공 및 분리 정합성 확립** | 마운틴카트 2025/2026년 그랜드포렛·미니포렛 분리로 인한 YoY 0% 왜곡 방지: `leisure-usage-rate`와 동일하게 2024(레거시)+2025(그랜드+미니)+2026(그랜드+미니) 통합 행 제공 요청 |
-| **P1 (신규/인프라)** | 파이프라인 | **[Ticket 41] 매일 밤 자정(00:00) 전 부문(골프·객실·레져·식음) 이용요금 및 스페셜 오퍼 자동 수집 Lambda & S3 파이프라인** | [방안 A 채택] DB 수면 모드(20:00~08:00) 100% 보존형: 매일 자정 4대 부문 및 스페셜오퍼 스크래핑 후 서버리스 S3(`resort_pricing_catalog.json`) 저장 및 API 서빙 (`leisure/pricing-catalog`) |
+| **P1 (완료)** | 파이프라인 | **[Ticket 41] 매일 밤 자정(00:00) 전 부문(골프·객실·레져·식음) 이용요금 및 스페셜 오퍼 자동 수집 Lambda & S3 파이프라인** | [배포/연동완료] DB 수면 모드(20:00~08:00) 100% 보존형: 매일 자정 4대 부문 및 스페셜오퍼 스크래핑 후 서버리스 S3(`resort_pricing_catalog.json`) 저장 및 API 서빙 (`leisure/pricing-catalog`) |
+| **P1 (신규)** | 정규 API | **[Ticket 42] 컨텐츠기획본부(외주식음) 영업장별 매출·점유비율(%)·매출 상위 Top 3 메뉴 및 크롤링 휴무일 통합 API** | 외주식음 전체 대비 각 영업장 매출 비중(`sharePct`), 각 영업장 POS 매출 상위 3개 메뉴(`topMenus`), S3 크롤링 휴무일(`closedDay`) 완제품 제공 요청 (`outsourced-fnb-sales`) |
 
 
 ---
@@ -3066,8 +3067,174 @@ const FACILITY_NAME_SSOT_MAP = {
 2. **동적 연동 훅**:
    - 백엔드에서 `/api/v6/leisure/pricing-catalog`가 배포되는 즉시, S3 최신 데이터를 우선 반영하고 최상단에 **"S3 자동 동기화: 2026-10-18 00:02"** 실시간 배지를 자동 표출하도록 처리 완료되었습니다.
 
+---
 
+## 42. 🍽️ [P1 신규 정규 API] [Ticket 42] 컨텐츠기획본부(외주식음) 영업장별 매출 · 점유비율(%) · 최고 매출 메뉴 Top 3 및 크롤링 휴무일 통합 API 신설
 
+### 42-1. 배경 및 대표님 지시사항
+- **대표님/경영진 지시사항**:
+  1. 사이드바 `컨텐츠기획본부` 산하에 **외주식음 업체의 매출**을 정리하여 보여줄 것.
+  2. **전체 외주 식음업체 매출 중 해당 영업장이 차지하는 비율(`%`)**을 보여줄 것.
+  3. **각 영업장마다 가장 매출이 높은 메뉴 3개(Top 3)**를 보여줄 것.
+  4. **각 영업장의 휴무일**을 보여줄 것 (휴무일은 공식 웹사이트 크롤링 데이터에서 연동).
+- **현황 및 한계**:
+  - 현재 `/api/v6/dashboard/revenue-by-org`의 `콘텐츠기획본부 > 식음` 파트는 영업장별 매출 총계(`todayActual`, `mtdActual`, `ytdActual`)만 반환하며:
+    1) 전체 외주식음 대비 해당 영업장의 **점유 비율(`todaySharePct`, `mtdSharePct`, `ytdSharePct`)이 누락**되어 있음 (프론트엔드 무관용 원칙에 따라 클라이언트에서 `venueSales / totalSales * 100` 나눗셈 연산 금지).
+    2) `venue.tickets` 배열이 개별 POS 메뉴명이 아닌 `"ticketName": "일반"` 단일 행으로 뭉뚱그려져 있어, **각 영업장별 매출 상위 3개 메뉴(`topMenus`)를 알 수 없음**.
 
+---
 
+### 42-2. 요청 엔드포인트 및 파라미터 규격
+- **엔드포인트**: `GET /api/v6/report/outsourced-fnb-sales`
+- **쿼리 파라미터**:
+  - 단일 일자 조회: `?date=YYYY-MM-DD`
+  - 기간 조회: `?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+
+---
+
+### 42-3. 백엔드 데이터 추출 및 연산 로직 (MariaDB SSOT + S3 크롤링 결합)
+
+#### 1) 외주식음 영업장별 매출 및 점유 비율(`sharePct`) 산출
+- **원천/마트**: `mat_v6_data_mart_revenue` (또는 `fact_fnb_sales_v6` + `dim_facility_team_mapping` where `org_division = '콘텐츠기획본부'` AND `part_name = '식음'`)
+- **비율(`sharePct`) 사전 연산 (DB 단 처리 필수)**:
+  - `todaySharePct = ROUND(venue_today_actual * 100.0 / NULLIF(SUM(venue_today_actual) OVER (), 0), 2)`
+  - `mtdSharePct = ROUND(venue_mtd_actual * 100.0 / NULLIF(SUM(venue_mtd_actual) OVER (), 0), 2)`
+  - `ytdSharePct = ROUND(venue_ytd_actual * 100.0 / NULLIF(SUM(venue_ytd_actual) OVER (), 0), 2)`
+  - 최대 잔여법(Largest Remainder Method) 또는 소수점 2자리 반올림 보정을 통해 $\sum \text{sharePct} = 100.00\%$ 정합성 유지.
+
+#### 2) 각 영업장별 매출 상위 메뉴 Top 3 (`topMenus`) 추출 SQL
+- **원천 테이블**: `raw_포스_메뉴_v6` (또는 메뉴 단위 집계 마트 `mat_v6_fnb_menu_daily`)와 `dim_terminal_mapping` / `dim_facility_team_mapping` 조인.
+- **권장 쿼리 예시**:
+```sql
+WITH MenuAgg AS (
+  SELECT 
+    m.standard_venue_name AS venue_name,
+    p.메뉴명 AS menu_name,
+    ROUND(SUM(CAST(REPLACE(p.실매출액, ',', '') AS DECIMAL(15,2)) / 1.1)) AS net_sales,
+    SUM(CAST(REPLACE(p.수량, ',', '') AS SIGNED)) AS sales_qty
+  FROM raw_포스_메뉴_v6 p
+  JOIN dim_terminal_mapping m ON p.영업장명 = m.raw_venue_name
+  WHERE p.영업일자 BETWEEN :startDate AND :endDate
+    AND m.org_division = '콘텐츠기획본부'
+    AND m.part_name = '식음'
+    AND p.메뉴명 IS NOT NULL
+    AND p.메뉴명 NOT IN ('', '할인', '봉사료', '공병보증금')
+  GROUP BY m.standard_venue_name, p.메뉴명
+  HAVING net_sales > 0
+),
+RankedMenus AS (
+  SELECT 
+    venue_name,
+    menu_name,
+    net_sales,
+    sales_qty,
+    ROUND(net_sales / NULLIF(sales_qty, 0)) AS unit_price,
+    ROUND(net_sales * 100.0 / NULLIF(SUM(net_sales) OVER (PARTITION BY venue_name), 0), 2) AS venue_share_pct,
+    ROW_NUMBER() OVER (PARTITION BY venue_name ORDER BY net_sales DESC, sales_qty DESC) AS rn
+  FROM MenuAgg
+)
+SELECT 
+  venue_name AS venueName,
+  rn AS `rank`,
+  menu_name AS menuName,
+  net_sales AS sales,
+  sales_qty AS quantity,
+  unit_price AS unitPrice,
+  venue_share_pct AS venueSharePct
+FROM RankedMenus
+WHERE rn <= 3
+ORDER BY venue_name, rn;
+```
+
+#### 3) 각 영업장의 휴무일(`closedDay`) 및 운영시간(`operatingHours`) 크롤링 데이터 결합
+- `scripts/nightly_resort_pricing_scraper.cjs`의 `scrapeDiningList()` 함수를 업그레이드하여, 매일 자정 `https://belleforetresort.com/dining/*` 상세 페이지에서 각 매장의 `closedDay`(휴무일), `operatingHours`(운영시간), `contact`(연락처), `officialUrl`(상세 링크)을 추출하도록 반영 완료함:
+  - **딜라이트** (`/dining/2`): `"매주 월~수 휴장 (목~일 운영)"` (`10:00 ~ 17:30`)
+  - **밤밤테이블** (`/dining/13`): `"매주 화요일 휴무 (공휴일·전일 정상운영)"` (`주중 16:00 ~ 22:30 / 주말 11:00 ~ 22:30`)
+  - **핏스탑** (`/dining/10`): `"매주 월요일 휴무 (화~일·공휴일 운영)"` (`11:00 ~ 17:00`)
+  - **남도예담** (`/dining/4`): `"연중무휴"` (`10:30 ~ 21:00`)
+  - **브리스킷346** (`/dining/6`): `"연중무휴 (상시운영)"` (`11:30 ~ 21:00`)
+  - **쿠치나** (`/dining/7`): `"연중무휴 (상시운영)"` (`07:00 ~ 10:00`)
+  - **투썸플레이스** (`/dining/1`): `"연중무휴 (상시운영)"` (`09:00 ~ 20:00`)
+  - **얼룩말카페** (`/dining/3`): `"연중무휴 (상시운영)"` (`10:00 ~ 17:30`)
+  - **BHC 치킨 / BHC(멕시카나)** (`/dining/15`): `"연중무휴 (상시운영)"` (`17:00 ~ 21:30`)
+  - **CU 편의점** (`/dining/16`): `"연중무휴 (24시간 상시운영)"` (`13:00 ~ 22:00 유인 / 22:00 ~ 13:00 무인`)
+
+---
+
+### 42-4. 기대 응답 JSON 규격 (`GET /api/v6/report/outsourced-fnb-sales`)
+```json
+{
+  "status": "success",
+  "data": {
+    "queryPeriod": {
+      "startDate": "2026-10-15",
+      "endDate": "2026-10-15"
+    },
+    "summary": {
+      "todayActual": 13457169,
+      "todayLy": 12688081,
+      "todayGrowth": 6.06,
+      "mtdActual": 291449097,
+      "mtdLy": 307907346,
+      "mtdGrowth": -5.35,
+      "ytdActual": 5031178525,
+      "ytdLy": 4774067437,
+      "ytdGrowth": 5.39,
+      "totalVenuesCount": 10
+    },
+    "venues": [
+      {
+        "venueName": "남도예담",
+        "partName": "식음",
+        "todayActual": 5839727,
+        "todayLy": 3891999,
+        "todayGrowth": 50.04,
+        "todayQuantity": 125,
+        "mtdActual": 86735364,
+        "mtdLy": 83428996,
+        "mtdGrowth": 3.96,
+        "mtdQuantity": 755,
+        "ytdActual": 1416840611,
+        "ytdLy": 1318570301,
+        "ytdGrowth": 7.45,
+        "ytdQuantity": 38273,
+        "todaySharePct": 43.39,
+        "mtdSharePct": 29.76,
+        "ytdSharePct": 28.16,
+        "sharePct": 28.16,
+        "closedDay": "연중무휴",
+        "operatingHours": "10:30 ~ 21:00 (라스트오더 20:00)",
+        "contact": "043-926-1074",
+        "officialUrl": "https://belleforetresort.com/dining/4",
+        "topMenus": [
+          {
+            "rank": 1,
+            "menuName": "한우 떡갈비 정식",
+            "sales": 542100000,
+            "quantity": 15200,
+            "unitPrice": 35454,
+            "venueSharePct": 38.26
+          },
+          {
+            "rank": 2,
+            "menuName": "한돈 떡갈비 정식",
+            "sales": 418500000,
+            "quantity": 16440,
+            "unitPrice": 25454,
+            "venueSharePct": 29.54
+          },
+          {
+            "rank": 3,
+            "menuName": "반반 떡갈비 정식",
+            "sales": 215400000,
+            "quantity": 7180,
+            "unitPrice": 30000,
+            "venueSharePct": 15.20
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 

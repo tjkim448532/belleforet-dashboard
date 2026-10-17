@@ -309,23 +309,10 @@ export default function MonthlyTrevporChart() {
   const kpiHighlights = useMemo(() => {
     if (targetPeriodMonths.length === 0) return null;
 
-    let totalTyRevenue = 0;
-    let totalTyAvailRooms = 0;
-    let totalLyRevenue = 0;
-    let totalLyAvailRooms = 0;
     let maxMonth = targetPeriodMonths[0];
     let maxTrevpar = 0;
 
     targetPeriodMonths.forEach(m => {
-      if (m.ty) {
-        totalTyRevenue += (metricMode === 'TOTAL' ? m.ty.totalRevenue : m.ty.netRevenueWithoutGolf) || 0;
-        totalTyAvailRooms += m.ty.availableRooms || 0;
-      }
-      if (m.ly) {
-        totalLyRevenue += (metricMode === 'TOTAL' ? m.ly.totalRevenue : m.ly.netRevenueWithoutGolf) || 0;
-        totalLyAvailRooms += m.ly.availableRooms || 0;
-      }
-      
       const tyVal = getTrevparValue(m.ty, metricMode) || 0;
       if (tyVal > maxTrevpar) {
         maxTrevpar = tyVal;

@@ -18,7 +18,6 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { getLatestClosedDateStr } from '../lib/dateUtils';
-import { LEISURE_FACILITIES } from '../data/leisurePricingData';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -87,47 +86,6 @@ const showPct = (val: number | null | undefined): string => {
   return `${Number(val).toFixed(2)}%`;
 };
 
-// 크롤링 매장명 <-> DB 표준 영업장명 매칭 헬퍼 (단순 식별용)
-function matchCrawledDiningInfo(venueName: string, crawledDiningList: any[]) {
-  const cleanVenue = venueName.replace(/\s+/g, '');
-
-  // 1. S3 실시간 크롤링 diningVenues 매칭
-  const matchedS3 = crawledDiningList.find((d: any) => {
-    const norm = String(d.normalizedName || d.rawName || '').replace(/\s+/g, '');
-    if (!norm) return false;
-    if (cleanVenue.includes('BHC') && norm.includes('BHC')) return true;
-    if (cleanVenue.includes('CU') && norm.includes('CU')) return true;
-    return norm === cleanVenue || cleanVenue.includes(norm) || norm.includes(cleanVenue);
-  });
-
-  // 2. 공식 크롤링 마스터 카탈로그(LEISURE_FACILITIES dining 부문) 매칭
-  const diningFacilities = LEISURE_FACILITIES.filter(f => f.mainCategory === 'dining');
-  const matchedCatalog = diningFacilities.find(f => {
-    const fName = f.name.replace(/\s+/g, '');
-    if (cleanVenue.includes('BHC') && fName.includes('BHC')) return true;
-    if (cleanVenue.includes('CU') && fName.includes('CU')) return true;
-    if (cleanVenue.includes('남도예담') && fName.includes('남도예담')) return true;
-    if (cleanVenue.includes('브리스킷') && fName.includes('브리스킷')) return true;
-    if (cleanVenue.includes('쿠치나') && fName.includes('쿠치나')) return true;
-    if (cleanVenue.includes('투썸') && fName.includes('투썸')) return true;
-    if (cleanVenue.includes('딜라이트') && fName.includes('딜라이트')) return true;
-    if (cleanVenue.includes('밤밤테이블') && fName.includes('밤밤테이블')) return true;
-    return fName.includes(cleanVenue);
-  });
-
-  return {
-    closedDay: matchedS3?.closedDay || matchedCatalog?.closedDay || '크롤링 정보 확인 중 (계절/임시 운영)',
-    operatingHours: matchedS3?.operatingHours || matchedCatalog?.operatingHours || '-',
-    contact: matchedS3?.contact || matchedCatalog?.contact || undefined,
-    location: matchedCatalog?.location || undefined,
-    officialUrl: matchedS3?.officialUrl || matchedCatalog?.officialUrl || undefined,
-    crawledMenus: matchedCatalog?.regularPrices?.slice(0, 3).map(rp => ({
-      name: rp.name,
-      price: rp.priceWeekday
-    })) || []
-  };
-}
-
 export default function OutsourcedFnbDashboard() {
   const { startDate, endDate, isRange } = useDate();
   const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
@@ -154,23 +112,15 @@ export default function OutsourcedFnbDashboard() {
         : `date=${startDate || latestClosed}`;
 
       try {
-        // 1. 전용 외주식음 API (Ticket 42), 2. 조직별 정산 SSOT API, 3. S3 자정 크롤링 카탈로그 API 동시 호출
-        const [dedicatedRes, orgRes, catalogRes] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/report/outsourced-fnb-sales?${query}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${query}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/leisure/pricing-catalog`).catch(() => null)
-        ]);
+        const dedicatedRes = await secureFetcher(`${API_BASE}/api/v6/report/outsourced-fnb-sales?${query}`);
 
         if (isCancelled) return;
 
-        const catalogPayload = catalogRes?.data ?? catalogRes;
-        const crawledDiningList = Array.isArray(catalogPayload?.diningVenues) ? catalogPayload.diningVenues : [];
-        if (catalogPayload?.lastUpdated) {
-          setCatalogLastUpdated(`${String(catalogPayload.lastUpdated).replace('T', ' ').substring(0, 16)} (S3 크롤링 동기화)`);
+        const dedicatedPayload = dedicatedRes?.data ?? dedicatedRes;
+        if (dedicatedPayload?.metadata?.lastUpdated || dedicatedPayload?.lastUpdated) {
+          setCatalogLastUpdated(`${String(dedicatedPayload.metadata?.lastUpdated || dedicatedPayload.lastUpdated).replace('T', ' ').substring(0, 16)} (S3 크롤링 동기화)`);
         }
 
-        // Case A: [Ticket 42] 전용 API (/api/v6/report/outsourced-fnb-sales) 가 배포된 경우 100% 우선 바인딩
-        const dedicatedPayload = dedicatedRes?.data ?? dedicatedRes;
         if (
           dedicatedPayload &&
           dedicatedPayload.summary &&
@@ -193,7 +143,6 @@ export default function OutsourcedFnbDashboard() {
           });
 
           const mappedVenues: OutsourcedFnbVenueData[] = dedicatedPayload.venues.map((v: any) => {
-            const crawled = matchCrawledDiningInfo(v.venueName || '', crawledDiningList);
             const rawTopMenus = Array.isArray(v.topMenus) ? v.topMenus.slice(0, 3) : [];
             return {
               venueName: v.venueName,
@@ -222,12 +171,12 @@ export default function OutsourcedFnbDashboard() {
                 unitPrice: m.unitPrice !== undefined ? Number(m.unitPrice) : undefined,
                 venueSharePct: m.venueSharePct ?? m.sharePct ?? null
               })),
-              closedDay: v.closedDay || crawled.closedDay,
-              operatingHours: v.operatingHours || crawled.operatingHours,
-              contact: v.contact || crawled.contact,
-              location: v.location || crawled.location,
-              officialUrl: v.officialUrl || crawled.officialUrl,
-              crawledMenus: crawled.crawledMenus
+              closedDay: v.closedDay || '-',
+              operatingHours: v.operatingHours || '-',
+              contact: v.contact || undefined,
+              location: v.location || undefined,
+              officialUrl: v.officialUrl || undefined,
+              crawledMenus: Array.isArray(v.crawledMenus) ? v.crawledMenus : []
             };
           });
 
@@ -235,86 +184,10 @@ export default function OutsourcedFnbDashboard() {
           return;
         }
 
-        // Case B: 전용 API 배포 전 — 기존 V6 공식 정산 API (revenue-by-org)의 콘텐츠기획본부 > 식음 파트 완제품 바인딩
         setIsDedicatedApiLive(false);
-        const orgPayload = orgRes?.data ?? orgRes;
-        const divisions = Array.isArray(orgPayload?.divisions) ? orgPayload.divisions : [];
-        const contentDiv = divisions.find(
-          (d: any) => d.orgDivision === '콘텐츠기획본부' || d.orgDivision === '컨텐츠기획본부'
-        );
-
-        if (!contentDiv) {
-          setSummary(null);
-          setVenues([]);
-          setError('콘텐츠기획본부(외주식음) 정산 데이터를 찾을 수 없습니다.');
-          return;
-        }
-
-        const fnbPart = (contentDiv.parts || []).find((p: any) => p.partName === '식음') || contentDiv.parts?.[0];
-        const partSub = fnbPart?.partSubtotal || fnbPart?.part_subtotal || contentDiv.divisionSubtotal;
-        const rawVenues = Array.isArray(fnbPart?.venues) ? fnbPart.venues : [];
-
-        setSummary({
-          todayActual: Number(partSub?.todayActual ?? 0),
-          todayLy: Number(partSub?.todayLy ?? 0),
-          todayGrowth: partSub?.todayGrowth ?? null,
-          mtdActual: Number(partSub?.mtdActual ?? 0),
-          mtdLy: Number(partSub?.mtdLy ?? 0),
-          mtdGrowth: partSub?.mtdGrowth ?? null,
-          ytdActual: Number(partSub?.ytdActual ?? 0),
-          ytdLy: Number(partSub?.ytdLy ?? 0),
-          ytdGrowth: partSub?.ytdGrowth ?? null,
-          totalVenuesCount: rawVenues.length
-        });
-
-        const mappedFromOrg: OutsourcedFnbVenueData[] = rawVenues.map((v: any) => {
-          const vs = v.venueSubtotal || {};
-          const crawled = matchCrawledDiningInfo(v.venueName || '', crawledDiningList);
-
-          // tickets 배열에 '일반' 외 실제 메뉴명이 내려오는 경우에만 Top 3로 수용 (Zero-Guessing)
-          const validTickets = Array.isArray(v.tickets)
-            ? v.tickets.filter((t: any) => t.ticketName && t.ticketName !== '일반' && t.ticketName !== '기프트/상품')
-            : [];
-
-          return {
-            venueName: v.venueName,
-            partName: fnbPart?.partName || '식음',
-            todayActual: Number(vs.todayActual ?? 0),
-            todayLy: Number(vs.todayLy ?? 0),
-            todayGrowth: vs.todayGrowth ?? null,
-            todayQuantity: Number(vs.todayQuantity ?? 0),
-            mtdActual: Number(vs.mtdActual ?? 0),
-            mtdLy: Number(vs.mtdLy ?? 0),
-            mtdGrowth: vs.mtdGrowth ?? null,
-            mtdQuantity: Number(vs.mtdQuantity ?? 0),
-            ytdActual: Number(vs.ytdActual ?? 0),
-            ytdLy: Number(vs.ytdLy ?? 0),
-            ytdGrowth: vs.ytdGrowth ?? null,
-            ytdQuantity: Number(vs.ytdQuantity ?? 0),
-            // [Zero-Proxy / Fail-Stop]: 백엔드에서 사전 계산된 비중(%) 필드가 있으면 바인딩, 없으면 null ('-')
-            todaySharePct: vs.todaySharePct ?? v.todaySharePct ?? null,
-            mtdSharePct: vs.mtdSharePct ?? v.mtdSharePct ?? null,
-            ytdSharePct: vs.ytdSharePct ?? v.ytdSharePct ?? null,
-            sharePct: vs.sharePct ?? v.sharePct ?? null,
-            topMenus: Array.isArray(v.topMenus)
-              ? v.topMenus.slice(0, 3)
-              : validTickets.slice(0, 3).map((t: any, idx: number) => ({
-                  rank: idx + 1,
-                  menuName: t.ticketName,
-                  sales: Number(t.ytdActual ?? t.todayActual ?? 0),
-                  quantity: Number(t.ytdQuantity ?? t.todayQuantity ?? 0),
-                  venueSharePct: t.sharePct ?? null
-                })),
-            closedDay: v.closedDay || crawled.closedDay,
-            operatingHours: v.operatingHours || crawled.operatingHours,
-            contact: crawled.contact,
-            location: crawled.location,
-            officialUrl: crawled.officialUrl,
-            crawledMenus: crawled.crawledMenus
-          };
-        });
-
-        setVenues(mappedFromOrg);
+        setSummary(null);
+        setVenues([]);
+        setError('콘텐츠기획본부(외주식음) 정산 데이터를 찾을 수 없습니다.');
       } catch (err: any) {
         if (!isCancelled) {
           setError(err?.message || '외주식음 데이터를 불러오는 중 오류가 발생했습니다.');

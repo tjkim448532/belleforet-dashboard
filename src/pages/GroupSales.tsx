@@ -345,31 +345,25 @@ export default function GroupSales() {
     fetchSalesData();
   }, [startDate, endDate, isRange]);
 
-  // 🏛️ 판매방식(채널)별 × 평형별 세그먼트 정규화 및 집계
+  // 🏛️ 판매방식(채널)별 × 평형별 세그먼트 정규화 및 집계 (100% 백엔드 완제품 바인딩)
   const { channelGroups, grandTotals, uniqueRoomTypes, availableChannels } = useMemo(() => {
-    let grandRevenue = 0;
-    let grandRooms = 0;
-    let grandGuests = 0;
-
     const channelMap = new Map<string, RawChannelRoomItem[]>();
+    const subtotalMap = new Map<string, RawChannelRoomItem>();
     const roomTypeSet = new Set<string>();
-
-    const normalizeRoomTypeName = (raw: string): string => {
-      const trimmed = raw.trim();
-      // 산하 PMS 미배정 원천 코드('ROOM')를 비즈니스 표준 명칭인 '미지정(배정대기)'으로 정규화
-      if (trimmed.toUpperCase() === 'ROOM') {
-        return '미지정(배정대기)';
-      }
-      return trimmed;
-    };
+    let grandTotalRecord: RawChannelRoomItem | undefined;
 
     channelRawData.forEach(item => {
       const channel = String(item.channelName || item.channel_name || item.channel || '기타채널').trim();
-      const rawRoom = String(item.roomType || item.room_type || '기타').trim();
-      const room = normalizeRoomTypeName(rawRoom);
+      const room = String(item.roomType || item.room_type || '기타').trim();
 
-      // 전체 소계 레코드(isGrandTotal, isChannelSubtotal)는 제외하고 세부 조합 항목만 파싱
-      if (channel === '총합계' || room === '전체') return;
+      if ((item as any).isGrandTotal || channel === '총합계') {
+        grandTotalRecord = item;
+        return;
+      }
+      if ((item as any).isChannelSubtotal || (item as any).isSubtotal || room === '전체') {
+        subtotalMap.set(channel, item);
+        return;
+      }
 
       const rooms = Number(item.todayRooms ?? item.mtdRooms ?? 0);
       const revenue = Number(item.todayRevenue ?? item.mtdRevenue ?? 0);
@@ -382,10 +376,6 @@ export default function GroupSales() {
       }
       channelMap.get(channel)!.push(item);
 
-      grandRevenue += revenue;
-      grandRooms += rooms;
-      grandGuests += Number(item.todayGuests ?? item.guests ?? item.mtdGuests ?? 0);
-
       roomTypeSet.add(room);
     });
 
@@ -393,23 +383,14 @@ export default function GroupSales() {
     const groups: ChannelGroup[] = [];
 
     channelMap.forEach((items, chName) => {
-      let chRooms = 0;
-      let chRev = 0;
-      let chGuests = 0;
-
       const segItems: SegmentItem[] = [];
 
       items.forEach(raw => {
-        const rawRType = String(raw.roomType || raw.room_type || '기타').trim();
-        const rType = normalizeRoomTypeName(rawRType);
+        const rType = String(raw.roomType || raw.room_type || '기타').trim();
         const rooms = Number(raw.todayRooms ?? raw.mtdRooms ?? 0);
         const rev = Number(raw.todayRevenue ?? raw.mtdRevenue ?? 0);
         const adr = Number(raw.todayAdr ?? raw.adr ?? 0);
         const guests = Number(raw.todayGuests ?? raw.guests ?? raw.mtdGuests ?? 0);
-
-        chRooms += rooms;
-        chRev += rev;
-        chGuests += guests;
 
         segItems.push({
           roomType: rType,
@@ -427,20 +408,21 @@ export default function GroupSales() {
 
       const meta = getChannelMeta(chName);
 
-      const subtotalItem = items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal);
-      const subtotalAdr = Number(subtotalItem?.adr ?? 0);
+      const subtotalItem = subtotalMap.get(chName) || items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal);
+      const subtotalRooms = Number((subtotalItem as any)?.todayRooms ?? (subtotalItem as any)?.mtdRooms ?? (subtotalItem as any)?.totalRooms ?? 0);
+      const subtotalRev = Number((subtotalItem as any)?.todayRevenue ?? (subtotalItem as any)?.mtdRevenue ?? (subtotalItem as any)?.totalRevenue ?? 0);
+      const subtotalGuests = Number((subtotalItem as any)?.todayGuests ?? (subtotalItem as any)?.guests ?? (subtotalItem as any)?.mtdGuests ?? (subtotalItem as any)?.totalGuests ?? 0);
+      const subtotalAdr = Number(subtotalItem?.adr ?? (subtotalItem as any)?.todayAdr ?? (subtotalItem as any)?.averageAdr ?? 0);
       const channelSharePct = Number((subtotalItem as any)?.revenueSharePct ?? (subtotalItem as any)?.sharePct ?? 0);
-      const channelAdr = subtotalAdr;
-      const groupGuests = chGuests;
 
       groups.push({
         channelName: chName,
         iconType: meta.iconType,
         badgeColor: meta.badgeColor,
-        totalRooms: chRooms,
-        totalRevenue: chRev,
-        totalGuests: groupGuests,
-        averageAdr: channelAdr,
+        totalRooms: subtotalRooms,
+        totalRevenue: subtotalRev,
+        totalGuests: subtotalGuests,
+        averageAdr: subtotalAdr,
         revenueSharePct: channelSharePct,
         items: segItems
       });
@@ -451,17 +433,41 @@ export default function GroupSales() {
 
     const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => a.localeCompare(b));
 
-    const rawSummaryAdr = (!Array.isArray(channelRawData) && typeof channelRawData === 'object')
-      ? Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
-      : 0;
+    const grandRev = Number(
+      (grandTotalRecord as any)?.todayRevenue ??
+      (grandTotalRecord as any)?.mtdRevenue ??
+      (grandTotalRecord as any)?.totalRevenue ??
+      seminarShare?.total?.totalRevenue ??
+      0
+    );
+    const grandRms = Number(
+      (grandTotalRecord as any)?.todayRooms ??
+      (grandTotalRecord as any)?.mtdRooms ??
+      (grandTotalRecord as any)?.totalRooms ??
+      seminarShare?.total?.totalRooms ??
+      0
+    );
+    const grandGsts = Number(
+      (grandTotalRecord as any)?.todayGuests ??
+      (grandTotalRecord as any)?.guests ??
+      (grandTotalRecord as any)?.mtdGuests ??
+      (grandTotalRecord as any)?.totalGuests ??
+      0
+    );
+    const grandAdrVal = Number(
+      grandTotalRecord?.adr ??
+      (grandTotalRecord as any)?.todayAdr ??
+      (grandTotalRecord as any)?.averageAdr ??
+      0
+    );
 
     return {
       channelGroups: groups,
       grandTotals: {
-        revenue: grandRevenue,
-        rooms: grandRooms,
-        guests: grandGuests,
-        adr: rawSummaryAdr
+        revenue: grandRev,
+        rooms: grandRms,
+        guests: grandGsts,
+        adr: grandAdrVal
       },
       uniqueRoomTypes: sortedRoomTypes,
       availableChannels: groups.map(g => g.channelName)
@@ -637,44 +643,34 @@ export default function GroupSales() {
           name,
           corporateName: g.corporateName || name,
           categoryName: g.categoryName || '기업 세미나/워크샵',
-          visitCount: 0,
-          isRepeatCustomer: false,
-          totalRooms: 0,
-          totalPax: 0,
-          totalRevenue: 0,
-          roomTypesSummary: [],
-          firstCheckIn: checkIn,
-          lastCheckIn: checkIn,
+          visitCount: Number((g as any).visitCount ?? 1),
+          isRepeatCustomer: Boolean((g as any).isRepeatCustomer ?? ((g as any).visitCount > 1)),
+          totalRooms: Number((g as any).organizationTotalRooms ?? rooms),
+          totalPax: Number((g as any).organizationTotalPax ?? pax),
+          totalRevenue: Number((g as any).organizationTotalRevenue ?? rev),
+          roomTypesSummary: [...types],
+          firstCheckIn: (g as any).firstCheckIn || checkIn,
+          lastCheckIn: (g as any).lastCheckIn || checkIn,
           primaryContact: g.contactName || '',
           primaryPhone: g.contactPhone || '',
           salesManager: g.salesManager || '',
-          visits: []
+          visits: [visit]
+        });
+      } else {
+        const org = orgMap.get(name)!;
+        org.visits.push(visit);
+        if (checkIn && (!org.firstCheckIn || checkIn < org.firstCheckIn)) {
+          org.firstCheckIn = checkIn;
+        }
+        if (checkIn && (!org.lastCheckIn || checkIn > org.lastCheckIn)) {
+          org.lastCheckIn = checkIn;
+        }
+        types.forEach(t => {
+          if (!org.roomTypesSummary.includes(t)) {
+            org.roomTypesSummary.push(t);
+          }
         });
       }
-
-      const org = orgMap.get(name)!;
-      org.visitCount += 1;
-      org.totalRooms += rooms;
-      org.totalPax += pax;
-      org.totalRevenue += rev;
-      org.visits.push(visit);
-
-      if (org.visitCount > 1) {
-        org.isRepeatCustomer = true;
-      }
-
-      if (checkIn && (!org.firstCheckIn || checkIn < org.firstCheckIn)) {
-        org.firstCheckIn = checkIn;
-      }
-      if (checkIn && (!org.lastCheckIn || checkIn > org.lastCheckIn)) {
-        org.lastCheckIn = checkIn;
-      }
-
-      types.forEach(t => {
-        if (!org.roomTypesSummary.includes(t)) {
-          org.roomTypesSummary.push(t);
-        }
-      });
     });
 
     const list = Array.from(orgMap.values());
@@ -687,12 +683,12 @@ export default function GroupSales() {
       return b.totalRooms - a.totalRooms;
     });
 
-    const repeats = Number((corporateSummary as any)?.seminar?.repeatGroupsCount ?? list.filter(o => o.isRepeatCustomer).length);
-    const totalRooms = Number((corporateSummary as any)?.seminar?.totalRooms ?? 0);
+    const repeats = Number((corporateSummary as any)?.repeatGroupsCount ?? (corporateSummary as any)?.seminar?.repeatGroupsCount ?? 0);
+    const totalRooms = Number((corporateSummary as any)?.mice?.roomsCount ?? (corporateSummary as any)?.seminar?.totalRooms ?? 0);
 
     return {
       organizedGroups: list,
-      totalSeminarGroupsCount: Number((corporateSummary as any)?.seminar?.totalGroupsCount ?? list.length),
+      totalSeminarGroupsCount: Number((corporateSummary as any)?.mice?.groupsCount ?? (corporateSummary as any)?.seminar?.totalGroupsCount ?? (corporateSummary as any)?.totalGroups ?? 0),
       repeatGroupsCount: repeats,
       totalBookedRoomsInGroups: totalRooms
     };

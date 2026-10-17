@@ -219,6 +219,39 @@ files.forEach(filePath => {
         });
       }
     }
+
+    // 13. 상호명 정규식 추론 및 스마트 텍스트 매핑 검사 (Zero Regex Guessing / Rule 4)
+    const regexGuessingMatch = codeOnly.match(/isNonVisitorVenue|얼룩말카페\|핏스탑|trimmed\.toUpperCase\(\)\s*===\s*['"]ROOM['"]|\.replace\(\/\\s\*\\\[소계\\\]\/g/);
+    if (regexGuessingMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Regex Guessing & Smart Text Mapping Forbidden (상호명 정규식 추론 및 임의 텍스트 매핑 금지)',
+        code: codeOnly
+      });
+    }
+
+    // 14. JSX 내 하드코딩된 정수 퍼센트 범위 검사 (>-35% ~ -90%<, >+7% ~ +15%< 등)
+    const intPctRangeMatch = codeOnly.match(/>\s*[+-]\d+%\s*~\s*[+-]?\d+%/);
+    if (intPctRangeMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Hardcoded Integer Percentage Range in JSX (JSX 내 하드코딩된 퍼센트 범위 삽입 금지)',
+        code: codeOnly
+      });
+    }
+
+    // 15. 대시보드/리포트 내 클라이언트 단가·팀수·전년비·RevPAR 인라인 나눗셈/곱셈 합성 차단
+    const inlineKpiDivisionMatch = codeOnly.match(/Math\.round\(visitors\s*\/\s*4\)|Math\.round\(rev\s*\/\s*visitors\)|\(row\.revenue\s*-\s*row\.lyRev\)\s*\/\s*row\.lyRev|yoyPrimaryDiff\s*\/\s*prev(?:Guests|Rooms)|yoyRevDiff\s*\/\s*prevRev|Math\.round\((?:weekdayAdr|weekendAdr)\s*\*\s*\((?:weekdayOcc|weekendOcc)\s*\/\s*100\)\)/);
+    if (inlineKpiDivisionMatch) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Inline Client-Side KPI Arithmetic Forbidden (클라이언트 인라인 단가/팀수/전년비/RevPAR 사칙연산 금지)',
+        code: codeOnly
+      });
+    }
   });
 });
 

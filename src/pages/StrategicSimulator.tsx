@@ -609,20 +609,15 @@ export default function StrategicSimulator() {
   }, [rawCategories, input.includeGolf, rawGrandTarget2026, rawGrandTotal2025, strategicMultipliers]);
 
   const grandTargetTotal = useMemo(() => {
-    const rawTarget = rawGrandTarget2026;
-    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF');
-    const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
-    const rawGrandTotal = apiData?.summary?.grandTotal2025 ?? 0;
-    const totalBaseRev = input.includeGolf ? rawGrandTotal : Math.max(0, rawGrandTotal - golfActual2025);
-    return input.includeGolf ? rawTarget : Math.round(rawTarget * (totalBaseRev / (rawGrandTotal || 1)));
-  }, [input.includeGolf, rawGrandTarget2026, rawCategories, apiData]);
+    return rawGrandTarget2026;
+  }, [rawGrandTarget2026]);
 
   // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {
     // If backend API provided actuals in summary
     if (apiData?.summary?.grandActual2026 !== undefined && apiData?.summary?.grandActual2026 > 0) {
       const act = apiData.summary.grandActual2026;
-      const rate = grandTargetTotal > 0 ? Number(((act / grandTargetTotal) * 100).toFixed(1)) : 0;
+      const rate = Number(apiData.summary.overallAchievementRate ?? 0);
       return {
         revenue: act,
         rate,
@@ -640,17 +635,37 @@ export default function StrategicSimulator() {
       statusText: `${input.targetYear}년 ${monthLabel} 목표 실행 단계 (실적 집계 전)`,
       isUpcoming: true
     };
-  }, [input.selectedMonth, input.targetYear, grandTargetTotal, apiData]);
+  }, [input.selectedMonth, input.targetYear, apiData]);
 
-  // Group Category Facilities into 2-Depth Part Groups
+  // Group Category Facilities into 2-Depth Part Groups (백엔드 parts 사전 집계 우선 바인딩)
   const getCategoryParts = useMemo(() => {
     return (cat: ApiCategory): ApiPartGroup[] => {
-      const map: Record<string, ApiPartGroup> = {};
+      const backendParts = (cat as any).parts;
+      if (Array.isArray(backendParts) && backendParts.length > 0) {
+        return backendParts.map((p: any) => {
+          const rawPart = String(p.partName || p.teamName || '일반').trim();
+          const partKey = `${cat.categoryCode}_${rawPart}`;
+          const matchedFacilities = (cat.facilities || [])
+            .filter(f => (f.partName || f.teamName || '일반').trim() === rawPart)
+            .map((fac, idx) => ({ ...fac, no: idx + 1 }));
+          return {
+            partKey,
+            partName: rawPart,
+            facilityCount: Number(p.facilityCount ?? matchedFacilities.length),
+            totalWeight: Number(p.partWeight ?? p.totalWeight ?? 0),
+            totalActual2025: Number(p.partActual2025 ?? p.totalActual2025 ?? 0),
+            totalTarget2026: Number(p.partTarget2026 ?? p.totalTarget2026 ?? 0),
+            totalActual2026: Number(p.partActual2026 ?? p.totalActual2026 ?? 0),
+            achievementRate: Number(p.achievementRate ?? 0),
+            facilities: matchedFacilities
+          };
+        }).sort((a: ApiPartGroup, b: ApiPartGroup) => b.totalTarget2026 - a.totalTarget2026);
+      }
 
+      const map: Record<string, ApiPartGroup> = {};
       (cat.facilities || []).forEach((fac) => {
         const rawPart = (fac.partName || fac.teamName || '일반').trim();
         const partKey = `${cat.categoryCode}_${rawPart}`;
-
         if (!map[partKey]) {
           map[partKey] = {
             partKey,
@@ -664,26 +679,14 @@ export default function StrategicSimulator() {
             facilities: []
           };
         }
-
         map[partKey].facilities.push({
           ...fac,
           no: map[partKey].facilities.length + 1
         });
-        map[partKey].facilityCount += 1;
-        map[partKey].totalWeight = Number((map[partKey].totalWeight + (fac.weight || 0)).toFixed(2));
-        map[partKey].totalActual2025 += (fac.actual2025 || 0);
-        map[partKey].totalTarget2026 += (fac.target2026 || 0);
-        map[partKey].totalActual2026 += (fac.actual2026 || 0);
+        map[partKey].facilityCount = map[partKey].facilities.length;
       });
 
-      const partGroups = Object.values(map);
-      partGroups.forEach(pg => {
-        if (pg.totalTarget2026 > 0 && pg.totalActual2026 > 0) {
-          pg.achievementRate = Number(((pg.totalActual2026 / pg.totalTarget2026) * 100).toFixed(1));
-        }
-      });
-
-      return partGroups.sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
+      return Object.values(map).sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
     };
   }, []);
 
@@ -707,12 +710,13 @@ export default function StrategicSimulator() {
     );
   }, [effectiveCategories, selectedCategoryFilter]);
 
-  // Total facilities across all effective categories
+  // Total facilities across all effective categories (백엔드 summary.totalFacilityCount 바인딩)
   const totalFacilityCount = useMemo(() => {
-    const fromEffective = effectiveCategories.reduce((acc, cat) => acc + (cat.facilities?.length || 0), 0);
-    if (fromEffective > 0) return fromEffective;
+    if (apiData?.summary?.totalFacilityCount !== undefined) {
+      return Number(apiData.summary.totalFacilityCount);
+    }
     return monthlyMatrixData?.length || 0;
-  }, [effectiveCategories, monthlyMatrixData]);
+  }, [apiData, monthlyMatrixData]);
 
   const availableMatrixCategories = useMemo(() => {
     if (effectiveCategories.length > 0) {
@@ -2291,7 +2295,7 @@ export default function StrategicSimulator() {
               목표 {input.includeGolf ? '전사 Total' : '순수 리조트'} TrevPAR
             </div>
             <div className="text-2xl font-black text-teal-800 font-mono tabular-nums">
-              {formatCurrency(apiData?.summary?.totalRoomCap ? Math.round(grandTargetTotal / apiData.summary.totalRoomCap) : 0)}원 <span className="text-sm font-normal text-slate-500 font-sans">/실</span>
+              {formatCurrency(Number((apiData?.summary as any)?.dailyTrevPar ?? apiData?.summary?.dailyTrevPAR ?? 0))}원 <span className="text-sm font-normal text-slate-500 font-sans">/실</span>
             </div>
           </div>
           <div className="text-xs text-slate-500 mt-1">

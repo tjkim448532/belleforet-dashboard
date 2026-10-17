@@ -316,7 +316,7 @@ export default function RoomGuestsYoyTable() {
                 const monthNum = row.month;
                 const isSelectedMonth = monthNum === currentMonthNum;
 
-                // Calculate YoY Diff between latestYear and prevYear for Primary Metric & Revenue
+                // YoY Diff & Backend Pre-calculated Pct between latestYear and prevYear
                 let yoyPrimaryDiff: number | null = null;
                 let yoyPrimaryPct: number | null = null;
                 let yoyRevDiff: number | null = null;
@@ -334,12 +334,12 @@ export default function RoomGuestsYoyTable() {
                   if (metricMode === 'GUESTS') {
                     if (latestGuests > 0 && prevGuests > 0) {
                       yoyPrimaryDiff = Math.round((latestGuests - prevGuests) * 10) / 10;
-                      yoyPrimaryPct = Math.round((yoyPrimaryDiff / prevGuests) * 1000) / 10;
+                      yoyPrimaryPct = (row as any).yoyGuestsPct ?? (row as any).yoyPct ?? null;
                     }
                   } else {
                     if (latestRooms > 0 && prevRooms > 0) {
                       yoyPrimaryDiff = latestRooms - prevRooms;
-                      yoyPrimaryPct = Math.round((yoyPrimaryDiff / prevRooms) * 1000) / 10;
+                      yoyPrimaryPct = (row as any).yoyRoomsPct ?? null;
                     }
                   }
 
@@ -347,7 +347,7 @@ export default function RoomGuestsYoyTable() {
                   const prevRev = getRevenue(prevYear, monthNum, row);
                   if (latestRev > 0 && prevRev > 0) {
                     yoyRevDiff = Math.round(latestRev - prevRev);
-                    yoyRevPct = Math.round((yoyRevDiff / prevRev) * 1000) / 10;
+                    yoyRevPct = (row as any).yoyRevPct ?? null;
                   }
                 }
 
@@ -526,7 +526,7 @@ export default function RoomGuestsYoyTable() {
                     <td className="py-4 px-6 text-center bg-indigo-50/50">
                       {metricMode === 'GUESTS' && data.totals?.[latestYear] !== undefined && data.totals?.[prevYear] !== undefined ? (() => {
                         const diff = data.totals[latestYear] - data.totals[prevYear];
-                        const pct = data.totals[prevYear] > 0 ? (diff / data.totals[prevYear]) * 100 : null;
+                        const pct: number | null = (data.totals as any)?.yoyGuestsPct ?? (data.totals as any)?.yoyPct ?? null;
                         return (
                           <div className="flex flex-col items-center gap-1 font-mono text-xs">
                             <div className="flex items-center gap-1">

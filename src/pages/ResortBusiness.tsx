@@ -1228,9 +1228,9 @@ export default function ResortBusiness() {
                             {row.lyRev !== null ? `${row.revenue - row.lyRev > 0 ? '+' : ''}${formatCurrency(row.revenue - row.lyRev)}원` : '-'}
                           </td>
                           <td className="py-3 px-4 text-right">
-                            {row.lyRev !== null && row.lyRev > 0 ? (
-                              <span className={row.revenue >= row.lyRev ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
-                                {row.revenue >= row.lyRev ? '▲' : '▼'} {Math.abs(Number(((row.revenue - row.lyRev) / row.lyRev * 100).toFixed(1)))}%
+                            {(row as any).revGrowth != null ? (
+                              <span className={(row as any).revGrowth >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
+                                {(row as any).revGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((row as any).revGrowth))}%
                               </span>
                             ) : '-'}
                           </td>
@@ -1271,7 +1271,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-emerald-800">{standardPhysicalRooms.toLocaleString()}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((standardPhysicalRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '-'}</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats?.standardOccRate != null ? `${lodgingStats.standardOccRate}%` : '-'}</div>
                   </div>
                 </div>
 
@@ -1285,7 +1285,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-cyan-800">{connectingPhysicalRooms.toLocaleString()}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((connectingPhysicalRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '-'}</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats?.connectingOccRate != null ? `${lodgingStats.connectingOccRate}%` : '-'}</div>
                   </div>
                 </div>
 
@@ -1299,7 +1299,7 @@ export default function ResortBusiness() {
                   </div>
                   <div className="text-right">
                     <div className="text-base font-bold text-slate-700">{remainingRooms.toLocaleString()}실</div>
-                    <div className="text-[10px] text-slate-400">{totalBaseRooms > 0 ? ((remainingRooms / totalBaseRooms) * 100).toFixed(1) + '%' : '-'}</div>
+                    <div className="text-[10px] text-slate-400">{lodgingStats?.remainingOccRate != null ? `${lodgingStats.remainingOccRate}%` : '-'}</div>
                   </div>
                 </div>
               </div>
@@ -1334,7 +1334,7 @@ export default function ResortBusiness() {
                   const borderColors = ['border-blue-100', 'border-amber-100', 'border-emerald-100'];
                   const textColors = ['text-blue-800', 'text-amber-800', 'text-emerald-800'];
                   const cIdx = idx % 3;
-                  const ratio = lodgingStats?.roomsSold > 0 ? ((r.roomsSold / lodgingStats.roomsSold) * 100).toFixed(1) : '0.0';
+                  const ratio = r.sharePct ?? r.roomsSharePct ?? null;
                   return (
                     <div key={idx} className={`p-4 rounded-2xl ${bgColors[cIdx]} border ${borderColors[cIdx]} flex items-center justify-between`}>
                       <div className="flex items-center gap-3">
@@ -1346,7 +1346,7 @@ export default function ResortBusiness() {
                       </div>
                       <div className="text-right">
                         <div className={`text-base font-bold ${textColors[cIdx]}`}>{r.roomsSold}건</div>
-                        <div className="text-[10px] text-slate-400">{ratio}%</div>
+                        <div className="text-[10px] text-slate-400">{ratio != null ? `${ratio}%` : '-'}</div>
                       </div>
                     </div>
                   );

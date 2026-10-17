@@ -3440,6 +3440,10 @@ ORDER BY venue_name, rn;
      - **`revGrowth`** (객실 매출 YoY 증감률, `%`)
      - **`roomsGrowth`** (판매 객실수 YoY 증감률, `%`)
      - **`adrGrowth`** (통합 ADR YoY 증감률, `%`)
+   - `lodgingStats`:
+     - **`standardOccRate`**, **`connectingOccRate`**, **`remainingOccRate`** (단독 객실 / 커넥팅 복합객실 / 잔여 객실 가동 비중 `%`, 고정 모수 1,080실 또는 기간 가용객실 기준)
+   - `rooms[]` (평형별 판매 내역):
+     - 각 평형별 객실 판매 비중 **`sharePct`** (`roomsSharePct`, `%`)
    - `channels[]` 및 `rates[]`:
      - 각 항목별 **`revGrowth`** (전년 동기 대비 매출 증감률, `%`)
    - `dayTypeComparison.summary`:
@@ -3451,10 +3455,10 @@ ORDER BY venue_name, rn;
 
 3. **`GET /api/v6/report/room-channel-sales` & `GET /api/v6/report/corporate-group-sales` (`GroupSales.tsx` 세일즈본부 대시보드)**:
    - `room-channel-sales`:
-     - 채널×평형 개별 행에 채널 내 매출 비중 **`channelSharePct`** 및 전사 대비 매출 비중 **`grandSharePct`** 추가.
-     - 채널별 소계(`isChannelSubtotal: true`, `averageAdr`, `revenueSharePct`, `totalRooms`, `totalRevenue`, `isGroupChannel: boolean`) 및 평형별 합계 행(`channelName: '총합계'`, `isRoomTypeSubtotal: true`, `roomType`, `todayRooms`/`mtdRooms`, `todayRevenue`/`mtdRevenue`) 추가.
+     - 채널×평형 개별 행에 채널 내 매출 비중 **`channelSharePct`** 및 전사 대비 매출 비중 **`grandSharePct`** 추가 (`roomType` 원천 코드 `'ROOM'`은 DB 마트 단에서 `'미지정(배정대기)'`로 정규화하여 반환).
+     - 채널별 소계(`isChannelSubtotal: true`, `averageAdr`, `revenueSharePct`, `totalRooms`, `totalRevenue`, `totalGuests`, `isGroupChannel: boolean`) 및 평형별 합계 행(`channelName: '총합계'`, `isRoomTypeSubtotal: true`, `roomType`, `todayRooms`/`mtdRooms`, `todayRevenue`/`mtdRevenue`) 추가.
    - `corporate-group-sales`:
-     - `summary.seminar` 객체 내에 세미나 단체 총 건수 **`totalGroupsCount`**, 재방문 단체 건수 **`repeatGroupsCount`**, 세미나 단체 총 객실수 **`totalRooms`** 사전 집계 필드 추가.
+     - `groups[]` 내 각 단체 레코드에 기관명(`groupName`) 기준 사전 집계된 **`visitCount`**, **`isRepeatCustomer`**, **`organizationTotalRooms`**, **`organizationTotalPax`**, **`organizationTotalRevenue`** 필드 추가.
 
 4. **`GET /api/v6/report/leisure-yoy-matrix` (`LeisureUsageRate.tsx` 레저 이용률 분석)**:
    - `facilities`, `pivotData`, `facilityPeriodCumulative` 내에 **`'마운틴카트(전체)'`** (2024년 레거시 `'마운틴카트'` + 2025~2026년 `'마운틴카트(그랜드포렛)'` + `'마운틴카트(미니포렛)'` 통합분) 완제품 키를 백엔드에서 직접 생성하여 반환 요청 (`leisure-usage-rate` API와 동일 기준).
@@ -3462,3 +3466,15 @@ ORDER BY venue_name, rn;
 5. **`GET /api/v6/report/member-quota-ltv` (`Members.tsx` 회원관리 대시보드)**:
    - `accountQuotaOverview` 객체 내에 전체 구좌 대비 활성 구좌 비율 **`activeRatePct`** (`ROUND(activeAccounts * 100.0 / NULLIF(totalAccounts, 0), 1)`) 사전 연산 필드 추가.
 
+6. **`GET /api/v6/report/tomorrow-revenue-forecast` (`TomorrowRevenueForecast.tsx` 내일 예상 매출 분석)**:
+   - `summary`:
+     - 본부별 예상 매출 비중 **`golfSharePct`**, **`fnbSharePct`**, **`leisureSharePct`**, **`roomSharePct`**, **`motoSharePct`** (`%`, 소수점 1자리)
+     - 기상 영향 증감률 **`weatherImpactDeltaPct`** (`%`) 및 우천/강설 시 야외/실내 활동 변동 범위 텍스트(`outdoorActivityDropRange`, `indoorActivityBoostRange`)
+   - `venues[]`:
+     - 각 영업장의 예상 매출 대비 콘도 투숙객 파급 비중 **`hotelSpilloverSharePct`** (`%`)
+
+7. **`GET /api/v6/report/room-guests-yoy` (`RoomGuestsYoyTable.tsx` 객실 투숙객 YoY 비교표)**:
+   - 월별 행(`monthly[]`) 및 연간 총계(`totals`) 객체에 전년 대비 증감률 **`yoyGuestsPct`**, **`yoyRoomsPct`**, **`yoyRevPct`** (`%`, 소수점 1자리) 사전 연산 필드 추가.
+
+8. **`GET /api/v6/report/synergy` (`Synergy.tsx` 객실×부대시설 시너지 분석)**:
+   - `summary.nonLodgingRevenue` (비숙박 부대매출 합계), `roomTypes[].sharePct` (평형별 객실 매출 비중 `%`, `[소계]` 문자열 제거된 순수 평형명 반환), `ancillaryByDepartment[].sharePct` (부대시설 부문별 비중 `%`) 사전 연산 필드 추가.

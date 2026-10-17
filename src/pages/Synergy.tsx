@@ -315,9 +315,7 @@ export default function Synergy() {
     const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음' || c.categoryName === '식음')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음')?.todayActual || 0);
     const leisureRev = parseNum(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO' || c.categoryCode === '레져본부' || c.categoryCode === '모토아레나')?.totalSales || cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === '레져본부')?.todayActual || 0);
     
-    const totalRev = parseNum(summaryData?.summary?.totalRevenue || 0);
-    const roomRev = grandTotal.revenue || parseNum(cats.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.totalSales || cats.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도')?.todayActual || 0);
-    const totalAncillary = parseNum(summaryData?.summary?.totalAncillary || 0) || Math.max(0, totalRev - roomRev);
+    const totalAncillary = parseNum(summaryData?.summary?.totalAncillary || 0);
 
     return {
       golf: golfRev,
@@ -330,25 +328,24 @@ export default function Synergy() {
   // Ground-Up Breakdown Grouping (Pure Zero-Proxy, No MTD fallback in single date mode)
   const segmentSummaries = useMemo(() => {
     if (channelData && channelData.length > 0) {
-      let subtotalRows = channelData.filter(item => item.isChannelSubtotal || (item.channelName && item.channelName.includes('[소계]')));
+      let subtotalRows = channelData.filter(item => item.isChannelSubtotal);
       if (selectedChannel !== 'ALL') {
         subtotalRows = subtotalRows.filter(item => item.channelName === selectedChannel || item.channelName?.startsWith(selectedChannel));
       }
-      const totalRoomRev = grandTotal.revenue || 1;
 
       const mapped = subtotalRows
         .map(item => {
-          const cleanName = (item.channelName || '').replace(/\s*\[소계\]/g, '').trim();
+          const cleanName = (item.channelName || '').trim();
           const rooms = parseNum(isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0));
           const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
-          const shareRatio = totalRoomRev > 0 ? revenue / totalRoomRev : 0;
+          const backendShare = (item as any).sharePct ?? (item as any).revenueSharePct ?? null;
 
           return {
             name: cleanName,
             rooms,
             revenue,
             adr: parseNum(item.adr || 0),
-            sharePct: (shareRatio * 100).toFixed(1),
+            sharePct: backendShare != null ? Number(backendShare).toFixed(1) : '-',
             isMtdFallback: false
           };
         })
@@ -359,11 +356,10 @@ export default function Synergy() {
 
     // Fallback: Map from salesByCategory
     const cats = (summaryData?.salesByCategory || []).filter((c: any) => c.categoryCode !== 'ROOM');
-    const totalAncillary = ancillarySales.total || 1;
 
     return cats.map((c: any) => {
       const rev = parseNum(c.totalSales || c.todayActual || 0);
-      const share = totalAncillary > 0 ? (rev / totalAncillary) * 100 : 0;
+      const backendShare = c.sharePct ?? c.todaySharePct ?? null;
       const rooms = grandTotal.rooms || 0;
       const revpas = parseNum(summaryData?.summary?.totalRevPAS || 0);
       return {
@@ -371,7 +367,7 @@ export default function Synergy() {
         rooms: rooms,
         revenue: rev,
         adr: revpas,
-        sharePct: share.toFixed(1),
+        sharePct: backendShare != null ? Number(backendShare).toFixed(1) : '-',
         isMtdFallback: false
       };
     }).filter((g: any) => g.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);

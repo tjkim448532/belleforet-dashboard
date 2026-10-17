@@ -177,31 +177,8 @@ export default function GolfChannelIntelligence() {
           const findYearData = (y: string) => {
             const item = monthlyList.find((d: any) => d.month === `${y}-${mStr}`);
             const rev = Number(item?.revenue || 0);
-            const visitors = Number(item?.visitors || item?.players || 0);
-
-            let teams = Number(item?.teams || 0);
-            if (teams === 0) {
-              if (item?.teams !== undefined && item?.teams !== null) {
-                teams = Number(item.teams);
-              } else if (y === queryYear && m === queryMonth && totTeams > 0) {
-                teams = totTeams;
-              } else if (visitors > 0) {
-                // 백엔드 Ticket 14 배포 전 임시 fallback (배포 후 item.teams 우선 적용)
-                teams = Math.round(visitors / 4);
-              }
-            }
-
-            let avgGreenFee = Number(item?.avgGreenFee ?? item?.averageGreenFee ?? 0);
-            if (avgGreenFee === 0) {
-              if (item?.avgGreenFee !== undefined && item?.avgGreenFee !== null) {
-                avgGreenFee = Number(item.avgGreenFee);
-              } else if (y === queryYear && m === queryMonth && avgGf > 0) {
-                avgGreenFee = avgGf;
-              } else if (visitors > 0 && rev > 0) {
-                // 백엔드 Ticket 14 배포 전 임시 fallback (배포 후 item.avgGreenFee 우선 적용)
-                avgGreenFee = Math.round(rev / visitors);
-              }
-            }
+            const teams = Number(item?.teams ?? ((y === queryYear && m === queryMonth && totTeams > 0) ? totTeams : 0));
+            const avgGreenFee = Number(item?.avgGreenFee ?? item?.averageGreenFee ?? ((y === queryYear && m === queryMonth && avgGf > 0) ? avgGf : 0));
             return { teams, avgGreenFee, revenue: rev };
           };
           return {

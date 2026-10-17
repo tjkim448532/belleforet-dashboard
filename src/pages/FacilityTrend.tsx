@@ -87,7 +87,7 @@ export default function FacilityTrend() {
               const gRev = Math.round(Number(item.golfRevenue ?? 0));
               const exRev = item.exGolfRevenue !== undefined && item.exGolfRevenue !== null
                 ? Math.round(Number(item.exGolfRevenue))
-                : Math.max(0, totRev - gRev);
+                : 0;
               const totVisitors = item.totalVisitors !== undefined && item.totalVisitors !== null
                 ? Math.round(Number(item.totalVisitors))
                 : (guestsMap[mKey] || 0);

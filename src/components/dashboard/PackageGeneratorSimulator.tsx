@@ -250,14 +250,11 @@ export default function PackageGeneratorSimulator() {
               const weekdayAdr = Number(activeData.weekdayAdr ?? 0);
               const weekendAdr = Number(activeData.weekendAdr ?? 0);
 
-              // 1. RevPAR 분리 (주중 vs 주말): 백엔드 완제품 우선 바인딩, 미제공 시 정규 수식 ROUND(ADR * OCC/100) 연산
-              const weekdayRevpar = Number(activeData.weekdayRevpar ?? (weekdayAdr > 0 && weekdayOcc > 0 ? Math.round(weekdayAdr * (weekdayOcc / 100)) : 0));
-              const weekendRevpar = Number(activeData.weekendRevpar ?? (weekendAdr > 0 && weekendOcc > 0 ? Math.round(weekendAdr * (weekendOcc / 100)) : 0));
-
-              // 2. TRevPAR 분리 (주중 vs 주말): 백엔드 완제품 우선 바인딩, 미제공 시 비골프 TRevPAR 비율 비례 연산
-              const trevparRatio = revpar > 0 ? (trevparWithoutGolf / revpar) : 0;
-              const weekdayTrevpar = Number(activeData.weekdayTrevpar ?? (activeData.weekdayTrevparWithoutGolf ?? (weekdayRevpar > 0 && trevparRatio > 0 ? Math.round(weekdayRevpar * trevparRatio) : 0)));
-              const weekendTrevpar = Number(activeData.weekendTrevpar ?? (activeData.weekendTrevparWithoutGolf ?? (weekendRevpar > 0 && trevparRatio > 0 ? Math.round(weekendRevpar * trevparRatio) : 0)));
+              // 1. RevPAR & TRevPAR 분리 (주중 vs 주말): 100% 백엔드 완제품 바인딩 (클라이언트 사칙연산 금지)
+              const weekdayRevpar = Number(activeData.weekdayRevpar ?? 0);
+              const weekendRevpar = Number(activeData.weekendRevpar ?? 0);
+              const weekdayTrevpar = Number(activeData.weekdayTrevpar ?? activeData.weekdayTrevparWithoutGolf ?? 0);
+              const weekendTrevpar = Number(activeData.weekendTrevpar ?? activeData.weekendTrevparWithoutGolf ?? 0);
 
               map[m.month] = {
                 month: m.month,
@@ -345,7 +342,7 @@ export default function PackageGeneratorSimulator() {
         const end = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
         // Fetch revenue-summary and day-of-week-sales in parallel
-        let [res, dowRes] = await Promise.all([
+        let [res] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${start}&endDate=${end}`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/day-of-week-sales?startDate=${start}&endDate=${end}`).catch(() => null)
         ]);
@@ -360,7 +357,7 @@ export default function PackageGeneratorSimulator() {
           const lyStart = `${bYear}-${String(selectedMonth).padStart(2, '0')}-01`;
           const lyLastDay = new Date(bYear, selectedMonth, 0).getDate();
           const lyEnd = `${bYear}-${String(selectedMonth).padStart(2, '0')}-${String(lyLastDay).padStart(2, '0')}`;
-          [res, dowRes] = await Promise.all([
+          [res] = await Promise.all([
             secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${lyStart}&endDate=${lyEnd}`).catch(() => null),
             secureFetcher(`${API_BASE}/api/v6/report/day-of-week-sales?startDate=${lyStart}&endDate=${lyEnd}`).catch(() => null)
           ]);
@@ -369,32 +366,19 @@ export default function PackageGeneratorSimulator() {
         const ls = res?.lodgingStats || {};
         const sum = res?.summary || {};
         const effData = monthlyEfficiencyMap[selectedMonth];
-        const dowSum = dowRes?.data?.summary || dowRes?.summary || {};
 
         const weekdayAdr = ls.weekdayAdr || effData?.weekdayAdr || 0;
         const weekendAdr = ls.weekendAdr || effData?.weekendAdr || 0;
         const weekdayOcc = ls.weekdayOcc || effData?.weekdayOcc || 0;
         const weekendOcc = ls.weekendOcc || effData?.weekendOcc || 0;
 
-        // RevPAR: Weekday & Weekend
-        const weekdayRevpar = effData?.weekdayRevpar || (weekdayAdr > 0 && weekdayOcc > 0 ? Math.round(weekdayAdr * (weekdayOcc / 100)) : 0);
-        const weekendRevpar = effData?.weekendRevpar || (weekendAdr > 0 && weekendOcc > 0 ? Math.round(weekendAdr * (weekendOcc / 100)) : 0);
-
-        // TRevPAR: Weekday & Weekend
-        const physicalDailyUnits = 175; // SSOT
-        const totalRev = Number(sum.totalRevenue ?? effData?.netRevenueWithoutGolf ?? 0);
-        const nonGolfRev = Number(effData?.netRevenueWithoutGolf ?? totalRev);
-        const nonGolfRatio = (totalRev > 0 && nonGolfRev > 0) ? (nonGolfRev / totalRev) : (totalRev > 0 ? 1 : 0);
-
-        const weekdayDailyAvg = Number(dowSum.weekday?.dailyAvg ?? 0);
-        const weekendDailyAvg = Number(dowSum.redDayTotal?.dailyAvg ?? (dowSum.weekend?.dailyAvg ?? 0));
-
-        const weekdayTrevparTotal = weekdayDailyAvg > 0 ? Math.round(weekdayDailyAvg / physicalDailyUnits) : 0;
-        const weekendTrevparTotal = weekendDailyAvg > 0 ? Math.round(weekendDailyAvg / physicalDailyUnits) : 0;
-
-        const weekdayTrevpar = effData?.weekdayTrevpar || (weekdayTrevparTotal > 0 ? Math.round(weekdayTrevparTotal * nonGolfRatio) : 0);
-        const weekendTrevpar = effData?.weekendTrevpar || (weekendTrevparTotal > 0 ? Math.round(weekendTrevparTotal * nonGolfRatio) : 0);
-
+        // RevPAR & TRevPAR (Weekday & Weekend): 100% 백엔드 완제품 바인딩
+        const weekdayRevpar = effData?.weekdayRevpar ?? 0;
+        const weekendRevpar = effData?.weekendRevpar ?? 0;
+        const weekdayTrevparTotal = effData?.weekdayTrevparTotal ?? 0;
+        const weekendTrevparTotal = effData?.weekendTrevparTotal ?? 0;
+        const weekdayTrevpar = effData?.weekdayTrevpar ?? 0;
+        const weekendTrevpar = effData?.weekendTrevpar ?? 0;
         const trevparWithoutGolf = effData?.trevparWithoutGolf ?? sum.trevPar ?? 0;
 
         if (isMounted) {

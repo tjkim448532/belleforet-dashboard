@@ -213,9 +213,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
         reservedTeams: reserved,
         visitedTeams: visited,
         canceledTeams: canceled,
-        pendingTeams: c.summary?.totalGolfPendingTeams !== undefined 
-          ? parseNum(c.summary.totalGolfPendingTeams) 
-          : Math.max(0, reserved - visited - canceled),
+        pendingTeams: parseNum(c.summary?.totalGolfPendingTeams || 0),
         visitedPlayers: visitedPlayers,
         avgGreenFee: parseNum(c.summary?.golfAvgGreenFee || 0),
         ly_avgGreenFee: 0,
@@ -428,8 +426,8 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
 
   const connectingFromMap = roomOccupancyMap['51평']?.sold || 0;
   const connectingPhysicalRooms = parseNum(payload.summary?.connectingPhysicalRooms || ls.connectingPhysicalRooms || connectingFromMap);
-  const standardPhysicalRooms = parseNum(payload.summary?.standardPhysicalRooms || ls.standardPhysicalRooms || Math.max(0, summaryRoomsSold - connectingPhysicalRooms));
-  const totalPhysicalKeysSold = parseNum(payload.summary?.totalPhysicalKeysSold || ls.totalPhysicalKeysSold || (connectingPhysicalRooms + standardPhysicalRooms));
+  const standardPhysicalRooms = parseNum(payload.summary?.standardPhysicalRooms || ls.standardPhysicalRooms || 0);
+  const totalPhysicalKeysSold = parseNum(payload.summary?.totalPhysicalKeysSold || ls.totalPhysicalKeysSold || 0);
 
   const lodgingStats = {
     revenue: parseNum(ls.revenue || summaryRevenue || payload.summary?.totalRoomRev || 0),

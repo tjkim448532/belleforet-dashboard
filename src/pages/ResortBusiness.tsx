@@ -793,13 +793,13 @@ export default function ResortBusiness() {
                     </div>
                     <div className="grid grid-cols-3 gap-1.5">
                       {/* 16평 */}
-                      <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
+                      <div className="bg-slate-50/80 rounded-xl px-1.5 py-2 text-center border border-slate-100/80">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">16평</span>
-                        <span className="text-xs font-extrabold text-slate-900 font-financial block">
+                        <span className="text-[11px] xl:text-xs font-extrabold text-slate-900 font-financial block whitespace-nowrap tracking-tight">
                           {adr16 !== undefined && adr16 > 0 ? `${formatCurrency(adr16)}원` : '-'}
                         </span>
                         {lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 && (
-                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap">
                             전년 {formatCurrency(lyAdr16)}
                             {adrDiff16 !== null && adrDiff16 !== 0 && (
                               <span className={`block font-bold ${adrDiff16 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -811,13 +811,13 @@ export default function ResortBusiness() {
                       </div>
 
                       {/* 35평 */}
-                      <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
+                      <div className="bg-slate-50/80 rounded-xl px-1.5 py-2 text-center border border-slate-100/80">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">35평</span>
-                        <span className="text-xs font-extrabold text-slate-900 font-financial block">
+                        <span className="text-[11px] xl:text-xs font-extrabold text-slate-900 font-financial block whitespace-nowrap tracking-tight">
                           {adr35 !== undefined && adr35 > 0 ? `${formatCurrency(adr35)}원` : '-'}
                         </span>
                         {lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 && (
-                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap">
                             전년 {formatCurrency(lyAdr35)}
                             {adrDiff35 !== null && adrDiff35 !== 0 && (
                               <span className={`block font-bold ${adrDiff35 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -829,13 +829,13 @@ export default function ResortBusiness() {
                       </div>
 
                       {/* 51평 */}
-                      <div className="bg-slate-50/80 rounded-xl p-2 text-center border border-slate-100/80">
+                      <div className="bg-slate-50/80 rounded-xl px-1.5 py-2 text-center border border-slate-100/80">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">51평</span>
-                        <span className="text-xs font-extrabold text-slate-900 font-financial block">
+                        <span className="text-[11px] xl:text-xs font-extrabold text-slate-900 font-financial block whitespace-nowrap tracking-tight">
                           {adr51 !== undefined && adr51 > 0 ? `${formatCurrency(adr51)}원` : '-'}
                         </span>
                         {lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 && (
-                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight">
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap">
                             전년 {formatCurrency(lyAdr51)}
                             {adrDiff51 !== null && adrDiff51 !== 0 && (
                               <span className={`block font-bold ${adrDiff51 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>

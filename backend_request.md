@@ -3338,11 +3338,11 @@ ORDER BY venue_name, rn;
 
 ## 🚨 [Ticket 46] 레저 할인 누수 마트(`mat_v6_leisure_discount_audit_daily`) 내 외주식음(밤밤테이블·남도예담 등) 및 골프 POS 오적재 적발 및 레저본부 전속 격리 요청 (2026-10-17)
 
-### 46-1. 실측 적발 현황 (Zero-Hallucination Stdout)
+### 46-1. 실측 적발 현황 (Zero-Hallucination Stdout) — ✅ 백엔드 격리 조치 완료 (2026-10-17)
 - **화면 위치**: `/leisure` (`src/pages/LeisureFacility.tsx` — 레저본부 대시보드 3번 섹션)
 - **증상**: 레저 티켓/POS 할인 누수율 감사 화면에 레저본부와 무관한 **식음(F&B) 외주업체 '밤밤테이블'의 고기 메뉴(목살, 삼겹살, 항정살, 꼬들살, 가브리살 등)** 및 골프장 식당이 대거 노출됨.
-- **`date=2026-10-16` 실측 데이터 (총 31개 업장 중 14개 업장 오적재 적발)**:
-  - **콘텐츠기획본부 (외주식음)**:
+- **`date=2026-10-16` 오적재 적발 및 격리 완료 대상 (총 12개 타 본부 업장)**:
+  - **콘텐츠기획본부 (외주식음 8개 업장)**:
     - `밤밤테이블`: 정가 269만 원 / **할인 144,494원** (목살 할인 29,232원, 삼겹살 할인 19,296원, 항정살 할인 16,744원, 꼬들살 할인 16,560원 등)
     - `남도예담`: 정가 728만 원 / 할인 29,600원
     - `딜라이트`: 정가 123만 원 / 할인 16,600원
@@ -3351,30 +3351,27 @@ ORDER BY venue_name, rn;
     - `투썸플레이스`: 정가 230만 원
     - `CU편의점`: 정가 156만 원
     - `BHC(멕시카나)`: 정가 43만 원
-    - `얼룩말카페`: 정가 27만 원
-    - `핏스탑`: 정가 22만 원
-  - **골프본부**:
+  - **골프본부 (3개 업장)**:
     - `레스토랑(클럽하우스)`: 정가 303만 원
     - `스타트하우스`: 정가 266만 원
     - `프로샵`: 정가 81만 원
-  - **기타/과거업장**:
+  - **기타/과거업장 (1개 업장)**:
     - `주차관제`: 정가 148만 원
-- **왜곡 규모**: 총 정상가 4,939만 원 중 **3,000만 원 이상(60% 이상)**이 레저본부가 아닌 타 본부(식음/골프) POS 매출로 오염되어 있음.
+  - *(정정 기록: `얼룩말카페`는 `레저본부 > 목장`, `핏스탑`은 `모토아레나 > 모토서킷` 공식 소속이므로 레저 할인 누수 마트 적재 대상이 맞음을 확인하여 오적재 목록에서 제외함)*
 
-### 46-2. 원인 분석 및 백엔드 조치 요청 사항
-1. **근본 원인**:
-   - `sp_etl_v6_mat_discount_audit` (또는 마트 적재 프로시저)에서 `raw_포스_메뉴_v6` 데이터를 적재할 때, **`dim_facility_team_mapping`의 조직 분류(`org_division = '레저본부'`) 필터링을 누락**하고 전사 모든 POS 데이터를 통째로 `mat_v6_leisure_discount_audit_daily`에 `INSERT`함.
-2. **백엔드 시정 요청**:
-   - 마트 적재 프로시저에 `dim_facility_team_mapping.org_division = '레저본부'` (또는 레저본부 산하 6대 파트 + 모토아레나) 조건절을 강제하여, **외주식음(밤밤테이블 등) 및 골프본부 POS 데이터가 레저 마트에 혼입되지 않도록 원천 격리**해 주십시오.
-   - 격리 쿼리 반영 후 2026-10-01 ~ 2026-10-16 전체 구간 마트 테이블을 재집계(Backfill)해 주십시오.
+### 46-2. 백엔드 조치 완료 내역 (2026-10-17)
+- `sp_etl_v6_mat_leisure_discount_audit` 프로시저 내 `INNER JOIN dim_facility_team_mapping ft ON ft.facility_name = TRIM(업장명) WHERE ft.team_name IN ('레저본부', '모토아레나')` 정규 조인 강제 적용 및 전 구간 백필 완료 (`2026-10-16` 기준 19개 레저/모토 업장, `totalListAmount: 19,286,044원`, `totalDiscountAmount: 569,444원`).
 
 ---
 
-## 🚨 [Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) POS 판매 수량의 레저 이용객수(방문객) 둔갑 및 가짜 숫자 적재 결함 긴급 시정 요청 (2026-10-17)
+## 🚨 [Ticket 47] 레저본부·모토아레나 산하 식음·카페 매장(얼룩말카페·핏스탑) POS 판매 수량의 이용객수(방문객) 둔갑 결함 시정 요청 (2026-10-17)
 
 ### 47-1. 실측 적발 현황 (Zero-Hallucination Terminal Stdout)
 - **화면 위치**: 레저본부 대시보드 (`/leisure` — `src/pages/LeisureFacility.tsx` 상단 1번 섹션 "전체 영업장 실적")
-- **증상**: 이용객수 판별이 불가능한 식음·카페 매장(얼룩말카페, 핏스탑)에 **'이용객수 70명'**, **'이용객수 4명'**이라는 명백한 거짓 숫자가 집계·노출됨.
+- **공식 소속 확인**:
+  - `얼룩말카페`: `레저본부 > 목장` (`team_name = '레저본부'`, `categoryCode = 'TICKET'`)
+  - `핏스탑`: `모토아레나 > 모토서킷` (`team_name = '모토아레나'`, `categoryCode = 'MOTO'`)
+- **증상**: 레저본부·모토아레나 산하 식음·카페 매장인 `얼룩말카페`와 `핏스탑`에서 판매된 음료/스낵 POS 수량이 `is_visitor_count = 0` 예외 처리가 누락되어 **'이용객수 70명'**, **'이용객수 4명'**으로 집계·노출됨.
 - **`GET /api/v6/dashboard/revenue-summary?date=2026-10-16` 실측치 (`salesByFacility`)**:
   ```json
   [
@@ -3405,28 +3402,63 @@ ORDER BY venue_name, rn;
   ]
   ```
 - **수학적 팩트 검증**:
-  - `얼룩말카페`: 오늘 매출 263,182원 ÷ 수량 70건 = **건당 약 3,760원** (커피/아이스티 1잔 단가와 정확히 일치).
-  - 즉, 손님이 주문한 **커피/음료 70잔 판매 수량이 그대로 '이용객 70명'으로 둔갑**한 것임.
-  - 대조군인 `미디어-뮤지엄카페`는 63잔이 팔렸어도 `todayVisitors: 0명`으로 정상 처리되고 있음.
+  - `얼룩말카페`: 오늘 매출 263,182원 ÷ 수량 70건 = **건당 약 3,760원** (커피/아이스티 1잔 단가와 일치).
+  - 대조군인 `미디어-뮤지엄카페`(`레저본부 > 미디어아트`)는 63잔이 팔렸어도 `todayVisitors: 0명`으로 정상 처리되고 있음.
 
 ### 47-2. 근본 원인 분석
 1. **식음 품목 방문객 배수 룰 누락 (`dim_pos_menu_visitor_rule`)**:
    - 벨포레 헌법 제4조: *"FNB(식음료), BANQUET(연회) 판매 수량은 메뉴/아이템 개수이므로 무조건 `is_visitor_count = 0`이어야 한다."*
-   - `얼룩말카페`와 `핏스탑`은 메뉴별 방문객 산출 룰(`dim_pos_menu_visitor_rule`)에서 식음료 예외 처리(`visitor_multiplier = 0`)가 누락되어 있어, POS 판매 수량(커피 70잔, 스낵 4개)이 그대로 골드 마트(`mat_v6_data_mart_revenue`)에 방문객 수(1:1)로 전면 이관됨.
-2. **단말기 조직 분류의 비식음 매핑 (`dim_terminal_mapping` / `dim_facility_team_mapping`)**:
-   - `얼룩말카페`가 `TICKET(레저본부 목장 파트)`, `핏스탑`이 `MOTO(모토아레나 모토서킷 파트)`로 등록되어 있어, 티켓 시설 기본 로직을 타고 방문객 수가 자동 부여됨.
+   - `얼룩말카페`와 `핏스탑`은 메뉴별 방문객 산출 룰(`dim_pos_menu_visitor_rule`)에서 식음료 예외 처리(`visitor_multiplier = 0`)가 누락되어 있어, POS 판매 수량이 그대로 골드 마트(`mat_v6_data_mart_revenue`)에 방문객 수(1:1)로 이관됨.
 
 ### 47-3. 백엔드 조치 요청 사항
 1. **`dim_pos_menu_visitor_rule` 내 방문객 배수 0 처리 (`visitor_multiplier = 0`)**:
-   - `얼룩말카페`와 `핏스탑`의 모든 POS 판매 메뉴에 대해 `is_visitor_count = 0` 및 `visitor_multiplier = 0`을 등록해 주십시오.
+   - `얼룩말카페`와 `핏스탑`의 모든 POS 판매 메뉴에 대해 `is_visitor_count = 0` 및 `visitor_multiplier = 0`을 등록해 주십시오 (`미디어-뮤지엄카페`와 동일 기준).
 2. **골드 마트(`mat_v6_data_mart_revenue`) 방문객 수 백필(재집계)**:
-   - `얼룩말카페`와 `핏스탑`의 과거(2025~2026년) 및 금일 `visitors`, `todayVisitors`, `totalVisitors`를 모두 `0`으로 재집계(Backfill)해 주십시오.
+   - `얼룩말카페`와 `핏스탑`의 과거(2025~2026년) 및 금일 `visitors`, `todayVisitors`, `mtdVisitors`, `ytdVisitors`, `totalVisitors`를 모두 `0`으로 재집계(Backfill)해 주십시오.
 
-### 47-4. 프론트엔드 방어 조치 내역
+### 47-4. 프론트엔드 Pure Consumer 원복 완료
 - `src/pages/LeisureFacility.tsx`:
-  - 식음·편의 시설(`얼룩말카페`, `핏스탑`, `미디어-뮤지엄카페`, `모토아레나 렌탈샵` 등)을 식별하여, 가짜 이용객 수(`이용객수 70명`) 노출을 차단하고 **`식음·편의 (이용객 미집계)`** 라벨로 안전하게 분리 표출 완료.
+  - 프론트엔드 무관용 원칙(Zero Regex Guessing & Zero Local Patch)에 따라 클라이언트 단의 정규식 필터링(`isNonVisitorVenue`) 및 강제 `0` 덮어쓰기 코드를 전면 삭제하고, 백엔드 API가 내려주는 `totalVisitors ?? todayVisitors` 값을 순수 출력(0명일 때만 `'이용객 미집계 (0명)'` 표출)하도록 원복 완료했습니다.
 
+---
 
+## 📊 [Ticket 48] 프론트엔드 인라인 사칙연산(Zero-Proxy 위반) 전면 숙청에 따른 백엔드 사전 연산(Pre-calculated) 지표 필드 추가 요청 (2026-10-17)
 
+### 48-1. 배경 및 목적
+- 프론트엔드 전수 감사를 통해 클라이언트 코드 내에 잔존하던 나눗셈(`/`), 백분율(`* 100`), 배열 합산(`.reduce()`) 수식을 전면 삭제하고 **백엔드 미제공 시 `'-'`(Fail-Stop)를 표출**하도록 순수 소비자(Pure Consumer) 구조로 전환했습니다.
+- 이에 따라 화면에 `'-'`로 노출되는 아래 지표들을 백엔드 DB/마트 레벨에서 사전 연산하여 응답 JSON에 포함해 주실 것을 요청합니다.
 
+### 48-2. 엔드포인트별 추가 요청 필드 명세
+
+1. **`GET /api/v6/dashboard/revenue-summary` (`salesByFacility[]`, `condoSummary`, `nextDayGolf`)**:
+   - `salesByFacility[]`: 각 영업장 객체에 레저/모토 부문 내 매출 점유비율 **`sharePct`** (`todaySharePct`, `mtdSharePct`, `ytdSharePct`, 소수점 1자리, 최대잔여법 100.0% 보정) 필드 추가 (`/leisure` 도넛 차트 및 영업장 카드 바인딩용).
+   - `condoSummary` (또는 콘도 예약 요약 응답): 전체 예약 객실 대비 단체 객실 비중 **`groupSharePct`** (`ROUND(totalGroupRooms * 100.0 / NULLIF(totalRooms, 0), 1)`) 및 `groups[]` 내 개별 단체의 **`sharePct`** 필드 추가 (`CondoReservationCard.tsx` 바인딩용).
+   - `nextDayGolf` (또는 골프 익일 예약 요약 응답): 예약 팀 대비 취소 팀 비율 **`cancelRate`** (`ROUND(canceledTeams * 100.0 / NULLIF(reservedTeams, 0), 1)`) 필드 추가 (`GolfReservationCard.tsx` 바인딩용).
+
+2. **`GET /api/v6/report/resort-business-summary` (`ResortBusiness.tsx` 리조트사업부 대시보드)**:
+   - `summary`:
+     - **`revGrowth`** (객실 매출 YoY 증감률, `%`)
+     - **`roomsGrowth`** (판매 객실수 YoY 증감률, `%`)
+     - **`adrGrowth`** (통합 ADR YoY 증감률, `%`)
+   - `channels[]` 및 `rates[]`:
+     - 각 항목별 **`revGrowth`** (전년 동기 대비 매출 증감률, `%`)
+   - `dayTypeComparison.summary`:
+     - **`weekdayRevenueGrowth`**, **`weekendRevenueGrowth`** (주중/주말 매출 YoY 증감률, `%`)
+     - **`weekdayRoomsGrowth`**, **`weekendRoomsGrowth`** (주중/주말 판매객실 YoY 증감률, `%`)
+     - **`weekdayAdrGrowth`**, **`weekendAdrGrowth`** (주중/주말 ADR YoY 증감률, `%`)
+   - `pyeongComparison`:
+     - 평형별(`16평`, `35평`, `51평`) 전년 동기 대비 ADR 증감률 **`adrGrowth16`**, **`adrGrowth35`**, **`adrGrowth51`** (`%`)
+
+3. **`GET /api/v6/report/room-channel-sales` & `GET /api/v6/report/corporate-group-sales` (`GroupSales.tsx` 세일즈본부 대시보드)**:
+   - `room-channel-sales`:
+     - 채널×평형 개별 행에 채널 내 매출 비중 **`channelSharePct`** 및 전사 대비 매출 비중 **`grandSharePct`** 추가.
+     - 채널별 소계(`isChannelSubtotal: true`, `averageAdr`, `revenueSharePct`, `totalRooms`, `totalRevenue`, `isGroupChannel: boolean`) 및 평형별 합계 행(`channelName: '총합계'`, `isRoomTypeSubtotal: true`, `roomType`, `todayRooms`/`mtdRooms`, `todayRevenue`/`mtdRevenue`) 추가.
+   - `corporate-group-sales`:
+     - `summary.seminar` 객체 내에 세미나 단체 총 건수 **`totalGroupsCount`**, 재방문 단체 건수 **`repeatGroupsCount`**, 세미나 단체 총 객실수 **`totalRooms`** 사전 집계 필드 추가.
+
+4. **`GET /api/v6/report/leisure-yoy-matrix` (`LeisureUsageRate.tsx` 레저 이용률 분석)**:
+   - `facilities`, `pivotData`, `facilityPeriodCumulative` 내에 **`'마운틴카트(전체)'`** (2024년 레거시 `'마운틴카트'` + 2025~2026년 `'마운틴카트(그랜드포렛)'` + `'마운틴카트(미니포렛)'` 통합분) 완제품 키를 백엔드에서 직접 생성하여 반환 요청 (`leisure-usage-rate` API와 동일 기준).
+
+5. **`GET /api/v6/report/member-quota-ltv` (`Members.tsx` 회원관리 대시보드)**:
+   - `accountQuotaOverview` 객체 내에 전체 구좌 대비 활성 구좌 비율 **`activeRatePct`** (`ROUND(activeAccounts * 100.0 / NULLIF(totalAccounts, 0), 1)`) 사전 연산 필드 추가.
 

@@ -1233,7 +1233,7 @@ export default function Members() {
                   <div className="flex items-center justify-between text-xs text-slate-300 font-bold">
                     <span>전체 분양구좌 수</span>
                     <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded-full text-[11px]">
-                      활성율 {quotaLtvData.accountQuotaOverview.totalAccounts > 0 ? ((quotaLtvData.accountQuotaOverview.activeAccounts / quotaLtvData.accountQuotaOverview.totalAccounts) * 100).toFixed(1) : 0}%
+                      활성율 {(quotaLtvData.accountQuotaOverview as any).activeRatePct != null ? `${(quotaLtvData.accountQuotaOverview as any).activeRatePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl font-black text-white mt-1.5 tabular-nums">

@@ -140,11 +140,6 @@ export default function LeisureFacility() {
   const showPct = (v: any) => (v === null || v === undefined || v === '' ? '-' : `${v}%`);
   const showWon = (v: any) => (v === null || v === undefined || v === '' ? '-' : `${formatCurrency(v)}원`);
 
-  // 식음/카페/대여 등 입장권·턴스타일이 없어 이용객(인원수) 판별이 불가능한 영업장 판별 가드
-  const isNonVisitorVenue = (name: string): boolean => {
-    return /얼룩말카페|핏스탑|미디어-뮤지엄카페|뮤지엄카페|렌탈샵/i.test(name);
-  };
-
   const { totalSales, topTickets } = useMemo(() => {
     // 1. Primary SSOT: core.salesByFacility (from /api/v6/dashboard/revenue-summary)
     // Official Gold Mart SSOT: contains 100% complete POS + PMS sales and proper category mapping
@@ -161,15 +156,14 @@ export default function LeisureFacility() {
                          parseNumber(motoCat?.todayActual || motoCat?.totalSales || 0);
       }
 
-      const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string; isNonVisitorVenue: boolean }> = ticketFacilities
+      const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string; sharePct: number | null }> = ticketFacilities
         .map((item: any) => {
           const name = item.shopName || item.facilityName || '기타';
           const sales = parseNumber(item.todayActual || item.totalSales || 0);
-          const isNonVisitor = isNonVisitorVenue(name);
-          // 식음/카페/대여 매장은 POS 수량이 방문객 수로 오적재된 가짜 숫자를 원천 방어하여 0 처리
-          const qty = isNonVisitor ? 0 : parseNumber(item.totalVisitors || item.visitors || 0);
+          const qty = parseNumber(item.totalVisitors || item.visitors || 0);
           const depth2 = item.partName || '티켓/레저';
-          return { name, sales, qty, depth2, isNonVisitorVenue: isNonVisitor };
+          const sharePct = item.sharePct ?? item.todaySharePct ?? null;
+          return { name, sales, qty, depth2, sharePct };
         })
         .filter((item: any) => item.sales > 0 || item.qty > 0)
         .sort((a: any, b: any) => b.sales - a.sales);
@@ -185,17 +179,13 @@ export default function LeisureFacility() {
       const grandTotal = parseNumber(channelData.summary?.totalRevenue || 0);
       const mapped = channelData.venues
         .filter((v: any) => v.venueName !== '벨포레 리조트') // Guard against room/resort mistagging
-        .map((v: any) => {
-          const name = v.venueName || '기타';
-          const isNonVisitor = isNonVisitorVenue(name);
-          return {
-            name,
-            sales: parseNumber(v.totalRevenue || 0),
-            qty: isNonVisitor ? 0 : parseNumber(v.totalVisitors || 0),
-            depth2: '레저/체험',
-            isNonVisitorVenue: isNonVisitor
-          };
-        })
+        .map((v: any) => ({
+          name: v.venueName || '기타',
+          sales: parseNumber(v.totalRevenue || 0),
+          qty: parseNumber(v.totalVisitors || 0),
+          depth2: '레저/체험',
+          sharePct: v.sharePct ?? v.revenueSharePct ?? null
+        }))
         .filter((v: any) => v.sales > 0 || v.qty > 0)
         .sort((a: any, b: any) => b.sales - a.sales);
 
@@ -352,24 +342,19 @@ export default function LeisureFacility() {
                         <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 px-2.5 py-0.5 rounded-full whitespace-nowrap">
                           {ticket.name}
                         </span>
-                        {ticket.isNonVisitorVenue && (
-                          <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                            식음·편의
-                          </span>
-                        )}
                       </div>
-                      {ticket.isNonVisitorVenue ? (
-                        <p className="text-xs text-slate-400 font-medium whitespace-nowrap">이용객 미집계 (식음·편의)</p>
-                      ) : (
-                        <p className="text-xs text-slate-600 font-medium tabular-nums whitespace-nowrap">이용객수 {ticket.qty.toLocaleString()}명</p>
-                      )}
+                      <p className="text-xs text-slate-600 font-medium tabular-nums whitespace-nowrap">
+                        {ticket.qty > 0 ? `이용객수 ${ticket.qty.toLocaleString()}명` : '이용객 미집계 (0명)'}
+                      </p>
                     </div>
                     
                     <div className="text-right ml-4 tabular-nums whitespace-nowrap shrink-0">
                       <div className="font-bold text-base text-slate-900">{formatCurrency(ticket.sales)}원</div>
-                      <div className="text-xs font-semibold text-slate-500">
-                        ({totalSales > 0 ? ((ticket.sales / totalSales) * 100).toFixed(1) : 0}%)
-                      </div>
+                      {ticket.sharePct !== null && ticket.sharePct !== undefined && (
+                        <div className="text-xs font-semibold text-slate-500">
+                          ({ticket.sharePct}%)
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

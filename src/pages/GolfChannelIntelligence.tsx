@@ -229,16 +229,11 @@ export default function GolfChannelIntelligence() {
         const memberAnchorRevenue = Number(liveSummary.memberAnchorRevenue || 0);
 
         const joinRankingList = Array.isArray(payload.joinRanking) ? payload.joinRanking : [];
-        const normalFourTeams = Math.max(0, totalTeams - threePlayerTeamsCount - joinTeamsCount);
+        const normalFourTeams = Number(liveSummary.normalFourTeams ?? liveSummary.fourPlayerTeamsCount ?? 0);
 
-        let size4Ratio = 0;
-        let size3Ratio = 0;
-        let size2Ratio = 0;
-        if (totalTeams > 0) {
-          size4Ratio = Number(((normalFourTeams / totalTeams) * 100).toFixed(1));
-          size3Ratio = Number(((threePlayerTeamsCount / totalTeams) * 100).toFixed(1));
-          size2Ratio = Number(((joinTeamsCount / totalTeams) * 100).toFixed(1));
-        }
+        const size4Ratio = Number(liveSummary.size4Ratio ?? liveSummary.fourPlayerRatio ?? 0);
+        const size3Ratio = Number(liveSummary.size3Ratio ?? liveSummary.threePlayerRatio ?? 0);
+        const size2Ratio = Number(liveSummary.size2Ratio ?? liveSummary.joinRatio ?? 0);
 
         const realMonthlyYoy = buildMonthlyYoy(totalTeams, averageGreenFee);
 
@@ -783,25 +778,9 @@ export default function GolfChannelIntelligence() {
     };
   };
 
-  let directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
-  let otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
-  if (directAvg === 0 && data.channels.length > 0) {
-    const directChannels = data.channels.filter(c => c.channelType === 'DIRECT');
-    const directRev = directChannels.reduce((sum, c) => sum + Number(c.revenue || 0), 0);
-    const directPax = directChannels.reduce((sum, c) => sum + Number(c.players || 0), 0);
-    if (directPax > 0 && directRev > 0) {
-      directAvg = Math.round(directRev / directPax);
-    }
-  }
-  if (otaAvg === 0 && data.channels.length > 0) {
-    const otaChannels = data.channels.filter(c => c.channelType === 'OTA');
-    const otaRev = otaChannels.reduce((sum, c) => sum + Number(c.revenue || 0), 0);
-    const otaPax = otaChannels.reduce((sum, c) => sum + Number(c.players || 0), 0);
-    if (otaPax > 0 && otaRev > 0) {
-      otaAvg = Math.round(otaRev / otaPax);
-    }
-  }
-  const diffAvg = (directAvg > 0 && otaAvg > 0) ? directAvg - otaAvg : 0;
+  const directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
+  const otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
+  const diffAvg = Number((data.summary as any)?.diffAvgGreenFee ?? ((directAvg > 0 && otaAvg > 0) ? directAvg - otaAvg : 0));
 
   const validSlots = data.timeSlotYield.filter(s => s.occupancy > 0);
   const bestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => b.occupancy - a.occupancy)[0] : null;

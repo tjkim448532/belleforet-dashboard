@@ -56,6 +56,9 @@ interface RawChannelRoomItem {
   todayGuests?: number | string;
   guests?: number | string;
   mtdGuests?: number | string;
+  channelSharePct?: number | string;
+  sharePct?: number | string;
+  grandSharePct?: number | string;
 }
 
 interface SegmentItem {
@@ -414,14 +417,9 @@ export default function GroupSales() {
           revenue: rev,
           adr,
           guests,
-          channelSharePct: 0,
-          grandSharePct: grandRevenue > 0 ? (rev / grandRevenue) * 100 : 0
+          channelSharePct: Number(raw.channelSharePct ?? raw.sharePct ?? 0),
+          grandSharePct: Number(raw.grandSharePct ?? 0)
         });
-      });
-
-      // 채널 내 비중 채우기
-      segItems.forEach(si => {
-        si.channelSharePct = chRev > 0 ? (si.revenue / chRev) * 100 : 0;
       });
 
       // 평형 정렬: 매출액 내림차순 및 명칭 정렬
@@ -429,11 +427,10 @@ export default function GroupSales() {
 
       const meta = getChannelMeta(chName);
 
-      const isSeminar = chName.includes('단체') || chName.includes('세미나');
-      const seminarAdr = isSeminar && seminarShare?.total?.averageAdr ? seminarShare.total.averageAdr : 0;
-      const subtotalAdr = Number(items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal)?.adr ?? 0);
-      const calculatedChannelAdr = chRooms > 0 ? Math.round(chRev / chRooms) : 0;
-      const channelAdr = seminarAdr > 0 ? seminarAdr : (subtotalAdr > 0 ? subtotalAdr : calculatedChannelAdr);
+      const subtotalItem = items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal);
+      const subtotalAdr = Number(subtotalItem?.adr ?? 0);
+      const channelSharePct = Number((subtotalItem as any)?.revenueSharePct ?? (subtotalItem as any)?.sharePct ?? 0);
+      const channelAdr = subtotalAdr;
       const groupGuests = chGuests;
 
       groups.push({
@@ -444,7 +441,7 @@ export default function GroupSales() {
         totalRevenue: chRev,
         totalGuests: groupGuests,
         averageAdr: channelAdr,
-        revenueSharePct: grandRevenue > 0 ? (chRev / grandRevenue) * 100 : 0,
+        revenueSharePct: channelSharePct,
         items: segItems
       });
     });
@@ -454,7 +451,6 @@ export default function GroupSales() {
 
     const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => a.localeCompare(b));
 
-    const grandCalculatedAdr = grandRooms > 0 ? Math.round(grandRevenue / grandRooms) : 0;
     const rawSummaryAdr = (!Array.isArray(channelRawData) && typeof channelRawData === 'object')
       ? Number((channelRawData as any)?.summary?.adr ?? (channelRawData as any)?.grandTotal?.adr ?? 0)
       : 0;
@@ -465,7 +461,7 @@ export default function GroupSales() {
         revenue: grandRevenue,
         rooms: grandRooms,
         guests: grandGuests,
-        adr: rawSummaryAdr > 0 ? rawSummaryAdr : grandCalculatedAdr
+        adr: rawSummaryAdr
       },
       uniqueRoomTypes: sortedRoomTypes,
       availableChannels: groups.map(g => g.channelName)
@@ -691,16 +687,16 @@ export default function GroupSales() {
       return b.totalRooms - a.totalRooms;
     });
 
-    const repeats = list.filter(o => o.isRepeatCustomer).length;
-    const totalRooms = list.reduce((acc, o) => acc + o.totalRooms, 0);
+    const repeats = Number((corporateSummary as any)?.seminar?.repeatGroupsCount ?? list.filter(o => o.isRepeatCustomer).length);
+    const totalRooms = Number((corporateSummary as any)?.seminar?.totalRooms ?? 0);
 
     return {
       organizedGroups: list,
-      totalSeminarGroupsCount: list.length,
+      totalSeminarGroupsCount: Number((corporateSummary as any)?.seminar?.totalGroupsCount ?? list.length),
       repeatGroupsCount: repeats,
       totalBookedRoomsInGroups: totalRooms
     };
-  }, [rawGroupData]);
+  }, [rawGroupData, corporateSummary]);
 
   // 필터링 적용된 단체 목록
   const filteredOrganizedGroups = useMemo(() => {
@@ -1751,21 +1747,19 @@ export default function GroupSales() {
                     전사 평형별 합계
                   </td>
                   {uniqueRoomTypes.map(rt => {
-                    const colRooms = channelGroups.reduce((sum, g) => {
-                      const item = g.items.find(i => i.roomType === rt);
-                      return sum + (item?.roomsSold || 0);
-                    }, 0);
-                    const colRev = channelGroups.reduce((sum, g) => {
-                      const item = g.items.find(i => i.roomType === rt);
-                      return sum + (item?.revenue || 0);
-                    }, 0);
+                    const rtTotalItem = channelRawData.find(
+                      r => (r.channelName === '총합계' || r.channel_name === '총합계' || (r as any).isRoomTypeSubtotal) &&
+                           (r.roomType === rt || r.room_type === rt)
+                    );
+                    const colRooms = rtTotalItem ? Number(rtTotalItem.todayRooms ?? rtTotalItem.mtdRooms ?? 0) : null;
+                    const colRev = rtTotalItem ? Number(rtTotalItem.todayRevenue ?? rtTotalItem.mtdRevenue ?? 0) : null;
                     return (
                       <td key={rt} className="py-3.5 px-3 text-right">
                         <div className="font-black text-slate-900">
-                          {formatRevenue(colRev)}
+                          {colRev != null ? formatRevenue(colRev) : '-'}
                         </div>
                         <div className="text-[10px] text-slate-600 font-bold">
-                          {colRooms}실
+                          {colRooms != null ? `${colRooms}실` : '-'}
                         </div>
                       </td>
                     );

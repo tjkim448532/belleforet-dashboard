@@ -294,7 +294,7 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
                 )}
               </div>
               <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate">
-                취소율 {((nextDayGolf?.reservedTeams ?? 0) > 0 ? (((nextDayGolf?.canceledTeams ?? 0) / (nextDayGolf?.reservedTeams ?? 1)) * 100).toFixed(1) : '0.0')}%
+                취소율 {(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}
               </div>
             </div>
           </div>

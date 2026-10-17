@@ -189,10 +189,8 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
   const roomEstRev = resData?.estimatedRevenue ?? forecastData?.roomRevenue ?? null;
   const totalEstRev = resData?.estimatedTotalRevenue ?? forecastData?.totalRevenue ?? null;
 
-  // 단체 기업 예약의 전체 객실 대비 비중 (%)
-  const groupSharePct = (resData?.totalRooms && resData.totalRooms > 0 && resData.totalGroupRooms) 
-    ? ((resData.totalGroupRooms / resData.totalRooms) * 100).toFixed(1)
-    : '0.0';
+  // 단체 기업 예약의 전체 객실 대비 비중 (%) - 백엔드 완제품 필드만 사용 (클라이언트 나눗셈 금지)
+  const groupSharePct = (resData as any)?.groupSharePct ?? (resData as any)?.groupRatio ?? null;
 
   return (
     <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
@@ -414,7 +412,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
-                    총 {resData?.totalGroupRooms ?? 0}실 ({groupSharePct}% 비중)
+                    총 {resData?.totalGroupRooms ?? 0}실 {groupSharePct != null ? `(${groupSharePct}% 비중)` : ''}
                   </span>
                 </div>
               </div>
@@ -422,9 +420,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
               {resData?.groups && resData.groups.length > 0 ? (
                 <div className="space-y-1.5 max-h-[170px] overflow-y-auto pr-1">
                   {resData.groups.map((grp, gIdx) => {
-                    const itemShare = (resData.totalRooms > 0)
-                      ? ((grp.totalRooms / resData.totalRooms) * 100).toFixed(1)
-                      : '0.0';
+                    const itemShare = (grp as any)?.sharePct ?? (grp as any)?.roomSharePct ?? null;
                     return (
                       <div
                         key={gIdx}
@@ -434,9 +430,11 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
                           <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
                             <span className="truncate text-sm font-extrabold">{grp.channelName}</span>
-                            <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-semibold shrink-0 border border-purple-100">
-                              비중 {itemShare}%
-                            </span>
+                            {itemShare != null && (
+                              <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md font-semibold shrink-0 border border-purple-100">
+                                비중 {itemShare}%
+                              </span>
+                            )}
                             {grp.category && (
                               <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded-sm shrink-0 hidden sm:inline">
                                 {grp.category}

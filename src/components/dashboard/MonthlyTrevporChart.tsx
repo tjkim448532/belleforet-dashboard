@@ -333,33 +333,18 @@ export default function MonthlyTrevporChart() {
       }
     });
 
-    // [1:1 동기화 SSOT] 선택된 기간(periodMode)에 따른 정밀 가중 TrevPAR 산출 (라벨-수치 완벽 일치)
-    const isFullYtd = periodMode === 'ALL_MTD';
-    
-    const computedTyTrevpar = totalTyAvailRooms > 0 ? Math.round(totalTyRevenue / totalTyAvailRooms) : null;
-    const computedLyTrevpar = totalLyAvailRooms > 0 ? Math.round(totalLyRevenue / totalLyAvailRooms) : null;
-    const computedGrowth = (computedTyTrevpar !== null && computedLyTrevpar !== null && computedLyTrevpar > 0)
-      ? Number(((computedTyTrevpar - computedLyTrevpar) / computedLyTrevpar * 100).toFixed(1))
-      : null;
+    // 백엔드 공인 ytdSummary 완제품 바인딩 (클라이언트 나눗셈 금지, 미제공 시 null Fail-Stop)
+    const avgTyTrevpar = metricMode === 'TOTAL'
+      ? ((data as any)?.ytdSummary?.ty?.trevparTotal ?? null)
+      : ((data as any)?.ytdSummary?.ty?.trevparWithoutGolf ?? null);
 
-    // ALL_MTD(당월 포함 전체) 선택 시 백엔드 공인 ytdSummary 우선 바인딩, 특정 구간(마감월/반기/분기) 선택 시 해당 구간 1:1 정밀값 바인딩
-    const avgTyTrevpar = isFullYtd
-      ? (metricMode === 'TOTAL'
-          ? ((data as any)?.ytdSummary?.ty?.trevparTotal ?? computedTyTrevpar)
-          : ((data as any)?.ytdSummary?.ty?.trevparWithoutGolf ?? computedTyTrevpar))
-      : computedTyTrevpar;
+    const avgLyTrevpar = metricMode === 'TOTAL'
+      ? ((data as any)?.ytdSummary?.ly?.trevparTotal ?? null)
+      : ((data as any)?.ytdSummary?.ly?.trevparWithoutGolf ?? null);
 
-    const avgLyTrevpar = isFullYtd
-      ? (metricMode === 'TOTAL'
-          ? ((data as any)?.ytdSummary?.ly?.trevparTotal ?? computedLyTrevpar)
-          : ((data as any)?.ytdSummary?.ly?.trevparWithoutGolf ?? computedLyTrevpar))
-      : computedLyTrevpar;
-
-    const yoyGrowth = isFullYtd
-      ? (metricMode === 'TOTAL'
-          ? ((data as any)?.ytdSummary?.growthTotalRate ?? computedGrowth)
-          : ((data as any)?.ytdSummary?.growthWithoutGolfRate ?? computedGrowth))
-      : computedGrowth;
+    const yoyGrowth = metricMode === 'TOTAL'
+      ? ((data as any)?.ytdSummary?.growthTotalRate ?? null)
+      : ((data as any)?.ytdSummary?.growthWithoutGolfRate ?? null);
 
     let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
     if (periodMode === 'CLOSED_ONLY') {

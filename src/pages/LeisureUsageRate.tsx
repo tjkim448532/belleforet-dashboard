@@ -145,9 +145,11 @@ export default function LeisureUsageRate() {
     setError(null);
     try {
       const currentYear = getClosedBusinessYear();
+      const sMonth = startDate ? parseInt(startDate.slice(5, 7), 10) : 1;
+      const eMonth = (isRange && endDate) ? parseInt(endDate.slice(5, 7), 10) : sMonth;
       const [resUsage, resYoy] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/leisure-usage-rate`),
-        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=${currentYear}`),
+        secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=${currentYear}&startMonth=${sMonth}&endMonth=${eMonth}`),
       ]);
 
       const payloadUsage: LeisureUsageRateResponse = resUsage?.data ?? resUsage;
@@ -160,7 +162,7 @@ export default function LeisureUsageRate() {
         const cartTotalSeries = payloadUsage.series?.find((s) => s.facilityName === '마운틴카트(전체)');
         const years = payloadYoy.years && payloadYoy.years.length > 0 ? [...payloadYoy.years].sort() : ['2024', '2025', '2026'];
 
-        if (cartTotalSeries && payloadYoy.pivotData) {
+        if (cartTotalSeries && payloadYoy.pivotData && !payloadYoy.pivotData['마운틴카트(전체)']) {
           const cartTotalPivotRows = Array.from({ length: 12 }, (_, i) => {
             const m = i + 1;
             const mPad = String(m).padStart(2, '0');
@@ -181,31 +183,13 @@ export default function LeisureUsageRate() {
             return row;
           });
 
-          // '마운틴카트(전체)' 및 '마운틴카트' 모두에 통합 pivotData 연결
           payloadYoy.pivotData['마운틴카트(전체)'] = cartTotalPivotRows;
           payloadYoy.pivotData['마운틴카트'] = cartTotalPivotRows;
 
-          // facilityPeriodCumulative 보강
-          if (payloadYoy.facilityPeriodCumulative) {
-            const cartCum: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {};
-            years.forEach((yr) => {
-              const grand = payloadYoy.facilityPeriodCumulative?.['마운틴카트(그랜드포렛)']?.[yr];
-              const mini = payloadYoy.facilityPeriodCumulative?.['마운틴카트(미니포렛)']?.[yr];
-              const legacy = payloadYoy.facilityPeriodCumulative?.['마운틴카트']?.[yr];
-
-              const vGrand = grand?.visitors || 0;
-              const vMini = mini?.visitors || 0;
-              const vLegacy = legacy?.visitors || 0;
-              const roomG = grand?.roomGuests || mini?.roomGuests || legacy?.roomGuests || 0;
-              const totalV = (vGrand + vMini) > 0 ? (vGrand + vMini) : vLegacy;
-              const rate = roomG > 0 ? Math.round((totalV / roomG) * 1000) / 10 : 0;
-              cartCum[yr] = { visitors: totalV, roomGuests: roomG, usageRate: rate };
-            });
-            payloadYoy.facilityPeriodCumulative['마운틴카트(전체)'] = cartCum;
-            payloadYoy.facilityPeriodCumulative['마운틴카트'] = cartCum;
+          if (payloadYoy.facilityPeriodCumulative && !payloadYoy.facilityPeriodCumulative['마운틴카트(전체)']) {
+            payloadYoy.facilityPeriodCumulative['마운틴카트(전체)'] = payloadYoy.facilityPeriodCumulative['마운틴카트'] || {};
           }
 
-          // facilities 목록 정리: '마운틴카트'를 '마운틴카트(전체)'로 대체하고 그랜드/미니 유지
           if (payloadYoy.facilities) {
             const facSet = new Set(payloadYoy.facilities);
             facSet.delete('마운틴카트');
@@ -248,7 +232,7 @@ export default function LeisureUsageRate() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [startDate, endDate, isRange]);
 
   // When date range changes via GlobalDatePicker, reset selectedViewKey to PERIOD_TOTAL if range mode, or matching month
   useEffect(() => {
@@ -328,36 +312,21 @@ export default function LeisureUsageRate() {
     const targetFacilityName = isCartTotal ? '마운틴카트(전체)' : selectedFacility;
 
     if (isPeriodTotalMode) {
-      // 1. Calculate Period Cumulative across selectedPeriodMonths
-      const selSeries = usageData.series.find((s) => s.facilityName === targetFacilityName)
-        || usageData.series.find((s) => s.facilityName === selectedFacility);
-      let selVisitors = 0;
-      let selDenominator = 0;
-      for (const m of selectedPeriodMonths) {
-        const pt = selSeries?.data.find((d) => d.month === m);
-        if (pt) {
-          selVisitors += pt.visitors;
-          selDenominator += pt.totalRoomGuests;
-        }
-      }
-      const selRate = selDenominator > 0 ? Math.round((selVisitors / selDenominator) * 1000) / 10 : 0;
+      const yrKey = startDate ? startDate.slice(0, 4) : String(getClosedBusinessYear());
+      const selCum = yoyData?.facilityPeriodCumulative?.[targetFacilityName]?.[yrKey]
+        || yoyData?.facilityPeriodCumulative?.[selectedFacility]?.[yrKey];
+      const selVisitors = selCum?.visitors ?? 0;
+      const selDenominator = selCum?.roomGuests ?? 0;
+      const selRate = selCum?.usageRate ?? 0;
 
-      // Top venue across selected period (전 영업장 공식 실측치 공정 평가)
       let topVenue = { name: '-', visitors: 0, usageRate: 0 };
-      for (const s of usageData.series) {
-        let vTotal = 0;
-        let dTotal = 0;
-        for (const m of selectedPeriodMonths) {
-          const pt = s.data.find((d) => d.month === m);
-          if (pt) {
-            vTotal += pt.visitors;
-            dTotal += pt.totalRoomGuests;
+      if (yoyData?.facilityPeriodCumulative) {
+        Object.entries(yoyData.facilityPeriodCumulative).forEach(([facName, yrMap]) => {
+          const item = yrMap?.[yrKey];
+          if (item && item.usageRate > topVenue.usageRate) {
+            topVenue = { name: facName, visitors: item.visitors, usageRate: item.usageRate };
           }
-        }
-        const avgRate = dTotal > 0 ? Math.round((vTotal / dTotal) * 1000) / 10 : 0;
-        if (avgRate > topVenue.usageRate) {
-          topVenue = { name: s.facilityName, visitors: vTotal, usageRate: avgRate };
-        }
+        });
       }
 
       return {
@@ -405,7 +374,7 @@ export default function LeisureUsageRate() {
         topVenue,
       };
     }
-  }, [usageData, isPeriodTotalMode, selectedPeriodMonths, selectedFacility, startMonthStr, endMonthStr, activeSingleMonth]);
+  }, [usageData, yoyData, startDate, isPeriodTotalMode, selectedPeriodMonths, selectedFacility, startMonthStr, endMonthStr, activeSingleMonth]);
 
   // Months 1 to 12 labels
   const monthLabels = useMemo(() => [
@@ -654,38 +623,25 @@ export default function LeisureUsageRate() {
   // Cumulative numbers for the selected period across availableYears in the matrix table
   const periodCumulative = useMemo(() => {
     const isCart = selectedFacility === '마운틴카트' || selectedFacility === '마운틴카트(전체)';
-    const pivotKey = (isCart && !yoyData?.pivotData?.[selectedFacility])
-      ? (yoyData?.pivotData?.['마운틴카트(전체)'] ? '마운틴카트(전체)' : '마운틴카트')
+    const pivotKey = (isCart && !yoyData?.facilityPeriodCumulative?.[selectedFacility])
+      ? (yoyData?.facilityPeriodCumulative?.['마운틴카트(전체)'] ? '마운틴카트(전체)' : '마운틴카트')
       : selectedFacility;
 
-    if (!yoyData?.pivotData || !yoyData.pivotData[pivotKey]) return null;
-
-    const rows = yoyData.pivotData[pivotKey];
-    const targetRows = rows.filter((r) => selectedPeriodMonthNumbers.has(r.month));
+    const cumMap = yoyData?.facilityPeriodCumulative?.[pivotKey];
+    if (!cumMap) return null;
 
     const result: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {};
     availableYears.forEach((yr) => {
-      result[yr] = { visitors: 0, roomGuests: 0, usageRate: 0 };
-    });
-
-    availableYears.forEach((yr) => {
-      let v = 0;
-      let g = 0;
-      targetRows.forEach((r) => {
-        const item = r[yr] as LeisureYoyYearData | undefined;
-        if (item) {
-          v += item.visitors;
-          g += item.roomGuests;
-        }
-      });
-      const usageRate = g > 0 
-        ? Math.round((v / g) * 1000) / 10 
-        : 0;
-      result[yr] = { visitors: v, roomGuests: g, usageRate };
+      const item = cumMap[yr];
+      result[yr] = {
+        visitors: item?.visitors ?? 0,
+        roomGuests: item?.roomGuests ?? 0,
+        usageRate: item?.usageRate ?? 0,
+      };
     });
 
     return result;
-  }, [yoyData, selectedFacility, selectedPeriodMonthNumbers, availableYears]);
+  }, [yoyData, selectedFacility, availableYears]);
 
   const periodYoYDiff = useMemo(() => {
     if (!periodCumulative) return null;
@@ -697,35 +653,27 @@ export default function LeisureUsageRate() {
     return null;
   }, [periodCumulative, compareYearB, compareYearA]);
 
-  // 7개 주요 영업장 선택 구간 누적 연산 (각 영업장 및 선택 연도별 실측 집계)
+  // 7개 주요 영업장 선택 구간 누적 (백엔드 facilityPeriodCumulative 완제품 직접 바인딩)
   const sevenFacilitiesCumulative = useMemo(() => {
-    if (!yoyData?.pivotData) return {};
+    if (!yoyData?.facilityPeriodCumulative) return {};
     const result: Record<string, Record<string, { visitors: number; roomGuests: number; usageRate: number }>> = {};
 
     SEVEN_KEY_FACILITIES.forEach(({ key }) => {
-      const rows = yoyData.pivotData[key] || [];
-      const targetRows = rows.filter((r) => selectedPeriodMonthNumbers.has(r.month));
+      const cumMap = yoyData.facilityPeriodCumulative?.[key] || {};
       result[key] = {};
 
       selectedMatrixYears.forEach((yr) => {
-        let v = 0;
-        let g = 0;
-        targetRows.forEach((r) => {
-          const item = r[yr] as LeisureYoyYearData | undefined;
-          if (item) {
-            v += item.visitors;
-            g += item.roomGuests;
-          }
-        });
-        const usageRate = g > 0
-          ? Math.round((v / g) * 1000) / 10
-          : 0;
-        result[key][yr] = { visitors: v, roomGuests: g, usageRate };
+        const item = cumMap[yr];
+        result[key][yr] = {
+          visitors: item?.visitors ?? 0,
+          roomGuests: item?.roomGuests ?? 0,
+          usageRate: item?.usageRate ?? 0,
+        };
       });
     });
 
     return result;
-  }, [yoyData, selectedPeriodMonthNumbers, selectedMatrixYears]);
+  }, [yoyData, selectedMatrixYears]);
 
   // 엑셀 출력: 선택된 영업장에 관계없이 전 영업장의 최신 2개년(prevYear vs latestYear) 및 전체 연도 이용률 비교 워크북 생성
   const handleExportExcel = () => {

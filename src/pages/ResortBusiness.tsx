@@ -274,9 +274,9 @@ export default function ResortBusiness() {
     ? lodgingStats.lyRevenue
     : (lyStats?.revenue || 0);
   const revDiff = revLy > 0 ? revCurrent - revLy : 0;
-  const revGrowth = lodgingStats.revenueGrowth !== undefined
+  const revGrowth = lodgingStats.revenueGrowth !== undefined && lodgingStats.revenueGrowth !== null
     ? lodgingStats.revenueGrowth
-    : (revLy > 0 ? Number(((revDiff / revLy) * 100).toFixed(1)) : null);
+    : null;
 
   // 2. 판매 건수 (계약) - physicalRoomMaster.metrics.totalRoomsSold 우선 바인딩
   const roomsCurrent = curPhysicalMetrics?.totalRoomsSold ?? lodgingStats.roomsSold;
@@ -286,11 +286,9 @@ export default function ResortBusiness() {
       ? lodgingStats.lyRoomsSold
       : (lyStats?.roomsSold || 0));
   const roomsDiff = roomsLy > 0 ? roomsCurrent - roomsLy : 0;
-  const roomsGrowth = curPhysicalMetrics?.totalRoomsSold !== undefined && lyPhysicalMetrics?.totalRoomsSold !== undefined && roomsLy > 0
-    ? Number((((roomsCurrent - roomsLy) / roomsLy) * 100).toFixed(1))
-    : (lodgingStats.roomsGrowth !== undefined
-      ? lodgingStats.roomsGrowth
-      : (roomsLy > 0 ? Number(((roomsDiff / roomsLy) * 100).toFixed(1)) : null));
+  const roomsGrowth = lodgingStats.roomsGrowth !== undefined && lodgingStats.roomsGrowth !== null
+    ? lodgingStats.roomsGrowth
+    : ((curPhysicalMetrics as any)?.roomsGrowth ?? null);
 
   // 3. 실운영 점유실 (물리) & 점유율 - physicalRoomMaster.metrics 우선 바인딩 (167실, 95.4%)
   const summary = data?.summary || {};
@@ -343,9 +341,7 @@ export default function ResortBusiness() {
   const adrCurrent = lodgingStats.adr;
   const adrLy = lyStats?.adr !== undefined && lyStats.adr > 0 ? lyStats.adr : null;
   const adrDiff = adrCurrent !== undefined && adrLy !== null ? adrCurrent - adrLy : null;
-  const adrGrowth = adrCurrent !== undefined && adrLy !== null && adrLy > 0
-    ? Number((((adrCurrent - adrLy) / adrLy) * 100).toFixed(1))
-    : null;
+  const adrGrowth = (lodgingStats as any).adrGrowth ?? (summary as any).adrGrowth ?? null;
   
   const roomOccupancyData = (() => {
     if (!data?.roomOccupancyMap) return [];
@@ -442,7 +438,7 @@ export default function ResortBusiness() {
       const lyAdr = ly?.adr ?? 0;
       const soldDiff = cur.roomsSold - lySold;
       const revDiff = cur.totalRevenue - lyRev;
-      const revGrowth = lyRev > 0 ? Number(((revDiff / lyRev) * 100).toFixed(1)) : null;
+      const revGrowth = cur.revenueGrowth ?? cur.revGrowth ?? null;
       const adrDiff = (cur.adr > 0 && lyAdr > 0) ? cur.adr - lyAdr : null;
 
       return {
@@ -472,7 +468,7 @@ export default function ResortBusiness() {
       const lyAdr = ly?.adr ?? 0;
       const soldDiff = cur.roomsSold - lySold;
       const revDiff = cur.totalRevenue - lyRev;
-      const revGrowth = lyRev > 0 ? Number(((revDiff / lyRev) * 100).toFixed(1)) : null;
+      const revGrowth = cur.revenueGrowth ?? cur.revGrowth ?? null;
       const adrDiff = (cur.adr > 0 && lyAdr > 0) ? cur.adr - lyAdr : null;
 
       return {
@@ -1007,9 +1003,9 @@ export default function ResortBusiness() {
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayRevenue !== undefined && lyStats.weekdayRevenue ? (
-                            <span className={lodgingStats.weekdayRevenue >= lyStats.weekdayRevenue ? 'text-emerald-700' : 'text-rose-600'}>
-                              {lodgingStats.weekdayRevenue >= lyStats.weekdayRevenue ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayRevenue - lyStats.weekdayRevenue) / lyStats.weekdayRevenue * 100).toFixed(1)))}%
+                          {(lodgingStats as any).weekdayRevenueGrowth != null ? (
+                            <span className={(lodgingStats as any).weekdayRevenueGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                              {(lodgingStats as any).weekdayRevenueGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekdayRevenueGrowth))}%
                             </span>
                           ) : '-'}
                         </td>
@@ -1024,9 +1020,9 @@ export default function ResortBusiness() {
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendRevenue !== undefined && lyStats.weekendRevenue ? (
-                            <span className={lodgingStats.weekendRevenue >= lyStats.weekendRevenue ? 'text-emerald-700' : 'text-rose-600'}>
-                              {lodgingStats.weekendRevenue >= lyStats.weekendRevenue ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendRevenue - lyStats.weekendRevenue) / lyStats.weekendRevenue * 100).toFixed(1)))}%
+                          {(lodgingStats as any).weekendRevenueGrowth != null ? (
+                            <span className={(lodgingStats as any).weekendRevenueGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                              {(lodgingStats as any).weekendRevenueGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekendRevenueGrowth))}%
                             </span>
                           ) : '-'}
                         </td>
@@ -1058,9 +1054,9 @@ export default function ResortBusiness() {
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayRoomsSold !== undefined && lyStats.weekdayRoomsSold ? (
-                            <span className={lodgingStats.weekdayRoomsSold >= lyStats.weekdayRoomsSold ? 'text-emerald-700' : 'text-rose-600'}>
-                              {lodgingStats.weekdayRoomsSold >= lyStats.weekdayRoomsSold ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold) / lyStats.weekdayRoomsSold * 100).toFixed(1)))}%
+                          {(lodgingStats as any).weekdayRoomsGrowth != null ? (
+                            <span className={(lodgingStats as any).weekdayRoomsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                              {(lodgingStats as any).weekdayRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekdayRoomsGrowth))}%
                             </span>
                           ) : '-'}
                         </td>
@@ -1075,9 +1071,9 @@ export default function ResortBusiness() {
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendRoomsSold !== undefined && lyStats.weekendRoomsSold ? (
-                            <span className={lodgingStats.weekendRoomsSold >= lyStats.weekendRoomsSold ? 'text-emerald-700' : 'text-rose-600'}>
-                              {lodgingStats.weekendRoomsSold >= lyStats.weekendRoomsSold ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold) / lyStats.weekendRoomsSold * 100).toFixed(1)))}%
+                          {(lodgingStats as any).weekendRoomsGrowth != null ? (
+                            <span className={(lodgingStats as any).weekendRoomsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                              {(lodgingStats as any).weekendRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekendRoomsGrowth))}%
                             </span>
                           ) : '-'}
                         </td>
@@ -1109,9 +1105,9 @@ export default function ResortBusiness() {
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayAdr !== undefined && lyStats?.weekdayAdr ? (
-                            <span className={lodgingStats.weekdayAdr >= lyStats.weekdayAdr ? 'text-emerald-700' : 'text-rose-600'}>
-                              {lodgingStats.weekdayAdr >= lyStats.weekdayAdr ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekdayAdr - lyStats.weekdayAdr) / lyStats.weekdayAdr * 100).toFixed(1)))}%
+                          {(lodgingStats as any).weekdayAdrGrowth != null ? (
+                            <span className={(lodgingStats as any).weekdayAdrGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                              {(lodgingStats as any).weekdayAdrGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekdayAdrGrowth))}%
                             </span>
                           ) : '-'}
                         </td>
@@ -1126,9 +1122,9 @@ export default function ResortBusiness() {
                             : '-'}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendAdr !== undefined && lyStats?.weekendAdr ? (
-                            <span className={lodgingStats.weekendAdr >= lyStats.weekendAdr ? 'text-emerald-700' : 'text-rose-600'}>
-                              {lodgingStats.weekendAdr >= lyStats.weekendAdr ? '▲' : '▼'} {Math.abs(Number(((lodgingStats.weekendAdr - lyStats.weekendAdr) / lyStats.weekendAdr * 100).toFixed(1)))}%
+                          {(lodgingStats as any).weekendAdrGrowth != null ? (
+                            <span className={(lodgingStats as any).weekendAdrGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                              {(lodgingStats as any).weekendAdrGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekendAdrGrowth))}%
                             </span>
                           ) : '-'}
                         </td>
@@ -1146,9 +1142,9 @@ export default function ResortBusiness() {
                             {adrDiff16 !== null ? `${adrDiff16 > 0 ? '+' : ''}${formatCurrency(adrDiff16)}원` : '-'}
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs font-bold">
-                            {adrDiff16 !== null && lyAdr16 ? (
-                              <span className={adrDiff16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                                {adrDiff16 >= 0 ? '▲' : '▼'} {Math.abs(Number(((adrDiff16) / lyAdr16 * 100).toFixed(1)))}%
+                            {(lodgingStats as any).adrGrowth16 != null ? (
+                              <span className={(lodgingStats as any).adrGrowth16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                {(lodgingStats as any).adrGrowth16 >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).adrGrowth16))}%
                               </span>
                             ) : '-'}
                           </td>
@@ -1166,9 +1162,9 @@ export default function ResortBusiness() {
                             {adrDiff35 !== null ? `${adrDiff35 > 0 ? '+' : ''}${formatCurrency(adrDiff35)}원` : '-'}
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs font-bold">
-                            {adrDiff35 !== null && lyAdr35 ? (
-                              <span className={adrDiff35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                                {adrDiff35 >= 0 ? '▲' : '▼'} {Math.abs(Number(((adrDiff35) / lyAdr35 * 100).toFixed(1)))}%
+                            {(lodgingStats as any).adrGrowth35 != null ? (
+                              <span className={(lodgingStats as any).adrGrowth35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                {(lodgingStats as any).adrGrowth35 >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).adrGrowth35))}%
                               </span>
                             ) : '-'}
                           </td>
@@ -1186,9 +1182,9 @@ export default function ResortBusiness() {
                             {adrDiff51 !== null ? `${adrDiff51 > 0 ? '+' : ''}${formatCurrency(adrDiff51)}원` : '-'}
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs font-bold">
-                            {adrDiff51 !== null && lyAdr51 ? (
-                              <span className={adrDiff51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                                {adrDiff51 >= 0 ? '▲' : '▼'} {Math.abs(Number(((adrDiff51) / lyAdr51 * 100).toFixed(1)))}%
+                            {(lodgingStats as any).adrGrowth51 != null ? (
+                              <span className={(lodgingStats as any).adrGrowth51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                {(lodgingStats as any).adrGrowth51 >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).adrGrowth51))}%
                               </span>
                             ) : '-'}
                           </td>

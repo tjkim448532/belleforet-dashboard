@@ -112,8 +112,6 @@ function matchCrawledDiningInfo(venueName: string, crawledDiningList: any[]) {
     if (cleanVenue.includes('투썸') && fName.includes('투썸')) return true;
     if (cleanVenue.includes('딜라이트') && fName.includes('딜라이트')) return true;
     if (cleanVenue.includes('밤밤테이블') && fName.includes('밤밤테이블')) return true;
-    if (cleanVenue.includes('핏스탑') && fName.includes('핏스탑')) return true;
-    if (cleanVenue.includes('얼룩말') && fName.includes('얼룩말')) return true;
     return fName.includes(cleanVenue);
   });
 
@@ -401,18 +399,22 @@ export default function OutsourcedFnbDashboard() {
           <span className="text-slate-600 font-medium">
             정기 휴무 매장:
             <strong className="text-rose-600 ml-1.5">딜라이트(월~수 휴장)</strong> ·
-            <strong className="text-rose-600 ml-1">밤밤테이블(화요일 휴무)</strong> ·
-            <strong className="text-amber-700 ml-1">핏스탑(월요일 휴무)</strong>
-            <span className="text-slate-400 ml-1.5">(그 외 남도예담·브리스킷346·쿠치나·투썸·BHC·CU 연중무휴)</span>
+            <strong className="text-rose-600 ml-1">밤밤테이블(화요일 휴무)</strong>
+            <span className="text-slate-400 ml-1.5">(그 외 남도예담·브리스킷346·쿠치나·투썸·BHC·CU 연중무휴 / 푸드트럭 2곳 시즌운영)</span>
           </span>
         </div>
 
-        {!isDedicatedApiLive && !loading && (
+        {isDedicatedApiLive && !loading ? (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
+            <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+            <span>정규 외주식음 API 연동 완료 (Ticket 42 SSOT · 0-Variance 점유비율 & Top 3 메뉴)</span>
+          </div>
+        ) : !loading ? (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
             <AlertCircle size={14} className="text-amber-600 shrink-0" />
             <span>점유비율(%) 및 POS 실매출 Top 3 메뉴 데이터 연동 준비 중 (공식 홈페이지 대표 메뉴 임시 연동)</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* 3. 전체 외주식음 요약 KPI 카드 (3종: 당일/선택기간, 당월 MTD, 올해 누적 YTD) */}
@@ -739,7 +741,7 @@ export default function OutsourcedFnbDashboard() {
                           매출 상위 메뉴 Top 3
                         </span>
                         <span className="text-[11px] text-slate-400 font-medium">
-                          {venue.topMenus.length > 0 ? 'POS 실측 판매금액 순' : 'Ticket 42 API 대기'}
+                          {venue.topMenus.length > 0 ? 'POS 실측 판매금액 순' : 'POS 단일 정산'}
                         </span>
                       </div>
 
@@ -775,7 +777,7 @@ export default function OutsourcedFnbDashboard() {
                         <div className="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-300 text-xs space-y-2">
                           <div className="text-slate-700 font-semibold flex items-center gap-1.5">
                             <Sparkles size={13} className="text-amber-500 shrink-0" />
-                            <span>{isDedicatedApiLive ? '수수료 입점 매장 (POS 메뉴 미제공)' : 'POS 메뉴별 매출 Top 3 집계 대기'}</span>
+                            <span>POS 단일 정산 매장 (개별 메뉴 미집계)</span>
                           </div>
                           {venue.crawledMenus && venue.crawledMenus.length > 0 && (
                             <div className="pt-1.5 border-t border-slate-200/80 space-y-1">
@@ -962,26 +964,17 @@ export default function OutsourcedFnbDashboard() {
                               </span>
                             ))}
                           </div>
-                        ) : v.crawledMenus && v.crawledMenus.length > 0 ? (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {v.crawledMenus.slice(0, 3).map((cm, cIdx) => (
-                              <span
-                                key={cIdx}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-medium text-[11px]"
-                                title={`공식 홈페이지 대표 메뉴 (${cm.price})`}
-                              >
-                                <span className="text-slate-400 font-bold">{cIdx + 1}</span> {cm.name}
-                                <span className="text-slate-400 font-mono text-[10px]">({cm.price})</span>
-                              </span>
-                            ))}
-                            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded font-semibold">
-                              공식 홈페이지 대표 메뉴
-                            </span>
-                          </div>
                         ) : (
-                          <span className="text-slate-400 font-medium text-[11px]">
-                            {isDedicatedApiLive ? '수수료 입점 매장 (POS 품목 미연동)' : 'POS 메뉴 집계 준비 중'}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
+                              POS 단일 정산 매장 (개별 메뉴 미집계)
+                            </span>
+                            {v.crawledMenus && v.crawledMenus.length > 0 && (
+                              <span className="text-[10px] text-slate-400">
+                                (홈페이지 대표: {v.crawledMenus.slice(0, 2).map(c => c.name).join(', ')})
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
                     </tr>

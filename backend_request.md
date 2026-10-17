@@ -3287,5 +3287,49 @@ ORDER BY venue_name, rn;
   - `avgAssignedCountPerUnit`: 가동 호실당 평균 배정 횟수 (예: `23.4`)
   - `avgRoomNightsPerUnit`: 가동 호실당 평균 투숙 박수 (예: `26.8`)
 
+---
+
+## 🎟️ [Ticket 45] 레저 할인 누수·미사용 티켓 감사 마트(`mat_v6_leisure_discount_audit_daily`) 최신 일자(2026-10-15~16) 미적재 및 0/0 나눗셈 100% 왜곡 수정 요청 (2026-10-17)
+
+### 45-1. 증상 및 실측 Stdout (Zero-Hallucination)
+1. **단일 일자(`date=2026-10-16`) 조회 시 0원 및 100% 빈 껍데기 반환**:
+   - `GET /api/v6/report/leisure-discount-leakage?date=2026-10-16` 실측 결과:
+     ```json
+     {
+       "summary": {
+         "totalSalesCount": 0,
+         "totalListAmount": 0,
+         "totalDiscountAmount": 0,
+         "totalNetAmount": 0,
+         "overallRealizationRate": 100,
+         "overallDiscountRate": 0,
+         "totalUnusedCount": 0,
+         "totalUnusedAmount": 0
+       },
+       "shops": [],
+       "topDiscountMenus": []
+     }
+     ```
+   - 정상가와 할인액이 모두 0원인데 `overallRealizationRate: 100`이 반환되어, 대시보드 화면에 "정규 마트 연동 완료" 배지와 함께 `0원 / 0원 / 100% / 0원` 및 빈 테이블이 표출되는 원인이 됨.
+2. **원천 실적 정상 존재 (타 마트 API 대조 검증)**:
+   - 동일 일자(`date=2026-10-16`) `GET /api/v6/report/leisure-channel-sales` 실측 결과:
+     `summary: { totalRevenue: 16,485,201원, ticketOnlyRevenue: 6,020,638원, motoOnlyRevenue: 10,464,563원, posRevenue: 10,682,818원 }, venues: 13개`
+     ➔ 원천 티켓·POS 데이터는 정상 적재되어 있으나, `mat_v6_leisure_discount_audit_daily` 마트 적재만 누락됨.
+3. **일자별 마트 적재 현황 실측 (10/14 이후 ETL 단절 적발)**:
+   - `2026-10-01 ~ 2026-10-14`: 총 45,082건, 정상가 7.21억 원, 30개 업장 정상 적재 완료.
+   - `2026-10-15`: **단 1건 (43,000원)만 적재** (배치 중단 의심).
+   - `2026-10-16`: **0건 (완전 누락)**.
+
+### 45-2. 백엔드 조치 요청 사항
+1. **`mat_v6_leisure_discount_audit_daily` 마트 배치 프로시저 점검 및 10/15~10/16 백필**:
+   - `sp_etl_v6_mat_discount_audit` (또는 티켓/POS 할인 마트 ETL)의 스케줄러 상태를 점검하고, 2026-10-15와 2026-10-16 일자 데이터를 재집계(Backfill)해 주십시오.
+2. **`totalListAmount === 0`일 때 `overallRealizationRate` 기본값 보정**:
+   - 분모(`totalListAmount`)가 0원일 때 `100`을 반환하지 말고 `null` 또는 `0`으로 반환하여, 데이터가 없는 날짜에 100% 실현율로 오인되지 않도록 수정해 주십시오.
+
+### 45-3. 프론트엔드 방어 조치 내역
+- `src/pages/LeisureFacility.tsx`:
+  - `totalListAmount === 0`일 때 백엔드 폴백 100% 대신 `'-'`로 Fail-Stop 처리.
+  - 데이터가 0건일 때 빈 테이블 대신 `"조회하신 일자에 집계된 할인 누수 및 미사용 티켓 내역이 없습니다 (백엔드 마트 배치 점검 필요)"` 빈 상태 안내 행 표출.
+
 
 

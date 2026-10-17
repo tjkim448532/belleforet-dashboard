@@ -800,14 +800,35 @@ export default function OutsourcedFnbDashboard() {
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <div className="text-slate-400 font-medium">{isRangeMode ? '기간' : '당일'}</div>
                       <div className="font-bold text-slate-800 font-mono mt-0.5 truncate">{formatNum(venue.todayActual)}원</div>
+                      {venue.todayGrowth !== null && venue.todayGrowth !== undefined ? (
+                        <div className={`text-[10px] font-bold mt-0.5 ${venue.todayGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          전년비 {venue.todayGrowth >= 0 ? '▲' : '▼'}{Math.abs(venue.todayGrowth).toFixed(1)}%
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 mt-0.5">-</div>
+                      )}
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <div className="text-slate-400 font-medium">당월(MTD)</div>
                       <div className="font-bold text-blue-800 font-mono mt-0.5 truncate">{formatNum(venue.mtdActual)}원</div>
+                      {venue.mtdGrowth !== null && venue.mtdGrowth !== undefined ? (
+                        <div className={`text-[10px] font-bold mt-0.5 ${venue.mtdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          전년비 {venue.mtdGrowth >= 0 ? '▲' : '▼'}{Math.abs(venue.mtdGrowth).toFixed(1)}%
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 mt-0.5">-</div>
+                      )}
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <div className="text-slate-400 font-medium">연간(YTD)</div>
                       <div className="font-bold text-indigo-800 font-mono mt-0.5 truncate">{formatNum(venue.ytdActual)}원</div>
+                      {venue.ytdGrowth !== null && venue.ytdGrowth !== undefined ? (
+                        <div className={`text-[10px] font-bold mt-0.5 ${venue.ytdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          전년비 {venue.ytdGrowth >= 0 ? '▲' : '▼'}{Math.abs(venue.ytdGrowth).toFixed(1)}%
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 mt-0.5">-</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -840,10 +861,24 @@ export default function OutsourcedFnbDashboard() {
                   <th className="py-3.5 px-4">영업장명</th>
                   <th className="py-3.5 px-4">휴무일 (크롤링)</th>
                   <th className="py-3.5 px-4">운영시간</th>
-                  <th className="py-3.5 px-4 text-right">{isRangeMode ? '선택기간 매출' : '당일 매출'}</th>
-                  <th className="py-3.5 px-4 text-right">당월 누적 (MTD)</th>
-                  <th className="py-3.5 px-4 text-right">연간 누적 (YTD)</th>
-                  <th className="py-3.5 px-4 text-right">외주식음 내 비율(%)</th>
+                  <th className="py-3.5 px-4 text-right">
+                    <div>{isRangeMode ? '선택기간 매출' : '당일 매출'}</div>
+                    <div className="text-[10px] text-slate-400 font-normal">금액 / 전년비(%)</div>
+                  </th>
+                  <th className="py-3.5 px-4 text-right">
+                    <div>당월 누적 (MTD)</div>
+                    <div className="text-[10px] text-blue-500 font-normal">금액 / 전년비(%)</div>
+                  </th>
+                  <th className="py-3.5 px-4 text-right">
+                    <div>연간 누적 (YTD)</div>
+                    <div className="text-[10px] text-indigo-500 font-normal">금액 / 전년비(%)</div>
+                  </th>
+                  <th className="py-3.5 px-4 text-right">
+                    <div>외주식음 내 비율(%)</div>
+                    {!isDedicatedApiLive && (
+                      <div className="text-[10px] text-amber-600 font-normal">Ticket 42 대기</div>
+                    )}
+                  </th>
                   <th className="py-3.5 px-4">매출 상위 메뉴 Top 3</th>
                 </tr>
               </thead>
@@ -872,17 +907,48 @@ export default function OutsourcedFnbDashboard() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">{v.operatingHours}</td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800">
-                        {formatNum(v.todayActual)}원
+                      <td className="py-3.5 px-4 text-right font-mono">
+                        <div className="font-bold text-slate-800">{formatNum(v.todayActual)}원</div>
+                        {v.todayGrowth !== null && v.todayGrowth !== undefined ? (
+                          <div className={`text-[11px] font-semibold mt-0.5 ${
+                            v.todayGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            전년비 {v.todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(v.todayGrowth).toFixed(1)}%
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 mt-0.5">-</div>
+                        )}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-blue-800">
-                        {formatNum(v.mtdActual)}원
+                      <td className="py-3.5 px-4 text-right font-mono">
+                        <div className="font-bold text-blue-800">{formatNum(v.mtdActual)}원</div>
+                        {v.mtdGrowth !== null && v.mtdGrowth !== undefined ? (
+                          <div className={`text-[11px] font-semibold mt-0.5 ${
+                            v.mtdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            전년비 {v.mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(v.mtdGrowth).toFixed(1)}%
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 mt-0.5">-</div>
+                        )}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-extrabold text-indigo-900">
-                        {formatNum(v.ytdActual)}원
+                      <td className="py-3.5 px-4 text-right font-mono">
+                        <div className="font-extrabold text-indigo-900">{formatNum(v.ytdActual)}원</div>
+                        {v.ytdGrowth !== null && v.ytdGrowth !== undefined ? (
+                          <div className={`text-[11px] font-semibold mt-0.5 ${
+                            v.ytdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            전년비 {v.ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(v.ytdGrowth).toFixed(1)}%
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 mt-0.5">-</div>
+                        )}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-extrabold text-emerald-700">
-                        {showPct(getActiveSharePct(v))}
+                      <td className="py-3.5 px-4 text-right font-mono">
+                        {getActiveSharePct(v) !== null && getActiveSharePct(v) !== undefined ? (
+                          <span className="font-extrabold text-emerald-700">{showPct(getActiveSharePct(v))}</span>
+                        ) : (
+                          <span className="text-slate-400 font-normal" title="Ticket 42 백엔드 API 배포 대기 중">-</span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4">
                         {v.topMenus.length > 0 ? (
@@ -896,8 +962,24 @@ export default function OutsourcedFnbDashboard() {
                               </span>
                             ))}
                           </div>
+                        ) : v.crawledMenus && v.crawledMenus.length > 0 ? (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {v.crawledMenus.slice(0, 3).map((cm, cIdx) => (
+                              <span
+                                key={cIdx}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-medium text-[11px]"
+                                title={`공식 홈페이지 크롤링 대표 메뉴 (${cm.price})`}
+                              >
+                                <span className="text-slate-400 font-bold">{cIdx + 1}</span> {cm.name}
+                                <span className="text-slate-400 font-mono text-[10px]">({cm.price})</span>
+                              </span>
+                            ))}
+                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded">
+                              웹 크롤링 메뉴 (Ticket 42 POS 집계 대기)
+                            </span>
+                          </div>
                         ) : (
-                          <span className="text-slate-400 font-medium">
+                          <span className="text-slate-400 font-medium text-[11px]">
                             [Ticket 42] 백엔드 Top 3 메뉴 API 연동 대기
                           </span>
                         )}
@@ -912,10 +994,33 @@ export default function OutsourcedFnbDashboard() {
                     <td colSpan={4} className="py-4 px-4 text-center">
                       [콘텐츠기획본부 외주식음 전체 총합 (SSOT 완제품)]
                     </td>
-                    <td className="py-4 px-4 text-right font-mono">{formatNum(summary.todayActual)}원</td>
-                    <td className="py-4 px-4 text-right font-mono text-emerald-300">{formatNum(summary.mtdActual)}원</td>
-                    <td className="py-4 px-4 text-right font-mono text-amber-300">{formatNum(summary.ytdActual)}원</td>
-                    <td className="py-4 px-4 text-right font-mono">{isDedicatedApiLive ? showPct(100) : '-'}</td>
+                    <td className="py-4 px-4 text-right font-mono">
+                      <div>{formatNum(summary.todayActual)}원</div>
+                      {summary.todayGrowth !== null && summary.todayGrowth !== undefined && (
+                        <div className={`text-[11px] font-bold ${summary.todayGrowth >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          전년비 {summary.todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(summary.todayGrowth).toFixed(1)}%
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono">
+                      <div className="text-emerald-300">{formatNum(summary.mtdActual)}원</div>
+                      {summary.mtdGrowth !== null && summary.mtdGrowth !== undefined && (
+                        <div className={`text-[11px] font-bold ${summary.mtdGrowth >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          전년비 {summary.mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(summary.mtdGrowth).toFixed(1)}%
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono">
+                      <div className="text-amber-300">{formatNum(summary.ytdActual)}원</div>
+                      {summary.ytdGrowth !== null && summary.ytdGrowth !== undefined && (
+                        <div className={`text-[11px] font-bold ${summary.ytdGrowth >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          전년비 {summary.ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(summary.ytdGrowth).toFixed(1)}%
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono text-slate-400">
+                      {isDedicatedApiLive ? showPct(100) : '-'}
+                    </td>
                     <td className="py-4 px-4 text-slate-300 font-normal">
                       백엔드 사전 집계 총합 (클라이언트 합산 미수행)
                     </td>

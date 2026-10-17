@@ -681,7 +681,9 @@ export default function LeisureFacility() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">정가 실현율 (Price Realization)</div>
                 <div className="text-xl font-black text-emerald-700 mt-1">
-                  {showPct(discountLeakageIntel.summary?.realizationRatePct ?? discountLeakageIntel.summary?.overallRealizationRate)}
+                  {(discountLeakageIntel.summary?.totalListAmount ?? 0) > 0
+                    ? showPct(discountLeakageIntel.summary?.realizationRatePct ?? discountLeakageIntel.summary?.overallRealizationRate)
+                    : '-'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
                   정상가 대비 실수취 비율
@@ -717,19 +719,31 @@ export default function LeisureFacility() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {(discountLeakageIntel.topDiscountMenus || discountLeakageIntel.items || discountLeakageIntel.shops || []).map((item: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/80">
-                        <td className="py-2.5 px-3 font-bold text-slate-800">{item.shopName ?? '-'}</td>
-                        <td className="py-2.5 px-3 text-slate-700">{item.menuName ?? item.shopName ?? '-'}</td>
-                        <td className="py-2.5 px-3 text-right text-slate-600">{showWon(item.listAmount)}</td>
-                        <td className="py-2.5 px-3 text-right text-rose-600 font-semibold">{showWon(item.discountAmount)}</td>
-                        <td className="py-2.5 px-3 text-right font-bold text-slate-900">{showWon(item.netAmount)}</td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-emerald-700">{showPct(item.realizationRatePct ?? item.realizationRate)}</td>
-                        <td className="py-2.5 px-3 text-right text-slate-700">
-                          {item.salesCount != null ? `${Number(item.salesCount).toLocaleString()}건` : (item.unusedCount != null ? `${Number(item.unusedCount).toLocaleString()}건` : '-')}
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const items = discountLeakageIntel.topDiscountMenus || discountLeakageIntel.items || discountLeakageIntel.shops || [];
+                      if (items.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan={7} className="py-10 text-center text-slate-400 font-medium">
+                              조회하신 일자({endDate && startDate !== endDate ? `${startDate} ~ ${endDate}` : startDate})에 집계된 할인 누수 및 미사용 티켓 내역이 없습니다. (백엔드 마트 배치 점검 필요)
+                            </td>
+                          </tr>
+                        );
+                      }
+                      return items.map((item: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/80">
+                          <td className="py-2.5 px-3 font-bold text-slate-800">{item.shopName ?? '-'}</td>
+                          <td className="py-2.5 px-3 text-slate-700">{item.menuName ?? item.shopName ?? '-'}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-600">{showWon(item.listAmount)}</td>
+                          <td className="py-2.5 px-3 text-right text-rose-600 font-semibold">{showWon(item.discountAmount)}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">{showWon(item.netAmount)}</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-emerald-700">{showPct(item.realizationRatePct ?? item.realizationRate)}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-700">
+                            {item.salesCount != null ? `${Number(item.salesCount).toLocaleString()}건` : (item.unusedCount != null ? `${Number(item.unusedCount).toLocaleString()}건` : '-')}
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>

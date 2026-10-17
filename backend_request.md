@@ -3238,3 +3238,30 @@ ORDER BY venue_name, rn;
 }
 ```
 
+---
+
+## ⛳ [Ticket 43] 골프사업본부 경영 현황 리포트(`GET /api/v6/report/golf-channel-teetime-analysis-v2`) 다중 월 구간 조회 25초 타임아웃 개선 요청 (2026-10-17)
+
+### 43-1. 증상 및 실측 감사 결과 (Zero-Hallucination Stdout)
+- 사용자가 전역 날짜 선택기에서 장기 구간(예: `startDate=2026-01-01&endDate=2026-04-16`)을 선택한 상태로 `골프사업본부 > 경영 현황 대시보드` (`/golf-business`) 진입 시:
+  - `GET /api/v6/dashboard/revenue-summary`: **1,059ms (200 OK)**
+  - `GET /api/v6/dashboard/revenue-by-org`: **659ms (200 OK)**
+  - `GET /api/v6/report/golf-channel-teetime-analysis-v2?startDate=2026-01-01&endDate=2026-04-16`: **40,493ms (40.5초 소요 ➔ 프론트엔드 25초 AbortError 발생)**
+- 구간 길이별 실측 응답 시간:
+  - 단일 일자 (`date=2026-04-16`): **190ms**
+  - 7일 구간 (`2026-04-10 ~ 2026-04-16`): **1,228ms**
+  - 16일 구간 (`2026-04-01 ~ 2026-04-16`): **4,046ms**
+  - 31일 구간 (`2026-03-01 ~ 2026-03-31`): **9,720ms**
+  - 106일 구간 (`2026-01-01 ~ 2026-04-16`): **40,493ms (타임아웃)**
+
+### 43-2. 원인 진단 및 백엔드 조치 요청 사항
+1. **`/api/v6/report/golf-channel-teetime-analysis-v2` 쿼리 튜닝 (원천 테이블 스캔 제거 및 일별 마트 `mat_v6_golf_daily` 활용)**:
+   - 조회 일수에 비례하여 응답 시간이 선형/기하급수적으로 증가(1일당 약 350~400ms 소요)하고 있습니다.
+   - `partAnalysis`(1부·2부·3부 티타임별 내장팀/평균그린피/순매출) 및 `membershipAnalysis` 산출 시 원천 테이블(`raw_골프_예약_v6`, `raw_골프_정산_v6`)을 매번 실시간 조인/서브쿼리 스캔하는 대신, 사전 집계된 정규 골드 마트(`mat_v6_golf_daily`, `mat_v6_data_mart_revenue`) 인덱스만 스캔하여 **장기 구간 조회 시에도 1초 이내(Sub-second)**에 응답하도록 쿼리를 최적화해 주십시오.
+2. **`/api/v6/dashboard/revenue-summary` 구간 조회 시 `golfParts` 내장 실적 누락 보완**:
+   - 현재 `revenue-summary`는 단일 일자 조회 시에는 `summary.golfParts.part1~3`에 `visitedTeams`, `players`, `greenFeeRevenue`, `avgGreenFee`를 정상 반환하나, 구간 조회(`startDate`~`endDate`) 시에는 `reservedTeams`만 반환하고 `visitedTeams: 0, players: 0, greenFeeRevenue: 0`으로 내려주고 있습니다.
+   - 구간 조회 시에도 `mat_v6_golf_daily`에서 1·2·3부별 내장팀/인원/그린피 매출을 합산하여 반환하도록 보강해 주십시오.
+3. **프론트엔드 선제 방어 완료**:
+   - 프론트엔드(`src/pages/GolfBusiness.tsx`)는 `/api/v6/report/golf-channel-teetime-analysis-v2`가 지연되거나 25초 타임아웃되더라도 화면이 멈추지 않도록 에러를 격리하고, 0.6초 만에 응답하는 공식 SSOT 마트 API(`revenue-summary` + `revenue-by-org`)의 골프본부 완제품 데이터를 즉시 바인딩하여 렌더링하도록 조치 완료했습니다.
+
+

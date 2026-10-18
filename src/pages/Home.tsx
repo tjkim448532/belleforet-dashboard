@@ -817,209 +817,239 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-12 flex flex-col gap-6">
-            <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group">
-              <h2 className="text-base font-semibold text-slate-800 mb-6 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-brand-mint" /> 주요 지표 및 운영 효율
-              </h2>
+            <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-200/90 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-emerald-600" /> 객실 및 복합 리조트 핵심 운영 지표
+                </h2>
+                <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                  175실 기준 공식 산출
+                </span>
+              </div>
               
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {/* 1. 객실 점유율 (Occ) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                  <div className="flex items-center justify-between text-slate-700">
-                    <span className="text-xs font-bold text-slate-700">객실 점유율 (Occ)</span>
-                    <MetricExplainerTooltip presetKey="occupancy" />
-                  </div>
-                  {(() => {
-                    const physicalOcc = coreData.core?.physicalRoomMaster?.metrics?.physicalOccupancyRate
-                                      ?? coreData.core?.summary?.physicalOccRate;
-                    const occ = physicalOcc !== undefined && physicalOcc !== null
-                              ? Number(Number(physicalOcc).toFixed(1))
-                              : ((coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
-                              : (coreData.core?.summary?.occRate && Number(coreData.core.summary.occRate) > 0) ? Number(coreData.core.summary.occRate)
-                              : displayData?.kpiMetrics?.totalOcc);
-                    const occupiedUnits = coreData.core?.physicalRoomMaster?.metrics?.physicalOccupiedUnits
-                                       ?? coreData.core?.summary?.physicalOccupiedUnits;
-                    return occ !== undefined && occ !== null ? (
-                      <>
-                        <div>
-                          <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                            {Number(occ).toFixed(1)}%
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-medium mt-1">
-                            {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
-                          <span>{isRangeMode ? '선택 기간 누적 가동' : '가용 175실 기준'}</span>
-                          <span className="font-semibold text-emerald-700">{occupiedUnits ? `실운영 ${occupiedUnits}실 가동` : '공식 정산 기준'}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        전체 객실 재고 데이터 산출 불가
-                      </div>
-                    );
-                  })()}
-                </div>
-                
-                {/* 2. 객단가 (ADR) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                  <div className="flex items-center justify-between text-slate-700">
-                    <span className="text-xs font-bold text-slate-700">객단가 (ADR)</span>
-                    <MetricExplainerTooltip presetKey="adr" />
-                  </div>
-                  {(() => {
-                    const adr = (coreData.core?.summary?.totalADR && Number(coreData.core.summary.totalADR) > 0) ? Number(coreData.core.summary.totalADR)
-                              : (coreData.core?.summary?.adr && Number(coreData.core.summary.adr) > 0) ? Number(coreData.core.summary.adr)
-                              : displayData?.kpiMetrics?.totalADR;
-                    return adr !== undefined && adr !== null && Number(adr) > 0 ? (
-                      <>
-                        <div>
-                          <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                            {formatRevenue(adr)} <span className="text-sm font-semibold text-slate-400">원</span>
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-medium mt-1">
-                            객실 순매출 ÷ 실제 판매 객실수
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
-                          <span>순수 객실 판매 실적</span>
-                          <span className="font-semibold text-slate-600">계약 기준 객단가</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        ADR 산출 불가
-                      </div>
-                    );
-                  })()}
-                </div>
-                
-                {/* 3. 객실당 매출 (RevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-                  <div className="flex items-center justify-between text-slate-700">
-                    <span className="text-xs font-bold text-slate-700">객실당 매출 (RevPAR)</span>
-                    <MetricExplainerTooltip 
-                      customData={{
-                        title: '객실당 매출 (RevPAR)',
-                        badge: '호텔 지표',
-                        definition: '판매 여부와 무관하게 175실 전체 물리 객실 1실당 창출된 객실 순매출입니다.',
-                        formula: '객실 순매출 ÷ 전체 물리 가용 객실수 (175실 × 일수)',
-                        insight: 'OCC와 ADR의 곱으로 산출되며, 객실 부문의 순수 자산 생산성을 평가합니다.'
-                      }}
-                    />
-                  </div>
-                  {(() => {
-                    const revPar = (coreData.core?.summary?.revPAR && Number(coreData.core.summary.revPAR) > 0) ? Number(coreData.core.summary.revPAR)
-                                 : displayData?.kpiMetrics?.revPAR;
-                    return revPar !== undefined && revPar !== null && Number(revPar) > 0 ? (
-                      <>
-                        <div>
-                          <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                            {formatRevenue(revPar)} <span className="text-sm font-semibold text-slate-400">원</span>
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-medium mt-1">
-                            객실 순매출 ÷ 전체 객실수 (175실)
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
-                          <span>전체 물리 175실 기준</span>
-                          <span className="font-semibold text-slate-600">ADR × 점유율 연동</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        RevPAR 산출 불가
-                      </div>
-                    );
-                  })()}
-                </div>
-                
-                {/* 4. 가용객실당 총매출 (TrevPAR) */}
-                <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 flex flex-col justify-between min-h-[170px] h-full shadow-sm hover:shadow-md transition-all bg-gradient-to-b from-white to-emerald-50/20">
-                  <div className="flex items-center justify-between text-slate-700">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-bold text-emerald-800">
-                        {trevparViewMode === 'EX_GOLF' ? '순수리조트 TrevPAR' : '전사 총매출 TrevPAR'}
-                      </span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border whitespace-nowrap ${
-                        trevparViewMode === 'EX_GOLF'
-                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                          : 'bg-slate-100 text-slate-700 border-slate-300'
-                      }`}>
-                        {trevparViewMode === 'EX_GOLF' ? '골프제외' : '전사 총합'}
-                      </span>
-                      <MetricExplainerTooltip presetKey="trevpar" />
-                    </div>
-                    {/* Toggle: 전사 vs 골프제외 */}
-                    <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
-                      <button
-                        type="button"
-                        onClick={() => setTrevparViewMode('TOTAL')}
-                        className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${
-                          trevparViewMode === 'TOTAL'
-                            ? 'bg-white text-emerald-800 shadow-xs font-bold'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        전사
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTrevparViewMode('EX_GOLF')}
-                        className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${
-                          trevparViewMode === 'EX_GOLF'
-                            ? 'bg-emerald-600 text-white shadow-xs font-black'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        골프제외
-                      </button>
-                    </div>
-                  </div>
-                  {(() => {
-                    const trevParTotal = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
-                    const golfSales = coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'GOLF')?.todayActual 
-                                   || coreData.core?.summary?.golfGreenFeeRevenue 
-                                   || 0;
-                    const netRevWithoutGolf = Math.max(0, (coreData.core?.summary?.totalRevenue || 0) - golfSales);
-                    const trevParExGolf = Math.round(netRevWithoutGolf / 175);
-                    const activeTrevPar = trevparViewMode === 'EX_GOLF' ? trevParExGolf : trevParTotal;
+              {/* 소프트 슬레이트 패널 컨테이너 (사용자 지정 SSOT 스타일) */}
+              <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 mb-6">
+                <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 text-xs flex items-center justify-between">
+                  <span>핵심 경영 지표 실측치 (TrevPAR · ADR · RevPAR · Occ)</span>
+                  <span className="text-[11px] text-slate-400 font-normal">공식 PMS/POS 원천 확정 기준</span>
+                </h4>
 
-                    return activeTrevPar !== undefined && activeTrevPar !== null && Number(activeTrevPar) > 0 ? (
-                      <>
-                        <div>
-                          <div className="text-3xl font-extrabold text-emerald-800 tracking-tight font-financial">
-                            {formatRevenue(activeTrevPar)} <span className="text-sm font-semibold text-emerald-600">원</span>
-                          </div>
-                          <div className="text-[11px] text-emerald-700 font-medium mt-1">
-                            {trevparViewMode === 'EX_GOLF' 
-                              ? '순수 리조트(골프 제외) ÷ 175실 (패키지 기획 기준)' 
-                              : '전사 총매출 ÷ 175실 (리조트 통합 소비력)'}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between pt-1.5 border-t border-emerald-100 text-[10px]">
-                          <span className="text-slate-500 font-financial">
-                            {trevparViewMode === 'EX_GOLF' 
-                              ? `골프포함: ${formatRevenue(trevParTotal)}원` 
-                              : `골프제외: ${formatRevenue(trevParExGolf)}원`}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                  {/* 1. 가용객실당 총매출 (TrevPAR) - 원포인트 틸 하이라이트 카드 */}
+                  <div className="bg-white p-4 rounded-xl border border-teal-200/80 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                        <span className="font-extrabold text-teal-900 text-sm">
+                          {trevparViewMode === 'EX_GOLF' ? '순수리조트 TrevPAR' : '전사 총매출 TrevPAR'}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">
+                            핵심 지표
                           </span>
-                          <Link 
-                            to="/strategic-simulator?tab=package" 
-                            className="font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5 hover:underline"
-                          >
-                            <Package size={11} className="text-teal-600" />
-                            <span>패키지 생성기</span>
-                            <span>➔</span>
-                          </Link>
+                          {/* Toggle: 전사 vs 골프제외 */}
+                          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[9px] font-bold">
+                            <button
+                              type="button"
+                              onClick={() => setTrevparViewMode('TOTAL')}
+                              className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                                trevparViewMode === 'TOTAL'
+                                  ? 'bg-white text-teal-900 shadow-xs font-bold'
+                                  : 'text-slate-500 hover:text-slate-700'
+                              }`}
+                            >
+                              전사
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTrevparViewMode('EX_GOLF')}
+                              className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                                trevparViewMode === 'EX_GOLF'
+                                  ? 'bg-teal-700 text-white shadow-xs font-bold'
+                                  : 'text-slate-500 hover:text-slate-700'
+                              }`}
+                            >
+                              골프제외
+                            </button>
+                          </div>
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-slate-400 font-medium h-full flex flex-col justify-center">
-                        TrevPAR 산출 불가
                       </div>
-                    );
-                  })()}
+                      <p className="text-slate-400 text-[11px] mb-2 leading-relaxed">
+                        Total Revenue Per Available Room
+                      </p>
+                      {(() => {
+                        const trevParTotal = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
+                        const golfSales = coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'GOLF')?.todayActual 
+                                       || coreData.core?.summary?.golfGreenFeeRevenue 
+                                       || 0;
+                        const netRevWithoutGolf = Math.max(0, (coreData.core?.summary?.totalRevenue || 0) - golfSales);
+                        const trevParExGolf = Math.round(netRevWithoutGolf / 175);
+                        const activeTrevPar = trevparViewMode === 'EX_GOLF' ? trevParExGolf : trevParTotal;
+
+                        return activeTrevPar !== undefined && activeTrevPar !== null && Number(activeTrevPar) > 0 ? (
+                          <>
+                            <div className="text-2xl font-black text-teal-950 tracking-tight font-financial my-1 tabular-nums">
+                              {formatRevenue(activeTrevPar)} <span className="text-xs font-normal text-teal-700">원</span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100 my-2 text-center">
+                              {trevparViewMode === 'EX_GOLF' ? '리조트(골프제외) ÷ 가용 175실' : '전사 총매출 ÷ 전체 가용 175실'}
+                            </div>
+                            <p className="text-slate-600 text-[11px] leading-relaxed">
+                              {trevparViewMode === 'EX_GOLF' 
+                                ? '순수 숙박/식음/레저 기반 객실당 부가가치' 
+                                : '리조트 전반에서 창출하는 1실당 총체적 부가가치'}
+                            </p>
+                            <div className="flex items-center justify-between pt-2 mt-2 border-t border-teal-100 text-[10px]">
+                              <span className="text-slate-500 font-financial">
+                                {trevparViewMode === 'EX_GOLF' 
+                                  ? `골프포함: ${formatRevenue(trevParTotal)}원` 
+                                  : `골프제외: ${formatRevenue(trevParExGolf)}원`}
+                              </span>
+                              <Link 
+                                to="/strategic-simulator?tab=package" 
+                                className="font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5 hover:underline"
+                              >
+                                <Package size={11} className="text-teal-600" />
+                                <span>패키지</span>
+                                <span>➔</span>
+                              </Link>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-slate-400 font-medium py-4 text-center">
+                            TrevPAR 산출 불가
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 2. 판매 객단가 (ADR) - 화이트 카드 + 슬레이트 캡슐 */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-extrabold text-slate-800 text-sm">판매 객단가 (ADR)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">실판매 단가</span>
+                      </div>
+                      <p className="text-slate-400 text-[11px] mb-2 leading-relaxed">
+                        Average Daily Rate
+                      </p>
+                      {(() => {
+                        const adr = (coreData.core?.summary?.totalADR && Number(coreData.core.summary.totalADR) > 0) ? Number(coreData.core.summary.totalADR)
+                                  : (coreData.core?.summary?.adr && Number(coreData.core.summary.adr) > 0) ? Number(coreData.core.summary.adr)
+                                  : displayData?.kpiMetrics?.totalADR;
+                        return adr !== undefined && adr !== null && Number(adr) > 0 ? (
+                          <>
+                            <div className="text-2xl font-black text-slate-900 tracking-tight font-financial my-1 tabular-nums">
+                              {formatRevenue(adr)} <span className="text-xs font-normal text-slate-400">원</span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
+                              순수 객실 매출 ÷ 실제 판매 객실 수
+                            </div>
+                            <p className="text-slate-600 text-[11px] leading-relaxed">
+                              실제 투숙 고객에게 판매된 객실 1실당 순수 평균 판매 가격입니다.
+                            </p>
+                            <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
+                              <span>순수 객실 실적</span>
+                              <span className="font-semibold text-slate-600">계약 기준 객단가</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-slate-400 font-medium py-4 text-center">
+                            ADR 산출 불가
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 3. 객실당 매출 (RevPAR) - 화이트 카드 + 슬레이트 캡슐 */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-extrabold text-slate-800 text-sm">객실당 매출 (RevPAR)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">객실 효율</span>
+                      </div>
+                      <p className="text-slate-400 text-[11px] mb-2 leading-relaxed">
+                        Revenue Per Available Room
+                      </p>
+                      {(() => {
+                        const revPar = (coreData.core?.summary?.revPAR && Number(coreData.core.summary.revPAR) > 0) ? Number(coreData.core.summary.revPAR)
+                                     : displayData?.kpiMetrics?.revPAR;
+                        return revPar !== undefined && revPar !== null && Number(revPar) > 0 ? (
+                          <>
+                            <div className="text-2xl font-black text-slate-900 tracking-tight font-financial my-1 tabular-nums">
+                              {formatRevenue(revPar)} <span className="text-xs font-normal text-slate-400">원</span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
+                              객실 매출 ÷ 가용 175실 = ADR × 점유율
+                            </div>
+                            <p className="text-slate-600 text-[11px] leading-relaxed">
+                              전체 보유 객실(175실) 대비 순수 객실 판매 효율을 나타냅니다.
+                            </p>
+                            <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
+                              <span>가용 175실 기준</span>
+                              <span className="font-semibold text-slate-600">ADR × 점유율 연동</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-slate-400 font-medium py-4 text-center">
+                            RevPAR 산출 불가
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 4. 객실 점유율 (Occ) - 화이트 카드 + 슬레이트 캡슐 */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-extrabold text-slate-800 text-sm">객실 점유율 (Occ)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">가동률</span>
+                      </div>
+                      <p className="text-slate-400 text-[11px] mb-2 leading-relaxed">
+                        Occupancy Rate
+                      </p>
+                      {(() => {
+                        const physicalOcc = coreData.core?.physicalRoomMaster?.metrics?.physicalOccupancyRate
+                                          ?? coreData.core?.summary?.physicalOccRate;
+                        const occ = physicalOcc !== undefined && physicalOcc !== null
+                                  ? Number(Number(physicalOcc).toFixed(1))
+                                  : ((coreData.core?.summary?.totalOcc && Number(coreData.core.summary.totalOcc) > 0) ? Number(coreData.core.summary.totalOcc)
+                                  : (coreData.core?.summary?.occRate && Number(coreData.core.summary.occRate) > 0) ? Number(coreData.core.summary.occRate)
+                                  : displayData?.kpiMetrics?.totalOcc);
+                        const occupiedUnits = coreData.core?.physicalRoomMaster?.metrics?.physicalOccupiedUnits
+                                           ?? coreData.core?.summary?.physicalOccupiedUnits;
+                        return occ !== undefined && occ !== null ? (
+                          <>
+                            <div className="text-2xl font-black text-slate-900 tracking-tight font-financial my-1 tabular-nums">
+                              {Number(occ).toFixed(1)} <span className="text-xs font-normal text-slate-400">%</span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
+                              판매 객실 수 ÷ 전체 가용 175실
+                            </div>
+                            <p className="text-slate-600 text-[11px] leading-relaxed">
+                              {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
+                            </p>
+                            <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
+                              <span>{isRangeMode ? '선택 기간 누적 가동' : '가용 175실 기준'}</span>
+                              <span className="font-semibold text-emerald-700">{occupiedUnits ? `실운영 ${occupiedUnits}실 가동` : '공식 정산 기준'}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-slate-400 font-medium py-4 text-center">
+                            가동률 산출 불가
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 하단 공식 정산 기준 안내 배너 */}
+                <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-3.5 border border-teal-100 font-medium flex items-center justify-between flex-wrap gap-2">
+                  <span><strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(TrevPAR, ADR, RevPAR, 객실 점유율 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.</span>
+                  <span className="text-[11px] text-teal-600 font-mono font-normal">SSOT V6 Engine</span>
                 </div>
               </div>
 

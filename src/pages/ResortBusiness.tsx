@@ -859,88 +859,120 @@ export default function ResortBusiness() {
           </div>
 
           {/* Room Occupancy Status Card */}
-          <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
-              <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
-                🏨 평형별 객실 실시간 가동률 (Occupancy Status)
+          <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-xs border border-slate-200/90 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Hotel className="w-5 h-5 text-emerald-600" /> 평형별 객실 실시간 가동률 (Occupancy Status)
               </h2>
-              <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full font-medium">
-                💡 51평은 전용 5실 외 16평+35평 커넥티드 룸(35세트) 조합 판매 실수가 포함됩니다.
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                175실 물리 고정 기준 SSOT
               </span>
             </div>
-            {roomOccupancyData.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {roomOccupancyData.map((row) => (
-                  <div key={row.roomSize} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col items-center justify-between">
-                    <div className="flex flex-col items-center mb-3">
-                      <span className="text-sm font-bold text-slate-700">{row.roomSize}</span>
-                      {row.isConnectedType && (
-                        <div className="flex flex-col items-center gap-1 mt-1">
-                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                            🔗 전용+커넥티드
-                          </span>
+
+            {/* 소프트 슬레이트 패널 (사용자 지정 SSOT 스타일) */}
+            <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80">
+              <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 text-xs flex items-center justify-between">
+                <span>평형별 실운영 점유 및 전년 대비 가동 효율 (16평 · 35평 · 51평)</span>
+                <span className="text-[11px] text-slate-400 font-normal">공식 PMS/POS 원장 기준</span>
+              </h4>
+
+              {roomOccupancyData.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {roomOccupancyData.map((row) => {
+                    const is51 = row.isConnectedType;
+                    return (
+                      <div 
+                        key={row.roomSize} 
+                        className={`bg-white p-4 rounded-xl shadow-xs flex flex-col items-center justify-between border ${
+                          is51 ? 'border-teal-200/80' : 'border-slate-200'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center mb-2 w-full">
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-sm font-extrabold text-slate-800">{row.roomSize}</span>
+                            {is51 ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">
+                                🔗 전용+조립
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                단독형
+                              </span>
+                            )}
+                          </div>
                           {row.dynamicOccupancyRate === 100 && (
-                            <span className="text-[9px] bg-amber-50 text-amber-700 font-medium px-1.5 py-0.5 rounded border border-amber-200">
+                            <span className="text-[9px] bg-amber-50 text-amber-700 font-medium px-2 py-0.5 rounded border border-amber-200 mt-1 self-start">
                               조립 잔여 소진 (동적 100%)
                             </span>
                           )}
                         </div>
-                      )}
-                    </div>
-                    <div className="relative w-20 h-20 flex items-center justify-center">
-                      <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="40" cy="40" r="34" stroke="#e2e8f0" strokeWidth="6" fill="transparent" />
-                        <circle cx="40" cy="40" r="34" stroke="#10b981" strokeWidth="6" fill="transparent" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - Math.min(row.rate, 100) / 100)} />
-                      </svg>
-                      <span className="absolute text-base font-bold text-slate-800">{row.displayRate}</span>
-                    </div>
 
-                    {/* 전년 동기 가동률 비교 배지 */}
-                    {row.lyRate !== null && row.lyRate !== undefined && (
-                      <div className="mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full font-financial bg-white border border-slate-200 text-slate-600 flex items-center gap-1">
-                        <span>전년 {row.lyRate}%</span>
-                        {row.rateDiff !== null && (
-                          <span className={row.rateDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                            ({row.rateDiff >= 0 ? '+' : ''}{row.rateDiff}%p)
+                        {/* Circular Progress Indicator */}
+                        <div className="relative w-20 h-20 flex items-center justify-center my-1">
+                          <svg className="w-full h-full transform -rotate-90">
+                            <circle cx="40" cy="40" r="34" stroke="#f1f5f9" strokeWidth="6" fill="transparent" />
+                            <circle 
+                              cx="40" 
+                              cy="40" 
+                              r="34" 
+                              stroke={is51 ? '#0d9488' : '#059669'} 
+                              strokeWidth="6" 
+                              fill="transparent" 
+                              strokeDasharray={2 * Math.PI * 34} 
+                              strokeDashoffset={2 * Math.PI * 34 * (1 - Math.min(row.rate, 100) / 100)} 
+                            />
+                          </svg>
+                          <span className="absolute text-base font-black text-slate-900 tabular-nums font-financial">
+                            {row.displayRate}
                           </span>
-                        )}
-                      </div>
-                    )}
+                        </div>
 
-                    <div className="flex flex-col items-center mt-3 space-y-1 text-center w-full">
-                      <div className="text-xs font-semibold text-slate-600 flex items-center justify-center gap-1 flex-wrap">
-                        <span>{row.sold}건 / {row.capacity}실</span>
-                        {row.lySold !== null && (
-                          <span className="text-[10px] text-slate-400 font-normal font-financial">
-                            (전년 {row.lySold}건)
-                          </span>
+                        {/* 캡슐 공식 / 수량 박스 */}
+                        <div className={`p-2 rounded-lg font-mono text-[11px] font-bold border my-2 text-center w-full tabular-nums ${
+                          is51 
+                            ? 'bg-teal-50/70 text-teal-900 border-teal-100' 
+                            : 'bg-slate-100 text-slate-800 border-slate-200/60'
+                        }`}>
+                          {row.sold}건 판매 / {row.capacity}실 재고
+                        </div>
+
+                        {/* 전년 동기 가동률 비교 배지 */}
+                        {row.lyRate !== null && row.lyRate !== undefined && (
+                          <div className="text-[10px] font-bold px-2 py-0.5 rounded-full font-financial bg-slate-50 border border-slate-200 text-slate-600 flex items-center gap-1 my-0.5">
+                            <span>전년 {row.lyRate}%</span>
+                            {row.rateDiff !== null && (
+                              <span className={row.rateDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                                ({row.rateDiff >= 0 ? '+' : ''}{row.rateDiff}%p)
+                              </span>
+                            )}
+                          </div>
                         )}
+
+                        {/* 매출 및 분리 ADR 요약 */}
+                        <div className="flex flex-col items-center mt-2 pt-2 border-t border-slate-100 w-full text-center space-y-0.5">
+                          <div className="text-[10px] text-slate-500 font-financial tabular-nums">
+                            순매출: <strong className="text-slate-800">{formatCurrency(row.revenue)}원</strong>
+                          </div>
+                          <div className="text-[10px] font-bold font-financial tabular-nums text-emerald-800">
+                            ADR: {row.adr !== null && row.adr !== undefined && row.adr > 0 ? formatCurrency(row.adr) + '원' : '-'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-500 font-financial">
-                        매출: {formatCurrency(row.revenue)}원
-                        {row.lyRev !== null && row.lyRev > 0 && (
-                          <span className="text-slate-400 block text-[9px]">
-                            전년 {formatCurrency(row.lyRev)}원
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-emerald-600 font-bold font-financial">
-                        ADR: {row.adr !== null && row.adr !== undefined && row.adr > 0 ? formatCurrency(row.adr) + '원' : '-'}
-                        {row.lyAdr !== null && row.lyAdr > 0 && (
-                          <span className="text-slate-400 block text-[9px] font-normal">
-                            전년 {formatCurrency(row.lyAdr)}원
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  해당 날짜에 가동률 데이터가 없습니다.
+                </div>
+              )}
+
+              {/* 하단 공식 기준 배너 */}
+              <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-4 border border-teal-100 font-medium flex items-center justify-between flex-wrap gap-2">
+                <span><strong>공식 산출 기준:</strong> 51평형은 전용 5실 외 16평+35평 커넥티드 룸(35세트) 조합 판매 실수가 포함되며, 복합 객실 모수 왜곡을 방지하기 위해 물리 175실 기준을 SSOT로 유지합니다.</span>
+                <span className="text-[11px] text-teal-600 font-mono font-normal">Fixed Capacity SSOT</span>
               </div>
-            ) : (
-              <div className="py-12 text-center text-slate-400">
-                해당 날짜에 가동률 데이터가 없습니다.
-              </div>
-            )}
+            </div>
           </div>
 
           {/* 🏛️ V6 리조트 종합 요약 (resort-business-summary 완제품 바인딩) */}

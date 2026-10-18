@@ -358,8 +358,8 @@ export default function GolfBusiness() {
         </div>
 
         {/* 📊 골프 경영 핵심 분석 및 수익성 진단 */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 border border-slate-100">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-2">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-xs border border-slate-200/90 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 gap-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
@@ -381,81 +381,94 @@ export default function GolfBusiness() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* 카드 1: 코스 핵심 수익 (그린피 + 카트비) */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <DollarSign className="w-4 h-4 text-emerald-600" /> 코스 본원 매출 성과 (그린피 + 카트대여)
-                  </span>
-                  <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
-                    핵심 매출 기여도 {courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}
-                  </span>
-                </div>
-                <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
-                  {totalCourseRevenue !== null ? `${totalCourseRevenue.toLocaleString()}원` : '-'}{' '}
-                  <span className="text-xs font-normal text-slate-400">({greenFeeItem?.playersFormatted || '0'}명 내장, 카트 {cartFeeItem?.quantityFormatted || '0'}건)</span>
-                </div>
-                <div className="space-y-1.5 text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 font-financial tabular-nums">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">그린피 순매출 (점유율):</span>
-                    <strong className="text-slate-800">{greenFeeItem?.revenueFormatted || '0'}원 ({greenFeeItem?.revenueSharePct !== null && greenFeeItem?.revenueSharePct !== undefined ? `${greenFeeItem.revenueSharePct}%` : '-'})</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">카트대여 순매출 (점유율):</span>
-                    <strong className="text-slate-800">{cartFeeItem?.revenueFormatted || '0'}원 ({cartFeeItem?.revenueSharePct !== null && cartFeeItem?.revenueSharePct !== undefined ? `${cartFeeItem.revenueSharePct}%` : '-'})</strong>
-                  </div>
-                </div>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed">
-                순수 라운딩 코스 매출(그린피 + 카트비)이 전체 골프 부문 매출의 <strong className="text-slate-700">{courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}</strong>를 견인하고 있습니다.
-              </p>
-            </div>
+          {/* 소프트 슬레이트 패널 (사용자 지정 SSOT 스타일) */}
+          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80">
+            <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 text-xs flex items-center justify-between">
+              <span>코스 본원 및 클럽 부대시설 수익 구조 (그린피 · 카트대여 · 식음 · 프로샵)</span>
+              <span className="text-[11px] text-slate-400 font-normal">공식 골프 마트 원천 확정 기준</span>
+            </h4>
 
-            {/* 카드 2: 클럽 부대시설 부가 수익 (식음 + 프로샵 등) */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <UtensilsCrossed className="w-4 h-4 text-slate-600" /> 클럽 부대시설 수익 성과 (식음료 및 프로샵 등)
-                  </span>
-                  <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
-                    부가 매출 기여도 {amenityRatio !== null ? `${amenityRatio}%` : '-'}
-                  </span>
-                </div>
-                <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
-                  {totalAmenityRevenue !== null ? `${totalAmenityRevenue.toLocaleString()}원` : '-'}
-                  {totalAmenityQuantity !== null && (
-                    <span className="text-xs font-normal text-slate-400"> (총 {totalAmenityQuantity.toLocaleString()}건)</span>
-                  )}
-                </div>
-                <div className="space-y-1.5 text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 font-financial tabular-nums">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">스타트하우스 식음:</span>
-                    <strong className="text-slate-800">{startHouseItem?.revenueFormatted || '0'}원 ({startHouseItem?.revenueSharePct !== null && startHouseItem?.revenueSharePct !== undefined ? `${startHouseItem.revenueSharePct}%` : '-'})</strong>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* 카드 1: 코스 핵심 수익 (그린피 + 카트비) - 원포인트 틸 하이라이트 카드 */}
+              <div className="bg-white p-5 rounded-2xl border border-teal-200/80 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-teal-600" /> 코스 본원 매출 성과 (그린피 + 카트대여)
+                    </span>
+                    <span className="text-[10px] font-black bg-teal-100 text-teal-800 px-2.5 py-0.5 rounded-full">
+                      핵심 기여도 {courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">클럽 레스토랑 식음:</span>
-                    <strong className="text-slate-800">{restaurantItem?.revenueFormatted || '0'}원 ({restaurantItem?.revenueSharePct !== null && restaurantItem?.revenueSharePct !== undefined ? `${restaurantItem.revenueSharePct}%` : '-'})</strong>
+                  <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
+                    {totalCourseRevenue !== null ? `${totalCourseRevenue.toLocaleString()}원` : '-'}{' '}
+                    <span className="text-xs font-normal text-slate-400">({greenFeeItem?.playersFormatted || '0'}명 내장, 카트 {cartFeeItem?.quantityFormatted || '0'}건)</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">프로샵 용품 매출:</span>
-                    <strong className="text-slate-800">{proShopItem?.revenueFormatted || '0'}원 ({proShopItem?.revenueSharePct !== null && proShopItem?.revenueSharePct !== undefined ? `${proShopItem.revenueSharePct}%` : '-'})</strong>
+                  <div className="p-2 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100 my-2 text-center">
+                    그린피 + 카트대여 = {totalCourseRevenue !== null ? `${totalCourseRevenue.toLocaleString()}원` : '-'}
                   </div>
-                  {etcItem && etcItem.revenue > 0 && (
+                  <div className="space-y-1.5 text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 font-financial tabular-nums">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">기타매출 및 대여:</span>
-                      <strong className="text-slate-800">{etcItem.revenueFormatted}원 ({etcItem.revenueSharePct !== null && etcItem.revenueSharePct !== undefined ? `${etcItem.revenueSharePct}%` : '-'})</strong>
+                      <span className="text-slate-400">그린피 순매출 (점유율):</span>
+                      <strong className="text-slate-800">{greenFeeItem?.revenueFormatted || '0'}원 ({greenFeeItem?.revenueSharePct !== null && greenFeeItem?.revenueSharePct !== undefined ? `${greenFeeItem.revenueSharePct}%` : '-'})</strong>
                     </div>
-                  )}
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">카트대여 순매출 (점유율):</span>
+                      <strong className="text-slate-800">{cartFeeItem?.revenueFormatted || '0'}원 ({cartFeeItem?.revenueSharePct !== null && cartFeeItem?.revenueSharePct !== undefined ? `${cartFeeItem.revenueSharePct}%` : '-'})</strong>
+                    </div>
+                  </div>
                 </div>
+                <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed">
+                  순수 라운딩 코스 매출(그린피 + 카트비)이 전체 골프 부문 매출의 <strong className="text-slate-700">{courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}</strong>를 견인하고 있습니다.
+                </p>
               </div>
-              <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed">
-                라운딩 전후 식음 및 용품 구매를 통한 부가 매출이 전체 골프 부문 매출의 <strong className="text-slate-700">{amenityRatio !== null ? `${amenityRatio}%` : '-'}</strong>를 차지하고 있습니다.
-              </p>
-            </div>
+
+              {/* 카드 2: 클럽 부대시설 부가 수익 (식음 + 프로샵 등) */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <UtensilsCrossed className="w-4 h-4 text-slate-600" /> 클럽 부대시설 수익 성과 (식음료 및 프로샵 등)
+                    </span>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
+                      부가 기여도 {amenityRatio !== null ? `${amenityRatio}%` : '-'}
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
+                    {totalAmenityRevenue !== null ? `${totalAmenityRevenue.toLocaleString()}원` : '-'}
+                    {totalAmenityQuantity !== null && (
+                      <span className="text-xs font-normal text-slate-400"> (총 {totalAmenityQuantity.toLocaleString()}건)</span>
+                    )}
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
+                    식음료 + 프로샵 = {totalAmenityRevenue !== null ? `${totalAmenityRevenue.toLocaleString()}원` : '-'}
+                  </div>
+                  <div className="space-y-1.5 text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 font-financial tabular-nums">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">스타트하우스 식음:</span>
+                      <strong className="text-slate-800">{startHouseItem?.revenueFormatted || '0'}원 ({startHouseItem?.revenueSharePct !== null && startHouseItem?.revenueSharePct !== undefined ? `${startHouseItem.revenueSharePct}%` : '-'})</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">클럽 레스토랑 식음:</span>
+                      <strong className="text-slate-800">{restaurantItem?.revenueFormatted || '0'}원 ({restaurantItem?.revenueSharePct !== null && restaurantItem?.revenueSharePct !== undefined ? `${restaurantItem.revenueSharePct}%` : '-'})</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">프로샵 용품 매출:</span>
+                      <strong className="text-slate-800">{proShopItem?.revenueFormatted || '0'}원 ({proShopItem?.revenueSharePct !== null && proShopItem?.revenueSharePct !== undefined ? `${proShopItem.revenueSharePct}%` : '-'})</strong>
+                    </div>
+                    {etcItem && etcItem.revenue > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">기타매출 및 대여:</span>
+                        <strong className="text-slate-800">{etcItem.revenueFormatted}원 ({etcItem.revenueSharePct !== null && etcItem.revenueSharePct !== undefined ? `${etcItem.revenueSharePct}%` : '-'})</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed">
+                  라운딩 전후 식음 및 용품 구매를 통한 부가 매출이 전체 골프 부문 매출의 <strong className="text-slate-700">{amenityRatio !== null ? `${amenityRatio}%` : '-'}</strong>를 차지하고 있습니다.
+                </p>
+              </div>
 
             {/* 카드 3: 1부 · 2부 · 3부 티타임 성과 및 평균 그린피 */}
             {partAnalysis && (
@@ -614,11 +627,18 @@ export default function GolfBusiness() {
               </div>
             )}
 
+            </div>
+
+            {/* 하단 공식 기준 배너 */}
+            <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-4 border border-teal-100 font-medium flex items-center justify-between flex-wrap gap-2">
+              <span><strong>공식 산출 기준:</strong> 골프 부문 순매출(Net)은 그린피, 카트대여, 클럽하우스 식음, 프로샵 등 리조트 공식 ERP/POS 원천 확정 데이터를 기준으로 제공됩니다.</span>
+              <span className="text-[11px] text-teal-600 font-mono font-normal">Golf SSOT Engine</span>
+            </div>
           </div>
         </div>
 
         {/* 🏆 골프 부문별 영업장 실적 및 점유율 분석 섹션 */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 border border-slate-100">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-xs border border-slate-200/90 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-2">
             <div>
               <div className="flex items-center gap-2 mb-1">

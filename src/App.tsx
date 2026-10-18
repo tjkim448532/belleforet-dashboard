@@ -99,6 +99,7 @@ export function App() {
                     <Route path="leisure-simulator" element={<LeisureSimulator />} />
                     <Route path="leisure/pricing" element={<LeisurePricing />} />
                     <Route path="leisure-pricing" element={<LeisurePricing />} />
+                    <Route path="pricing" element={<LeisurePricing />} />
                     <Route path="leisure/package-sales" element={<LeisurePackageSales />} />
                     <Route path="leisure-package-sales" element={<LeisurePackageSales />} />
                     <Route path="content/outsourced-fnb" element={<OutsourcedFnbDashboard viewMode="CARDS" />} />

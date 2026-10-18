@@ -1111,7 +1111,7 @@ export default function Home() {
                           </span>
                           <span className="text-[11px] font-normal text-slate-400">내장객 순매출 기준</span>
                         </div>
-                        <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                        <div className="space-y-1.5">
                           {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
                             const rawPct = item.sharePct ?? item.barWidthPct;
                             const pct = rawPct != null ? Number(rawPct) : null;

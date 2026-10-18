@@ -6,8 +6,7 @@ import {
 import ReactECharts from 'echarts-for-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import type { 
-  LeisureTopProductsResponse,
-  LeisurePricingSimResponse
+  LeisureTopProductsResponse
 } from '../../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -103,51 +102,6 @@ export default function LeisurePricingSimulator() {
     fetchTopProducts();
   }, [selectedFacility, baseYear]);
 
-  // Server Simulator Integration: POST /api/v6/simulator/leisure-pricing
-  const [serverSimData, setServerSimData] = useState<LeisurePricingSimResponse | null>(null);
-  const [isServerComputing, setIsServerComputing] = useState<boolean>(false);
-  const [serverNotice, setServerNotice] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const runSimulator = async () => {
-      setIsServerComputing(true);
-      try {
-        const itemIds = apiResponse?.topProducts?.map(p => p.itemId) || [];
-        const res: LeisurePricingSimResponse = await secureFetcher(`${API_BASE}/api/v6/simulator/leisure-pricing`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            selectedItemIds: itemIds,
-            bundleDiscountPct: activeMarkup > 0 ? activeMarkup : 0,
-            expectedVolumeIncreasePct: demandChangePct,
-            startDate: `${baseYear}-01-01`,
-            endDate: `${baseYear}-12-31`
-          })
-        });
-
-        if (!isMounted) return;
-
-        if ((res as any)?.isPowerSaving || res?.error?.includes('심야 절전')) {
-          setServerNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
-          setServerSimData(null);
-        } else if (res?.success || res?.projectedRevenue !== undefined) {
-          setServerSimData(res);
-          setServerNotice(null);
-        }
-      } catch (err: any) {
-        if (!isMounted) return;
-        if (err?.message?.includes('심야 절전') || String(err).includes('500')) {
-          setServerNotice('🌙 심야 절전 운영 시간(20:00 ~ 08:00)에는 서버리스 계산 엔진이 대기 상태입니다. 매일 아침 08:00에 정상 가동됩니다.');
-        }
-      } finally {
-        if (isMounted) setIsServerComputing(false);
-      }
-    };
-
-    runSimulator();
-    return () => { isMounted = false; };
-  }, [selectedFacility, baseYear, demandChangePct, activeMarkup, apiResponse]);
 
   // Handle single item price change
   const handlePriceChange = (itemId: string, newPrice: number) => {
@@ -511,26 +465,6 @@ export default function LeisurePricingSimulator() {
       {/* 4. Active Simulator Interface (When API data is loaded) */}
       {!isApiPending && simulationResults && (
         <div className="space-y-8">
-          {/* Server Power-saving / Operational Notice */}
-          {serverNotice && (
-            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 text-xs font-semibold text-amber-900 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="text-amber-600 shrink-0" />
-                <span>{serverNotice}</span>
-              </div>
-              <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-mono">
-                절전 모드 대기
-              </span>
-            </div>
-          )}
-
-          {/* Server Computation Indicator */}
-          {isServerComputing && (
-            <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-lg w-fit">
-              <RefreshCw size={12} className="animate-spin" />
-              <span>서버리스 시뮬레이터 연산 중...</span>
-            </div>
-          )}
           
           {/* 4-A. Scenario & Demand Elasticity Controls */}
           <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-200/80 space-y-4">
@@ -691,9 +625,6 @@ export default function LeisurePricingSimulator() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black text-blue-950 flex items-center gap-1.5">
                   <span>예상 연매출 ({baseYear}년 고객수 유지)</span>
-                  {serverSimData?.baselineRevenue !== undefined && (
-                    <span className="px-1.5 py-0.2 bg-blue-600 text-white rounded text-[9px] font-bold">서버연산</span>
-                  )}
                 </span>
                 <span className="px-2 py-0.5 bg-blue-200 text-blue-900 rounded text-[10px] font-bold">
                   단가 변경 효과
@@ -701,13 +632,13 @@ export default function LeisurePricingSimulator() {
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-blue-950 font-mono">
-                  {(serverSimData?.baselineRevenue ?? simulationResults.baselineTotalRev).toLocaleString()}
+                  {simulationResults.baselineTotalRev.toLocaleString()}
                 </span>
                 <span className="text-xs font-bold text-blue-800">원</span>
               </div>
               <div className="flex items-center justify-between text-[11px] mt-2">
                 <span className="text-blue-700">
-                  월평균: <b className="font-mono">{Math.round((serverSimData?.baselineRevenue ?? simulationResults.baselineTotalRev) / 12).toLocaleString()}원</b>
+                  월평균: <b className="font-mono">{Math.round(simulationResults.baselineTotalRev / 12).toLocaleString()}원</b>
                 </span>
                 {simulationResults.baselineTotalDelta === 0 ? (
                   <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
@@ -736,9 +667,6 @@ export default function LeisurePricingSimulator() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
                   <span>예상 연매출 ({baseYear}년 대비 수요 {demandChangePct >= 0 ? `+${demandChangePct}` : demandChangePct}% 반영)</span>
-                  {serverSimData?.projectedRevenue !== undefined && (
-                    <span className="px-1.5 py-0.2 bg-emerald-700 text-white rounded text-[9px] font-bold">서버연산</span>
-                  )}
                 </span>
                 <span className="px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold">
                   수요+단가 종합
@@ -746,35 +674,28 @@ export default function LeisurePricingSimulator() {
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-emerald-950 font-mono">
-                  {(serverSimData?.projectedRevenue ?? simulationResults.adjustedTotalRev).toLocaleString()}
+                  {simulationResults.adjustedTotalRev.toLocaleString()}
                 </span>
                 <span className="text-xs font-bold text-emerald-900">원</span>
               </div>
               <div className="flex items-center justify-between text-[11px] mt-2">
                 <span className="text-emerald-800">
-                  월평균: <b className="font-mono">{Math.round((serverSimData?.projectedRevenue ?? simulationResults.adjustedTotalRev) / 12).toLocaleString()}원</b>
+                  월평균: <b className="font-mono">{Math.round(simulationResults.adjustedTotalRev / 12).toLocaleString()}원</b>
                 </span>
-                {(() => {
-                  const finalDelta = serverSimData?.netRevenueDelta !== undefined ? serverSimData.netRevenueDelta : simulationResults.adjustedTotalDelta;
-                  const finalGrowthPct = serverSimData?.revenueGrowthPct !== undefined ? serverSimData.revenueGrowthPct : simulationResults.adjustedTotalDeltaPct;
-                  if (finalDelta === 0) {
-                    return (
-                      <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
-                        {baseYear}년과 동일 (+0원, 0.0%)
-                      </span>
-                    );
-                  }
-                  return (
-                    <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
-                      finalDelta > 0 ? 'text-emerald-900' : 'text-rose-700'
-                    }`}>
-                      {finalDelta > 0 ? '+' : ''}
-                      {finalDelta.toLocaleString()}원
-                      ({finalGrowthPct > 0 ? '+' : ''}
-                      {finalGrowthPct.toFixed(1)}%)
-                    </span>
-                  );
-                })()}
+                {simulationResults.adjustedTotalDelta === 0 ? (
+                  <span className="font-mono font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded text-[11px]">
+                    {baseYear}년과 동일 (+0원, 0.0%)
+                  </span>
+                ) : (
+                  <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
+                    simulationResults.adjustedTotalDelta > 0 ? 'text-emerald-900' : 'text-rose-700'
+                  }`}>
+                    {simulationResults.adjustedTotalDelta > 0 ? '+' : ''}
+                    {simulationResults.adjustedTotalDelta.toLocaleString()}원
+                    ({simulationResults.adjustedTotalDeltaPct > 0 ? '+' : ''}
+                    {simulationResults.adjustedTotalDeltaPct.toFixed(1)}%)
+                  </span>
+                )}
               </div>
               {simulationResults.adjustedTotalDelta === 0 && (
                 <div className="text-[10px] text-slate-500 mt-1.5 font-medium">
@@ -784,34 +705,6 @@ export default function LeisurePricingSimulator() {
             </div>
 
           </div>
-
-          {/* Server-Allocated Unit Prices (When Leisure Bundle Pricing returned) */}
-          {serverSimData?.allocatedUnitPrices && serverSimData.allocatedUnitPrices.length > 0 && (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-emerald-600" />
-                  <h4 className="text-xs font-bold text-slate-900">
-                    서버 연산 결합상품(패키지) 배분 단가
-                  </h4>
-                </div>
-                <div className="text-xs text-slate-500 font-mono">
-                  정상 총액: <b className="text-slate-800">{serverSimData.totalNormalPrice?.toLocaleString()}원</b> ➔ 패키지가: <b className="text-emerald-700">{serverSimData.bundleSellingPrice?.toLocaleString()}원</b>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {serverSimData.allocatedUnitPrices.map((p, idx) => (
-                  <div key={p.itemId || idx} className="bg-white p-3 rounded-xl border border-slate-200 text-xs">
-                    <div className="text-slate-500 font-medium truncate mb-1" title={p.name || p.itemId}>{p.name || p.itemId}</div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="line-through text-slate-400 font-mono text-[11px]">{p.normalPrice?.toLocaleString()}원</span>
-                      <span className="font-bold text-emerald-800 font-mono text-sm">{p.allocatedPrice?.toLocaleString()}원</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* 4-C. Top 5 Products Interactive Pricing Table */}
           <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">

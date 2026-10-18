@@ -143,13 +143,13 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
         </div>
 
         {/* 1. 기준일 마감 실적 섹션 */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-2.5 px-1">
-            <div className="flex items-center gap-1.5 font-bold text-slate-700">
-              <Calendar size={13} className="text-slate-500" />
+        <div>
+          <div className="flex items-center justify-between text-xs mb-2.5 px-3 py-1.5 bg-slate-100/90 border border-slate-200/90 rounded-xl">
+            <div className="flex items-center gap-1.5 font-bold text-slate-800">
+              <Calendar size={13} className="text-slate-600" />
               <span>{currentDate} ({currentDayOfWeek}) {isRangeMode ? '선택 기간 합산 실적' : '마감 실적'}</span>
             </div>
-            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80">
+            <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200/80 shadow-2xs">
               정산 완료
             </span>
           </div>
@@ -239,9 +239,12 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
           )}
         </div>
 
+        {/* 🌟 [두 자료 명확한 분리 구분선] 기준일 마감 실적 ↔ 다음날 도착 예약 현황 */}
+        <div className="my-6 border-t-2 border-slate-300" />
+
         {/* 2. 다음날 날짜와 예약 현황 섹션 (사용자 신규 요청: 실제 오늘/익일 도착 예약) */}
-        <div className="pt-4 border-t border-slate-200/80">
-          <div className="flex items-center justify-between text-xs mb-2.5 px-1 bg-teal-50/70 border border-teal-100/90 rounded-xl py-1.5 px-3">
+        <div>
+          <div className="flex items-center justify-between text-xs mb-2.5 px-3 py-1.5 bg-teal-50/80 border border-teal-100/90 rounded-xl">
             <div className="flex items-center gap-1.5 font-bold text-teal-900">
               <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
               <span>다음날({nextDateStr} {nextDayOfWeek}) 골프 예약 현황</span>

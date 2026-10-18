@@ -396,88 +396,90 @@ export default function OnlineMembers() {
 
           
           {/* Member Lifecycle & Deduplication Summary Banner */}
-          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-5 rounded-3xl mb-8 text-white shadow-lg flex flex-col xl:flex-row xl:items-center justify-between gap-5 border border-slate-700/50">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 shadow-inner">
-                <Users size={22} className="text-brand-mint" />
-              </div>
-              <div>
-                <h4 className="text-sm font-extrabold flex items-center gap-2 tracking-tight">
-                  온라인 회원 모수 & 활동·중복 구조 분석
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-brand-mint/20 text-brand-mint border border-brand-mint/30">
-                    전수 실측
-                  </span>
-                </h4>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  총 {formatCurrency(summary.totalTransactions || 0)}건의 결제·예약 중 중복을 제거한 순수 {formatCurrency(summary.totalActiveMembers || 0)}명 분석
-                  <span className="ml-1 text-slate-400 font-medium">(기준일: {isRangeMode && endDate ? `${startDate} ~ ${endDate}` : (startDate || '오늘')})</span>
-                </p>
-                <p className="text-[11px] text-slate-400/70 mt-1.5 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 rounded-full bg-slate-500"></span>
-                  기준일자 안내: 우측 상단 달력에서 설정한 {isRangeMode && endDate ? `조회 기간(${startDate} ~ ${endDate})` : `조회일(${startDate || '오늘'})`} 시점까지 누적된 전체 실적 및 회원 스냅샷입니다.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mt-5">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">총 결제/예약 거래</div>
-                <div className="text-base font-extrabold text-white mt-0.5 font-mono">
-                  {formatCurrency(summary.totalTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
+          <div className="bg-white p-6 rounded-3xl mb-8 border border-slate-200/90 shadow-xs">
+            <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80">
+              <div className="flex items-center gap-3.5 pb-4 border-b border-slate-200/80">
+                <div className="w-11 h-11 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-200 shadow-2xs">
+                  <Users size={22} className="text-teal-700" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold flex items-center gap-2 tracking-tight text-slate-900">
+                    온라인 회원 모수 & 활동·중복 구조 분석
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-200">
+                      전수 실측
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    총 {formatCurrency(summary.totalTransactions || 0)}건의 결제·예약 중 중복을 제거한 순수 {formatCurrency(summary.totalActiveMembers || 0)}명 분석
+                    <span className="ml-1 text-slate-400 font-medium">(기준일: {isRangeMode && endDate ? `${startDate} ~ ${endDate}` : (startDate || '오늘')})</span>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 rounded-full bg-slate-400"></span>
+                    기준일자 안내: 우측 상단 달력에서 설정한 {isRangeMode && endDate ? `조회 기간(${startDate} ~ ${endDate})` : `조회일(${startDate || '오늘'})`} 시점까지 누적된 전체 실적 및 회원 스냅샷입니다.
+                  </p>
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">반복·중복 거래</div>
-                <div className="text-base font-extrabold text-amber-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.duplicateTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
-                  {summary.duplicateRate !== undefined && (
-                    <span className="text-[10px] text-amber-300/80 ml-1 font-sans">(-{summary.duplicateRate}%)</span>
-                  )}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mt-4">
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                  <div className="text-slate-500 text-[11px] font-medium">총 결제/예약 거래</div>
+                  <div className="text-base font-black text-slate-900 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.totalTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">최근 1년 실활동</div>
-                <div className="text-base font-extrabold text-emerald-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.recentActiveMembers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-emerald-300/80 ml-1 font-sans">({summary.recentActiveRate || 0}%)</span>
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                  <div className="text-slate-500 text-[11px] font-medium">반복·중복 거래</div>
+                  <div className="text-base font-black text-amber-600 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.duplicateTransactions || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">건</span>
+                    {summary.duplicateRate !== undefined && (
+                      <span className="text-[10px] text-amber-700 ml-1 font-sans">(-{summary.duplicateRate}%)</span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">1년 이상 휴면</div>
-                <div className="text-base font-extrabold text-slate-300 mt-0.5 font-mono">
-                  {formatCurrency(summary.dormantMembers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  <span className="text-[10px] text-slate-400 ml-1 font-sans">({summary.dormantRate || 0}%)</span>
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                  <div className="text-slate-500 text-[11px] font-medium">최근 1년 실활동</div>
+                  <div className="text-base font-black text-teal-700 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.recentActiveMembers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                    <span className="text-[10px] text-teal-800 ml-1 font-sans">({summary.recentActiveRate || 0}%)</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">2회 이상 재구매</div>
-                <div className="text-base font-extrabold text-cyan-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.repeatBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  {summary.repeatBuyerRate !== undefined && (
-                    <span className="text-[10px] text-cyan-300/80 ml-1 font-sans">({summary.repeatBuyerRate}%)</span>
-                  )}
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                  <div className="text-slate-500 text-[11px] font-medium">1년 이상 휴면</div>
+                  <div className="text-base font-black text-slate-600 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.dormantMembers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                    <span className="text-[10px] text-slate-400 ml-1 font-sans">({summary.dormantRate || 0}%)</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
-                <div className="text-yellow-200 text-[11px] font-bold">찐 재방문(5일+)</div>
-                <div className="text-base font-extrabold text-yellow-400 mt-0.5 font-mono">
-                  {formatCurrency(summary.trueRepeatBuyers || 0)}<span className="text-xs font-normal text-yellow-500/80 ml-0.5">명</span>
-                  <span className="text-[10px] text-yellow-300/80 ml-1 font-sans">({summary.trueRepeatRate || 0}%)</span>
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                  <div className="text-slate-500 text-[11px] font-medium">2회 이상 재구매</div>
+                  <div className="text-base font-black text-cyan-700 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.repeatBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                    {summary.repeatBuyerRate !== undefined && (
+                      <span className="text-[10px] text-cyan-800 ml-1 font-sans">({summary.repeatBuyerRate}%)</span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-                <div className="text-slate-400 text-[11px] font-medium">단발성 1회 이용</div>
-                <div className="text-base font-extrabold text-rose-300 mt-0.5 font-mono">
-                  {formatCurrency(summary.oneTimeBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
-                  {summary.oneTimeRate !== undefined && (
-                    <span className="text-[10px] text-rose-300/80 ml-1 font-sans">({summary.oneTimeRate}%)</span>
-                  )}
+                <div className="bg-white border-2 border-amber-300 rounded-xl p-3 shadow-2xs">
+                  <div className="text-amber-800 text-[11px] font-bold">찐 재방문(5일+)</div>
+                  <div className="text-base font-black text-amber-700 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.trueRepeatBuyers || 0)}<span className="text-xs font-normal text-amber-600 ml-0.5">명</span>
+                    <span className="text-[10px] text-amber-800 ml-1 font-sans">({summary.trueRepeatRate || 0}%)</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                  <div className="text-slate-500 text-[11px] font-medium">단발성 1회 이용</div>
+                  <div className="text-base font-black text-rose-600 mt-0.5 font-mono tabular-nums">
+                    {formatCurrency(summary.oneTimeBuyers || 0)}<span className="text-xs font-normal text-slate-400 ml-0.5">명</span>
+                    {summary.oneTimeRate !== undefined && (
+                      <span className="text-[10px] text-rose-700 ml-1 font-sans">({summary.oneTimeRate}%)</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

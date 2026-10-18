@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { parseNum } from '../../lib/dataTransformers';
 
@@ -41,6 +41,7 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
   const [loading, setLoading] = useState(false);
   const [nextDayGolf, setNextDayGolf] = useState<NextDayGolfData | null>(null);
   const [viewMode, setViewMode] = useState<'RESERVATION' | 'CLOSED'>('RESERVATION');
+  const [isPartsOpen, setIsPartsOpen] = useState(false);
 
   // 날짜 계산 헬퍼: D+1 익일(다음날, 실제로는 오늘 도착) 계산
   const getNextDateStr = (dateStr: string) => {
@@ -238,82 +239,97 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
               </div>
             </div>
 
+            {/* 아코디언 토글 버튼 */}
+            <button
+              type="button"
+              onClick={() => setIsPartsOpen(!isPartsOpen)}
+              className="w-full mt-3 py-2 px-3 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <span>티타임 파트별(1·2·3부) 상세 현황</span>
+              <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                <span>{isPartsOpen ? '접기' : '상세보기'}</span>
+                {isPartsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
+            </button>
+
             {/* 1부 / 2부 / 3부 티타임 파트별 예약 현황 */}
-            <div className="mt-3.5 pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs mb-2 px-1">
-                <span className="font-bold text-slate-700">티타임 파트별 예약 현황</span>
-                <span className="text-[11px] text-slate-400">
-                  {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined
-                    ? '실시간 파트별 집계'
-                    : '1부·2부·3부 예약 내역 없음'}
-                </span>
+            {isPartsOpen && (
+              <div className="mt-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs mb-2 px-1">
+                  <span className="font-bold text-slate-700">티타임 파트별 예약 현황</span>
+                  <span className="text-[11px] text-slate-400">
+                    {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined
+                      ? '실시간 파트별 집계'
+                      : '1부·2부·3부 예약 내역 없음'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
+                  {/* 1부 */}
+                  <div className="px-1.5">
+                    <div className="text-xs font-semibold text-slate-600 mb-0.5">1부 (오전)</div>
+                    <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                      {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined ? (
+                        <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium">06:00~11:00</div>
+                    {nextDayGolf?.part1AvgGreenFee !== null && nextDayGolf?.part1AvgGreenFee !== undefined && nextDayGolf.part1AvgGreenFee > 0 && (
+                      <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                        <div className="text-[10px] text-slate-400">평균 단가</div>
+                        <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                          {nextDayGolf.part1AvgGreenFee.toLocaleString()}원
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2부 */}
+                  <div className="px-1.5">
+                    <div className="text-xs font-semibold text-slate-600 mb-0.5">2부 (오후)</div>
+                    <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                      {nextDayGolf?.part2Reserved !== null && nextDayGolf?.part2Reserved !== undefined ? (
+                        <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium">11:00~14:00</div>
+                    {nextDayGolf?.part2AvgGreenFee !== null && nextDayGolf?.part2AvgGreenFee !== undefined && nextDayGolf.part2AvgGreenFee > 0 && (
+                      <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                        <div className="text-[10px] text-slate-400">평균 단가</div>
+                        <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                          {nextDayGolf.part2AvgGreenFee.toLocaleString()}원
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3부 */}
+                  <div className="px-1.5">
+                    <div className="text-xs font-semibold text-slate-600 mb-0.5">3부 (야간)</div>
+                    <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                      {nextDayGolf?.part3Reserved !== null && nextDayGolf?.part3Reserved !== undefined ? (
+                        <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">- 팀</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium">14:00~마감</div>
+                    {nextDayGolf?.part3AvgGreenFee !== null && nextDayGolf?.part3AvgGreenFee !== undefined && nextDayGolf.part3AvgGreenFee > 0 && (
+                      <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                        <div className="text-[10px] text-slate-400">평균 단가</div>
+                        <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                          {nextDayGolf.part3AvgGreenFee.toLocaleString()}원
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-
-              <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
-                {/* 1부 */}
-                <div className="px-1.5">
-                  <div className="text-xs font-semibold text-slate-600 mb-0.5">1부 (오전)</div>
-                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                    {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined ? (
-                      <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">- 팀</span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium">06:00~11:00</div>
-                  {nextDayGolf?.part1AvgGreenFee !== null && nextDayGolf?.part1AvgGreenFee !== undefined && nextDayGolf.part1AvgGreenFee > 0 && (
-                    <div className="mt-2 pt-1.5 border-t border-slate-200/60">
-                      <div className="text-[10px] text-slate-400">평균 단가</div>
-                      <div className="text-xs font-extrabold text-slate-800 tabular-nums">
-                        {nextDayGolf.part1AvgGreenFee.toLocaleString()}원
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2부 */}
-                <div className="px-1.5">
-                  <div className="text-xs font-semibold text-slate-600 mb-0.5">2부 (오후)</div>
-                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                    {nextDayGolf?.part2Reserved !== null && nextDayGolf?.part2Reserved !== undefined ? (
-                      <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">- 팀</span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium">11:00~14:00</div>
-                  {nextDayGolf?.part2AvgGreenFee !== null && nextDayGolf?.part2AvgGreenFee !== undefined && nextDayGolf.part2AvgGreenFee > 0 && (
-                    <div className="mt-2 pt-1.5 border-t border-slate-200/60">
-                      <div className="text-[10px] text-slate-400">평균 단가</div>
-                      <div className="text-xs font-extrabold text-slate-800 tabular-nums">
-                        {nextDayGolf.part2AvgGreenFee.toLocaleString()}원
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3부 */}
-                <div className="px-1.5">
-                  <div className="text-xs font-semibold text-slate-600 mb-0.5">3부 (야간)</div>
-                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                    {nextDayGolf?.part3Reserved !== null && nextDayGolf?.part3Reserved !== undefined ? (
-                      <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">- 팀</span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium">14:00~마감</div>
-                  {nextDayGolf?.part3AvgGreenFee !== null && nextDayGolf?.part3AvgGreenFee !== undefined && nextDayGolf.part3AvgGreenFee > 0 && (
-                    <div className="mt-2 pt-1.5 border-t border-slate-200/60">
-                      <div className="text-[10px] text-slate-400">평균 단가</div>
-                      <div className="text-xs font-extrabold text-slate-800 tabular-nums">
-                        {nextDayGolf.part3AvgGreenFee.toLocaleString()}원
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -372,39 +388,55 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
 
             {/* 기준일 1부 / 2부 / 3부 티타임 파트별 마감 실적 */}
             {todaySummary.golfParts && (
-              <div className="mt-3.5 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between text-xs mb-2 px-1">
-                  <span className="font-bold text-slate-700">티타임 파트별 마감 실적</span>
-                  <span className="text-[11px] text-slate-400">1부·2부·3부 정산 완료</span>
-                </div>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsPartsOpen(!isPartsOpen)}
+                  className="w-full mt-3 py-2 px-3 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span>티타임 파트별(1·2·3부) 상세 실적</span>
+                  <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                    <span>{isPartsOpen ? '접기' : '상세보기'}</span>
+                    {isPartsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </div>
+                </button>
 
-                <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
-                  {[
-                    { key: 'part1', data: todaySummary.golfParts.part1, label: '1부 (오전)', time: '06:00~11:00' },
-                    { key: 'part2', data: todaySummary.golfParts.part2, label: '2부 (오후)', time: '11:00~14:00' },
-                    { key: 'part3', data: todaySummary.golfParts.part3, label: '3부 (야간)', time: '14:00~마감' }
-                  ].map(({ key, data: p, label, time }) => {
-                    if (!p) return null;
-                    return (
-                      <div key={key} className="px-1.5">
-                        <div className="text-xs font-semibold text-slate-600 mb-0.5">{label}</div>
-                        <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                          {p.visitedTeams} <span className="text-xs font-normal text-slate-400">팀</span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-medium">{time}</div>
-                        {p.avgGreenFee !== undefined && p.avgGreenFee > 0 && (
-                          <div className="mt-2 pt-1.5 border-t border-slate-200/60">
-                            <div className="text-[10px] text-slate-400">평균 단가</div>
-                            <div className="text-xs font-extrabold text-slate-800 tabular-nums">
-                              {p.avgGreenFeeFormatted || `${p.avgGreenFee.toLocaleString()}원`}
+                {isPartsOpen && (
+                  <div className="mt-2 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-xs mb-2 px-1">
+                      <span className="font-bold text-slate-700">티타임 파트별 마감 실적</span>
+                      <span className="text-[11px] text-slate-400">1부·2부·3부 정산 완료</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
+                      {[
+                        { key: 'part1', data: todaySummary.golfParts.part1, label: '1부 (오전)', time: '06:00~11:00' },
+                        { key: 'part2', data: todaySummary.golfParts.part2, label: '2부 (오후)', time: '11:00~14:00' },
+                        { key: 'part3', data: todaySummary.golfParts.part3, label: '3부 (야간)', time: '14:00~마감' }
+                      ].map(({ key, data: p, label, time }) => {
+                        if (!p) return null;
+                        return (
+                          <div key={key} className="px-1.5">
+                            <div className="text-xs font-semibold text-slate-600 mb-0.5">{label}</div>
+                            <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                              {p.visitedTeams} <span className="text-xs font-normal text-slate-400">팀</span>
                             </div>
+                            <div className="text-[11px] text-slate-400 font-medium">{time}</div>
+                            {p.avgGreenFee !== undefined && p.avgGreenFee > 0 && (
+                              <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                                <div className="text-[10px] text-slate-400">평균 단가</div>
+                                <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                                  {p.avgGreenFeeFormatted || `${p.avgGreenFee.toLocaleString()}원`}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

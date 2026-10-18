@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getClosedBusinessDate } from '../../lib/dateUtils';
 import ReactECharts from 'echarts-for-react';
-import { Building, Info, Calendar, BarChart3, TrendingUp, HelpCircle, Award, ArrowUpRight, ArrowDownRight, Filter, AlertTriangle } from 'lucide-react';
+import { Building, Info, Calendar, BarChart3, TrendingUp, HelpCircle, Award, ArrowUpRight, ArrowDownRight, Filter, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import MetricExplainerTooltip from '../common/MetricExplainerTooltip';
 
@@ -146,6 +146,7 @@ export default function MonthlyTrevporChart() {
   const [metricMode, setMetricMode] = useState<'TOTAL' | 'EX_GOLF'>('TOTAL');
   const [periodMode, setPeriodMode] = useState<'CLOSED_ONLY' | 'ALL_MTD' | 'H1' | 'H2' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('CLOSED_ONLY');
   const [stackedYearMode, setStackedYearMode] = useState<'COMPARE' | 'TY_ONLY' | 'LY_ONLY'>('COMPARE');
+  const [isGuideSectionsOpen, setIsGuideSectionsOpen] = useState<boolean>(false);
   const [data, setData] = useState<MonthlyEfficiencyResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -1416,147 +1417,169 @@ export default function MonthlyTrevporChart() {
             )}
           </div>
 
-          {/* 🏢 부문별(숙·식·레·모·대) 포함 영업장 안내 (부문별 정산 현황 기준) */}
-          <div className="bg-slate-50/80 p-4 sm:p-5 rounded-2xl border border-slate-200/90 mb-6 shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-200/80 gap-2">
+          {/* 🏢 부문별 포함 영업장 및 객실 지표 산정 공식 안내 (아코디언 SSOT) */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setIsGuideSectionsOpen(!isGuideSectionsOpen)}
+              className="w-full py-2.5 px-4 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center justify-between transition-colors cursor-pointer"
+            >
               <div className="flex items-center gap-2">
-                <Building className="w-4 h-4 text-slate-700 shrink-0" />
-                <h4 className="text-xs sm:text-sm font-black text-slate-800 tracking-tight">
-                  부문별({metricMode === 'TOTAL' ? '숙·식·레·모·대·골' : '숙·식·레·모·대'}) 실제 포함 영업장 안내
-                </h4>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-                  경영 조직도 부문별 정산 현황 기준
-                </span>
+                <Building className="w-4 h-4 text-slate-600" />
+                <span>부문별({metricMode === 'TOTAL' ? '숙·식·레·모·대·골' : '숙·식·레·모·대'}) 포함 영업장 및 객실 지표 산정 공식 안내</span>
               </div>
-              <span className="text-[11px] text-slate-500 font-medium">
-                ※ 월별 TrevPAR 부문별 매출 비중 배지에 합산되는 공식 영업장 목록입니다.
-              </span>
-            </div>
-
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${metricMode === 'TOTAL' ? 'lg:grid-cols-3 xl:grid-cols-6' : 'lg:grid-cols-5'} gap-3`}>
-              {/* 🏨 숙박 (ROOM) */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200">숙</span>
-                  <span className="text-xs font-black text-slate-800">객실 (리조트본부)</span>
-                </div>
-                <div className="flex flex-wrap gap-1 content-start">
-                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM</span>
-                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM OTHER</span>
-                </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-normal">
+                <span>{isGuideSectionsOpen ? '가이드 접기' : '가이드 펼치기'}</span>
+                {isGuideSectionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </div>
+            </button>
 
-              {/* 🍽️ 식음 (F&B) */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">식</span>
-                  <span className="text-xs font-black text-slate-800">식음 (콘텐츠본부)</span>
-                </div>
-                <div className="flex flex-wrap gap-1 content-start">
-                  {['남도예담', '쿠치나', '브리스킷346', '투썸플레이스', 'BHC(멕시카나)', 'CU편의점', '딜라이트', '밤밤테이블', '밤밤트럭', '썸머랜드 푸드트럭'].map((v) => (
-                    <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* 🎢 레저 (TICKET) */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">레</span>
-                  <span className="text-xs font-black text-slate-800">레저 (레저본부)</span>
-                </div>
-                <div className="flex flex-wrap gap-1 content-start">
-                  {['벨포레 목장', '벨포레 목장(체험)', '얼룩말카페', '사계절썰매장', '마운틴카트', '마리나 클럽', '미디어아트센터', '미디어-기프트샵', '미디어-뮤지엄카페', '썸머랜드', '원더풀', '놀이동산(2025)'].map((v) => (
-                    <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* 🏎️ 모토 (MOTO) */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">모</span>
-                  <span className="text-xs font-black text-slate-800">모토 (모토아레나)</span>
-                </div>
-                <div className="flex flex-wrap gap-1 content-start">
-                  {['모토아레나', '핏스탑'].map((v) => (
-                    <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* 🏛️ 대관 (BANQUET) */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200">대</span>
-                  <span className="text-xs font-black text-slate-800">대관 (세일즈본부)</span>
-                </div>
-                <div className="flex flex-wrap gap-1 content-start">
-                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">연회장</span>
-                </div>
-              </div>
-
-              {/* ⛳ 골프 (GOLF) */}
-              {metricMode === 'TOTAL' && (
-                <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                    <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">골</span>
-                    <span className="text-xs font-black text-slate-800">골프 (골프본부)</span>
+            {isGuideSectionsOpen && (
+              <div className="mt-3 space-y-4">
+                {/* 🏢 부문별(숙·식·레·모·대) 포함 영업장 안내 (부문별 정산 현황 기준) */}
+                <div className="bg-slate-50/80 p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-200/80 gap-2">
+                    <div className="flex items-center gap-2">
+                      <Building className="w-4 h-4 text-slate-700 shrink-0" />
+                      <h4 className="text-xs sm:text-sm font-black text-slate-800 tracking-tight">
+                        부문별({metricMode === 'TOTAL' ? '숙·식·레·모·대·골' : '숙·식·레·모·대'}) 실제 포함 영업장 안내
+                      </h4>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+                        경영 조직도 부문별 정산 현황 기준
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      ※ 월별 TrevPAR 부문별 매출 비중 배지에 합산되는 공식 영업장 목록입니다.
+                    </span>
                   </div>
-                  <div className="flex flex-wrap gap-1 content-start">
-                    {['골프장', '클럽-레스토랑', '클럽-스타트하우스', '프로샵'].map((v) => (
-                      <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
-                    ))}
+
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 ${metricMode === 'TOTAL' ? 'lg:grid-cols-3 xl:grid-cols-6' : 'lg:grid-cols-5'} gap-3`}>
+                    {/* 🏨 숙박 (ROOM) */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                      <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200">숙</span>
+                        <span className="text-xs font-black text-slate-800">객실 (리조트본부)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 content-start">
+                        <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM</span>
+                        <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">ROOM OTHER</span>
+                      </div>
+                    </div>
+
+                    {/* 🍽️ 식음 (F&B) */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                      <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">식</span>
+                        <span className="text-xs font-black text-slate-800">식음 (콘텐츠본부)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 content-start">
+                        {['남도예담', '쿠치나', '브리스킷346', '투썸플레이스', 'BHC(멕시카나)', 'CU편의점', '딜라이트', '밤밤테이블', '밤밤트럭', '썸머랜드 푸드트럭'].map((v) => (
+                          <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 🎢 레저 (TICKET) */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                      <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">레</span>
+                        <span className="text-xs font-black text-slate-800">레저 (레저본부)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 content-start">
+                        {['벨포레 목장', '벨포레 목장(체험)', '얼룩말카페', '사계절썰매장', '마운틴카트', '마리나 클럽', '미디어아트센터', '미디어-기프트샵', '미디어-뮤지엄카페', '썸머랜드', '원더풀', '놀이동산(2025)'].map((v) => (
+                          <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-medium">{v}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 🏎️ 모토 (MOTO) */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                      <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">모</span>
+                        <span className="text-xs font-black text-slate-800">모토 (모토아레나)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 content-start">
+                        {['모토아레나', '핏스탑'].map((v) => (
+                          <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 🏛️ 대관 (BANQUET) */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                      <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200">대</span>
+                        <span className="text-xs font-black text-slate-800">대관 (세일즈본부)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 content-start">
+                        <span className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">연회장</span>
+                      </div>
+                    </div>
+
+                    {/* ⛳ 골프 (GOLF) */}
+                    {metricMode === 'TOTAL' && (
+                      <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                          <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">골</span>
+                          <span className="text-xs font-black text-slate-800">골프 (골프본부)</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 content-start">
+                          {['골프장', '클럽-레스토랑', '클럽-스타트하우스', '프로샵'].map((v) => (
+                            <span key={v} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/70 rounded text-[10.5px] font-semibold">{v}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* 가용객실 vs 판매객실 카운팅 기준 및 TrevPAR 연동 공식 안내 */}
-          <div className="mb-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 shadow-2xs">
-            <div className="flex items-center gap-2 mb-2 font-bold text-slate-900 text-sm">
-              <Building className="w-4 h-4 text-teal-700" />
-              <span>📌 객실 지표 카운팅(Counting) 기준 및 산정 공식 안내</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200/60 text-slate-600">
-              <div className="bg-white p-3 rounded-xl border border-slate-200/70">
-                <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-slate-500"></span>
-                  <span>가용객실 (Available Rooms)</span>
-                </div>
-                <div className="text-[11px] leading-relaxed">
-                  • <b>산정 방식</b>: 벨포레 물리 고정 인벤토리 <b>1일 175실 × 해당 월 역일수(Days)</b><br/>
-                  • 31일 월: 5,425실 (1, 3, 5, 7, 8, 10, 12월)<br/>
-                  • 30일 월: 5,250실 (4, 6, 9, 11월)<br/>
-                  • 28일 월: 4,900실 (2월) · 진행월: 175실 × 누적일수
+                {/* 가용객실 vs 판매객실 카운팅 기준 및 TrevPAR 연동 공식 안내 */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 shadow-2xs">
+                  <div className="flex items-center gap-2 mb-2 font-bold text-slate-900 text-sm">
+                    <Building className="w-4 h-4 text-teal-700" />
+                    <span>📌 객실 지표 카운팅(Counting) 기준 및 산정 공식 안내</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200/60 text-slate-600">
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/70">
+                      <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                        <span>가용객실 (Available Rooms)</span>
+                      </div>
+                      <div className="text-[11px] leading-relaxed">
+                        • <b>산정 방식</b>: 벨포레 물리 고정 인벤토리 <b>1일 175실 × 해당 월 역일수(Days)</b><br/>
+                        • 31일 월: 5,425실 (1, 3, 5, 7, 8, 10, 12월)<br/>
+                        • 30일 월: 5,250실 (4, 6, 9, 11월)<br/>
+                        • 28일 월: 4,900실 (2월) · 진행월: 175실 × 누적일수
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/70">
+                      <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+                        <span>판매객실 (Rooms Sold)</span>
+                      </div>
+                      <div className="text-[11px] leading-relaxed">
+                        • <b>산정 방식</b>: 산하 PMS(정산 마스터)에 등록된 <b>실제 정산 계약 및 체크인 완료 객실수 누적</b><br/>
+                        • <b>객실 점유율(Occupancy)</b> = (판매객실 ÷ 가용객실) × 100<br/>
+                        • 조립형 커넥팅룸 등 PMS 실판매 기준 적용
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-slate-200/70">
+                      <div className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        <span>RevPAR & TrevPAR 산출 연동</span>
+                      </div>
+                      <div className="text-[11px] leading-relaxed">
+                        • <b>RevPAR 공식</b> = <b>객실 순매출액 ÷ 월 가용객실수</b> (순수 객실 판매 효율)<br/>
+                        • <b>TrevPAR 공식</b> = <b>{metricMode === 'TOTAL' ? '전사 총매출액' : '순수 리조트매출액'} ÷ 월 가용객실수</b> (객실 1실당 전체 매출 기여도)<br/>
+                        • 참고: <b>TrevPOR</b> = 전사 총매출액 ÷ 실판매객실수
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="bg-white p-3 rounded-xl border border-slate-200/70">
-                <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-teal-600"></span>
-                  <span>판매객실 (Rooms Sold)</span>
-                </div>
-                <div className="text-[11px] leading-relaxed">
-                  • <b>산정 방식</b>: 산하 PMS(정산 마스터)에 등록된 <b>실제 정산 계약 및 체크인 완료 객실수 누적</b><br/>
-                  • <b>객실 점유율(Occupancy)</b> = (판매객실 ÷ 가용객실) × 100<br/>
-                  • 조립형 커넥팅룸 등 PMS 실판매 기준 적용
-                </div>
-              </div>
-
-              <div className="bg-white p-3 rounded-xl border border-slate-200/70">
-                <div className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                  <span>RevPAR & TrevPAR 산출 연동</span>
-                </div>
-                <div className="text-[11px] leading-relaxed">
-                  • <b>RevPAR 공식</b> = <b>객실 순매출액 ÷ 월 가용객실수</b> (순수 객실 판매 효율)<br/>
-                  • <b>TrevPAR 공식</b> = <b>{metricMode === 'TOTAL' ? '전사 총매출액' : '순수 리조트매출액'} ÷ 월 가용객실수</b> (객실 1실당 전체 매출 기여도)<br/>
-                  • 참고: <b>TrevPOR</b> = 전사 총매출액 ÷ 실판매객실수
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* 12-Month Detailed Reconciliation Table */}

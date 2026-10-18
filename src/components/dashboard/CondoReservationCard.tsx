@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Calendar, CheckCircle2, AlertCircle, Coins } from 'lucide-react';
+import { Building2, Users, Calendar, CheckCircle2, AlertCircle, Coins, ChevronDown, ChevronUp } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { parseNum } from '../../lib/dataTransformers';
 import { formatDate, getKSTNow } from '../../lib/dateUtils';
@@ -42,6 +42,7 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
   const [loading, setLoading] = useState(false);
   const [resData, setResData] = useState<CondoReservationData | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [forecastData, setForecastData] = useState<{
     roomRevenue: number | null;
     totalRevenue: number | null;
@@ -324,150 +325,167 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
           </div>
         ) : (
           <div className="space-y-3 mt-3.5">
-            {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - 카드 중첩 제거) */}
-            <div className="pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2 px-1">
-                <span>평수별 체크인 예약 현황</span>
-                <span className="text-[11px] font-normal text-slate-400">실제 객실수 기준</span>
+            {/* 아코디언 토글 버튼 */}
+            <button
+              type="button"
+              onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+              className="w-full py-2 px-3 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <span>평수별 예약·단체 명단·예상 매출 상세</span>
+              <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                <span>{isDetailsOpen ? '접기' : '상세보기'}</span>
+                {isDetailsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </div>
+            </button>
 
-              <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
-                {(resData?.byType || []).map((t, idx) => {
-                  const pct = Math.min(100, Math.max(0, t.rate || 0));
-                  return (
-                    <div key={idx} className="px-1.5">
-                      <div className="text-xs font-semibold text-slate-600 mb-0.5">{t.roomType}</div>
+            {isDetailsOpen && (
+              <div className="space-y-3 pt-1">
+                {/* 평수별 실제 객실수 현황 (16평, 35평, 51평 - 카드 중첩 제거) */}
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2 px-1">
+                    <span>평수별 체크인 예약 현황</span>
+                    <span className="text-[11px] font-normal text-slate-400">실제 객실수 기준</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
+                    {(resData?.byType || []).map((t, idx) => {
+                      const pct = Math.min(100, Math.max(0, t.rate || 0));
+                      return (
+                        <div key={idx} className="px-1.5">
+                          <div className="text-xs font-semibold text-slate-600 mb-0.5">{t.roomType}</div>
+                          <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                            {t.roomsSold} <span className="text-xs font-normal text-slate-400">실</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-medium">
+                            가용 {t.capacity}실
+                          </div>
+                          <div className="w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden mt-1.5 mb-1">
+                            <div
+                              className="h-full bg-slate-800 rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-semibold">
+                            점유 {pct.toFixed(0)}%
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 단체 기업예약: 실제 단체/기업 공식 명칭 및 배정 객실 리스트 */}
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2 px-1">
+                    <span className="flex items-center gap-1.5">
+                      <Users size={14} className="text-slate-600" />
+                      <span>단체 / 기업 예약 명단</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      총 {resData?.totalGroupRooms ?? 0}실 {groupSharePct != null ? `(${groupSharePct}% 비중)` : ''}
+                    </span>
+                  </div>
+
+                  {resData?.groups && resData.groups.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {resData.groups.map((grp, gIdx) => {
+                        const itemShare = (grp as any)?.sharePct ?? (grp as any)?.roomSharePct ?? null;
+                        return (
+                          <div
+                            key={gIdx}
+                            className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs gap-2 hover:bg-slate-50 transition-colors"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 flex items-center gap-1.5" title={grp.channelName}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-700 shrink-0"></span>
+                                <span className="truncate text-xs font-bold" title={grp.channelName}>{grp.channelName}</span>
+                                {itemShare != null && (
+                                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold shrink-0">
+                                    {itemShare}%
+                                  </span>
+                                )}
+                              </div>
+                              {grp.breakdown.length > 0 && (
+                                <div className="text-[11px] text-slate-400 truncate mt-0.5 ml-3 font-medium" title={grp.breakdown.join(' · ')}>
+                                  {grp.breakdown.join(' · ')}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right whitespace-nowrap shrink-0 pl-2">
+                              <span className="text-sm font-black text-slate-900">{grp.totalRooms}</span>
+                              <span className="text-xs font-normal text-slate-400 ml-0.5">실</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 text-center text-xs text-slate-400">
+                      <span>확정된 단체 예약이 없습니다. (일반/개별 고객 예약)</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 체크인 당일 예상 매출액 */}
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2 px-1">
+                    <span className="flex items-center gap-1.5">
+                      <Coins size={14} className="text-slate-600" />
+                      <span>체크인 당일 예상 매출액</span>
+                    </span>
+                    <span className="text-[11px] font-normal text-slate-400">
+                      예약 원장 및 운영 모델 기준
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
+                    {/* 1. 객실 부문 예상 매출액 */}
+                    <div className="px-2">
+                      <div className="text-xs font-semibold text-slate-500 mb-1">
+                        객실 예상 매출
+                      </div>
                       <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                        {t.roomsSold} <span className="text-xs font-normal text-slate-400">실</span>
+                        {forecastLoading ? (
+                          <span className="text-xs text-slate-400 font-normal animate-pulse">산출 중...</span>
+                        ) : roomEstRev !== null && roomEstRev !== undefined ? (
+                          <>
+                            {new Intl.NumberFormat('ko-KR').format(roomEstRev)}
+                            <span className="text-xs font-normal text-slate-400 ml-0.5">원</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </div>
                       <div className="text-[10px] text-slate-400 font-medium">
-                        가용 {t.capacity}실
-                      </div>
-                      <div className="w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden mt-1.5 mb-1">
-                        <div
-                          className="h-full bg-slate-800 rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-semibold">
-                        점유 {pct.toFixed(0)}%
+                        {resData?.totalRooms ?? 0}실 기준
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* 단체 기업예약: 실제 단체/기업 공식 명칭 및 배정 객실 리스트 */}
-            <div className="pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2 px-1">
-                <span className="flex items-center gap-1.5">
-                  <Users size={14} className="text-slate-600" />
-                  <span>단체 / 기업 예약 명단</span>
-                </span>
-                <span className="text-[11px] font-semibold text-slate-500">
-                  총 {resData?.totalGroupRooms ?? 0}실 {groupSharePct != null ? `(${groupSharePct}% 비중)` : ''}
-                </span>
-              </div>
-
-              {resData?.groups && resData.groups.length > 0 ? (
-                <div className="space-y-1.5">
-                  {resData.groups.map((grp, gIdx) => {
-                    const itemShare = (grp as any)?.sharePct ?? (grp as any)?.roomSharePct ?? null;
-                    return (
-                      <div
-                        key={gIdx}
-                        className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs gap-2 hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="min-w-0">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5" title={grp.channelName}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700 shrink-0"></span>
-                            <span className="truncate text-xs font-bold" title={grp.channelName}>{grp.channelName}</span>
-                            {itemShare != null && (
-                              <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold shrink-0">
-                                {itemShare}%
-                              </span>
-                            )}
-                          </div>
-                          {grp.breakdown.length > 0 && (
-                            <div className="text-[11px] text-slate-400 truncate mt-0.5 ml-3 font-medium" title={grp.breakdown.join(' · ')}>
-                              {grp.breakdown.join(' · ')}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right whitespace-nowrap shrink-0 pl-2">
-                          <span className="text-sm font-black text-slate-900">{grp.totalRooms}</span>
-                          <span className="text-xs font-normal text-slate-400 ml-0.5">실</span>
-                        </div>
+                    {/* 2. 리조트 전체 파급 예상 매출액 */}
+                    <div className="px-2">
+                      <div className="text-xs font-semibold text-slate-500 mb-1">
+                        전체 예상 매출
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 text-center text-xs text-slate-400">
-                  <span>확정된 단체 예약이 없습니다. (일반/개별 고객 예약)</span>
-                </div>
-              )}
-            </div>
-
-            {/* 체크인 당일 예상 매출액 */}
-            <div className="pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2 px-1">
-                <span className="flex items-center gap-1.5">
-                  <Coins size={14} className="text-slate-600" />
-                  <span>체크인 당일 예상 매출액</span>
-                </span>
-                <span className="text-[11px] font-normal text-slate-400">
-                  예약 원장 및 운영 모델 기준
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
-                {/* 1. 객실 부문 예상 매출액 */}
-                <div className="px-2">
-                  <div className="text-xs font-semibold text-slate-500 mb-1">
-                    객실 예상 매출
-                  </div>
-                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                    {forecastLoading ? (
-                      <span className="text-xs text-slate-400 font-normal animate-pulse">산출 중...</span>
-                    ) : roomEstRev !== null && roomEstRev !== undefined ? (
-                      <>
-                        {new Intl.NumberFormat('ko-KR').format(roomEstRev)}
-                        <span className="text-xs font-normal text-slate-400 ml-0.5">원</span>
-                      </>
-                    ) : (
-                      <span className="text-slate-400">-</span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-medium">
-                    {resData?.totalRooms ?? 0}실 기준
-                  </div>
-                </div>
-
-                {/* 2. 리조트 전체 파급 예상 매출액 */}
-                <div className="px-2">
-                  <div className="text-xs font-semibold text-slate-500 mb-1">
-                    전체 예상 매출
-                  </div>
-                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
-                    {forecastLoading ? (
-                      <span className="text-xs text-slate-400 font-normal animate-pulse">산출 중...</span>
-                    ) : totalEstRev !== null && totalEstRev !== undefined ? (
-                      <>
-                        {new Intl.NumberFormat('ko-KR').format(totalEstRev)}
-                        <span className="text-xs font-normal text-slate-400 ml-0.5">원</span>
-                      </>
-                    ) : (
-                      <span className="text-slate-400">-</span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-medium">
-                    부대·식음 파급 합산
+                      <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                        {forecastLoading ? (
+                          <span className="text-xs text-slate-400 font-normal animate-pulse">산출 중...</span>
+                        ) : totalEstRev !== null && totalEstRev !== undefined ? (
+                          <>
+                            {new Intl.NumberFormat('ko-KR').format(totalEstRev)}
+                            <span className="text-xs font-normal text-slate-400 ml-0.5">원</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        부대·식음 파급 합산
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble, Package } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -18,6 +18,13 @@ import GolfReservationCard from '../components/dashboard/GolfReservationCard';
 export default function Home() {
   const { startDate, endDate } = useDate();
   const coreData = useCoreData();
+
+  // 🎯 아코디언 상태 관리 (모두 기본값 false: 접힘 SSOT)
+  const [isCard2MtdOpen, setIsCard2MtdOpen] = React.useState<boolean>(false);
+  const [isCard3AttractionsOpen, setIsCard3AttractionsOpen] = React.useState<boolean>(false);
+  const [isKpiFormulasOpen, setIsKpiFormulasOpen] = React.useState<boolean>(false);
+  const [isGolfFeeDetailOpen, setIsGolfFeeDetailOpen] = React.useState<boolean>(false);
+  const [isGuideOpen, setIsGuideOpen] = React.useState<boolean>(false);
   const isRangeMode = Boolean(coreData.core?.isRangeQuery || (startDate && (coreData.core?.endDate || endDate) && startDate !== (coreData.core?.endDate || endDate)));
 
   const currentEndDateStr = isRangeMode && coreData.core?.endDate ? coreData.core.endDate : startDate;
@@ -548,137 +555,159 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 2. 💡 월별 누적 매출(MTD) / 선택기간 객실부문 실적 + 공휴일 일수 비교 */}
-              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
-                <div className="flex items-center justify-between flex-wrap gap-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarDays className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
-                    <span className="text-sm font-bold text-slate-800">
-                      {isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출'}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded tracking-wide">
-                      MTD
-                    </span>
-                    <MetricExplainerTooltip presetKey={isRangeMode ? "netRevenue" : "mtdRevenue"} align="left" />
+              {/* 2 & 3. 월별 누적 MTD 및 객실 판매 상세 아코디언 */}
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCard2MtdOpen(!isCard2MtdOpen)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-xs font-bold border border-slate-200/80 cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>월별 MTD 실적 및 객실 판매 상세</span>
+                  </span>
+                  <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                    <span>{isCard2MtdOpen ? '접기' : '상세보기'}</span>
+                    {isCard2MtdOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </div>
+                </button>
 
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs text-slate-500 font-medium font-financial bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                      📅 {activePeriodStr}
-                    </span>
+                {isCard2MtdOpen && (
+                  <div className="space-y-4 pt-3">
+                    {/* 2. 💡 월별 누적 매출(MTD) / 선택기간 객실부문 실적 + 공휴일 일수 비교 */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between flex-wrap gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <CalendarDays className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                          <span className="text-sm font-bold text-slate-800">
+                            {isRangeMode ? '선택 기간 객실 부문 실적' : '월별 누적 매출'}
+                          </span>
+                          <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded tracking-wide">
+                            MTD
+                          </span>
+                          <MetricExplainerTooltip presetKey={isRangeMode ? "netRevenue" : "mtdRevenue"} align="left" />
+                        </div>
 
-                    {/* 🎈 공휴일수 비교 배지 */}
-                    <div 
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
-                      title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
-                    >
-                      <span className="text-amber-800">🎈 공휴일:</span>
-                      <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
-                      <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
-                      {periodHolidays.diffHolidays !== 0 ? (
-                        <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs text-slate-500 font-medium font-financial bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                            📅 {activePeriodStr}
+                          </span>
+
+                          {/* 🎈 공휴일수 비교 배지 */}
+                          <div 
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs whitespace-nowrap"
+                            title={`[당해 ${isRangeMode ? '선택기간' : 'MTD'}] 총 ${periodHolidays.currentPeriod.totalDays}일 중 휴일 ${periodHolidays.currentPeriod.totalHolidays}일 (토 ${periodHolidays.currentPeriod.saturdays}, 일 ${periodHolidays.currentPeriod.sundays}, 평일공휴일 ${periodHolidays.currentPeriod.nationalHolidaysOnWeekdays})\n[전년 동기] 총 ${periodHolidays.lastYearPeriod.totalDays}일 중 휴일 ${periodHolidays.lastYearPeriod.totalHolidays}일 (토 ${periodHolidays.lastYearPeriod.saturdays}, 일 ${periodHolidays.lastYearPeriod.sundays}, 평일공휴일 ${periodHolidays.lastYearPeriod.nationalHolidaysOnWeekdays})`}
+                          >
+                            <span className="text-amber-800">🎈 공휴일:</span>
+                            <strong className="text-amber-950 font-black">{periodHolidays.currentPeriod.totalHolidays}일</strong>
+                            <span className="text-amber-700 font-normal">vs 전년 {periodHolidays.lastYearPeriod.totalHolidays}일</span>
+                            {periodHolidays.diffHolidays !== 0 ? (
+                              <span className={`text-[10px] font-black ${periodHolidays.diffHolidays > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                ({periodHolidays.diffHolidays > 0 ? `+${periodHolidays.diffHolidays}일` : `${periodHolidays.diffHolidays}일`})
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                          {formatRevenue(activeSecondaryRev)}
                         </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-500 font-medium">(동일)</span>
-                      )}
+                        <span className="text-base font-semibold text-slate-400">원</span>
+                        <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap font-financial">
+                          {secondaryFinancial.formatted}
+                        </span>
+                        {isRangeMode && <span className="text-[11px] text-slate-400 font-normal">(객실 순매출)</span>}
+                      </div>
+
+                      {/* 🌟 전년 동기 대조 바 (일체형 오와열 정렬) */}
+                      <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
+                        <div className="flex items-center gap-1.5 flex-wrap text-xs" title={`대조 기간: ${activeLyPeriodStr}`}>
+                          <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+                            전년 동기 실적
+                          </span>
+                          <span className="font-extrabold text-slate-800 text-sm">
+                            {activeSecondaryLyRev > 0 ? `${formatRevenue(activeSecondaryLyRev)}원` : '-'}
+                          </span>
+                          {activeSecondaryLyRev > 0 && (
+                            <span className="text-xs font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
+                              {secondaryLyFinancial.formatted}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                          {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
+                            <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
+                              activeSecondaryGrowth >= 0 
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                : 'bg-rose-100 text-rose-800 border border-rose-200'
+                            }`}>
+                              <span>전년비 {activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
+                              {activeSecondaryDiff !== undefined && (
+                                <span className="font-semibold text-[10px] opacity-90">({activeSecondaryDiff > 0 ? '+' : ''}{formatRevenue(activeSecondaryDiff)}원)</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-medium">전년 비교 산출 대기</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. 🛏️ 월별 누적 객실 판매 */}
+                    <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                      <div className="flex items-center justify-between flex-wrap gap-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                          <BedDouble className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                          <span className="text-sm font-bold text-slate-800">
+                            {isRangeMode ? '선택 기간 객실 판매' : '월별 누적 객실 판매'}
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/80">
+                            콘도 투숙
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                          {activeRoomsSold.toLocaleString()}
+                        </span>
+                        <span className="text-base font-semibold text-slate-400">실</span>
+                      </div>
+
+                      {/* 🌟 전년 동기간 대조 바 (일체형 오와열 정렬) */}
+                      <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
+                        <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                          <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+                            전년 동기간
+                          </span>
+                          <span className="font-extrabold text-slate-800 text-sm">
+                            {activeLyRoomsSold > 0 ? `${activeLyRoomsSold.toLocaleString()}실` : '-'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                          {activeLyRoomsSold > 0 && activeRoomsGrowth !== null ? (
+                            <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
+                              activeRoomsGrowth >= 0 
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                : 'bg-rose-100 text-rose-800 border border-rose-200'
+                            }`}>
+                              <span>전년비 {activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
+                              <span className="font-semibold text-[10px] opacity-90">({activeRoomsDiff > 0 ? '+' : ''}{activeRoomsDiff.toLocaleString()}실)</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 대기</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                    {formatRevenue(activeSecondaryRev)}
-                  </span>
-                  <span className="text-base font-semibold text-slate-400">원</span>
-                  <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap font-financial">
-                    {secondaryFinancial.formatted}
-                  </span>
-                  {isRangeMode && <span className="text-[11px] text-slate-400 font-normal">(객실 순매출)</span>}
-                </div>
-
-                {/* 🌟 전년 동기 대조 바 (일체형 오와열 정렬) */}
-                <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
-                  <div className="flex items-center gap-1.5 flex-wrap text-xs" title={`대조 기간: ${activeLyPeriodStr}`}>
-                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
-                      전년 동기 실적
-                    </span>
-                    <span className="font-extrabold text-slate-800 text-sm">
-                      {activeSecondaryLyRev > 0 ? `${formatRevenue(activeSecondaryLyRev)}원` : '-'}
-                    </span>
-                    {activeSecondaryLyRev > 0 && (
-                      <span className="text-xs font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
-                        {secondaryLyFinancial.formatted}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                    {activeSecondaryGrowth !== undefined && activeSecondaryGrowth !== null ? (
-                      <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
-                        activeSecondaryGrowth >= 0 
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
-                      }`}>
-                        <span>전년비 {activeSecondaryGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeSecondaryGrowth).toFixed(1)}%</span>
-                        {activeSecondaryDiff !== undefined && (
-                          <span className="font-semibold text-[10px] opacity-90">({activeSecondaryDiff > 0 ? '+' : ''}{formatRevenue(activeSecondaryDiff)}원)</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-medium">전년 비교 산출 대기</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. 🛏️ 월별 누적 객실 판매 */}
-              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
-                <div className="flex items-center justify-between flex-wrap gap-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                    <BedDouble className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
-                    <span className="text-sm font-bold text-slate-800">
-                      {isRangeMode ? '선택 기간 객실 판매' : '월별 누적 객실 판매'}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/80">
-                      콘도 투숙
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                    {activeRoomsSold.toLocaleString()}
-                  </span>
-                  <span className="text-base font-semibold text-slate-400">실</span>
-                </div>
-
-                {/* 🌟 전년 동기간 대조 바 (일체형 오와열 정렬) */}
-                <div className="p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-financial">
-                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
-                      전년 동기간
-                    </span>
-                    <span className="font-extrabold text-slate-800 text-sm">
-                      {activeLyRoomsSold > 0 ? `${activeLyRoomsSold.toLocaleString()}실` : '-'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                    {activeLyRoomsSold > 0 && activeRoomsGrowth !== null ? (
-                      <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap ${
-                        activeRoomsGrowth >= 0 
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
-                      }`}>
-                        <span>전년비 {activeRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeRoomsGrowth).toFixed(1)}%</span>
-                        <span className="font-semibold text-[10px] opacity-90">({activeRoomsDiff > 0 ? '+' : ''}{activeRoomsDiff.toLocaleString()}실)</span>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">전년 비교 산출 대기</span>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -745,68 +774,84 @@ export default function Home() {
                   </div>
                 )}
                 
-                {/* Major Leisure Facilities Visitors Breakdown */}
+                {/* Major Leisure Facilities Visitors Breakdown (Accordion) */}
                 <div className="mt-3 pt-3 border-t border-slate-100 relative z-10">
-                  <div className="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
-                    <span>주요 레저/어트랙션 이용객 수</span>
-                    <span className="text-[11px] text-slate-400 font-normal">{isRangeMode ? '(선택 기간 누적)' : '(당일 실적)'}</span>
-                  </div>
-                  {(() => {
-                    const lv = (coreData.core?.summary?.leisureVisitors || coreData.core?.leisureVisitors) as Record<string, number> | undefined;
-                    const attractionItems = [
-                      { label: '🎨 미디어아트', val: lv?.mediaArt ?? (leisureVisitorsMap['미디어아트센터'] || 0), isSeasonal: false },
-                      { label: '🐑 벨포레 목장', val: lv?.ranch ?? (leisureVisitorsMap['벨포레 목장'] || 0), isSeasonal: false },
-                      { label: '🛷 사계절썰매', val: lv?.sled ?? (leisureVisitorsMap['사계절썰매장'] || 0), isSeasonal: false },
-                      { label: '🚤 마리나 클럽', val: lv?.marina ?? (leisureVisitorsMap['마리나 클럽'] || 0), isSeasonal: false },
-                      { label: '🏎️ 카트(그랜드포렛)', title: '마운틴카트(그랜드포렛)', val: lv?.mountainCartGrand ?? (leisureVisitorsMap['마운틴카트(그랜드포렛)'] || leisureVisitorsMap['그랜드포렛'] || 0), isSeasonal: false },
-                      { label: '🏎️ 카트(미니포렛)', title: '마운틴카트(미니포렛)', val: lv?.mountainCartMini ?? (leisureVisitorsMap['마운틴카트(미니포렛)'] || leisureVisitorsMap['미니포렛'] || 0), isSeasonal: false },
-                      { label: '🏊 썸머랜드', val: lv?.summerland ?? (leisureVisitorsMap['[썸머랜드 전체 소계]'] || leisureVisitorsMap['썸머랜드'] || 0), isSeasonal: true },
-                      { label: '🎡 원더풀', val: lv?.wonderful ?? (leisureVisitorsMap['원더풀'] || 0), isSeasonal: true },
-                    ].filter(item => !(item.isSeasonal && (!item.val || item.val <= 0)));
+                  <button
+                    type="button"
+                    onClick={() => setIsCard3AttractionsOpen(!isCard3AttractionsOpen)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-xs font-bold border border-slate-200/80 cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-brand-mint" />
+                      <span>주요 레저/어트랙션 이용객 수</span>
+                      <span className="text-[10px] text-slate-400 font-normal">{isRangeMode ? '(선택 기간)' : '(당일 실적)'}</span>
+                    </span>
+                    <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                      <span>{isCard3AttractionsOpen ? '접기' : '상세보기'}</span>
+                      {isCard3AttractionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </div>
+                  </button>
 
-                    const motoCount = lv?.motoArena ?? (leisureVisitorsMap['모토아레나'] || 0);
+                  {isCard3AttractionsOpen && (
+                    <div className="pt-3">
+                      {(() => {
+                        const lv = (coreData.core?.summary?.leisureVisitors || coreData.core?.leisureVisitors) as Record<string, number> | undefined;
+                        const attractionItems = [
+                          { label: '🎨 미디어아트', val: lv?.mediaArt ?? (leisureVisitorsMap['미디어아트센터'] || 0), isSeasonal: false },
+                          { label: '🐑 벨포레 목장', val: lv?.ranch ?? (leisureVisitorsMap['벨포레 목장'] || 0), isSeasonal: false },
+                          { label: '🛷 사계절썰매', val: lv?.sled ?? (leisureVisitorsMap['사계절썰매장'] || 0), isSeasonal: false },
+                          { label: '🚤 마리나 클럽', val: lv?.marina ?? (leisureVisitorsMap['마리나 클럽'] || 0), isSeasonal: false },
+                          { label: '🏎️ 카트(그랜드포렛)', title: '마운틴카트(그랜드포렛)', val: lv?.mountainCartGrand ?? (leisureVisitorsMap['마운틴카트(그랜드포렛)'] || leisureVisitorsMap['그랜드포렛'] || 0), isSeasonal: false },
+                          { label: '🏎️ 카트(미니포렛)', title: '마운틴카트(미니포렛)', val: lv?.mountainCartMini ?? (leisureVisitorsMap['마운틴카트(미니포렛)'] || leisureVisitorsMap['미니포렛'] || 0), isSeasonal: false },
+                          { label: '🏊 썸머랜드', val: lv?.summerland ?? (leisureVisitorsMap['[썸머랜드 전체 소계]'] || leisureVisitorsMap['썸머랜드'] || 0), isSeasonal: true },
+                          { label: '🎡 원더풀', val: lv?.wonderful ?? (leisureVisitorsMap['원더풀'] || 0), isSeasonal: true },
+                        ].filter(item => !(item.isSeasonal && (!item.val || item.val <= 0)));
 
-                    return (
-                      <div className="grid grid-cols-2 gap-1.5 text-xs">
-                        {attractionItems.map((item, idx) => (
-                          <div key={idx} className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
-                            <span className="text-slate-700 font-semibold truncate" title={item.title || item.label}>
-                              {item.label}
-                            </span>
-                            <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
-                              {new Intl.NumberFormat('ko-KR').format(item.val)}
-                              <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
-                            </span>
+                        const motoCount = lv?.motoArena ?? (leisureVisitorsMap['모토아레나'] || 0);
+
+                        return (
+                          <div className="grid grid-cols-2 gap-1.5 text-xs">
+                            {attractionItems.map((item, idx) => (
+                              <div key={idx} className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs">
+                                <span className="text-slate-700 font-semibold truncate" title={item.title || item.label}>
+                                  {item.label}
+                                </span>
+                                <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
+                                  {new Intl.NumberFormat('ko-KR').format(item.val)}
+                                  <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                                </span>
+                              </div>
+                            ))}
+                            <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs col-span-2">
+                              <span className="text-slate-700 font-semibold truncate" title="모토아레나">🏁 모토아레나</span>
+                              <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
+                                {new Intl.NumberFormat('ko-KR').format(motoCount)}
+                                <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                              </span>
+                            </div>
                           </div>
-                        ))}
-                        <div className="bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center justify-between border border-slate-100/80 shadow-xs col-span-2">
-                          <span className="text-slate-700 font-semibold truncate" title="모토아레나">🏁 모토아레나</span>
-                          <span className="text-base sm:text-lg font-black text-brand-mint tracking-tight whitespace-nowrap">
-                            {new Intl.NumberFormat('ko-KR').format(motoCount)}
-                            <span className="text-xs font-normal text-slate-500 ml-0.5">명</span>
+                        );
+                      })()}
+
+                      {/* 모토아레나 숙박/회원 세부 내역 (하단 전용 바) */}
+                      <div className="mt-2 px-3 py-2 rounded-xl bg-slate-50/90 border border-slate-200/70 flex items-center justify-between text-xs text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200/80 whitespace-nowrap">
+                            모토아레나 숙박·회원
+                          </span>
+                          <span className="text-slate-700 font-medium">
+                            숙박할인 <strong className="text-slate-900 font-bold">{motoGuestCount}</strong>명 · 회원할인 <strong className="text-slate-900 font-bold">{motoMemberCount}</strong>명
                           </span>
                         </div>
+                        <span className="text-xs font-semibold text-slate-500">
+                          총 <strong className="text-brand-mint font-bold">{motoTotalCount}</strong>명
+                          <span className="text-[11px] text-slate-400 font-normal ml-1">
+                            (전체 {new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}명 중)
+                          </span>
+                        </span>
                       </div>
-                    );
-                  })()}
-
-                  {/* 모토아레나 숙박/회원 세부 내역 (하단 전용 바) */}
-                  <div className="mt-2 px-3 py-2 rounded-xl bg-slate-50/90 border border-slate-200/70 flex items-center justify-between text-xs text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200/80 whitespace-nowrap">
-                        모토아레나 숙박·회원
-                      </span>
-                      <span className="text-slate-700 font-medium">
-                        숙박할인 <strong className="text-slate-900 font-bold">{motoGuestCount}</strong>명 · 회원할인 <strong className="text-slate-900 font-bold">{motoMemberCount}</strong>명
-                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-500">
-                      총 <strong className="text-brand-mint font-bold">{motoTotalCount}</strong>명
-                      <span className="text-[11px] text-slate-400 font-normal ml-1">
-                        (전체 {new Intl.NumberFormat('ko-KR').format(leisureVisitorsMap['모토아레나'] || 0)}명 중)
-                      </span>
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
               
@@ -818,13 +863,23 @@ export default function Home() {
 
           <div className="lg:col-span-12 flex flex-col gap-6">
             <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-200/90 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <Coins className="w-5 h-5 text-emerald-600" /> 객실 및 복합 리조트 핵심 운영 지표
                 </h2>
-                <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  175실 기준 공식 산출
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    175실 기준 공식 산출
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsKpiFormulasOpen(!isKpiFormulasOpen)}
+                    className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    <span>{isKpiFormulasOpen ? '공식/설명 접기' : '산출 공식 및 세부설명'}</span>
+                    {isKpiFormulasOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                </div>
               </div>
               
               {/* 소프트 슬레이트 패널 컨테이너 (사용자 지정 SSOT 스타일) */}
@@ -890,14 +945,18 @@ export default function Home() {
                             <div className="text-2xl font-black text-teal-950 tracking-tight font-financial my-1 tabular-nums">
                               {formatRevenue(activeTrevPar)} <span className="text-xs font-normal text-teal-700">원</span>
                             </div>
-                            <div className="p-2 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100 my-2 text-center">
-                              {trevparViewMode === 'EX_GOLF' ? '리조트(골프제외) ÷ 가용 175실' : '전사 총매출 ÷ 전체 가용 175실'}
-                            </div>
-                            <p className="text-slate-600 text-[11px] leading-relaxed">
-                              {trevparViewMode === 'EX_GOLF' 
-                                ? '순수 숙박/식음/레저 기반 객실당 부가가치' 
-                                : '리조트 전반에서 창출하는 1실당 총체적 부가가치'}
-                            </p>
+                            {isKpiFormulasOpen && (
+                              <div className="mt-2 pt-2 border-t border-teal-100">
+                                <div className="p-2 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100 mb-2 text-center">
+                                  {trevparViewMode === 'EX_GOLF' ? '리조트(골프제외) ÷ 가용 175실' : '전사 총매출 ÷ 전체 가용 175실'}
+                                </div>
+                                <p className="text-slate-600 text-[11px] leading-relaxed">
+                                  {trevparViewMode === 'EX_GOLF' 
+                                    ? '순수 숙박/식음/레저 기반 객실당 부가가치' 
+                                    : '리조트 전반에서 창출하는 1실당 총체적 부가가치'}
+                                </p>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between pt-2 mt-2 border-t border-teal-100 text-[10px]">
                               <span className="text-slate-500 font-financial">
                                 {trevparViewMode === 'EX_GOLF' 
@@ -942,12 +1001,16 @@ export default function Home() {
                             <div className="text-2xl font-black text-slate-900 tracking-tight font-financial my-1 tabular-nums">
                               {formatRevenue(adr)} <span className="text-xs font-normal text-slate-400">원</span>
                             </div>
-                            <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
-                              순수 객실 매출 ÷ 실제 판매 객실 수
-                            </div>
-                            <p className="text-slate-600 text-[11px] leading-relaxed">
-                              실제 투숙 고객에게 판매된 객실 1실당 순수 평균 판매 가격입니다.
-                            </p>
+                            {isKpiFormulasOpen && (
+                              <div className="mt-2 pt-2 border-t border-slate-100">
+                                <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 mb-2 text-center">
+                                  순수 객실 매출 ÷ 실제 판매 객실 수
+                                </div>
+                                <p className="text-slate-600 text-[11px] leading-relaxed">
+                                  실제 투숙 고객에게 판매된 객실 1실당 순수 평균 판매 가격입니다.
+                                </p>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
                               <span>순수 객실 실적</span>
                               <span className="font-semibold text-slate-600">계약 기준 객단가</span>
@@ -980,12 +1043,16 @@ export default function Home() {
                             <div className="text-2xl font-black text-slate-900 tracking-tight font-financial my-1 tabular-nums">
                               {formatRevenue(revPar)} <span className="text-xs font-normal text-slate-400">원</span>
                             </div>
-                            <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
-                              객실 매출 ÷ 가용 175실 = ADR × 점유율
-                            </div>
-                            <p className="text-slate-600 text-[11px] leading-relaxed">
-                              전체 보유 객실(175실) 대비 순수 객실 판매 효율을 나타냅니다.
-                            </p>
+                            {isKpiFormulasOpen && (
+                              <div className="mt-2 pt-2 border-t border-slate-100">
+                                <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 mb-2 text-center">
+                                  객실 매출 ÷ 가용 175실 = ADR × 점유율
+                                </div>
+                                <p className="text-slate-600 text-[11px] leading-relaxed">
+                                  전체 보유 객실(175실) 대비 순수 객실 판매 효율을 나타냅니다.
+                                </p>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
                               <span>가용 175실 기준</span>
                               <span className="font-semibold text-slate-600">ADR × 점유율 연동</span>
@@ -1025,12 +1092,16 @@ export default function Home() {
                             <div className="text-2xl font-black text-slate-900 tracking-tight font-financial my-1 tabular-nums">
                               {Number(occ).toFixed(1)} <span className="text-xs font-normal text-slate-400">%</span>
                             </div>
-                            <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 my-2 text-center">
-                              판매 객실 수 ÷ 전체 가용 175실
-                            </div>
-                            <p className="text-slate-600 text-[11px] leading-relaxed">
-                              {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
-                            </p>
+                            {isKpiFormulasOpen && (
+                              <div className="mt-2 pt-2 border-t border-slate-100">
+                                <div className="p-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60 mb-2 text-center">
+                                  판매 객실 수 ÷ 전체 가용 175실
+                                </div>
+                                <p className="text-slate-600 text-[11px] leading-relaxed">
+                                  {isRangeMode ? '선택 기간 평균 가동률' : (occupiedUnits ? `175실 재고 기준 (실운영 ${occupiedUnits}실)` : '175실 재고 기준 자동 산출')}
+                                </p>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[10px] text-slate-400 font-financial">
                               <span>{isRangeMode ? '선택 기간 누적 가동' : '가용 175실 기준'}</span>
                               <span className="font-semibold text-emerald-700">{occupiedUnits ? `실운영 ${occupiedUnits}실 가동` : '공식 정산 기준'}</span>
@@ -1047,10 +1118,12 @@ export default function Home() {
                 </div>
 
                 {/* 하단 공식 정산 기준 안내 배너 */}
-                <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-3.5 border border-teal-100 font-medium flex items-center justify-between flex-wrap gap-2">
-                  <span><strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(TrevPAR, ADR, RevPAR, 객실 점유율 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.</span>
-                  <span className="text-[11px] text-teal-600 font-mono font-normal">SSOT V6 Engine</span>
-                </div>
+                {isKpiFormulasOpen && (
+                  <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-3.5 border border-teal-100 font-medium flex items-center justify-between flex-wrap gap-2">
+                    <span><strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(TrevPAR, ADR, RevPAR, 객실 점유율 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.</span>
+                    <span className="text-[11px] text-teal-600 font-mono font-normal">SSOT V6 Engine</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -1078,103 +1151,120 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* 자사 평균 / OTA 평균 / 회원 평균 3분할 통합 그리드 (카드 중첩 제거) */}
-                    <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      {/* 자사 평균 */}
-                      <div className="px-2">
-                        <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="자사 평균 (홈페이지 직접 예약)">
-                          자사 평균
-                        </div>
-                        <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
-                          {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
-                            ? `${formatRevenue(displayData.golfSummary.directAvgGreenFee)}원`
-                            : (coreData.summary?.isGolfChannelsLoading ? (
-                                <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
-                              ) : '-')}
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="홈페이지 예약">
-                          홈페이지
-                        </div>
+                    {/* 아코디언 토글 버튼 */}
+                    <button
+                      type="button"
+                      onClick={() => setIsGolfFeeDetailOpen(!isGolfFeeDetailOpen)}
+                      className="w-full mt-2 py-2 px-3 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>채널별(자사·OTA·회원) 및 순위 상세</span>
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                        <span>{isGolfFeeDetailOpen ? '접기' : '상세보기'}</span>
+                        {isGolfFeeDetailOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </div>
+                    </button>
 
-                      {/* OTA 평균 */}
-                      <div className="px-2">
-                        <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="OTA 제휴사 평균">
-                          OTA 평균
-                        </div>
-                        <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
-                          {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
-                            ? `${formatRevenue(displayData.golfSummary.otaAvgGreenFee)}원`
-                            : (coreData.summary?.isGolfChannelsLoading ? (
-                                <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
-                              ) : '-')}
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="대행사 제휴처 (골프존·스마트스코어·골프몬 등)">
-                          대행 제휴사
-                        </div>
-                      </div>
+                    {isGolfFeeDetailOpen && (
+                      <div className="mt-3 space-y-3">
+                        {/* 자사 평균 / OTA 평균 / 회원 평균 3분할 통합 그리드 (카드 중첩 제거) */}
+                        <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 text-center">
+                          {/* 자사 평균 */}
+                          <div className="px-2">
+                            <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="자사 평균 (홈페이지 직접 예약)">
+                              자사 평균
+                            </div>
+                            <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
+                              {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
+                                ? `${formatRevenue(displayData.golfSummary.directAvgGreenFee)}원`
+                                : (coreData.summary?.isGolfChannelsLoading ? (
+                                    <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
+                                  ) : '-')}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="홈페이지 예약">
+                              홈페이지
+                            </div>
+                          </div>
 
-                      {/* 회원 평균 */}
-                      <div className="px-2">
-                        <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="회원 우대 평균 단가">
-                          회원 평균
-                        </div>
-                        <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
-                          {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
-                            ? `${formatRevenue(displayData.golfSummary.memberAvgGreenFee)}원`
-                            : (coreData.summary?.isGolfChannelsLoading ? (
-                                <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
-                              ) : '-')}
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="회원 우대 단가">
-                          회원 우대
-                        </div>
-                      </div>
-                    </div>
+                          {/* OTA 평균 */}
+                          <div className="px-2">
+                            <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="OTA 제휴사 평균">
+                              OTA 평균
+                            </div>
+                            <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
+                              {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
+                                ? `${formatRevenue(displayData.golfSummary.otaAvgGreenFee)}원`
+                                : (coreData.summary?.isGolfChannelsLoading ? (
+                                    <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
+                                  ) : '-')}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="대행사 제휴처 (골프존·스마트스코어·골프몬 등)">
+                              대행 제휴사
+                            </div>
+                          </div>
 
-                    {/* 채널별 1인당 실측 그린피 순위 미니 차트 & 테이블 */}
-                    {coreData.core?.summary?.golfRankedChannels && coreData.core.summary.golfRankedChannels.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-slate-100">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
-                          <span className="flex items-center gap-1.5">
-                            <span>📊</span> 채널별 1인당 실측 그린피 순위
-                          </span>
-                          <span className="text-[11px] font-normal text-slate-400">내장객 순매출 기준</span>
+                          {/* 회원 평균 */}
+                          <div className="px-2">
+                            <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="회원 우대 평균 단가">
+                              회원 평균
+                            </div>
+                            <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
+                              {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
+                                ? `${formatRevenue(displayData.golfSummary.memberAvgGreenFee)}원`
+                                : (coreData.summary?.isGolfChannelsLoading ? (
+                                    <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
+                                  ) : '-')}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="회원 우대 단가">
+                              회원 우대
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1.5">
-                          {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
-                            const rawPct = item.sharePct ?? item.barWidthPct;
-                            const pct = rawPct != null ? Number(rawPct) : null;
-                            return (
-                              <div key={idx} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs gap-2 hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-2 min-w-[120px] truncate" title={item.name}>
-                                  <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                                    idx === 0 ? 'bg-amber-100 text-amber-800' :
-                                    idx === 1 ? 'bg-slate-200 text-slate-700' :
-                                    idx === 2 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
-                                  }`}>
-                                    {idx + 1}
-                                  </span>
-                                  <span className="font-semibold text-slate-800 truncate" title={item.name}>{item.name}</span>
-                                </div>
-                                {pct != null && (
-                                  <div className="flex-1 mx-2 hidden sm:block">
-                                    <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
-                                      <div 
-                                        className="h-full bg-slate-800 rounded-full transition-all duration-500" 
-                                        style={{ width: `${pct}%` }}
-                                      />
+
+                        {/* 채널별 1인당 실측 그린피 순위 미니 차트 & 테이블 */}
+                        {coreData.core?.summary?.golfRankedChannels && coreData.core.summary.golfRankedChannels.length > 0 && (
+                          <div className="pt-2 border-t border-slate-100">
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                              <span className="flex items-center gap-1.5">
+                                <span>📊</span> 채널별 1인당 실측 그린피 순위
+                              </span>
+                              <span className="text-[11px] font-normal text-slate-400">내장객 순매출 기준</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {coreData.core.summary.golfRankedChannels.map((item: any, idx: number) => {
+                                const rawPct = item.sharePct ?? item.barWidthPct;
+                                const pct = rawPct != null ? Number(rawPct) : null;
+                                return (
+                                  <div key={idx} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs gap-2 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-2 min-w-[120px] truncate" title={item.name}>
+                                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                        idx === 0 ? 'bg-amber-100 text-amber-800' :
+                                        idx === 1 ? 'bg-slate-200 text-slate-700' :
+                                        idx === 2 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
+                                      }`}>
+                                        {idx + 1}
+                                      </span>
+                                      <span className="font-semibold text-slate-800 truncate" title={item.name}>{item.name}</span>
+                                    </div>
+                                    {pct != null && (
+                                      <div className="flex-1 mx-2 hidden sm:block">
+                                        <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-slate-800 rounded-full transition-all duration-500" 
+                                            style={{ width: `${pct}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="text-right whitespace-nowrap shrink-0">
+                                      <span className="font-extrabold text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
+                                      <span className="text-[11px] text-slate-400 ml-1.5">({item.players}명)</span>
                                     </div>
                                   </div>
-                                )}
-                                <div className="text-right whitespace-nowrap shrink-0">
-                                  <span className="font-extrabold text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
-                                  <span className="text-[11px] text-slate-400 ml-1.5">({item.players}명)</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1215,109 +1305,129 @@ export default function Home() {
           )}
 
             {/* QA & KPI 상세 가이드 Accordion */}
-            <div className="lg:col-span-12 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-brand-mint" />
-                지표 산출 공식 및 경영 의미 가이드
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Resort & Room Indicators: TrevPAR, ADR, RevPAR, Occ */}
-                <div className="bg-slate-50 p-5 rounded-2xl flex flex-col justify-between border border-slate-200/80 lg:col-span-2">
-                  <div>
-                    <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">객실 및 복합 리조트 핵심 지표 산출 방식 안내</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                      {/* TrevPAR */}
-                      <div className="bg-white p-4 rounded-xl border border-teal-200/70 shadow-xs flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-extrabold text-teal-900 text-sm">가용객실당 총매출 (TrevPAR)</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">핵심 지표</span>
-                          </div>
-                          <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
-                            Total Revenue Per Available Room
-                          </p>
-                          <div className="p-2.5 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100">
-                            리조트 전사 총매출 ÷ 전체 가용 객실 수 (175실)
-                          </div>
-                        </div>
-                        <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
-                          단순 숙박을 넘어 <strong>객실 1실이 골프, 식음, 레저(목장/루지), 모토 등 리조트 전반에서 창출하는 총체적 부가가치</strong>를 평가하는 벨포레의 최우선 경영 지표입니다.
-                        </p>
-                      </div>
+            <div className="lg:col-span-12 bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => setIsGuideOpen(!isGuideOpen)}
+                className="w-full p-6 flex items-center justify-between text-left hover:bg-slate-50/80 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-brand-mint" />
+                  <h3 className="text-base font-bold text-slate-900">
+                    지표 산출 공식 및 경영 의미 가이드
+                  </h3>
+                  <span className="text-xs text-slate-400 font-normal hidden sm:inline ml-1">
+                    (TrevPAR · ADR · RevPAR · Occ · 그린피 산정 원리)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-slate-600 bg-slate-100">
+                  <span>{isGuideOpen ? '가이드 접기' : '가이드 펼치기'}</span>
+                  {isGuideOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </div>
+              </button>
 
-                      {/* ADR */}
-                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-extrabold text-slate-800 text-sm">판매 객단가 (ADR)</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">실판매 단가</span>
+              {isGuideOpen && (
+                <div className="p-6 pt-0 border-t border-slate-100">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+                    {/* Resort & Room Indicators: TrevPAR, ADR, RevPAR, Occ */}
+                    <div className="bg-slate-50 p-5 rounded-2xl flex flex-col justify-between border border-slate-200/80 lg:col-span-2">
+                      <div>
+                        <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">객실 및 복합 리조트 핵심 지표 산출 방식 안내</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                          {/* TrevPAR */}
+                          <div className="bg-white p-4 rounded-xl border border-teal-200/70 shadow-xs flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-extrabold text-teal-900 text-sm">가용객실당 총매출 (TrevPAR)</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">핵심 지표</span>
+                              </div>
+                              <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
+                                Total Revenue Per Available Room
+                              </p>
+                              <div className="p-2.5 rounded-lg bg-teal-50/70 font-mono text-[11px] text-teal-900 font-bold border border-teal-100">
+                                리조트 전사 총매출 ÷ 전체 가용 객실 수 (175실)
+                              </div>
+                            </div>
+                            <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
+                              단순 숙박을 넘어 <strong>객실 1실이 골프, 식음, 레저(목장/루지), 모토 등 리조트 전반에서 창출하는 총체적 부가가치</strong>를 평가하는 벨포레의 최우선 경영 지표입니다.
+                            </p>
                           </div>
-                          <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
-                            Average Daily Rate
-                          </p>
-                          <div className="p-2.5 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60">
-                            순수 객실 매출 ÷ 실제 판매 객실 수 (Rooms Sold)
-                          </div>
-                        </div>
-                        <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
-                          실제 투숙 고객에게 판매된 객실 1실당 순수 평균 판매 가격입니다.
-                        </p>
-                      </div>
 
-                      {/* RevPAR & Occ */}
-                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-extrabold text-slate-800 text-sm">객실당 매출 (RevPAR) & 점유율 (Occ)</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">객실 효율</span>
+                          {/* ADR */}
+                          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-extrabold text-slate-800 text-sm">판매 객단가 (ADR)</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">실판매 단가</span>
+                              </div>
+                              <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
+                                Average Daily Rate
+                              </p>
+                              <div className="p-2.5 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60">
+                                순수 객실 매출 ÷ 실제 판매 객실 수 (Rooms Sold)
+                              </div>
+                            </div>
+                            <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
+                              실제 투숙 고객에게 판매된 객실 1실당 순수 평균 판매 가격입니다.
+                            </p>
                           </div>
-                          <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
-                            Revenue Per Available Room & Occupancy
-                          </p>
-                          <div className="p-2.5 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60">
-                            RevPAR = 객실 매출 ÷ 가용 175실 = ADR × 점유율
+
+                          {/* RevPAR & Occ */}
+                          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-extrabold text-slate-800 text-sm">객실당 매출 (RevPAR) & 점유율 (Occ)</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">객실 효율</span>
+                              </div>
+                              <p className="text-slate-500 text-[11px] mb-2 leading-relaxed">
+                                Revenue Per Available Room & Occupancy
+                              </p>
+                              <div className="p-2.5 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-800 font-bold border border-slate-200/60">
+                                RevPAR = 객실 매출 ÷ 가용 175실 = ADR × 점유율
+                              </div>
+                            </div>
+                            <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
+                              전체 보유 객실(175실) 대비 순수 객실 판매 효율을 나타내며, 점유율(판매객실 ÷ 175실)과 직결됩니다.
+                            </p>
                           </div>
                         </div>
-                        <p className="text-slate-600 text-[11px] mt-2.5 leading-relaxed">
-                          전체 보유 객실(175실) 대비 순수 객실 판매 효율을 나타내며, 점유율(판매객실 ÷ 175실)과 직결됩니다.
-                        </p>
+
+                        <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-3.5 border border-teal-100 font-medium">
+                          <strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(TrevPAR, ADR, RevPAR, 객실 점유율 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.
+                        </div>
                       </div>
                     </div>
 
-                    <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-3.5 border border-teal-100 font-medium">
-                      <strong>공식 정산 기준:</strong> 모든 핵심 운영 지표(TrevPAR, ADR, RevPAR, 객실 점유율 등)는 리조트 공식 PMS/POS 원천 확정 데이터를 기준으로 제공됩니다.
+                    {/* Golf Green Fee */}
+                    <div className="bg-slate-50 p-5 rounded-2xl lg:col-span-2 border border-slate-200/80">
+                      <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">골프 평균 그린피 (전체 / 자사 / OTA / 회원)</h4>
+                      <ul className="space-y-2 text-slate-600 text-xs">
+                        <li className="flex flex-col">
+                          <span className="font-bold text-slate-800 text-sm">
+                            • 1인당 전체 평균 그린피: {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원
+                          </span>
+                          <span className="text-slate-500 mt-0.5 tabular-nums">
+                            = {formatCurrency((displayData.golfSummary?.avgGreenFee || 0) * (displayData.golfSummary?.visitedPlayers || 0))}원 (그린피 총매출) ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)
+                          </span>
+                        </li>
+                        <li className="text-slate-500 pt-1">
+                          • <strong>자사 평균:</strong> 홈페이지/모바일 직접 예약 고객의 1인당 실질 결제 그린피
+                        </li>
+                        <li className="text-slate-500">
+                          • <strong>OTA 평균:</strong> 골프락, 골프존, 골프몬 등 외부 대행 제휴처를 통한 내장객 1인당 실질 결제 그린피
+                        </li>
+                        <li className="text-slate-500">
+                          • <strong>회원 평균:</strong> 창립회원, 정회원, 무기명 우대 혜택 적용 고객의 1인당 실질 결제 그린피
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 </div>
-
-                {/* Golf Green Fee */}
-                <div className="bg-slate-50 p-5 rounded-2xl lg:col-span-2 border border-slate-200/80">
-                  <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">골프 평균 그린피 (전체 / 자사 / OTA / 회원)</h4>
-                  <ul className="space-y-2 text-slate-600 text-xs">
-                    <li className="flex flex-col">
-                      <span className="font-bold text-slate-800 text-sm">
-                        • 1인당 전체 평균 그린피: {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원
-                      </span>
-                      <span className="text-slate-500 mt-0.5 tabular-nums">
-                        = {formatCurrency((displayData.golfSummary?.avgGreenFee || 0) * (displayData.golfSummary?.visitedPlayers || 0))}원 (그린피 총매출) ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)
-                      </span>
-                    </li>
-                    <li className="text-slate-500 pt-1">
-                      • <strong>자사 평균:</strong> 홈페이지/모바일 직접 예약 고객의 1인당 실질 결제 그린피
-                    </li>
-                    <li className="text-slate-500">
-                      • <strong>OTA 평균:</strong> 골프락, 골프존, 골프몬 등 외부 대행 제휴처를 통한 내장객 1인당 실질 결제 그린피
-                    </li>
-                    <li className="text-slate-500">
-                      • <strong>회원 평균:</strong> 창립회원, 정회원, 무기명 우대 혜택 적용 고객의 1인당 실질 결제 그린피
-                    </li>
-                  </ul>
-              </div>
+              )}
             </div>
 
           </div>
         </div>
       </div>
-    </div>
   );
 }

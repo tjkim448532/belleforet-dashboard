@@ -649,7 +649,7 @@ export default function ResortBusiness() {
           {/* Main KPI Cards Grid: 용어 표기 명확 분리 & YoY 전면 대조 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* 1. Total Revenue */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between h-full hover:border-slate-300 transition-all">
               <div>
                 <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                   <Coins className="w-5 h-5 text-[#00ae95]" /> 
@@ -684,7 +684,7 @@ export default function ResortBusiness() {
             </div>
 
             {/* 2. 판매 건수 (계약) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between h-full hover:border-slate-300 transition-all">
               <div>
                 <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                   <CalendarDays className="w-5 h-5 text-[#00ae95]" /> 
@@ -719,7 +719,7 @@ export default function ResortBusiness() {
             </div>
 
             {/* 3. 실운영 점유실 (물리) */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between h-full hover:border-slate-300 transition-all">
               <div>
                 <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                   <KeyRound className="w-5 h-5 text-[#00ae95]" /> 
@@ -754,7 +754,7 @@ export default function ResortBusiness() {
             </div>
 
             {/* 4. Overall ADR */}
-            <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative group border border-slate-100 flex flex-col justify-between h-full">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between h-full hover:border-slate-300 transition-all">
               <div>
                 <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-3 flex items-center gap-1.5 whitespace-nowrap">
                   <Coins className="w-5 h-5 text-[#00ae95]" /> 
@@ -789,22 +789,22 @@ export default function ResortBusiness() {
                   </div>
                 )}
 
-                {/* 🏨 평형별 분리 객단가 (16평 · 35평 · 51평 SSOT) */}
+                {/* 🏨 평형별 분리 객단가 (16평 · 35평 · 51평 SSOT Flattened Row) */}
                 {(adr16 !== undefined || adr35 !== undefined || adr51 !== undefined) && (
                   <div className="mt-3 pt-2.5 border-t border-slate-100">
                     <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-1.5">
                       <span>평형별 분리 ADR</span>
                       <span className="text-[10px] text-slate-400 font-normal">전년 대비</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-2.5 rounded-2xl border border-slate-100 text-center">
                       {/* 16평 */}
-                      <div className="bg-slate-50/80 rounded-xl px-1.5 py-2 text-center border border-slate-100/80">
+                      <div className="px-1 text-center">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">16평</span>
-                        <span className="text-[11px] xl:text-xs font-extrabold text-slate-900 font-financial block whitespace-nowrap tracking-tight">
+                        <span className="text-[11px] xl:text-xs font-black text-slate-900 font-financial block whitespace-nowrap tracking-tight tabular-nums">
                           {adr16 !== undefined && adr16 > 0 ? `${formatCurrency(adr16)}원` : '-'}
                         </span>
                         {lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 && (
-                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap">
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap tabular-nums">
                             전년 {formatCurrency(lyAdr16)}
                             {adrDiff16 !== null && adrDiff16 !== 0 && (
                               <span className={`block font-bold ${adrDiff16 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -816,13 +816,13 @@ export default function ResortBusiness() {
                       </div>
 
                       {/* 35평 */}
-                      <div className="bg-slate-50/80 rounded-xl px-1.5 py-2 text-center border border-slate-100/80">
+                      <div className="px-1 text-center">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">35평</span>
-                        <span className="text-[11px] xl:text-xs font-extrabold text-slate-900 font-financial block whitespace-nowrap tracking-tight">
+                        <span className="text-[11px] xl:text-xs font-black text-slate-900 font-financial block whitespace-nowrap tracking-tight tabular-nums">
                           {adr35 !== undefined && adr35 > 0 ? `${formatCurrency(adr35)}원` : '-'}
                         </span>
                         {lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 && (
-                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap">
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap tabular-nums">
                             전년 {formatCurrency(lyAdr35)}
                             {adrDiff35 !== null && adrDiff35 !== 0 && (
                               <span className={`block font-bold ${adrDiff35 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -834,13 +834,13 @@ export default function ResortBusiness() {
                       </div>
 
                       {/* 51평 */}
-                      <div className="bg-slate-50/80 rounded-xl px-1.5 py-2 text-center border border-slate-100/80">
+                      <div className="px-1 text-center">
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">51평</span>
-                        <span className="text-[11px] xl:text-xs font-extrabold text-slate-900 font-financial block whitespace-nowrap tracking-tight">
+                        <span className="text-[11px] xl:text-xs font-black text-slate-900 font-financial block whitespace-nowrap tracking-tight tabular-nums">
                           {adr51 !== undefined && adr51 > 0 ? `${formatCurrency(adr51)}원` : '-'}
                         </span>
                         {lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 && (
-                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap">
+                          <div className="text-[9px] font-financial mt-0.5 text-slate-400 leading-tight whitespace-nowrap tabular-nums">
                             전년 {formatCurrency(lyAdr51)}
                             {adrDiff51 !== null && adrDiff51 !== 0 && (
                               <span className={`block font-bold ${adrDiff51 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>

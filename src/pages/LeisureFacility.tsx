@@ -407,40 +407,40 @@ export default function LeisureFacility() {
           <>
             {/* 4대 채널 요약 KPI 카드 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 tabular-nums">
-              <div className="p-5 rounded-2xl bg-slate-900 text-white shadow-sm">
-                <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all">
+                <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>현장 POS (현장발권)</span>
-                  <span className="text-[11px] bg-slate-800 px-2 py-0.5 rounded-full">현장 결제</span>
+                  <span className="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200/60">현장 결제</span>
                 </div>
-                <div className="text-3xl font-black text-amber-300 mt-2">{showPct(channelData.summary?.posSharePct)}</div>
-                <div className="text-xs text-slate-300/90 mt-1">매출 {showWon(channelData.summary?.posRevenue)}</div>
+                <div className="text-3xl font-black text-slate-900 tracking-tight mt-2">{showPct(channelData.summary?.posSharePct)}</div>
+                <div className="text-xs text-slate-400 mt-1">매출 {showWon(channelData.summary?.posRevenue)}</div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="text-xs font-bold text-slate-600 flex items-center justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all">
+                <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>자사 홈페이지 (Direct)</span>
-                  <span className="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full">수수료 0%</span>
+                  <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200/60">수수료 0%</span>
                 </div>
-                <div className="text-3xl font-black text-emerald-600 mt-2">{showPct(channelData.summary?.homepageSharePct)}</div>
-                <div className="text-xs text-slate-500 mt-1">매출 {showWon(channelData.summary?.homepageRevenue)}</div>
+                <div className="text-3xl font-black text-slate-900 tracking-tight mt-2">{showPct(channelData.summary?.homepageSharePct)}</div>
+                <div className="text-xs text-slate-400 mt-1">매출 {showWon(channelData.summary?.homepageRevenue)}</div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
-                <div className="text-xs font-bold text-indigo-900 flex items-center justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all">
+                <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>순수 외부 OTA (대행사)</span>
-                  <span className="text-[11px] bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-full">야놀자/네이버 등</span>
+                  <span className="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200/60">야놀자/네이버 등</span>
                 </div>
-                <div className="text-3xl font-black text-indigo-600 mt-2">{showPct(channelData.summary?.otaSharePct)}</div>
-                <div className="text-xs text-indigo-700/90 mt-1">매출 {showWon(channelData.summary?.otaRevenue)}</div>
+                <div className="text-3xl font-black text-slate-900 tracking-tight mt-2">{showPct(channelData.summary?.otaSharePct)}</div>
+                <div className="text-xs text-slate-400 mt-1">매출 {showWon(channelData.summary?.otaRevenue)}</div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="text-xs font-bold text-slate-600 flex items-center justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all">
+                <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>객실 연계 (PMS)</span>
-                  <span className="text-[11px] bg-slate-200/80 text-slate-700 font-semibold px-2 py-0.5 rounded-full">패키지/부대</span>
+                  <span className="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200/60">패키지/부대</span>
                 </div>
-                <div className="text-3xl font-black text-slate-900 mt-2">{showPct(channelData.summary?.pmsSharePct)}</div>
-                <div className="text-xs text-slate-500 mt-1">매출 {showWon(channelData.summary?.pmsRevenue)}</div>
+                <div className="text-3xl font-black text-slate-900 tracking-tight mt-2">{showPct(channelData.summary?.pmsSharePct)}</div>
+                <div className="text-xs text-slate-400 mt-1">매출 {showWon(channelData.summary?.pmsRevenue)}</div>
               </div>
             </div>
 

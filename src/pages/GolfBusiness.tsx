@@ -384,136 +384,133 @@ export default function GolfBusiness() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* 카드 1: 코스 핵심 수익 (그린피 + 카트비) */}
-            <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/40 p-6 rounded-2xl border border-emerald-200 flex flex-col justify-between">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-emerald-600" /> 코스 본원 매출 성과 (그린피 + 카트대여)
                   </span>
-                  <span className="text-[10px] font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
                     핵심 매출 기여도 {courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}
                   </span>
                 </div>
-                <div className="text-2xl font-black text-emerald-900 my-1 font-financial">
+                <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
                   {totalCourseRevenue !== null ? `${totalCourseRevenue.toLocaleString()}원` : '-'}{' '}
-                  <span className="text-xs font-normal text-slate-500">({greenFeeItem?.playersFormatted || '0'}명 내장, 카트 {cartFeeItem?.quantityFormatted || '0'}건)</span>
+                  <span className="text-xs font-normal text-slate-400">({greenFeeItem?.playersFormatted || '0'}명 내장, 카트 {cartFeeItem?.quantityFormatted || '0'}건)</span>
                 </div>
-                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-emerald-200/60 font-financial">
+                <div className="space-y-1.5 text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 font-financial tabular-nums">
                   <div className="flex justify-between">
-                    <span>• 그린피 순매출 (점유율):</span>
-                    <strong>{greenFeeItem?.revenueFormatted || '0'}원 ({greenFeeItem?.revenueSharePct !== null && greenFeeItem?.revenueSharePct !== undefined ? `${greenFeeItem.revenueSharePct}%` : '-'})</strong>
+                    <span className="text-slate-400">그린피 순매출 (점유율):</span>
+                    <strong className="text-slate-800">{greenFeeItem?.revenueFormatted || '0'}원 ({greenFeeItem?.revenueSharePct !== null && greenFeeItem?.revenueSharePct !== undefined ? `${greenFeeItem.revenueSharePct}%` : '-'})</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 카트대여 순매출 (점유율):</span>
-                    <strong className="text-slate-900">{cartFeeItem?.revenueFormatted || '0'}원 ({cartFeeItem?.revenueSharePct !== null && cartFeeItem?.revenueSharePct !== undefined ? `${cartFeeItem.revenueSharePct}%` : '-'})</strong>
+                    <span className="text-slate-400">카트대여 순매출 (점유율):</span>
+                    <strong className="text-slate-800">{cartFeeItem?.revenueFormatted || '0'}원 ({cartFeeItem?.revenueSharePct !== null && cartFeeItem?.revenueSharePct !== undefined ? `${cartFeeItem.revenueSharePct}%` : '-'})</strong>
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-emerald-950 mt-4 pt-2 border-t border-emerald-200/40 leading-relaxed">
-                💡 순수 라운딩 코스 매출(그린피 + 카트비)이 전체 골프 부문 매출의 <strong>{courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}</strong>를 견인하고 있습니다.
+              <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed">
+                순수 라운딩 코스 매출(그린피 + 카트비)이 전체 골프 부문 매출의 <strong className="text-slate-700">{courseCoreRatio !== null ? `${courseCoreRatio}%` : '-'}</strong>를 견인하고 있습니다.
               </p>
             </div>
 
             {/* 카드 2: 클럽 부대시설 부가 수익 (식음 + 프로샵 등) */}
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 p-6 rounded-2xl border border-slate-200 flex flex-col justify-between">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <UtensilsCrossed className="w-4 h-4 text-blue-600" /> 클럽 부대시설 수익 성과 (식음료 및 프로샵 등)
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <UtensilsCrossed className="w-4 h-4 text-slate-600" /> 클럽 부대시설 수익 성과 (식음료 및 프로샵 등)
                   </span>
-                  <span className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
                     부가 매출 기여도 {amenityRatio !== null ? `${amenityRatio}%` : '-'}
                   </span>
                 </div>
-                <div className="text-2xl font-black text-slate-900 my-1 font-financial">
+                <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
                   {totalAmenityRevenue !== null ? `${totalAmenityRevenue.toLocaleString()}원` : '-'}
                   {totalAmenityQuantity !== null && (
-                    <span className="text-xs font-normal text-slate-500"> (총 {totalAmenityQuantity.toLocaleString()}건)</span>
+                    <span className="text-xs font-normal text-slate-400"> (총 {totalAmenityQuantity.toLocaleString()}건)</span>
                   )}
                 </div>
-                <div className="space-y-1.5 text-xs text-slate-700 mt-3 pt-2 border-t border-slate-200 font-financial">
+                <div className="space-y-1.5 text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 font-financial tabular-nums">
                   <div className="flex justify-between">
-                    <span>• 스타트하우스 식음:</span>
-                    <strong>{startHouseItem?.revenueFormatted || '0'}원 ({startHouseItem?.revenueSharePct !== null && startHouseItem?.revenueSharePct !== undefined ? `${startHouseItem.revenueSharePct}%` : '-'})</strong>
+                    <span className="text-slate-400">스타트하우스 식음:</span>
+                    <strong className="text-slate-800">{startHouseItem?.revenueFormatted || '0'}원 ({startHouseItem?.revenueSharePct !== null && startHouseItem?.revenueSharePct !== undefined ? `${startHouseItem.revenueSharePct}%` : '-'})</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 클럽 레스토랑 식음:</span>
-                    <strong>{restaurantItem?.revenueFormatted || '0'}원 ({restaurantItem?.revenueSharePct !== null && restaurantItem?.revenueSharePct !== undefined ? `${restaurantItem.revenueSharePct}%` : '-'})</strong>
+                    <span className="text-slate-400">클럽 레스토랑 식음:</span>
+                    <strong className="text-slate-800">{restaurantItem?.revenueFormatted || '0'}원 ({restaurantItem?.revenueSharePct !== null && restaurantItem?.revenueSharePct !== undefined ? `${restaurantItem.revenueSharePct}%` : '-'})</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>• 프로샵 용품 매출:</span>
-                    <strong>{proShopItem?.revenueFormatted || '0'}원 ({proShopItem?.revenueSharePct !== null && proShopItem?.revenueSharePct !== undefined ? `${proShopItem.revenueSharePct}%` : '-'})</strong>
+                    <span className="text-slate-400">프로샵 용품 매출:</span>
+                    <strong className="text-slate-800">{proShopItem?.revenueFormatted || '0'}원 ({proShopItem?.revenueSharePct !== null && proShopItem?.revenueSharePct !== undefined ? `${proShopItem.revenueSharePct}%` : '-'})</strong>
                   </div>
                   {etcItem && etcItem.revenue > 0 && (
                     <div className="flex justify-between">
-                      <span>• 기타매출 및 대여:</span>
-                      <strong>{etcItem.revenueFormatted}원 ({etcItem.revenueSharePct !== null && etcItem.revenueSharePct !== undefined ? `${etcItem.revenueSharePct}%` : '-'})</strong>
+                      <span className="text-slate-400">기타매출 및 대여:</span>
+                      <strong className="text-slate-800">{etcItem.revenueFormatted}원 ({etcItem.revenueSharePct !== null && etcItem.revenueSharePct !== undefined ? `${etcItem.revenueSharePct}%` : '-'})</strong>
                     </div>
                   )}
                 </div>
               </div>
-              <p className="text-[11px] text-slate-600 mt-4 pt-2 border-t border-slate-200 leading-relaxed">
-                💡 라운딩 전후 식음 및 용품 구매를 통한 부가 매출이 전체 골프 부문 매출의 <strong>{amenityRatio !== null ? `${amenityRatio}%` : '-'}</strong>를 차지하고 있습니다.
+              <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed">
+                라운딩 전후 식음 및 용품 구매를 통한 부가 매출이 전체 골프 부문 매출의 <strong className="text-slate-700">{amenityRatio !== null ? `${amenityRatio}%` : '-'}</strong>를 차지하고 있습니다.
               </p>
             </div>
 
             {/* 카드 3: 1부 · 2부 · 3부 티타임 성과 및 평균 그린피 */}
             {partAnalysis && (
-              <div className="bg-gradient-to-br from-indigo-50/70 to-slate-50 p-6 rounded-2xl border border-indigo-200 flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-indigo-600" /> 1부 · 2부 · 3부 티타임 성과 및 평균 그린피
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-slate-600" /> 1부 · 2부 · 3부 티타임 성과 및 평균 그린피
                     </span>
-                    <span className="text-[10px] font-extrabold bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
                       전체 평균 {partAnalysis.overallAvgGreenFeeFormatted}원
                     </span>
                   </div>
-                  <div className="text-2xl font-black text-indigo-950 my-1 font-financial">
+                  <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
                     {partAnalysis.totalVisitedTeams.toLocaleString()}팀 내장 완료
-                    <span className="text-xs font-normal text-slate-500 ml-1.5">
+                    <span className="text-xs font-normal text-slate-400 ml-1.5">
                       (총 예약 {partAnalysis.totalReservedTeams.toLocaleString()}팀 / 취소 {partAnalysis.totalCanceledTeams.toLocaleString()}팀)
                     </span>
                   </div>
 
-                  {/* 1부, 2부, 3부 3-Grid */}
+                  {/* 1부, 2부, 3부 Flattened Divide-x Row */}
                   {partAnalysis.parts && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 my-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 my-3">
                       {[
                         { key: 'part1', data: partAnalysis.parts.part1, tag: '오전' },
                         { key: 'part2', data: partAnalysis.parts.part2, tag: '오후' },
                         { key: 'part3', data: partAnalysis.parts.part3, tag: '야간' }
                       ].map(({ key, data: p, tag }) => (
-                        <div key={key} className="bg-white/95 p-3 rounded-xl border border-indigo-100/80 shadow-2xs flex flex-col justify-between">
+                        <div key={key} className="px-2.5 py-1.5 flex flex-col justify-between text-center">
                           <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-black text-slate-800 flex items-center gap-1">
-                                {p.name.slice(0, 2)}
-                                <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200/60">{tag}</span>
-                              </span>
-                              <span className="text-[9px] font-medium text-slate-400">{p.timeRange}</span>
+                            <div className="flex items-center justify-center gap-1 mb-0.5">
+                              <span className="text-xs font-bold text-slate-800">{p.name.slice(0, 2)}</span>
+                              <span className="text-[10px] font-semibold text-slate-500 bg-white px-1.5 py-0.2 rounded border border-slate-200">{tag}</span>
                             </div>
-                            <div className="text-base font-black text-indigo-900 font-financial mt-1">
+                            <div className="text-base font-black text-slate-900 font-financial tabular-nums">
                               {p.avgGreenFee > 0 ? `${p.avgGreenFeeFormatted}원` : '-'}
                             </div>
-                            <div className="text-[10px] text-slate-500 mt-0.5">
+                            <div className="text-[10px] text-slate-400 mt-0.5">
                               평균 그린피 ({p.players > 0 ? `${p.players.toLocaleString()}명` : '-'})
                             </div>
                           </div>
 
-                          <div className="pt-2 mt-2 border-t border-slate-100 text-[10px] space-y-1 font-financial text-slate-600">
+                          <div className="pt-2 mt-2 border-t border-slate-200/50 text-[10px] space-y-1 font-financial tabular-nums text-slate-500">
                             <div className="flex justify-between">
-                              <span className="text-slate-400">내장팀:</span>
-                              <strong className="text-slate-800">
+                              <span className="text-slate-400">내장:</span>
+                              <strong className="text-slate-700">
                                 {p.visitedTeams > 0 ? `${p.visitedTeams}팀` : '-'}
                                 {p.pendingTeams > 0 ? ` (진행 ${p.pendingTeams}팀)` : ''}
                               </strong>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-400">예약팀:</span>
+                              <span className="text-slate-400">예약:</span>
                               <span>{p.reservedTeams}팀</span>
                             </div>
-                            <div className="flex justify-between pt-0.5 border-t border-slate-100 text-indigo-950 font-bold">
+                            <div className="flex justify-between pt-0.5 border-t border-slate-200/40 text-slate-800 font-bold">
                               <span className="text-slate-400 font-normal">순매출:</span>
                               <span>{p.greenFeeRevenue > 0 ? `${Math.round(p.greenFeeRevenue).toLocaleString()}원` : '-'}</span>
                             </div>
@@ -524,91 +521,85 @@ export default function GolfBusiness() {
                   )}
                 </div>
 
-                <p className="text-[11px] text-indigo-950 mt-4 pt-2 border-t border-indigo-200/50 leading-relaxed font-financial">
-                  💡 시간대별(1부·2부·3부) 실시간 예약/내장/진행 팀수와 실제 결제된 1인당 평균 그린피 실측치입니다.
+                <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed font-financial">
+                  시간대별(1부·2부·3부) 실시간 예약/내장/진행 팀수와 실제 결제된 1인당 평균 그린피 실측치입니다.
                 </p>
               </div>
             )}
 
             {/* 카드 4: 회원 vs 비회원 내장 비중 및 그린피 단가 분석 */}
             {membershipAnalysis && (
-              <div className="bg-gradient-to-br from-teal-50/70 to-emerald-50/30 p-6 rounded-2xl border border-teal-200 flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
-                      <UserCheck className="w-4 h-4 text-teal-600" /> 회원 vs 비회원 내장 비중 및 그린피 단가 분석
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <UserCheck className="w-4 h-4 text-slate-600" /> 회원 vs 비회원 내장 비중 및 그린피 단가 분석
                     </span>
-                    <span className="text-[10px] font-extrabold bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200/60">
                       단가 격차 {membershipAnalysis.greenFeeGapFormatted}원
                     </span>
                   </div>
-                  <div className="text-2xl font-black text-teal-950 my-1 font-financial">
+                  <div className="text-2xl font-black text-slate-900 my-1 font-financial tracking-tight">
                     그린피 단가 격차: +{membershipAnalysis.greenFeeGapFormatted}원
-                    <span className="text-xs font-normal text-slate-500 ml-1.5">
+                    <span className="text-xs font-normal text-slate-400 ml-1.5">
                       (비회원이 1인당 평균 {membershipAnalysis.greenFeeGapFormatted}원 추가 지불)
                     </span>
                   </div>
 
-                  {/* 회원 vs 비회원 2분할 카드 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
-                    {/* 회원 카드 */}
-                    <div className="bg-white/95 p-3.5 rounded-xl border border-teal-200/80 shadow-2xs flex flex-col justify-between">
+                  {/* 회원 vs 비회원 Flattened Divide-x Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 my-3">
+                    {/* 회원 컬럼 */}
+                    <div className="px-3 py-2 flex flex-col justify-between text-center">
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-teal-600"></span>
-                            회원 (정회원/무기명)
-                          </span>
-                          <span className="text-[10px] font-extrabold bg-teal-50 text-teal-800 px-2 py-0.5 rounded-md border border-teal-200">
+                        <div className="flex items-center justify-center gap-1.5 mb-1">
+                          <span className="text-xs font-bold text-slate-800">회원 (정회원/무기명)</span>
+                          <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                             비중 {membershipAnalysis.member.playerRatio}%
                           </span>
                         </div>
-                        <div className="text-xl font-black text-teal-950 font-financial">
+                        <div className="text-lg font-black text-slate-900 font-financial tabular-nums">
                           {membershipAnalysis.member.avgGreenFeeFormatted}원
                         </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">
+                        <div className="text-[10px] text-slate-400 mt-0.5">
                           1인당 평균 그린피
                         </div>
                       </div>
 
-                      <div className="pt-2 mt-3 border-t border-slate-100 text-[11px] space-y-1 font-financial text-slate-600">
+                      <div className="pt-2 mt-2 border-t border-slate-200/50 text-[11px] space-y-1 font-financial tabular-nums text-slate-500">
                         <div className="flex justify-between">
                           <span className="text-slate-400">내장 인원:</span>
-                          <strong className="text-slate-800">{membershipAnalysis.member.playersFormatted}명</strong>
+                          <strong className="text-slate-700">{membershipAnalysis.member.playersFormatted}명</strong>
                         </div>
-                        <div className="flex justify-between pt-0.5 border-t border-slate-100 text-teal-950 font-bold">
+                        <div className="flex justify-between pt-0.5 border-t border-slate-200/40 text-slate-800 font-bold">
                           <span className="text-slate-400 font-normal">그린피 순매출:</span>
                           <span>{membershipAnalysis.member.greenFeeRevenueFormatted}원</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* 비회원 카드 */}
-                    <div className="bg-white/95 p-3.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                    {/* 비회원 컬럼 */}
+                    <div className="px-3 py-2 flex flex-col justify-between text-center">
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-slate-500"></span>
-                            비회원 (일반/대중)
-                          </span>
-                          <span className="text-[10px] font-extrabold bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-300">
+                        <div className="flex items-center justify-center gap-1.5 mb-1">
+                          <span className="text-xs font-bold text-slate-800">비회원 (일반/대중)</span>
+                          <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                             비중 {membershipAnalysis.nonMember.playerRatio}%
                           </span>
                         </div>
-                        <div className="text-xl font-black text-slate-900 font-financial">
+                        <div className="text-lg font-black text-slate-900 font-financial tabular-nums">
                           {membershipAnalysis.nonMember.avgGreenFeeFormatted}원
                         </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">
+                        <div className="text-[10px] text-slate-400 mt-0.5">
                           1인당 평균 그린피
                         </div>
                       </div>
 
-                      <div className="pt-2 mt-3 border-t border-slate-100 text-[11px] space-y-1 font-financial text-slate-600">
+                      <div className="pt-2 mt-2 border-t border-slate-200/50 text-[11px] space-y-1 font-financial tabular-nums text-slate-500">
                         <div className="flex justify-between">
                           <span className="text-slate-400">내장 인원:</span>
-                          <strong className="text-slate-800">{membershipAnalysis.nonMember.playersFormatted}명</strong>
+                          <strong className="text-slate-700">{membershipAnalysis.nonMember.playersFormatted}명</strong>
                         </div>
-                        <div className="flex justify-between pt-0.5 border-t border-slate-100 text-slate-950 font-bold">
+                        <div className="flex justify-between pt-0.5 border-t border-slate-200/40 text-slate-800 font-bold">
                           <span className="text-slate-400 font-normal">그린피 순매출:</span>
                           <span>{membershipAnalysis.nonMember.greenFeeRevenueFormatted}원</span>
                         </div>
@@ -617,8 +608,8 @@ export default function GolfBusiness() {
                   </div>
                 </div>
 
-                <p className="text-[11px] text-teal-950 mt-4 pt-2 border-t border-teal-200/50 leading-relaxed font-financial">
-                  💡 비회원 내장객 비중 <strong>{membershipAnalysis.nonMember.playerRatio}%</strong>이며, 비회원이 1인당 평균 <strong>+{membershipAnalysis.greenFeeGapFormatted}원</strong>의 그린피를 추가 지불하고 있습니다.
+                <p className="text-[11px] text-slate-400 mt-4 pt-2.5 border-t border-slate-100 leading-relaxed font-financial">
+                  비회원 내장객 비중 <strong className="text-slate-700">{membershipAnalysis.nonMember.playerRatio}%</strong>이며, 비회원이 1인당 평균 <strong className="text-slate-700">+{membershipAnalysis.greenFeeGapFormatted}원</strong>의 그린피를 추가 지불하고 있습니다.
                 </p>
               </div>
             )}
@@ -652,11 +643,7 @@ export default function GolfBusiness() {
             {normalizedChannels.map((ch, idx) => (
               <div 
                 key={`${ch.productGroup}-${ch.venueName}-${idx}`}
-                className={`p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
-                  idx === 0 
-                    ? 'bg-gradient-to-br from-emerald-50/90 to-teal-50/40 border-emerald-200 shadow-xs' 
-                    : 'bg-slate-50/70 border-slate-200/80 hover:bg-white hover:shadow-xs'
-                }`}
+                className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between mb-1 gap-2">
@@ -671,17 +658,17 @@ export default function GolfBusiness() {
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap border border-slate-200/60">
                       {ch.revenueSharePct !== null && ch.revenueSharePct !== undefined ? `점유 ${ch.revenueSharePct}%` : '점유 -'}
                     </span>
                   </div>
                   
-                  <div className="text-2xl font-black text-slate-900 my-2">
-                    {ch.displayCountFormatted} <span className="text-xs font-normal text-slate-500">{ch.displayUnit}</span>
+                  <div className="text-2xl font-black text-slate-900 my-2 tabular-nums">
+                    {ch.displayCountFormatted} <span className="text-xs font-normal text-slate-400">{ch.displayUnit}</span>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200/60">
+                <div className="space-y-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-100 tabular-nums font-financial">
                   <div className="flex justify-between">
                     <span className="text-slate-400">상품 분류:</span>
                     <strong className="text-slate-700">{ch.productGroup}</strong>
@@ -690,8 +677,8 @@ export default function GolfBusiness() {
                     <span className="text-slate-400">평균 단가:</span>
                     <strong>{ch.unitPriceFormatted !== '-' ? `${ch.unitPriceFormatted}원` : '-'}</strong>
                   </div>
-                  <div className="flex justify-between pt-1 border-t border-slate-200/40 text-emerald-900 font-black">
-                    <span>순매출:</span>
+                  <div className="flex justify-between pt-1 border-t border-slate-100 text-slate-900 font-black">
+                    <span className="text-slate-500 font-normal">순매출:</span>
                     <span>{ch.revenueFormatted}원</span>
                   </div>
                 </div>

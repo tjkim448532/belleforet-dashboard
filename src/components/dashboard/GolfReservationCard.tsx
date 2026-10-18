@@ -136,38 +136,41 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
   return (
     <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all cursor-default">
       <div>
-        {/* Card Main Title & Time-Axis Segment Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div className="text-slate-800 font-bold text-base flex items-center gap-2">
+        {/* Card Main Title */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="text-slate-800 font-bold text-base flex items-center gap-2 whitespace-nowrap">
             <Users size={18} className="text-slate-700" />
             <span>골프 예약 및 입장 현황</span>
           </div>
+          <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-xl whitespace-nowrap">
+            {viewMode === 'RESERVATION' ? '익일 사전예약' : '당일 일마감'}
+          </span>
+        </div>
 
-          {/* Clean Segment Switcher (시간축 분리 토글) */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-xs font-bold self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode('RESERVATION')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                viewMode === 'RESERVATION'
-                  ? 'bg-white text-slate-900 shadow-xs font-extrabold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              도착 예약 ({nextDateStr})
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('CLOSED')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                viewMode === 'CLOSED'
-                  ? 'bg-white text-slate-900 shadow-xs font-extrabold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              마감 실적 ({currentDate})
-            </button>
-          </div>
+        {/* Full-width 2-Segment Switcher (시간축 분리 토글) */}
+        <div className="grid grid-cols-2 bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-xs font-bold mb-3.5">
+          <button
+            type="button"
+            onClick={() => setViewMode('RESERVATION')}
+            className={`py-1.5 px-2 text-center rounded-lg transition-all cursor-pointer whitespace-nowrap truncate ${
+              viewMode === 'RESERVATION'
+                ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            도착 예약 ({nextDateStr})
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('CLOSED')}
+            className={`py-1.5 px-2 text-center rounded-lg transition-all cursor-pointer whitespace-nowrap truncate ${
+              viewMode === 'CLOSED'
+                ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            마감 실적 ({currentDate})
+          </button>
         </div>
 
         {/* 1. 도착 예약 현황 탭 (기본 메인 뷰) */}

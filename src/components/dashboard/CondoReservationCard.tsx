@@ -197,17 +197,17 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
     <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all cursor-default">
       <div>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div className="text-slate-800 font-bold text-base flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <div className="text-slate-800 font-bold text-base flex items-center gap-2 whitespace-nowrap">
             <Building2 size={18} className="text-slate-700" />
-            <span>콘도(객실) 체크인 예약 현황</span>
+            <span>콘도 체크인 예약 현황</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 self-start sm:self-auto bg-slate-100 text-slate-700 border border-slate-200">
-            <Calendar size={13} className="text-slate-500" />
-            <span>{targetCheckInDate} ({targetDayOfWeek}) 도착 예약</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 bg-slate-100 text-slate-700 border border-slate-200/80 whitespace-nowrap">
+            <Calendar size={12} className="text-slate-500" />
+            <span>{targetCheckInDate} ({targetDayOfWeek}) 도착</span>
             {isClosedHistory && (
-              <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded font-bold ml-1">
+              <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded font-bold ml-0.5">
                 마감 완료
               </span>
             )}

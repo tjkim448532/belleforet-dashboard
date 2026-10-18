@@ -391,98 +391,97 @@ export default function Home() {
             
             {/* 🌟 Card 1: 전사 순매출 (Hero Bento Card) */}
             <div className="bg-white rounded-3xl p-6 lg:p-7 border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group flex flex-col justify-between">
-              <div>
-                <div className="min-h-[88px] mb-3 relative z-10 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <CalendarDays className="w-5 h-5 text-brand-mint shrink-0" /> 
-                       <span className="text-sm font-bold text-slate-800">
-                        {isRangeMode && coreData.core?.endDate ? `선택 기간 전사 순매출` : `당일 전사 순매출`}
-                      </span>
-                      <MetricExplainerTooltip presetKey="netRevenue" align="left" />
-                      <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">VAT 제외</span>
-                    </div>
-                    <span className="text-xs text-slate-400 font-medium font-financial">
-                      {isRangeMode && coreData.core?.endDate ? `${startDate} ~ ${coreData.core.endDate}` : startDate}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays className="w-5 h-5 text-brand-mint shrink-0" /> 
+                    <span className="text-sm font-bold text-slate-800">
+                      {isRangeMode && coreData.core?.endDate ? `선택 기간 전사 순매출` : `당일 전사 순매출`}
                     </span>
+                    <MetricExplainerTooltip presetKey="netRevenue" align="left" />
+                    <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">VAT 제외</span>
                   </div>
-
-                  {!isRangeMode && (weather || lastYearWeather) && (
-                    <div className="self-start text-sm bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-3">
-                      <div className="opacity-60 text-right pr-3 border-r border-slate-200">
-                        <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일</div>
-                        {lastYearWeather ? (
-                          <>
-                            <div className="font-semibold text-slate-500 text-sm flex items-center justify-end gap-1">
-                              {lastYearWeather.weatherDesc === '데이터없음' || lastYearWeather.description === '데이터없음' ? '☁️ 알수없음' : (
-                                <>
-                                  {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
-                                  {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
-                                </>
-                              )}
-                            </div>
-                            {(lastYearWeather.tempMax != null && lastYearWeather.tempMin != null && (lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0)) && (
-                              <div className="text-slate-400 text-[10px] mt-0.5 font-financial">최고 {lastYearWeather.tempMax}℃ / 최저 {lastYearWeather.tempMin}℃</div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="font-semibold text-slate-300 text-xs flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[10px] font-medium text-[#00ae95] mb-0.5">현재 날씨</div>
-                        {weather && (weather.weatherDesc || weather.description || weather.tempMax != null) ? (
-                          <>
-                            <div className="font-medium text-[#00ae95] text-base flex items-center justify-end gap-1">
-                              {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
-                                <>
-                                  {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
-                                  {weather.weatherDesc || weather.description || '맑음'}
-                                </>
-                              )}
-                            </div>
-                            {(weather.tempMax != null && weather.tempMin != null && (weather.tempMax !== 0 || weather.tempMin !== 0)) && (
-                              <div className="text-slate-500 text-xs mt-1 font-financial">최고 {weather.tempMax}℃ / 최저 {weather.tempMin}℃</div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="font-medium text-slate-400 text-sm flex items-center justify-end gap-1">☁️ 기상 정보 수집 중</div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <span className="text-xs text-slate-400 font-medium font-financial">
+                    {isRangeMode && coreData.core?.endDate ? `${startDate} ~ ${coreData.core.endDate}` : startDate}
+                  </span>
                 </div>
 
                 {/* 🏛️ 듀얼 표기: 원단위 숫자 + 직관적 한글(억/만원) 단위 */}
-                <div className="mb-3">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
-                      {formatRevenue(todayGross)}
-                    </span>
-                    <span className="text-base font-semibold text-slate-400">원</span>
-                    <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap">
-                      {todayFinancial.formatted}
-                    </span>
-                  </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+                    {formatRevenue(todayGross)}
+                  </span>
+                  <span className="text-base font-semibold text-slate-400">원</span>
+                  <span className="text-xs font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md whitespace-nowrap font-financial">
+                    {todayFinancial.formatted}
+                  </span>
+                </div>
+
+                {/* 델타 변화율 캡슐 */}
+                <div>
+                  {todayGrowth !== undefined && todayGrowth !== null ? (
+                    <div className={todayGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
+                      <span className="text-slate-600 font-medium">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
+                      <span className="font-bold">{todayGrowth !== undefined && todayGrowth !== null ? (todayGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(todayGrowth).toFixed(1) + '%' : '-'}</span>
+                      {todayDiff !== undefined && (
+                        <span className="font-medium opacity-85">({todayDiff > 0 ? '+' : ''}{formatRevenue(todayDiff)}원)</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="badge-delta-neutral">
+                      <span>전년 비교 데이터 산출 대기</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* 델타 변화율 캡슐 */}
-              <div>
-                {todayGrowth !== undefined && todayGrowth !== null ? (
-                  <div className={todayGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
-                    <span className="text-slate-600 font-medium">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                    <span className="font-bold">{todayGrowth !== undefined && todayGrowth !== null ? (todayGrowth >= 0 ? '▲' : '▼') + ' ' + Math.abs(todayGrowth).toFixed(1) + '%' : '-'}</span>
-                    {todayDiff !== undefined && (
-                      <span className="font-medium opacity-85">({todayDiff > 0 ? '+' : ''}{formatRevenue(todayDiff)}원)</span>
-                    )}
+              {/* 날씨 서브 패널 */}
+              {!isRangeMode && (weather || lastYearWeather) && (
+                <div className="mt-4 pt-3 border-t border-slate-100">
+                  <div className="text-xs bg-slate-50/90 p-2.5 rounded-2xl border border-slate-200/70 flex items-center justify-between">
+                    <div className="text-left pr-3 border-r border-slate-200">
+                      <div className="text-[10px] font-medium text-slate-400 mb-0.5">전년 동요일 날씨</div>
+                      {lastYearWeather ? (
+                        <>
+                          <div className="font-semibold text-slate-600 text-xs flex items-center gap-1">
+                            {lastYearWeather.weatherDesc === '데이터없음' || lastYearWeather.description === '데이터없음' ? '☁️ 알수없음' : (
+                              <>
+                                {(lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('비') ? '🌧️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('눈') ? '❄️' : (lastYearWeather.weatherDesc || lastYearWeather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                                {lastYearWeather.weatherDesc || lastYearWeather.description || '맑음'}
+                              </>
+                            )}
+                          </div>
+                          {(lastYearWeather.tempMax != null && lastYearWeather.tempMin != null && (lastYearWeather.tempMax !== 0 || lastYearWeather.tempMin !== 0)) && (
+                            <div className="text-slate-400 text-[10px] mt-0.5 font-financial">{lastYearWeather.tempMax}℃ / {lastYearWeather.tempMin}℃</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="font-semibold text-slate-300 text-[11px] flex items-center gap-1">☁️ 기상 수집 중</div>
+                      )}
+                    </div>
+                    <div className="text-right pl-3">
+                      <div className="text-[10px] font-medium text-brand-mint mb-0.5">현재 날씨</div>
+                      {weather && (weather.weatherDesc || weather.description || weather.tempMax != null) ? (
+                        <>
+                          <div className="font-medium text-brand-mint text-xs flex items-center justify-end gap-1">
+                            {weather.weatherDesc === '데이터없음' || weather.description === '데이터없음' ? '☁️ 알수없음' : (
+                              <>
+                                {(weather.weatherDesc || weather.description)?.includes('비') ? '🌧️' : (weather.weatherDesc || weather.description)?.includes('눈') ? '❄️' : (weather.weatherDesc || weather.description)?.includes('구름') ? '⛅' : '☀️'} 
+                                {weather.weatherDesc || weather.description || '맑음'}
+                              </>
+                            )}
+                          </div>
+                          {(weather.tempMax != null && weather.tempMin != null && (weather.tempMax !== 0 || weather.tempMin !== 0)) && (
+                            <div className="text-slate-500 text-[10px] mt-0.5 font-financial">{weather.tempMax}℃ / {weather.tempMin}℃</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="font-medium text-slate-400 text-[11px] flex items-center justify-end gap-1">☁️ 기상 수집 중</div>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div className="badge-delta-neutral">
-                    <span>전년 비교 데이터 산출 대기</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* 🌟 Card 2: 누적 매출 (YTD & MTD) 및 객실 판매 */}
@@ -721,6 +720,9 @@ export default function Home() {
                     <MetricExplainerTooltip presetKey="visitorCount" />
                     <span className="text-xs text-slate-400 font-normal">(콘도 투숙객)</span>
                   </div>
+                  <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">
+                    {isRangeMode ? '선택 기간 누적' : '당일 투숙객 집계'}
+                  </span>
                 </div>
 
                 <div className="mb-2">
@@ -853,10 +855,6 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              </div>
-              
-              <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold relative z-10 bg-slate-50 text-slate-500 border border-slate-100 self-start">
-                <span>{isRangeMode ? '선택 기간 객실 투숙객 누적 집계' : '당일 객실 투숙객 집계'}</span>
               </div>
             </div>
           </div>

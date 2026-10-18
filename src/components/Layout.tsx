@@ -16,11 +16,11 @@ export default function Layout() {
     return saved !== null ? saved === 'true' : true; // 사용자 승인 기본값: 펼침(고정)
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [salesOpen, setSalesOpen] = useState(true);
-  const [golfOpen, setGolfOpen] = useState(true);
+  const [salesOpen, setSalesOpen] = useState(false);
+  const [golfOpen, setGolfOpen] = useState(false);
   const [resortOpen, setResortOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
-  const [contentOpen, setContentOpen] = useState(true);
+  const [contentOpen, setContentOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(false);
 
   const togglePin = () => {

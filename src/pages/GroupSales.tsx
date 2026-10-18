@@ -219,7 +219,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
   const [groupSearchKeyword, setGroupSearchKeyword] = useState<string>('');
   const [groupFilterTab, setGroupFilterTab] = useState<'ALL' | 'REPEAT' | 'LARGE' | 'SINGLE'>('ALL');
   const [expandedGroupNames, setExpandedGroupNames] = useState<Set<string>>(new Set());
-  const [isGroupMasterListOpen, setIsGroupMasterListOpen] = useState<boolean>(true);
+  const [isGroupMasterListOpen, setIsGroupMasterListOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   
   // 🎯 사용자의 핵심 요구사항: 세일즈본부는 '단체영업(세미나)'이 주력이므로 기본값 고정

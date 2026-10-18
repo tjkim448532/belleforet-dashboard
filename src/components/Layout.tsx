@@ -540,7 +540,7 @@ export default function Layout() {
               onClick={handleNavClick}
             >
               <Tag size={20} />
-              종합이용안내
+              영업장 이용안내
             </NavLink>
 
             <button

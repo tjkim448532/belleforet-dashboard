@@ -255,7 +255,7 @@ export default function LeisurePricing() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                벨포레 통합 이용요금 안내
+                벨포레 영업장 이용안내
               </span>
               <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
                 S3 자동 동기화

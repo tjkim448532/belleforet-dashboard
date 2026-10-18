@@ -950,10 +950,7 @@ export default function ResortBusiness() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                      V6 리조트 종합 요약
-                    </span>
-                    <span className="text-xs font-semibold text-slate-500 font-financial">
-                      단일 진실 공급원 (SSOT)
+                      리조트 종합 요약
                     </span>
                   </div>
                   <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -1044,7 +1041,7 @@ export default function ResortBusiness() {
                 <div>
                   <h3 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
                     <Hotel size={14} className="text-blue-600" />
-                    <span>평형별 전년 대비 종합 성장률 & 매출 비중 (사전 연산 완제품)</span>
+                    <span>평형별 전년 대비 종합 성장률 & 매출 비중</span>
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {resortSummary.pyeongComparison.items.map((item) => (

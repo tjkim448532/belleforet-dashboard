@@ -815,10 +815,10 @@ export default function FacilityTrend() {
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
-              <span>2026 vs 2025 월별 시즌성 종합 매트릭스 (100% 사전 연산 완제품)</span>
+              <span>2026 vs 2025 월별 시즌성 종합 매트릭스</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              프론트엔드 인라인 연산 없이 백엔드에서 0-Variance로 사전 연산된 증감액과 증감률을 1:1 바인딩합니다.
+              월별 매출, 이용객 수 및 TRevPAR 지표의 전년 대비 증감 실적을 종합 분석합니다.
             </p>
           </div>
 
@@ -1063,10 +1063,7 @@ export default function FacilityTrend() {
           }`}
         >
           <Sparkles size={17} />
-          <span>📅 2026 vs 2025 월별 시즌성 매트릭스 & TRevPAR (사전 연산 완제품)</span>
-          <span className="text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
-            V6 신규
-          </span>
+          <span>📅 2026 vs 2025 월별 시즌성 매트릭스 & TRevPAR</span>
         </button>
       </div>
 

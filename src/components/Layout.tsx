@@ -19,7 +19,7 @@ export default function Layout() {
   const [golfOpen, setGolfOpen] = useState(true);
   const [resortOpen, setResortOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
-  const [contentOpen, setContentOpen] = useState(false);
+  const [contentOpen, setContentOpen] = useState(true);
   const [synergyOpen, setSynergyOpen] = useState(false);
 
   const togglePin = () => {
@@ -316,7 +316,7 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 4. 컨텐츠기획본부 Accordion (외주식음 영업장 매출 현황) */}
+          {/* 4. 컨텐츠기획본부 Accordion (4대 분류 페이지) */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'content' || userRole === 'fnb' || userRole === 'leisure') && (
             <div className="mt-2">
               <button
@@ -339,7 +339,34 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    외주식음 영업장 매출 현황
+                    외주식음 매출 & 인기메뉴
+                  </NavLink>
+                  <NavLink
+                    to="/content/group-rankings"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    영업장별 단체 순위 & 평균매출
+                  </NavLink>
+                  <NavLink
+                    to="/content/group-segments"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    단체 유형별 선호도 & 방문동선
+                  </NavLink>
+                  <NavLink
+                    to="/content/fnb-directory"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    종합 일람표 & 휴무일 안내
                   </NavLink>
                 </div>
               )}

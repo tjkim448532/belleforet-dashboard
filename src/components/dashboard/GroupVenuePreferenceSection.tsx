@@ -18,6 +18,8 @@ import {
   Moon,
   Filter
 } from 'lucide-react';
+import GlobalDatePicker from '../GlobalDatePicker';
+import ContentDivisionNav from './ContentDivisionNav';
 import { useDate } from '../../contexts/DateContext';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { getLatestClosedDateStr } from '../../lib/dateUtils';
@@ -32,8 +34,10 @@ import type {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
-interface GroupVenuePreferenceSectionProps {
+export interface GroupVenuePreferenceSectionProps {
   initialVenueCategory?: 'ALL' | 'FNB' | 'LEISURE';
+  mode?: 'RANKINGS_ONLY' | 'SEGMENTS_AND_TRAILS' | 'ALL';
+  isStandalonePage?: boolean;
   onVenueRankingsLoaded?: (rankings: VenueGroupRankingItem[], summary?: GroupVenuePreferenceResponse['meta']) => void;
 }
 
@@ -74,6 +78,8 @@ const STACKED_BAR_COLORS = [
 
 export default function GroupVenuePreferenceSection({
   initialVenueCategory = 'ALL',
+  mode = 'ALL',
+  isStandalonePage = false,
   onVenueRankingsLoaded
 }: GroupVenuePreferenceSectionProps) {
   const { startDate, endDate } = useDate();
@@ -83,6 +89,7 @@ export default function GroupVenuePreferenceSection({
   const [searchInput, setSearchInput] = useState<string>('');
   const [appliedSearch, setAppliedSearch] = useState<string>('');
   const [sortBy, setSortBy] = useState<RankingSortKey>('rank');
+  const [internalTab, setInternalTab] = useState<'RANKINGS' | 'SEGMENTS'>('RANKINGS');
   const [expandedGroupCodes, setExpandedGroupCodes] = useState<Record<string, boolean>>({});
 
   const [data, setData] = useState<GroupVenuePreferenceResponse | null>(null);
@@ -128,7 +135,6 @@ export default function GroupVenuePreferenceSection({
           if (onVenueRankingsLoaded && Array.isArray(payload.venueRankings)) {
             onVenueRankingsLoaded(payload.venueRankings, payload.meta);
           }
-          // 기본 상위 3개 단체 동선 자동 펼침
           if (Array.isArray(payload.groupTrails) && payload.groupTrails.length > 0) {
             const initialExpanded: Record<string, boolean> = {};
             payload.groupTrails.slice(0, 3).forEach((g) => {
@@ -288,93 +294,158 @@ export default function GroupVenuePreferenceSection({
 
   const highTicketThresholdLabel = '단체 고액 결제';
 
+  const showRankings =
+    mode === 'RANKINGS_ONLY' || (mode === 'ALL' && internalTab === 'RANKINGS');
+  const showSegmentsAndTrails =
+    mode === 'SEGMENTS_AND_TRAILS' || (mode === 'ALL' && internalTab === 'SEGMENTS');
+
+  const headerTitle =
+    mode === 'RANKINGS_ONLY'
+      ? '영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 급증률'
+      : mode === 'SEGMENTS_AND_TRAILS'
+      ? '단체 유형별 선호 매장 · 평균 매출 및 리조트 내 방문 동선'
+      : '영업장별 단체 방문 순위 · 단체 유형별 선호도 · 단체 방문 시 평균 매출 & 급증률';
+
+  const headerDesc =
+    mode === 'RANKINGS_ONLY'
+      ? '각 식음·부대 영업장에 단체가 얼마나 많이 방문하는지(유치 순위), 단체가 왔을 때 1팀당 평균 매출과 매장 일평균 매출 급증률은 얼마인지 정리합니다.'
+      : mode === 'SEGMENTS_AND_TRAILS'
+      ? '어떤 단체 종류(대기업·공공기관·학교·여행사)가 방문했을 때 매출이 크게 늘어나는지, 단체별 선호 영업장 공식과 1:N 실제 매장 방문 동선을 분석합니다.'
+      : '각 영업장에 단체가 얼마나 방문하는지(순위), 어떤 단체 종류가 방문했을 때 매출이 늘어나는지, 단체 방문 시 평균 매출을 종합 분석합니다.';
+
   return (
-    <section id="group-venue-preference-section" className="space-y-6 pt-4 border-t-2 border-slate-200/90">
-      {/* 섹션 헤더 & 멀티 필터 바 */}
+    <section
+      id="group-venue-preference-section"
+      className={
+        isStandalonePage
+          ? 'p-4 sm:p-6 lg:p-8 max-w-[1650px] mx-auto space-y-6'
+          : 'space-y-6 pt-4 border-t-2 border-slate-200/90'
+      }
+    >
+      {/* 섹션 헤더 배너 */}
       <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-lg">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-bold">
               <Users size={14} />
-              <span>숙박·연회 단체 × 식음/부대 영업장 시너지 분석</span>
+              <span>컨텐츠기획본부 · 숙박·연회 단체 × 식음/부대 영업장 분석</span>
               {period?.startDate && period?.endDate && (
                 <span className="text-emerald-300 font-mono ml-1">
-                  ({period.startDate} ~ {period.endDate}{period.totalDays != null ? ` · ${period.totalDays}일간` : ''})
+                  ({period.startDate} ~ {period.endDate}
+                  {period.totalDays != null ? ` · ${period.totalDays}일간` : ''})
                 </span>
               )}
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight flex flex-wrap items-center gap-2.5">
-              <span>영업장별 단체 방문 순위 · 단체 유형별 선호도 · 단체 방문 시 평균 매출 & 급증률</span>
-            </h2>
+            <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight flex flex-wrap items-center gap-2.5">
+              <span>{headerTitle}</span>
+            </h1>
             <p className="text-slate-300 text-xs sm:text-sm max-w-4xl leading-relaxed">
-              각 영업장에 단체가 얼마나 방문하는지(순위), 어떤 단체 종류(대기업·공공기관·학교·여행사)가 방문했을 때 매출이 크게 늘어나는지, 그리고 단체 방문 시 팀당·일평균 매출이 얼마인지 종합 분석합니다.
+              {headerDesc}
             </p>
           </div>
 
-          {/* 필터 컨트롤 바 */}
-          <div className="flex flex-wrap items-center gap-2.5 bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/15">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 mr-1">
-              <Filter size={14} className="text-emerald-400" />
-              <span>필터</span>
+          {isStandalonePage && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+              <GlobalDatePicker />
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* 매장 구분 */}
-            <select
-              value={venueCategory}
-              onChange={(e) => setVenueCategory(e.target.value)}
-              className="bg-slate-900/90 border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-400 cursor-pointer"
-            >
-              <option value="ALL">전체 매장 (식음+레저)</option>
-              <option value="FNB">식음 매장 (F&B)</option>
-              <option value="LEISURE">레저/부대시설</option>
-            </select>
+      {/* 단독 페이지일 때 컨텐츠기획본부 4대 페이지 상단 탭 네비게이션 */}
+      {isStandalonePage && <ContentDivisionNav />}
 
-            {/* 단체 유형 */}
-            <select
-              value={groupSegment}
-              onChange={(e) => setGroupSegment(e.target.value)}
-              className="bg-slate-900/90 border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-400 cursor-pointer"
-            >
-              <option value="ALL">전체 단체 유형</option>
-              <option value="ENTERPRISE">대기업/중견기업</option>
-              <option value="PUBLIC">공공/교육청/군/협회</option>
-              <option value="SCHOOL">초·중·고/대학</option>
-              <option value="TRAVEL">여행사/패스</option>
-            </select>
+      {/* 필터 컨트롤 바 & (ALL 모드일 때) 뷰 전환 스위치 */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 mr-1">
+            <Filter size={14} className="text-emerald-600" />
+            <span>분석 조건 필터</span>
+          </div>
 
-            {/* 키워드 검색 */}
-            <div className="flex items-center bg-slate-900/90 border border-slate-700 rounded-xl overflow-hidden">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') setAppliedSearch(searchInput);
-                }}
-                placeholder="단체명·영업장 검색 (예: 네패스)"
-                className="bg-transparent text-white text-xs px-3 py-2 outline-none w-44 placeholder:text-slate-400"
-              />
-              <button
-                type="button"
-                onClick={() => setAppliedSearch(searchInput)}
-                className="px-2.5 py-2 text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer"
-                title="검색 실행"
-              >
-                <Search size={14} />
-              </button>
-            </div>
+          {/* 매장 구분 */}
+          <select
+            value={venueCategory}
+            onChange={(e) => setVenueCategory(e.target.value)}
+            className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="ALL">전체 매장 (식음+레저)</option>
+            <option value="FNB">식음 매장 (F&B)</option>
+            <option value="LEISURE">레저/부대시설</option>
+          </select>
 
+          {/* 단체 유형 */}
+          <select
+            value={groupSegment}
+            onChange={(e) => setGroupSegment(e.target.value)}
+            className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="ALL">전체 단체 유형</option>
+            <option value="ENTERPRISE">대기업/중견기업</option>
+            <option value="PUBLIC">공공/교육청/군/협회</option>
+            <option value="SCHOOL">초·중·고/대학</option>
+            <option value="TRAVEL">여행사/패스</option>
+          </select>
+
+          {/* 키워드 검색 */}
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') setAppliedSearch(searchInput);
+              }}
+              placeholder="단체명·영업장 검색 (예: 네패스)"
+              className="bg-transparent text-slate-800 text-xs px-3 py-2 outline-none w-48 placeholder:text-slate-400"
+            />
             <button
               type="button"
-              onClick={handleResetFilters}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-              title="필터 초기화"
+              onClick={() => setAppliedSearch(searchInput)}
+              className="px-2.5 py-2 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+              title="검색 실행"
             >
-              <RotateCcw size={13} />
-              <span>초기화</span>
+              <Search size={14} />
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+            title="필터 초기화"
+          >
+            <RotateCcw size={13} />
+            <span>초기화</span>
+          </button>
         </div>
+
+        {mode === 'ALL' && (
+          <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold gap-1">
+            <button
+              type="button"
+              onClick={() => setInternalTab('RANKINGS')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                internalTab === 'RANKINGS'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🏆 영업장별 단체 순위 & 평균매출
+            </button>
+            <button
+              type="button"
+              onClick={() => setInternalTab('SEGMENTS')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                internalTab === 'SEGMENTS'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🏢 단체 유형별 선호도 & 방문동선
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 로딩 / 절전 / 에러 / 대기 상태 처리 */}
@@ -551,192 +622,194 @@ export default function GroupVenuePreferenceSection({
           {/* ================================================================= */}
           {/* ② 영업장별 단체 유치 실적 & 평균 매출/급증률 리더보드 테이블 */}
           {/* ================================================================= */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                  <Trophy size={19} className="text-amber-500" />
-                  <span>영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 매출 급증률 리더보드</span>
-                  <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                    {venueRankings.length}개 영업장
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  각 영업장이 유치한 단체 수(B2B 정산 + 객실후불), 단체 1팀당 평균 지출액, 그리고 단체가 방문한 날의 매장 전체 일평균 매출 급증 효과를 비교합니다.
-                </p>
+          {showRankings && (
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+              <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <Trophy size={19} className="text-amber-500" />
+                    <span>영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 매출 급증률 리더보드</span>
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                      {venueRankings.length}개 영업장
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    각 영업장이 유치한 단체 수(B2B 정산 + 객실후불), 단체 1팀당 평균 지출액, 그리고 단체가 방문한 날의 매장 전체 일평균 매출 급증 효과를 비교합니다.
+                  </p>
+                </div>
+
+                {/* 정렬 기준 스위치 */}
+                <div className="inline-flex flex-wrap items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold gap-1">
+                  {[
+                    { key: 'rank', label: '기본 순위' },
+                    { key: 'groupCount', label: '단체 방문 많은 순' },
+                    { key: 'revenue', label: '단체 총매출 순' },
+                    { key: 'avgSpend', label: '팀당 평균매출 순' },
+                    { key: 'surgePct', label: '방문일 매출 급증률 순' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setSortBy(tab.key as RankingSortKey)}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        sortBy === tab.key
+                          ? 'bg-slate-900 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* 정렬 기준 스위치 */}
-              <div className="inline-flex flex-wrap items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold gap-1">
-                {[
-                  { key: 'rank', label: '기본 순위' },
-                  { key: 'groupCount', label: '단체 방문 많은 순' },
-                  { key: 'revenue', label: '단체 총매출 순' },
-                  { key: 'avgSpend', label: '팀당 평균매출 순' },
-                  { key: 'surgePct', label: '방문일 매출 급증률 순' }
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setSortBy(tab.key as RankingSortKey)}
-                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                      sortBy === tab.key
-                        ? 'bg-slate-900 text-white shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
-                    <th className="py-3.5 px-4 text-center">순위</th>
-                    <th className="py-3.5 px-4 text-left">영업장명 / 구분</th>
-                    <th className="py-3.5 px-4 text-right">
-                      <div>유치 단체 수</div>
-                      <div className="text-[10px] text-slate-400 font-normal">B2B / 객실후불</div>
-                    </th>
-                    <th className="py-3.5 px-4 text-right">
-                      <div>단체 총매출</div>
-                      <div className="text-[10px] text-slate-400 font-normal">전체 단체매출 내 비중(%)</div>
-                    </th>
-                    <th className="py-3.5 px-4 text-right">
-                      <div>B2B 단체 1팀당 평균 매출</div>
-                      <div className="text-[10px] text-emerald-600 font-normal">전표 건당 / 전체 팀당 평균</div>
-                    </th>
-                    <th className="py-3.5 px-4 text-right">
-                      <div>단체 방문일 vs 평소 일평균 매출</div>
-                      <div className="text-[10px] text-blue-600 font-normal">방문일수 / 미방문일수</div>
-                    </th>
-                    <th className="py-3.5 px-4 text-right">
-                      <div>단체 방문 효과 (매출 급증률)</div>
-                      <div className="text-[10px] text-rose-500 font-normal">일평균 순증액 / 급증 등급</div>
-                    </th>
-                    <th className="py-3.5 px-4 text-left">주요 방문 단체 Top 3</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {venueRankings.map((item) => {
-                    const gradeMeta =
-                      SURGE_GRADE_META[item.revenueSurgeGrade] || SURGE_GRADE_META.STABLE;
-                    return (
-                      <tr key={item.venueName} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3.5 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center justify-center w-6 h-6 rounded-lg font-extrabold text-xs ${
-                              item.rank === 1
-                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                : item.rank === 2
-                                ? 'bg-slate-200 text-slate-800'
-                                : item.rank === 3
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {item.rank ?? '-'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-left">
-                          <div className="font-extrabold text-slate-900 text-sm">{item.venueName}</div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
+                      <th className="py-3.5 px-4 text-center">순위</th>
+                      <th className="py-3.5 px-4 text-left">영업장명 / 구분</th>
+                      <th className="py-3.5 px-4 text-right">
+                        <div>유치 단체 수</div>
+                        <div className="text-[10px] text-slate-400 font-normal">B2B / 객실후불</div>
+                      </th>
+                      <th className="py-3.5 px-4 text-right">
+                        <div>단체 총매출</div>
+                        <div className="text-[10px] text-slate-400 font-normal">전체 단체매출 내 비중(%)</div>
+                      </th>
+                      <th className="py-3.5 px-4 text-right">
+                        <div>B2B 단체 1팀당 평균 매출</div>
+                        <div className="text-[10px] text-emerald-600 font-normal">전표 건당 / 전체 팀당 평균</div>
+                      </th>
+                      <th className="py-3.5 px-4 text-right">
+                        <div>단체 방문일 vs 평소 일평균 매출</div>
+                        <div className="text-[10px] text-blue-600 font-normal">방문일수 / 미방문일수</div>
+                      </th>
+                      <th className="py-3.5 px-4 text-right">
+                        <div>단체 방문 효과 (매출 급증률)</div>
+                        <div className="text-[10px] text-rose-500 font-normal">일평균 순증액 / 급증 등급</div>
+                      </th>
+                      <th className="py-3.5 px-4 text-left">주요 방문 단체 Top 3</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {venueRankings.map((item) => {
+                      const gradeMeta =
+                        SURGE_GRADE_META[item.revenueSurgeGrade] || SURGE_GRADE_META.STABLE;
+                      return (
+                        <tr key={item.venueName} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4 text-center">
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                item.venueCategory === 'FNB'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              className={`inline-flex items-center justify-center w-6 h-6 rounded-lg font-extrabold text-xs ${
+                                item.rank === 1
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : item.rank === 2
+                                  ? 'bg-slate-200 text-slate-800'
+                                  : item.rank === 3
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-slate-100 text-slate-600'
                               }`}
                             >
-                              {item.venueCategoryName || item.venueCategory || '-'}
+                              {item.rank ?? '-'}
                             </span>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-mono">
-                          <div className="font-extrabold text-slate-900 text-sm">
-                            {item.totalGroupCountFormatted ?? '-'}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            B2B {item.b2bGroupCount ?? '-'}팀 · 객실후불 {item.roomChargeGroupCount ?? '-'}팀
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-mono">
-                          <div className="font-extrabold text-indigo-950 text-sm">
-                            {item.totalGroupRevenueFormatted ? `${item.totalGroupRevenueFormatted}원` : '-'}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            비중{' '}
-                            <strong className="text-emerald-700">
-                              {item.shareOfGroupSalesPct != null ? `${item.shareOfGroupSalesPct}%` : '-'}
-                            </strong>
-                            {' '}({item.totalTxCount ?? '-'}건)
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-mono bg-emerald-50/30">
-                          <div className="font-black text-emerald-800 text-sm">
-                            {item.b2bAvgSpendPerGroupFormatted ? `${item.b2bAvgSpendPerGroupFormatted}원` : '-'}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            건당 {item.b2bAvgSpendPerTxFormatted ? `${item.b2bAvgSpendPerTxFormatted}원` : '-'} · 전체평균{' '}
-                            {item.avgSpendPerGroupFormatted ? `${item.avgSpendPerGroupFormatted}원` : '-'}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-mono">
-                          <div className="font-extrabold text-slate-900">
-                            방문일 {item.avgDailyRevWithGroupFormatted ? `${item.avgDailyRevWithGroupFormatted}원` : '-'}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            평소 {item.avgDailyRevWithoutGroupFormatted ? `${item.avgDailyRevWithoutGroupFormatted}원` : '-'}
-                            <span className="text-slate-400 ml-1">
-                              ({item.groupVisitDays ?? '-'}일 vs {item.nonGroupVisitDays ?? '-'}일)
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-mono">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <span className={`px-2 py-0.5 rounded-md border text-[11px] font-extrabold ${gradeMeta.badgeClass}`}>
-                              {item.revenueSurgePctFormatted ?? '-'}
-                            </span>
-                          </div>
-                          <div className={`text-[11px] mt-1 ${gradeMeta.deltaClass}`}>
-                            {item.revenueSurgeDeltaFormatted ? `${item.revenueSurgeDeltaFormatted}원` : '-'} ({gradeMeta.label})
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-left">
-                          {Array.isArray(item.topVisitingGroups) && item.topVisitingGroups.length > 0 ? (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {item.topVisitingGroups.slice(0, 3).map((g, gIdx) => (
-                                <span
-                                  key={`${item.venueName}-topg-${gIdx}`}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-semibold"
-                                >
-                                  <strong className="text-indigo-700">{gIdx + 1}위</strong>
-                                  <span>{g.groupName}</span>
-                                  <span className="font-mono text-slate-600">
-                                    ({g.spendFormatted ? `${g.spendFormatted}원` : '-'})
-                                  </span>
-                                </span>
-                              ))}
+                          </td>
+                          <td className="py-3.5 px-4 text-left">
+                            <div className="font-extrabold text-slate-900 text-sm">{item.venueName}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                  item.venueCategory === 'FNB'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                }`}
+                              >
+                                {item.venueCategoryName || item.venueCategory || '-'}
+                              </span>
                             </div>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono">
+                            <div className="font-extrabold text-slate-900 text-sm">
+                              {item.totalGroupCountFormatted ?? '-'}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              B2B {item.b2bGroupCount ?? '-'}팀 · 객실후불 {item.roomChargeGroupCount ?? '-'}팀
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono">
+                            <div className="font-extrabold text-indigo-950 text-sm">
+                              {item.totalGroupRevenueFormatted ? `${item.totalGroupRevenueFormatted}원` : '-'}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              비중{' '}
+                              <strong className="text-emerald-700">
+                                {item.shareOfGroupSalesPct != null ? `${item.shareOfGroupSalesPct}%` : '-'}
+                              </strong>
+                              {' '}({item.totalTxCount ?? '-'}건)
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono bg-emerald-50/30">
+                            <div className="font-black text-emerald-800 text-sm">
+                              {item.b2bAvgSpendPerGroupFormatted ? `${item.b2bAvgSpendPerGroupFormatted}원` : '-'}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              건당 {item.b2bAvgSpendPerTxFormatted ? `${item.b2bAvgSpendPerTxFormatted}원` : '-'} · 전체평균{' '}
+                              {item.avgSpendPerGroupFormatted ? `${item.avgSpendPerGroupFormatted}원` : '-'}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono">
+                            <div className="font-extrabold text-slate-900">
+                              방문일 {item.avgDailyRevWithGroupFormatted ? `${item.avgDailyRevWithGroupFormatted}원` : '-'}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              평소 {item.avgDailyRevWithoutGroupFormatted ? `${item.avgDailyRevWithoutGroupFormatted}원` : '-'}
+                              <span className="text-slate-400 ml-1">
+                                ({item.groupVisitDays ?? '-'}일 vs {item.nonGroupVisitDays ?? '-'}일)
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className={`px-2 py-0.5 rounded-md border text-[11px] font-extrabold ${gradeMeta.badgeClass}`}>
+                                {item.revenueSurgePctFormatted ?? '-'}
+                              </span>
+                            </div>
+                            <div className={`text-[11px] mt-1 ${gradeMeta.deltaClass}`}>
+                              {item.revenueSurgeDeltaFormatted ? `${item.revenueSurgeDeltaFormatted}원` : '-'} ({gradeMeta.label})
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-left">
+                            {Array.isArray(item.topVisitingGroups) && item.topVisitingGroups.length > 0 ? (
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {item.topVisitingGroups.slice(0, 3).map((g, gIdx) => (
+                                  <span
+                                    key={`${item.venueName}-topg-${gIdx}`}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-semibold"
+                                  >
+                                    <strong className="text-indigo-700">{gIdx + 1}위</strong>
+                                    <span>{g.groupName}</span>
+                                    <span className="font-mono text-slate-600">
+                                      ({g.spendFormatted ? `${g.spendFormatted}원` : '-'})
+                                    </span>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ================================================================= */}
           {/* ③ 단체 성향(유형)별 선호 매장 매트릭스 & 평균 지출 카드 */}
           {/* ================================================================= */}
-          {segmentMatrix.length > 0 && (
+          {showSegmentsAndTrails && segmentMatrix.length > 0 && (
             <div className="space-y-4">
               <div>
                 <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
@@ -874,9 +947,117 @@ export default function GroupVenuePreferenceSection({
           )}
 
           {/* ================================================================= */}
+          {/* ⑤ 숙박 단체 규모별 식음 고액 영수증 급증 상관관계 차트 & 카드 */}
+          {/* ================================================================= */}
+          {showSegmentsAndTrails && staySurgeList.length > 0 && (
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <Flame size={19} className="text-rose-500" />
+                    <span>숙박 단체 투숙 규모별 식음 일평균 매출 및 고액 영수증({highTicketThresholdLabel}) 급증 상관관계</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    현장 법인카드 결제 단체까지 모두 포착하기 위해 대규모 단체 투숙일(15실 이상), 중소 단체 투숙일(3~14실), 일반일(0~2실) 구간별 식음 전체 일평균 매출과 고액 결제 건수를 대조합니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
+                {/* 좌측 3단 비교 카드 */}
+                <div className="xl:col-span-5 space-y-3">
+                  {staySurgeList.map((tier) => {
+                    const isLarge = tier.tierCode === 'LARGE_GROUP_DAY';
+                    const isMedium = tier.tierCode === 'MEDIUM_GROUP_DAY';
+                    return (
+                      <div
+                        key={tier.tierCode}
+                        className={`p-5 rounded-2xl border space-y-3 ${
+                          isLarge
+                            ? 'bg-slate-900 text-white border-slate-800 shadow-sm'
+                            : isMedium
+                            ? 'bg-indigo-50/50 border-indigo-200 text-slate-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-900'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-extrabold text-sm flex items-center gap-1.5">
+                            {isLarge ? '🔥' : isMedium ? '📈' : '📅'} {tier.tierName}
+                          </span>
+                          <span
+                            className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full ${
+                              isLarge ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {tier.daysCount ?? '-'}일 · 평균 단체객실 {tier.avgGroupRooms ?? '-'}실
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 pt-1">
+                          <div>
+                            <div className={`text-[11px] ${isLarge ? 'text-slate-300' : 'text-slate-500'}`}>
+                              식음 전체 일평균 매출
+                            </div>
+                            <div className="text-base sm:text-lg font-black font-mono mt-0.5">
+                              {tier.avgDailyFnbRevenueFormatted ? `${tier.avgDailyFnbRevenueFormatted}원` : '-'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className={`text-[11px] ${isLarge ? 'text-slate-300' : 'text-slate-500'}`}>
+                              고액 영수증({highTicketThresholdLabel}) 일평균
+                            </div>
+                            <div className={`text-base sm:text-lg font-black font-mono mt-0.5 ${isLarge ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                              {tier.avgBigTicketRevenueFormatted ? `${tier.avgBigTicketRevenueFormatted}원` : '-'}
+                              <span className="text-xs font-bold ml-1">
+                                ({tier.avgBigTicketCount ?? '-'}건)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {tier.venueAvgDailyRevenue && Object.keys(tier.venueAvgDailyRevenue).length > 0 && (
+                          <div className={`pt-2.5 border-t flex flex-wrap items-center gap-2 text-[11px] ${
+                            isLarge ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'
+                          }`}>
+                            <Receipt size={12} className="shrink-0" />
+                            {Object.entries(tier.venueAvgDailyRevenue)
+                              .slice(0, 4)
+                              .map(([vName, vObj]) => (
+                                <span key={vName} className="font-mono">
+                                  <strong>{vName}</strong>: {vObj?.avgRevenueFormatted ? `${vObj.avgRevenueFormatted}원` : '-'}
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 우측 ECharts 비교 차트 */}
+                <div className="xl:col-span-7 bg-slate-50/70 rounded-2xl p-4 border border-slate-200/80">
+                  {staySurgeChartOption ? (
+                    <ReactECharts
+                      key={`stay-surge-chart-${venueCategory}-${groupSegment}`}
+                      option={staySurgeChartOption}
+                      notMerge={true}
+                      lazyUpdate={true}
+                      style={{ height: '340px', width: '100%' }}
+                    />
+                  ) : (
+                    <div className="p-12 text-center text-xs text-slate-400">
+                      상관관계 차트 데이터가 없습니다.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
           {/* ④ 단체별 리조트 내 실제 매장 방문 동선 (1:N Trail) 익스팬더블 테이블 */}
           {/* ================================================================= */}
-          {groupTrails.length > 0 && (
+          {showSegmentsAndTrails && groupTrails.length > 0 && (
             <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -1063,114 +1244,6 @@ export default function GroupVenuePreferenceSection({
                     })}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================= */}
-          {/* ⑤ 숙박 단체 규모별 식음 고액 영수증 급증 상관관계 차트 & 카드 */}
-          {/* ================================================================= */}
-          {staySurgeList.length > 0 && (
-            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                    <Flame size={19} className="text-rose-500" />
-                    <span>숙박 단체 투숙 규모별 식음 일평균 매출 및 고액 영수증({highTicketThresholdLabel}) 급증 상관관계</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    현장 법인카드 결제 단체까지 모두 포착하기 위해 대규모 단체 투숙일(15실 이상), 중소 단체 투숙일(3~14실), 일반일(0~2실) 구간별 식음 전체 일평균 매출과 고액 결제 건수를 대조합니다.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
-                {/* 좌측 3단 비교 카드 */}
-                <div className="xl:col-span-5 space-y-3">
-                  {staySurgeList.map((tier) => {
-                    const isLarge = tier.tierCode === 'LARGE_GROUP_DAY';
-                    const isMedium = tier.tierCode === 'MEDIUM_GROUP_DAY';
-                    return (
-                      <div
-                        key={tier.tierCode}
-                        className={`p-5 rounded-2xl border space-y-3 ${
-                          isLarge
-                            ? 'bg-slate-900 text-white border-slate-800 shadow-sm'
-                            : isMedium
-                            ? 'bg-indigo-50/50 border-indigo-200 text-slate-900'
-                            : 'bg-slate-50 border-slate-200 text-slate-900'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-extrabold text-sm flex items-center gap-1.5">
-                            {isLarge ? '🔥' : isMedium ? '📈' : '📅'} {tier.tierName}
-                          </span>
-                          <span
-                            className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full ${
-                              isLarge ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white text-slate-700 border border-slate-200'
-                            }`}
-                          >
-                            {tier.daysCount ?? '-'}일 · 평균 단체객실 {tier.avgGroupRooms ?? '-'}실
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 pt-1">
-                          <div>
-                            <div className={`text-[11px] ${isLarge ? 'text-slate-300' : 'text-slate-500'}`}>
-                              식음 전체 일평균 매출
-                            </div>
-                            <div className="text-base sm:text-lg font-black font-mono mt-0.5">
-                              {tier.avgDailyFnbRevenueFormatted ? `${tier.avgDailyFnbRevenueFormatted}원` : '-'}
-                            </div>
-                          </div>
-                          <div>
-                            <div className={`text-[11px] ${isLarge ? 'text-slate-300' : 'text-slate-500'}`}>
-                              고액 영수증({highTicketThresholdLabel}) 일평균
-                            </div>
-                            <div className={`text-base sm:text-lg font-black font-mono mt-0.5 ${isLarge ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                              {tier.avgBigTicketRevenueFormatted ? `${tier.avgBigTicketRevenueFormatted}원` : '-'}
-                              <span className="text-xs font-bold ml-1">
-                                ({tier.avgBigTicketCount ?? '-'}건)
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {tier.venueAvgDailyRevenue && Object.keys(tier.venueAvgDailyRevenue).length > 0 && (
-                          <div className={`pt-2.5 border-t flex flex-wrap items-center gap-2 text-[11px] ${
-                            isLarge ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'
-                          }`}>
-                            <Receipt size={12} className="shrink-0" />
-                            {Object.entries(tier.venueAvgDailyRevenue)
-                              .slice(0, 4)
-                              .map(([vName, vObj]) => (
-                                <span key={vName} className="font-mono">
-                                  <strong>{vName}</strong>: {vObj?.avgRevenueFormatted ? `${vObj.avgRevenueFormatted}원` : '-'}
-                                </span>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* 우측 ECharts 비교 차트 */}
-                <div className="xl:col-span-7 bg-slate-50/70 rounded-2xl p-4 border border-slate-200/80">
-                  {staySurgeChartOption ? (
-                    <ReactECharts
-                      key={`stay-surge-chart-${venueCategory}-${groupSegment}`}
-                      option={staySurgeChartOption}
-                      notMerge={true}
-                      lazyUpdate={true}
-                      style={{ height: '340px', width: '100%' }}
-                    />
-                  ) : (
-                    <div className="p-12 text-center text-xs text-slate-400">
-                      상관관계 차트 데이터가 없습니다.
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           )}

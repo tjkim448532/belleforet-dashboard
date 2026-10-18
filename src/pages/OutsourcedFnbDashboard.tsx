@@ -12,12 +12,15 @@ import {
   Store,
   Sparkles,
   Phone,
-  MapPin
+  MapPin,
+  Users
 } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
+import GroupVenuePreferenceSection from '../components/dashboard/GroupVenuePreferenceSection';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { getLatestClosedDateStr } from '../lib/dateUtils';
+import type { VenueGroupRankingItem } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
@@ -98,6 +101,17 @@ export default function OutsourcedFnbDashboard() {
 
   const [summary, setSummary] = useState<OutsourcedFnbSummary | null>(null);
   const [venues, setVenues] = useState<OutsourcedFnbVenueData[]>([]);
+  const [groupVenueMap, setGroupVenueMap] = useState<Record<string, VenueGroupRankingItem>>({});
+
+  const handleVenueRankingsLoaded = (rankings: VenueGroupRankingItem[]) => {
+    const map: Record<string, VenueGroupRankingItem> = {};
+    rankings.forEach((item) => {
+      if (item.venueName) {
+        map[item.venueName] = item;
+      }
+    });
+    setGroupVenueMap(map);
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -287,17 +301,27 @@ export default function OutsourcedFnbDashboard() {
           </span>
         </div>
 
-        {isDedicatedApiLive && !loading ? (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
-            <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-            <span>외주식음 매출 현황 및 Top 3 메뉴</span>
-          </div>
-        ) : !loading ? (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
-            <AlertCircle size={14} className="text-amber-600 shrink-0" />
-            <span>점유비율(%) 및 POS 실매출 Top 3 메뉴 데이터 연동 준비 중 (공식 홈페이지 대표 메뉴 임시 연동)</span>
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="#group-venue-preference-section"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-white font-bold transition-colors"
+          >
+            <Users size={13} className="text-emerald-400 shrink-0" />
+            <span>단체 방문 순위 · 유형별 선호 · 평균매출 분석 바로가기</span>
+          </a>
+
+          {isDedicatedApiLive && !loading ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
+              <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+              <span>외주식음 매출 현황 및 Top 3 메뉴</span>
+            </div>
+          ) : !loading ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
+              <AlertCircle size={14} className="text-amber-600 shrink-0" />
+              <span>점유비율(%) 및 POS 실매출 Top 3 메뉴 데이터 연동 준비 중 (공식 홈페이지 대표 메뉴 임시 연동)</span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* 3. 전체 외주식음 요약 KPI 카드 (3종: 당일/선택기간, 당월 MTD, 올해 누적 YTD) */}
@@ -678,6 +702,54 @@ export default function OutsourcedFnbDashboard() {
                         </div>
                       )}
                     </div>
+
+                    {/* 해당 영업장 단체 방문 순위 · 평균 매출 · 급증 효과 박스 */}
+                    {groupVenueMap[venue.venueName] && (() => {
+                      const gInfo = groupVenueMap[venue.venueName];
+                      return (
+                        <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-2 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-extrabold text-indigo-950 flex items-center gap-1.5">
+                              <Users size={13} className="text-indigo-600 shrink-0" />
+                              <span>단체 방문 {gInfo.rank ?? '-'}위</span>
+                            </span>
+                            <span className="font-extrabold px-2 py-0.5 rounded-full bg-indigo-900 text-white text-[11px] font-mono">
+                              {gInfo.totalGroupCountFormatted ?? '-'} (B2B {gInfo.b2bGroupCount ?? '-'} / 후불 {gInfo.roomChargeGroupCount ?? '-'})
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-indigo-200/60">
+                            <div>
+                              <div className="text-[10px] text-slate-500">B2B 단체 1팀당 평균</div>
+                              <div className="font-black font-mono text-indigo-950">
+                                {gInfo.b2bAvgSpendPerGroupFormatted ? `${gInfo.b2bAvgSpendPerGroupFormatted}원` : '-'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[10px] text-slate-500">단체 방문일 일평균 (급증률)</div>
+                              <div className="font-black font-mono text-emerald-700">
+                                {gInfo.avgDailyRevWithGroupFormatted ? `${gInfo.avgDailyRevWithGroupFormatted}원` : '-'}{' '}
+                                <span className="text-rose-600">({gInfo.revenueSurgePctFormatted ?? '-'})</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {Array.isArray(gInfo.topVisitingGroups) && gInfo.topVisitingGroups.length > 0 && (
+                            <div className="pt-1.5 border-t border-indigo-200/60 flex flex-wrap items-center gap-1 text-[11px]">
+                              <span className="text-slate-500 font-bold mr-1">주요 단체:</span>
+                              {gInfo.topVisitingGroups.slice(0, 3).map((tg, tgIdx) => (
+                                <span
+                                  key={`${venue.venueName}-tg-${tgIdx}`}
+                                  className="px-2 py-0.5 rounded-md bg-white border border-indigo-200 text-slate-800 font-semibold"
+                                >
+                                  {tg.groupName} ({tg.spendFormatted ? `${tg.spendFormatted}원` : '-'})
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* 하단 당일 / 당월 / 연누적 3단 요약 푸터 */}
@@ -723,7 +795,13 @@ export default function OutsourcedFnbDashboard() {
         </div>
       )}
 
-      {/* 5. 전체 외주식음 영업장 일람표 (Table View) */}
+      {/* 5. 숙박·연회 단체 × 식음/부대 영업장 선호도 및 평균 매출·급증률 분석 리포트 */}
+      <GroupVenuePreferenceSection
+        initialVenueCategory="ALL"
+        onVenueRankingsLoaded={handleVenueRankingsLoaded}
+      />
+
+      {/* 6. 전체 외주식음 영업장 일람표 (Table View) */}
       {!loading && sortedVenues.length > 0 && (
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -898,7 +976,7 @@ export default function OutsourcedFnbDashboard() {
                       {isDedicatedApiLive ? showPct(100) : '-'}
                     </td>
                     <td className="py-4 px-4 text-slate-300 font-normal">
-                      백엔드 사전 집계 총합 (클라이언트 합산 미수행)
+                      외주식음 전체 합계
                     </td>
                   </tr>
                 </tfoot>

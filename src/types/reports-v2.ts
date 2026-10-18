@@ -1030,9 +1030,180 @@ export interface MonthlyRebalancerResponse {
   error?: string;
 }
 
+// ============================================================================
+// ⑯ 숙박·연회 단체 × 식음/부대 영업장 선호도 및 평균 매출·급증률 분석 리포트
+// (GET /api/v6/report/group-venue-preference)
+// ============================================================================
+export type VenueCategoryType = 'FNB' | 'LEISURE';
+export type GroupSegmentType = 'ENTERPRISE' | 'PUBLIC' | 'SCHOOL' | 'TRAVEL' | 'OTHER';
+export type SurgeGradeType = 'EXPLOSIVE' | 'HIGH' | 'MODERATE' | 'STABLE';
 
+export interface GroupVenuePreferenceResponse {
+  success: boolean;
+  status?: 'OK' | 'SERVER_SLEEPING' | 'ERROR';
+  isPowerSaving?: boolean;
+  message?: string;
+  meta?: {
+    engine?: string;
+    period?: {
+      startDate: string;
+      endDate: string;
+      totalDays: number;
+    };
+    summary?: {
+      totalUniqueGroups: number;
+      totalUniqueGroupsFormatted: string;
+      totalGroupTxCount: number;
+      totalGroupTxCountFormatted: string;
+      totalGroupSpend: number;
+      totalGroupSpendFormatted: string;
+      avgSpendPerGroup: number;
+      avgSpendPerGroupFormatted: string;
+      avgSpendPerTx: number;
+      avgSpendPerTxFormatted: string;
+      topRevenueVenue?: {
+        venueName: string;
+        groupCount: number;
+        groupSpend: number;
+        groupSpendFormatted: string;
+        b2bAvgSpendPerGroupFormatted: string;
+      };
+      topGroupCountVenue?: {
+        venueName: string;
+        groupCount: number;
+        groupSpend: number;
+        groupSpendFormatted: string;
+      };
+      topSurgeVenue?: {
+        venueName: string;
+        avgDailyRevWithGroupFormatted: string;
+        avgDailyRevWithoutGroupFormatted: string;
+        surgePct: number;
+        surgePctFormatted: string;
+      };
+    };
+  };
+  venueRankings?: VenueGroupRankingItem[];
+  groupTrails?: GroupConsumptionTrailItem[];
+  segmentPreferenceMatrix?: SegmentPreferenceMatrixItem[];
+  staySurgeCorrelation?: StaySurgeCorrelationItem[];
+  data?: any;
+  error?: string;
+}
 
+export interface VenueGroupRankingItem {
+  rank: number;
+  venueName: string;
+  venueCategory: VenueCategoryType;
+  venueCategoryName: string;
+  totalGroupCount: number;
+  totalGroupCountFormatted: string;
+  b2bGroupCount: number;
+  roomChargeGroupCount: number;
+  totalTxCount: number;
+  b2bTxCount: number;
+  totalGroupRevenue: number;
+  totalGroupRevenueFormatted: string;
+  b2bRevenue: number;
+  b2bRevenueFormatted: string;
+  roomChargeRevenue: number;
+  roomChargeRevenueFormatted: string;
+  shareOfGroupSalesPct: number;
+  b2bAvgSpendPerGroup: number;
+  b2bAvgSpendPerGroupFormatted: string;
+  b2bAvgSpendPerTx: number;
+  b2bAvgSpendPerTxFormatted: string;
+  avgSpendPerGroup: number;
+  avgSpendPerGroupFormatted: string;
+  groupVisitDays: number;
+  nonGroupVisitDays: number;
+  avgDailyRevWithGroup: number;
+  avgDailyRevWithGroupFormatted: string;
+  avgDailyRevWithoutGroup: number;
+  avgDailyRevWithoutGroupFormatted: string;
+  revenueSurgeDelta: number;
+  revenueSurgeDeltaFormatted: string;
+  revenueSurgePct: number;
+  revenueSurgePctFormatted: string;
+  revenueSurgeGrade: SurgeGradeType;
+  topVisitingGroups: Array<{
+    groupName: string;
+    spend: number;
+    spendFormatted: string;
+    txCount: number;
+  }>;
+}
 
+export interface GroupConsumptionTrailItem {
+  rank: number;
+  groupCode: string;
+  groupRawInfo: string;
+  groupName: string;
+  groupSegment: GroupSegmentType;
+  groupSegmentName: string;
+  visitDates: string[];
+  roomStayMatched: boolean;
+  roomsCount: number | null;
+  paxCount: number | null;
+  visitedVenueCount: number;
+  totalGroupSpend: number;
+  totalGroupSpendFormatted: string;
+  fnbSpend: number;
+  fnbSpendFormatted: string;
+  leisureSpend: number;
+  leisureSpendFormatted: string;
+  avgSpendPerVenue: number;
+  avgSpendPerVenueFormatted: string;
+  favoriteFnbVenue: string | null;
+  favoriteLeisureVenue: string | null;
+  venueBreakdown: Array<{
+    venueName: string;
+    venueCategory: VenueCategoryType;
+    txCount: number;
+    spend: number;
+    spendFormatted: string;
+    sharePct: number;
+  }>;
+}
 
+export interface SegmentPreferenceMatrixItem {
+  groupSegment: GroupSegmentType;
+  groupSegmentName: string;
+  groupCount: number;
+  totalFnbSpend: number;
+  totalFnbSpendFormatted: string;
+  avgFnbSpendPerGroup: number;
+  avgFnbSpendPerGroupFormatted: string;
+  avgTotalSpendPerGroup: number;
+  avgTotalSpendPerGroupFormatted: string;
+  top1Venue: string;
+  top2Venue: string;
+  top3Venue: string;
+  patternDescription: string;
+  venueShares: Array<{
+    venueName: string;
+    groupCount: number;
+    spend: number;
+    spendFormatted: string;
+    avgSpendPerGroup: number;
+    avgSpendPerGroupFormatted: string;
+    sharePct: number;
+  }>;
+}
 
+export interface StaySurgeCorrelationItem {
+  tierCode: 'LARGE_GROUP_DAY' | 'MEDIUM_GROUP_DAY' | 'NORMAL_DAY';
+  tierName: string;
+  daysCount: number;
+  avgGroupRooms: number;
+  avgDailyFnbRevenue: number;
+  avgDailyFnbRevenueFormatted: string;
+  avgBigTicketRevenue: number;
+  avgBigTicketRevenueFormatted: string;
+  avgBigTicketCount: number;
+  venueAvgDailyRevenue: Record<string, {
+    avgRevenue: number;
+    avgRevenueFormatted: string;
+  }>;
+}
 

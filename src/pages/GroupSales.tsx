@@ -33,6 +33,7 @@ import {
   ArrowDownRight,
   CheckCircle2
 } from 'lucide-react';
+import GroupVenuePreferenceSection from '../components/dashboard/GroupVenuePreferenceSection';
 import type { SalesVenuePerformanceResponse } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -2863,7 +2864,10 @@ export default function GroupSales() {
         )}
       </div>
 
-      {/* 6. Strategy Insight Footer */}
+      {/* 6. 숙박·연회 단체 × 식음/부대 영업장 선호도 및 평균 매출·급증률 분석 리포트 */}
+      <GroupVenuePreferenceSection initialVenueCategory="ALL" />
+
+      {/* 7. Strategy Insight Footer */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-[24px] p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-white/10 text-brand-mint shrink-0">
@@ -2878,7 +2882,7 @@ export default function GroupSales() {
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
           <span className="text-[11px] font-semibold bg-white/10 px-3 py-1.5 rounded-lg border border-white/15 text-slate-200">
-            세일즈본부 공식 집계 Ver 6.0
+            세일즈본부 공식 집계
           </span>
         </div>
       </div>

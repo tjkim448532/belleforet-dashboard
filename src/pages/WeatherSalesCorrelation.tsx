@@ -1709,7 +1709,7 @@ export default function WeatherSalesCorrelation() {
                   </p>
                 </div>
                 <div className="mt-3 pt-2 border-t border-white/10 text-[11px] text-emerald-300 font-semibold">
-                  원칙: 0-Variance 실측 장부 기준
+                  원칙: 회계 실측 장부 기준
                 </div>
               </div>
             </div>

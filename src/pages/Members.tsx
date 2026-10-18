@@ -1216,7 +1216,7 @@ export default function Members() {
           </div>
           <div className="shrink-0 flex items-center gap-2 text-xs font-bold text-emerald-900 bg-emerald-50 px-4 py-2.5 rounded-xl border border-emerald-200">
             <Layers size={15} className="text-emerald-600" />
-            <span>0-Variance 오차 0원 검증</span>
+            <span>회계 및 정산 무결성 검증</span>
           </div>
         </div>
 

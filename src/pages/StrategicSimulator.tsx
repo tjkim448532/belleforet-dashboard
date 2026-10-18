@@ -1489,7 +1489,7 @@ export default function StrategicSimulator() {
                 1~12월 전체 영업장별 매출목표 데이터를 동기화하는 중입니다...
               </p>
               <p className="text-[11px] text-indigo-600">
-                전체 12개월의 정규 마트 데이터를 0-Variance로 취합하고 있습니다.
+                전체 12개월의 마트 실적 데이터를 취합하고 있습니다.
               </p>
             </div>
           )}
@@ -2397,7 +2397,7 @@ export default function StrategicSimulator() {
             </div>
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            백엔드 제공 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준
+            공식 가동 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준
           </div>
         </div>
 

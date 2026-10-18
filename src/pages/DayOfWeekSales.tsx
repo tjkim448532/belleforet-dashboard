@@ -120,7 +120,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
             </div>
           )}
           <p className="text-slate-400 text-sm mb-6">
-            프론트엔드 Bypass 방지 원칙에 따라, 회계 왜곡을 막기 위해 화면 렌더링이 강제 차단되었습니다.
+            회계 정합성 수호 원칙에 따라, 미분류 항목 매핑 완료 후 정규 데이터가 안전하게 표출됩니다.
           </p>
           <Link to="/admin/mapping" className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-sm">
             관리자 통제 센터에서 매핑 해결하기

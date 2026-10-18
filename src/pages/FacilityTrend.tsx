@@ -632,8 +632,27 @@ export default function FacilityTrend() {
       );
     }
 
+    const facility = selectedFacility;
+    const isAll = facility === '전체';
     const monthsList: MonthlySeasonalityMonthRow[] = seasonalityData.months || seasonalityData.monthly || [];
-    const annual = seasonalityData.annual || seasonalityData.totals || {};
+
+    // 선택된 영업장 연간 요약 매핑
+    const selectedFacilityAnnual = !isAll
+      ? (seasonalityData.facilities || (seasonalityData as any).data?.facilities || []).find(
+          (f: any) => f.venueName === facility || f.displayName === facility || f.categoryName === facility
+        )
+      : null;
+
+    const annual = isAll ? (seasonalityData.annual || seasonalityData.totals || {}) : (selectedFacilityAnnual || {});
+
+    // 월별 영업장 데이터 추출 헬퍼
+    const getFacilityMonth = (m: MonthlySeasonalityMonthRow) => {
+      if (isAll) return m;
+      const f = ((m as any).facilities || []).find(
+        (x: any) => x.venueName === facility || x.displayName === facility || x.categoryName === facility
+      );
+      return f || m;
+    };
 
     const rev2026 = annual.revenue2026 ?? annual.tyRevenue ?? 0;
     const rev2025 = annual.revenue2025 ?? annual.lyRevenue ?? 0;
@@ -650,12 +669,14 @@ export default function FacilityTrend() {
     const trevDiff = annual.yoyTrevparDiff ?? (trev2026 - trev2025);
     const trevPct = annual.yoyTrevparPct ?? 0;
 
-    // ECharts Seasonality Option
+    // ECharts Seasonality Option (선택 영업장 연동)
     const monthLabels = monthsList.map(m => m.monthName || `${m.month}월`);
-    const chartRev2025 = monthsList.map(m => m.revenue2025 ?? m.lyRevenue ?? 0);
-    const chartRev2026 = monthsList.map(m => m.revenue2026 ?? m.tyRevenue ?? 0);
+    const chartRev2025 = monthsList.map(m => getFacilityMonth(m).revenue2025 ?? getFacilityMonth(m).lyRevenue ?? 0);
+    const chartRev2026 = monthsList.map(m => getFacilityMonth(m).revenue2026 ?? getFacilityMonth(m).tyRevenue ?? 0);
     const chartTrev2025 = monthsList.map(m => m.trevpar2025 ?? 0);
     const chartTrev2026 = monthsList.map(m => m.trevpar2026 ?? 0);
+    const chartVis2025 = monthsList.map(m => getFacilityMonth(m).visitors2025 ?? getFacilityMonth(m).lyVisitors ?? 0);
+    const chartVis2026 = monthsList.map(m => getFacilityMonth(m).visitors2026 ?? getFacilityMonth(m).tyVisitors ?? 0);
 
     const seasonalityChartOption = {
       tooltip: {
@@ -663,7 +684,9 @@ export default function FacilityTrend() {
         axisPointer: { type: 'cross' }
       },
       legend: {
-        data: ['2025년 매출', '2026년 매출', '2025 TRevPAR', '2026 TRevPAR'],
+        data: isAll
+          ? ['2025년 매출', '2026년 매출', '2025 TRevPAR', '2026 TRevPAR']
+          : ['2025년 매출', '2026년 매출', '2025년 이용객', '2026년 이용객'],
         bottom: 0
       },
       grid: { left: '3%', right: '3%', bottom: '15%', containLabel: true },
@@ -672,12 +695,20 @@ export default function FacilityTrend() {
         {
           type: 'value',
           name: '매출액 (원)',
-          axisLabel: { formatter: (v: number) => `${Math.round(v / 100000000)}억` }
+          axisLabel: {
+            formatter: (v: number) => {
+              if (Math.abs(v) >= 100000000) return `${Math.round(v / 100000000)}억`;
+              if (Math.abs(v) >= 10000) return `${Math.round(v / 10000)}만`;
+              return `${v}`;
+            }
+          }
         },
         {
           type: 'value',
-          name: 'TRevPAR (원)',
-          axisLabel: { formatter: (v: number) => `${Math.round(v / 10000)}만` }
+          name: isAll ? 'TRevPAR (원)' : '이용객 (명)',
+          axisLabel: {
+            formatter: (v: number) => isAll ? `${Math.round(v / 10000)}만` : `${Math.round(v).toLocaleString()}명`
+          }
         }
       ],
       series: [
@@ -695,22 +726,41 @@ export default function FacilityTrend() {
           itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
           barMaxWidth: 18
         },
-        {
-          name: '2025 TRevPAR',
-          type: 'line',
-          yAxisIndex: 1,
-          data: chartTrev2025,
-          itemStyle: { color: '#f59e0b' },
-          lineStyle: { width: 2, type: 'dashed' }
-        },
-        {
-          name: '2026 TRevPAR',
-          type: 'line',
-          yAxisIndex: 1,
-          data: chartTrev2026,
-          itemStyle: { color: '#10b981' },
-          lineStyle: { width: 2.5 }
-        }
+        ...(isAll ? [
+          {
+            name: '2025 TRevPAR',
+            type: 'line',
+            yAxisIndex: 1,
+            data: chartTrev2025,
+            itemStyle: { color: '#f59e0b' },
+            lineStyle: { width: 2, type: 'dashed' }
+          },
+          {
+            name: '2026 TRevPAR',
+            type: 'line',
+            yAxisIndex: 1,
+            data: chartTrev2026,
+            itemStyle: { color: '#10b981' },
+            lineStyle: { width: 2.5 }
+          }
+        ] : [
+          {
+            name: '2025년 이용객',
+            type: 'line',
+            yAxisIndex: 1,
+            data: chartVis2025,
+            itemStyle: { color: '#f59e0b' },
+            lineStyle: { width: 2, type: 'dashed' }
+          },
+          {
+            name: '2026년 이용객',
+            type: 'line',
+            yAxisIndex: 1,
+            data: chartVis2026,
+            itemStyle: { color: '#10b981' },
+            lineStyle: { width: 2.5 }
+          }
+        ])
       ]
     };
 
@@ -721,7 +771,9 @@ export default function FacilityTrend() {
           {/* Card 1: Revenue YoY */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 누적 매출 (YoY)</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                {isAll ? '연간 누적 매출 (전사 전체)' : `연간 누적 매출 (${facility})`}
+              </span>
               <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold">2026 vs 2025</span>
             </div>
             <div className="flex items-baseline gap-2">
@@ -746,7 +798,9 @@ export default function FacilityTrend() {
           {/* Card 2: Visitors YoY */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 총이용객 (YoY)</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                {isAll ? '연간 총이용객 (전사 전체)' : `연간 총이용객 (${facility})`}
+              </span>
               <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">2026 vs 2025</span>
             </div>
             <div className="flex items-baseline gap-2">
@@ -768,30 +822,51 @@ export default function FacilityTrend() {
             </div>
           </div>
 
-          {/* Card 3: TRevPAR YoY */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 TRevPAR (YoY)</span>
-              <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-bold">총체류매출</span>
+          {/* Card 3: TRevPAR YoY (전체 선택 시) 또는 전사 기여 비중 (영업장 선택 시) */}
+          {isAll ? (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 TRevPAR (YoY)</span>
+                <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-bold">총체류매출</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl lg:text-3xl font-black font-financial text-slate-900">
+                  {trev2026 > 0 ? `${formatCurrency(trev2026)}원` : '-'}
+                </span>
+                <span className={`text-xs font-black font-financial inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg ${
+                  trevPct >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                }`}>
+                  {trevPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  {trevPct >= 0 ? '+' : ''}{trevPct}%
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-financial">
+                <span>2025년: {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}</span>
+                <span className={trevDiff >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
+                  증감 {trevDiff >= 0 ? '+' : ''}{formatCurrency(trevDiff)}원
+                </span>
+              </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl lg:text-3xl font-black font-financial text-slate-900">
-                {trev2026 > 0 ? `${formatCurrency(trev2026)}원` : '-'}
-              </span>
-              <span className={`text-xs font-black font-financial inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg ${
-                trevPct >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-              }`}>
-                {trevPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                {trevPct >= 0 ? '+' : ''}{trevPct}%
-              </span>
+          ) : (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">전사 매출 기여도</span>
+                <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-bold">매출 비중</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl lg:text-3xl font-black font-financial text-slate-900">
+                  {annual.shareRatio !== undefined ? `${((annual.shareRatio || 0) * 100).toFixed(1)}%` : '-'}
+                </span>
+                <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg">
+                  {annual.categoryName || '지정 영업장'}
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-financial">
+                <span>영업장 명칭:</span>
+                <span className="text-slate-800 font-bold">{facility}</span>
+              </div>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-financial">
-              <span>2025년: {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}</span>
-              <span className={trevDiff >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
-                증감 {trevDiff >= 0 ? '+' : ''}{formatCurrency(trevDiff)}원
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* 12-Month YoY EChart */}
@@ -800,10 +875,16 @@ export default function FacilityTrend() {
             <div>
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-blue-600" />
-                <span>2026 vs 2025 월별 매출 & TRevPAR 시즌성 대조 차트</span>
+                <span>
+                  {isAll
+                    ? '2026 vs 2025 전사 월별 매출 & TRevPAR 시즌성 대조 차트'
+                    : `2026 vs 2025 [${facility}] 월별 매출 및 이용객 시즌성 대조 차트`}
+                </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                월별 매출 실적과 TRevPAR(가용 객실당 총체류매출)의 시즌성 변화 추이를 전년 동월과 1:1 대조합니다.
+                {isAll
+                  ? '전사 월별 매출 실적과 TRevPAR(가용 객실당 총체류매출)의 시즌성 변화 추이를 전년 동월과 대조합니다.'
+                  : `${facility}의 2026년과 2025년 월별 매출 및 이용객 수 변화 추이를 전년 동월과 대조합니다.`}
               </p>
             </div>
           </div>
@@ -815,10 +896,16 @@ export default function FacilityTrend() {
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
-              <span>2026 vs 2025 월별 시즌성 종합 매트릭스</span>
+              <span>
+                {isAll
+                  ? '2026 vs 2025 전사 월별 시즌성 종합 매트릭스'
+                  : `2026 vs 2025 [${facility}] 월별 시즌성 매트릭스`}
+              </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              월별 매출, 이용객 수 및 TRevPAR 지표의 전년 대비 증감 실적을 종합 분석합니다.
+              {isAll
+                ? '전사 월별 매출, 이용객 수 및 TRevPAR 지표의 전년 대비 증감 실적을 종합 분석합니다.'
+                : `${facility}의 월별 매출 및 이용객 수 전년 대비 증감 실적을 종합 분석합니다.`}
             </p>
           </div>
 
@@ -835,22 +922,27 @@ export default function FacilityTrend() {
                   <th className="px-4 py-3 text-right">2025년 이용객</th>
                   <th className="px-4 py-3 text-right">인원 증감</th>
                   <th className="px-4 py-3 text-right">인원 증감률</th>
-                  <th className="px-4 py-3 text-right">2026 TRevPAR</th>
-                  <th className="px-4 py-3 text-right">2025 TRevPAR</th>
-                  <th className="px-4 py-3 text-right">TRevPAR 증감률</th>
+                  {isAll && (
+                    <>
+                      <th className="px-4 py-3 text-right">2026 TRevPAR</th>
+                      <th className="px-4 py-3 text-right">2025 TRevPAR</th>
+                      <th className="px-4 py-3 text-right">TRevPAR 증감률</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-financial">
                 {monthsList.map((m) => {
-                  const mRev2026 = m.revenue2026 ?? m.tyRevenue ?? 0;
-                  const mRev2025 = m.revenue2025 ?? m.lyRevenue ?? 0;
-                  const mRevDiff = m.yoyRevenueDiff ?? m.yoyRevDiff ?? m.revenueDiff ?? (mRev2026 - mRev2025);
-                  const mRevPct = m.yoyRevenuePct ?? m.yoyRevPct ?? m.revenueYoyPct ?? m.revenueGrowthRate ?? 0;
+                  const fm = getFacilityMonth(m);
+                  const mRev2026 = fm.revenue2026 ?? fm.tyRevenue ?? 0;
+                  const mRev2025 = fm.revenue2025 ?? fm.lyRevenue ?? 0;
+                  const mRevDiff = fm.yoyRevenueDiff ?? fm.yoyRevDiff ?? fm.revenueDiff ?? (mRev2026 - mRev2025);
+                  const mRevPct = fm.yoyRevenuePct ?? fm.yoyRevPct ?? fm.revenueYoyPct ?? fm.revenueGrowthRate ?? 0;
 
-                  const mVis2026 = m.visitors2026 ?? m.tyVisitors ?? 0;
-                  const mVis2025 = m.visitors2025 ?? m.lyVisitors ?? 0;
-                  const mVisDiff = m.yoyVisitorsDiff ?? m.visitorsDiff ?? (mVis2026 - mVis2025);
-                  const mVisPct = m.yoyVisitorsPct ?? m.visitorsYoyPct ?? m.visitorsGrowthRate ?? 0;
+                  const mVis2026 = fm.visitors2026 ?? fm.tyVisitors ?? 0;
+                  const mVis2025 = fm.visitors2025 ?? fm.lyVisitors ?? 0;
+                  const mVisDiff = fm.yoyVisitorsDiff ?? fm.visitorsDiff ?? (mVis2026 - mVis2025);
+                  const mVisPct = fm.yoyVisitorsPct ?? fm.visitorsYoyPct ?? fm.visitorsGrowthRate ?? 0;
 
                   const mTrev2026 = m.trevpar2026 ?? 0;
                   const mTrev2025 = m.trevpar2025 ?? 0;
@@ -885,15 +977,19 @@ export default function FacilityTrend() {
                       <td className={`px-4 py-3 text-right font-black ${mVisPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                         {mVisPct !== 0 ? `${mVisPct > 0 ? '+' : ''}${mVisPct}%` : '-'}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-purple-900">
-                        {mTrev2026 > 0 ? `${formatCurrency(mTrev2026)}원` : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-500">
-                        {mTrev2025 > 0 ? `${formatCurrency(mTrev2025)}원` : '-'}
-                      </td>
-                      <td className={`px-4 py-3 text-right font-black ${mTrevPct >= 0 ? 'text-purple-700' : 'text-rose-700'}`}>
-                        {mTrevPct !== 0 ? `${mTrevPct > 0 ? '+' : ''}${mTrevPct}%` : '-'}
-                      </td>
+                      {isAll && (
+                        <>
+                          <td className="px-4 py-3 text-right font-bold text-purple-900">
+                            {mTrev2026 > 0 ? `${formatCurrency(mTrev2026)}원` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-slate-500">
+                            {mTrev2025 > 0 ? `${formatCurrency(mTrev2025)}원` : '-'}
+                          </td>
+                          <td className={`px-4 py-3 text-right font-black ${mTrevPct >= 0 ? 'text-purple-700' : 'text-rose-700'}`}>
+                            {mTrevPct !== 0 ? `${mTrevPct > 0 ? '+' : ''}${mTrevPct}%` : '-'}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
@@ -925,15 +1021,19 @@ export default function FacilityTrend() {
                   <td className={`px-4 py-3 text-right font-black ${visPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {visPct !== 0 ? `${visPct > 0 ? '+' : ''}${visPct}%` : '-'}
                   </td>
-                  <td className="px-4 py-3 text-right font-black text-purple-950">
-                    {trev2026 > 0 ? `${formatCurrency(trev2026)}원` : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-600">
-                    {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}
-                  </td>
-                  <td className={`px-4 py-3 text-right font-black ${trevPct >= 0 ? 'text-purple-700' : 'text-rose-700'}`}>
-                    {trevPct !== 0 ? `${trevPct > 0 ? '+' : ''}${trevPct}%` : '-'}
-                  </td>
+                  {isAll && (
+                    <>
+                      <td className="px-4 py-3 text-right font-black text-purple-950">
+                        {trev2026 > 0 ? `${formatCurrency(trev2026)}원` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-600">
+                        {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-black ${trevPct >= 0 ? 'text-purple-700' : 'text-rose-700'}`}>
+                        {trevPct !== 0 ? `${trevPct > 0 ? '+' : ''}${trevPct}%` : '-'}
+                      </td>
+                    </>
+                  )}
                 </tr>
               </tfoot>
             </table>
@@ -1063,7 +1163,7 @@ export default function FacilityTrend() {
           }`}
         >
           <Sparkles size={17} />
-          <span>📅 2026 vs 2025 월별 시즌성 매트릭스 & TRevPAR</span>
+          <span>📅 2026 vs 2025 월별 시즌성 매트릭스{selectedFacility === '전체' ? ' & TRevPAR' : ` (${selectedFacility})`}</span>
         </button>
       </div>
 

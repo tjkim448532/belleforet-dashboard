@@ -1541,7 +1541,7 @@ export default function MonthlyTrevporChart() {
                 <div className="text-[11px] leading-relaxed">
                   • <b>산정 방식</b>: 산하 PMS(정산 마스터)에 등록된 <b>실제 정산 계약 및 체크인 완료 객실수 누적</b><br/>
                   • <b>객실 점유율(Occupancy)</b> = (판매객실 ÷ 가용객실) × 100<br/>
-                  • 조립형 커넥팅룸 등 PMS 실판매 기준 1:1 바인딩
+                  • 조립형 커넥팅룸 등 PMS 실판매 기준 적용
                 </div>
               </div>
 

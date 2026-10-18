@@ -41,8 +41,7 @@
 | **P1 (완료)** | 정규 API | **[Ticket 42] 컨텐츠기획본부(외주식음) 영업장별 매출·점유비율(%)·매출 상위 Top 3 메뉴 및 크롤링 휴무일 통합 API** | [배포/검증완료] 외주식음 10개 영업장 매출, 0-Variance 점유비율(%), Top 3 메뉴, S3 크롤링 휴무일/운영시간 완제품 서빙 (`outsourced-fnb-sales`) |
 | **P0 (완료)** | 데이터 정합성 | **[Ticket 46] 레저 할인 누수 마트(`mat_v6_leisure_discount_audit_daily`) 내 외주식음·골프 POS 격리** | [배포/검증완료] `dim_facility_team_mapping` 레저본부/모토아레나 전속 조인 강제 및 마트 재집계 완료 (정상가 1,928만원 / 할인 56만원 / 실징수율 96%) |
 | **P0 (긴급)** | 데이터 정합성 | **[Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) 판매수량의 레저 이용객수 둔갑 및 가짜 숫자 적재 시정** | [긴급] 카페 음료 70잔·스낵 4개가 이용객수로 둔갑된 결함: `dim_pos_menu_visitor_rule` 배수 0(`is_visitor_count = 0`) 적용 및 마트 백필 |
-
-
+| **P1 (신규)** | 정규 API | **[Ticket 51] 레저본부 영업장별 패키지(복합권) 매출·이용객 점유비율(%) 분석 API** | 마운틴카트 그랜드포렛 등 영업장별 패밀리4종 패스 등 복합 패키지 귀속 매출, 비중(%), 유입 이용객수(명), 이용객 점유율(%) 1-Call 완제품 제공 (`leisure-package-sales`) |
 
 ---
 
@@ -3659,3 +3658,92 @@ ORDER BY venue_name, rn;
 
 ### 15-3. 백엔드 조치 요청 사항
 - `GET /api/v6/report/group-venue-preference` API (또는 참조하는 매장 마스터/차원 테이블)에서 **`쿠치나`의 `venueCategoryName`을 `"식음(이탈리안/양식)"` ➔ `"식음(뷔페)"` (또는 `"식음(부페 식당)"`)으로 즉시 수정**해 주시기 바랍니다.
+
+---
+
+## 16. 🎟️ [Ticket 51 / P1 신규 정규 API] 레저본부 영업장별 패키지(복합권) 매출·이용객 점유비율(%) 분석 API 신설 요청 (2026-10-18)
+
+### 16-1. 신설 대상 엔드포인트
+- `GET /api/v6/report/leisure-package-sales?date=YYYY-MM-DD`
+- `GET /api/v6/report/leisure-package-sales?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+
+### 16-2. 신설 배경 및 대표님 절대 지시사항
+- **대표님 요구사항**:
+  > *"레져본부 영업장매출중에서 패키지가 매출에 차지하는 비율을 따로 정리한 페이지 추가. 예) 마운틴카트 그랜드포렛 매출 중 패밀리4종 패스가 차지하는 비율과 차지하는 이용객 숫자 같이. 백엔드 도움이 필요하면 요청해. 절대 가짜 숫자는 안돼."*
+- **프론트엔드 통제 원칙 (Zero-Proxy & Fail-Stop)**:
+  - 프론트엔드 단독의 상품명 정규식(RLIKE) 추론, 단가 역산, 클라이언트 `.reduce()` 합산은 영구 금지(Zero-Fake Numbers)입니다.
+  - 마운틴카트 그랜드포렛, 익스트림루지 등 각 영업장의 총매출 및 이용객 중 복합 패키지가 기여하는 실측 매출액, 이용객수, 점유비율(%)을 **백엔드 완제품(Pre-calculated JSON)**으로 서빙해야 합니다.
+
+### 16-3. 데이터 파이프라인 및 집계 로직 (Pipeline Master SSOT)
+1. **복합 패키지 1:N 매출 안분**:
+   - `dim_ticket_split_rule` / `dim_ticket_allocation_rule`에 등록된 공식 안분율(`split_ratio DECIMAL(8,6)`)에 따라 단일 패키지 매출을 대상 영업장에 분할 적재 (`allocatedRevenue = package_sales_revenue * split_ratio`).
+2. **방문객 수 카운트 (Pipeline Master 제2편 2조)**:
+   - 복합 패키지의 방문객 수(`visitors`)는 쪼개지 않고, 배분 대상 모든 영업장에 전체 판매 수량(1장당 각 시설 1명)으로 실측 카운트합니다.
+3. **영업장별 점유율(%) 사전 연산**:
+   - `packageRevenueSharePct`: (영업장 내 패키지 귀속 총매출 ÷ 영업장 전체 총매출) × 100 (소수점 1자리 반올림)
+   - `packageVisitorSharePct`: (영업장 내 패키지 유입 총이용객 ÷ 영업장 전체 총이용객) × 100 (소수점 1자리 반올림)
+4. **세부 패키지 권종 전개 (`packages[]`)**:
+   - 각 영업장에 유입된 개별 패키지 권종명(예: '패밀리4종 패스', '루지+카트 결합권', '빅3 패키지' 등), 귀속 매출액, 유입 이용객수, 판매수량, 안분율(`splitRatio`), 점유비율 반환.
+
+### 16-4. 요청 응답 JSON 스키마
+```json
+{
+  "success": true,
+  "dateRange": {
+    "startDate": "2026-10-18",
+    "endDate": "2026-10-18",
+    "isRange": false
+  },
+  "summary": {
+    "totalLeisureRevenue": 45000000,
+    "totalPackageRevenue": 18500000,
+    "packageRevenueSharePct": 41.1,
+    "totalLeisureVisitors": 2850,
+    "totalPackageVisitors": 1420,
+    "packageVisitorSharePct": 49.8,
+    "topVenueByPackageRev": "마운틴카트 그랜드포렛",
+    "topPackageName": "패밀리4종 패스"
+  },
+  "venues": [
+    {
+      "venueName": "마운틴카트 그랜드포렛",
+      "categoryName": "레저/놀이",
+      "totalRevenue": 12500000,
+      "packageRevenue": 5300000,
+      "singleRevenue": 7200000,
+      "packageRevenueSharePct": 42.4,
+      "totalVisitors": 680,
+      "packageVisitors": 390,
+      "singleVisitors": 290,
+      "packageVisitorSharePct": 57.4,
+      "packageCount": 3,
+      "packages": [
+        {
+          "packageName": "패밀리4종 패스",
+          "allocatedRevenue": 3200000,
+          "visitors": 240,
+          "salesQty": 240,
+          "splitRatio": 0.25,
+          "revenueSharePct": 25.6,
+          "visitorSharePct": 35.3
+        },
+        {
+          "packageName": "카트+루지 콤보",
+          "allocatedRevenue": 2100000,
+          "visitors": 150,
+          "salesQty": 150,
+          "splitRatio": 0.50,
+          "revenueSharePct": 16.8,
+          "visitorSharePct": 22.1
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 16-5. 프론트엔드 구현 상태
+- 신규 페이지: `src/pages/LeisurePackageSales.tsx` 구현 완료
+- 라우트 및 사이드바: `/leisure/package-sales` 및 레저본부 아코디언 메뉴 등록 완료
+- 디자인: 소프트 슬레이트-50 컨테이너 + 순백색 카드 + 필박스 + 틸 하이라이트 + 공식 SSOT 배너 적용
+- 무결성 가드: 임의 Mocking 차단 및 백엔드 배포 전까지 Fail-Stop(결함 노출 및 대기) 상태 유지 완료

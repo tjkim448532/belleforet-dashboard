@@ -1264,7 +1264,7 @@ export default function StrategicSimulator() {
         <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-indigo-400" />
-            <span className="text-xs font-bold text-white">서버리스 전사 매출 시뮬레이터 실시간 완제품</span>
+            <span className="text-xs font-bold text-white">전사 12개월 매출 예측 시뮬레이터</span>
             {isForecastComputing && <span className="text-[11px] text-indigo-300 font-semibold animate-pulse">연산 중...</span>}
           </div>
           <div className="flex flex-wrap items-center gap-5 text-xs">

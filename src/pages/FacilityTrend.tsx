@@ -639,19 +639,30 @@ export default function FacilityTrend() {
     // 선택된 영업장 연간 요약 매핑
     const selectedFacilityAnnual = !isAll
       ? (seasonalityData.facilities || (seasonalityData as any).data?.facilities || []).find(
-          (f: any) => f.venueName === facility || f.displayName === facility || f.categoryName === facility
+          (f: any) => f.venueName === facility || f.facilityName === facility || f.displayName === facility || f.categoryName === facility
         )
       : null;
 
     const annual = isAll ? (seasonalityData.annual || seasonalityData.totals || {}) : (selectedFacilityAnnual || {});
 
-    // 월별 영업장 데이터 추출 헬퍼
+    // 월별 영업장 데이터 추출 헬퍼 (개별 영업장 누락 시 전사 총계로 오염되지 않도록 0값 보장)
     const getFacilityMonth = (m: MonthlySeasonalityMonthRow) => {
       if (isAll) return m;
       const f = ((m as any).facilities || []).find(
-        (x: any) => x.venueName === facility || x.displayName === facility || x.categoryName === facility
+        (x: any) => x.venueName === facility || x.facilityName === facility || x.displayName === facility || x.categoryName === facility
       );
-      return f || m;
+      return f || {
+        month: m.month,
+        monthName: m.monthName,
+        revenue2026: 0,
+        revenue2025: 0,
+        visitors2026: 0,
+        visitors2025: 0,
+        yoyRevenueDiff: 0,
+        yoyRevenuePct: 0,
+        yoyVisitorsDiff: 0,
+        yoyVisitorsPct: 0
+      };
     };
 
     const rev2026 = annual.revenue2026 ?? annual.tyRevenue ?? 0;
@@ -888,7 +899,13 @@ export default function FacilityTrend() {
               </p>
             </div>
           </div>
-          <ReactECharts option={seasonalityChartOption} style={{ height: '360px', width: '100%' }} />
+          <ReactECharts
+            key={`seasonality-chart-${facility}`}
+            option={seasonalityChartOption}
+            notMerge={true}
+            lazyUpdate={true}
+            style={{ height: '360px', width: '100%' }}
+          />
         </div>
 
         {/* 12-Month Seasonality Grid Table */}
@@ -1207,7 +1224,13 @@ export default function FacilityTrend() {
                 </div>
 
                 <div className="h-[400px] w-full">
-                  <ReactECharts option={getChartOptions()} style={{ height: '100%', width: '100%' }} />
+                  <ReactECharts
+                    key={`trend-chart-${selectedFacility}-${golfViewMode}`}
+                    option={getChartOptions()}
+                    notMerge={true}
+                    lazyUpdate={true}
+                    style={{ height: '100%', width: '100%' }}
+                  />
                 </div>
               </div>
 

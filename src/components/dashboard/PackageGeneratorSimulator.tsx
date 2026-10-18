@@ -988,7 +988,7 @@ ${itemListText}
       {(loading || loadingSummary) && (
         <div className="bg-teal-50 border border-teal-200 text-teal-800 text-xs px-4 py-2.5 rounded-2xl flex items-center gap-2 font-bold shadow-2xs">
           <span className="animate-pulse">📊</span>
-          <span>V6 데이터 마트 실측 월별 ADR·RevPAR·TRevPAR 및 주중/주말 점유율을 실시간 동기화하고 있습니다...</span>
+          <span>실측 월별 ADR·RevPAR·TRevPAR 및 주중/주말 점유율을 실시간 동기화하고 있습니다...</span>
         </div>
       )}
       {error && (

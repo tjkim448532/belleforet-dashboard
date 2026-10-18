@@ -76,12 +76,12 @@ export default function Layout() {
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
+    <div className="min-h-screen bg-[#F4F3EE] text-[#1B382E] font-sans flex">
       
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-[#1B382E]/60 z-40 lg:hidden backdrop-blur-xs"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -94,9 +94,9 @@ export default function Layout() {
         />
       )}
 
-      {/* Sidebar - Belleforet Light Theme */}
+      {/* Sidebar - Forest & Stone Luxury Theme */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 flex flex-col border-r border-slate-200 shadow-sm ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#284F42] text-white transform transition-transform duration-300 flex flex-col border-r border-[#1B382E] shadow-2xl ${
           isPinned 
             ? 'translate-x-0' 
             : (sidebarOpen ? 'translate-x-0' : '-translate-x-full')
@@ -105,15 +105,21 @@ export default function Layout() {
           if (!isPinned) setSidebarOpen(false);
         }}
       >
-        <div className="p-4 flex items-center justify-between border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <h1 className="font-emphatic text-lg tracking-wider text-brand-mint font-black">BELLE FORET</h1>
+        <div className="p-4 flex items-center justify-between border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            {/* Mac-style 3 dots from reference image */}
+            <div className="flex items-center gap-1.5 mr-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#DE6E6D]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#E5B85C]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#5FB878]" />
+            </div>
+            <h1 className="font-emphatic text-base tracking-widest text-white font-black">BELLE FORET</h1>
           </div>
           <div className="flex items-center gap-1">
             {/* Desktop Pin/Collapse Button */}
             <button
               onClick={togglePin}
-              className="hidden lg:flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-brand-mint hover:bg-slate-100 transition-colors cursor-pointer"
+              className="hidden lg:flex items-center justify-center p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               title={isPinned ? "사이드바 접기 (넓은 화면)" : "사이드바 고정"}
             >
               {isPinned ? <PanelLeftClose size={18} /> : <Pin size={18} className="rotate-45" />}
@@ -121,7 +127,7 @@ export default function Layout() {
             {/* Mobile Close Button */}
             <button 
               onClick={() => setSidebarOpen(false)} 
-              className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors p-1"
+              className="lg:hidden text-white/60 hover:text-white transition-colors p-1"
             >
               <X size={20} />
             </button>
@@ -129,7 +135,7 @@ export default function Layout() {
         </div>
         
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-          <div className="text-xs font-medium text-slate-400 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
+          <div className="text-[11px] font-semibold text-white/45 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
           
           {visibleMenuItems.map((item, idx) => (
             <NavLink
@@ -137,8 +143,8 @@ export default function Layout() {
               to={item.path}
               className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl whitespace-nowrap ${
                 (isActive || (item.path === '/matrix-weekly' && window.location.pathname === '/day-of-week-sales')) && (item.path === '/' ? window.location.pathname === '/' : true)
-                  ? 'bg-brand-mint/10 text-brand-mint'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                  : 'text-white/75 hover:bg-white/10 hover:text-white'
               }`}
               onClick={(e) => {
                   if (item.path.startsWith('#')) e.preventDefault();
@@ -157,7 +163,7 @@ export default function Layout() {
             <div className="mt-2">
               <button
                 onClick={() => setSalesOpen(!salesOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Briefcase size={20} />
@@ -167,13 +173,13 @@ export default function Layout() {
               </button>
 
               {salesOpen && (
-                <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/group-sales"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                       isActive || window.location.pathname === '/sales/room-channels'
-                        ? 'text-brand-mint bg-brand-mint/10 font-semibold'
-                        : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                        ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -182,7 +188,7 @@ export default function Layout() {
                   <NavLink
                     to="/sales/venue-performance"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -191,7 +197,7 @@ export default function Layout() {
                   <NavLink
                     to="/sales/group-master-crm"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -200,7 +206,7 @@ export default function Layout() {
                   <NavLink
                     to="/sales/group-venue-preference"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -216,7 +222,7 @@ export default function Layout() {
             <div className="mt-2">
               <button
                 onClick={() => setGolfOpen(!golfOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap"
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Flag size={20} />
@@ -226,11 +232,11 @@ export default function Layout() {
               </button>
               
               {golfOpen && (
-                <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/golf-business"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -239,7 +245,7 @@ export default function Layout() {
                   <NavLink
                     to="/golf/channel-intelligence"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -255,7 +261,7 @@ export default function Layout() {
             <div className="mt-2">
             <button
               onClick={() => setResortOpen(!resortOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <Hotel size={20} />
@@ -265,11 +271,11 @@ export default function Layout() {
             </button>
             
             {resortOpen && (
-              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+              <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
                 <NavLink
                   to="/resort-business"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -278,7 +284,7 @@ export default function Layout() {
                 <NavLink
                   to="/resort/room-guest-analysis"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -287,7 +293,7 @@ export default function Layout() {
                 <NavLink
                   to="/resort/room-guests-yoy"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -296,7 +302,7 @@ export default function Layout() {
                 <NavLink
                   to="/members"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -312,7 +318,7 @@ export default function Layout() {
           <div className="mt-2">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <Ticket size={20} />
@@ -322,12 +328,12 @@ export default function Layout() {
             </button>
             
             {leisureOpen && (
-              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+              <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
                 <NavLink
                   to="/leisure"
                   end
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -336,7 +342,7 @@ export default function Layout() {
                 <NavLink
                   to="/leisure/organization"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -345,7 +351,7 @@ export default function Layout() {
                 <NavLink
                   to="/leisure/usage-rate"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -354,7 +360,7 @@ export default function Layout() {
                 <NavLink
                   to="/leisure/simulator"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -363,11 +369,11 @@ export default function Layout() {
                 <NavLink
                   to="/leisure/package-sales"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
-                  <Package size={14} className="shrink-0 text-teal-600" />
+                  <Package size={14} className="shrink-0 text-white" />
                   영업장별 패키지 매출 비중
                 </NavLink>
 
@@ -381,7 +387,7 @@ export default function Layout() {
             <div className="mt-2">
               <button
                 onClick={() => setContentOpen(!contentOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Palette size={20} />
@@ -391,11 +397,11 @@ export default function Layout() {
               </button>
               
               {contentOpen && (
-                <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/content/outsourced-fnb"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -404,7 +410,7 @@ export default function Layout() {
                   <NavLink
                     to="/content/group-rankings"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -413,7 +419,7 @@ export default function Layout() {
                   <NavLink
                     to="/content/group-segments"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -422,7 +428,7 @@ export default function Layout() {
                   <NavLink
                     to="/content/fnb-directory"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
@@ -437,7 +443,7 @@ export default function Layout() {
           <div className="mt-2">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <MonitorPlay size={20} />
@@ -447,12 +453,12 @@ export default function Layout() {
             </button>
             
             {synergyOpen && (
-              <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+              <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
                 <NavLink
                   to="/synergy"
                   end
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -462,7 +468,7 @@ export default function Layout() {
                 <NavLink
                   to="/synergy/correlation"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -472,7 +478,7 @@ export default function Layout() {
                 <NavLink
                   to="/synergy/weather-sales"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -483,18 +489,18 @@ export default function Layout() {
                 <NavLink
                   to="/synergy/forecast"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
-                  <TrendingUp size={14} className="shrink-0 text-teal-600" />
+                  <TrendingUp size={14} className="shrink-0 text-white" />
                   🔮 내일 매출 예상
                 </NavLink>
 
                 <NavLink
                   to="/online-members"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
@@ -507,21 +513,21 @@ export default function Layout() {
 
           {/* 6. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
-            <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-1">
+            <div className="mt-3 pt-2 border-t border-white/10 space-y-1">
               <NavLink
                 to="/strategic-simulator"
                 className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-900 font-bold border border-teal-200/80 shadow-xs'
-                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
                 onClick={handleNavClick}
               >
                 <div className="flex items-center gap-2.5">
-                  <Sparkles size={18} className="text-teal-600" />
+                  <Sparkles size={18} className="text-[#CAAC86]" />
                   <span className="text-sm font-bold">전략 목표 시뮬레이터</span>
                 </div>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200/60">v2 PRO</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/20 text-white border border-white/30">v2 PRO</span>
               </NavLink>
             </div>
           )}
@@ -529,13 +535,13 @@ export default function Layout() {
         </div>
           
         {/* 하단 유틸리티 및 관리자 메뉴 */}
-        <div className="p-4 space-y-2 border-t border-slate-100">
+        <div className="p-4 space-y-2 border-t border-white/10">
             <NavLink
               to="/leisure/pricing"
               className={({ isActive }) => `w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
                 isActive 
-                  ? 'bg-brand-mint/10 text-brand-mint font-semibold' 
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  ? 'bg-[#B59269] text-white font-semibold' 
+                  : 'text-white/75 hover:bg-white/10 hover:text-white'
               }`}
               onClick={handleNavClick}
             >
@@ -545,7 +551,7 @@ export default function Layout() {
 
             <button
               onClick={() => setPwdModalOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/75 hover:bg-white/10 hover:text-white transition-all font-medium text-sm cursor-pointer"
             >
               <Key size={20} />
               비밀번호 변경
@@ -553,7 +559,7 @@ export default function Layout() {
             
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all font-medium text-sm cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/75 hover:bg-white/10 hover:text-white transition-all font-medium text-sm cursor-pointer"
             >
               <LogOut size={20} />
               로그아웃
@@ -563,9 +569,9 @@ export default function Layout() {
             {isAdmin && (
               <NavLink
                 to="/admin/roles"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-slate-900 text-white shadow-md hover:bg-slate-800 mt-2"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm bg-[#B59269] hover:bg-[#9E7542] text-white shadow-md mt-2"
               >
-                <ShieldCheck size={20} className="text-brand-mint" />
+                <ShieldCheck size={20} className="text-white" />
                 관리자
               </NavLink>
             )}
@@ -581,20 +587,20 @@ export default function Layout() {
               setIsPinned(true);
               localStorage.setItem('belleforet_sidebar_pinned', 'true');
             }}
-            className="hidden lg:flex fixed top-4 left-4 z-40 items-center gap-1.5 px-3 py-2 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-md text-slate-700 hover:text-brand-mint text-xs font-bold transition-all hover:scale-105 cursor-pointer select-none"
+            className="hidden lg:flex fixed top-4 left-4 z-40 items-center gap-1.5 px-3 py-2 rounded-xl bg-[#284F42]/95 backdrop-blur-md border border-white/20 shadow-lg text-white hover:bg-[#2F5548] text-xs font-bold transition-all hover:scale-105 cursor-pointer select-none"
             title="사이드바 펼쳐서 고정"
           >
-            <PanelLeftOpen size={16} className="text-brand-mint" />
+            <PanelLeftOpen size={16} className="text-[#CAAC86]" />
             <span>메뉴 열기</span>
           </button>
         )}
         {/* Topbar for mobile */}
-        <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm">
+        <header className="lg:hidden h-16 bg-[#284F42] border-b border-[#1B382E] flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm text-white">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="text-slate-500">
+            <button onClick={() => setSidebarOpen(true)} className="text-white/80 hover:text-white">
               <Menu size={24} />
             </button>
-            <h1 className="font-emphatic text-xl tracking-widest text-brand-mint mt-1">BELLE FORET</h1>
+            <h1 className="font-emphatic text-xl tracking-widest text-white font-black mt-1">BELLE FORET</h1>
           </div>
         </header>
 

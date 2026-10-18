@@ -995,24 +995,24 @@ export default function MonthlyTrevporChart() {
   }, [data, metricMode, stackedYearMode, monthMeta]);
 
   return (
-    <div className="lg:col-span-12 bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80">
+    <div className="lg:col-span-12 bg-white rounded-[32px] p-8 shadow-xs border border-[#D0C6BB]/75">
       
       {/* Header & Controls Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#D0C6BB]/50 pb-6 mb-6">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-teal-50 text-teal-700 rounded-2xl border border-teal-100">
+            <div className="p-2.5 bg-[#E8F2EE] text-[#284F42] rounded-2xl border border-[#B4C6C1]/70">
               <Building className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <h2 className="text-xl font-black text-[#1B382E] tracking-tight flex items-center gap-2">
                 가용객실당 총매출 (TrevPAR) 월별 전년 vs 올해 비교 분석
                 <MetricExplainerTooltip presetKey="trevpar" />
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#B59269]/20 text-[#8C6839]">
                   공식 월별 실적
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-[#6C7A73] mt-0.5">
                 가용객실당 총매출(TrevPAR) 및 6대 사업 부문(숙박·식음·레저·모토·대관·골프) 월별 기여도를 전수 분석합니다.
               </p>
             </div>
@@ -1022,39 +1022,39 @@ export default function MonthlyTrevporChart() {
         {/* View Mode & 2-Track Toggle Bar */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Chart View Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+          <div className="flex items-center bg-[#EAE6DF] p-1 rounded-2xl border border-[#D0C6BB]/60">
             <button
               onClick={() => setChartViewTab('YOY_TREND')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 chartViewTab === 'YOY_TREND'
-                  ? 'bg-white text-teal-900 shadow-sm border border-slate-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'text-[#6C7A73] hover:text-[#1B382E]'
               }`}
             >
-              <TrendingUp className="w-3.5 h-3.5 text-teal-600" />
+              <TrendingUp className="w-3.5 h-3.5" />
               <span>12개월 TrevPAR 성장 트렌드</span>
             </button>
             <button
               onClick={() => setChartViewTab('STACKED_100')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 chartViewTab === 'STACKED_100'
-                  ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'text-[#6C7A73] hover:text-[#1B382E]'
               }`}
             >
-              <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+              <BarChart3 className="w-3.5 h-3.5" />
               <span>부문별 기여 비중 100% 비교</span>
             </button>
           </div>
 
           {/* 2-Track Toggle Pills */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+          <div className="flex items-center bg-[#EAE6DF] p-1 rounded-2xl border border-[#D0C6BB]/60">
             <button
               onClick={() => setMetricMode('TOTAL')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 metricMode === 'TOTAL'
-                  ? 'bg-white text-teal-800 shadow-sm border border-slate-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'text-[#6C7A73] hover:text-[#1B382E]'
               }`}
             >
               <span>⛳</span> 골프 포함
@@ -1063,8 +1063,8 @@ export default function MonthlyTrevporChart() {
               onClick={() => setMetricMode('EX_GOLF')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 metricMode === 'EX_GOLF'
-                  ? 'bg-white text-sky-800 shadow-sm border border-slate-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'text-[#6C7A73] hover:text-[#1B382E]'
               }`}
             >
               <span>🏨</span> 골프 제외
@@ -1074,10 +1074,10 @@ export default function MonthlyTrevporChart() {
       </div>
 
       {/* 🧭 [동적 분석 기간 선택 필터 바] 날짜가 지나감에 따라 버튼 텍스트와 분기/반기 옵션이 100% 자동 생성 */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 mb-6 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]/70 mb-6 text-xs">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-500" />
-          <span className="font-bold text-slate-800">분석 대상 기간 선택:</span>
+          <Filter className="w-4 h-4 text-[#6C7A73]" />
+          <span className="font-bold text-[#1B382E]">분석 대상 기간 선택:</span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {/* 1. 공식 마감월 버튼 (동적 텍스트 생성) */}
@@ -1085,8 +1085,8 @@ export default function MonthlyTrevporChart() {
             onClick={() => setPeriodMode('CLOSED_ONLY')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
               periodMode === 'CLOSED_ONLY'
-                ? 'bg-teal-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                ? 'bg-[#284F42] text-white shadow-xs'
+                : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
             }`}
           >
             ✅ {monthMeta.lastClosedMonth === 12 ? '연간 전체 마감 (1~12월)' : `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`} <span className="text-[10px] opacity-90">(권장·왜곡 없음)</span>
@@ -1098,8 +1098,8 @@ export default function MonthlyTrevporChart() {
               onClick={() => setPeriodMode('ALL_MTD')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                 periodMode === 'ALL_MTD'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  ? 'bg-[#B59269] text-white shadow-xs'
+                  : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
               }`}
             >
               ⚠️ 당월 포함 (1~{monthMeta.activeMonth}월 진행중)
@@ -1111,8 +1111,8 @@ export default function MonthlyTrevporChart() {
             onClick={() => setPeriodMode('H1')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
               periodMode === 'H1'
-                ? 'bg-indigo-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                ? 'bg-[#284F42] text-white shadow-xs'
+                : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
             }`}
           >
             상반기 (1~6월)
@@ -1124,8 +1124,8 @@ export default function MonthlyTrevporChart() {
               onClick={() => setPeriodMode('H2')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                 periodMode === 'H2'
-                  ? 'bg-indigo-700 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
               }`}
             >
               하반기 (7~12월)
@@ -1137,8 +1137,8 @@ export default function MonthlyTrevporChart() {
             onClick={() => setPeriodMode('Q1')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
               periodMode === 'Q1'
-                ? 'bg-indigo-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                ? 'bg-[#284F42] text-white shadow-xs'
+                : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
             }`}
           >
             1분기 (1~3월)
@@ -1149,8 +1149,8 @@ export default function MonthlyTrevporChart() {
             onClick={() => setPeriodMode('Q2')}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
               periodMode === 'Q2'
-                ? 'bg-indigo-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                ? 'bg-[#284F42] text-white shadow-xs'
+                : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
             }`}
           >
             2분기 (4~6월)
@@ -1162,8 +1162,8 @@ export default function MonthlyTrevporChart() {
               onClick={() => setPeriodMode('Q3')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                 periodMode === 'Q3'
-                  ? 'bg-indigo-700 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
               }`}
             >
               3분기 (7~9월)
@@ -1176,8 +1176,8 @@ export default function MonthlyTrevporChart() {
               onClick={() => setPeriodMode('Q4')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                 periodMode === 'Q4'
-                  ? 'bg-indigo-700 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'bg-white text-[#1B382E] border border-[#D0C6BB]/60 hover:bg-[#EAE6DF]'
               }`}
             >
               4분기 (10~12월)

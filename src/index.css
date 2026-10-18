@@ -2,10 +2,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-mint: #00AE95; /* Pantone 3275C / RGB 00ae95 - Primary Brand Color */
-  --color-brand-dark: #0F172A; /* Slate 900 - Primary Dark Text/Heading */
-  --color-brand-muted: #64748B; /* Slate 500 - Subtext/Muted */
-  --color-brand-accent: #10B981; /* Emerald 500 - Positive/Growth Accent */
+  --color-brand-mint: #284F42; /* Primary Brand: Deep Forest Green (#284F42) */
+  --color-forest-primary: #284F42; /* Deep Forest Green Base */
+  --color-forest-surface: #2F5548; /* Accent Forest / Radial Glow */
+  --color-forest-dark: #1B382E; /* Ultra Deep Forest */
+  --color-forest-muted: #426356; /* Muted Forest Tone */
+  
+  --color-warm-canvas: #D8D7CF; /* Stone Canvas Frame */
+  --color-warm-bg: #F4F3EE; /* Natural Warm Linen Background */
+  --color-warm-sand: #D0C6BB; /* Sand Card Accent */
+  --color-warm-taupe: #C2B4A9; /* Warm Taupe Accent */
+  --color-warm-beige: #C2BDB2; /* Warm Beige Accent */
+  --color-sage-soft: #B4C6C1; /* Soft Sage Eucalyptus */
+  
+  --color-camel-primary: #B59269; /* Camel CTA & Highlights */
+  --color-camel-dark: #9E7542; /* Camel Hover / Active */
+  --color-camel-light: #CAAC86; /* Camel Light Accent */
+  
+  --color-mac-red: #DE6E6D; /* Mac 3-Dot Red */
+  --color-mac-yellow: #E5B85C; /* Mac 3-Dot Yellow */
+  --color-mac-green: #5FB878; /* Mac 3-Dot Green */
+
+  --color-brand-dark: #1B382E; /* Deep Forest Dark Text */
+  --color-brand-muted: #5C6F67; /* Muted Forest Slate */
+  --color-brand-accent: #B59269; /* Accent Camel Gold */
   --font-sans: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -16,8 +36,8 @@
 body {
   margin: 0;
   font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #F4F3EE;
+  color: #1B382E;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -34,27 +54,27 @@ html {
   letter-spacing: -0.03em;
 }
 
-/* 🏛️ Institutional Trust Surface & Bento Grid */
+/* 🏛️ Institutional Trust Surface & Bento Grid (Warm Sand & Forest) */
 .bento-card {
-  background: #ffffff;
-  border-radius: 24px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  background: #FFFFFF;
+  border-radius: 28px;
+  border: 1px solid rgba(208, 198, 187, 0.7);
+  box-shadow: 0 4px 20px -2px rgba(40, 79, 66, 0.05), 0 2px 6px -1px rgba(40, 79, 66, 0.02);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bento-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(203, 213, 225, 0.9);
-  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  border-color: rgba(181, 146, 105, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(40, 79, 66, 0.09), 0 4px 12px -2px rgba(40, 79, 66, 0.04);
 }
 
 .bento-hero-card {
-  background: linear-gradient(145deg, #0a192f 0%, #0f172a 60%, #1e293b 100%);
+  background: linear-gradient(145deg, #1B382E 0%, #284F42 60%, #2F5548 100%);
   border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 40px -15px rgba(10, 25, 47, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 20px 40px -15px rgba(27, 56, 46, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
   position: relative;
   overflow: hidden;
 }
@@ -66,11 +86,11 @@ html {
   right: 0;
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(0, 174, 149, 0.18) 0%, rgba(0, 174, 149, 0) 70%);
+  background: radial-gradient(circle, rgba(181, 146, 105, 0.2) 0%, rgba(47, 85, 72, 0) 70%);
   pointer-events: none;
 }
 
-/* 🏛️ Toss/Fintech Delta Capsules (신뢰감 있는 지표 변화율 캡슐) */
+/* 🏛️ Forest & Warm Sand Delta Capsules */
 .badge-delta-up {
   display: inline-flex;
   align-items: center;
@@ -79,9 +99,9 @@ html {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
-  background-color: #ecfdf5;
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background-color: #E8F2EE;
+  color: #1E523F;
+  border: 1px solid rgba(180, 198, 193, 0.7);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -94,9 +114,9 @@ html {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
-  background-color: #fff1f2;
-  color: #e11d48;
-  border: 1px solid rgba(244, 63, 94, 0.25);
+  background-color: #FAECEB;
+  color: #9E372E;
+  border: 1px solid rgba(222, 110, 109, 0.45);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -109,10 +129,46 @@ html {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
-  background-color: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  background-color: #EBE9E1;
+  color: #6C7A73;
+  border: 1px solid #D0C6BB;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 🌟 Luxury Forest UI Utility Classes */
+.btn-camel {
+  background-color: #B59269;
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px -1px rgba(181, 146, 105, 0.35);
+}
+.btn-camel:hover {
+  background-color: #9E7542;
+}
+
+.pill-forest {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(40, 79, 66, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.tag-highlight-box {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  backdrop-filter: blur(4px);
+  font-weight: 800;
   white-space: nowrap;
 }
 

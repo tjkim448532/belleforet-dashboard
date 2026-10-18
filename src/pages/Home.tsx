@@ -1025,86 +1025,86 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {/* 1인당 평균 그린피 (전체 / 자사 / OTA / 회원 4분할 분석) */}
-                <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all cursor-default">
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="text-slate-800 font-bold text-base flex items-center gap-2">
-                        <Coins size={18} className="text-emerald-600" />
-                        골프 1인당 그린피 분석
+                        <Coins size={18} className="text-slate-700" />
+                        <span>골프 1인당 그린피 분석</span>
                       </div>
-                      <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                      <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-xl">
                         순매출 기준
                       </span>
                     </div>
 
-                    {/* 전체 평균 그린피 (메인) */}
-                    <div className="mb-3.5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                      <div className="text-xs text-slate-500 font-medium mb-1 flex items-center justify-between">
-                        <span className="font-semibold text-slate-700">🏆 전체 1인 평균 그린피</span>
-                        <span className="text-slate-400 font-normal">{isRangeMode ? '선택 기간 합산' : '금일 실적'}</span>
+                    {/* 전체 평균 그린피 (메인 Hero) */}
+                    <div className="mb-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                      <div className="text-xs text-slate-500 font-semibold mb-1 flex items-center justify-between">
+                        <span>전체 1인 평균 그린피</span>
+                        <span className="text-[11px] text-slate-400 font-normal">{isRangeMode ? '선택 기간 합산' : '금일 실적'}</span>
                       </div>
-                      <div className="text-3xl font-black text-emerald-600 tracking-tight tabular-nums whitespace-nowrap">
-                        {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원 <span className="text-sm font-normal text-slate-500">/인</span>
+                      <div className="text-3xl font-black text-slate-900 tracking-tight tabular-nums whitespace-nowrap">
+                        {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원 <span className="text-sm font-normal text-slate-400">/인</span>
                       </div>
                     </div>
 
-                    {/* 자사 평균 / OTA 평균 / 회원 평균 3분할 서브 그리드 */}
-                    <div className="grid grid-cols-3 gap-2.5">
+                    {/* 자사 평균 / OTA 평균 / 회원 평균 3분할 통합 그리드 (카드 중첩 제거) */}
+                    <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 text-center">
                       {/* 자사 평균 */}
-                      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-indigo-700 bg-indigo-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap" title="자사 평균 (홈페이지 직접 예약)">
+                      <div className="px-2">
+                        <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="자사 평균 (홈페이지 직접 예약)">
                           자사 평균
                         </div>
-                        <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
+                        <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
                           {displayData.golfSummary?.directAvgGreenFee && displayData.golfSummary.directAvgGreenFee > 0
                             ? `${formatRevenue(displayData.golfSummary.directAvgGreenFee)}원`
                             : (coreData.summary?.isGolfChannelsLoading ? (
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap" title="홈페이지 예약">
-                          홈페이지 예약
+                        <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="홈페이지 예약">
+                          홈페이지
                         </div>
                       </div>
 
                       {/* OTA 평균 */}
-                      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-amber-700 bg-amber-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap" title="OTA 제휴사 평균">
+                      <div className="px-2">
+                        <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="OTA 제휴사 평균">
                           OTA 평균
                         </div>
-                        <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
+                        <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
                           {displayData.golfSummary?.otaAvgGreenFee && displayData.golfSummary.otaAvgGreenFee > 0
                             ? `${formatRevenue(displayData.golfSummary.otaAvgGreenFee)}원`
                             : (coreData.summary?.isGolfChannelsLoading ? (
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap" title="대행사 제휴처 (골프존·스마트스코어·골프몬 등)">
-                          대행사 제휴처
+                        <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="대행사 제휴처 (골프존·스마트스코어·골프몬 등)">
+                          대행 제휴사
                         </div>
                       </div>
 
                       {/* 회원 평균 */}
-                      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs text-center flex flex-col justify-between">
-                        <div className="text-xs font-bold text-purple-700 bg-purple-50 py-0.5 px-1.5 rounded-lg mb-1 truncate whitespace-nowrap" title="회원 우대 평균 단가">
+                      <div className="px-2">
+                        <div className="text-xs font-semibold text-slate-500 mb-1 truncate" title="회원 우대 평균 단가">
                           회원 평균
                         </div>
-                        <div className="text-base font-black text-slate-900 tabular-nums my-1 whitespace-nowrap">
+                        <div className="text-lg font-black text-slate-900 tabular-nums whitespace-nowrap">
                           {displayData.golfSummary?.memberAvgGreenFee && displayData.golfSummary.memberAvgGreenFee > 0
                             ? `${formatRevenue(displayData.golfSummary.memberAvgGreenFee)}원`
                             : (coreData.summary?.isGolfChannelsLoading ? (
                                 <span className="text-xs text-slate-400 font-normal animate-pulse">집계 중...</span>
                               ) : '-')}
                         </div>
-                        <div className="text-xs text-slate-400 font-medium truncate whitespace-nowrap" title="회원 우대 단가">
-                          회원 우대 단가
+                        <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5" title="회원 우대 단가">
+                          회원 우대
                         </div>
                       </div>
                     </div>
 
                     {/* 채널별 1인당 실측 그린피 순위 미니 차트 & 테이블 */}
                     {coreData.core?.summary?.golfRankedChannels && coreData.core.summary.golfRankedChannels.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-slate-200/80">
+                      <div className="mt-3.5 pt-3 border-t border-slate-100">
                         <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
                           <span className="flex items-center gap-1.5">
                             <span>📊</span> 채널별 1인당 실측 그린피 순위
@@ -1116,9 +1116,9 @@ export default function Home() {
                             const rawPct = item.sharePct ?? item.barWidthPct;
                             const pct = rawPct != null ? Number(rawPct) : null;
                             return (
-                              <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between text-xs shadow-2xs gap-2 hover:border-emerald-200 transition-all">
-                                <div className="flex items-center gap-1.5 min-w-[120px] truncate" title={item.name}>
-                                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                              <div key={idx} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs gap-2 hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-2 min-w-[120px] truncate" title={item.name}>
+                                  <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${
                                     idx === 0 ? 'bg-amber-100 text-amber-800' :
                                     idx === 1 ? 'bg-slate-200 text-slate-700' :
                                     idx === 2 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
@@ -1129,17 +1129,17 @@ export default function Home() {
                                 </div>
                                 {pct != null && (
                                   <div className="flex-1 mx-2 hidden sm:block">
-                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
                                       <div 
-                                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                        className="h-full bg-slate-800 rounded-full transition-all duration-500" 
                                         style={{ width: `${pct}%` }}
                                       />
                                     </div>
                                   </div>
                                 )}
                                 <div className="text-right whitespace-nowrap shrink-0">
-                                  <span className="font-black text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
-                                  <span className="text-[10px] text-slate-400 ml-1.5">({item.players}명)</span>
+                                  <span className="font-extrabold text-slate-900">{formatRevenue(item.avgGreenFee)}원</span>
+                                  <span className="text-[11px] text-slate-400 ml-1.5">({item.players}명)</span>
                                 </div>
                               </div>
                             );
@@ -1149,8 +1149,8 @@ export default function Home() {
                     )}
                   </div>
 
-                  <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                    <span>그린피 순매출 ÷ 실제 내장객 수 (자사 / OTA / 회원별 실시간 집계)</span>
+                  <div className="text-[11px] text-slate-400 mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span>그린피 순매출 ÷ 실제 내장객 수</span>
                   </div>
                 </div>
 

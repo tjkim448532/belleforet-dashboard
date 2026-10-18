@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Calendar } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { secureFetcher } from '../../lib/secureFetcher';
 import { parseNum } from '../../lib/dataTransformers';
 
@@ -40,6 +40,7 @@ interface GolfReservationCardProps {
 export default function GolfReservationCard({ currentDate, todaySummary, isRangeMode = false }: GolfReservationCardProps) {
   const [loading, setLoading] = useState(false);
   const [nextDayGolf, setNextDayGolf] = useState<NextDayGolfData | null>(null);
+  const [viewMode, setViewMode] = useState<'RESERVATION' | 'CLOSED'>('RESERVATION');
 
   // 날짜 계산 헬퍼: D+1 익일(다음날, 실제로는 오늘 도착) 계산
   const getNextDateStr = (dateStr: string) => {
@@ -132,299 +133,286 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
   const todayCanceledAndPending = (todaySummary.canceledTeams || 0) + (todaySummary.pendingTeams || 0);
 
   return (
-    <div className="bg-[#f8fafc] p-6 rounded-3xl border border-slate-200 flex flex-col justify-between hover:bg-white hover:shadow-md transition-all duration-300 cursor-default shadow-xs">
+    <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all cursor-default">
       <div>
-        {/* Card Main Title */}
-        <div className="text-slate-800 font-bold text-base mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users size={18} className="text-brand-mint" />
+        {/* Card Main Title & Time-Axis Segment Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="text-slate-800 font-bold text-base flex items-center gap-2">
+            <Users size={18} className="text-slate-700" />
             <span>골프 예약 및 입장 현황</span>
           </div>
+
+          {/* Clean Segment Switcher (시간축 분리 토글) */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-xs font-bold self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('RESERVATION')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                viewMode === 'RESERVATION'
+                  ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              도착 예약 ({nextDateStr})
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('CLOSED')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                viewMode === 'CLOSED'
+                  ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              마감 실적 ({currentDate})
+            </button>
+          </div>
         </div>
 
-        {/* 1. 기준일 마감 실적 섹션 */}
-        <div>
-          <div className="flex items-center justify-between text-xs mb-2.5 px-3 py-1.5 bg-slate-100/90 border border-slate-200/90 rounded-xl">
-            <div className="flex items-center gap-1.5 font-bold text-slate-800">
-              <Calendar size={13} className="text-slate-600" />
-              <span>{currentDate} ({currentDayOfWeek}) {isRangeMode ? '선택 기간 합산 실적' : '마감 실적'}</span>
-            </div>
-            <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200/80 shadow-2xs">
-              정산 완료
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2.5">
-            {/* 총 예약 팀수 */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">총 예약 팀수</div>
-              <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums whitespace-nowrap">
-                {todaySummary.reservedTeams} <span className="text-sm font-normal text-slate-500">팀</span>
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                당일 총 예약
-              </div>
-            </div>
-
-            {/* 실제 입장 (내장) */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">실제 입장 (내장)</div>
-              <div className="text-2xl lg:text-3xl font-black text-brand-mint tabular-nums whitespace-nowrap">
-                {todaySummary.visitedTeams} <span className="text-sm font-normal text-slate-500">팀</span>
-              </div>
-              <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
-                라운딩 완료
-              </div>
-            </div>
-
-            {/* 취소 / 미내장 */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-rose-500 font-semibold mb-1 whitespace-nowrap">취소 / 미내장</div>
-              <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums whitespace-nowrap">
-                {todayCanceledAndPending} <span className="text-sm font-normal text-slate-500">팀</span>
-              </div>
-              <div 
-                className="text-[10px] text-slate-500 font-medium mt-0.5 truncate"
-                title={todaySummary.pendingTeams > 0
-                  ? `취소 ${todaySummary.canceledTeams}팀 · 미내장 ${todaySummary.pendingTeams}팀`
-                  : `취소 ${todaySummary.canceledTeams}팀`}
-              >
-                {todaySummary.pendingTeams > 0
-                  ? `취소 ${todaySummary.canceledTeams}팀 · 미내장 ${todaySummary.pendingTeams}팀`
-                  : `취소 ${todaySummary.canceledTeams}팀`}
-              </div>
-            </div>
-          </div>
-
-          {/* 🌟 1-B. 기준일 1부 / 2부 / 3부 티타임 파트별 실적 */}
-          {todaySummary.golfParts && (
-            <div className="mt-3 pt-2.5 border-t border-slate-100">
-              <div className="flex items-center justify-between text-[11px] mb-2 px-0.5">
-                <span className="font-bold text-slate-700 flex items-center gap-1">
-                  <span>⏰</span> 티타임 파트별 마감 실적
-                </span>
-                <span className="text-[10px] text-slate-400 font-medium">1부·2부·3부 실시간 집계</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: 'part1', data: todaySummary.golfParts.part1, label: '1부 (오전)', time: '06:00~11:00' },
-                  { key: 'part2', data: todaySummary.golfParts.part2, label: '2부 (오후)', time: '11:00~14:00' },
-                  { key: 'part3', data: todaySummary.golfParts.part3, label: '3부 (야간)', time: '14:00~마감' }
-                ].map(({ key, data: p, label }) => {
-                  if (!p) return null;
-                  return (
-                    <div key={key} className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                      <div>
-                        <div className="text-[11px] font-bold text-slate-800 mb-0.5">{label}</div>
-                        <div className="text-base font-black text-slate-900 tabular-nums">
-                          {p.visitedTeams} <span className="text-xs font-normal text-slate-500">팀 완료</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          총 예약 {p.reservedTeams}팀 {p.pendingTeams > 0 ? `(대기 ${p.pendingTeams})` : ''}
-                        </div>
-                      </div>
-                      {p.avgGreenFee !== undefined && p.avgGreenFee > 0 && (
-                        <div className="mt-2 pt-1.5 border-t border-slate-100 flex flex-col items-center">
-                          <span className="text-[9px] text-slate-400">평균 그린피</span>
-                          <span className="text-xs font-extrabold text-slate-800 tabular-nums">
-                            {p.avgGreenFeeFormatted || `${p.avgGreenFee.toLocaleString()}원`}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 🌟 [두 자료 명확한 분리 구분선] 기준일 마감 실적 ↔ 다음날 도착 예약 현황 */}
-        <div className="my-6 border-t-2 border-slate-300" />
-
-        {/* 2. 다음날 날짜와 예약 현황 섹션 (사용자 신규 요청: 실제 오늘/익일 도착 예약) */}
-        <div>
-          <div className="flex items-center justify-between text-xs mb-2.5 px-3 py-1.5 bg-teal-50/80 border border-teal-100/90 rounded-xl">
-            <div className="flex items-center gap-1.5 font-bold text-teal-900">
-              <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
-              <span>다음날({nextDateStr} {nextDayOfWeek}) 골프 예약 현황</span>
-            </div>
-            <span className="text-[10px] font-bold text-teal-700 bg-white/90 px-2 py-0.5 rounded-md border border-teal-200/80">
-              실시간 예약 원장
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2.5">
-            {/* 다음날 총 예약 팀수 */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">총 예약 팀수</div>
-              <div className="text-2xl lg:text-3xl font-black text-slate-900 tabular-nums whitespace-nowrap">
-                {loading ? (
-                  <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
-                ) : (
-                  <>
-                    {nextDayGolf?.reservedTeams ?? 0} <span className="text-sm font-normal text-slate-500">팀</span>
-                  </>
-                )}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                전체 예약 접수
-              </div>
-            </div>
-
-            {/* 다음날 도착 예정 (유효 예약 = 총예약 - 취소) */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold mb-1 whitespace-nowrap">도착 예정 (유효 예약)</div>
-              <div className="text-2xl lg:text-3xl font-black text-teal-600 tabular-nums whitespace-nowrap">
-                {loading ? (
-                  <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
-                ) : (
-                  <>
-                    {Math.max(0, (nextDayGolf?.reservedTeams ?? 0) - (nextDayGolf?.canceledTeams ?? 0))} <span className="text-sm font-normal text-slate-500">팀</span>
-                  </>
-                )}
-              </div>
-              <div className="text-[10px] text-teal-700 font-semibold mt-0.5">
-                취소 제외 라운딩 예정
-              </div>
-            </div>
-
-            {/* 다음날 예약 취소 */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-rose-500 font-semibold mb-1 whitespace-nowrap">예약 취소</div>
-              <div className="text-2xl lg:text-3xl font-black text-rose-500 tabular-nums whitespace-nowrap">
-                {loading ? (
-                  <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
-                ) : (
-                  <>
-                    {nextDayGolf?.canceledTeams ?? 0} <span className="text-sm font-normal text-slate-500">팀</span>
-                  </>
-                )}
-              </div>
-              <div 
-                className="text-[10px] text-slate-500 font-medium mt-0.5 truncate"
-                title={`취소율 ${(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}`}
-              >
-                취소율 {(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}
-              </div>
-            </div>
-          </div>
-
-          {/* 🌟 2-B. 1부 / 2부 / 3부 티타임 파트별 예약 현황 (사용자 명시 요청) */}
-          <div className="mt-3.5 pt-3 border-t border-slate-200/80">
-            <div className="flex items-center justify-between text-xs mb-2 px-1">
-              <div className="flex items-center gap-1.5 font-bold text-slate-700">
-                <span className="text-sm">⏰</span>
-                <span>티타임 파트별 예약 현황</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-medium">
-                {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined
-                  ? '실시간 파트별 집계'
-                  : '1부·2부·3부 예약 내역 없음'}
+        {/* 1. 도착 예약 현황 탭 (기본 메인 뷰) */}
+        {viewMode === 'RESERVATION' && (
+          <div>
+            {/* Context Sub-header */}
+            <div className="flex items-center justify-between text-xs mb-3 px-3 py-1.5 bg-slate-50/80 border border-slate-100 rounded-xl">
+              <span className="font-semibold text-slate-700">
+                {nextDateStr} ({nextDayOfWeek}) 실시간 도착 예약
+              </span>
+              <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                예약 원장 집계
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {/* 1부 */}
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                <div>
-                  <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50/80 py-0.5 rounded-md mb-1">
-                    1부 (오전)
-                  </div>
-                  <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+            {/* 3대 KPI 그리드 (카드 중첩 제거 & 단일 3분할 디바이더) */}
+            <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 text-center">
+              {/* 총 예약 접수 */}
+              <div className="px-2">
+                <div className="text-xs font-semibold text-slate-500 mb-1 whitespace-nowrap">총 예약</div>
+                <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+                  {loading ? (
+                    <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
+                  ) : (
+                    <>
+                      {nextDayGolf?.reservedTeams ?? 0}
+                      <span className="text-sm font-normal text-slate-400 ml-0.5">팀</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">전체 접수</div>
+              </div>
+
+              {/* 도착 예정 (유효 예약) */}
+              <div className="px-2">
+                <div className="text-xs font-semibold text-slate-500 mb-1 whitespace-nowrap">도착 예정</div>
+                <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+                  {loading ? (
+                    <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
+                  ) : (
+                    <>
+                      {Math.max(0, (nextDayGolf?.reservedTeams ?? 0) - (nextDayGolf?.canceledTeams ?? 0))}
+                      <span className="text-sm font-normal text-slate-400 ml-0.5">팀</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">유효 예약</div>
+              </div>
+
+              {/* 예약 취소 */}
+              <div className="px-2">
+                <div className="text-xs font-semibold text-rose-500 mb-1 whitespace-nowrap">예약 취소</div>
+                <div className="text-2xl font-black text-rose-600 tabular-nums whitespace-nowrap">
+                  {loading ? (
+                    <span className="text-xs text-slate-400 font-normal animate-pulse">조회 중...</span>
+                  ) : (
+                    <>
+                      {nextDayGolf?.canceledTeams ?? 0}
+                      <span className="text-sm font-normal text-slate-400 ml-0.5">팀</span>
+                    </>
+                  )}
+                </div>
+                <div 
+                  className="text-[11px] text-slate-400 font-medium mt-0.5 truncate"
+                  title={`취소율 ${(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}`}
+                >
+                  취소율 {(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}
+                </div>
+              </div>
+            </div>
+
+            {/* 1부 / 2부 / 3부 티타임 파트별 예약 현황 */}
+            <div className="mt-3.5 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between text-xs mb-2 px-1">
+                <span className="font-bold text-slate-700">티타임 파트별 예약 현황</span>
+                <span className="text-[11px] text-slate-400">
+                  {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined
+                    ? '실시간 파트별 집계'
+                    : '1부·2부·3부 예약 내역 없음'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
+                {/* 1부 */}
+                <div className="px-1.5">
+                  <div className="text-xs font-semibold text-slate-600 mb-0.5">1부 (오전)</div>
+                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
                     {nextDayGolf?.part1Reserved !== null && nextDayGolf?.part1Reserved !== undefined ? (
-                      <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                      <>{nextDayGolf.part1Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
                     ) : (
                       <span className="text-xs text-slate-400 font-medium">- 팀</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400">
-                    06:00 ~ 11:00
-                  </div>
+                  <div className="text-[11px] text-slate-400 font-medium">06:00~11:00</div>
+                  {nextDayGolf?.part1AvgGreenFee !== null && nextDayGolf?.part1AvgGreenFee !== undefined && nextDayGolf.part1AvgGreenFee > 0 && (
+                    <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                      <div className="text-[10px] text-slate-400">평균 단가</div>
+                      <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                        {nextDayGolf.part1AvgGreenFee.toLocaleString()}원
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* 1부 평균 그린피 (맨밑) */}
-                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col items-center">
-                  <span className="text-[10px] text-slate-400 font-medium">평균 그린피</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-indigo-700 tabular-nums mt-0.5">
-                    {nextDayGolf?.part1AvgGreenFee !== null && nextDayGolf?.part1AvgGreenFee !== undefined && nextDayGolf.part1AvgGreenFee > 0 ? (
-                      <>{nextDayGolf.part1AvgGreenFee.toLocaleString()}원</>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">- 원</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* 2부 */}
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                <div>
-                  <div className="text-[11px] font-bold text-teal-700 bg-teal-50/80 py-0.5 rounded-md mb-1">
-                    2부 (오후)
-                  </div>
-                  <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                {/* 2부 */}
+                <div className="px-1.5">
+                  <div className="text-xs font-semibold text-slate-600 mb-0.5">2부 (오후)</div>
+                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
                     {nextDayGolf?.part2Reserved !== null && nextDayGolf?.part2Reserved !== undefined ? (
-                      <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                      <>{nextDayGolf.part2Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
                     ) : (
                       <span className="text-xs text-slate-400 font-medium">- 팀</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400">
-                    11:00 ~ 14:00
-                  </div>
+                  <div className="text-[11px] text-slate-400 font-medium">11:00~14:00</div>
+                  {nextDayGolf?.part2AvgGreenFee !== null && nextDayGolf?.part2AvgGreenFee !== undefined && nextDayGolf.part2AvgGreenFee > 0 && (
+                    <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                      <div className="text-[10px] text-slate-400">평균 단가</div>
+                      <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                        {nextDayGolf.part2AvgGreenFee.toLocaleString()}원
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* 2부 평균 그린피 (맨밑) */}
-                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col items-center">
-                  <span className="text-[10px] text-slate-400 font-medium">평균 그린피</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-teal-700 tabular-nums mt-0.5">
-                    {nextDayGolf?.part2AvgGreenFee !== null && nextDayGolf?.part2AvgGreenFee !== undefined && nextDayGolf.part2AvgGreenFee > 0 ? (
-                      <>{nextDayGolf.part2AvgGreenFee.toLocaleString()}원</>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">- 원</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* 3부 */}
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs text-center flex flex-col justify-between">
-                <div>
-                  <div className="text-[11px] font-bold text-amber-700 bg-amber-50/80 py-0.5 rounded-md mb-1">
-                    3부 (야간/라이트)
-                  </div>
-                  <div className="text-xl font-black text-slate-900 tabular-nums my-0.5">
+                {/* 3부 */}
+                <div className="px-1.5">
+                  <div className="text-xs font-semibold text-slate-600 mb-0.5">3부 (야간)</div>
+                  <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
                     {nextDayGolf?.part3Reserved !== null && nextDayGolf?.part3Reserved !== undefined ? (
-                      <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-500">팀</span></>
+                      <>{nextDayGolf.part3Reserved} <span className="text-xs font-normal text-slate-400">팀</span></>
                     ) : (
                       <span className="text-xs text-slate-400 font-medium">- 팀</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400">
-                    14:00 ~ 마감
-                  </div>
-                </div>
-
-                {/* 3부 평균 그린피 (맨밑) */}
-                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col items-center">
-                  <span className="text-[10px] text-slate-400 font-medium">평균 그린피</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-amber-700 tabular-nums mt-0.5">
-                    {nextDayGolf?.part3AvgGreenFee !== null && nextDayGolf?.part3AvgGreenFee !== undefined && nextDayGolf.part3AvgGreenFee > 0 ? (
-                      <>{nextDayGolf.part3AvgGreenFee.toLocaleString()}원</>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">- 원</span>
-                    )}
-                  </span>
+                  <div className="text-[11px] text-slate-400 font-medium">14:00~마감</div>
+                  {nextDayGolf?.part3AvgGreenFee !== null && nextDayGolf?.part3AvgGreenFee !== undefined && nextDayGolf.part3AvgGreenFee > 0 && (
+                    <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                      <div className="text-[10px] text-slate-400">평균 단가</div>
+                      <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                        {nextDayGolf.part3AvgGreenFee.toLocaleString()}원
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* 2. 기준일 마감 실적 탭 */}
+        {viewMode === 'CLOSED' && (
+          <div>
+            {/* Context Sub-header */}
+            <div className="flex items-center justify-between text-xs mb-3 px-3 py-1.5 bg-slate-50/80 border border-slate-100 rounded-xl">
+              <span className="font-semibold text-slate-700">
+                {currentDate} ({currentDayOfWeek}) {isRangeMode ? '선택 기간 합산' : '일마감 실적'}
+              </span>
+              <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                정산 완료
+              </span>
+            </div>
+
+            {/* 3대 KPI 그리드 */}
+            <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 text-center">
+              {/* 총 예약 팀수 */}
+              <div className="px-2">
+                <div className="text-xs font-semibold text-slate-500 mb-1 whitespace-nowrap">총 예약</div>
+                <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+                  {todaySummary.reservedTeams}
+                  <span className="text-sm font-normal text-slate-400 ml-0.5">팀</span>
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">당일 총 예약</div>
+              </div>
+
+              {/* 실제 입장 (내장) */}
+              <div className="px-2">
+                <div className="text-xs font-semibold text-slate-500 mb-1 whitespace-nowrap">실제 내장</div>
+                <div className="text-2xl font-black text-slate-900 tabular-nums whitespace-nowrap">
+                  {todaySummary.visitedTeams}
+                  <span className="text-sm font-normal text-slate-400 ml-0.5">팀</span>
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">라운딩 완료</div>
+              </div>
+
+              {/* 취소 / 미내장 */}
+              <div className="px-2">
+                <div className="text-xs font-semibold text-rose-500 mb-1 whitespace-nowrap">취소 / 미내장</div>
+                <div className="text-2xl font-black text-rose-600 tabular-nums whitespace-nowrap">
+                  {todayCanceledAndPending}
+                  <span className="text-sm font-normal text-slate-400 ml-0.5">팀</span>
+                </div>
+                <div 
+                  className="text-[11px] text-slate-400 font-medium mt-0.5 truncate"
+                  title={todaySummary.pendingTeams > 0
+                    ? `취소 ${todaySummary.canceledTeams}팀 · 미내장 ${todaySummary.pendingTeams}팀`
+                    : `취소 ${todaySummary.canceledTeams}팀`}
+                >
+                  취소 {todaySummary.canceledTeams}팀
+                </div>
+              </div>
+            </div>
+
+            {/* 기준일 1부 / 2부 / 3부 티타임 파트별 마감 실적 */}
+            {todaySummary.golfParts && (
+              <div className="mt-3.5 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs mb-2 px-1">
+                  <span className="font-bold text-slate-700">티타임 파트별 마감 실적</span>
+                  <span className="text-[11px] text-slate-400">1부·2부·3부 정산 완료</span>
+                </div>
+
+                <div className="grid grid-cols-3 divide-x divide-slate-200/70 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 text-center">
+                  {[
+                    { key: 'part1', data: todaySummary.golfParts.part1, label: '1부 (오전)', time: '06:00~11:00' },
+                    { key: 'part2', data: todaySummary.golfParts.part2, label: '2부 (오후)', time: '11:00~14:00' },
+                    { key: 'part3', data: todaySummary.golfParts.part3, label: '3부 (야간)', time: '14:00~마감' }
+                  ].map(({ key, data: p, label, time }) => {
+                    if (!p) return null;
+                    return (
+                      <div key={key} className="px-1.5">
+                        <div className="text-xs font-semibold text-slate-600 mb-0.5">{label}</div>
+                        <div className="text-lg font-black text-slate-900 tabular-nums my-0.5">
+                          {p.visitedTeams} <span className="text-xs font-normal text-slate-400">팀</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-medium">{time}</div>
+                        {p.avgGreenFee !== undefined && p.avgGreenFee > 0 && (
+                          <div className="mt-2 pt-1.5 border-t border-slate-200/60">
+                            <div className="text-[10px] text-slate-400">평균 단가</div>
+                            <div className="text-xs font-extrabold text-slate-800 tabular-nums">
+                              {p.avgGreenFeeFormatted || `${p.avgGreenFee.toLocaleString()}원`}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer Subtext */}
-      <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-        <span>골프장 실시간 예약 원장 및 마감 라운딩 실적 데이터</span>
+      <div className="text-[11px] text-slate-400 mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span>골프장 실시간 예약 원장 및 마감 실적</span>
       </div>
     </div>
   );

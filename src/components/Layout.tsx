@@ -16,6 +16,7 @@ export default function Layout() {
     return saved !== null ? saved === 'true' : true; // 사용자 승인 기본값: 펼침(고정)
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [salesOpen, setSalesOpen] = useState(true);
   const [golfOpen, setGolfOpen] = useState(true);
   const [resortOpen, setResortOpen] = useState(false);
   const [leisureOpen, setLeisureOpen] = useState(false);
@@ -70,7 +71,6 @@ export default function Layout() {
     { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
     { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive', 'management'] },
     { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} />, roles: ['admin', 'executive', 'fnb', 'leisure', 'resort'] },
-    { name: '세일즈본부', path: '/group-sales', icon: <Briefcase size={20} />, roles: ['admin', 'executive', 'sales', 'resort', 'management'] },
   ];
 
   const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
@@ -151,6 +151,65 @@ export default function Layout() {
               {item.name}
             </NavLink>
           ))}
+
+          {/* 세일즈본부 Accordion */}
+          {(!userRole || ['admin', 'executive', 'sales', 'resort', 'management'].includes(userRole)) && (
+            <div className="mt-2">
+              <button
+                onClick={() => setSalesOpen(!salesOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <Briefcase size={20} />
+                  세일즈본부
+                </div>
+                {salesOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+
+              {salesOpen && (
+                <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                  <NavLink
+                    to="/group-sales"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive || window.location.pathname === '/sales/room-channels'
+                        ? 'text-brand-mint bg-brand-mint/10 font-semibold'
+                        : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    객실 판매방식 & 세미나 점유율
+                  </NavLink>
+                  <NavLink
+                    to="/sales/venue-performance"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    연회·세미나실 대관 현황
+                  </NavLink>
+                  <NavLink
+                    to="/sales/group-master-crm"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    단체 예약 명부 & 판촉 실적
+                  </NavLink>
+                  <NavLink
+                    to="/sales/group-venue-preference"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'text-brand-mint bg-brand-mint/10 font-semibold' : 'text-slate-500 hover:text-brand-mint hover:bg-brand-mint/5'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    단체 방문 매장 순위 & 동선
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 골프사업본부 Accordion */}
           {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (

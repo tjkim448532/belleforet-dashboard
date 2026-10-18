@@ -34,6 +34,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import GroupVenuePreferenceSection from '../components/dashboard/GroupVenuePreferenceSection';
+import SalesDivisionNav from '../components/dashboard/SalesDivisionNav';
 import type { SalesVenuePerformanceResponse } from '../types/reports-v2';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -202,7 +203,13 @@ const getChannelMeta = (channelName: string): { iconType: ChannelGroup['iconType
   return CHANNEL_META_MAP[channelName] || { iconType: 'etc', badgeColor: 'bg-slate-100 text-slate-700 border-slate-200', label: channelName };
 };
 
-export default function GroupSales() {
+export type SalesPageSectionType = 'ROOM_CHANNELS' | 'VENUE_PERFORMANCE' | 'GROUP_MASTER_CRM' | 'GROUP_VENUE_PREFERENCE';
+
+export interface GroupSalesProps {
+  pageSection?: SalesPageSectionType;
+}
+
+export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSalesProps) {
   const { startDate, endDate, isRange, setStartDate, setEndDate } = useDate();
   
   const [channelRawData, setChannelRawData] = useState<RawChannelRoomItem[]>([]);
@@ -212,7 +219,7 @@ export default function GroupSales() {
   const [groupSearchKeyword, setGroupSearchKeyword] = useState<string>('');
   const [groupFilterTab, setGroupFilterTab] = useState<'ALL' | 'REPEAT' | 'LARGE' | 'SINGLE'>('ALL');
   const [expandedGroupNames, setExpandedGroupNames] = useState<Set<string>>(new Set());
-  const [isGroupMasterListOpen, setIsGroupMasterListOpen] = useState<boolean>(false);
+  const [isGroupMasterListOpen, setIsGroupMasterListOpen] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   
   // 🎯 사용자의 핵심 요구사항: 세일즈본부는 '단체영업(세미나)'이 주력이므로 기본값 고정
@@ -769,10 +776,37 @@ export default function GroupSales() {
     };
   }, [venuePerformanceData, selectedVenueFilter, venueSearchKeyword]);
 
+  const pageHeaderMeta = {
+    ROOM_CHANNELS: {
+      title: '세일즈본부 객실 판매방식 & 세미나 점유율',
+      badge: '주력: 단체영업(세미나)',
+      desc: '리조트 전체 판매 객실 대비 단체 세미나 점유율(주중·주말·YoY)과 판매방식×평형별 실적을 집중 분석합니다.'
+    },
+    VENUE_PERFORMANCE: {
+      title: '세일즈본부 연회·세미나실 대관 현황 & 단가 분석',
+      badge: '세미나A · 세미나B · 벨포레홀 · 그랜드볼룸',
+      desc: '연회 및 세미나실 장소별 대관 건수, 건당 평균 대관 단가, 월별 추이 매트릭스 및 대관 이용 기업 명부를 분석합니다.'
+    },
+    GROUP_MASTER_CRM: {
+      title: '세일즈본부 단체 예약 명부 & 판촉 수주 기여도',
+      badge: '재방문 단체 CRM · 영업담당자 순기여도',
+      desc: '세미나/워크샵 예약 단체 마스터 명부(복수 방문 단골·차수별 상세)와 판촉 영업담당자별 B2B 수주 리더보드를 조회합니다.'
+    },
+    GROUP_VENUE_PREFERENCE: {
+      title: '세일즈본부 단체 방문 매장 순위 & 평균 매출 · 동선',
+      badge: '식음·부대 매장 선호도 분석',
+      desc: '숙박·연회 단체가 리조트 내 식음·부대 영업장을 방문한 순위, B2B 팀당 평균 매출, 방문일 급증률 및 선호 동선을 분석합니다.'
+    }
+  }[pageSection];
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
       
-      {/* 1. Header with Institutional Polish */}
+      {/* 0. 세일즈본부 4대 세부 페이지 공통 네비게이션 */}
+      <SalesDivisionNav />
+
+      {/* 1. Header with Institutional Polish (GROUP_VENUE_PREFERENCE는 자체 헤더 보유) */}
+      {pageSection !== 'GROUP_VENUE_PREFERENCE' && (
       <div className="bg-white p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex items-center gap-3.5">
           <div className="p-3.5 bg-brand-mint/10 text-brand-mint rounded-2xl border border-brand-mint/20">
@@ -781,14 +815,14 @@ export default function GroupSales() {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight break-keep whitespace-nowrap">
-                세일즈본부 객실 판매 실적
+                {pageHeaderMeta.title}
               </h1>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                주력: 단체영업(세미나)
+                {pageHeaderMeta.badge}
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1 break-keep">
-              세일즈본부 핵심 주력 사업인 단체영업(세미나)을 중심으로 각 평형별 실적을 집중 분석합니다.
+              {pageHeaderMeta.desc}
             </p>
           </div>
         </div>
@@ -828,7 +862,10 @@ export default function GroupSales() {
           </button>
         </div>
       </div>
+      )}
 
+      {pageSection === 'ROOM_CHANNELS' && (
+      <>
       {/* 🌟 2. [NEW] 전체 객실 대비 단체영업(세미나) 점유율 분석 (통합 / 주중 / 주말 3단 벤토 패널 with YoY 비교) */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-6 lg:p-7 rounded-[28px] border border-slate-700/60 shadow-md text-white">
         
@@ -1908,8 +1945,11 @@ export default function GroupSales() {
           })}
         </div>
       )}
+      </>
+      )}
 
       {/* 4. 🏛️ [NEW] 세일즈본부 연회/세미나실 장소별(Venue) 판매 현황 & 평균 가격 분석 */}
+      {pageSection === 'VENUE_PERFORMANCE' && (
       <div className="bg-white rounded-[32px] p-6 lg:p-8 border border-slate-200/90 shadow-xs space-y-6">
         
         {/* Section Header */}
@@ -2304,8 +2344,11 @@ export default function GroupSales() {
         )}
 
       </div>
+      )}
 
       {/* 5. 👥 단체영업(세미나) 실제 예약 단체 마스터 명부 & 복수 방문(단골) 심층 분석 (아코디언 접기/펼치기) */}
+      {pageSection === 'GROUP_MASTER_CRM' && (
+      <>
       <div className="bg-white rounded-[32px] border border-slate-200/90 shadow-xs overflow-hidden transition-all">
         
         {/* Section Header (Clickable Accordion Bar) */}
@@ -2863,9 +2906,13 @@ export default function GroupSales() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* 6. 숙박·연회 단체 × 식음/부대 영업장 선호도 및 평균 매출·급증률 분석 리포트 */}
-      <GroupVenuePreferenceSection initialVenueCategory="ALL" />
+      {pageSection === 'GROUP_VENUE_PREFERENCE' && (
+        <GroupVenuePreferenceSection initialVenueCategory="ALL" mode="ALL" isStandalonePage={false} />
+      )}
 
       {/* 7. Strategy Insight Footer */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-[24px] p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">

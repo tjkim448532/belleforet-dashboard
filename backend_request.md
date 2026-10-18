@@ -3645,4 +3645,17 @@ ORDER BY venue_name, rn;
   5. **신규 4대 시뮬레이터 API (`POST /api/v6/simulator/*`)**: 파라미터 및 반환 데이터 모델 연동 대기 규격 등록 완료.
 - **프론트엔드 상태**: Pure Consumer / Fail-Stop 원칙 100% 준수, 클라이언트 가짜 연산 0건(Clean Zero) 보존.
 
+---
 
+## 15. 🍽️ [Ticket 50 / P1 데이터 정합성] `group-venue-preference` API 내 `쿠치나` 업종 구분명(`venueCategoryName`) 교정 요청 (2026-10-18)
+
+### 15-1. 대상 엔드포인트
+- `GET /api/v6/report/group-venue-preference`
+
+### 15-2. 현상 및 사용자 지적 사항
+- 영업장별 단체 유치 순위(`venueRankings[]`) 배열에서 **`venueName: "쿠치나"`** 항목의 업종 구분명(`venueCategoryName`)이 현재 **`"식음(이탈리안/양식)"`**으로 반환되고 있습니다.
+- 사용자 확인 결과 **쿠치나는 이탈리안/양식당이 아니라 '뷔페(부페) 식당'**입니다.
+- 프론트엔드 무관용 원칙(AGENTS.md 제4조: *API가 내려주는 항목명에 오타나 잘못된 분류가 섞여 있더라도 프론트엔드에서 if문/정규식으로 텍스트를 치환하여 렌더링 금지*)에 따라 프론트엔드에서는 로컬 치환을 하지 않고 백엔드 원천/API 수정을 요청합니다.
+
+### 15-3. 백엔드 조치 요청 사항
+- `GET /api/v6/report/group-venue-preference` API (또는 참조하는 매장 마스터/차원 테이블)에서 **`쿠치나`의 `venueCategoryName`을 `"식음(이탈리안/양식)"` ➔ `"식음(뷔페)"` (또는 `"식음(부페 식당)"`)으로 즉시 수정**해 주시기 바랍니다.

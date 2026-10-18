@@ -84,7 +84,11 @@ export function App() {
                     <Route path="golf-business" element={<GolfBusiness />} />
                     <Route path="golf/channel-intelligence" element={<GolfChannelIntelligence />} />
                     <Route path="golf-channel-intelligence" element={<GolfChannelIntelligence />} />
-                    <Route path="group-sales" element={<GroupSales />} />
+                    <Route path="group-sales" element={<GroupSales pageSection="ROOM_CHANNELS" />} />
+                    <Route path="sales/room-channels" element={<GroupSales pageSection="ROOM_CHANNELS" />} />
+                    <Route path="sales/venue-performance" element={<GroupSales pageSection="VENUE_PERFORMANCE" />} />
+                    <Route path="sales/group-master-crm" element={<GroupSales pageSection="GROUP_MASTER_CRM" />} />
+                    <Route path="sales/group-venue-preference" element={<GroupSales pageSection="GROUP_VENUE_PREFERENCE" />} />
                     <Route path="leisure" element={<LeisureFacility />} />
                     <Route path="leisure/organization" element={<LeisureOrganization />} />
                     <Route path="leisure-organization" element={<LeisureOrganization />} />

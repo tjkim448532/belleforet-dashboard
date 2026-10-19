@@ -30,7 +30,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(false);
   const [golfOpen, setGolfOpen] = useState(false);
-  const [resortOpen, setResortOpen] = useState(false);
+  const [resortOpen, setResortOpen] = useState(() => location.pathname.startsWith('/resort') || location.pathname.includes('reservation-status'));
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(false);
@@ -292,6 +292,17 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   경영 현황 대시보드
+                </NavLink>
+                <NavLink
+                  to="/resort/reservation-status"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive || window.location.pathname === '/reservation-status'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  예약현황
                 </NavLink>
                 <NavLink
                   to="/resort/room-guest-analysis"

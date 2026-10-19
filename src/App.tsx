@@ -17,6 +17,7 @@ import AdminDaolRules from './pages/AdminDaolRules';
 import AdminRoles from './pages/AdminRoles';
 
 import ResortBusiness from './pages/ResortBusiness';
+import CondoReservationStatus from './pages/CondoReservationStatus';
 import ResortRoomGuestsYoy from './pages/ResortRoomGuestsYoy';
 import RoomGuestAnalysis from './pages/RoomGuestAnalysis';
 import GolfBusiness from './pages/GolfBusiness';
@@ -87,6 +88,8 @@ export function App() {
                   <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     <Route index element={<Home />} />
                     <Route path="resort-business" element={<ResortBusiness />} />
+                    <Route path="resort/reservation-status" element={<CondoReservationStatus />} />
+                    <Route path="reservation-status" element={<CondoReservationStatus />} />
                     <Route path="resort/room-guest-analysis" element={<RoomGuestAnalysis />} />
                     <Route path="resort/room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="resort-room-guests-yoy" element={<ResortRoomGuestsYoy />} />

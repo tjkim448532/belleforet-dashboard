@@ -734,7 +734,8 @@ export default function RoomDynamicPricing() {
   const [showSelectedDayDetailAccordion, setShowSelectedDayDetailAccordion] = useState<boolean>(false);
   const [expandedMatrixDateStr, setExpandedMatrixDateStr] = useState<string | null>(null);
   const [matrixCategoryTab, setMatrixCategoryTab] = useState<'ALL' | 'STANDARD_3' | 'PET_3'>('ALL');
-  const [showKpiSpilloverAccordion, setShowKpiSpilloverAccordion] = useState<boolean>(false);
+  const [activeMainTab, setActiveMainTab] = useState<'DAILY' | 'MATRIX' | 'ANALYTICS'>('DAILY');
+  const [showKpiSpilloverAccordion, setShowKpiSpilloverAccordion] = useState<boolean>(true);
 
   const fetchDynamicPricing = async () => {
     setLoading(true);
@@ -1554,9 +1555,94 @@ export default function RoomDynamicPricing() {
         ) : data && (
           <>
             {/* ====================================================================
-                1. [최상단 마스터 요약표] 한눈에 보는 6대 평형별 × 요일별 기준가 & 향후 30일 추천 평균 판매가
+                메인 3대 워크스페이스 서브 탭 (Operational Mode Navigation)
                ==================================================================== */}
-            <div className="bg-white rounded-3xl border-2 border-[#1B3B2B]/85 shadow-[0_6px_24px_rgba(27,59,43,0.08)] overflow-hidden">
+            <div className="bg-white rounded-3xl p-2.5 sm:p-3 border border-[#D0C6BB]/90 shadow-[0_4px_20px_rgba(27,59,43,0.06)]">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveMainTab('DAILY')}
+                  className={`p-3.5 sm:p-4 rounded-2xl text-left transition-all cursor-pointer border ${
+                    activeMainTab === 'DAILY'
+                      ? 'bg-[#1B3B2B] text-white border-[#1B3B2B] shadow-md ring-2 ring-[#1B3B2B]/20'
+                      : 'bg-[#FAF9F6] text-[#1B382E] border-[#D0C6BB]/70 hover:bg-[#F4F3EE]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-sm sm:text-base font-black flex items-center gap-2">
+                      <span>📅</span>
+                      <span>1. 오늘/날짜별 판매가 실행</span>
+                    </span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      activeMainTab === 'DAILY' ? 'bg-white/20 text-white' : 'bg-[#E8F2EE] text-[#1E523F]'
+                    }`}>
+                      실무·예약실
+                    </span>
+                  </div>
+                  <p className={`text-xs ${activeMainTab === 'DAILY' ? 'text-white/80' : 'text-[#5A6B63]'}`}>
+                    오늘 권장가 카드 & 6대 채널 실행가 및 잔여 객실 확인
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveMainTab('MATRIX')}
+                  className={`p-3.5 sm:p-4 rounded-2xl text-left transition-all cursor-pointer border ${
+                    activeMainTab === 'MATRIX'
+                      ? 'bg-[#1B3B2B] text-white border-[#1B3B2B] shadow-md ring-2 ring-[#1B3B2B]/20'
+                      : 'bg-[#FAF9F6] text-[#1B382E] border-[#D0C6BB]/70 hover:bg-[#F4F3EE]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-sm sm:text-base font-black flex items-center gap-2">
+                      <span>📊</span>
+                      <span>2. 30일 가격 캘린더 (Matrix)</span>
+                    </span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      activeMainTab === 'MATRIX' ? 'bg-white/20 text-white' : 'bg-[#FAF6ED] text-[#8C6D3B]'
+                    }`}>
+                      월간·마케팅
+                    </span>
+                  </div>
+                  <p className={`text-xs ${activeMainTab === 'MATRIX' ? 'text-white/80' : 'text-[#5A6B63]'}`}>
+                    향후 30일 전체 일정의 평형별 권장가 및 마케팅 전략 필터
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveMainTab('ANALYTICS')}
+                  className={`p-3.5 sm:p-4 rounded-2xl text-left transition-all cursor-pointer border ${
+                    activeMainTab === 'ANALYTICS'
+                      ? 'bg-[#1B3B2B] text-white border-[#1B3B2B] shadow-md ring-2 ring-[#1B3B2B]/20'
+                      : 'bg-[#FAF9F6] text-[#1B382E] border-[#D0C6BB]/70 hover:bg-[#F4F3EE]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-sm sm:text-base font-black flex items-center gap-2">
+                      <span>📡</span>
+                      <span>3. 경쟁사 분석 & 경영 리포트</span>
+                    </span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      activeMainTab === 'ANALYTICS' ? 'bg-white/20 text-white' : 'bg-[#E8F2EE] text-[#284F42]'
+                    }`}>
+                      경영진·전략
+                    </span>
+                  </div>
+                  <p className={`text-xs ${activeMainTab === 'ANALYTICS' ? 'text-white/80' : 'text-[#5A6B63]'}`}>
+                    충청권 4대 경쟁사 낙수수요(Spillover), 재무 KPI 및 시계열
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* ====================================================================
+                [탭 1] 오늘/날짜별 판매가 실행 (Daily Operations)
+               ==================================================================== */}
+            {activeMainTab === 'DAILY' && (
+              <div className="space-y-6">
+                {/* 1. [최상단 마스터 요약표] 한눈에 보는 6대 평형별 × 요일별 기준가 & 향후 30일 추천 평균 판매가 */}
+                <div className="bg-white rounded-3xl border-2 border-[#1B3B2B]/85 shadow-[0_6px_24px_rgba(27,59,43,0.08)] overflow-hidden">
               <div className="p-5 sm:p-6 bg-gradient-to-r from-[#1B3B2B] via-[#284F42] to-[#1B3B2B] text-white flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -2153,11 +2239,16 @@ export default function RoomDynamicPricing() {
                 </div>
               </div>
             )}
+              </div>
+            )}
 
             {/* ====================================================================
-                3. [향후 30일 일자별 × 평형별 권장 판매가 전체 일람표 (Matrix)]
+                [탭 2] 30일 가격 매트릭스 캘린더 (Matrix Grid)
                ==================================================================== */}
-            <div className="bg-white rounded-3xl border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
+            {activeMainTab === 'MATRIX' && (
+              <div className="space-y-6">
+                {/* 3. [향후 30일 일자별 × 평형별 권장 판매가 전체 일람표 (Matrix)] */}
+                <div className="bg-white rounded-3xl border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
               <div className="p-6 bg-[#F4F3EE] border-b border-[#D0C6BB]/75 space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   <div>
@@ -2505,11 +2596,16 @@ export default function RoomDynamicPricing() {
                 })()}
               </div>
             </div>
+              </div>
+            )}
 
             {/* ====================================================================
-                4. [아코디언 D] 향후 30일 4대 핵심 KPI & 충청권 4대 경쟁사 낙수수요(Spillover) 실측 분석
+                [탭 3] 경쟁사 분석 & 경영 리포트 (Market Intelligence)
                ==================================================================== */}
-            <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
+            {activeMainTab === 'ANALYTICS' && (
+              <div className="space-y-6">
+                {/* 4. [아코디언 D] 향후 30일 4대 핵심 KPI & 충청권 4대 경쟁사 낙수수요(Spillover) 실측 분석 */}
+                <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowKpiSpilloverAccordion(!showKpiSpilloverAccordion)}
@@ -3254,6 +3350,8 @@ export default function RoomDynamicPricing() {
                 </div>
               )}
             </div>
+              </div>
+            )}
           </>
         )}
       </div>

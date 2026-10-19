@@ -281,7 +281,7 @@ const getActionBadgeStyle = (actionCode: DynamicActionCode) => {
         dot: 'bg-[#284F42]',
         icon: <ShieldCheck size={14} className="shrink-0 text-[#284F42]" />,
         shortTitle: '기준가 유지 · 정상 페이스',
-        easyAction: '예약 속도가 안정적입니다. 평소 기준 요금을 흔들림 없이 방어하세요.'
+        easyAction: '예약 속도가 안정적입니다. 2026년 기준 요금을 흔들림 없이 수호하세요.'
       };
     case 'BUNDLE_PROMO':
       return {
@@ -292,7 +292,7 @@ const getActionBadgeStyle = (actionCode: DynamicActionCode) => {
         dot: 'bg-[#B59269]',
         icon: <Package size={14} className="shrink-0 text-[#8C6D3B]" />,
         shortTitle: '레저 번들 특전 · 사전 모객',
-        easyAction: '빈방이 여유롭습니다. 방값을 깎지 말고 마운틴카트·미디어아트 특전을 묶어 파세요.'
+        easyAction: '빈방이 여유롭습니다. 방값을 덤핑 할인하지 말고 마운틴카트·미디어아트 등 레저 특전을 묶어 파세요.'
       };
     case 'FLASH_SALE':
       return {
@@ -691,7 +691,7 @@ export default function RoomDynamicPricing() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#FAF6ED] text-[#8C6D3B] font-extrabold shrink-0">🎁 BUNDLE_PROMO (번들 특전)</span>
-                      <span className="text-[#5A6B63]">D-11 이후 비수기 평일입니다. 객실 단가를 직접 깎지 말고 <strong>마운틴카트·미디어아트 등 레저 2인 특전을 결합해 사전 모객</strong>하세요.</span>
+                      <span className="text-[#5A6B63]">체크인 11일 이상 남은 사전 모객 기간(비수기 평일)입니다. 객실 단가를 직접 깎지 말고 <strong>마운틴카트·미디어아트 등 레저 2인 특전을 결합해 사전 모객</strong>하세요.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#FDF0ED] text-[#8B2635] font-extrabold shrink-0">⚡ FLASH_SALE (타임세일)</span>
@@ -1023,7 +1023,7 @@ export default function RoomDynamicPricing() {
 
                               <div className="flex items-baseline justify-between gap-2 mt-1">
                                 <div>
-                                  <span className="text-xs text-[#5A6B63] font-medium mr-1.5">기준가:</span>
+                                  <span className="text-xs text-[#5A6B63] font-medium mr-1.5">2026 기준가:</span>
                                   <span className="text-sm font-bold text-[#5A6B63] line-through">
                                     {formatWon(rt.baselineAdr)}
                                   </span>
@@ -1038,7 +1038,7 @@ export default function RoomDynamicPricing() {
                           {/* 카드 하단: 최저~최고 가격 가드레일 & 예약 현황 */}
                           <div className="space-y-2 text-xs">
                             <div className="flex items-center justify-between bg-[#F4F3EE]/80 px-3 py-2 rounded-xl border border-[#D0C6BB]/60">
-                              <span className="text-[#5A6B63] font-bold">하한 ~ 상한 방어선</span>
+                              <span className="text-[#5A6B63] font-bold">하한 ~ 상한 가드레일</span>
                               <span className="font-extrabold">
                                 <span className="text-[#8B2635]">하한 {formatWon(rt.floorAdr)}</span>
                                 <span className="mx-1.5 text-[#5A6B63]">~</span>
@@ -1051,7 +1051,7 @@ export default function RoomDynamicPricing() {
                                 현재 예약: <strong className="text-[#1B382E]">{formatNum(rt.otbBooked)}실 (점유율 {formatPct(rt.otbOccupancyPct)})</strong>
                               </span>
                               <span>
-                                26년 최근: <strong className="text-[#1B382E]">{formatWon(rt.adr2026RecentRetail)}</strong> (25년 {formatWon(rt.adr2025Retail)})
+                                26년 실측: <strong className="text-[#1B382E]">{formatWon(rt.adr2026RecentRetail)}</strong> (25년 {formatWon(rt.adr2025Retail)})
                               </span>
                             </div>
                           </div>
@@ -1219,7 +1219,7 @@ export default function RoomDynamicPricing() {
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="text-xs font-extrabold text-[#5A6B63] uppercase tracking-wider">
-                        2. 2025 동기 vs 2026 최근 Retail ADR
+                        2. 2025 동기 vs 2026 실측 Retail ADR (100% 앵커)
                       </span>
                       <span className="p-2 rounded-xl bg-[#FAF6ED] text-[#8C6D3B]">
                         <TrendingUp size={18} />
@@ -1257,7 +1257,7 @@ export default function RoomDynamicPricing() {
                       <span className="font-bold text-[#1B382E]">{formatPct(hist2025?.avgOccupancyPct)} ({formatWon(hist2025?.overallAdr)})</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#5A6B63] font-medium">최근 30일 점유율 / 연박 비중</span>
+                      <span className="text-[#5A6B63] font-medium">2026 최근 점유율 / 연박 비중</span>
                       <span className="font-extrabold text-[#1E523F]">
                         점유 {formatPct(recent2026?.avgOccupancyPct)} · 연박 {formatPct(recent2026?.avgMultiNightRatioPct)}
                       </span>
@@ -1369,7 +1369,7 @@ export default function RoomDynamicPricing() {
 
                   <div className="relative z-10 mt-4 pt-3.5 border-t border-white/15 space-y-1.5 text-xs">
                     <div className="flex items-center justify-between text-white/80">
-                      <span>기준가 고정 시</span>
+                      <span>2026 기준가 고정 시</span>
                       <span className="font-bold text-white">{formatWon(pricingRec?.baselineProjectedRevenue)}</span>
                     </div>
                     <div className="flex items-center justify-between text-[#EAE3D2]">
@@ -1483,7 +1483,7 @@ export default function RoomDynamicPricing() {
                     <tr className="bg-[#FAF9F5] text-[#5A6B63] text-xs font-extrabold border-b border-[#D0C6BB]/75">
                       <th className="py-3.5 px-4">일자 / 요일 / D-Day</th>
                       <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/40 text-[#1B382E]">
-                        🎯 단가 비교 및 제안 ADR (기준가 ➔ 추천 ADR)
+                        🎯 단가 제안 (2026 기준가 ➔ 추천 ADR)
                       </th>
                       <th className="py-3.5 px-4 text-center">마케팅 액션</th>
                       <th className="py-3.5 px-4 text-right">현재 OTB vs 예상 점유율</th>
@@ -1759,7 +1759,7 @@ export default function RoomDynamicPricing() {
                     </span>
                   </div>
                   <p className="text-xs text-[#5A6B63] mt-1 font-medium">
-                    16평·35평·51평·펫룸 각각의 물리 모수, 향후 30일 예약수, 2025 vs 2026 최근 Retail ADR, 요일별 기준가(평일·금·토·일) 및 가드레일 범위를 확인합니다.
+                    16평·35평·51평·펫룸 각각의 물리 모수, 향후 30일 예약수, 2025 vs 2026 실측 Retail ADR, 2026 요일별 기준가(평일·금·토·일) 및 가드레일 범위를 확인합니다.
                   </p>
                 </div>
 

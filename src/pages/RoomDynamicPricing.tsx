@@ -1829,17 +1829,34 @@ export default function RoomDynamicPricing() {
                               <strong className="text-[#1B382E] font-financial">{formatWon(bm.adr2025Retail)}</strong>
                             </div>
                             <div>
-                              <span className="text-[10px] text-[#5A6B63] block">2026 실측 (앵커)</span>
+                              <span className="text-[10px] text-[#5A6B63] block" title="2026년에 실제로 판매된 객실 평균 단가 (가격 방어 기준점)">
+                                2026 실측 (기준점)
+                              </span>
                               <strong className="text-[#1B382E] font-financial">{formatWon(bm.adr2026RecentRetail)}</strong>
                             </div>
                             <div className="bg-[#E8F2EE]/70 px-2 py-1 rounded-lg">
-                              <span className="text-[10px] text-[#1E523F] font-bold block">30일 추천 평균</span>
+                              <span className="text-[10px] text-[#1E523F] font-bold block" title="평일(월~목 65% 비중)이 포함된 향후 30일 달력 평균가">
+                                30일 추천 평균
+                              </span>
                               <strong className="text-[#1E523F] font-black font-financial">{formatWon(bm.next30dAvgRecommendedAdr)}</strong>
                             </div>
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* 30일 추천 평균 vs 실측 기준점 차이 해설 배너 */}
+                  <div className="mt-3.5 pt-3 border-t border-[#D0C6BB]/60 flex items-start gap-2.5 text-xs text-[#5A6B63] bg-white p-3.5 rounded-xl border border-[#D0C6BB]/75 shadow-2xs">
+                    <HelpCircle size={16} className="text-[#8C6D3B] shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 leading-relaxed">
+                      <strong className="font-extrabold text-[#1B382E] block">
+                        💡 30일 추천 평균이 2026 실측보다 항상 작아 보이는 이유 (달력 요일 구성비 차이)
+                      </strong>
+                      <p>
+                        <strong>2026 실측(기준점)</strong>은 예약이 집중된 주말·성수기 고가 구간에 실제 판매된 방들의 가중평균인 반면, <strong>30일 추천 평균</strong>은 한 달 30일 중 약 65%를 차지하는 <strong>평일(월~목 18~20일) 정가</strong>가 모두 포함된 30일 달력 전체의 단순 평균값입니다. 즉, <strong>가격을 깎아서 추천하는 것이 아니며</strong> 주말에는 여전히 실측보다 높은 추천 요금을 수호합니다.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

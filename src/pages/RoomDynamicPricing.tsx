@@ -1845,7 +1845,11 @@ export default function RoomDynamicPricing() {
                     <button
                       type="button"
                       onClick={() => setShowSelectedDayDetailAccordion(!showSelectedDayDetailAccordion)}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#1B3B2B] text-white font-extrabold flex items-center gap-1.5 cursor-pointer hover:bg-[#0F291E]"
+                      className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 cursor-pointer transition-all border ${
+                        showSelectedDayDetailAccordion
+                          ? 'bg-[#1E523F] text-white border-[#1E523F] shadow-xs'
+                          : 'bg-[#1B3B2B] text-white border-[#1B3B2B] hover:bg-[#0F291E]'
+                      }`}
                     >
                       <Radio size={13} />
                       <span>{showSelectedDayDetailAccordion ? '경쟁사 가격 비교 & 상세 근거 접기' : '경쟁사 가격 비교 & 상세 근거 보기'}</span>
@@ -1853,6 +1857,135 @@ export default function RoomDynamicPricing() {
                     </button>
                   </div>
                 </div>
+
+                {/* 2-B-1. [아코디언 내용] 버튼 바로 아래에 즉시 펼쳐지는 경쟁사 비교 레이더 & 11열 상세표 & 채널별 실행가 */}
+                {showSelectedDayDetailAccordion && (
+                  <div className="p-4 sm:p-5 bg-white rounded-3xl border-2 border-[#1B3B2B]/60 shadow-md space-y-4">
+                    <div className="flex items-center justify-between bg-[#E8F2EE] px-4 py-2.5 rounded-2xl border border-[#B4C6C1] text-xs">
+                      <div className="flex items-center gap-2 font-black text-[#1E523F]">
+                        <Radio size={14} className="text-[#1E523F]" />
+                        <span>[{selectedDayItem.date}] 충청권 4대 경쟁사 실시간 비교 레이더 & 평형별 산출 근거 상세 (펼쳐짐)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSelectedDayDetailAccordion(false)}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-[#B4C6C1] text-[#1E523F] font-extrabold hover:bg-[#F4F3EE] cursor-pointer"
+                      >
+                        상세 근거 닫기 ✕
+                      </button>
+                    </div>
+
+                    {renderCompetitorDrawer(selectedDayItem)}
+
+                    {/* 11열 상세 비교표 */}
+                    <div className="bg-[#FAF9F6] rounded-2xl p-4 border border-[#D0C6BB]/75 overflow-x-auto">
+                      <div className="text-xs font-extrabold text-[#1B382E] mb-2.5">
+                        📊 [{selectedDayItem.date}] 6대 평형별 산출 지표 11열 상세 비교표
+                      </div>
+                      <table className="w-full text-left border-collapse whitespace-nowrap min-w-[920px] bg-white rounded-xl overflow-hidden">
+                        <thead>
+                          <tr className="bg-[#F4F3EE] text-[#5A6B63] text-xs font-extrabold border-b border-[#D0C6BB]/80">
+                            <th className="py-2.5 px-4">평형명</th>
+                            <th className="py-2.5 px-4 text-right">물리 모수</th>
+                            <th className="py-2.5 px-4 text-right">현재 예약(OTB)</th>
+                            <th className="py-2.5 px-4 text-right">잔여 판매가능</th>
+                            <th className="py-2.5 px-4 text-right">점유율</th>
+                            <th className="py-2.5 px-4 text-right">2025 실측 ADR</th>
+                            <th className="py-2.5 px-4 text-right">2026 실측 ADR</th>
+                            <th className="py-2.5 px-4 text-right">요일 기준가</th>
+                            <th className="py-2.5 px-4 text-right">권장 판매가 (조정률)</th>
+                            <th className="py-2.5 px-4 text-right">하한 ~ 상한 가드레일</th>
+                            <th className="py-2.5 px-4 text-center">액션</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#D0C6BB]/40 text-xs">
+                          {(selectedDayItem.roomTypes || []).map((rt) => {
+                            const st = getActionBadgeStyle(rt.actionCode);
+                            const adj = rt.adjustmentPct ?? 0;
+                            return (
+                              <tr key={rt.roomType} className="hover:bg-[#F4F3EE]/50">
+                                <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">{rt.roomType}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatNum(rt.capacity)}실</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E]">{formatNum(rt.otbBooked)}실</td>
+                                <td className="py-2.5 px-4 text-right font-black text-[#284F42]">{formatNum(rt.remainingSellable)}실</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E]">{formatPct(rt.otbOccupancyPct)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatWon(rt.adr2025Retail)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatWon(rt.adr2026RecentRetail)}</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E]">{formatWon(rt.baselineAdr)}</td>
+                                <td className="py-2.5 px-4 text-right">
+                                  <span className="font-black text-[#1B3B2B]">{formatWon(rt.recommendedAdr)}</span>
+                                  <span className={`ml-1 font-extrabold ${
+                                    adj > 0 ? 'text-[#1E523F]' : adj < 0 ? 'text-[#8B2635]' : 'text-[#5A6B63]'
+                                  }`}>
+                                    ({formatSignedPct(rt.adjustmentPct)})
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">
+                                  {formatWon(rt.floorAdr)} ~ {formatWon(rt.ceilingAdr)}
+                                </td>
+                                <td className="py-2.5 px-4 text-center">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold border ${st.bg} ${st.text} ${st.border}`}>
+                                    {rt.actionLabel || rt.actionCode}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* 채널별 실행 단가 가이드 및 단체 네고 하한선 테이블 */}
+                    <div className="bg-[#FAF9F6] rounded-2xl p-4 border border-[#D0C6BB]/75 overflow-x-auto">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                        <div className="text-xs font-extrabold text-[#1B382E] flex items-center gap-2">
+                          <Tag size={14} className="text-[#1E523F]" />
+                          <span>[{selectedDayItem.date}] 6대 평형별 판매채널 실행 단가 가이드 & 단체 수주 마지노선 (Walk-Away Floor)</span>
+                        </div>
+                        {selectedDayItem.pricing?.channelRateGuide && (() => {
+                          const g = selectedDayItem.pricing.channelRateGuide;
+                          const pStyle = getGroupPolicyBadgeStyle(g.groupBookingPolicyStatus);
+                          return (
+                            <span className={`px-2.5 py-0.5 rounded text-[11px] font-black border ${pStyle.bg} ${pStyle.text} ${pStyle.border}`}>
+                              {pStyle.icon} 단체 수주 정책: {g.groupBookingPolicyLabel}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                      <table className="w-full text-left border-collapse whitespace-nowrap min-w-[920px] bg-white rounded-xl overflow-hidden text-xs">
+                        <thead>
+                          <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/80">
+                            <th className="py-2.5 px-4">평형 구분</th>
+                            <th className="py-2.5 px-4 text-right">다이나믹 권장가</th>
+                            <th className="py-2.5 px-4 text-right">자사몰(직판) 2.5%</th>
+                            <th className="py-2.5 px-4 text-right">OTA 노출가 (12% 방어)</th>
+                            <th className="py-2.5 px-4 text-right">법인 휴양소 협약가</th>
+                            <th className="py-2.5 px-4 text-right">단체 세미나 평시가</th>
+                            <th className="py-2.5 px-4 text-right bg-[#FAF6ED] text-[#8C6D3B]">★ 단체 네고 하한가 (Floor)</th>
+                            <th className="py-2.5 px-4 text-right">분양 구좌회원 약정가</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#D0C6BB]/40">
+                          {(selectedDayItem.roomTypes || []).map((rt) => {
+                            const cr = rt.channelRateGuide;
+                            return (
+                              <tr key={`channel-${rt.roomType}`} className="hover:bg-[#F4F3EE]/50">
+                                <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">{rt.roomType}</td>
+                                <td className="py-2.5 px-4 text-right font-black text-[#1B3B2B] font-financial">{formatWon(rt.recommendedAdr)}</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">{formatWon(cr?.fitDirectWebAdr)}</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">{formatWon(cr?.fitOtaListedAdr)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.corporateResortContractAdr)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.groupSeminarContractBaseAdr)}</td>
+                                <td className="py-2.5 px-4 text-right font-black text-[#8C6D3B] bg-[#FAF6ED]/50 font-financial">{formatWon(cr?.groupSeminarWalkAwayFloorAdr)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.memberContractAdr)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* 2-B-2. 당일 6대 채널별 OTB 예약 구성비 & 베이스 선점 */}
                 {selectedDayItem.inventory?.channelBreakdown && (() => {
@@ -2046,120 +2179,6 @@ export default function RoomDynamicPricing() {
                     </span>
                   </div>
                 </div>
-
-                {/* 2-E. [접이식] 선택 일자의 경쟁사 가격 비교 드로어 & 11열 상세 테이블 */}
-                {showSelectedDayDetailAccordion && (
-                  <div className="pt-3 border-t border-[#D0C6BB]/70 space-y-4">
-                    {renderCompetitorDrawer(selectedDayItem)}
-
-                    <div className="bg-[#FAF9F6] rounded-2xl p-4 border border-[#D0C6BB]/75 overflow-x-auto">
-                      <div className="text-xs font-extrabold text-[#1B382E] mb-2.5">
-                        📊 [{selectedDayItem.date}] 6대 평형별 산출 지표 11열 상세 비교표
-                      </div>
-                      <table className="w-full text-left border-collapse whitespace-nowrap min-w-[920px] bg-white rounded-xl overflow-hidden">
-                        <thead>
-                          <tr className="bg-[#F4F3EE] text-[#5A6B63] text-xs font-extrabold border-b border-[#D0C6BB]/80">
-                            <th className="py-2.5 px-4">평형명</th>
-                            <th className="py-2.5 px-4 text-right">물리 모수</th>
-                            <th className="py-2.5 px-4 text-right">현재 예약(OTB)</th>
-                            <th className="py-2.5 px-4 text-right">잔여 판매가능</th>
-                            <th className="py-2.5 px-4 text-right">점유율</th>
-                            <th className="py-2.5 px-4 text-right">2025 실측 ADR</th>
-                            <th className="py-2.5 px-4 text-right">2026 실측 ADR</th>
-                            <th className="py-2.5 px-4 text-right">요일 기준가</th>
-                            <th className="py-2.5 px-4 text-right">권장 판매가 (조정률)</th>
-                            <th className="py-2.5 px-4 text-right">하한 ~ 상한 가드레일</th>
-                            <th className="py-2.5 px-4 text-center">액션</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#D0C6BB]/40 text-xs">
-                          {(selectedDayItem.roomTypes || []).map((rt) => {
-                            const st = getActionBadgeStyle(rt.actionCode);
-                            const adj = rt.adjustmentPct ?? 0;
-                            return (
-                              <tr key={rt.roomType} className="hover:bg-[#F4F3EE]/50">
-                                <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">{rt.roomType}</td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatNum(rt.capacity)}실</td>
-                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E]">{formatNum(rt.otbBooked)}실</td>
-                                <td className="py-2.5 px-4 text-right font-black text-[#284F42]">{formatNum(rt.remainingSellable)}실</td>
-                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E]">{formatPct(rt.otbOccupancyPct)}</td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatWon(rt.adr2025Retail)}</td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatWon(rt.adr2026RecentRetail)}</td>
-                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E]">{formatWon(rt.baselineAdr)}</td>
-                                <td className="py-2.5 px-4 text-right">
-                                  <span className="font-black text-[#1B3B2B]">{formatWon(rt.recommendedAdr)}</span>
-                                  <span className={`ml-1 font-extrabold ${
-                                    adj > 0 ? 'text-[#1E523F]' : adj < 0 ? 'text-[#8B2635]' : 'text-[#5A6B63]'
-                                  }`}>
-                                    ({formatSignedPct(rt.adjustmentPct)})
-                                  </span>
-                                </td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63]">
-                                  {formatWon(rt.floorAdr)} ~ {formatWon(rt.ceilingAdr)}
-                                </td>
-                                <td className="py-2.5 px-4 text-center">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold border ${st.bg} ${st.text} ${st.border}`}>
-                                    {rt.actionLabel || rt.actionCode}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* 채널별 실행 단가 가이드 및 단체 네고 하한선 테이블 */}
-                    <div className="bg-[#FAF9F6] rounded-2xl p-4 border border-[#D0C6BB]/75 overflow-x-auto">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-                        <div className="text-xs font-extrabold text-[#1B382E] flex items-center gap-2">
-                          <Tag size={14} className="text-[#1E523F]" />
-                          <span>[{selectedDayItem.date}] 6대 평형별 판매채널 실행 단가 가이드 & 단체 수주 마지노선 (Walk-Away Floor)</span>
-                        </div>
-                        {selectedDayItem.pricing?.channelRateGuide && (() => {
-                          const g = selectedDayItem.pricing.channelRateGuide;
-                          const pStyle = getGroupPolicyBadgeStyle(g.groupBookingPolicyStatus);
-                          return (
-                            <span className={`px-2.5 py-0.5 rounded text-[11px] font-black border ${pStyle.bg} ${pStyle.text} ${pStyle.border}`}>
-                              {pStyle.icon} 단체 수주 정책: {g.groupBookingPolicyLabel}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                      <table className="w-full text-left border-collapse whitespace-nowrap min-w-[920px] bg-white rounded-xl overflow-hidden text-xs">
-                        <thead>
-                          <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/80">
-                            <th className="py-2.5 px-4">평형 구분</th>
-                            <th className="py-2.5 px-4 text-right">다이나믹 권장가</th>
-                            <th className="py-2.5 px-4 text-right">자사몰(직판) 2.5%</th>
-                            <th className="py-2.5 px-4 text-right">OTA 노출가 (12% 방어)</th>
-                            <th className="py-2.5 px-4 text-right">법인 휴양소 협약가</th>
-                            <th className="py-2.5 px-4 text-right">단체 세미나 평시가</th>
-                            <th className="py-2.5 px-4 text-right bg-[#FAF6ED] text-[#8C6D3B]">★ 단체 네고 하한가 (Floor)</th>
-                            <th className="py-2.5 px-4 text-right">분양 구좌회원 약정가</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#D0C6BB]/40">
-                          {(selectedDayItem.roomTypes || []).map((rt) => {
-                            const cr = rt.channelRateGuide;
-                            return (
-                              <tr key={`channel-${rt.roomType}`} className="hover:bg-[#F4F3EE]/50">
-                                <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">{rt.roomType}</td>
-                                <td className="py-2.5 px-4 text-right font-black text-[#1B3B2B] font-financial">{formatWon(rt.recommendedAdr)}</td>
-                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">{formatWon(cr?.fitDirectWebAdr)}</td>
-                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">{formatWon(cr?.fitOtaListedAdr)}</td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.corporateResortContractAdr)}</td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.groupSeminarContractBaseAdr)}</td>
-                                <td className="py-2.5 px-4 text-right font-black text-[#8C6D3B] bg-[#FAF6ED]/50 font-financial">{formatWon(cr?.groupSeminarWalkAwayFloorAdr)}</td>
-                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.memberContractAdr)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

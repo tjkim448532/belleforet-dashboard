@@ -24,6 +24,7 @@ export interface RoomDynamicPricingMeta {
   physicalKeysCapacity: number;
   fixedMonthlyCapacity: number;
   fixedOccupancyBenchmarkPct: number;
+  pricingArchitecture?: string;
   dataSignalsUsed?: string[];
 }
 
@@ -38,6 +39,11 @@ export interface HistoricalPeriodSummary {
   retailAdr: number | null;
   avgOccupancyPct: number | null;
   avgMultiNightRatioPct?: number | null;
+  losTrendByYear?: {
+    y2024?: number | null;
+    y2025?: number | null;
+    y2026?: number | null;
+  };
   yoyRetailAdrGrowthPct?: number | null;
 }
 
@@ -60,6 +66,20 @@ export interface PricingRecommendationSummary {
   avgBaselineAdr: number | null;
   avgRecommendedAdr: number | null;
   avgAdrLiftPct: number | null;
+  calendarVolumeWeightedBaselineAdr?: number | null;
+  calendarVolumeWeightedRecommendedAdr?: number | null;
+  baselineByDayType?: {
+    satHoliday?: number | null;
+    friday?: number | null;
+    sunday?: number | null;
+    weekday?: number | null;
+  };
+  recommendedByDayType?: {
+    satHoliday?: number | null;
+    friday?: number | null;
+    sunday?: number | null;
+    weekday?: number | null;
+  };
   baselineProjectedRevenue: number | null;
   dynamicProjectedRevenue: number | null;
   expectedRevenueGain: number | null;
@@ -119,6 +139,10 @@ export interface DailyCalendarItem {
   holidayName: string;
   leadDays: number | null;
   yoyMatchDate: string;
+  yoy2024MatchDate?: string;
+  seasonalityIndex?: number | null;
+  isHolidayEve?: boolean;
+  isHolidayClosingNight?: boolean;
   inventory: {
     physicalKeyCapacity: number | null;
     otbRoomsBooked: number | null;
@@ -130,6 +154,11 @@ export interface DailyCalendarItem {
     yoyFinalRoomsSold: number | null;
     yoyFinalOccupiedKeys: number | null;
     yoyFinalOccupancyPct: number | null;
+    yoy2025FinalOccupancyPct?: number | null;
+    yoy2024FinalOccupancyPct?: number | null;
+    yoy2025SameLeadKeys?: number | null;
+    yoy2024SameLeadKeys?: number | null;
+    historicalAttritionPct?: number | null;
     bookingPacePct: number | null;
     bookingPaceStatus: string;
     projectedOccupiedKeys: number | null;
@@ -418,8 +447,13 @@ export default function RoomDynamicPricing() {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B3B2B] border border-[#0F291E] text-white text-xs font-semibold shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
-                  <span>BELLEFORET RESORT · DYNAMIC PRICING & YIELD ENGINE</span>
+                  <span>BELLEFORET RESORT · DYNAMIC PRICING & YIELD ENGINE V2</span>
                 </div>
+                {meta?.pricingArchitecture && (
+                  <span className="px-3 py-1 rounded-full bg-[#1B3B2B] text-[#EAE3D2] border border-[#2F5548] text-xs font-extrabold shadow-2xs">
+                    ⚡ {meta.pricingArchitecture}
+                  </span>
+                )}
                 {meta && (
                   <span className="px-3 py-1 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1] text-xs font-extrabold">
                     {meta.startDate} ~ {meta.endDate} ({formatNum(meta.totalDays)}일간) · 물리 객실 모수 {formatNum(meta.physicalKeysCapacity)}키 (월 고정 모수 {formatNum(meta.fixedMonthlyCapacity)}실 / 기준 점유율 {meta.fixedOccupancyBenchmarkPct != null ? `${meta.fixedOccupancyBenchmarkPct}%` : '-'})
@@ -434,7 +468,7 @@ export default function RoomDynamicPricing() {
                 <span>콘도본부 30일 다이나믹 프라이싱 & 마케팅 ADR 제안</span>
               </h1>
               <p className="text-xs sm:text-sm text-[#5A6B63] mt-1.5 font-medium">
-                날짜를 선택하면 <strong className="text-[#1B382E]">"오늘 각 평형(16·35·51·펫룸)을 얼마에 팔아야 하는지"</strong>와 <strong className="text-[#1B382E]">대기예약·취소율·골프 부킹 시너지 기반 마케팅 액션</strong>을 즉시 확인할 수 있습니다.
+                <strong>2026년 인상 단가 SSOT 100% 앵커링</strong>과 <strong>2024·2025 2개년 비가격 앙상블</strong>을 기반으로, 오늘 각 평형별 권장 판매가와 대기·취소·골프 시너지 액션을 즉시 확인합니다.
               </p>
             </div>
 
@@ -579,17 +613,17 @@ export default function RoomDynamicPricing() {
             </div>
           )}
 
-          {/* 📖 [아코디언 B] 다이나믹 프라이싱 초보자/실무자 상세 설명 가이드 */}
+          {/* 📖 [아코디언 B] 다이나믹 프라이싱 V2 실무자 상세 설명 가이드 */}
           {showGuideAccordion && (
             <div className="mt-4 pt-5 border-t-2 border-[#D0C6BB]/70 bg-[#FAF9F6] rounded-2xl p-5 sm:p-6 space-y-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
                     <BookOpen size={18} className="text-[#284F42]" />
-                    <span>실무자용 직관적 가이드 — "그래서 방을 얼마에 팔아야 하는지 어떻게 보나요?"</span>
+                    <span>실무자용 직관적 가이드 — "V2 다이나믹 프라이싱 어떻게 작동하나요?"</span>
                   </h3>
                   <p className="text-xs sm:text-sm text-[#5A6B63] mt-1 leading-relaxed">
-                    복잡한 통계를 계산할 필요 없이, <strong>① 날짜를 고르고 ➔ ② 각 평형 카드에 적힌 [권장 판매가]를 확인한 뒤 ➔ ③ 추천 액션(단가 상향 / 기준가 유지 / 번들 특전 / 타임세일)</strong>을 그대로 실행하시면 됩니다.
+                    <strong>2026년 전략적 인상 단가를 100% 출발 기준선(Anchor)</strong>으로 삼고, <strong>과거 2개년(2024·2025) 실측 데이터는 원화 금액을 섞지 않고 오직 수요 패턴(앙상블 점유율·예약 속도·계절성 곡선)</strong>만 결합하여 최적 판매가를 도출합니다.
                   </p>
                 </div>
                 <button
@@ -601,41 +635,41 @@ export default function RoomDynamicPricing() {
                 </button>
               </div>
 
-              {/* 3-Step 실무 활용법 */}
+              {/* 3대 핵심 엔진 개선 포인트 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-1.5">
                   <div className="text-xs font-black text-[#1E523F] bg-[#E8F2EE] px-2.5 py-1 rounded-lg inline-block">
-                    STEP 1 · 숙박 날짜 선택
+                    핵심 1 · 2026 순수 가격 앵커링
                   </div>
                   <div className="text-sm font-extrabold text-[#1B382E]">
-                    아래 날짜 바 또는 30일 표에서 날짜를 클릭하세요
+                    2025년 과거 가격 물타기(Dilution) 전면 배제
                   </div>
                   <p className="text-xs text-[#5A6B63] leading-relaxed">
-                    오늘, 다가오는 주말(금·토), 혹은 빈방이 걱정되는 평일을 클릭하면 해당 날짜의 평형별 적정 판매가가 즉시 상단 보드에 표시됩니다.
-                  </p>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-1.5">
-                  <div className="text-xs font-black text-[#1E523F] bg-[#E8F2EE] px-2.5 py-1 rounded-lg inline-block">
-                    STEP 2 · 평형별 권장 판매가 확인
-                  </div>
-                  <div className="text-sm font-extrabold text-[#1B382E]">
-                    가장 크게 적힌 "권장 판매가"가 목표 방값입니다
-                  </div>
-                  <p className="text-xs text-[#5A6B63] leading-relaxed">
-                    16평·35평·51평·펫룸 각 카드에 표시된 <strong>권장 판매가(추천 ADR)</strong>와 <strong>하한(최저 방어선)~상한</strong> 범위를 확인하여 OTA 및 자사몰 요금을 조정하세요.
+                    과거 낮은 가격과의 단순 평균을 폐기하고, 2026년 실측 Retail ADR을 그대로 출발선으로 고정하여 2026년 인상 기조 위에서 단가 상향(Yield-Up)을 집행합니다.
                   </p>
                 </div>
 
                 <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-1.5">
                   <div className="text-xs font-black text-[#8C6D3B] bg-[#FAF6ED] px-2.5 py-1 rounded-lg inline-block">
-                    STEP 3 · 복합 수요 시그널 & 번들 적용
+                    핵심 2 · 2024·2025 2개년 비가격 앙상블
                   </div>
                   <div className="text-sm font-extrabold text-[#1B382E]">
-                    대기예약·골프 부킹 팀수를 함께 확인하세요
+                    추석 이동 노이즈 제거 & 62,233건 취소 위험 차감
                   </div>
                   <p className="text-xs text-[#5A6B63] leading-relaxed">
-                    골프 부킹 팀수가 많거나 대기예약이 쌓인 날은 객실 수요도 함께 폭발하므로 특가를 닫고 단가를 높이며, 여유로운 평일은 레저 번들 특전으로 모객합니다.
+                    2개년 동요일 점유율 및 리드타임 D-k 예약 속도를 앙상블 결합하여, 11월 주말의 구조적 만실 패턴을 포착하고 D-25 이전에도 선제적 Yield-Up을 가동합니다.
+                  </p>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-1.5">
+                  <div className="text-xs font-black text-[#1B3B2B] bg-[#E8F2EE] px-2.5 py-1 rounded-lg inline-block">
+                    핵심 3 · 숙박업 전용 Stay-Night 규칙
+                  </div>
+                  <div className="text-sm font-extrabold text-[#1B382E]">
+                    공휴일 전야(Eve) 최성수 & 연휴 마감 분리
+                  </div>
+                  <p className="text-xs text-[#5A6B63] leading-relaxed">
+                    달력상 평일이라도 다음 날이 쉬는 날인 밤(연휴 전야)은 토요일 최성수 요금으로 자동 편입되며, 연휴 마지막 날 밤은 일요 요금제로 자동 분리됩니다.
                   </p>
                 </div>
               </div>
@@ -649,15 +683,15 @@ export default function RoomDynamicPricing() {
                   <div className="space-y-2 text-xs">
                     <div className="flex items-start gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#E8F2EE] text-[#1E523F] font-extrabold shrink-0">🔥 YIELD_UP (단가 상향)</span>
-                      <span className="text-[#5A6B63]">주말·대기예약·골프 성수일 등 수요 집중 구간입니다. <strong>OTA 할인 특가를 마감하고 기준가보다 높여 수익을 극대화</strong>하세요.</span>
+                      <span className="text-[#5A6B63]">주말·대기예약·골프 성수일 등 수요 집중 구간입니다. <strong>OTA 할인 특가를 마감하고 2026년 기준가보다 높여 수익을 극대화</strong>하세요.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#F4F3EE] text-[#284F42] font-extrabold shrink-0">⚖️ HOLD (기준가 유지)</span>
-                      <span className="text-[#5A6B63]">예약 속도가 안정적인 날입니다. <strong>명목 기준가를 방어하면서 주력 복합패키지 판매 비중을 유지</strong>하세요.</span>
+                      <span className="text-[#5A6B63]">예약 속도가 안정적인 날입니다. <strong>2026년 인상 기준가를 방어하면서 주력 복합패키지 판매 비중을 유지</strong>하세요.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#FAF6ED] text-[#8C6D3B] font-extrabold shrink-0">🎁 BUNDLE_PROMO (번들 특전)</span>
-                      <span className="text-[#5A6B63]">D-11 이후 비수기 평일입니다. 객실 단가를 직접 깎지 말고 <strong>마운틴카트·미디어아트 등 레저 티켓을 결합해 사전 모객</strong>하세요.</span>
+                      <span className="text-[#5A6B63]">D-11 이후 비수기 평일입니다. 객실 단가를 직접 깎지 말고 <strong>마운틴카트·미디어아트 등 레저 2인 특전을 결합해 사전 모객</strong>하세요.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#FDF0ED] text-[#8B2635] font-extrabold shrink-0">⚡ FLASH_SALE (타임세일)</span>
@@ -668,20 +702,20 @@ export default function RoomDynamicPricing() {
 
                 <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/75 space-y-2.5">
                   <div className="text-xs font-extrabold text-[#1B382E] border-b border-[#D0C6BB]/50 pb-2">
-                    📌 핵심 지표 쉽게 이해하기
+                    📌 V2 핵심 지표 및 필드 쉽게 이해하기
                   </div>
                   <div className="space-y-2 text-xs">
                     <div>
-                      <strong className="text-[#1B382E]">▪ Retail ADR (일반 실판매 단가):</strong>{' '}
-                      <span className="text-[#5A6B63]">자사몰(DIRECT)과 온라인여행사(OTA)를 통해 들어온 순수 일반 고객의 평균 객실 단가입니다.</span>
+                      <strong className="text-[#1B382E]">▪ 2개년 동요일 실측 점유율 앙상블:</strong>{' '}
+                      <span className="text-[#5A6B63]">52주 전(2025 D-364)과 104주 전(2024 D-728) 실측 점유율을 가중 앙상블하여 특정 연도의 우천/추석 이동 왜곡을 보정합니다.</span>
+                    </div>
+                    <div>
+                      <strong className="text-[#1B382E]">▪ 계절성 탄력 지수 (Seasonality Index S):</strong>{' '}
+                      <span className="text-[#5A6B63]">원화 금액을 배제하고, 과거 연도 내 연평균 대비 해당 월·요일군의 상대적 수요 비율(0.96x ~ 1.06x)만 추출한 무차원 가중치입니다.</span>
                     </div>
                     <div>
                       <strong className="text-[#1B382E]">▪ 하한 방어선(Floor) ~ 상한선(Ceiling):</strong>{' '}
-                      <span className="text-[#5A6B63]">원가 및 브랜드 가치를 지키기 위해 <strong>절대 이 금액 밑으로 팔면 안 되는 최저선(하한)</strong>과 <strong>최대 인상 가능 한도(상한)</strong>입니다.</span>
-                    </div>
-                    <div>
-                      <strong className="text-[#1B382E]">▪ 대기예약 · 취소율 · 연박 비중 · 골프 부킹 팀수:</strong>{' '}
-                      <span className="text-[#5A6B63]">단순 잔여 객실수뿐만 아니라 대기 수요(W), 취소 위험(X), 연박(LOS), 골프장 부킹 팀수를 교차 분석해 가격 정확도를 높입니다.</span>
+                      <span className="text-[#5A6B63]">2026년 인상 단가 체계에서 원가 및 가치를 지키는 최저선(Floor)과 최대 인상 한도(Ceiling)입니다.</span>
                     </div>
                   </div>
                 </div>
@@ -791,8 +825,18 @@ export default function RoomDynamicPricing() {
                           {selectedDayItem.date} ({selectedDayItem.dayOfWeek}요일) · {selectedDayItem.dayTypeLabel}
                         </h2>
                         <span className="px-2.5 py-1 rounded-lg bg-white text-[#1B382E] text-xs font-extrabold border border-[#D0C6BB]">
-                          D-{selectedDayItem.leadDays != null ? selectedDayItem.leadDays : '-'} (전년 매칭 {selectedDayItem.yoyMatchDate || '-'})
+                          D-{selectedDayItem.leadDays != null ? selectedDayItem.leadDays : '-'} (25년 {selectedDayItem.yoyMatchDate || '-'} · 24년 {selectedDayItem.yoy2024MatchDate || '-'})
                         </span>
+                        {selectedDayItem.isHolidayEve && (
+                          <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1] flex items-center gap-1 shadow-2xs">
+                            ★ 공휴일 전야 최성수 (토요요금)
+                          </span>
+                        )}
+                        {selectedDayItem.isHolidayClosingNight && (
+                          <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB] flex items-center gap-1">
+                            연휴 마감 (일요요금)
+                          </span>
+                        )}
                         {(() => {
                           const st = getActionBadgeStyle(selectedDayItem.marketing?.actionCode);
                           return (
@@ -863,8 +907,23 @@ export default function RoomDynamicPricing() {
                       골프 부킹 <strong>{formatNum(selectedDayItem.inventory?.golfBookedTeams)}팀</strong>
                     </span>
                     <span className="px-3 py-1 rounded-xl bg-white border border-[#D0C6BB]/80 text-xs font-bold text-[#5A6B63]">
-                      전년 동요일 최종 점유율 <strong className="text-[#1B382E]">{formatPct(selectedDayItem.inventory?.yoyFinalOccupancyPct)}</strong> (Retail ADR {formatWon(selectedDayItem.pricing?.yoy2025RetailAdr)})
+                      2개년 동요일 점유율 <strong className="text-[#1B382E]">{formatPct(selectedDayItem.inventory?.yoyFinalOccupancyPct)}</strong>
+                      {(selectedDayItem.inventory?.yoy2025FinalOccupancyPct != null || selectedDayItem.inventory?.yoy2024FinalOccupancyPct != null) && (
+                        <span className="text-[11px] text-[#5A6B63] ml-1">
+                          (25년 {formatPct(selectedDayItem.inventory?.yoy2025FinalOccupancyPct)} · 24년 {formatPct(selectedDayItem.inventory?.yoy2024FinalOccupancyPct)})
+                        </span>
+                      )}
                     </span>
+                    {selectedDayItem.seasonalityIndex != null && (
+                      <span className="px-3 py-1 rounded-xl bg-white border border-[#D0C6BB]/80 text-xs font-bold text-[#1B382E]">
+                        계절성 탄력 지수 <strong className="text-[#284F42]">{selectedDayItem.seasonalityIndex}x</strong>
+                      </span>
+                    )}
+                    {selectedDayItem.inventory?.historicalAttritionPct != null && (
+                      <span className="px-3 py-1 rounded-xl bg-white border border-[#D0C6BB]/80 text-xs font-bold text-[#5A6B63]">
+                        3개년 고유 취소율 <strong className="text-[#8B2635]">{formatPct(selectedDayItem.inventory?.historicalAttritionPct)}</strong>
+                      </span>
+                    )}
                   </div>
 
                   {/* 왜 이 가격인가요? (AI/SSOT 마케팅 의사결정 가이드 문장 + 추천 번들 + 타겟 채널) */}
@@ -1203,6 +1262,14 @@ export default function RoomDynamicPricing() {
                         점유 {formatPct(recent2026?.avgOccupancyPct)} · 연박 {formatPct(recent2026?.avgMultiNightRatioPct)}
                       </span>
                     </div>
+                    {recent2026?.losTrendByYear && (
+                      <div className="flex items-center justify-between text-[11px] text-[#5A6B63] pt-1 border-t border-[#D0C6BB]/30">
+                        <span>3개년 연박 성장</span>
+                        <span className="font-extrabold text-[#284F42]">
+                          24년 {formatPct(recent2026.losTrendByYear.y2024)} ➔ 25년 {formatPct(recent2026.losTrendByYear.y2025)} ➔ 26년 {formatPct(recent2026.losTrendByYear.y2026)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1230,6 +1297,27 @@ export default function RoomDynamicPricing() {
                     <p className="text-xs text-[#5A6B63] mt-2 font-medium">
                       기준 ADR 평균: <strong className="text-[#1B382E]">{formatWon(pricingRec?.avgBaselineAdr)}</strong>
                     </p>
+
+                    {pricingRec?.recommendedByDayType && (
+                      <div className="mt-2.5 pt-2 border-t border-[#D0C6BB]/40 grid grid-cols-2 gap-1.5 text-[11px]">
+                        <div className="flex items-center justify-between bg-[#FAF6ED] px-2 py-1 rounded-lg border border-[#E5DAC1]">
+                          <span className="text-[#8C6D3B] font-bold">토·연휴</span>
+                          <span className="font-black text-[#8C6D3B]">{formatWon(pricingRec.recommendedByDayType.satHoliday)}</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-[#F4F3EE] px-2 py-1 rounded-lg border border-[#D0C6BB]/70">
+                          <span className="text-[#1B382E] font-bold">금요일</span>
+                          <span className="font-black text-[#1B382E]">{formatWon(pricingRec.recommendedByDayType.friday)}</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-[#F4F3EE] px-2 py-1 rounded-lg border border-[#D0C6BB]/70">
+                          <span className="text-[#5A6B63] font-bold">일요일</span>
+                          <span className="font-bold text-[#1B382E]">{formatWon(pricingRec.recommendedByDayType.sunday)}</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-[#E8F2EE] px-2 py-1 rounded-lg border border-[#B4C6C1]/70">
+                          <span className="text-[#1E523F] font-bold">평일(월~목)</span>
+                          <span className="font-black text-[#1E523F]">{formatWon(pricingRec.recommendedByDayType.weekday)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 pt-3.5 border-t border-[#D0C6BB]/50 grid grid-cols-4 gap-1.5 text-center">
@@ -1432,7 +1520,7 @@ export default function RoomDynamicPricing() {
                                   <ChevronDown size={15} className="text-[#5A6B63] shrink-0" />
                                 )}
                                 <div>
-                                  <div className="font-extrabold text-[#1B382E] flex items-center gap-1.5">
+                                  <div className="font-extrabold text-[#1B382E] flex items-center gap-1.5 flex-wrap">
                                     <span>{day.date}</span>
                                     <span className={`px-1.5 py-0.5 rounded text-[11px] font-black ${
                                       day.dayOfWeek === '토'
@@ -1446,9 +1534,19 @@ export default function RoomDynamicPricing() {
                                     <span className="px-1.5 py-0.5 rounded bg-[#F4F3EE] border border-[#D0C6BB]/60 text-[11px] font-extrabold text-[#1B382E]">
                                       D-{day.leadDays != null ? day.leadDays : '-'}
                                     </span>
+                                    {day.isHolidayEve && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]">
+                                        ★연휴전야
+                                      </span>
+                                    )}
+                                    {day.isHolidayClosingNight && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]">
+                                        연휴마감
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[11px] text-[#5A6B63] mt-0.5">
-                                    {day.dayTypeLabel} · 전년매칭 {day.yoyMatchDate || '-'}
+                                    {day.dayTypeLabel} · 매칭 (25년 {day.yoyMatchDate || '-'} / 24년 {day.yoy2024MatchDate || '-'})
                                   </div>
                                 </div>
                               </div>
@@ -1473,7 +1571,7 @@ export default function RoomDynamicPricing() {
                                 </span>
                               </div>
                               <div className="text-[11px] text-[#5A6B63]">
-                                전년 당일 Retail {formatWon(day.pricing?.yoy2025RetailAdr)} | 하한 {formatWon(day.pricing?.floorAdr)} ~ 상한 {formatWon(day.pricing?.ceilingAdr)}
+                                25년 Retail {formatWon(day.pricing?.yoy2025RetailAdr)} | 하한 {formatWon(day.pricing?.floorAdr)} ~ 상한 {formatWon(day.pricing?.ceilingAdr)}
                               </div>
                             </td>
 
@@ -1493,7 +1591,15 @@ export default function RoomDynamicPricing() {
                                 <span className="font-black text-[#1E523F]">예상 {formatPct(day.inventory?.projectedOccupancyPct)}</span>
                               </div>
                               <div className="text-[11px] text-[#5A6B63]">
-                                {formatNum(day.inventory?.otbOccupiedKeys)}/{formatNum(day.inventory?.physicalKeyCapacity)}키 (잔여 <strong className="text-[#284F42]">{formatNum(day.inventory?.remainingKeys)}키</strong>) · 전년최종 {formatPct(day.inventory?.yoyFinalOccupancyPct)}
+                                {formatNum(day.inventory?.otbOccupiedKeys)}/{formatNum(day.inventory?.physicalKeyCapacity)}키 (잔여 <strong className="text-[#284F42]">{formatNum(day.inventory?.remainingKeys)}키</strong>)
+                              </div>
+                              <div className="text-[10px] text-[#5A6B63]">
+                                2개년 동요일 {formatPct(day.inventory?.yoyFinalOccupancyPct)}
+                                {(day.inventory?.yoy2025FinalOccupancyPct != null || day.inventory?.yoy2024FinalOccupancyPct != null) && (
+                                  <span className="ml-1 text-[10px]">
+                                    (25년 {formatPct(day.inventory?.yoy2025FinalOccupancyPct)} · 24년 {formatPct(day.inventory?.yoy2024FinalOccupancyPct)})
+                                  </span>
+                                )}
                               </div>
                             </td>
 
@@ -1787,30 +1893,30 @@ export default function RoomDynamicPricing() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <BookOpen size={19} className="text-[#1B3B2B]" />
                     <h2 className="text-lg font-extrabold text-[#1B382E]">
-                      다이나믹 프라이싱으로 판매 시 매출이 더 늘어나는 원리 & 적용 기간 안내
+                      다이나믹 프라이싱 V2 엔진 — 2026년 100% 가격 앵커링 & 2개년 비가격 앙상블 매출 극대화 원리
                     </h2>
                     <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]">
-                      상세 해설 아코디언
+                      V2 상세 해설 아코디언
                     </span>
                   </div>
                   <p className="text-xs text-[#5A6B63] mt-1 font-medium">
-                    고정 요금제 대비 왜 매출이 늘어나는지 4대 핵심 로직(단가상향·번들특전·타임세일·골프시너지)과 30일 산출 기준을 확인합니다.
+                    과거 가격 물타기(Price Dilution)를 전면 차단하고 2026년 인상 단가를 100% 수호하며, 2024·2025 2개년 62,233건 비가격 앙상블로 매출을 극대화하는 산출 공식을 확인합니다.
                   </p>
                 </div>
 
                 <div className="px-4 py-2 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB] text-xs font-extrabold text-[#1B382E] flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                  <span>{showLogicExplanationAccordion ? '매출 원리 해설 접기' : '매출 원리 해설 펼치기'}</span>
+                  <span>{showLogicExplanationAccordion ? 'V2 해설 접기' : 'V2 해설 펼치기'}</span>
                   {showLogicExplanationAccordion ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                 </div>
               </button>
 
               {showLogicExplanationAccordion && (
                 <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-6">
-                  {/* 1. 적용 기간 및 데이터 모수 */}
+                  {/* 1. 예측 및 적용 기간 안내 */}
                   <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-3">
                     <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
                       <Calendar size={16} className="text-[#1B3B2B]" />
-                      <span>1. 예측 및 적용 기간 안내</span>
+                      <span>1. 예측 및 적용 기간 & 분석 모수</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                       <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
@@ -1826,23 +1932,85 @@ export default function RoomDynamicPricing() {
                         </p>
                       </div>
                       <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
-                        <span className="font-extrabold text-[#1B382E] block">📊 실측 비교 기준 데이터</span>
+                        <span className="font-extrabold text-[#1B382E] block">📊 V2 가격 & 비가격 앙상블 소스</span>
                         <p className="text-[#5A6B63] leading-relaxed">
-                          <strong>2025년 동기 30일 전수</strong>({hist2025?.startDate} ~ {hist2025?.endDate})의 리드타임별 예약 속도 및 <strong>2026년 최근 30일</strong>({recent2026?.startDate} ~ {recent2026?.endDate}) 일반 Retail ADR을 단일 진실 공급원(SSOT)으로 삼습니다.
+                          가격은 <strong>2026년 최근 30일 실측 Retail ADR({formatWon(recent2026?.retailAdr)})을 100% 앵커</strong>로 삼고, 수요 패턴은 <strong>2024년·2025년 2개년 62,233건 실측 데이터</strong>를 앙상블 결합합니다.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* 2. 매출이 늘어나는 4대 핵심 로직 */}
+                  {/* 2. 핵심 질의 응답: 왜 2025년 과거 가격과 평균을 내지 않는가? */}
+                  <div className="bg-white p-5 rounded-2xl border-2 border-[#1B3B2B] shadow-2xs space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B3B2B]">
+                      <Sparkles size={16} className="text-[#B59269]" />
+                      <span>2. 핵심 설계 원칙: "왜 2025년 과거 단가와 평균을 내지 않는가? (Price Dilution 방지)"</span>
+                    </div>
+                    <div className="space-y-2 text-xs text-[#5A6B63] leading-relaxed">
+                      <p>
+                        2026년 리조트는 시설 리뉴얼 및 브랜드 포지셔닝에 맞춰 <strong>의도적으로 객단가를 전년 대비 {formatPct(recent2026?.yoyRetailAdrGrowthPct)} 인상({formatWon(recent2026?.retailAdr)})</strong>하여 시장에 성공적으로 안착시켰습니다.
+                      </p>
+                      <p className="text-[#1B382E] font-bold bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/70">
+                        과거의 낮은 2025년 단가({formatWon(hist2025?.retailAdr)})와 원화 금액끼리 단순 평균을 내버리면, <strong>경영진이 의도적으로 올려놓은 객단가가 과거 가격으로 깎여 내려가는 치명적 희석(Price Dilution)</strong>이 발생합니다.
+                      </p>
+                      <p>
+                        따라서 V2 엔진은 <strong>2025년의 원화 금액을 완전히 배제</strong>하고, 모든 평형과 요일군의 출발 기준가(Baseline)를 <strong>100% 2026년 실측 Retail 체결 단가</strong>로 고정했습니다. 다이나믹 프라이싱은 2026년 인상 단가를 최저 방어선으로 삼고, 수요 집중 시 <strong>그 위로 추가 상향(Yield-Up)</strong>하여 초과 이익을 창출합니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. 2024·2025 2개년 비가격 5대 심층 시그널 */}
+                  <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
+                      <Layers size={16} className="text-[#284F42]" />
+                      <span>3. 과거 2개년(2024·2025) 비가격 5대 구조 시그널 결합 원리</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <strong className="text-[#1B382E] block">① 2개년 동요일 점유율 앙상블</strong>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          52주 전(2025 D-364)과 104주 전(2024 D-728) 2개년 동요일 실측 점유율을 결합하여, 특정 연도의 우천이나 추석 이동 노이즈를 제거하고 구조적 만실 요일을 선제 판별합니다.
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <strong className="text-[#1B382E] block">② 2개년 동일 리드타임(D-k) 속도</strong>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          과거 2개년 동일 시점의 OTB 키 수와 체크인까지 추가 유입된 잔여 픽업량을 추적하여 최종 예상 가동률의 신뢰도를 대폭 높였습니다.
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <strong className="text-[#1B382E] block">③ 무차원 계절성 탄력 지수 S</strong>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          원화 가격을 배제하고, 연평균 대비 해당 월·요일군의 상대 비율만 무차원 계수로 추출하여 10월 단풍철에서 11월 중순 비수기 전환 곡선을 정밀 반영합니다.
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <strong className="text-[#1B382E] block">④ 3개년 62,233건 고유 취소율</strong>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          요일군별 3개년 누적 취소 위험률을 산출하여, 현재 취소율이 이를 초과할 경우 허수 예약(Phantom OTB)을 사전에 차감하고 공실 위험을 방어합니다.
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <strong className="text-[#1B382E] block">⑤ 3개년 연박(LOS) 구조적 성장</strong>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          2024년 ➔ 2025년 ➔ 2026년으로 이어지는 연박 비중 증가 추세를 반영하여, 연박 비중이 높은 날은 회전율 비용 절감 및 단가 방어 가중치를 부여합니다.
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <strong className="text-[#1B382E] block">⑥ 숙박업 전용 Stay-Night 규칙</strong>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          익일 공휴일인 전야(Holiday Eve)는 토요일 최성수 요금으로 자동 승격하고, 익일 출근일인 연휴 마감일 밤은 일요 요금제로 자동 분리합니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. 4대 전략 실행 로직 */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
                       <Zap size={16} className="text-[#B59269]" />
-                      <span>2. 다이나믹 프라이싱으로 매출이 늘어나는 4대 핵심 로직</span>
+                      <span>4. 다이나믹 프라이싱으로 매출이 늘어나는 4대 핵심 로직</span>
                     </div>
-                    <p className="text-xs text-[#5A6B63] leading-relaxed">
-                      객실은 <strong>"오늘 안 팔리면 내일 가치가 0원이 되는 소멸성 자산(Perishable Asset)"</strong>입니다. 고정 요금제로 판매할 경우 발생하는 <strong>"주말/성수기 헐값 완판 손실"</strong>과 <strong>"평일 공실 방치 손실"</strong>을 8대 실시간 시그널 기반의 4대 전략으로 방어하여 순매출을 극대화합니다.
-                    </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                       {/* 로직 1: 단가 상향 */}
@@ -1856,7 +2024,7 @@ export default function RoomDynamicPricing() {
                           </span>
                         </div>
                         <p className="text-[#5A6B63] leading-relaxed">
-                          <strong>[원리]</strong> 주말·단풍시즌·대기예약 발생일·골프 부킹 집중일처럼 예약 속도가 전년보다 빠른 날은 저가 OTA 특가를 마감하고 기준가 대비 <strong>상한 방어선 범위 내에서 단가를 상향</strong>합니다.
+                          <strong>[원리]</strong> 주말·단풍시즌·대기예약 발생일·골프 부킹 집중일처럼 예약 속도가 빠른 날은 저가 OTA 특가를 마감하고 2026년 기준가 대비 <strong>상한 방어선 범위 내에서 단가를 상향</strong>합니다.
                         </p>
                         <p className="text-[#1E523F] font-bold leading-relaxed">
                           👉 조기 매진으로 놓치던 객단가(ADR Lift)를 끌어올려 같은 수의 방을 팔아도 더 큰 매출을 거둡니다.
@@ -1874,7 +2042,7 @@ export default function RoomDynamicPricing() {
                           </span>
                         </div>
                         <p className="text-[#5A6B63] leading-relaxed">
-                          <strong>[원리]</strong> D-11 이전 비수기 평일에는 방값을 덤핑 할인하면 브랜드 가치가 훼손되므로, 방값은 기준가로 방어하되 마운틴카트·미디어아트센터 등 <strong>리조트 레저 티켓을 결합한 특전 패키지</strong>로 모객합니다.
+                          <strong>[원리]</strong> D-11 이전 비수기 평일에는 방값을 덤핑 할인하면 브랜드 가치가 훼손되므로, 방값은 2026년 기준가로 방어하되 마운틴카트·미디어아트센터 등 <strong>리조트 레저 티켓을 결합한 특전 패키지</strong>로 모객합니다.
                         </p>
                         <p className="text-[#8C6D3B] font-bold leading-relaxed">
                           👉 객실 ADR을 무너뜨리지 않으면서 평일 공실을 채우고, 식음·레저 등 1인당 총 소비액(RevPAG)을 늘립니다.
@@ -1910,7 +2078,7 @@ export default function RoomDynamicPricing() {
                           </span>
                         </div>
                         <p className="text-[#5A6B63] leading-relaxed">
-                          <strong>[원리]</strong> 안정적 페이스의 날은 기준 요금을 흔들림 없이 수호하며, 향후 30일 골프 부킹 <strong>{formatNum(currentOtb?.totalGolfBookedTeams)}팀</strong>의 숙박 연계 수요와 최근 <strong>{formatPct(recent2026?.avgMultiNightRatioPct)}의 연박 고객</strong>을 우대합니다.
+                          <strong>[원리]</strong> 안정적 페이스의 날은 2026년 기준 요금을 수호하며, 향후 30일 골프 부킹 <strong>{formatNum(currentOtb?.totalGolfBookedTeams)}팀</strong>의 숙박 연계 수요와 <strong>연박 고객</strong>을 우대합니다.
                         </p>
                         <p className="text-[#284F42] font-bold leading-relaxed">
                           👉 객실 회전율(청소비·운영비)을 절감하고 고단가 35·51평 스위트룸 판매를 촉진합니다.
@@ -1919,12 +2087,12 @@ export default function RoomDynamicPricing() {
                     </div>
                   </div>
 
-                  {/* 3. 30일 시뮬레이션 실제 기대 효과 비교 표 */}
+                  {/* 5. 30일 시뮬레이션 실제 기대 효과 비교 표 */}
                   <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
                         <TrendingUp size={16} className="text-[#1E523F]" />
-                        <span>3. 향후 30일간 실제 기대 효과 비교 (단일 진실 공급원 SSOT)</span>
+                        <span>5. 향후 30일간 실제 기대 효과 비교 (단일 진실 공급원 SSOT)</span>
                       </div>
                       <span className="text-[11px] font-bold text-[#5A6B63]">
                         {meta?.startDate} ~ {meta?.endDate} ({formatNum(meta?.totalDays)}일간)

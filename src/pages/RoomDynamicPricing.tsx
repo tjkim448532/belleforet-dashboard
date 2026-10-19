@@ -1071,11 +1071,11 @@ export default function RoomDynamicPricing() {
                             <th className="py-3 px-4 text-right">현재 예약(OTB)</th>
                             <th className="py-3 px-4 text-right">잔여 판매가능</th>
                             <th className="py-3 px-4 text-right">점유율</th>
-                            <th className="py-3 px-4 text-right">2025 Retail ADR</th>
-                            <th className="py-3 px-4 text-right">2026 최근 ADR</th>
-                            <th className="py-3 px-4 text-right">기준가(Baseline)</th>
+                            <th className="py-3 px-4 text-right">2025 실측 ADR (참고)</th>
+                            <th className="py-3 px-4 text-right">2026 실측 ADR (앵커)</th>
+                            <th className="py-3 px-4 text-right">기준가 (2026 출발선)</th>
                             <th className="py-3 px-4 text-right">추천 ADR (조정률)</th>
-                            <th className="py-3 px-4 text-right">하한 ~ 상한 방어선</th>
+                            <th className="py-3 px-4 text-right">하한 ~ 상한 가드레일</th>
                             <th className="py-3 px-4 text-center">액션</th>
                           </tr>
                         </thead>
@@ -1147,19 +1147,19 @@ export default function RoomDynamicPricing() {
                 <div className="bg-white rounded-2xl p-4 border border-[#D0C6BB] text-xs text-[#5A6B63] grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 shadow-2xs">
                   <div>
                     <strong className="text-[#1B382E] block mb-0.5">① 실시간 예약(OTB) & 예상 가동률</strong>
-                    향후 30일 물리 가용 키({formatNum(currentOtb?.totalCapacityKeys)}키) 대비 현재 확보된 점유율과, 대기예약({formatNum(currentOtb?.totalWaitingRooms)}실)·취소({formatNum(currentOtb?.totalCancelledRooms)}실)·골프 부킹({formatNum(currentOtb?.totalGolfBookedTeams)}팀)을 반영한 최종 예상 가동률입니다.
+                    향후 30일 물리 가용 키({formatNum(currentOtb?.totalCapacityKeys)}키) 대비 현재 확보된 점유율과, 대기예약({formatNum(currentOtb?.totalWaitingRooms)}실)·취소({formatNum(currentOtb?.totalCancelledRooms)}실)·골프 부킹({formatNum(currentOtb?.totalGolfBookedTeams)}팀) 및 2개년 앙상블 리드타임을 반영한 최종 예상 가동률입니다.
                   </div>
                   <div>
-                    <strong className="text-[#1B382E] block mb-0.5">② 2025 동기 vs 2026 최근 Retail ADR</strong>
-                    자사몰(DIRECT)과 OTA 일반 고객의 실측 객단가 변화율과 최근 30일 연박 비중({formatPct(recent2026?.avgMultiNightRatioPct)})을 비교합니다.
+                    <strong className="text-[#1B382E] block mb-0.5">② 2025 동기 vs 2026 최근 Retail ADR (100% 앵커)</strong>
+                    출발 기준선(Baseline)으로 100% 고정된 2026년 실측 Retail ADR({formatWon(recent2026?.retailAdr)})과 2025년 동기 대비 인상률({formatSignedPct(recent2026?.yoyRetailAdrGrowthPct)}), 그리고 최근 3개년 연박 성장세를 비교합니다.
                   </div>
                   <div>
                     <strong className="text-[#1B382E] block mb-0.5">③ 향후 30일 다이나믹 추천 평균 ADR</strong>
-                    향후 30일 기준가 평균({formatWon(pricingRec?.avgBaselineAdr)}) 대비 다이나믹 프라이싱 적용 시 목표 평균 단가({formatWon(pricingRec?.avgRecommendedAdr)})입니다.
+                    2026년 실측 기준가 평균({formatWon(pricingRec?.avgBaselineAdr)})을 기초로 수요 집중일 선제적 단가 상향(Yield-Up)을 집행한 최종 추천 평균 단가({formatWon(pricingRec?.avgRecommendedAdr)})입니다.
                   </div>
                   <div>
-                    <strong className="text-[#1B382E] block mb-0.5">④ 다이나믹 예상 매출 증대 효과</strong>
-                    기준가 고정 시 예상 매출({formatWon(pricingRec?.baselineProjectedRevenue)}) 대비 다이나믹 단가 적용 시 기대되는 추가 수익({formatSignedWon(pricingRec?.expectedRevenueGain)})입니다.
+                    <strong className="text-[#1B382E] block mb-0.5">④ 다이나믹 예상 매출 증대 효과 (30일 누적)</strong>
+                    2026년 기준가 고정 시 예상 매출({formatWon(pricingRec?.baselineProjectedRevenue)}) 대비 다이나믹 전략 적용 시 기대되는 순수 추가 수익({formatSignedWon(pricingRec?.expectedRevenueGain)})입니다.
                   </div>
                 </div>
               )}
@@ -1194,7 +1194,7 @@ export default function RoomDynamicPricing() {
 
                   <div className="mt-4 pt-3.5 border-t border-[#D0C6BB]/50 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#5A6B63] font-medium">전년 동일 리드타임({formatNum(currentOtb?.yoySameLeadOccupiedKeys)}키) 대비</span>
+                      <span className="text-[#5A6B63] font-medium">과거 동일 리드타임({formatNum(currentOtb?.yoySameLeadOccupiedKeys)}키) 대비</span>
                       <span className="font-extrabold text-[#1E523F]">
                         예약 속도 {formatPct(currentOtb?.bookingPacePct)}
                       </span>
@@ -1295,7 +1295,7 @@ export default function RoomDynamicPricing() {
                     </div>
 
                     <p className="text-xs text-[#5A6B63] mt-2 font-medium">
-                      기준 ADR 평균: <strong className="text-[#1B382E]">{formatWon(pricingRec?.avgBaselineAdr)}</strong>
+                      2026 출발 기준가 평균: <strong className="text-[#1B382E]">{formatWon(pricingRec?.avgBaselineAdr)}</strong>
                     </p>
 
                     {pricingRec?.recommendedByDayType && (
@@ -1571,7 +1571,7 @@ export default function RoomDynamicPricing() {
                                 </span>
                               </div>
                               <div className="text-[11px] text-[#5A6B63]">
-                                25년 Retail {formatWon(day.pricing?.yoy2025RetailAdr)} | 하한 {formatWon(day.pricing?.floorAdr)} ~ 상한 {formatWon(day.pricing?.ceilingAdr)}
+                                25년 실측 {formatWon(day.pricing?.yoy2025RetailAdr)} | 가드레일 {formatWon(day.pricing?.floorAdr)} ~ {formatWon(day.pricing?.ceilingAdr)}
                               </div>
                             </td>
 
@@ -1683,11 +1683,11 @@ export default function RoomDynamicPricing() {
                                           <th className="py-2.5 px-4 text-right">현재 예약</th>
                                           <th className="py-2.5 px-4 text-right">잔여 판매가능</th>
                                           <th className="py-2.5 px-4 text-right">점유율</th>
-                                          <th className="py-2.5 px-4 text-right">2025 ADR</th>
-                                          <th className="py-2.5 px-4 text-right">2026 최근 ADR</th>
-                                          <th className="py-2.5 px-4 text-right">기준가</th>
+                                          <th className="py-2.5 px-4 text-right">2025 실측 ADR (참고)</th>
+                                          <th className="py-2.5 px-4 text-right">2026 실측 ADR (앵커)</th>
+                                          <th className="py-2.5 px-4 text-right">기준가 (2026 출발선)</th>
                                           <th className="py-2.5 px-4 text-right bg-[#E8F2EE]/40 text-[#1B382E]">추천 ADR (조정률)</th>
-                                          <th className="py-2.5 px-4 text-right">하한 ~ 상한</th>
+                                          <th className="py-2.5 px-4 text-right">하한 ~ 상한 가드레일</th>
                                           <th className="py-2.5 px-4 text-center">액션</th>
                                         </tr>
                                       </thead>
@@ -1805,13 +1805,13 @@ export default function RoomDynamicPricing() {
                           {/* 2025 vs 2026 Retail ADR & Next 30d Recommended ADR */}
                           <div className="grid grid-cols-3 gap-2 bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/50 mb-3">
                             <div>
-                              <div className="text-[10px] font-bold text-[#5A6B63]">2025 Retail ADR</div>
+                              <div className="text-[10px] font-bold text-[#5A6B63]">2025 실측 ADR (참고)</div>
                               <div className="text-xs sm:text-sm font-extrabold text-[#1B382E] mt-0.5">
                                 {formatWon(bm.adr2025Retail)}
                               </div>
                             </div>
                             <div>
-                              <div className="text-[10px] font-bold text-[#5A6B63]">2026 최근 ADR</div>
+                              <div className="text-[10px] font-bold text-[#5A6B63]">2026 실측 ADR (앵커)</div>
                               <div className="text-xs sm:text-sm font-extrabold text-[#1B382E] mt-0.5">
                                 {formatWon(bm.adr2026RecentRetail)}
                               </div>
@@ -1826,7 +1826,7 @@ export default function RoomDynamicPricing() {
 
                           {/* Day-of-Week Baseline Matrix */}
                           <div className="text-[11px] font-bold text-[#5A6B63] mb-1.5 px-0.5">
-                            요일별 기준가 (baselineByDayType):
+                            2026 요일별 기준가 (100% 실측 앵커 Baseline):
                           </div>
                           <div className="grid grid-cols-4 gap-1.5 text-center mb-3">
                             <div className="bg-[#FAF9F6] p-2 rounded-xl border border-[#D0C6BB]/50">

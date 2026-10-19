@@ -5,7 +5,7 @@ import {
   Tag, Zap, Flame, AlertCircle, HelpCircle, BookOpen,
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   Compass, Package, Database,
-  Radio, BarChart3, Activity
+  Radio, BarChart3, Activity, Users
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 
@@ -48,6 +48,58 @@ export interface HistoricalPeriodSummary {
   yoyRetailAdrGrowthPct?: number | null;
 }
 
+export interface OtbChannelBreakdown {
+  fitDirectRooms?: number | null;
+  fitOtaRooms?: number | null;
+  golfPkgRooms?: number | null;
+  corporateResortRooms?: number | null;
+  groupSeminarRooms?: number | null;
+  memberResortRooms?: number | null;
+  contractedBaseRooms?: number | null;
+  contractedBaseKeys?: number | null;
+  fitDirectSharePct?: number | null;
+  fitOtaSharePct?: number | null;
+  golfPkgSharePct?: number | null;
+  corporateResortSharePct?: number | null;
+  groupSeminarSharePct?: number | null;
+  memberResortSharePct?: number | null;
+  contractedBaseSharePct?: number | null;
+  contractedBaseKeysSharePct?: number | null;
+}
+
+export interface ChannelRateGuideSummary {
+  avgFitDirectWebAdr?: number | null;
+  avgFitOtaListedAdr?: number | null;
+  avgCorporateResortContractAdr?: number | null;
+  avgGroupSeminarContractBaseAdr?: number | null;
+  avgGroupSeminarWalkAwayFloorAdr?: number | null;
+  avgMemberContractAdr?: number | null;
+  contractedBaseCompressionDaysCount?: number | null;
+  groupRateFloorProtectedDaysCount?: number | null;
+  groupBlockClosedDaysCount?: number | null;
+}
+
+export interface DailyChannelRateGuide {
+  fitDirectWebAdr?: number | null;
+  fitOtaListedAdr?: number | null;
+  corporateResortContractAdr?: number | null;
+  groupSeminarContractBaseAdr?: number | null;
+  groupSeminarWalkAwayFloorAdr?: number | null;
+  memberContractAdr?: number | null;
+  groupBookingPolicyStatus?: 'GROUP_OPEN_AGGRESSIVE' | 'GROUP_STANDARD_FLOOR' | 'GROUP_RATE_FLOOR_PROTECTED' | 'GROUP_BLOCK_CLOSED' | string;
+  groupBookingPolicyLabel?: string;
+  corporateQuotaStatus?: string;
+}
+
+export interface RoomTypeChannelRateGuide {
+  fitDirectWebAdr?: number | null;
+  fitOtaListedAdr?: number | null;
+  corporateResortContractAdr?: number | null;
+  groupSeminarContractBaseAdr?: number | null;
+  groupSeminarWalkAwayFloorAdr?: number | null;
+  memberContractAdr?: number | null;
+}
+
 export interface CurrentOtbSummary {
   totalBookedRooms: number | null;
   totalOccupiedKeys: number | null;
@@ -61,6 +113,7 @@ export interface CurrentOtbSummary {
   totalWaitingRooms?: number | null;
   totalCancelledRooms?: number | null;
   totalGolfBookedTeams?: number | null;
+  channelBreakdown?: OtbChannelBreakdown;
 }
 
 export interface PricingRecommendationSummary {
@@ -116,6 +169,7 @@ export interface PricingRecommendationSummary {
   flashSaleDays: number | null;
   expectedAdditionalKeys?: number | null;
   dualTrackSummary?: DualTrackSummary;
+  channelRateGuideSummary?: ChannelRateGuideSummary;
 }
 
 export interface DualTrackSummaryItem {
@@ -321,6 +375,7 @@ export interface DailyRoomTypeDetail {
   adjustmentPct: number | null;
   actionCode: DynamicActionCode;
   actionLabel: string;
+  channelRateGuide?: RoomTypeChannelRateGuide;
 }
 
 export interface DailyCalendarItem {
@@ -364,6 +419,7 @@ export interface DailyCalendarItem {
     multiNightSharePct?: number | null;
     groupB2bSharePct?: number | null;
     golfBookedTeams?: number | null;
+    channelBreakdown?: OtbChannelBreakdown;
   };
   pricing: {
     yoy2025OverallAdr: number | null;
@@ -378,6 +434,7 @@ export interface DailyCalendarItem {
     dynamicProjectedRevenue: number | null;
     expectedRevenueDelta: number | null;
     connecting51BidPriceAdvisory?: Connecting51BidPriceAdvisory;
+    channelRateGuide?: DailyChannelRateGuide;
   };
   marketing: {
     actionCode: DynamicActionCode;
@@ -617,6 +674,39 @@ const getCompetitorBadgeStyle = (tone?: string) => {
   }
 };
 
+const getGroupPolicyBadgeStyle = (status: string | null | undefined) => {
+  switch (status) {
+    case 'GROUP_BLOCK_CLOSED':
+      return {
+        bg: 'bg-[#FDF0ED]',
+        text: 'text-[#8B2635]',
+        border: 'border-[#EAC5BD]',
+        icon: '⛔'
+      };
+    case 'GROUP_RATE_FLOOR_PROTECTED':
+      return {
+        bg: 'bg-[#FAF6ED]',
+        text: 'text-[#8C6D3B]',
+        border: 'border-[#E5DAC1]',
+        icon: '🛡️'
+      };
+    case 'GROUP_OPEN_AGGRESSIVE':
+      return {
+        bg: 'bg-[#E8F2EE]',
+        text: 'text-[#1E523F]',
+        border: 'border-[#B4C6C1]',
+        icon: '📢'
+      };
+    default:
+      return {
+        bg: 'bg-[#F4F3EE]',
+        text: 'text-[#1B382E]',
+        border: 'border-[#D0C6BB]',
+        icon: '⚖️'
+      };
+  }
+};
+
 // ============================================================================
 // Main Page Component
 // ============================================================================
@@ -695,6 +785,8 @@ export default function RoomDynamicPricing() {
   const yearlyMonthlySummary = competitorMarket?.yearlyMonthlySummary || [];
   const benchmarks = data?.roomTypeBenchmarks || [];
   const dailyCalendar = data?.dailyCalendar || [];
+  const summaryOtbChannel = currentOtb?.channelBreakdown;
+  const channelRateSummary = pricingRec?.channelRateGuideSummary;
 
   const filteredCalendar = selectedActionFilter === 'ALL'
     ? dailyCalendar
@@ -1734,6 +1826,16 @@ export default function RoomDynamicPricing() {
                         <span>Track B 고도화 {formatSignedWon(selectedDayItem.dualTrack.trackDelta.recommendedAdrDeltaKrw)}</span>
                       </span>
                     )}
+                    {selectedDayItem.pricing?.channelRateGuide?.groupBookingPolicyLabel && (() => {
+                      const gGuide = selectedDayItem.pricing.channelRateGuide;
+                      const pStyle = getGroupPolicyBadgeStyle(gGuide.groupBookingPolicyStatus);
+                      return (
+                        <span className={`px-2.5 py-1 rounded-xl text-xs font-black border flex items-center gap-1 ${pStyle.bg} ${pStyle.text} ${pStyle.border}`}>
+                          <span>{pStyle.icon}</span>
+                          <span>{gGuide.groupBookingPolicyLabel}</span>
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -1751,6 +1853,56 @@ export default function RoomDynamicPricing() {
                     </button>
                   </div>
                 </div>
+
+                {/* 2-B-2. 당일 6대 채널별 OTB 예약 구성비 & 베이스 선점 */}
+                {selectedDayItem.inventory?.channelBreakdown && (() => {
+                  const cb = selectedDayItem.inventory.channelBreakdown;
+                  return (
+                    <div className="bg-[#FAF9F5] p-3.5 rounded-2xl border border-[#D0C6BB]/80 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-1.5 font-black text-[#1B382E]">
+                          <Users size={14} className="text-[#1E523F]" />
+                          <span>당일 6대 채널별 예약(OTB) 구성비 (기예약 {formatNum(selectedDayItem.inventory?.otbRoomsBooked)}실)</span>
+                        </div>
+                        <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]">
+                          단체+휴양소+골프PKG 베이스 선점: {formatNum(cb.contractedBaseRooms)}실 ({formatPct(cb.contractedBaseSharePct)})
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                        <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
+                          <span className="text-[10px] text-[#5A6B63] block">자사몰 일반·레저PKG</span>
+                          <strong className="text-[#1B382E] font-financial">{formatNum(cb.fitDirectRooms)}실</strong>
+                          <span className="text-[10px] text-[#5A6B63] ml-1">({formatPct(cb.fitDirectSharePct)})</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
+                          <span className="text-[10px] text-[#5A6B63] block">온라인 여행사(OTA)</span>
+                          <strong className="text-[#1B382E] font-financial">{formatNum(cb.fitOtaRooms)}실</strong>
+                          <span className="text-[10px] text-[#5A6B63] ml-1">({formatPct(cb.fitOtaSharePct)})</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
+                          <span className="text-[10px] text-[#1E523F] font-bold block">골프 18·36H 패키지</span>
+                          <strong className="text-[#1E523F] font-financial">{formatNum(cb.golfPkgRooms)}실</strong>
+                          <span className="text-[10px] text-[#1E523F] ml-1">({formatPct(cb.golfPkgSharePct)})</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
+                          <span className="text-[10px] text-[#5A6B63] block">법인 휴양소 (현대·삼성 등)</span>
+                          <strong className="text-[#1B382E] font-financial">{formatNum(cb.corporateResortRooms)}실</strong>
+                          <span className="text-[10px] text-[#5A6B63] ml-1">({formatPct(cb.corporateResortSharePct)})</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
+                          <span className="text-[10px] text-[#8C6D3B] font-bold block">단체 세미나·일반단체</span>
+                          <strong className="text-[#8C6D3B] font-financial">{formatNum(cb.groupSeminarRooms)}실</strong>
+                          <span className="text-[10px] text-[#8C6D3B] ml-1">({formatPct(cb.groupSeminarSharePct)})</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
+                          <span className="text-[10px] text-[#5A6B63] block">분양 구좌회원 (1/6·1/12)</span>
+                          <strong className="text-[#1B382E] font-financial">{formatNum(cb.memberResortRooms)}실</strong>
+                          <span className="text-[10px] text-[#5A6B63] ml-1">({formatPct(cb.memberResortSharePct)})</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* 2-C. 🌟 [가장 중요한 영역] 선택한 날짜의 6대 평형별 권장 판매가 대형 카드 (최우선 배치!) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1825,6 +1977,34 @@ export default function RoomDynamicPricing() {
                             <div className="mt-2 pt-2 border-t border-[#D0C6BB]/50 flex items-center justify-between text-[11px] font-bold">
                               <span className="text-[#5A6B63]">표준(A) {formatWon(trackARoomPrice)}</span>
                               <span className="text-[#8C6D3B] font-extrabold">➔ 시장탄력(B) {formatWon(trackBRoomPrice)}</span>
+                            </div>
+                          )}
+
+                          {/* 채널별 실행 단가 가이드 */}
+                          {rt.channelRateGuide && (
+                            <div className="mt-2.5 pt-2.5 border-t border-[#D0C6BB]/50 space-y-1.5 text-[11px]">
+                              <div className="flex items-center justify-between text-[#5A6B63] font-bold">
+                                <span>채널별 실행 단가</span>
+                                <span className="text-[10px] text-[#284F42]">자사몰 2.5% · OTA 12%</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
+                                  <span className="text-[#5A6B63]">자사몰(직판)</span>
+                                  <strong className="font-financial text-[#1B382E]">{formatWon(rt.channelRateGuide.fitDirectWebAdr)}</strong>
+                                </div>
+                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
+                                  <span className="text-[#5A6B63]">OTA 노출</span>
+                                  <strong className="font-financial text-[#1B382E]">{formatWon(rt.channelRateGuide.fitOtaListedAdr)}</strong>
+                                </div>
+                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
+                                  <span className="text-[#8C6D3B] font-extrabold">단체 네고하한</span>
+                                  <strong className="font-financial text-[#8C6D3B]">{formatWon(rt.channelRateGuide.groupSeminarWalkAwayFloorAdr)}</strong>
+                                </div>
+                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
+                                  <span className="text-[#5A6B63]">법인 휴양소</span>
+                                  <strong className="font-financial text-[#1B382E]">{formatWon(rt.channelRateGuide.corporateResortContractAdr)}</strong>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1922,6 +2102,56 @@ export default function RoomDynamicPricing() {
                                     {rt.actionLabel || rt.actionCode}
                                   </span>
                                 </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* 채널별 실행 단가 가이드 및 단체 네고 하한선 테이블 */}
+                    <div className="bg-[#FAF9F6] rounded-2xl p-4 border border-[#D0C6BB]/75 overflow-x-auto">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                        <div className="text-xs font-extrabold text-[#1B382E] flex items-center gap-2">
+                          <Tag size={14} className="text-[#1E523F]" />
+                          <span>[{selectedDayItem.date}] 6대 평형별 판매채널 실행 단가 가이드 & 단체 수주 마지노선 (Walk-Away Floor)</span>
+                        </div>
+                        {selectedDayItem.pricing?.channelRateGuide && (() => {
+                          const g = selectedDayItem.pricing.channelRateGuide;
+                          const pStyle = getGroupPolicyBadgeStyle(g.groupBookingPolicyStatus);
+                          return (
+                            <span className={`px-2.5 py-0.5 rounded text-[11px] font-black border ${pStyle.bg} ${pStyle.text} ${pStyle.border}`}>
+                              {pStyle.icon} 단체 수주 정책: {g.groupBookingPolicyLabel}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                      <table className="w-full text-left border-collapse whitespace-nowrap min-w-[920px] bg-white rounded-xl overflow-hidden text-xs">
+                        <thead>
+                          <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/80">
+                            <th className="py-2.5 px-4">평형 구분</th>
+                            <th className="py-2.5 px-4 text-right">다이나믹 권장가</th>
+                            <th className="py-2.5 px-4 text-right">자사몰(직판) 2.5%</th>
+                            <th className="py-2.5 px-4 text-right">OTA 노출가 (12% 방어)</th>
+                            <th className="py-2.5 px-4 text-right">법인 휴양소 협약가</th>
+                            <th className="py-2.5 px-4 text-right">단체 세미나 평시가</th>
+                            <th className="py-2.5 px-4 text-right bg-[#FAF6ED] text-[#8C6D3B]">★ 단체 네고 하한가 (Floor)</th>
+                            <th className="py-2.5 px-4 text-right">분양 구좌회원 약정가</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#D0C6BB]/40">
+                          {(selectedDayItem.roomTypes || []).map((rt) => {
+                            const cr = rt.channelRateGuide;
+                            return (
+                              <tr key={`channel-${rt.roomType}`} className="hover:bg-[#F4F3EE]/50">
+                                <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">{rt.roomType}</td>
+                                <td className="py-2.5 px-4 text-right font-black text-[#1B3B2B] font-financial">{formatWon(rt.recommendedAdr)}</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">{formatWon(cr?.fitDirectWebAdr)}</td>
+                                <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">{formatWon(cr?.fitOtaListedAdr)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.corporateResortContractAdr)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.groupSeminarContractBaseAdr)}</td>
+                                <td className="py-2.5 px-4 text-right font-black text-[#8C6D3B] bg-[#FAF6ED]/50 font-financial">{formatWon(cr?.groupSeminarWalkAwayFloorAdr)}</td>
+                                <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">{formatWon(cr?.memberContractAdr)}</td>
                               </tr>
                             );
                           })}
@@ -2407,6 +2637,129 @@ export default function RoomDynamicPricing() {
                         <p className="text-xs font-bold text-[#1B382E] bg-[#F4F3EE] p-3 rounded-xl border border-[#D0C6BB]/60">
                           💡 {spillover.crossElasticitySummary}
                         </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 6대 판매채널 OTB 구성비 & 베이스 선점율 및 채널별 실행 단가 가이드 요약 */}
+                  {(summaryOtbChannel || channelRateSummary) && (
+                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/80 space-y-4">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="text-sm font-black text-[#1B382E] flex items-center gap-2">
+                          <Users size={16} className="text-[#1B3B2B]" />
+                          <span>향후 30일 6대 판매채널 OTB 구성비 & 채널별 실행 단가 가이드 (전체 누적 요약)</span>
+                        </div>
+                        {channelRateSummary && (
+                          <div className="flex items-center gap-1.5 text-xs font-bold flex-wrap">
+                            <span className="px-2 py-0.5 rounded bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]">
+                              베이스 과열 {formatNum(channelRateSummary.contractedBaseCompressionDaysCount)}일
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                              단체 하한 방어 {formatNum(channelRateSummary.groupRateFloorProtectedDaysCount)}일
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
+                              단체 블록 마감 {formatNum(channelRateSummary.groupBlockClosedDaysCount)}일
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 1. 6대 판매채널 OTB 기예약 구성비 */}
+                      {summaryOtbChannel && (
+                        <div className="space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                            <span className="font-extrabold text-[#1B382E]">
+                              6대 판매채널별 기예약(OTB) 비중 (총 {formatNum(currentOtb?.totalBookedRooms)}실 확정)
+                            </span>
+                            <span className="text-[11px] font-black text-[#8C6D3B]">
+                              단체+법인휴양소+골프PKG 베이스 선점 합계: {formatNum(summaryOtbChannel.contractedBaseRooms)}실 ({formatPct(summaryOtbChannel.contractedBaseSharePct)})
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+                            <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block font-medium">자사몰(직판) 2.5%</span>
+                              <strong className="text-base font-black text-[#1B382E] font-financial block mt-0.5">
+                                {formatNum(summaryOtbChannel.fitDirectRooms)}실
+                              </strong>
+                              <span className="text-[11px] text-[#5A6B63]">{formatPct(summaryOtbChannel.fitDirectSharePct)}</span>
+                            </div>
+
+                            <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block font-medium">온라인 여행사(OTA)</span>
+                              <strong className="text-base font-black text-[#1B382E] font-financial block mt-0.5">
+                                {formatNum(summaryOtbChannel.fitOtaRooms)}실
+                              </strong>
+                              <span className="text-[11px] text-[#5A6B63]">{formatPct(summaryOtbChannel.fitOtaSharePct)}</span>
+                            </div>
+
+                            <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#1E523F] block font-bold">골프 18·36H PKG</span>
+                              <strong className="text-base font-black text-[#1E523F] font-financial block mt-0.5">
+                                {formatNum(summaryOtbChannel.golfPkgRooms)}실
+                              </strong>
+                              <span className="text-[11px] text-[#1E523F]">{formatPct(summaryOtbChannel.golfPkgSharePct)}</span>
+                            </div>
+
+                            <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block font-medium">법인 휴양소 (현대·삼성)</span>
+                              <strong className="text-base font-black text-[#1B382E] font-financial block mt-0.5">
+                                {formatNum(summaryOtbChannel.corporateResortRooms)}실
+                              </strong>
+                              <span className="text-[11px] text-[#5A6B63]">{formatPct(summaryOtbChannel.corporateResortSharePct)}</span>
+                            </div>
+
+                            <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#8C6D3B] block font-bold">단체 세미나·일반단체</span>
+                              <strong className="text-base font-black text-[#8C6D3B] font-financial block mt-0.5">
+                                {formatNum(summaryOtbChannel.groupSeminarRooms)}실
+                              </strong>
+                              <span className="text-[11px] text-[#8C6D3B]">{formatPct(summaryOtbChannel.groupSeminarSharePct)}</span>
+                            </div>
+
+                            <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block font-medium">분양 구좌회원 (1/6·1/12)</span>
+                              <strong className="text-base font-black text-[#1B382E] font-financial block mt-0.5">
+                                {formatNum(summaryOtbChannel.memberResortRooms)}실
+                              </strong>
+                              <span className="text-[11px] text-[#5A6B63]">{formatPct(summaryOtbChannel.memberResortSharePct)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 2. 30일 채널별 평균 실행 단가 가이드 */}
+                      {channelRateSummary && (
+                        <div className="pt-2 border-t border-[#D0C6BB]/50 space-y-2">
+                          <div className="text-xs font-extrabold text-[#1B382E]">
+                            30일 채널별 평균 실행 단가 요약 (수수료 방어 & 단체 네고 하한)
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+                            <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block text-[10px]">자사몰 직판 평균</span>
+                              <strong className="text-[#1B382E] font-financial text-sm">{formatWon(channelRateSummary.avgFitDirectWebAdr)}</strong>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block text-[10px]">OTA 노출 평균 (+5% 방어)</span>
+                              <strong className="text-[#1B382E] font-financial text-sm">{formatWon(channelRateSummary.avgFitOtaListedAdr)}</strong>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block text-[10px]">법인 휴양소 협약 평균</span>
+                              <strong className="text-[#1B382E] font-financial text-sm">{formatWon(channelRateSummary.avgCorporateResortContractAdr)}</strong>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block text-[10px]">단체 세미나 평시 평균</span>
+                              <strong className="text-[#1B382E] font-financial text-sm">{formatWon(channelRateSummary.avgGroupSeminarContractBaseAdr)}</strong>
+                            </div>
+                            <div className="bg-[#FAF6ED] p-2.5 rounded-xl border border-[#E5DAC1]">
+                              <span className="text-[#8C6D3B] block text-[10px] font-bold">★ 단체 네고 하한 평균</span>
+                              <strong className="text-[#8C6D3B] font-financial text-sm">{formatWon(channelRateSummary.avgGroupSeminarWalkAwayFloorAdr)}</strong>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/60">
+                              <span className="text-[#5A6B63] block text-[10px]">분양 구좌회원 약정 평균</span>
+                              <strong className="text-[#1B382E] font-financial text-sm">{formatWon(channelRateSummary.avgMemberContractAdr)}</strong>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}

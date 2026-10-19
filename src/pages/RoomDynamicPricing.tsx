@@ -334,6 +334,7 @@ export default function RoomDynamicPricing() {
   const [showDayTableAccordion, setShowDayTableAccordion] = useState<boolean>(false);
   const [showBenchmarkAccordion, setShowBenchmarkAccordion] = useState<boolean>(false);
   const [showSummaryDetailAccordion, setShowSummaryDetailAccordion] = useState<boolean>(false);
+  const [showLogicExplanationAccordion, setShowLogicExplanationAccordion] = useState<boolean>(false);
 
   const fetchDynamicPricing = async () => {
     setLoading(true);
@@ -1768,6 +1769,204 @@ export default function RoomDynamicPricing() {
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ====================================================================
+                5. [아코디언 E] 다이나믹 프라이싱 매출 극대화 원리 및 산출 기간 안내
+               ==================================================================== */}
+            <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowLogicExplanationAccordion(!showLogicExplanationAccordion)}
+                className="w-full p-6 bg-white hover:bg-[#FAF9F6] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left cursor-pointer"
+              >
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <BookOpen size={19} className="text-[#1B3B2B]" />
+                    <h2 className="text-lg font-extrabold text-[#1B382E]">
+                      다이나믹 프라이싱으로 판매 시 매출이 더 늘어나는 원리 & 적용 기간 안내
+                    </h2>
+                    <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]">
+                      상세 해설 아코디언
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5A6B63] mt-1 font-medium">
+                    고정 요금제 대비 왜 매출이 늘어나는지 4대 핵심 로직(단가상향·번들특전·타임세일·골프시너지)과 30일 산출 기준을 확인합니다.
+                  </p>
+                </div>
+
+                <div className="px-4 py-2 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB] text-xs font-extrabold text-[#1B382E] flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                  <span>{showLogicExplanationAccordion ? '매출 원리 해설 접기' : '매출 원리 해설 펼치기'}</span>
+                  {showLogicExplanationAccordion ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                </div>
+              </button>
+
+              {showLogicExplanationAccordion && (
+                <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-6">
+                  {/* 1. 적용 기간 및 데이터 모수 */}
+                  <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
+                      <Calendar size={16} className="text-[#1B3B2B]" />
+                      <span>1. 예측 및 적용 기간 안내</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <span className="font-extrabold text-[#1B382E] block">📅 기본 적용 구간</span>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          기준일로부터 <strong>향후 {formatNum(meta?.totalDays)}일간</strong> ({meta?.startDate} ~ {meta?.endDate})의 일별 최적 판매가를 산출합니다. (상단 필터로 14일 / 30일 / 60일 조절 가능)
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <span className="font-extrabold text-[#1B382E] block">🏨 분석 대상 객실 모수</span>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          일일 물리 가용 <strong>{formatNum(meta?.physicalKeysCapacity)}키</strong> (월 고정 모수 {formatNum(meta?.fixedMonthlyCapacity)}실 / 기준 점유율 {meta?.fixedOccupancyBenchmarkPct != null ? `${meta.fixedOccupancyBenchmarkPct}%` : '-'} SSOT) 기준 총 <strong>{formatNum(currentOtb?.totalCapacityKeys)}키-일</strong>입니다.
+                        </p>
+                      </div>
+                      <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                        <span className="font-extrabold text-[#1B382E] block">📊 실측 비교 기준 데이터</span>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          <strong>2025년 동기 30일 전수</strong>({hist2025?.startDate} ~ {hist2025?.endDate})의 리드타임별 예약 속도 및 <strong>2026년 최근 30일</strong>({recent2026?.startDate} ~ {recent2026?.endDate}) 일반 Retail ADR을 단일 진실 공급원(SSOT)으로 삼습니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. 매출이 늘어나는 4대 핵심 로직 */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
+                      <Zap size={16} className="text-[#B59269]" />
+                      <span>2. 다이나믹 프라이싱으로 매출이 늘어나는 4대 핵심 로직</span>
+                    </div>
+                    <p className="text-xs text-[#5A6B63] leading-relaxed">
+                      객실은 <strong>"오늘 안 팔리면 내일 가치가 0원이 되는 소멸성 자산(Perishable Asset)"</strong>입니다. 고정 요금제로 판매할 경우 발생하는 <strong>"주말/성수기 헐값 완판 손실"</strong>과 <strong>"평일 공실 방치 손실"</strong>을 8대 실시간 시그널 기반의 4대 전략으로 방어하여 순매출을 극대화합니다.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      {/* 로직 1: 단가 상향 */}
+                      <div className="bg-white p-5 rounded-2xl border border-[#B4C6C1] shadow-2xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                            <TrendingUp size={13} /> ① 단가 상향 (YIELD_UP) — "수요 몰릴 때 제값 이상 받기"
+                          </span>
+                          <span className="font-extrabold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-lg">
+                            {formatNum(pricingRec?.yieldUpDays)}일간 적용
+                          </span>
+                        </div>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          <strong>[원리]</strong> 주말·단풍시즌·대기예약 발생일·골프 부킹 집중일처럼 예약 속도가 전년보다 빠른 날은 저가 OTA 특가를 마감하고 기준가 대비 <strong>상한 방어선 범위 내에서 단가를 상향</strong>합니다.
+                        </p>
+                        <p className="text-[#1E523F] font-bold leading-relaxed">
+                          👉 조기 매진으로 놓치던 객단가(ADR Lift)를 끌어올려 같은 수의 방을 팔아도 더 큰 매출을 거둡니다.
+                        </p>
+                      </div>
+
+                      {/* 로직 2: 번들 특전 */}
+                      <div className="bg-white p-5 rounded-2xl border border-[#E5DAC1] shadow-2xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]">
+                            <Package size={13} /> ② 번들 특전 (BUNDLE_PROMO) — "평일 방값 지키고 부가매출 결합"
+                          </span>
+                          <span className="font-extrabold text-[#8C6D3B] bg-[#FAF6ED] px-2 py-0.5 rounded-lg">
+                            {formatNum(pricingRec?.bundlePromoDays)}일간 적용
+                          </span>
+                        </div>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          <strong>[원리]</strong> D-11 이전 비수기 평일에는 방값을 덤핑 할인하면 브랜드 가치가 훼손되므로, 방값은 기준가로 방어하되 마운틴카트·미디어아트센터 등 <strong>리조트 레저 티켓을 결합한 특전 패키지</strong>로 모객합니다.
+                        </p>
+                        <p className="text-[#8C6D3B] font-bold leading-relaxed">
+                          👉 객실 ADR을 무너뜨리지 않으면서 평일 공실을 채우고, 식음·레저 등 1인당 총 소비액(RevPAG)을 늘립니다.
+                        </p>
+                      </div>
+
+                      {/* 로직 3: 타임세일 */}
+                      <div className="bg-white p-5 rounded-2xl border border-[#EAC5BD] shadow-2xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
+                            <Flame size={13} /> ③ 타임세일 (FLASH_SALE) — "공실 위기 방을 현금으로 전환"
+                          </span>
+                          <span className="font-extrabold text-[#8B2635] bg-[#FDF0ED] px-2 py-0.5 rounded-lg">
+                            {formatNum(pricingRec?.flashSaleDays)}일간 적용
+                          </span>
+                        </div>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          <strong>[원리]</strong> D-10 이내인데 잔여 객실이 많거나 취소율이 급증한 위기일에는, 원가 이하 판매를 막는 <strong>하한 방어선(Floor ADR)</strong> 범위 내에서 자사몰 CRM 회원 대상 긴급 타임세일을 단행합니다.
+                        </p>
+                        <p className="text-[#8B2635] font-bold leading-relaxed">
+                          👉 그대로 두면 '매출 0원'으로 버려질 공실 손실을 유의미한 추가 현금 매출로 전환하여 한계수익을 회수합니다.
+                        </p>
+                      </div>
+
+                      {/* 로직 4: 기준 유지 & 골프/연박 시너지 */}
+                      <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB] shadow-2xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#F4F3EE] text-[#284F42] border border-[#D0C6BB]">
+                            <ShieldCheck size={13} /> ④ 기준유지 & 골프·연박 교차 시너지
+                          </span>
+                          <span className="font-extrabold text-[#284F42] bg-[#F4F3EE] px-2 py-0.5 rounded-lg">
+                            {formatNum(pricingRec?.holdDays)}일간 적용
+                          </span>
+                        </div>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          <strong>[원리]</strong> 안정적 페이스의 날은 기준 요금을 흔들림 없이 수호하며, 향후 30일 골프 부킹 <strong>{formatNum(currentOtb?.totalGolfBookedTeams)}팀</strong>의 숙박 연계 수요와 최근 <strong>{formatPct(recent2026?.avgMultiNightRatioPct)}의 연박 고객</strong>을 우대합니다.
+                        </p>
+                        <p className="text-[#284F42] font-bold leading-relaxed">
+                          👉 객실 회전율(청소비·운영비)을 절감하고 고단가 35·51평 스위트룸 판매를 촉진합니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. 30일 시뮬레이션 실제 기대 효과 비교 표 */}
+                  <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
+                        <TrendingUp size={16} className="text-[#1E523F]" />
+                        <span>3. 향후 30일간 실제 기대 효과 비교 (단일 진실 공급원 SSOT)</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-[#5A6B63]">
+                        {meta?.startDate} ~ {meta?.endDate} ({formatNum(meta?.totalDays)}일간)
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs whitespace-nowrap min-w-[640px]">
+                        <thead>
+                          <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/70">
+                            <th className="py-2.5 px-4">지표 구분</th>
+                            <th className="py-2.5 px-4 text-right">기준가 고정 판매 시</th>
+                            <th className="py-2.5 px-4 text-right bg-[#E8F2EE]/40 text-[#1B382E]">다이나믹 프라이싱 적용 시</th>
+                            <th className="py-2.5 px-4 text-right text-[#1E523F]">증대 효과 (Δ)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#D0C6BB]/40">
+                          <tr>
+                            <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">30일 평균 추천 ADR (객단가)</td>
+                            <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatWon(pricingRec?.avgBaselineAdr)}</td>
+                            <td className="py-2.5 px-4 text-right font-black text-[#1B3B2B] bg-[#E8F2EE]/20">{formatWon(pricingRec?.avgRecommendedAdr)}</td>
+                            <td className="py-2.5 px-4 text-right font-extrabold text-[#1E523F]">{formatSignedPct(pricingRec?.avgAdrLiftPct)} Lift</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">30일 총 예상 매출</td>
+                            <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatWon(pricingRec?.baselineProjectedRevenue)}</td>
+                            <td className="py-2.5 px-4 text-right font-black text-[#1B3B2B] bg-[#E8F2EE]/20">{formatWon(pricingRec?.dynamicProjectedRevenue)}</td>
+                            <td className="py-2.5 px-4 text-right font-black text-[#1E523F]">
+                              {formatSignedWon(pricingRec?.expectedRevenueGain)} ({formatSignedPct(pricingRec?.expectedRevenueGainPct)})
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2.5 px-4 font-extrabold text-[#1B382E]">30일간 전략 실행 분포</td>
+                            <td className="py-2.5 px-4 text-right text-[#5A6B63]">고정 30일 동일 요금</td>
+                            <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] bg-[#E8F2EE]/20">
+                              상향 {formatNum(pricingRec?.yieldUpDays)}일 · 유지 {formatNum(pricingRec?.holdDays)}일 · 특전 {formatNum(pricingRec?.bundlePromoDays)}일 · 세일 {formatNum(pricingRec?.flashSaleDays)}일
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-extrabold text-[#284F42]">일자별 맞춤 가격 수호</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}

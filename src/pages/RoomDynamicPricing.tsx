@@ -2112,34 +2112,6 @@ export default function RoomDynamicPricing() {
                               <span className="text-[#8C6D3B] font-extrabold">➔ 시장탄력(B) {formatWon(trackBRoomPrice)}</span>
                             </div>
                           )}
-
-                          {/* 채널별 실행 단가 가이드 */}
-                          {rt.channelRateGuide && (
-                            <div className="mt-2.5 pt-2.5 border-t border-[#D0C6BB]/50 space-y-1.5 text-[11px]">
-                              <div className="flex items-center justify-between text-[#5A6B63] font-bold">
-                                <span>채널별 실행 단가</span>
-                                <span className="text-[10px] text-[#284F42]">자사몰 2.5% · OTA 12%</span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
-                                  <span className="text-[#5A6B63]">자사몰(직판)</span>
-                                  <strong className="font-financial text-[#1B382E]">{formatWon(rt.channelRateGuide.fitDirectWebAdr)}</strong>
-                                </div>
-                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
-                                  <span className="text-[#5A6B63]">OTA 노출</span>
-                                  <strong className="font-financial text-[#1B382E]">{formatWon(rt.channelRateGuide.fitOtaListedAdr)}</strong>
-                                </div>
-                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
-                                  <span className="text-[#8C6D3B] font-extrabold">단체 네고하한</span>
-                                  <strong className="font-financial text-[#8C6D3B]">{formatWon(rt.channelRateGuide.groupSeminarWalkAwayFloorAdr)}</strong>
-                                </div>
-                                <div className="bg-white px-2 py-1 rounded-lg border border-[#D0C6BB]/50 flex items-center justify-between">
-                                  <span className="text-[#5A6B63]">법인 휴양소</span>
-                                  <strong className="font-financial text-[#1B382E]">{formatWon(rt.channelRateGuide.corporateResortContractAdr)}</strong>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
 
                         {/* 하단: 허용 범위 & 현재 예약률 */}

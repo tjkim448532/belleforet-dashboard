@@ -277,6 +277,9 @@ export interface CompetitorResortDetail {
   lowestRoomName?: string;
   offerCount?: number;
   vsBelleforetGapKrw?: number | null;
+  surgeVsWeekdayPct?: number | null;
+  dropFromSatPeakPct?: number | null;
+  priceChange1dKrw?: number | null;
 }
 
 export interface CompetitorBenchmarkItem {
@@ -1044,59 +1047,180 @@ export default function RoomDynamicPricing() {
           );
         })()}
 
-        {/* 3. 4대 경쟁 리조트 상세 비교표 */}
+        {/* 3. 4대 경쟁사 실시간 판매 객실 & 상품 상세 (어디서 어떤 상품을 얼마에 파는가?) */}
         {resorts.length > 0 && (
-          <div className="rounded-xl border border-[#D0C6BB]/70 overflow-x-auto">
-            <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
-              <thead>
-                <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/70">
-                  <th className="py-2 px-3.5">경쟁 리조트</th>
-                  <th className="py-2 px-3.5 text-center">판매 상태</th>
-                  <th className="py-2 px-3.5 text-right">당일 최저가</th>
-                  <th className="py-2 px-3.5 text-right">중형 (16~35평)</th>
-                  <th className="py-2 px-3.5 text-right">대형 (51평)</th>
-                  <th className="py-2 px-3.5 text-right">어제 대비 변동률</th>
-                  <th className="py-2 px-3.5 text-right">지난주 대비 변동액</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D0C6BB]/40">
-                {resorts.map((r) => (
-                  <tr key={r.resortName} className="hover:bg-[#FAF9F6]">
-                    <td className="py-2 px-3.5 font-bold text-[#1B382E]">{r.resortName}</td>
-                    <td className="py-2 px-3.5 text-center">
-                      {r.isSoldOut ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
-                          마감·품절
+          <div className="space-y-4 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D0C6BB]/60 pb-2.5">
+              <div className="text-xs sm:text-sm font-black text-[#1B382E] flex items-center gap-1.5">
+                <Radio size={15} className="text-[#1E523F]" />
+                <span>충청권 4대 경쟁사 실시간 판매 객실 & 상품 상세 (어디서 어떤 상품을 얼마에 파는가?)</span>
+              </div>
+              <span className="text-[11px] font-bold text-[#5A6B63] bg-[#FAF9F6] px-2.5 py-1 rounded-lg border border-[#D0C6BB]/60">
+                실시간 OTA 채널 전수 수집 데이터
+              </span>
+            </div>
+
+            {/* 4대 리조트 판매 상품 요약 카드 그리드 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {resorts.map((r) => {
+                const gap = r.vsBelleforetGapKrw ?? 0;
+                const isSold = r.isSoldOut;
+                return (
+                  <div
+                    key={r.resortName}
+                    className="bg-[#FAF9F6] p-4 rounded-2xl border border-[#D0C6BB]/80 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1B3B2B]/60 transition-all"
+                  >
+                    <div>
+                      {/* 리조트명 + 판매상태 */}
+                      <div className="flex items-center justify-between gap-1.5 mb-2">
+                        <strong className="text-xs sm:text-sm font-black text-[#1B382E] truncate">
+                          {r.resortName}
+                        </strong>
+                        {isSold ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD] shrink-0">
+                            마감·품절
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1] shrink-0">
+                            판매중
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 판매 채널 배지 */}
+                      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-lg bg-white border border-[#D0C6BB]/70 text-[10px] font-black text-[#284F42] inline-flex items-center gap-1">
+                          <span>🛒 판매처:</span>
+                          <strong className="text-[#1B3B2B]">{r.lowestChannel || '온라인'}</strong>
                         </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
-                          판매중
-                        </span>
+                        {r.offerCount != null && r.offerCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]">
+                            {formatNum(r.offerCount)}개 상품
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 실제 판매 객실 / 패키지 상품명 박스 */}
+                      <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/60 mb-2">
+                        <span className="text-[10px] text-[#5A6B63] block font-medium">최저가 판매 객실 상품명</span>
+                        <p className="text-xs font-black text-[#1B382E] mt-0.5 leading-snug line-clamp-2" title={r.lowestRoomName || '-'}>
+                          {r.lowestRoomName || (isSold ? '전 객실 품절 마감' : '단일 상품')}
+                        </p>
+                      </div>
+
+                      {/* 평형별 가격 요약 */}
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px] bg-white/70 p-2 rounded-lg border border-[#D0C6BB]/40">
+                        <div>
+                          <span className="text-[#5A6B63] block">중형(16~35평)</span>
+                          <strong className="text-[#1B382E] font-financial">
+                            {r.tier16_35MinPrice != null ? formatWon(r.tier16_35MinPrice) : (r.tier16_35Price != null ? formatWon(r.tier16_35Price) : '-')}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[#5A6B63] block">대형(51평)</span>
+                          <strong className="text-[#1B382E] font-financial">
+                            {r.tier51MinPrice != null ? formatWon(r.tier51MinPrice) : (r.tier51Price != null ? formatWon(r.tier51Price) : '-')}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 하단 가격 & 벨포레 대비 격차 */}
+                    <div className="pt-2.5 border-t border-[#D0C6BB]/50 space-y-1.5">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-[11px] text-[#5A6B63] font-medium">당일 최저 판매가</span>
+                        <strong className="text-base sm:text-lg font-black text-[#1B3B2B] font-financial">
+                          {isSold ? '품절' : formatWon(r.minPrice)}
+                        </strong>
+                      </div>
+
+                      {/* 벨포레 대비 격차 */}
+                      {r.vsBelleforetGapKrw != null && (
+                        <div className="flex items-center justify-between text-[11px] bg-[#E8F2EE]/60 px-2 py-1 rounded-lg">
+                          <span className="text-[#5A6B63]">벨포레 대비</span>
+                          <strong className={`font-black font-financial ${gap > 0 ? 'text-[#1E523F]' : gap < 0 ? 'text-[#8B2635]' : 'text-[#5A6B63]'}`}>
+                            {gap > 0 ? `+${formatWon(gap)} 비쌈 (우위)` : gap < 0 ? `-${formatWon(Math.abs(gap))} 저렴` : '동일가'}
+                          </strong>
+                        </div>
                       )}
-                    </td>
-                    <td className="py-2 px-3.5 text-right font-black text-[#1B382E] font-financial">
-                      {formatWon(r.minPrice)}
-                    </td>
-                    <td className="py-2 px-3.5 text-right text-[#5A6B63] font-financial">
-                      {formatWon(r.tier16_35MinPrice ?? r.tier16_35Price)}
-                    </td>
-                    <td className="py-2 px-3.5 text-right text-[#5A6B63] font-financial">
-                      {formatWon(r.tier51MinPrice ?? r.tier51Price)}
-                    </td>
-                    <td className={`py-2 px-3.5 text-right font-bold ${
-                      ((r.priceChange1dPct ?? r.change1dPct) ?? 0) > 0 ? 'text-[#8B2635]' : ((r.priceChange1dPct ?? r.change1dPct) ?? 0) < 0 ? 'text-[#1E523F]' : 'text-[#5A6B63]'
-                    }`}>
-                      {formatSignedPct(r.priceChange1dPct ?? r.change1dPct)}
-                    </td>
-                    <td className={`py-2 px-3.5 text-right font-bold font-financial ${
-                      ((r.priceChange7dKrw ?? r.change7dKrw) ?? 0) > 0 ? 'text-[#8B2635]' : ((r.priceChange7dKrw ?? r.change7dKrw) ?? 0) < 0 ? 'text-[#1E523F]' : 'text-[#5A6B63]'
-                    }`}>
-                      {formatSignedWon(r.priceChange7dKrw ?? r.change7dKrw)}
-                    </td>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 4대 경쟁 리조트 10열 상세 비교표 */}
+            <div className="rounded-2xl border border-[#D0C6BB]/80 overflow-x-auto bg-white shadow-2xs">
+              <table className="w-full text-left border-collapse whitespace-nowrap text-xs min-w-[980px]">
+                <thead>
+                  <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/80">
+                    <th className="py-2.5 px-3.5">경쟁 리조트</th>
+                    <th className="py-2.5 px-3">판매처</th>
+                    <th className="py-2.5 px-3.5">실제 판매 객실 상품명 (오퍼)</th>
+                    <th className="py-2.5 px-3 text-center">판매 상태</th>
+                    <th className="py-2.5 px-3.5 text-right">당일 최저가</th>
+                    <th className="py-2.5 px-3 text-right">중형 (16~35평)</th>
+                    <th className="py-2.5 px-3 text-right">대형 (51평)</th>
+                    <th className="py-2.5 px-3.5 text-right">벨포레 대비 요금 차이</th>
+                    <th className="py-2.5 px-3 text-right">등록 상품</th>
+                    <th className="py-2.5 px-3 text-right">전일 대비</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#D0C6BB]/40">
+                  {resorts.map((r) => {
+                    const gap = r.vsBelleforetGapKrw ?? 0;
+                    return (
+                      <tr key={r.resortName} className="hover:bg-[#FAF9F6] transition-colors">
+                        <td className="py-2.5 px-3.5 font-black text-[#1B382E]">{r.resortName}</td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded bg-[#F4F3EE] border border-[#D0C6BB]/70 text-[10px] font-extrabold text-[#284F42]">
+                            {r.lowestChannel || '온라인'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3.5 font-bold text-[#1B382E] max-w-[280px] truncate" title={r.lowestRoomName || '-'}>
+                          {r.lowestRoomName || (r.isSoldOut ? '전 객실 품절 마감' : '-')}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {r.isSoldOut ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
+                              마감·품절
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                              판매중
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3.5 text-right font-black text-[#1B382E] font-financial">
+                          {r.isSoldOut ? '-' : formatWon(r.minPrice)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-[#5A6B63] font-financial">
+                          {formatWon(r.tier16_35MinPrice ?? r.tier16_35Price)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-[#5A6B63] font-financial">
+                          {formatWon(r.tier51MinPrice ?? r.tier51Price)}
+                        </td>
+                        <td className="py-2.5 px-3.5 text-right font-bold font-financial">
+                          {r.vsBelleforetGapKrw != null ? (
+                            <span className={gap > 0 ? 'text-[#1E523F] font-black' : gap < 0 ? 'text-[#8B2635] font-black' : 'text-[#5A6B63]'}>
+                              {gap > 0 ? `+${formatWon(gap)} (벨포레 우위)` : gap < 0 ? `-${formatWon(Math.abs(gap))}` : '0원'}
+                            </span>
+                          ) : '-'}
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-[#5A6B63]">
+                          {r.offerCount != null ? `${formatNum(r.offerCount)}개` : '-'}
+                        </td>
+                        <td className={`py-2.5 px-3 text-right font-bold ${
+                          ((r.priceChange1dPct ?? r.change1dPct) ?? 0) > 0 ? 'text-[#8B2635]' : ((r.priceChange1dPct ?? r.change1dPct) ?? 0) < 0 ? 'text-[#1E523F]' : 'text-[#5A6B63]'
+                        }`}>
+                          {formatSignedPct(r.priceChange1dPct ?? r.change1dPct)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -2010,6 +2134,50 @@ export default function RoomDynamicPricing() {
                     </button>
                   </div>
                 </div>
+
+                {/* 2-B-0. 당일 충청권 4대 경쟁사 최저가 상품 1초 요약 티커 바 */}
+                {selectedDayItem.competitorBenchmark?.resorts && selectedDayItem.competitorBenchmark.resorts.length > 0 && (
+                  <div className="bg-[#FAF9F5] p-3.5 rounded-2xl border border-[#D0C6BB]/80 flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 text-xs">
+                    <div className="flex items-center gap-2 font-black text-[#1B382E] shrink-0">
+                      <Radio size={15} className="text-[#1E523F]" />
+                      <span>[{selectedDayItem.date}] 주변 4대 경쟁사 실시간 판매 상품 요약:</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 w-full xl:w-auto">
+                      {selectedDayItem.competitorBenchmark.resorts.map((r) => {
+                        const isSold = r.isSoldOut;
+                        const gap = r.vsBelleforetGapKrw ?? 0;
+                        return (
+                          <div
+                            key={r.resortName}
+                            className="bg-white px-3 py-2 rounded-xl border border-[#D0C6BB]/60 flex items-center justify-between gap-2 shadow-2xs"
+                          >
+                            <div className="truncate">
+                              <div className="flex items-center gap-1.5">
+                                <strong className="text-xs font-black text-[#1B382E]">{r.resortName}</strong>
+                                <span className="text-[10px] text-[#284F42] bg-[#E8F2EE] px-1.5 py-0.2 rounded font-extrabold shrink-0">
+                                  {r.lowestChannel || '온라인'}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-[#5A6B63] truncate max-w-[150px] mt-0.5" title={r.lowestRoomName || ''}>
+                                {r.lowestRoomName || (isSold ? '품절 마감' : '-')}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-xs font-black text-[#1B3B2B] font-financial block">
+                                {isSold ? '품절' : formatWon(r.minPrice)}
+                              </span>
+                              {r.vsBelleforetGapKrw != null && (
+                                <span className={`text-[9px] font-bold block ${gap > 0 ? 'text-[#1E523F]' : gap < 0 ? 'text-[#8B2635]' : 'text-[#5A6B63]'}`}>
+                                  {gap > 0 ? `+${formatWon(gap)}` : gap < 0 ? `-${formatWon(Math.abs(gap))}` : '0원'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* 2-B-1. [아코디언 내용] 버튼 바로 아래에 즉시 펼쳐지는 경쟁사 비교 레이더 & 11열 상세표 & 채널별 실행가 */}
                 {showSelectedDayDetailAccordion && (

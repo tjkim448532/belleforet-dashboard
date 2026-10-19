@@ -1008,7 +1008,7 @@ export default function GolfChannelIntelligence() {
                 onClick={() => setChannelSortBy('PLAYERS')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                   channelSortBy === 'PLAYERS'
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? 'bg-[#284F42] text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -1258,7 +1258,7 @@ export default function GolfChannelIntelligence() {
           <div>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   Yield Management
                 </span>
                 <h3 className="text-lg font-bold text-slate-900 mt-1">
@@ -1290,7 +1290,7 @@ export default function GolfChannelIntelligence() {
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mt-4 text-xs text-slate-700 space-y-1.5">
             <div className="flex justify-between">
               <span>• 최고 가동 시간대:</span>
-              <strong className="text-indigo-600">
+              <strong className="text-[#284F42]">
                 {bestSlot ? `${bestSlot.dayOfWeek}요일 ${bestSlot.timeSlot} (가동률 ${bestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(bestSlot.avgGreenFee)}원, ${(bestSlot as any).teams || 0}팀)` : '-'}
               </strong>
             </div>
@@ -1337,7 +1337,7 @@ export default function GolfChannelIntelligence() {
                 onClick={() => setSelectedYoyYear(y)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedYoyYear === y
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? 'bg-[#284F42] text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -1444,7 +1444,7 @@ export default function GolfChannelIntelligence() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                 정밀 명세서
               </span>
               <span className="text-xs font-semibold text-slate-400">
@@ -1452,7 +1452,7 @@ export default function GolfChannelIntelligence() {
               </span>
             </div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-600" />
+              <Layers className="w-5 h-5 text-[#284F42]" />
               ⑥ 판매 채널별 종합 실적 상세 명세서 (1인당 평균 그린피 순)
             </h2>
           </div>
@@ -1639,7 +1639,7 @@ export default function GolfChannelIntelligence() {
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">회원권 타인 위임 내장 비중</div>
-                <div className="text-xl font-black text-indigo-700 mt-1">
+                <div className="text-xl font-black text-[#284F42] mt-1">
                   {visitorBehaviorIntel.summary?.delegatedRatioPct != null ? `${visitorBehaviorIntel.summary.delegatedRatioPct}%` : '-'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
@@ -1691,7 +1691,7 @@ export default function GolfChannelIntelligence() {
                           <td className="py-2.5 px-3 text-right text-slate-700">
                             {c.totalBookings != null ? `${Number(c.totalBookings).toLocaleString()}건` : '-'}
                           </td>
-                          <td className="py-2.5 px-3 text-right text-indigo-700 font-semibold">
+                          <td className="py-2.5 px-3 text-right text-[#284F42] font-semibold">
                             {c.delegatedCount != null ? `${Number(c.delegatedCount).toLocaleString()}건` : '-'}
                           </td>
                           <td className="py-2.5 px-3 text-right text-rose-600">
@@ -1728,7 +1728,7 @@ export default function GolfChannelIntelligence() {
                         <tr key={idx} className="hover:bg-slate-50/80">
                           <td className="py-2.5 px-3 font-bold text-slate-800">{g.delegatedGuestName ?? '-'}</td>
                           <td className="py-2.5 px-3 text-slate-600">{g.memberOwnerName ?? '-'}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-indigo-700">
+                          <td className="py-2.5 px-3 text-right font-bold text-[#284F42]">
                             {g.visitCount != null ? `${Number(g.visitCount).toLocaleString()}회` : '-'}
                           </td>
                           <td className="py-2.5 px-3 text-right text-slate-700">

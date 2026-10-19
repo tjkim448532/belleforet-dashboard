@@ -589,7 +589,7 @@ export default function ResortBusiness() {
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       
       {/* 🌲 Luxury Deep Forest Banner with Ambient Glow (Home Style) */}
-      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+      <div className="w-full bg-[#284F42] h-[210px] md:h-[200px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
         <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
         <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
         <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
@@ -1570,7 +1570,7 @@ export default function ResortBusiness() {
               <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-6 border-b border-slate-100 pb-5 gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                       체류 시너지 매트릭스 (LOS Synergy Matrix)
                     </span>
                     <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -1578,7 +1578,7 @@ export default function ResortBusiness() {
                     </span>
                   </div>
                   <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-indigo-600" /> 객실 체류(1박 vs 연박) 부대시설 시너지 매트릭스
+                    <Activity className="w-5 h-5 text-[#284F42]" /> 객실 체류(1박 vs 연박) 부대시설 시너지 매트릭스
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
                     단순 평균의 통계 왜곡을 배제하고 <b>[방안 1: 실측 객단가 코호트 대조]</b>와 <b>[방안 2: OLS 회귀 1팀 누적기여도]</b>를 <b>[익일 휴일군 vs 순수 주중군]</b> 환경별로 융합한 경영 의사결정 모델입니다.
@@ -1586,13 +1586,13 @@ export default function ResortBusiness() {
                 </div>
 
                 <div className="flex items-center gap-2 self-start xl:self-auto">
-                  {loadingLos && <span className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full mr-1"></span>}
+                  {loadingLos && <span className="animate-spin w-4 h-4 border-2 border-[#284F42] border-t-transparent rounded-full mr-1"></span>}
                   <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold">
                     <button
                       onClick={() => setLosMetricMode('revpas')}
                       className={`px-3 py-1.5 rounded-lg transition-all ${
                         losMetricMode === 'revpas'
-                          ? 'bg-white text-indigo-600 shadow-xs'
+                          ? 'bg-white text-[#284F42] shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -1602,7 +1602,7 @@ export default function ResortBusiness() {
                       onClick={() => setLosMetricMode('total')}
                       className={`px-3 py-1.5 rounded-lg transition-all ${
                         losMetricMode === 'total'
-                          ? 'bg-white text-indigo-600 shadow-xs'
+                          ? 'bg-white text-[#284F42] shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -1639,14 +1639,14 @@ export default function ResortBusiness() {
                     onClick={() => setDayTypeFilter('pure_weekday')}
                     className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                       dayTypeFilter === 'pure_weekday'
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200'
+                        ? 'bg-[#284F42] text-white shadow-md shadow-[#284F42]/20'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
                     <span>🏢 순수 주중 (일~목)</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                      dayTypeFilter === 'pure_weekday' ? 'bg-blue-700 text-blue-100' : 'bg-slate-200 text-slate-600'
+                      dayTypeFilter === 'pure_weekday' ? 'bg-[#1B382E] text-emerald-100' : 'bg-slate-200 text-slate-600'
                     }`}>
                       {analytics?.pureWeekdayCount || 0}일
                     </span>
@@ -1679,7 +1679,7 @@ export default function ResortBusiness() {
 
 
               {/* 💡 3. 데이터 기반 경영 액션 가이드 (Strategic Action Guide) */}
-              <div className="bg-gradient-to-r from-amber-50/70 via-indigo-50/50 to-teal-50/40 p-5 rounded-3xl border border-indigo-100/90 mb-6 shadow-2xs">
+              <div className="bg-gradient-to-r from-amber-50/70 via-[#284F42]/5 to-teal-50/40 p-5 rounded-3xl border border-[#284F42]/20 mb-6 shadow-2xs">
                 <div className="flex items-center gap-2 mb-2 font-bold text-slate-900 text-sm">
                   <Lightbulb className="w-4 h-4 text-amber-500 fill-amber-400" />
                   <span>데이터 기반 경영 액션 가이드 (Data-Driven Strategic Guide)</span>
@@ -1814,21 +1814,21 @@ export default function ResortBusiness() {
                     </div>
 
                     {/* 카드 3: 1실당 총 부대소비 파급력 (RevPAS) */}
-                    <div className="bg-gradient-to-br from-indigo-50/90 to-purple-50/50 p-5 rounded-2xl border border-indigo-200 flex flex-col justify-between shadow-xs">
+                    <div className="bg-gradient-to-br from-[#284F42]/10 to-[#B59269]/10 p-5 rounded-2xl border border-[#284F42]/20 flex flex-col justify-between shadow-xs">
                       <div>
-                        <div className="text-xs font-bold text-indigo-800 mb-1 flex items-center justify-between">
+                        <div className="text-xs font-bold text-[#1B382E] mb-1 flex items-center justify-between">
                           <span>💎 1객실당 총 부대소비 (RevPAS)</span>
-                          <span className="text-[11px] font-extrabold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">
+                          <span className="text-[11px] font-extrabold bg-[#284F42]/15 text-[#1B382E] px-2 py-0.5 rounded-full">
                             식음+레저 합산 (골프 불포함)
                           </span>
                         </div>
-                        <div className="text-2xl font-extrabold text-indigo-700 my-2">
-                          {formatCurrency(liveTotal)}원 <span className="text-xs font-normal text-indigo-500">/ 1실</span>
+                        <div className="text-2xl font-extrabold text-[#284F42] my-2">
+                          {formatCurrency(liveTotal)}원 <span className="text-xs font-normal text-[#284F42]/70">/ 1실</span>
                         </div>
-                        <div className="space-y-1 text-xs text-indigo-950 pt-2 border-t border-indigo-200/60">
+                        <div className="space-y-1 text-xs text-[#1B382E] pt-2 border-t border-[#284F42]/20">
                           <div className="flex justify-between">
                             <span>• 부대시설 실측 총매출:</span>
-                            <span className="font-semibold text-indigo-900">{formatCurrency(totalSynergySales)}원</span>
+                            <span className="font-semibold text-[#1B382E]">{formatCurrency(totalSynergySales)}원</span>
                           </div>
                           <div className="flex justify-between font-bold text-emerald-700">
                             <span>• 판매 객실 모수:</span>
@@ -1836,7 +1836,7 @@ export default function ResortBusiness() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-[11px] text-indigo-900/80 mt-3 pt-2 border-t border-indigo-200/40">
+                      <p className="text-[11px] text-[#1B382E]/70 mt-3 pt-2 border-t border-[#284F42]/20">
                         (식음 매출 + 레저 매출) ÷ 판매 객실수 (100% 수학적 실측 지표)
                       </p>
                     </div>
@@ -2162,7 +2162,7 @@ export default function ResortBusiness() {
 
           {/* 5. [Ticket 32] 객실 예약 리드타임·사전 취소 임계점(Cancellation Cliff) 및 175개 호실별 물리적 배정 편차 감사 */}
           <div className="bg-white rounded-[24px] border border-slate-200 shadow-xs mt-8">
-            <div className="p-6 border-b border-slate-100 rounded-t-[24px] flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-sky-50/50 via-white to-indigo-50/30">
+            <div className="p-6 border-b border-slate-100 rounded-t-[24px] flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-sky-50/50 via-white to-[#284F42]/5">
               <div className="flex items-start gap-3">
                 <div className="p-2.5 rounded-xl bg-sky-600 text-white shadow-xs shrink-0 mt-0.5">
                   <KeyRound size={20} />

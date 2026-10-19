@@ -1233,7 +1233,7 @@ export default function MonthlyTrevporChart() {
 
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
             <div className="text-[11px] font-bold text-slate-500 mb-1">최고 실적 달성 월</div>
-            <div className="text-xl font-black text-indigo-900 tabular-nums flex items-center gap-1.5">
+            <div className="text-xl font-black text-[#284F42] tabular-nums flex items-center gap-1.5">
               <Award className="w-5 h-5 text-amber-500" />
               {kpiHighlights.maxMonthName} ({formatCurrency(kpiHighlights.maxTrevpar)}원)
             </div>
@@ -1322,7 +1322,7 @@ export default function MonthlyTrevporChart() {
               <>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 pt-1 pb-3 border-b border-slate-200/80 mb-3 gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="inline-block w-3 h-3 rounded-full bg-indigo-600"></span>
+                    <span className="inline-block w-3 h-3 rounded-full bg-[#284F42]"></span>
                     <h3 className="text-sm font-black text-slate-900">
                       월별 TrevPAR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
@@ -1335,7 +1335,7 @@ export default function MonthlyTrevporChart() {
                         onClick={() => setStackedYearMode('COMPARE')}
                         className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           stackedYearMode === 'COMPARE'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs'
+                            ? 'bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 shadow-2xs'
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1345,7 +1345,7 @@ export default function MonthlyTrevporChart() {
                         onClick={() => setStackedYearMode('TY_ONLY')}
                         className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           stackedYearMode === 'TY_ONLY'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs'
+                            ? 'bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 shadow-2xs'
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1355,7 +1355,7 @@ export default function MonthlyTrevporChart() {
                         onClick={() => setStackedYearMode('LY_ONLY')}
                         className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           stackedYearMode === 'LY_ONLY'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs'
+                            ? 'bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 shadow-2xs'
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1444,7 +1444,7 @@ export default function MonthlyTrevporChart() {
                       <h4 className="text-xs sm:text-sm font-black text-slate-800 tracking-tight">
                         부문별({metricMode === 'TOTAL' ? '숙·식·레·모·대·골' : '숙·식·레·모·대'}) 실제 포함 영업장 안내
                       </h4>
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                         경영 조직도 부문별 정산 현황 기준
                       </span>
                     </div>
@@ -1520,7 +1520,7 @@ export default function MonthlyTrevporChart() {
                     {metricMode === 'TOTAL' && (
                       <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col">
                         <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                          <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">골</span>
+                          <span className="px-1.5 py-0.5 rounded-md text-[11px] font-black bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">골</span>
                           <span className="text-xs font-black text-slate-800">골프 (골프본부)</span>
                         </div>
                         <div className="flex flex-wrap gap-1 content-start">
@@ -1566,8 +1566,8 @@ export default function MonthlyTrevporChart() {
                     </div>
 
                     <div className="bg-white p-3 rounded-xl border border-slate-200/70">
-                      <div className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                      <div className="font-bold text-[#1B382E] mb-1 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#284F42]"></span>
                         <span>RevPAR & TrevPAR 산출 연동</span>
                       </div>
                       <div className="text-[11px] leading-relaxed">
@@ -1664,7 +1664,7 @@ export default function MonthlyTrevporChart() {
                               </span>
                             )}
                             {metricMode === 'TOTAL' && lyShares.golfRatio !== null && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200 shrink-0" title="골프 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-[#284F42]/10 text-[#1B382E] border border-[#284F42]/20 shrink-0" title="골프 비중">
                                 골 {lyShares.golfRatio}%
                               </span>
                             )}
@@ -1715,7 +1715,7 @@ export default function MonthlyTrevporChart() {
                               </span>
                             )}
                             {metricMode === 'TOTAL' && tyShares.golfRatio !== null && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-200 shrink-0" title="골프 비중">
+                              <span className="px-1.5 py-0.5 rounded bg-[#284F42]/10 text-[#1B382E] border border-[#284F42]/20 shrink-0" title="골프 비중">
                                 골 {tyShares.golfRatio}%
                               </span>
                             )}

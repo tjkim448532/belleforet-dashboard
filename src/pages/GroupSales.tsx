@@ -187,8 +187,8 @@ export interface GroupOrganizationSummary {
 
 // 채널별 시각적 아이콘 & 테마 색상 매핑
 const CHANNEL_META_MAP: Record<string, { iconType: ChannelGroup['iconType']; badgeColor: string; label: string }> = {
-  '단체영업': { iconType: 'group', badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: '단체영업' },
-  '세미나': { iconType: 'group', badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: '단체영업' },
+  '단체영업': { iconType: 'group', badgeColor: 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20', label: '단체영업' },
+  '세미나': { iconType: 'group', badgeColor: 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20', label: '단체영업' },
   '기업영업': { iconType: 'corporate', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200', label: '기업영업' },
   '휴양소': { iconType: 'corporate', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200', label: '기업영업' },
   '자사채널': { iconType: 'direct', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: '자사 채널' },
@@ -803,7 +803,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       
       {/* 🌲 Luxury Deep Forest Banner with Ambient Glow (Home Style) */}
-      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+      <div className="w-full bg-[#284F42] h-[220px] md:h-[210px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
         <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
         <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
         <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
@@ -811,67 +811,69 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
 
       <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-6">
         
-        {/* 0. 세일즈본부 4대 세부 페이지 공통 네비게이션 */}
-        <SalesDivisionNav />
-
-        {/* 1. Header with Institutional Polish (GROUP_VENUE_PREFERENCE는 자체 헤더 보유) */}
-        {pageSection !== 'GROUP_VENUE_PREFERENCE' && (
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
-            <div className="text-white">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
-                <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
-                <span>BELLEFORET RESORT · 세일즈본부</span>
-              </div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <Briefcase className="w-7 h-7 text-[#B59269] shrink-0" />
-                <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight break-keep whitespace-nowrap">
-                  {pageHeaderMeta.title}
-                </h1>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20">
+        {/* 1. Header with Institutional Polish (모든 세일즈본부 4대 탭 공통 헤더) */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3.5 bg-[#284F42] text-white rounded-2xl border border-[#1B382E] shrink-0 shadow-xs">
+              <Briefcase className="w-7 h-7 text-[#B59269]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#284F42]/10 border border-[#284F42]/20 text-[#284F42] text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+                  <span>BELLEFORET RESORT · 세일즈본부</span>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#B59269]/15 text-[#B59269] border border-[#B59269]/30">
                   {pageHeaderMeta.badge}
                 </span>
               </div>
-              <p className="text-sm text-white/80 mt-1 break-keep">
+              <h1 className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight break-keep">
+                {pageHeaderMeta.title}
+              </h1>
+              <p className="text-sm text-[#5A6B63] mt-1 break-keep max-w-4xl leading-relaxed">
                 {pageHeaderMeta.desc}
               </p>
             </div>
-
-            {/* Global Date & Action Bar */}
-            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-[#1B382E]/70 p-1.5 rounded-xl text-xs overflow-x-auto border border-white/10">
-                {[
-                  { key: 'WEEK', label: '최근 7일' },
-                  { key: 'MTD', label: '당월' },
-                  { key: 'PAST_6M', label: '6개월' },
-                  { key: 'YTD', label: '연간' }
-                ].map(p => {
-                  const active = isPresetActive(p.key as DatePresetType);
-                  return (
-                    <button
-                      key={p.key}
-                      type="button"
-                      onClick={() => applyPreset(p.key as DatePresetType)}
-                      className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                        active ? 'bg-[#B59269] text-white shadow-xs' : 'text-white/70 hover:text-white'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <GlobalDatePicker showPresets={false} />
-              <button
-                onClick={fetchSalesData}
-                disabled={loading}
-                className="px-4 py-2 bg-[#B59269] hover:bg-[#a38058] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                <span>조회</span>
-              </button>
-            </div>
           </div>
-        )}
+
+          {/* Global Date & Action Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 bg-[#F4F3EE] p-1.5 rounded-xl text-xs overflow-x-auto border border-[#D0C6BB]/70">
+              {[
+                { key: 'WEEK', label: '최근 7일' },
+                { key: 'MTD', label: '당월' },
+                { key: 'PAST_6M', label: '6개월' },
+                { key: 'YTD', label: '연간' }
+              ].map(p => {
+                const active = isPresetActive(p.key as DatePresetType);
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => applyPreset(p.key as DatePresetType)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      active ? 'bg-[#284F42] text-white shadow-xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+            <GlobalDatePicker showPresets={false} />
+            <button
+              onClick={fetchSalesData}
+              disabled={loading}
+              className="px-4 py-2 bg-[#B59269] hover:bg-[#a38058] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <span>조회</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2. 세일즈본부 4대 세부 페이지 공통 네비게이션 */}
+        <SalesDivisionNav />
 
       {pageSection === 'ROOM_CHANNELS' && (
       <>
@@ -1391,8 +1393,8 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
           </label>
 
           {selectedChannel === '단체영업' || selectedChannel === '세미나' || selectedChannel === '단체영업(세미나)' ? (
-            <span className="text-xs font-bold px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1.5 shadow-2xs">
-              <Sparkles size={12} className="text-indigo-600" /> 세일즈본부 핵심 주력 사업
+            <span className="text-xs font-bold px-3 py-1 rounded-lg bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 flex items-center gap-1.5 shadow-2xs">
+              <Sparkles size={12} className="text-[#284F42]" /> 세일즈본부 핵심 주력 사업
             </span>
           ) : (
             <button
@@ -1432,7 +1434,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Grid size={14} className="text-indigo-600" />
+            <Grid size={14} className="text-[#284F42]" />
             <span>크로스 피벗 매트릭스</span>
           </button>
 
@@ -1463,7 +1465,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
               <MetricExplainerTooltip presetKey="netRevenue" />
             </span>
             <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
-              isAllMode ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+              isAllMode ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20'
             }`}>
               {isAllMode ? '전사 합산' : (activeChannelGroup?.channelName || '선택 실적')}
             </span>
@@ -1581,7 +1583,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
           {/* Main Card Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700">
+              <div className="p-3 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 text-[#284F42]">
                 <Users className="w-6 h-6" />
               </div>
               <div>
@@ -1614,8 +1616,8 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   onClick={() => setSelectedChannel(g.channelName)}
                   className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer whitespace-nowrap ${
                     selectedChannel === g.channelName
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-2xs font-bold'
-                      : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                      ? 'bg-[#284F42] text-white border-[#1B382E] shadow-xs font-bold'
+                      : 'bg-[#F4F3EE]/80 hover:bg-[#F4F3EE] text-[#1B382E] border-[#D0C6BB]/70'
                   }`}
                 >
                   {g.channelName.split('(')[0]}
@@ -1728,14 +1730,14 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <Grid size={18} className="text-indigo-600" />
+                <Grid size={18} className="text-[#284F42]" />
                 판매방식 × 평형별 교차 실적 매트릭스 (Pivot)
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 모든 판매방식(행)과 평형(열)의 교차 매출액 및 [판매실수 / ADR]을 한눈에 조망합니다.
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
               상단: 매출액 (원) / 하단: 판매실수 (ADR)
             </span>
           </div>
@@ -1766,7 +1768,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                     <tr 
                       key={group.channelName} 
                       className={`transition-colors cursor-pointer ${
-                        isCurrentTarget ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'hover:bg-slate-50'
+                        isCurrentTarget ? 'bg-[#284F42]/5 hover:bg-[#284F42]/10' : 'hover:bg-slate-50'
                       }`}
                       onClick={() => {
                         setSelectedChannel(group.channelName);
@@ -1776,10 +1778,10 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                     >
                       <td className="py-3 px-4 font-bold text-slate-900 sticky left-0 bg-white z-10 whitespace-nowrap border-r border-slate-200 shadow-2xs">
                         <div className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${isCurrentTarget ? 'bg-indigo-600 ring-2 ring-indigo-200' : 'bg-brand-mint'}`} />
+                          <span className={`w-2 h-2 rounded-full ${isCurrentTarget ? 'bg-[#284F42] ring-2 ring-[#284F42]/30' : 'bg-brand-mint'}`} />
                           <span>{group.channelName}</span>
                           {isCurrentTarget && (
-                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-1 rounded">주력</span>
+                            <span className="text-[10px] font-bold text-[#284F42] bg-[#284F42]/15 px-1 rounded">주력</span>
                           )}
                         </div>
                       </td>
@@ -1868,13 +1870,13 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
               <div 
                 key={group.channelName}
                 className={`bg-white rounded-[24px] border shadow-xs overflow-hidden transition-all duration-200 ${
-                  isTarget ? 'border-indigo-300 ring-2 ring-indigo-50' : 'border-slate-200/90'
+                  isTarget ? 'border-[#284F42]/40 ring-2 ring-[#284F42]/10' : 'border-slate-200/90'
                 }`}
               >
                 <div className="p-5 bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-white border border-slate-200">
-                      {group.iconType === 'group' && <Users className="w-5 h-5 text-indigo-600" />}
+                      {group.iconType === 'group' && <Users className="w-5 h-5 text-[#284F42]" />}
                       {group.iconType === 'corporate' && <Building2 className="w-5 h-5 text-blue-600" />}
                       {group.iconType === 'direct' && <Globe className="w-5 h-5 text-emerald-600" />}
                       {group.iconType === 'ota' && <Plane className="w-5 h-5 text-sky-600" />}
@@ -1885,7 +1887,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                       <div className="flex items-center gap-2">
                         <h4 className="text-base font-bold text-slate-900">{group.channelName}</h4>
                         {isTarget && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-600 text-white">주력</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#284F42] text-white">주력</span>
                         )}
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${group.badgeColor}`}>
                           {group.items.length}개 평형
@@ -1917,7 +1919,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                         setSelectedChannel(group.channelName);
                         setViewMode('FOCUS_SINGLE');
                       }}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-all"
+                      className="px-3 py-1.5 bg-[#284F42] hover:bg-[#1E3E34] text-white text-xs font-bold rounded-lg transition-all border border-[#1B382E] shadow-xs cursor-pointer"
                     >
                       상세 보기
                     </button>
@@ -1972,26 +1974,26 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-200">
+            <div className="p-3 bg-[#284F42]/10 text-[#284F42] rounded-2xl border border-[#284F42]/20">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                <h3 className="text-xl font-extrabold text-[#1B382E] tracking-tight">
                   연회/세미나실 장소별(Venue) 판매 현황 & 평균 가격 분석
                 </h3>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   세미나A · 세미나B · 벨포레홀 · 그랜드볼룸
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#5A6B63] mt-1">
                 세미나 및 대관 장소별 판매 실적, 건당 평균 가격(대관료 단가), 연도별/월별 판매 건수 추이 및 이용 단체 명부를 분석합니다.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start md:self-auto">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+            <span className="text-xs font-semibold text-[#5A6B63] bg-[#F4F3EE] px-3 py-1.5 rounded-xl border border-[#D0C6BB]/70">
               연회 대관 원장 연동
             </span>
           </div>
@@ -2000,7 +2002,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
         {/* 🚨 FAIL-STOP & BACKEND AWAITING BANNER or DATA DISPLAY */}
         {venueLoading ? (
           <div className="py-12 flex flex-col items-center justify-center space-y-3">
-            <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+            <RefreshCw className="w-8 h-8 text-[#284F42] animate-spin" />
             <p className="text-sm font-bold text-slate-600">장소별 대관 판매 실적 데이터를 불러오는 중입니다...</p>
           </div>
         ) : !venuePerformanceData || !venuePerformanceData.venues || venuePerformanceData.venues.length === 0 ? (
@@ -2075,7 +2077,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                 <span className="text-xs font-semibold text-slate-500 block">대관 총매출 (순매출)</span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-2xl font-black text-indigo-700 font-financial">
+                  <span className="text-2xl font-black text-[#284F42] font-financial">
                     {formatRevenue(venuePerformanceData.summary.totalRentalRevenue)}원
                   </span>
                   {venuePerformanceData.summary.revenueGrowthRate !== undefined && (
@@ -2099,7 +2101,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   <span className="text-2xl font-black text-slate-900 font-financial">
                     {formatRevenue(venuePerformanceData.summary.averageRentalPrice)}원
                   </span>
-                  <span className="text-xs text-indigo-600 font-semibold">/ 건</span>
+                  <span className="text-xs text-[#B59269] font-semibold">/ 건</span>
                 </div>
                 <span className="text-[11px] text-slate-400 block mt-1">
                   전체 대관료 합산의 산술평균
@@ -2122,16 +2124,16 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
             {/* Part 1: 장소별 판매현황 & 평균가격 카드 그리드 */}
             <div className="space-y-3">
               <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
-                <MapPin size={16} className="text-indigo-600" />
+                <MapPin size={16} className="text-[#284F42]" />
                 <span>장소별 판매 실적 & 평균 대관 가격 현황</span>
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {venuePerformanceData.venues.map((v) => (
-                  <div key={v.venueId || v.venueName} className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-indigo-300 shadow-2xs transition-all space-y-3">
+                  <div key={v.venueId || v.venueName} className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#284F42]/40 shadow-2xs transition-all space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-base text-slate-900 flex items-center gap-1.5">
-                        <Building2 size={16} className="text-indigo-600" />
+                        <Building2 size={16} className="text-[#284F42]" />
                         <span>{v.venueName}</span>
                       </span>
                       {v.capacity && (
@@ -2148,7 +2150,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                             {v.bookedCount.toLocaleString()}건
                           </span>
                           {v.sharePct !== undefined && (
-                            <span className="text-xs font-bold text-indigo-600">
+                            <span className="text-xs font-bold text-[#284F42]">
                               ({v.sharePct.toFixed(1)}%)
                             </span>
                           )}
@@ -2171,7 +2173,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                     <div className="pt-3 border-t border-slate-100 space-y-1.5 text-xs font-financial">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500">건당 평균 가격</span>
-                        <strong className="text-indigo-700 font-extrabold text-sm">
+                        <strong className="text-[#284F42] font-extrabold text-sm">
                           {formatRevenue(v.averagePrice)}원
                         </strong>
                       </div>
@@ -2192,7 +2194,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
               <div className="space-y-3 pt-4 border-t border-slate-200">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
-                    <CalendarDays size={16} className="text-indigo-600" />
+                    <CalendarDays size={16} className="text-[#284F42]" />
                     <span>연도별 · 월별 장소 판매 건수 추이 매트릭스</span>
                   </h4>
                   <span className="text-xs text-slate-400">월별 각 장소의 판매 건수를 교차 비교합니다.</span>
@@ -2206,10 +2208,10 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                         {uniqueVenueNames.map(vName => (
                           <th key={vName} className="py-3 px-4 text-center whitespace-nowrap">{vName}</th>
                         ))}
-                        <th className="py-3 px-4 text-center bg-indigo-50/50 text-indigo-900 font-extrabold whitespace-nowrap">
+                        <th className="py-3 px-4 text-center bg-[#284F42]/10 text-[#1B382E] font-extrabold whitespace-nowrap">
                           월간 총 대관 건수
                         </th>
-                        <th className="py-3 px-4 text-right bg-indigo-50/50 text-indigo-900 font-extrabold whitespace-nowrap">
+                        <th className="py-3 px-4 text-right bg-[#284F42]/10 text-[#1B382E] font-extrabold whitespace-nowrap">
                           월간 대관 총매출
                         </th>
                       </tr>
@@ -2228,17 +2230,17 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                               return (
                                 <td key={vName} className="py-3 px-4 text-center whitespace-nowrap">
                                   <span className={`px-2 py-0.5 rounded font-bold ${
-                                    cnt && cnt > 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-400'
+                                    cnt && cnt > 0 ? 'bg-[#284F42]/10 text-[#284F42]' : 'text-slate-400'
                                   }`}>
                                     {cnt !== undefined ? `${cnt}건` : '-'}
                                   </span>
                                 </td>
                               );
                             })}
-                            <td className="py-3 px-4 text-center font-black text-indigo-900 bg-indigo-50/30 whitespace-nowrap">
+                            <td className="py-3 px-4 text-center font-black text-[#1B382E] bg-[#284F42]/5 whitespace-nowrap">
                               {totalB.toLocaleString()}건
                             </td>
-                            <td className="py-3 px-4 text-right font-extrabold text-slate-800 bg-indigo-50/30 whitespace-nowrap">
+                            <td className="py-3 px-4 text-right font-extrabold text-slate-800 bg-[#284F42]/5 whitespace-nowrap">
                               {trend.totalRevenue !== undefined ? `${formatRevenue(trend.totalRevenue)}원` : '-'}
                             </td>
                           </tr>
@@ -2256,7 +2258,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div>
                     <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
-                      <Users size={16} className="text-indigo-600" />
+                      <Users size={16} className="text-[#284F42]" />
                       <span>장소별 이용 단체(기업명/기관명) 상세 명부</span>
                     </h4>
                     <p className="text-xs text-slate-400 mt-0.5">
@@ -2269,7 +2271,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                     <select
                       value={selectedVenueFilter}
                       onChange={(e) => setSelectedVenueFilter(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-400"
+                      className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-1.5 outline-none focus:border-[#284F42] cursor-pointer"
                     >
                       <option value="ALL">🏛️ 전체 장소 보기</option>
                       {uniqueVenueNames.map(vName => (
@@ -2284,7 +2286,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                         value={venueSearchKeyword}
                         onChange={(e) => setVenueSearchKeyword(e.target.value)}
                         placeholder="기업명 / 행사명 / 담당자 검색..."
-                        className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 w-52"
+                        className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#284F42] w-52"
                       />
                     </div>
                   </div>
@@ -2318,7 +2320,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                               {b.eventDate || b.bookingDate}
                             </td>
                             <td className="py-3 px-4 whitespace-nowrap">
-                              <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[11px]">
+                              <span className="font-bold text-[#284F42] bg-[#284F42]/10 px-2 py-0.5 rounded text-[11px]">
                                 {b.venueName}
                               </span>
                             </td>
@@ -2339,7 +2341,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                               {b.rentalPrice !== undefined ? `${formatRevenue(b.rentalPrice)}원` : '-'}
                             </td>
                             <td className="py-3 px-4 text-center whitespace-nowrap">
-                              <span className="text-[10px] font-mono font-medium text-indigo-600 bg-indigo-50/60 px-2 py-0.5 rounded border border-indigo-100">
+                              <span className="text-[10px] font-financial font-medium text-[#B59269] bg-[#B59269]/10 px-2 py-0.5 rounded border border-[#B59269]/20">
                                 {b.reservationNo || b.eventId || '-'}
                               </span>
                             </td>
@@ -2374,15 +2376,15 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
           className="p-6 lg:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/80 transition-colors select-none"
         >
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-100 shrink-0">
+            <div className="p-3 bg-[#284F42]/10 text-[#284F42] rounded-2xl border border-[#284F42]/20 shrink-0">
               <Users className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                <h3 className="text-xl font-extrabold text-[#1B382E] tracking-tight">
                   단체영업(세미나) 예약 단체 마스터 명부
                 </h3>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-2xs">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42] text-white shadow-xs">
                   총 {totalSeminarGroupsCount}개 기관 / 단체
                 </span>
                 {repeatGroupsCount > 0 && (
@@ -2395,7 +2397,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   {isGroupMasterListOpen ? '클릭 시 접기' : '클릭 시 상세 명부 펼치기'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#5A6B63] mt-1">
                 세미나/교육/워크샵으로 예약된 단체별 대여 객실 수, 이용 평형, 복수 방문 횟수 및 방문 일정을 통합 조회합니다.
               </p>
             </div>
@@ -2411,7 +2413,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
               <div className="h-8 w-px bg-slate-200" />
               <div className="px-3 py-1">
                 <div className="text-[11px] text-slate-400 font-medium">총 계약 객실</div>
-                <div className="text-base font-extrabold text-indigo-600">{totalBookedRoomsInGroups.toLocaleString()}실</div>
+                <div className="text-base font-extrabold text-[#284F42]">{totalBookedRoomsInGroups.toLocaleString()}실</div>
               </div>
               <div className="h-8 w-px bg-slate-200" />
               <div className="px-3 py-1">
@@ -2447,8 +2449,8 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   onClick={() => setGroupFilterTab('ALL')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     groupFilterTab === 'ALL'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                      ? 'bg-[#284F42] text-white shadow-xs'
+                      : 'bg-white text-[#5A6B63] border border-[#D0C6BB]/70 hover:bg-[#F4F3EE]'
                   }`}
                 >
                   전체 단체 ({totalSeminarGroupsCount})
@@ -2458,7 +2460,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   onClick={() => setGroupFilterTab('REPEAT')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
                     groupFilterTab === 'REPEAT'
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-[#1E523F] text-white shadow-xs'
                       : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50'
                   }`}
                 >
@@ -2470,8 +2472,8 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   onClick={() => setGroupFilterTab('LARGE')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     groupFilterTab === 'LARGE'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'
+                      ? 'bg-[#B59269] text-white shadow-xs'
+                      : 'bg-white text-[#B59269] border border-[#B59269]/40 hover:bg-[#B59269]/10'
                   }`}
                 >
                   대규모 (20실 이상)
@@ -2481,8 +2483,8 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   onClick={() => setGroupFilterTab('SINGLE')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     groupFilterTab === 'SINGLE'
-                      ? 'bg-slate-700 text-white shadow-xs'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                      ? 'bg-[#1B382E] text-white shadow-xs'
+                      : 'bg-white text-[#5A6B63] border border-[#D0C6BB]/70 hover:bg-[#F4F3EE]'
                   }`}
                 >
                   단일 방문
@@ -2497,7 +2499,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   value={groupSearchKeyword}
                   onChange={(e) => setGroupSearchKeyword(e.target.value)}
                   placeholder="단체명, 담당자, 객실평형 검색..."
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-900 outline-none focus:border-brand-mint focus:ring-2 focus:ring-brand-mint/20"
+                  className="w-full bg-white border border-[#D0C6BB]/70 rounded-xl pl-9 pr-4 py-1.5 text-xs text-[#1B382E] outline-none focus:border-[#284F42]"
                 />
               </div>
             </div>
@@ -2506,7 +2508,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse font-financial">
                 <thead>
-                  <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50/50">
+                  <tr className="border-b-2 border-[#1B382E] text-xs font-bold text-[#1B382E] bg-[#F4F3EE]/60">
                     <th className="py-3.5 px-6 text-left whitespace-nowrap">단체 / 기업명</th>
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">방문 횟수</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">총 대여 객실수</th>
@@ -2530,7 +2532,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
 
                       return (
                         <React.Fragment key={org.name}>
-                          <tr className={`hover:bg-slate-50/90 transition-colors ${org.isRepeatCustomer ? 'bg-indigo-50/30' : ''}`}>
+                          <tr className={`hover:bg-slate-50/90 transition-colors ${org.isRepeatCustomer ? 'bg-[#284F42]/5' : ''}`}>
                             <td className="py-4 px-6">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-extrabold text-slate-900 text-sm">{org.name}</span>
@@ -2541,7 +2543,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                                   </span>
                                 )}
                                 {(org.totalRooms ?? 0) >= 30 && (
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#B59269]/10 text-[#B59269] border border-[#B59269]/20">
                                     대규모
                                   </span>
                                 )}
@@ -2639,9 +2641,9 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                             <tr className="bg-slate-50/90 border-b border-slate-200">
                               <td colSpan={8} className="p-4 px-8">
                                 <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-                                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                     <h5 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                                      <CalendarDays size={13} className="text-indigo-600" />
+                                      <CalendarDays size={13} className="text-[#284F42]" />
                                       <span>{org.name} - 방문 차수별 상세 내역 (총 {org.visits.length}회차)</span>
                                     </h5>
                                     <span className="text-[11px] text-slate-400">담당: {org.salesManager || 'B2B영업팀'}</span>
@@ -2651,7 +2653,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                                     {org.visits.map((v, vIdx) => (
                                       <div key={vIdx} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                         <div className="flex items-center gap-3 flex-wrap">
-                                          <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-[11px]">
+                                          <span className="font-extrabold text-[#284F42] bg-[#284F42]/10 border border-[#284F42]/20 px-2 py-0.5 rounded text-[11px]">
                                             {vIdx + 1}차 방문
                                           </span>
                                           <span className="font-bold text-slate-800">
@@ -2715,9 +2717,9 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
 
       {/* 5.5. [Ticket 31] 판촉 영업담당자별 B2B·연회 수주 순기여도(Net Contribution) 및 세미나홀 가동 효율 분석 */}
       <div className="bg-white rounded-[24px] border border-slate-200 shadow-xs overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-indigo-50/40 via-white to-emerald-50/30">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-[#284F42]/5 via-white to-[#B59269]/10">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-xs shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-[#284F42] text-white shadow-xs shrink-0 mt-0.5">
               <Briefcase size={20} />
             </div>
             <div>
@@ -2725,7 +2727,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                 <h3 className="text-lg font-extrabold text-slate-900">
                   판촉 영업담당자별 B2B 수주 순기여도(Net Contribution) 및 연회장 가동 효율
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   단체 판촉 실적 분석
                 </span>
               </div>
@@ -2802,7 +2804,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-xs font-bold text-slate-500">판촉 담당자 귀속 연회 수주</div>
-                <div className="text-xl font-black text-indigo-700 mt-1">
+                <div className="text-xl font-black text-[#284F42] mt-1">
                   {salesRepIntel.summary?.totalRepBanquetEvents != null
                     ? `${Number(salesRepIntel.summary.totalRepBanquetEvents).toLocaleString()}건`
                     : '-'}
@@ -2861,7 +2863,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                           <td className="py-2.5 px-3 text-right text-slate-700">
                             {rep.roomBookingCount != null ? `${Number(rep.roomBookingCount).toLocaleString()}건` : '-'}
                           </td>
-                          <td className="py-2.5 px-3 text-right text-indigo-700 font-semibold">
+                          <td className="py-2.5 px-3 text-right text-[#284F42] font-semibold">
                             {rep.banquetEventCount != null ? `${Number(rep.banquetEventCount).toLocaleString()}건` : '-'}
                           </td>
                           <td className="py-2.5 px-3 text-right text-slate-700">

@@ -431,7 +431,7 @@ export default function MonthlyDynamicRebalancer({
             color: (params: any) => {
               const mIdx = params.dataIndex;
               const meta = monthlyMetaList[mIdx];
-              if (lockedMonths[meta.month]) return '#4F46E5'; // Indigo for Locked
+              if (lockedMonths[meta.month]) return '#284F42'; // Deep Forest for Locked
               if (meta.isPeak && (growthRates[meta.month] || 0) > 5) return '#F59E0B'; // Amber for Peak Warning
               return '#0D9488'; // Teal for Normal
             },
@@ -443,16 +443,16 @@ export default function MonthlyDynamicRebalancer({
   }, [monthlyMetaList, calculatedMonthlyTargets, growthRates, lockedMonths, baseYear, targetYear, annualGrowthRate]);
 
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50/80 rounded-[32px] p-7 border border-indigo-100 shadow-sm space-y-6">
+    <div className="bg-gradient-to-br from-white to-slate-50/80 rounded-[32px] p-7 border border-[#D0C6BB]/75 shadow-sm space-y-6">
       
       {/* Header & Presets */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-indigo-600" />
+            <Sliders className="w-5 h-5 text-[#284F42]" />
             <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               12개월 동적 연동 리밸런싱 (Auto-Balancing Slider Engine)
-              <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-200 font-bold">
+              <span className="text-xs bg-[#284F42]/10 text-[#284F42] px-2.5 py-0.5 rounded-full border border-[#284F42]/20 font-bold">
                 Zero-Sum 100% 보존
               </span>
             </h3>
@@ -467,13 +467,13 @@ export default function MonthlyDynamicRebalancer({
           <div className="flex flex-col items-start sm:items-end">
             <button
               onClick={applyAiSmartOptimization}
-              className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-800 text-white rounded-2xl text-xs font-bold transition-all shadow-sm hover:shadow-indigo-200 active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#284F42] hover:bg-[#1E3E34] text-white rounded-2xl text-xs font-bold transition-all shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer border border-[#1B382E]"
               title="성수기 한계 제한 및 비수기 가중 배분 자동 실행"
             >
               <Sparkles size={15} />
               <span>✨ AI 시즌 스마트 최적화</span>
             </button>
-            <span className="text-[10px] text-purple-700 font-bold mt-1 px-1">
+            <span className="text-[10px] text-[#284F42] font-bold mt-1 px-1">
               성수기 Cap 제한 ➔ 비수기 가중 전이
             </span>
           </div>
@@ -497,7 +497,7 @@ export default function MonthlyDynamicRebalancer({
       {/* 💡 버튼 기능 가이드 (직관적 이해를 위한 동작 원리 안내) */}
       <div className="bg-slate-900/[0.03] border border-slate-200/90 rounded-2xl p-4.5 space-y-3">
         <div className="flex items-center gap-2 text-xs font-black text-slate-800">
-          <HelpCircle size={15} className="text-indigo-600" />
+          <HelpCircle size={15} className="text-[#284F42]" />
           <span>각 버튼의 기능 및 엔진 조작 원리</span>
           <span className="text-[11px] font-normal text-slate-500 ml-1">
             원하는 전략에 맞춰 버튼을 누르면 연간 목표 총액 손실 없이 월별 목표치가 즉시 재계산됩니다.
@@ -506,14 +506,14 @@ export default function MonthlyDynamicRebalancer({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Guide Card 1: AI 시즌 스마트 최적화 */}
-          <div className="bg-white rounded-xl p-3.5 border border-purple-100/80 shadow-2xs flex flex-col justify-between space-y-2">
+          <div className="bg-white rounded-xl p-3.5 border border-[#B59269]/30 shadow-2xs flex flex-col justify-between space-y-2">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[11px] font-black border border-purple-200/70">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#B59269]/10 text-[#8C6D46] text-[11px] font-black border border-[#B59269]/30">
                   <Sparkles size={12} />
                   ✨ AI 시즌 스마트 최적화
                 </span>
-                <span className="text-[10px] font-bold text-purple-600 bg-purple-50/50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold text-[#8C6D46] bg-[#B59269]/10 px-1.5 py-0.5 rounded">
                   추천 시나리오
                 </span>
               </div>
@@ -523,7 +523,7 @@ export default function MonthlyDynamicRebalancer({
                 대신 부족한 목표액을 여유 여력이 많은 비수기·숄더 월로 자동 전이(Spillover)하여 <strong>연간 목표를 현실적으로 100% 달성</strong>합니다.
               </p>
             </div>
-            <div className="text-[10px] text-purple-700/90 font-medium bg-purple-50/40 px-2 py-1 rounded border border-purple-100">
+            <div className="text-[10px] text-[#8C6D46] font-medium bg-[#B59269]/5 px-2 py-1 rounded border border-[#B59269]/20">
               💡 <em>사용 시점: 성수기 만실 한계를 인정하고 비수기 마케팅으로 승부할 때 클릭</em>
             </div>
           </div>
@@ -552,14 +552,14 @@ export default function MonthlyDynamicRebalancer({
           </div>
 
           {/* Guide Card 3: 월별 잠금/연동 제어 */}
-          <div className="bg-white rounded-xl p-3.5 border border-indigo-100/80 shadow-2xs flex flex-col justify-between space-y-2">
+          <div className="bg-white rounded-xl p-3.5 border border-[#284F42]/20 shadow-2xs flex flex-col justify-between space-y-2">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-black border border-indigo-200/70">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#284F42]/10 text-[#284F42] text-[11px] font-black border border-[#284F42]/30">
                   <Lock size={12} />
                   🔒 월별 잠금 / 🔓 연동 제어
                 </span>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold text-[#284F42] bg-[#284F42]/10 px-1.5 py-0.5 rounded">
                   Zero-Sum 보존
                 </span>
               </div>
@@ -569,7 +569,7 @@ export default function MonthlyDynamicRebalancer({
                 이후 <strong>[🔓 연동]</strong> 상태인 임의의 월 슬라이더를 올리거나 내리면, 잠금되지 않은 나머지 월들이 <strong>실시간으로 반비례 자동 가감되어 연간 총목표액이 1원의 오차도 없이 완벽히 유지</strong>됩니다.
               </p>
             </div>
-            <div className="text-[10px] text-indigo-700/90 font-medium bg-indigo-50/40 px-2 py-1 rounded border border-indigo-100">
+            <div className="text-[10px] text-[#284F42] font-medium bg-[#284F42]/5 px-2 py-1 rounded border border-[#284F42]/20">
               💡 <em>사용 시점: 특정 월(예: 행사/성수기) 목표를 고정해 두고 나머지 달을 조율할 때 활용</em>
             </div>
           </div>
@@ -591,11 +591,11 @@ export default function MonthlyDynamicRebalancer({
 
       {/* Server Dynamic Rebalancing Summary Bar */}
       {serverRebalanceData && (
-        <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-[#284F42]/10 border border-[#284F42]/20 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-indigo-600" />
-            <span className="text-xs font-bold text-indigo-950">서버리스 리밸런싱 엔진 연동</span>
-            {isRebalancing && <span className="text-[11px] text-indigo-600 font-semibold animate-pulse">연산 중...</span>}
+            <Sparkles size={16} className="text-[#284F42]" />
+            <span className="text-xs font-bold text-[#1B382E]">서버리스 리밸런싱 엔진 연동</span>
+            {isRebalancing && <span className="text-[11px] text-[#284F42] font-semibold animate-pulse">연산 중...</span>}
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs">
             {serverRebalanceData.closedTotalRevenue !== undefined && (
@@ -607,7 +607,7 @@ export default function MonthlyDynamicRebalancer({
             {serverRebalanceData.remainingRequiredRevenue !== undefined && (
               <div>
                 <span className="text-slate-500 font-medium">잔여월 필요: </span>
-                <b className="font-mono text-indigo-700">{serverRebalanceData.remainingRequiredRevenue.toLocaleString()}원</b>
+                <b className="font-mono text-[#284F42]">{serverRebalanceData.remainingRequiredRevenue.toLocaleString()}원</b>
               </div>
             )}
             {serverRebalanceData.requiredYoYGrowthPct !== undefined && (
@@ -627,7 +627,7 @@ export default function MonthlyDynamicRebalancer({
             <BarChart2 className="w-4 h-4 text-teal-600" />
             12개월 실적 기준선 대비 동적 목표선 실시간 대조 (정합성 검증)
           </span>
-          <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+          <span className="text-xs font-black text-[#284F42] bg-[#284F42]/10 px-2.5 py-1 rounded-lg border border-[#284F42]/20">
             연간 총목표: {(annualTargetRevenue / 100000000).toFixed(2)}억원 (연평균 +{annualGrowthRate}%) 고정
           </span>
         </div>
@@ -647,7 +647,7 @@ export default function MonthlyDynamicRebalancer({
               key={meta.month}
               className={`rounded-2xl p-4 transition-all border min-h-[195px] flex flex-col justify-between ${
                 isLocked 
-                  ? 'bg-indigo-50/50 border-indigo-200 shadow-2xs' 
+                  ? 'bg-[#284F42]/10 border-[#284F42]/30 shadow-2xs' 
                   : isCapacityWarning
                   ? 'bg-amber-50/40 border-amber-200'
                   : 'bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
@@ -666,7 +666,7 @@ export default function MonthlyDynamicRebalancer({
                   onClick={() => toggleLock(meta.month)}
                   className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
                     isLocked 
-                      ? 'bg-indigo-600 text-white shadow-2xs' 
+                      ? 'bg-[#284F42] text-white shadow-2xs' 
                       : 'bg-slate-100 text-slate-400 hover:text-slate-700'
                   }`}
                   title={isLocked ? '목표가 고정되어 타 월 조정 시 변하지 않습니다.' : '타 월 조정 시 자동으로 연동 리밸런싱됩니다.'}
@@ -729,7 +729,7 @@ export default function MonthlyDynamicRebalancer({
                     ADR 레버리지 필요
                   </span>
                 ) : meta.isPeak ? (
-                  <span className="text-indigo-600 font-semibold truncate" title={`성수기 (~${Math.round(meta.estimatedOcc * 100)}%)`}>
+                  <span className="text-[#284F42] font-semibold truncate" title={`성수기 (~${Math.round(meta.estimatedOcc * 100)}%)`}>
                     성수기 (~{Math.round(meta.estimatedOcc * 100)}%)
                   </span>
                 ) : (

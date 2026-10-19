@@ -73,7 +73,7 @@ const DIV_COLORS = [
   { row: "bg-blue-50/30 hover:bg-blue-50/80 transition-colors", divCell: "bg-blue-50", partCell: "bg-blue-50/50", partSubRow: "bg-blue-50/80", divSubRow: "bg-blue-100/80" },
   { row: "bg-emerald-50/30 hover:bg-emerald-50/80 transition-colors", divCell: "bg-emerald-50", partCell: "bg-emerald-50/50", partSubRow: "bg-emerald-50/80", divSubRow: "bg-emerald-100/80" },
   { row: "bg-amber-50/30 hover:bg-amber-50/80 transition-colors", divCell: "bg-amber-50", partCell: "bg-amber-50/50", partSubRow: "bg-amber-50/80", divSubRow: "bg-amber-100/80" },
-  { row: "bg-purple-50/30 hover:bg-purple-50/80 transition-colors", divCell: "bg-purple-50", partCell: "bg-purple-50/50", partSubRow: "bg-purple-50/80", divSubRow: "bg-purple-100/80" },
+  { row: "bg-teal-50/30 hover:bg-teal-50/80 transition-colors", divCell: "bg-teal-50", partCell: "bg-teal-50/50", partSubRow: "bg-teal-50/80", divSubRow: "bg-teal-100/80" },
 ];
 
 export default function V6DashboardViewer() {
@@ -122,7 +122,7 @@ export default function V6DashboardViewer() {
               {isRangeMode ? '선택 기간 실적 (Period)' : '당일 실적 (Today)'}
             </th>
             <th className="px-4 py-2 border-x border-slate-300 border-b bg-blue-50 text-blue-800" colSpan={3}>당월 누계 (MTD)</th>
-            <th className="px-4 py-2 border-x border-slate-300 border-b bg-indigo-50 text-indigo-800" colSpan={3}>올해 누계 (YTD)</th>
+            <th className="px-4 py-2 border-x border-slate-300 border-b bg-[#284F42]/10 text-[#1B382E]" colSpan={3}>올해 누계 (YTD)</th>
           </tr>
           {/* 하위 컬럼 헤더 */}
           <tr className="text-xs text-slate-600">
@@ -137,7 +137,7 @@ export default function V6DashboardViewer() {
             <th className="px-3 py-2 border-x border-slate-300 bg-[#f0f6ff]">증감(%)</th>
             
             {/* YTD */}
-            <th className="px-3 py-2 border-x border-slate-200 bg-[#f3f5ff]">올해 누적</th>
+            <th className="px-3 py-2 border-x border-slate-200 bg-[#284F42]/5">올해 누적</th>
             <th className="px-3 py-2 border-x border-slate-200 bg-[#f3f5ff]">전년 누적</th>
             <th className="px-3 py-2 border-x border-slate-300 bg-[#f3f5ff]">증감(%)</th>
           </tr>
@@ -194,9 +194,9 @@ export default function V6DashboardViewer() {
                             <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-blue-50/10">{formatGrowth(metrics.mtdGrowth)}</td>
                             
                             {/* YTD */}
-                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-indigo-800">{formatNum(metrics.ytdActual)}</td>
+                            <td className="px-3 py-3 text-right font-mono border border-slate-200 text-[#1B382E] font-semibold">{formatNum(metrics.ytdActual)}</td>
                             <td className="px-3 py-3 text-right font-mono border border-slate-200 text-slate-500">{formatNum(metrics.ytdLy)}</td>
-                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-indigo-50/10">{formatGrowth(metrics.ytdGrowth)}</td>
+                            <td className="px-3 py-3 text-right font-mono border-r border-slate-300 bg-[#284F42]/5">{formatGrowth(metrics.ytdGrowth)}</td>
                           </tr>
                         );
                       })}
@@ -216,9 +216,9 @@ export default function V6DashboardViewer() {
                         <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-blue-50/50">{formatGrowth(part.partSubtotal?.mtdGrowth || part.part_subtotal?.mtdGrowth)}</td>
                         
                         {/* YTD */}
-                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-indigo-800">{formatNum(part.partSubtotal?.ytdActual || part.part_subtotal?.ytdActual)}</td>
+                        <td className="px-3 py-2 text-right font-mono border border-slate-300 text-[#1B382E] font-bold">{formatNum(part.partSubtotal?.ytdActual || part.part_subtotal?.ytdActual)}</td>
                         <td className="px-3 py-2 text-right font-mono border border-slate-300 text-slate-500">{formatNum(part.partSubtotal?.ytdLy || part.part_subtotal?.ytdLy)}</td>
-                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-indigo-50/50">{formatGrowth(part.partSubtotal?.ytdGrowth || part.part_subtotal?.ytdGrowth)}</td>
+                        <td className="px-3 py-2 text-right font-mono border-r border-slate-300 bg-[#284F42]/10">{formatGrowth(part.partSubtotal?.ytdGrowth || part.part_subtotal?.ytdGrowth)}</td>
                       </tr>
                     </React.Fragment>
                   );
@@ -238,32 +238,32 @@ export default function V6DashboardViewer() {
                   <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-blue-100/50">{formatGrowth(division.divisionSubtotal?.mtdGrowth)}</td>
                   
                   {/* YTD */}
-                  <td className="px-3 py-3 text-right font-mono text-indigo-900 border border-slate-300">{formatNum(division.divisionSubtotal?.ytdActual)}</td>
+                  <td className="px-3 py-3 text-right font-mono text-[#1B382E] font-extrabold border border-slate-300">{formatNum(division.divisionSubtotal?.ytdActual)}</td>
                   <td className="px-3 py-3 text-right font-mono border border-slate-300 text-slate-600">{formatNum(division.divisionSubtotal?.ytdLy)}</td>
-                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-indigo-100/50">{formatGrowth(division.divisionSubtotal?.ytdGrowth)}</td>
+                  <td className="px-3 py-3 text-right font-mono border-r-2 border-slate-400 bg-[#284F42]/15">{formatGrowth(division.divisionSubtotal?.ytdGrowth)}</td>
                 </tr>
               </React.Fragment>
             );
           })}
           
-          {/* --- 5. 전사 총계 --- */}
-          <tr className="bg-slate-800 text-white font-bold text-base border-t-4 border-slate-900">
-            <td className="px-4 py-5 text-center border border-slate-700 tracking-wider" colSpan={3}>전사 총합계 (Grand Total)</td>
+          {/* --- 5. 전사 총계 (Deep Forest Bento) --- */}
+          <tr className="bg-[#284F42] text-white font-bold text-base border-t-4 border-[#1B382E]">
+            <td className="px-4 py-5 text-center border border-[#1B382E] tracking-wider" colSpan={3}>전사 총합계 (Grand Total)</td>
             
             {/* Today */}
-            <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px]">{formatNum(data.grandTotal?.todayActual)}</td>
-            <td className="px-3 py-5 text-right font-mono border border-slate-700 text-slate-400">{formatNum(data.grandTotal?.todayLy)}</td>
-            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.todayGrowth)}</td>
+            <td className="px-3 py-5 text-right font-mono border border-[#1B382E] text-[15px]">{formatNum(data.grandTotal?.todayActual)}</td>
+            <td className="px-3 py-5 text-right font-mono border border-[#1B382E] text-white/70">{formatNum(data.grandTotal?.todayLy)}</td>
+            <td className="px-3 py-5 text-right font-mono border-r-2 border-[#1B382E] bg-[#1B382E]/50">{formatGrowth(data.grandTotal?.todayGrowth)}</td>
             
             {/* MTD */}
-            <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px] text-blue-300">{formatNum(data.grandTotal?.mtdActual)}</td>
-            <td className="px-3 py-5 text-right font-mono border border-slate-700 text-slate-400">{formatNum(data.grandTotal?.mtdLy)}</td>
-            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.mtdGrowth)}</td>
+            <td className="px-3 py-5 text-right font-mono border border-[#1B382E] text-[15px] text-emerald-200">{formatNum(data.grandTotal?.mtdActual)}</td>
+            <td className="px-3 py-5 text-right font-mono border border-[#1B382E] text-white/70">{formatNum(data.grandTotal?.mtdLy)}</td>
+            <td className="px-3 py-5 text-right font-mono border-r-2 border-[#1B382E] bg-[#1B382E]/50">{formatGrowth(data.grandTotal?.mtdGrowth)}</td>
             
             {/* YTD */}
-            <td className="px-3 py-5 text-right font-mono border border-slate-700 text-[15px] text-indigo-300">{formatNum(data.grandTotal?.ytdActual)}</td>
-            <td className="px-3 py-5 text-right font-mono border border-slate-700 text-slate-400">{formatNum(data.grandTotal?.ytdLy)}</td>
-            <td className="px-3 py-5 text-right font-mono border-r-2 border-slate-500 bg-slate-700/50">{formatGrowth(data.grandTotal?.ytdGrowth)}</td>
+            <td className="px-3 py-5 text-right font-mono border border-[#1B382E] text-[15px] text-[#B59269]">{formatNum(data.grandTotal?.ytdActual)}</td>
+            <td className="px-3 py-5 text-right font-mono border border-[#1B382E] text-white/70">{formatNum(data.grandTotal?.ytdLy)}</td>
+            <td className="px-3 py-5 text-right font-mono border-r-2 border-[#1B382E] bg-[#1B382E]/50">{formatGrowth(data.grandTotal?.ytdGrowth)}</td>
           </tr>
         </tbody>
       </table>

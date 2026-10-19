@@ -497,7 +497,7 @@ export default function HolidayComparison() {
               <button
                 onClick={() => setMetricType('ROOMS')}
                 className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  metricType === 'ROOMS' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+                  metricType === 'ROOMS' ? 'bg-[#284F42] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 투숙 객실 추이

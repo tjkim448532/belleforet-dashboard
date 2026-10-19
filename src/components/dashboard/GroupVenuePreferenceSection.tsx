@@ -67,13 +67,13 @@ const SURGE_GRADE_META: Record<SurgeGradeType, { label: string; badgeClass: stri
 };
 
 const STACKED_BAR_COLORS = [
-  'bg-emerald-500',
-  'bg-blue-500',
-  'bg-indigo-500',
-  'bg-amber-500',
-  'bg-purple-500',
-  'bg-rose-500',
-  'bg-teal-500'
+  'bg-[#284F42]',
+  'bg-[#B59269]',
+  'bg-emerald-600',
+  'bg-amber-600',
+  'bg-teal-600',
+  'bg-[#8B2635]',
+  'bg-[#1B382E]'
 ];
 
 export default function GroupVenuePreferenceSection({
@@ -322,44 +322,55 @@ export default function GroupVenuePreferenceSection({
           : 'space-y-6 pt-4 border-t-2 border-slate-200/90'
       }
     >
-      {/* 섹션 헤더 배너 */}
-      <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-lg">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-bold">
-              <Users size={14} />
-              <span>컨텐츠기획본부 · 숙박·연회 단체 × 식음/부대 영업장 분석</span>
-              {period?.startDate && period?.endDate && (
-                <span className="text-emerald-300 font-mono ml-1">
-                  ({period.startDate} ~ {period.endDate}
-                  {period.totalDays != null ? ` · ${period.totalDays}일간` : ''})
-                </span>
-              )}
-            </div>
-            <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight flex flex-wrap items-center gap-2.5">
-              <span>{headerTitle}</span>
-            </h1>
-            <p className="text-slate-300 text-xs sm:text-sm max-w-4xl leading-relaxed">
-              {headerDesc}
-            </p>
+      {/* 섹션 헤더 배너 (단독 페이지일 때만 표출, 세일즈본부 임베딩 시에는 GroupSales 상단 헤더 활용) */}
+      {isStandalonePage && (
+        <>
+          {/* Ambient Deep Forest Glow Banner */}
+          <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+            <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+            <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+            <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
           </div>
 
-          {isStandalonePage && (
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col xl:flex-row xl:items-center justify-between gap-5 relative z-10">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3.5 bg-[#284F42] text-white rounded-2xl border border-[#1B382E] shrink-0 shadow-xs">
+                <Users className="w-7 h-7 text-[#B59269]" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#284F42]/10 border border-[#284F42]/20 text-[#284F42] text-xs font-bold mb-1.5">
+                  <span>컨텐츠기획본부 · 숙박·연회 단체 × 식음/부대 영업장 분석</span>
+                  {period?.startDate && period?.endDate && (
+                    <span className="text-[#B59269] font-mono ml-1">
+                      ({period.startDate} ~ {period.endDate}
+                      {period.totalDays != null ? ` · ${period.totalDays}일간` : ''})
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight break-keep">
+                  {headerTitle}
+                </h1>
+                <p className="text-xs sm:text-sm text-[#5A6B63] mt-1 break-keep max-w-4xl leading-relaxed">
+                  {headerDesc}
+                </p>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
               <GlobalDatePicker />
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* 단독 페이지일 때 컨텐츠기획본부 4대 페이지 상단 탭 네비게이션 */}
       {isStandalonePage && <ContentDivisionNav />}
 
       {/* 필터 컨트롤 바 & (ALL 모드일 때) 뷰 전환 스위치 */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl p-4 border border-[#D0C6BB]/75 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 mr-1">
-            <Filter size={14} className="text-emerald-600" />
+          <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#1B382E] mr-1">
+            <Filter size={14} className="text-[#284F42]" />
             <span>분석 조건 필터</span>
           </div>
 
@@ -367,7 +378,7 @@ export default function GroupVenuePreferenceSection({
           <select
             value={venueCategory}
             onChange={(e) => setVenueCategory(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+            className="bg-[#F4F3EE] border border-[#D0C6BB]/80 text-[#1B382E] text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-[#284F42] cursor-pointer"
           >
             <option value="ALL">전체 매장 (식음+레저)</option>
             <option value="FNB">식음 매장 (F&B)</option>
@@ -378,7 +389,7 @@ export default function GroupVenuePreferenceSection({
           <select
             value={groupSegment}
             onChange={(e) => setGroupSegment(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+            className="bg-[#F4F3EE] border border-[#D0C6BB]/80 text-[#1B382E] text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-[#284F42] cursor-pointer"
           >
             <option value="ALL">전체 단체 유형</option>
             <option value="ENTERPRISE">대기업/중견기업</option>
@@ -388,7 +399,7 @@ export default function GroupVenuePreferenceSection({
           </select>
 
           {/* 키워드 검색 */}
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+          <div className="flex items-center bg-[#F4F3EE] border border-[#D0C6BB]/80 rounded-xl overflow-hidden">
             <input
               type="text"
               value={searchInput}
@@ -397,12 +408,12 @@ export default function GroupVenuePreferenceSection({
                 if (e.key === 'Enter') setAppliedSearch(searchInput);
               }}
               placeholder="단체명·영업장 검색 (예: 네패스)"
-              className="bg-transparent text-slate-800 text-xs px-3 py-2 outline-none w-48 placeholder:text-slate-400"
+              className="bg-transparent text-[#1B382E] text-xs px-3 py-2 outline-none w-48 placeholder:text-[#5A6B63]/60"
             />
             <button
               type="button"
               onClick={() => setAppliedSearch(searchInput)}
-              className="px-2.5 py-2 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+              className="px-2.5 py-2 text-[#5A6B63] hover:text-[#284F42] transition-colors cursor-pointer"
               title="검색 실행"
             >
               <Search size={14} />
@@ -412,7 +423,7 @@ export default function GroupVenuePreferenceSection({
           <button
             type="button"
             onClick={handleResetFilters}
-            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-[#F4F3EE] hover:bg-[#E8E6DF] text-[#1B382E] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
             title="필터 초기화"
           >
             <RotateCcw size={13} />
@@ -421,14 +432,14 @@ export default function GroupVenuePreferenceSection({
         </div>
 
         {mode === 'ALL' && (
-          <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold gap-1">
+          <div className="inline-flex items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/70 text-xs font-bold gap-1">
             <button
               type="button"
               onClick={() => setInternalTab('RANKINGS')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 internalTab === 'RANKINGS'
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
             >
               🏆 영업장별 단체 순위 & 평균매출
@@ -438,8 +449,8 @@ export default function GroupVenuePreferenceSection({
               onClick={() => setInternalTab('SEGMENTS')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 internalTab === 'SEGMENTS'
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#284F42] text-white shadow-xs'
+                  : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
             >
               🏢 단체 유형별 선호도 & 방문동선
@@ -460,14 +471,14 @@ export default function GroupVenuePreferenceSection({
           ))}
         </div>
       ) : isSleeping ? (
-        <div className="bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="bg-[#284F42] text-white rounded-3xl p-8 border border-[#1B382E] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-[#1B382E] border border-white/20 flex items-center justify-center text-[#B59269] shrink-0">
               <Moon size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold">심야 데이터베이스 절전 모드 안내</h3>
-              <p className="text-xs text-slate-300 mt-1">
+              <h3 className="text-lg font-extrabold text-white">심야 데이터베이스 절전 모드 안내</h3>
+              <p className="text-xs text-white/80 mt-1">
                 현재 심야 절전 시간대로 인해 실시간 단체 영업장 선호도 분석 조회가 일시 대기 중입니다.
               </p>
             </div>
@@ -475,22 +486,22 @@ export default function GroupVenuePreferenceSection({
           <button
             type="button"
             onClick={() => setRefreshTick((t) => t + 1)}
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition-colors cursor-pointer shrink-0"
+            className="px-4 py-2.5 rounded-xl bg-[#B59269] hover:bg-[#a38058] text-white text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs"
           >
             다시 시도
           </button>
         </div>
       ) : error || !data ? (
-        <div className="bg-white rounded-3xl p-8 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-white rounded-3xl p-8 border border-[#D0C6BB]/75 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
               <AlertCircle size={22} />
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900">
+              <h3 className="text-sm font-extrabold text-[#1B382E]">
                 단체 × 식음/부대 영업장 선호도 및 평균 매출 리포트 연동 대기 중
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-[#5A6B63] mt-0.5">
                 {error || '백엔드 단체 분석 API 배포가 완료되면 영업장별 단체 방문 순위·단체 유형별 선호도·평균 매출 및 급증률이 즉시 표출됩니다.'}
               </p>
             </div>
@@ -498,7 +509,7 @@ export default function GroupVenuePreferenceSection({
           <button
             type="button"
             onClick={() => setRefreshTick((t) => t + 1)}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            className="px-4 py-2 rounded-xl bg-[#284F42] hover:bg-[#1E3E34] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
             <RotateCcw size={13} />
             <span>데이터 다시 확인</span>
@@ -512,19 +523,19 @@ export default function GroupVenuePreferenceSection({
           {summary && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
               {/* 카드 1: 총 방문 단체 수 / 총 부대지출 */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
+              <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 shadow-xs flex flex-col justify-between space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-slate-500">총 방문 단체 / 부대지출</span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                  <span className="text-xs font-extrabold text-[#5A6B63]">총 방문 단체 / 부대지출</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                     {summary.totalUniqueGroupsFormatted ?? '-'}
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black font-mono text-slate-900 tracking-tight">
+                <div className="text-xl sm:text-2xl font-black font-financial text-[#1B382E] tracking-tight">
                   {summary.totalGroupSpendFormatted ? `${summary.totalGroupSpendFormatted}원` : '-'}
                 </div>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="pt-2 border-t border-[#D0C6BB]/30 flex items-center justify-between text-[11px] text-[#5A6B63]">
                   <span>총 단체 결제 전표</span>
-                  <strong className="font-mono text-slate-800">{summary.totalGroupTxCountFormatted ?? '-'}</strong>
+                  <strong className="font-financial text-[#1B382E]">{summary.totalGroupTxCountFormatted ?? '-'}</strong>
                 </div>
               </div>
 
@@ -599,19 +610,19 @@ export default function GroupVenuePreferenceSection({
               </div>
 
               {/* 카드 5: 단체 방문 시 매출 급증 1위 */}
-              <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between space-y-2">
+              <div className="bg-[#284F42] text-white rounded-2xl p-5 border border-[#1B382E] shadow-sm flex flex-col justify-between space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-200">단체 방문 시 매출 급증 1위</span>
-                  <span className="text-xs font-black px-2 py-0.5 rounded-full bg-rose-500 text-white">
+                  <span className="text-xs font-bold text-white/80">단체 방문 시 매출 급증 1위</span>
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full bg-[#B59269] text-white">
                     {summary.topSurgeVenue?.surgePctFormatted ?? '-'}
                   </span>
                 </div>
                 <div className="text-lg sm:text-xl font-black text-white truncate" title={summary.topSurgeVenue?.venueName ?? '-'}>
                   {summary.topSurgeVenue?.venueName ?? '-'}
                 </div>
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300 font-mono">
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70 font-financial">
                   <span>평소 {summary.topSurgeVenue?.avgDailyRevWithoutGroupFormatted ?? '-'}원</span>
-                  <span className="text-emerald-300 font-bold">
+                  <span className="text-[#B59269] font-bold">
                     ➔ {summary.topSurgeVenue?.avgDailyRevWithGroupFormatted ?? '-'}원
                   </span>
                 </div>
@@ -623,23 +634,23 @@ export default function GroupVenuePreferenceSection({
           {/* ② 영업장별 단체 유치 실적 & 평균 매출/급증률 리더보드 테이블 */}
           {/* ================================================================= */}
           {showRankings && (
-            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-              <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-xs overflow-hidden">
+              <div className="p-6 border-b border-[#D0C6BB]/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                    <Trophy size={19} className="text-amber-500" />
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
+                    <Trophy size={19} className="text-[#B59269]" />
                     <span>영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 매출 급증률 리더보드</span>
-                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs font-bold text-[#284F42] bg-[#284F42]/10 border border-[#284F42]/20 px-2.5 py-0.5 rounded-full">
                       {venueRankings.length}개 영업장
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-[#5A6B63] mt-1">
                     각 영업장이 유치한 단체 수(B2B 정산 + 객실후불), 단체 1팀당 평균 지출액, 그리고 단체가 방문한 날의 매장 전체 일평균 매출 급증 효과를 비교합니다.
                   </p>
                 </div>
 
                 {/* 정렬 기준 스위치 */}
-                <div className="inline-flex flex-wrap items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold gap-1">
+                <div className="inline-flex flex-wrap items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/70 text-xs font-bold gap-1">
                   {[
                     { key: 'rank', label: '기본 순위' },
                     { key: 'groupCount', label: '단체 방문 많은 순' },
@@ -653,8 +664,8 @@ export default function GroupVenuePreferenceSection({
                       onClick={() => setSortBy(tab.key as RankingSortKey)}
                       className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                         sortBy === tab.key
-                          ? 'bg-slate-900 text-white shadow-2xs'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-[#284F42] text-white shadow-xs'
+                          : 'text-[#5A6B63] hover:text-[#1B382E]'
                       }`}
                     >
                       {tab.label}
@@ -720,23 +731,23 @@ export default function GroupVenuePreferenceSection({
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                                   item.venueCategory === 'FNB'
                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                    : 'bg-[#B59269]/10 text-[#B59269] border border-[#B59269]/20'
                                 }`}
                               >
                                 {item.venueCategoryName || item.venueCategory || '-'}
                               </span>
                             </div>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-mono">
-                            <div className="font-extrabold text-slate-900 text-sm">
+                          <td className="py-3.5 px-4 text-right font-financial">
+                            <div className="font-extrabold text-[#1B382E] text-sm">
                               {item.totalGroupCountFormatted ?? '-'}
                             </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5">
+                            <div className="text-[11px] text-[#5A6B63] mt-0.5">
                               B2B {item.b2bGroupCount ?? '-'}팀 · 객실후불 {item.roomChargeGroupCount ?? '-'}팀
                             </div>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-mono">
-                            <div className="font-extrabold text-indigo-950 text-sm">
+                          <td className="py-3.5 px-4 text-right font-financial">
+                            <div className="font-extrabold text-[#1B382E] text-sm">
                               {item.totalGroupRevenueFormatted ? `${item.totalGroupRevenueFormatted}원` : '-'}
                             </div>
                             <div className="text-[11px] text-slate-500 mt-0.5">
@@ -783,11 +794,11 @@ export default function GroupVenuePreferenceSection({
                                 {item.topVisitingGroups.slice(0, 3).map((g, gIdx) => (
                                   <span
                                     key={`${item.venueName}-topg-${gIdx}`}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-semibold"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F4F3EE] border border-[#D0C6BB]/70 text-[#1B382E] text-[11px] font-semibold"
                                   >
-                                    <strong className="text-indigo-700">{gIdx + 1}위</strong>
+                                    <strong className="text-[#284F42]">{gIdx + 1}위</strong>
                                     <span>{g.groupName}</span>
-                                    <span className="font-mono text-slate-600">
+                                    <span className="font-financial text-[#5A6B63]">
                                       ({g.spendFormatted ? `${g.spendFormatted}원` : '-'})
                                     </span>
                                   </span>
@@ -812,11 +823,11 @@ export default function GroupVenuePreferenceSection({
           {showSegmentsAndTrails && segmentMatrix.length > 0 && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                  <Building2 size={19} className="text-indigo-600" />
+                <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
+                  <Building2 size={19} className="text-[#284F42]" />
                   <span>단체 종류(유형)별 선호 영업장 순위 및 방문 시 평균 매출 분석</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-[#5A6B63] mt-0.5">
                   대기업 워크숍, 공공기관/교육청/군, 학교 단체, 여행사 등 어떤 단체 종류가 방문했을 때 1팀당 평균 매출이 가장 높고 어느 영업장을 집중 이용하는지 보여줍니다.
                 </p>
               </div>
@@ -825,47 +836,47 @@ export default function GroupVenuePreferenceSection({
                 {segmentMatrix.map((seg) => (
                   <div
                     key={seg.groupSegment}
-                    className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4 flex flex-col justify-between"
+                    className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-xs p-6 space-y-4 flex flex-col justify-between"
                   >
                     <div className="space-y-4">
                       {/* 유형 카드 상단 헤더 */}
-                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[#D0C6BB]/30">
                         <div>
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-extrabold mb-1">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] text-[11px] font-extrabold mb-1">
                             <span>{seg.groupSegment}</span>
                             <span>·</span>
                             <span>{seg.groupCount != null ? `${seg.groupCount}개 단체 방문` : '-'}</span>
                           </div>
-                          <h4 className="text-lg font-extrabold text-slate-900">{seg.groupSegmentName}</h4>
+                          <h4 className="text-lg font-extrabold text-[#1B382E]">{seg.groupSegmentName}</h4>
                         </div>
-                        <div className="text-right font-mono">
-                          <div className="text-[11px] text-slate-400 font-sans">유형 식음 총매출</div>
-                          <div className="text-base font-black text-slate-900">
+                        <div className="text-right font-financial">
+                          <div className="text-[11px] text-[#5A6B63]">유형 식음 총매출</div>
+                          <div className="text-base font-black text-[#1B382E]">
                             {seg.totalFnbSpendFormatted ? `${seg.totalFnbSpendFormatted}원` : '-'}
                           </div>
                         </div>
                       </div>
 
                       {/* 단체 1팀당 평균 매출 비교 박스 */}
-                      <div className="grid grid-cols-2 gap-3 bg-slate-900 text-white p-4 rounded-2xl">
+                      <div className="grid grid-cols-2 gap-3 bg-[#284F42] text-white p-4 rounded-2xl border border-[#1B382E]">
                         <div>
-                          <div className="text-[11px] text-slate-300 font-medium">단체 1팀당 평균 식음 매출</div>
-                          <div className="text-lg sm:text-xl font-black font-mono text-emerald-400 mt-0.5">
+                          <div className="text-[11px] text-white/80 font-medium">단체 1팀당 평균 식음 매출</div>
+                          <div className="text-lg sm:text-xl font-black font-financial text-[#B59269] mt-0.5">
                             {seg.avgFnbSpendPerGroupFormatted ? `${seg.avgFnbSpendPerGroupFormatted}원` : '-'}
                           </div>
                         </div>
-                        <div className="border-l border-slate-700 pl-3">
-                          <div className="text-[11px] text-slate-300 font-medium">1팀당 평균 총 부대매출 (식음+레저)</div>
-                          <div className="text-lg sm:text-xl font-black font-mono text-amber-300 mt-0.5">
+                        <div className="border-l border-white/20 pl-3">
+                          <div className="text-[11px] text-white/80 font-medium">1팀당 평균 총 부대매출 (식음+레저)</div>
+                          <div className="text-lg sm:text-xl font-black font-financial text-[#5FB878] mt-0.5">
                             {seg.avgTotalSpendPerGroupFormatted ? `${seg.avgTotalSpendPerGroupFormatted}원` : '-'}
                           </div>
                         </div>
                       </div>
 
                       {/* 최애 매장 공식 Top 3 */}
-                      <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-2">
-                        <div className="text-xs font-extrabold text-indigo-950 flex items-center gap-1.5">
-                          <Sparkles size={14} className="text-indigo-600 shrink-0" />
+                      <div className="p-3.5 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]/70 space-y-2">
+                        <div className="text-xs font-extrabold text-[#1B382E] flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-[#284F42] shrink-0" />
                           <span>선호 영업장 Top 3 동선 공식</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
@@ -974,10 +985,10 @@ export default function GroupVenuePreferenceSection({
                         key={tier.tierCode}
                         className={`p-5 rounded-2xl border space-y-3 ${
                           isLarge
-                            ? 'bg-slate-900 text-white border-slate-800 shadow-sm'
+                            ? 'bg-[#284F42] text-white border-[#1B382E] shadow-sm'
                             : isMedium
-                            ? 'bg-indigo-50/50 border-indigo-200 text-slate-900'
-                            : 'bg-slate-50 border-slate-200 text-slate-900'
+                            ? 'bg-[#B59269]/10 border-[#B59269]/30 text-[#1B382E]'
+                            : 'bg-[#F4F3EE] border-[#D0C6BB]/70 text-[#1B382E]'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -1138,35 +1149,35 @@ export default function GroupVenuePreferenceSection({
                                     : trail.visitDates[0]
                                   : '-'}
                               </div>
-                              <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                              <div className="text-[11px] text-[#5A6B63] mt-0.5 flex items-center gap-1">
                                 {trail.roomStayMatched ? (
-                                  <span className="text-indigo-700 font-semibold flex items-center gap-1">
+                                  <span className="text-[#284F42] font-semibold flex items-center gap-1">
                                     <BedDouble size={12} />
                                     객실 {trail.roomsCount ?? '-'}실
                                     {trail.paxCount != null ? ` · ${trail.paxCount}명` : ''}
                                   </span>
                                 ) : (
-                                  <span className="text-slate-400">당일/연회 방문</span>
+                                  <span className="text-[#5A6B63]/60">당일/연회 방문</span>
                                 )}
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-center font-mono">
-                              <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-800 font-extrabold">
+                            <td className="py-3.5 px-4 text-center font-financial">
+                              <span className="px-2.5 py-1 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 font-extrabold">
                                 {trail.visitedVenueCount != null ? `${trail.visitedVenueCount}곳` : '-'}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4 text-right font-mono font-black text-slate-900 text-sm">
+                            <td className="py-3.5 px-4 text-right font-financial font-black text-[#1B382E] text-sm">
                               {trail.totalGroupSpendFormatted ? `${trail.totalGroupSpendFormatted}원` : '-'}
                             </td>
-                            <td className="py-3.5 px-4 text-right font-mono">
+                            <td className="py-3.5 px-4 text-right font-financial">
                               <div className="text-emerald-700 font-bold">
                                 식음 {trail.fnbSpendFormatted ? `${trail.fnbSpendFormatted}원` : '-'}
                               </div>
-                              <div className="text-[11px] text-indigo-600 mt-0.5">
+                              <div className="text-[11px] text-[#B59269] mt-0.5">
                                 레저 {trail.leisureSpendFormatted ? `${trail.leisureSpendFormatted}원` : '-'}
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800">
+                            <td className="py-3.5 px-4 text-right font-financial font-bold text-slate-800">
                               {trail.avgSpendPerVenueFormatted ? `${trail.avgSpendPerVenueFormatted}원` : '-'}
                             </td>
                             <td className="py-3.5 px-4 text-left">
@@ -1177,7 +1188,7 @@ export default function GroupVenuePreferenceSection({
                                   </span>
                                 )}
                                 {trail.favoriteLeisureVenue && (
-                                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 font-bold text-[11px]">
+                                  <span className="px-2 py-0.5 rounded-md bg-[#B59269]/10 border border-[#B59269]/20 text-[#B59269] font-bold text-[11px]">
                                     🎡 {trail.favoriteLeisureVenue}
                                   </span>
                                 )}
@@ -1209,15 +1220,15 @@ export default function GroupVenuePreferenceSection({
                                       <div
                                         className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs shadow-2xs ${
                                           vb.venueCategory === 'FNB'
-                                            ? 'bg-white border-emerald-200 text-slate-900'
-                                            : 'bg-white border-indigo-200 text-slate-900'
+                                            ? 'bg-white border-emerald-200 text-[#1B382E]'
+                                            : 'bg-white border-[#B59269]/30 text-[#1B382E]'
                                         }`}
                                       >
                                         <span
                                           className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
                                             vb.venueCategory === 'FNB'
                                               ? 'bg-emerald-100 text-emerald-800'
-                                              : 'bg-indigo-100 text-indigo-800'
+                                              : 'bg-[#B59269]/20 text-[#B59269]'
                                           }`}
                                         >
                                           {vbIdx + 1}

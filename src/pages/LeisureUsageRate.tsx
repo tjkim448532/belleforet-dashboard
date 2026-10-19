@@ -21,7 +21,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel
 // Distinct modern color palette for facilities
 const FACILITY_COLORS: Record<string, string> = {
   '놀이동산': '#3b82f6', // Blue
-  '미디어아트센터': '#8b5cf6', // Violet
+  '미디어아트센터': '#284F42', // Deep Forest
   '벨포레 목장': '#10b981', // Teal/Green
   '사계절썰매장': '#f59e0b', // Amber
   '마운틴카트': '#ef4444', // Red
@@ -30,7 +30,7 @@ const FACILITY_COLORS: Record<string, string> = {
   '마운틴카트(미니포렛)': '#f97316', // Orange
   '벨포레 목장(체험)': '#14b8a6', // Teal
   '썸머랜드': '#06b6d4', // Cyan
-  '원더풀': '#6366f1', // Indigo
+  '원더풀': '#0D9488', // Deep Teal
   '회전그네': '#ec4899', // Pink
   '마리나 클럽': '#0284c7', // Sky Blue
   '미디어-뮤지엄카페': '#d97706', // Warm Amber
@@ -38,8 +38,8 @@ const FACILITY_COLORS: Record<string, string> = {
 };
 
 const DEFAULT_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', 
-  '#06b6d4', '#ec4899', '#14b8a6', '#6366f1', '#84cc16'
+  '#3b82f6', '#10b981', '#f59e0b', '#284F42', '#ef4444', 
+  '#06b6d4', '#ec4899', '#14b8a6', '#B59269', '#84cc16'
 ];
 
 export const SEVEN_KEY_FACILITIES = [
@@ -394,13 +394,13 @@ export default function LeisureUsageRate() {
     const rows = yoyData.pivotData[pivotKey];
     const years = availableYears;
 
-    const baseColors = ['#94a3b8', '#3b82f6', '#10b981', '#06b6d4', '#8b5cf6', '#ef4444', '#f59e0b'];
+    const baseColors = ['#94a3b8', '#3b82f6', '#10b981', '#06b6d4', '#B59269', '#ef4444', '#f59e0b'];
     const colors: Record<string, string> = {
       '2024': '#94a3b8', // Slate
       '2025': '#3b82f6', // Blue
       '2026': '#10b981', // Emerald
       '2027': '#06b6d4', // Cyan
-      '2028': '#8b5cf6', // Violet
+      '2028': '#B59269', // Warm Gold
     };
 
     const series = years.map((yr, idx) => {

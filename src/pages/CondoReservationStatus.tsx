@@ -1302,7 +1302,7 @@ export default function CondoReservationStatus() {
                       isSeminar
                         ? 'bg-blue-50 text-blue-700 border-blue-200'
                         : isComp
-                        ? 'bg-purple-50 text-purple-700 border-purple-200'
+                        ? 'bg-[#B59269]/10 text-[#B59269] border-[#B59269]/30'
                         : 'bg-emerald-50 text-emerald-800 border-emerald-200';
 
                     return (
@@ -1399,7 +1399,7 @@ export default function CondoReservationStatus() {
                                 </span>
                               </span>
                             ) : group.settlementStatus === 'COMPLIMENTARY' ? (
-                              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 font-sans">
+                              <span className="text-[11px] font-bold text-[#B59269] bg-[#B59269]/10 px-2 py-0.5 rounded-full border border-[#B59269]/30 font-sans">
                                 무상 투숙
                               </span>
                             ) : group.totalRevenueFormatted ? (

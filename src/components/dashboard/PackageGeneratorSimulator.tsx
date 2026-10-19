@@ -1000,24 +1000,24 @@ ${itemListText}
       {/* ============================================================== */}
       {/* 1. Header Banner & Target Year/Month Selection                */}
       {/* ============================================================== */}
-      <div className="bg-gradient-to-r from-teal-900 via-emerald-950 to-slate-900 rounded-[28px] p-6 lg:p-8 text-white relative overflow-hidden shadow-xl border border-teal-800/40">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-[#284F42] rounded-[28px] p-6 lg:p-8 text-white relative overflow-hidden shadow-xl border border-[#1B382E]">
+        <div className="absolute right-0 top-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/30 flex items-center gap-1.5 uppercase">
+              <span className="bg-white/10 text-[#D0C6BB] text-xs font-bold px-3 py-1 rounded-full border border-white/20 flex items-center gap-1.5 uppercase">
                 <Sparkles size={13} />
                 수익 관리 & 패키지 쿼터 기획 엔진
               </span>
-              <span className="text-xs text-slate-300 font-medium bg-white/10 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs text-white/80 font-medium bg-white/10 px-2.5 py-0.5 rounded-full">
                 물리 가용 객실수 175실 고정 · 일반 정가 판매 잠식(Cannibalization) 방지
               </span>
             </div>
             <h2 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-2.5 break-keep">
-              <Package className="text-teal-400 shrink-0" size={26} />
+              <Package className="text-[#B59269] shrink-0" size={26} />
               리조트 수익 관리(RM) 및 역산형 패키지 쿼터 시뮬레이터
             </h2>
-            <p className="text-slate-300 text-xs lg:text-sm mt-1.5 max-w-3xl leading-relaxed">
+            <p className="text-white/80 text-xs lg:text-sm mt-1.5 max-w-3xl leading-relaxed">
               분석 대상 월의 <strong>ADR, RevPAR, TRevPAR 및 점유율(전체/주중/주말)</strong>을 조회하여, 
               일반 정가 판매를 방어하는 <strong>안전 판매 마지노선(Allotment)</strong>을 자동 제안받고 
               <strong>정해진 부대시설 예산 안에서 식음과 레저·체험 품목을 직접 설계</strong>합니다.
@@ -1025,17 +1025,17 @@ ${itemListText}
           </div>
 
           {/* Target Year & Month Selector */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-900/90 p-2.5 rounded-2xl border border-white/10 shrink-0 shadow-inner">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-[#1B382E]/90 p-2.5 rounded-2xl border border-white/10 shrink-0 shadow-inner">
             {/* Year Selector */}
-            <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <div className="flex items-center gap-1 bg-[#284F42]/80 p-1 rounded-xl border border-white/10">
               {[2026, 2025].map(y => (
                 <button
                   key={y}
                   onClick={() => setSelectedYear(y)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     selectedYear === y
-                      ? 'bg-teal-500 text-slate-950 font-black shadow-xs'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#B59269] text-white font-black shadow-xs'
+                      : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   {y}년
@@ -1043,8 +1043,8 @@ ${itemListText}
               ))}
             </div>
 
-            <span className="text-xs font-bold text-slate-400 px-1 flex items-center gap-1">
-              <Calendar size={13} className="text-teal-400" />
+            <span className="text-xs font-bold text-slate-300 px-1 flex items-center gap-1">
+              <Calendar size={13} className="text-[#B59269]" />
               월:
             </span>
 
@@ -1061,7 +1061,7 @@ ${itemListText}
                   onClick={() => setSelectedMonth(item.m)}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedMonth === item.m
-                      ? 'bg-teal-500 text-slate-950 font-black shadow-md'
+                      ? 'bg-[#B59269] text-white font-black shadow-md'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
@@ -1076,7 +1076,7 @@ ${itemListText}
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
               aria-label="전체 12개월 타깃 월 선택"
-              className="bg-slate-800 text-white text-xs font-bold px-2 py-1.5 rounded-xl border border-slate-700 cursor-pointer"
+              className="bg-[#284F42] text-white text-xs font-bold px-2 py-1.5 rounded-xl border border-white/20 cursor-pointer"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
                 <option key={m} value={m}>{m}월 전체</option>
@@ -1138,7 +1138,7 @@ ${itemListText}
             </div>
             <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600 font-financial">
               <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayAdr)}원</strong></span>
-              <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendAdr)}원</strong></span>
+              <span>주말: <strong className="text-[#284F42]">{formatCurrency(liveSummary?.weekendAdr)}원</strong></span>
             </div>
           </div>
 
@@ -1158,7 +1158,7 @@ ${itemListText}
             </div>
             <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600 font-financial">
               <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayRevpar)}원</strong></span>
-              <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendRevpar)}원</strong></span>
+              <span>주말: <strong className="text-[#284F42]">{formatCurrency(liveSummary?.weekendRevpar)}원</strong></span>
             </div>
           </div>
 
@@ -1178,7 +1178,7 @@ ${itemListText}
             </div>
             <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-slate-600 font-financial">
               <span>주중: <strong className="text-teal-700">{formatCurrency(liveSummary?.weekdayTrevpar)}원</strong></span>
-              <span>주말: <strong className="text-indigo-700">{formatCurrency(liveSummary?.weekendTrevpar)}원</strong></span>
+              <span>주말: <strong className="text-[#284F42]">{formatCurrency(liveSummary?.weekendTrevpar)}원</strong></span>
             </div>
           </div>
 
@@ -1187,7 +1187,7 @@ ${itemListText}
             <div>
               <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
                 <span>점유율 (OCC) 3분할</span>
-                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
+                <span className="text-[10px] bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 font-bold px-1.5 py-0.5 rounded">
                   {activeMetrics.targetLabel} {(activeMetrics.targetOccPct).toFixed(1)}%
                 </span>
               </div>
@@ -1210,11 +1210,11 @@ ${itemListText}
                 </div>
                 <div className={`p-1.5 rounded-xl border transition-all ${
                   targetType === 'WEEKEND'
-                    ? 'bg-indigo-100/90 border-indigo-400 ring-2 ring-indigo-500/20 shadow-2xs'
-                    : 'bg-indigo-50/70 border-indigo-100'
+                    ? 'bg-[#284F42] text-white border-[#1B382E] ring-2 ring-[#284F42]/20 shadow-2xs'
+                    : 'bg-[#284F42]/10 border-[#284F42]/20'
                 }`}>
-                  <div className="text-[10px] text-indigo-700 font-bold">주말</div>
-                  <div className="text-sm font-black text-indigo-900">
+                  <div className={`text-[10px] font-bold ${targetType === 'WEEKEND' ? 'text-white/90' : 'text-[#284F42]'}`}>주말</div>
+                  <div className={`text-sm font-black ${targetType === 'WEEKEND' ? 'text-white' : 'text-[#1B382E]'}`}>
                     {(liveSummary?.weekendOcc ?? 0).toFixed(1)}%
                   </div>
                 </div>
@@ -1232,17 +1232,17 @@ ${itemListText}
       {/* ============================================================== */}
       {/* 3. 패키지 타겟 구분 선택 & 안전 판매 마지노선(Allotment) 제안   */}
       {/* ============================================================== */}
-      <div className="bg-gradient-to-br from-white via-teal-50/30 to-indigo-50/30 rounded-[28px] border-2 border-teal-600/30 p-6 shadow-sm space-y-5">
+      <div className="bg-white rounded-[28px] border border-[#D0C6BB]/75 p-6 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5">
         
         {/* Header & Target Selector */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-teal-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="bg-[#284F42] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 RM Quota Engine
               </span>
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Lock size={18} className="text-teal-600" />
+                <Lock size={18} className="text-[#284F42]" />
                 역산형 패키지 타겟 구분 & 안전 판매 마지노선(Allotment) 자동 산출
               </h3>
             </div>
@@ -1253,13 +1253,13 @@ ${itemListText}
           </div>
 
           {/* Toggle: 주중용 vs 주말용 */}
-          <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-2xl shrink-0 shadow-inner">
+          <div className="flex items-center gap-2 bg-[#1B382E] p-1.5 rounded-2xl shrink-0 shadow-inner">
             <button
               onClick={() => setTargetType('WEEKDAY')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 targetType === 'WEEKDAY'
                   ? 'bg-teal-500 text-slate-950 shadow-md scale-102'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-white/70 hover:text-white'
               }`}
             >
               <Sun size={15} />
@@ -1273,8 +1273,8 @@ ${itemListText}
               onClick={() => setTargetType('WEEKEND')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 targetType === 'WEEKEND'
-                  ? 'bg-indigo-600 text-white shadow-md scale-102'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#B59269] text-white shadow-md scale-102'
+                  : 'text-white/70 hover:text-white'
               }`}
             >
               <Moon size={15} />
@@ -1310,49 +1310,49 @@ ${itemListText}
           </div>
 
           {/* Card B: 일반 객실 방어 수량 */}
-          <div className="bg-white p-4 rounded-2xl border-2 border-indigo-200 shadow-2xs flex flex-col justify-between">
+          <div className="bg-white p-4 rounded-2xl border-2 border-[#1B382E]/20 shadow-2xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-indigo-900">
+                <span className="text-[11px] font-bold text-[#1B382E]">
                   일반 객실 방어 수량 (정가 Lock-in)
                 </span>
-                <Lock size={14} className="text-indigo-600" />
+                <Lock size={14} className="text-[#284F42]" />
               </div>
-              <div className="text-2xl font-black text-indigo-950 mt-1">
+              <div className="text-2xl font-black text-[#1B382E] mt-1">
                 {allotmentCalculations.lockedRegularRooms}
                 <span className="text-xs font-semibold text-slate-500 ml-1">실</span>
               </div>
-              <p className="text-[11px] text-indigo-800 font-medium mt-1">
+              <p className="text-[11px] text-[#5A6B63] font-medium mt-1">
                 수식: ROUND(175 × {allotmentCalculations.targetOccPct.toFixed(1)}%)
               </p>
             </div>
-            <div className="border-t border-indigo-50 pt-2 mt-2 text-[10px] text-indigo-700 font-bold">
+            <div className="border-t border-[#D0C6BB]/40 pt-2 mt-2 text-[10px] text-[#284F42] font-bold">
               🔒 정가 판매 잠식(Cannibalization) 전면 차단
             </div>
           </div>
 
           {/* Card C: 패키지 최대 할당 마지노선 */}
-          <div className="bg-teal-50/70 p-4 rounded-2xl border-2 border-teal-500 shadow-2xs flex flex-col justify-between">
+          <div className="bg-[#E8F2EE] p-4 rounded-2xl border-2 border-[#284F42] shadow-2xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-teal-900">
+                <span className="text-[11px] font-black text-[#1B382E]">
                   패키지 최대 할당 마지노선 (Allotment)
                 </span>
-                <CheckCircle2 size={15} className="text-teal-600" />
+                <CheckCircle2 size={15} className="text-[#284F42]" />
               </div>
-              <div className="text-2xl font-black text-teal-950 mt-1">
+              <div className="text-2xl font-black text-[#1B382E] mt-1">
                 하루 최대 {allotmentCalculations.maxPackageAllotment}
                 <span className="text-xs font-semibold text-slate-500 ml-1">실</span>
               </div>
-              <p className="text-[11px] text-teal-800 font-medium mt-1">
+              <p className="text-[11px] text-[#5A6B63] font-medium mt-1">
                 수식: 175실 − {allotmentCalculations.lockedRegularRooms}실
               </p>
             </div>
-            <div className="border-t border-teal-200 pt-2 mt-2 text-[10px] text-teal-800 font-extrabold flex items-center justify-between">
+            <div className="border-t border-[#B4C6C1] pt-2 mt-2 text-[10px] text-[#284F42] font-extrabold flex items-center justify-between">
               <span>🎯 안전 쿼터 준수</span>
               <button
                 onClick={handleApplySafeAllotment}
-                className="text-[10px] bg-teal-600 text-white px-2 py-0.5 rounded-lg hover:bg-teal-700 transition-all cursor-pointer font-bold"
+                className="text-[10px] bg-[#284F42] text-white px-2 py-0.5 rounded-lg hover:bg-[#1B382E] transition-all cursor-pointer font-bold"
                 title="시뮬레이터 일일 판매량에 이 수량을 즉시 적용합니다"
               >
                 마지노선 적용
@@ -1369,12 +1369,12 @@ ${itemListText}
               전체 객실 175실 쿼터 배분 구조:
             </span>
             <div className="flex items-center gap-4 text-[11px]">
-              <span className="flex items-center gap-1.5 text-indigo-800">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span>
+              <span className="flex items-center gap-1.5 text-[#1B382E]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#284F42] inline-block"></span>
                 일반 정가 방어 {allotmentCalculations.lockedRegularRooms}실 ({allotmentCalculations.targetOccPct.toFixed(1)}%)
               </span>
-              <span className="flex items-center gap-1.5 text-teal-800">
-                <span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block"></span>
+              <span className="flex items-center gap-1.5 text-[#B59269]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#B59269] inline-block"></span>
                 패키지 마지노선 {allotmentCalculations.maxPackageAllotment}실 ({(100 - allotmentCalculations.targetOccPct).toFixed(1)}%)
               </span>
             </div>
@@ -1382,12 +1382,12 @@ ${itemListText}
 
           <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden flex shadow-inner">
             <div
-              className="bg-indigo-600 h-full transition-all duration-300"
+              className="bg-[#284F42] h-full transition-all duration-300"
               style={{ width: `${Math.min(100, (allotmentCalculations.lockedRegularRooms / 175) * 100)}%` }}
               title={`일반 객실 방어: ${allotmentCalculations.lockedRegularRooms}실`}
             ></div>
             <div
-              className="bg-teal-500 h-full transition-all duration-300"
+              className="bg-[#B59269] h-full transition-all duration-300"
               style={{ width: `${Math.min(100, (allotmentCalculations.maxPackageAllotment / 175) * 100)}%` }}
               title={`패키지 최대 할당 마지노선: ${allotmentCalculations.maxPackageAllotment}실`}
             ></div>
@@ -1395,7 +1395,7 @@ ${itemListText}
         </div>
 
         {/* Official Recommendation Banner */}
-        <div className="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-teal-700/50">
+        <div className="bg-gradient-to-r from-[#284F42] to-[#1B382E] text-white p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-[#1B382E]">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center shrink-0">
               <Award size={20} className="text-teal-300" />
@@ -1605,16 +1605,16 @@ ${itemListText}
         </div>
 
         {/* Step 02: 객실 기준액 우선 공제 (실측 원가 보전형 or RevPAR 방어형) */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-indigo-500/30 shadow-xs relative flex flex-col justify-between">
-          <div className="absolute -top-3 left-4 bg-indigo-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+        <div className="bg-white p-5 rounded-2xl border-2 border-[#284F42]/30 shadow-xs relative flex flex-col justify-between">
+          <div className="absolute -top-3 left-4 bg-[#284F42] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
             Step 02
           </div>
           <div>
             <div className="flex items-center justify-between mt-1 mb-2">
               <span className="text-xs font-bold text-slate-500">객실 기준액 우선 공제</span>
-              <Hotel size={16} className="text-indigo-600" />
+              <Hotel size={16} className="text-[#284F42]" />
             </div>
-            <div className="text-2xl font-black text-indigo-950 mb-1">
+            <div className="text-2xl font-black text-[#1B382E] mb-1">
               − {formatCurrency(reverseCalculations.roomDeduction)}
               <span className="text-sm font-semibold text-slate-500 ml-1">원</span>
             </div>
@@ -1652,15 +1652,15 @@ ${itemListText}
                 onClick={() => setRoomDeductionMode('REVPAR')}
                 className={`py-2 px-1.5 rounded-xl text-[10.5px] font-bold border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                   roomDeductionMode === 'REVPAR'
-                    ? 'bg-indigo-600 text-white border-indigo-600 font-black shadow-2xs'
+                    ? 'bg-[#284F42] text-white border-[#284F42] font-black shadow-2xs'
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-1">
-                  <CheckCircle2 size={11} className={roomDeductionMode === 'REVPAR' ? 'text-indigo-200' : 'text-slate-400'} />
+                  <CheckCircle2 size={11} className={roomDeductionMode === 'REVPAR' ? 'text-white/80' : 'text-slate-400'} />
                   <span>실측 RevPAR 방어형</span>
                 </div>
-                <span className={`text-[9px] ${roomDeductionMode === 'REVPAR' ? 'text-indigo-100' : 'text-slate-500'}`}>
+                <span className={`text-[9px] ${roomDeductionMode === 'REVPAR' ? 'text-white/90' : 'text-slate-500'}`}>
                   {formatCurrency(Math.round(activeMetrics.targetRevpar / 1000) * 1000)}원
                 </span>
               </button>
@@ -1720,7 +1720,7 @@ ${itemListText}
                   step={1000}
                   value={customRoomDeduction}
                   onChange={(e) => setCustomRoomDeduction(Number(e.target.value))}
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-[#284F42] cursor-pointer"
                 />
                 <div className="flex items-center justify-between text-[10px]">
                   <span className={customRoomDeduction < reverseCalculations.currentRoomCost.totalCostGross ? 'text-rose-600 font-bold' : 'text-slate-500'}>
@@ -1728,7 +1728,7 @@ ${itemListText}
                       ? `⚠️ 실측 원가(${formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원) 미달 (역마진 위험)` 
                       : `최소 실측 원가: ${formatCurrency(reverseCalculations.currentRoomCost.totalCostGross)}원`}
                   </span>
-                  <span className="text-indigo-800 font-bold">
+                  <span className="text-[#284F42] font-bold">
                     배분액: {formatCurrency(customRoomDeduction)}원
                   </span>
                 </div>
@@ -2103,7 +2103,7 @@ ${itemListText}
                 <FileSpreadsheet size={11} className="text-teal-600" />
                 원가 분석표 기준 연동
               </span>
-              <span className="text-[10px] bg-indigo-50 text-indigo-800 font-extrabold px-2 py-0.5 rounded-full border border-indigo-200">
+              <span className="text-[10px] bg-[#284F42]/10 text-[#284F42] font-extrabold px-2 py-0.5 rounded-full border border-[#284F42]/20">
                 한계비용(MC) 원칙
               </span>
             </div>
@@ -2339,11 +2339,11 @@ ${itemListText}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+              <span className="bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Step 05
               </span>
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <TrendingUp size={18} className="text-indigo-600" />
+                <TrendingUp size={18} className="text-[#284F42]" />
                 {selectedMonth}월 [{activeMetrics.targetLabel}] 전사 TRevPAR & RevPAR 상승 시뮬레이션
               </h3>
             </div>
@@ -2410,7 +2410,7 @@ ${itemListText}
               <span className="text-[11px] text-slate-500 font-bold block mb-1">
                 객실 RevPAR 방어 수준
               </span>
-              <div className="text-2xl font-black text-indigo-900 tracking-tight">
+              <div className="text-2xl font-black text-[#1B382E] tracking-tight">
                 {formatCurrency(reverseCalculations.roomDeduction)}원
               </div>
             </div>

@@ -28,8 +28,8 @@ const formatCurrency = (val: any) => {
 const CHANNEL_THEMES = [
   { icon: Globe, iconColor: 'text-blue-600', iconBg: 'bg-blue-50', borderHover: 'hover:border-blue-300', barColor: 'from-blue-500 to-sky-400', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-200/60' },
   { icon: Smartphone, iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50', borderHover: 'hover:border-emerald-300', barColor: 'from-emerald-500 to-teal-400', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200/60' },
-  { icon: Landmark, iconColor: 'text-indigo-600', iconBg: 'bg-indigo-50', borderHover: 'hover:border-indigo-300', barColor: 'from-indigo-500 to-violet-400', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-200/60' },
-  { icon: PhoneCall, iconColor: 'text-purple-600', iconBg: 'bg-purple-50', borderHover: 'hover:border-purple-300', barColor: 'from-purple-500 to-fuchsia-400', badgeStyle: 'bg-purple-50 text-purple-700 border-purple-200/60' },
+  { icon: Landmark, iconColor: 'text-[#284F42]', iconBg: 'bg-[#284F42]/10', borderHover: 'hover:border-[#284F42]/40', barColor: 'from-[#284F42] to-[#3D6B5B]', badgeStyle: 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20' },
+  { icon: PhoneCall, iconColor: 'text-[#B59269]', iconBg: 'bg-[#B59269]/10', borderHover: 'hover:border-[#B59269]/40', barColor: 'from-[#B59269] to-[#C8AA85]', badgeStyle: 'bg-[#B59269]/10 text-[#B59269] border-[#B59269]/20' },
   { icon: Users, iconColor: 'text-amber-600', iconBg: 'bg-amber-50', borderHover: 'hover:border-amber-300', barColor: 'from-amber-500 to-orange-400', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-200/60' },
   { icon: CreditCard, iconColor: 'text-teal-600', iconBg: 'bg-teal-50', borderHover: 'hover:border-teal-300', barColor: 'from-teal-500 to-emerald-400', badgeStyle: 'bg-teal-50 text-teal-700 border-teal-200/60' },
   { icon: Sparkles, iconColor: 'text-rose-600', iconBg: 'bg-rose-50', borderHover: 'hover:border-rose-300', barColor: 'from-rose-500 to-pink-400', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-200/60' },

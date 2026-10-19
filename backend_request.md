@@ -41,8 +41,8 @@
 | **P1 (완료)** | 정규 API | **[Ticket 42] 컨텐츠기획본부(외주식음) 영업장별 매출·점유비율(%)·매출 상위 Top 3 메뉴 및 크롤링 휴무일 통합 API** | [배포/검증완료] 외주식음 10개 영업장 매출, 0-Variance 점유비율(%), Top 3 메뉴, S3 크롤링 휴무일/운영시간 완제품 서빙 (`outsourced-fnb-sales`) |
 | **P0 (완료)** | 데이터 정합성 | **[Ticket 46] 레저 할인 누수 마트(`mat_v6_leisure_discount_audit_daily`) 내 외주식음·골프 POS 격리** | [배포/검증완료] `dim_facility_team_mapping` 레저본부/모토아레나 전속 조인 강제 및 마트 재집계 완료 (정상가 1,928만원 / 할인 56만원 / 실징수율 96%) |
 | **P0 (긴급)** | 데이터 정합성 | **[Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) 판매수량의 레저 이용객수 둔갑 및 가짜 숫자 적재 시정** | [긴급] 카페 음료 70잔·스낵 4개가 이용객수로 둔갑된 결함: `dim_pos_menu_visitor_rule` 배수 0(`is_visitor_count = 0`) 적용 및 마트 백필 |
-| **P1 (신규)** | 정규 API | **[Ticket 51] 레저본부 영업장별 패키지(복합권) 매출·이용객 점유비율(%) 분석 API** | 마운틴카트 그랜드포렛 등 영업장별 패밀리4종 패스 등 복합 패키지 귀속 매출, 비중(%), 유입 이용객수(명), 이용객 점유율(%) 1-Call 완제품 제공 (`leisure-package-sales`) |
-| **P0 (긴급)** | 데이터 정합성 | **[Ticket 52] 기업 세미나 단체 후정산 미청구건(매출 0원)의 'COMP/사내' 오분류 결함 시정** | [긴급] KSS해운, 지구업 등 유상 기업 세미나(125건)가 후정산 미청구(`totalRevenue: 0`) 상태라는 이유로 `COMP/사내`로 둔갑되는 심각한 왜곡: 행사 카테고리(`category = 'SEMINAR'`) 기반 세그먼트 보존 및 후정산 상태 플래그(`settlementStatus`) 분리 (`corporate-group-sales`) |
+| **P1 (완료)** | 정규 API | **[Ticket 51] 레저본부 영업장별 패키지(복합권) 매출·이용객 점유비율(%) 분석 API** | [배포/검증완료] 마운틴카트 그랜드포렛 등 영업장별 복합 패키지 귀속 매출, 비중(%), 유입 이용객수(명), 이용객 점유율(%) 1-Call 완제품 제공 (`leisure-package-sales`, 프로덕션 9a94c201 연동 완료) |
+| **P0 (완료)** | 데이터 정합성 | **[Ticket 52] 기업 세미나 단체 후정산 미청구건(매출 0원)의 'COMP/사내' 오분류 결함 시정** | [배포/검증완료] KSS해운, 지구업 등 유상 기업 세미나 후정산 미청구(`totalRevenue: 0`) 건에 대해 `category = 'SEMINAR'` 기반 `b2bSegment: 'SEMINAR'` 보존 및 `settlementStatus: 'PENDING_POST_BILLING'` 분리 완료 (`corporate-group-sales`) |
 
 ---
 

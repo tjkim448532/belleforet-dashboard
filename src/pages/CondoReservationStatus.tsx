@@ -60,6 +60,7 @@ interface CorporateGroupItem {
   corporateName?: string;
   b2bSegment?: string;
   b2bSegmentName?: string;
+  settlementStatus?: 'COMPLIMENTARY' | 'PENDING_POST_BILLING' | 'COMPLETED' | string;
   category?: string;
   categoryName?: string;
   contactName?: string;
@@ -412,9 +413,9 @@ export default function CondoReservationStatus() {
     // 세그먼트/카테고리 필터
     if (groupSegmentFilter !== 'ALL') {
       if (groupSegmentFilter === 'SEMINAR') {
-        result = result.filter(g => g.category === 'SEMINAR' || (g.categoryName && g.categoryName.includes('세미나')));
+        result = result.filter(g => g.category === 'SEMINAR' || g.b2bSegment === 'SEMINAR' || (g.categoryName && g.categoryName.includes('세미나')));
       } else if (groupSegmentFilter === 'COMP') {
-        result = result.filter(g => (g.b2bSegment === 'COMP' || (g.b2bSegmentName && g.b2bSegmentName.includes('무상'))) && g.category !== 'SEMINAR');
+        result = result.filter(g => (g.settlementStatus === 'COMPLIMENTARY' || g.b2bSegment === 'COMP') && g.category !== 'SEMINAR' && g.settlementStatus !== 'PENDING_POST_BILLING');
       } else if (groupSegmentFilter === 'MICE') {
         result = result.filter(g => (g.categoryName && g.categoryName.includes('MICE')) || (g.b2bSegmentName && g.b2bSegmentName.includes('MICE')));
       } else if (groupSegmentFilter === 'CORP') {
@@ -1293,8 +1294,9 @@ export default function CondoReservationStatus() {
                     const rooms = group.spendingBreakdown?.roomsCount ?? group.roomsCount ?? 0;
                     const roomTypes = group.spendingBreakdown?.roomTypesUsed || [];
 
-                    const isSeminar = group.category === 'SEMINAR' || (group.categoryName && group.categoryName.includes('세미나'));
-                    const isComp = !isSeminar && (group.b2bSegment === 'COMP' || (group.b2bSegmentName && group.b2bSegmentName.includes('무상')));
+                    const isSeminar = group.category === 'SEMINAR' || group.b2bSegment === 'SEMINAR' || (group.categoryName && group.categoryName.includes('세미나'));
+                    const isComp = (group.settlementStatus === 'COMPLIMENTARY' || group.b2bSegment === 'COMP') && !isSeminar && group.settlementStatus !== 'PENDING_POST_BILLING';
+                    const isPendingPostBilling = group.settlementStatus === 'PENDING_POST_BILLING' || (group.totalRevenue === 0 && isSeminar);
 
                     const segmentBadge =
                       isSeminar
@@ -1331,7 +1333,7 @@ export default function CondoReservationStatus() {
                           {/* 3. 유형 */}
                           <td className="py-3.5 px-3 whitespace-nowrap">
                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${segmentBadge}`}>
-                              {isSeminar ? '기업 세미나' : isComp ? '무상/사내' : (group.categoryName || group.b2bSegmentName || '일반단체')}
+                              {group.b2bSegmentName || group.categoryName || (isSeminar ? '기업 세미나' : isComp ? '무상/사내' : '일반단체')}
                             </span>
                           </td>
 
@@ -1389,7 +1391,22 @@ export default function CondoReservationStatus() {
 
                           {/* 9. 매출액 */}
                           <td className="py-3.5 px-3 text-right font-mono font-bold text-blue-900 whitespace-nowrap">
-                            {group.totalRevenueFormatted ? `${group.totalRevenueFormatted}원` : '-'}
+                            {isPendingPostBilling ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="text-slate-400">0원</span>
+                                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-sans">
+                                  후정산 대기
+                                </span>
+                              </span>
+                            ) : group.settlementStatus === 'COMPLIMENTARY' ? (
+                              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 font-sans">
+                                무상 투숙
+                              </span>
+                            ) : group.totalRevenueFormatted ? (
+                              `${group.totalRevenueFormatted}원`
+                            ) : (
+                              '-'
+                            )}
                           </td>
 
                           {/* 10. 비고/상세 버튼 */}

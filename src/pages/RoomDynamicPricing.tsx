@@ -114,6 +114,36 @@ export interface PricingRecommendationSummary {
   holdDays: number | null;
   bundlePromoDays: number | null;
   flashSaleDays: number | null;
+  expectedAdditionalKeys?: number | null;
+  dualTrackSummary?: DualTrackSummary;
+}
+
+export interface DualTrackSummaryItem {
+  trackCode: 'STANDARD' | 'MARKET_ADAPTIVE' | string;
+  trackName: string;
+  lockedOtbRevenueTotal: number | null;
+  baselinePickupRevenueTotal: number | null;
+  dynamicPickupRevenueTotal: number | null;
+  expectedRevenueGain: number | null;
+  expectedRevenueGainPct: number | null;
+  expectedNetContributionMarginGain: number | null;
+  expectedNetContributionMarginGainPct: number | null;
+}
+
+export interface DualTrackSummary {
+  activeTrack: 'STANDARD' | 'MARKET_ADAPTIVE' | string;
+  trackBAdjustedDaysCount: number | null;
+  trackA_standard: DualTrackSummaryItem;
+  trackB_marketAdaptive: DualTrackSummaryItem;
+  trackDeltaBvsA: {
+    pickupRevenueDiffKrw: number | null;
+    netContributionMarginDiffKrw: number | null;
+  };
+  availableTracks?: Array<{
+    trackCode: string;
+    trackName: string;
+    description: string;
+  }>;
 }
 
 export interface CompetitorMarketSummary {
@@ -359,7 +389,46 @@ export interface DailyCalendarItem {
   };
   competitorBenchmark?: CompetitorBenchmarkItem;
   connecting51BidPriceAdvisory?: Connecting51BidPriceAdvisory;
+  dualTrack?: DailyDualTrackItem;
   roomTypes: DailyRoomTypeDetail[];
+}
+
+export interface DailyTrackDetail {
+  trackCode: string;
+  trackName: string;
+  actionCode: DynamicActionCode;
+  actionLabel: string;
+  dayMultiplier?: number;
+  recommendedAdr: number | null;
+  priceAdjustmentPct: number | null;
+  recommendedAdrByRoomType?: Record<string, number>;
+  dynamicNewPickupUnits?: number | null;
+  dynamicPickupRevenue?: number | null;
+  expectedRevenueDelta?: number | null;
+  dynamicPickupContributionMargin?: number | null;
+  expectedContributionMarginDelta?: number | null;
+  externalSpreadFactors?: {
+    seasonalPeakIntensityRatio?: number | null;
+    avgDropFromSatPeakPct?: number | null;
+    weekdayShoulderSurgeDetected?: boolean;
+    adaptiveMultiplierDelta?: number | null;
+    trackBReason?: string | null;
+  };
+}
+
+export interface DailyDualTrackItem {
+  activeTrack: string;
+  trackA_standard: DailyTrackDetail;
+  trackB_marketAdaptive: DailyTrackDetail;
+  trackDelta: {
+    recommendedAdrDeltaKrw: number | null;
+    expectedRevenueDeltaDiffKrw: number | null;
+    expectedCmDeltaDiffKrw: number | null;
+    isTrackBAdjusted?: boolean;
+    recommendedAdrDiffKrw?: number | null;
+    adaptiveMultiplierDelta?: number | null;
+  };
+  trackBReason?: string | null;
 }
 
 export interface RoomDynamicPricingResponse {
@@ -580,6 +649,7 @@ export default function RoomDynamicPricing() {
   const [days, setDays] = useState<number>(30);
   const [selectedRoomType, setSelectedRoomType] = useState<string>('ALL');
   const [selectedActionFilter, setSelectedActionFilter] = useState<string>('ALL');
+  const [selectedTrack, setSelectedTrack] = useState<'STANDARD' | 'MARKET_ADAPTIVE'>('STANDARD');
 
   const [data, setData] = useState<RoomDynamicPricingResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -600,7 +670,7 @@ export default function RoomDynamicPricing() {
     setLoading(true);
     setError(null);
     try {
-      const url = `${API_BASE}/api/v6/report/room-dynamic-pricing?date=${encodeURIComponent(baseDate)}&days=${days}&roomType=${encodeURIComponent(selectedRoomType)}`;
+      const url = `${API_BASE}/api/v6/report/room-dynamic-pricing?date=${encodeURIComponent(baseDate)}&days=${days}&roomType=${encodeURIComponent(selectedRoomType)}&track=${encodeURIComponent(selectedTrack)}`;
       const res = await secureFetcher(url);
       const payload: RoomDynamicPricingResponse = res?.data ? res.data : res;
 
@@ -627,7 +697,7 @@ export default function RoomDynamicPricing() {
 
   useEffect(() => {
     fetchDynamicPricing();
-  }, [baseDate, days, selectedRoomType]);
+  }, [baseDate, days, selectedRoomType, selectedTrack]);
 
   const meta = data?.meta;
   const summary = data?.summary;
@@ -635,6 +705,10 @@ export default function RoomDynamicPricing() {
   const recent2026 = summary?.recent2026;
   const currentOtb = summary?.currentOtb;
   const pricingRec = summary?.pricingRecommendation;
+  const dualTrackSummary = pricingRec?.dualTrackSummary;
+  const trackA = dualTrackSummary?.trackA_standard;
+  const trackB = dualTrackSummary?.trackB_marketAdaptive;
+  const trackDelta = dualTrackSummary?.trackDeltaBvsA;
   const competitorMarket = summary?.competitorMarket;
   const spillover = competitorMarket?.empiricalSpilloverAnalysis;
   const counterfactual = pricingRec?.counterfactualEvaluation;
@@ -790,6 +864,106 @@ export default function RoomDynamicPricing() {
             </div>
           </div>
         </div>
+
+        {/* 2-B. 투트랙 1:1 비교 & 외부시장 스프레드 분석 (Track B Market-Adaptive Factors) */}
+        {targetDay.dualTrack && (() => {
+          const dt = targetDay.dualTrack;
+          const factors = dt.trackB_marketAdaptive?.externalSpreadFactors;
+          const isAdjusted = dt.trackDelta?.recommendedAdrDeltaKrw !== 0;
+
+          return (
+            <div className="bg-[#FAF9F5] rounded-xl p-4 border border-[#D0C6BB]/70 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D0C6BB]/50 pb-2">
+                <div className="flex items-center gap-2">
+                  <Activity size={14} className="text-[#284F42]" />
+                  <span className="text-xs font-black text-[#1B382E]">
+                    투트랙 1:1 비교 & 외부시장 스프레드 분석 (Market-Adaptive)
+                  </span>
+                </div>
+                {isAdjusted ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]">
+                    Track B 보정: {formatSignedWon(dt.trackDelta?.recommendedAdrDeltaKrw)}
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]">
+                    Track A·B 동일 권장가
+                  </span>
+                )}
+              </div>
+
+              {/* 1:1 단가 비교 */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="bg-white p-2.5 rounded-lg border border-[#D0C6BB]/50">
+                  <span className="text-[10px] text-[#5A6B63] block">Track A (기본형) 권장가</span>
+                  <strong className="text-sm font-black text-[#1B382E] font-financial">
+                    {formatWon(dt.trackA_standard?.recommendedAdr)}
+                  </strong>
+                  <span className="text-[10px] text-[#5A6B63] ml-1">
+                    ({formatSignedPct(dt.trackA_standard?.priceAdjustmentPct)})
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-lg border border-[#D0C6BB]/50">
+                  <span className="text-[10px] text-[#5A6B63] block">Track B (고도화) 권장가</span>
+                  <strong className="text-sm font-black text-[#8C6D3B] font-financial">
+                    {formatWon(dt.trackB_marketAdaptive?.recommendedAdr)}
+                  </strong>
+                  <span className="text-[10px] text-[#8C6D3B] ml-1">
+                    ({formatSignedPct(dt.trackB_marketAdaptive?.priceAdjustmentPct)})
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-lg border border-[#D0C6BB]/50">
+                  <span className="text-[10px] text-[#5A6B63] block">트랙간 단가 차이 (B - A)</span>
+                  <strong className={`text-sm font-black font-financial ${
+                    (dt.trackDelta?.recommendedAdrDeltaKrw ?? 0) > 0 ? 'text-[#8C6D3B]' : (dt.trackDelta?.recommendedAdrDeltaKrw ?? 0) < 0 ? 'text-[#1E523F]' : 'text-[#5A6B63]'
+                  }`}>
+                    {formatSignedWon(dt.trackDelta?.recommendedAdrDeltaKrw)}
+                  </strong>
+                </div>
+              </div>
+
+              {/* 외부 스프레드 지표 */}
+              {factors && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
+                  <div className="bg-white p-2 rounded-lg border border-[#D0C6BB]/40">
+                    <span className="text-[#5A6B63] block">성수기 과열 강도</span>
+                    <strong className="text-[#1B382E]">
+                      {factors.seasonalPeakIntensityRatio != null ? `${factors.seasonalPeakIntensityRatio} / 1.0` : '-'}
+                    </strong>
+                  </div>
+
+                  <div className="bg-white p-2 rounded-lg border border-[#D0C6BB]/40">
+                    <span className="text-[#5A6B63] block">토요일 피크 대비 평일 낙폭</span>
+                    <strong className="text-[#1B382E]">
+                      {formatPct(factors.avgDropFromSatPeakPct)}
+                    </strong>
+                  </div>
+
+                  <div className="bg-white p-2 rounded-lg border border-[#D0C6BB]/40">
+                    <span className="text-[#5A6B63] block">주중 숄더 강세 여부</span>
+                    <strong className={factors.weekdayShoulderSurgeDetected ? 'text-[#8C6D3B]' : 'text-[#5A6B63]'}>
+                      {factors.weekdayShoulderSurgeDetected ? '🔥 숄더 강세 포착' : '정상 수준'}
+                    </strong>
+                  </div>
+
+                  <div className="bg-white p-2 rounded-lg border border-[#D0C6BB]/40">
+                    <span className="text-[#5A6B63] block">탄력 가중 승수</span>
+                    <strong className="text-[#284F42]">
+                      {factors.adaptiveMultiplierDelta != null ? formatSignedPct(factors.adaptiveMultiplierDelta * 100) : '-'}
+                    </strong>
+                  </div>
+                </div>
+              )}
+
+              {factors?.trackBReason && (
+                <p className="text-[11px] text-[#284F42] font-bold bg-white p-2.5 rounded-lg border border-[#D0C6BB]/50 leading-relaxed">
+                  💡 {factors.trackBReason}
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* 3. 4대 경쟁 리조트 상세 비교표 */}
         {resorts.length > 0 && (
@@ -1001,6 +1175,157 @@ export default function RoomDynamicPricing() {
                 <span>새로고침</span>
               </button>
             </div>
+          </div>
+
+          {/* 투트랙(Two-Track: Standard vs Market-Adaptive) 모드 전환 스위치 & 성과 비교 배너 */}
+          <div className="mt-5 pt-4 border-t border-[#D0C6BB]/60 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[#1B3B2B] text-white">
+                  <Zap size={16} />
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-[#1B382E] flex items-center gap-2 flex-wrap">
+                    <span>다이나믹 프라이싱 모드 선택 (투트랙 아키텍처)</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                      100% Zero-Proxy SSOT
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-[#5A6B63] font-medium">
+                    내부 OTB 중심 안정형 기본 모델(Track A)과 충청권 4대 경쟁사 낙폭·성수기 과열 연동 고도화 모델(Track B)을 1:1 비교 전환합니다.
+                  </p>
+                </div>
+              </div>
+
+              {/* 기확정 생존 OTB 격리 보호 배지 */}
+              <div className="px-3 py-1.5 rounded-xl bg-[#FAF9F5] border border-[#D0C6BB]/80 text-[11px] font-bold text-[#284F42] self-start sm:self-auto flex items-center gap-1.5">
+                <ShieldCheck size={13} className="text-[#1E523F]" />
+                <span>기확정 생존 OTB: <strong className="text-[#1B382E]">{formatWon(trackA?.lockedOtbRevenueTotal || pricingRec?.lockedOtbRevenueTotal)}</strong> (Δ = 0원 불변 고정)</span>
+              </div>
+            </div>
+
+            {/* 두 트랙 선택 탭 버튼 그리드 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {/* Track A 버튼 */}
+              <button
+                type="button"
+                onClick={() => setSelectedTrack('STANDARD')}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                  selectedTrack === 'STANDARD'
+                    ? 'bg-[#F4F3EE] border-2 border-[#1B3B2B] shadow-md ring-2 ring-[#1B3B2B]/10'
+                    : 'bg-white border-[#D0C6BB]/80 hover:border-[#1B3B2B]/40'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                      selectedTrack === 'STANDARD' ? 'border-[#1B3B2B] bg-[#1B3B2B]' : 'border-[#D0C6BB] bg-white'
+                    }`}>
+                      {selectedTrack === 'STANDARD' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </span>
+                    <span className="text-xs sm:text-sm font-black text-[#1B382E]">
+                      Track A: 표준 모드 (내부수요 중심 · 기본형)
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                    기본 적용
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-[#5A6B63] mb-3 leading-relaxed">
+                  벨포레 자체 예약률(OTB) × 리드타임 매트릭스 중심 + 경쟁사 과열 시 고정 보너스(+1.5%p ~ +3.5%p) 부여
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2.5 border-t border-[#D0C6BB]/50">
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                    <span className="text-[10px] text-[#5A6B63] block font-medium">30일 신규 픽업 매출 순증</span>
+                    <strong className="text-xs sm:text-sm font-black text-[#1B382E] font-financial">
+                      {formatSignedWon(trackA?.expectedRevenueGain)}
+                    </strong>
+                    <span className="text-[10px] font-extrabold text-[#1E523F] ml-1">
+                      ({formatSignedPct(trackA?.expectedRevenueGainPct)})
+                    </span>
+                  </div>
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                    <span className="text-[10px] text-[#5A6B63] block font-medium">30일 순공헌이익 순증</span>
+                    <strong className="text-xs sm:text-sm font-black text-[#1E523F] font-financial">
+                      {formatSignedWon(trackA?.expectedNetContributionMarginGain)}
+                    </strong>
+                    <span className="text-[10px] font-extrabold text-[#1E523F] ml-1">
+                      ({formatSignedPct(trackA?.expectedNetContributionMarginGainPct)})
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Track B 버튼 */}
+              <button
+                type="button"
+                onClick={() => setSelectedTrack('MARKET_ADAPTIVE')}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                  selectedTrack === 'MARKET_ADAPTIVE'
+                    ? 'bg-[#FAF6ED] border-2 border-[#8C6D3B] shadow-md ring-2 ring-[#8C6D3B]/20'
+                    : 'bg-white border-[#D0C6BB]/80 hover:border-[#8C6D3B]/50'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                      selectedTrack === 'MARKET_ADAPTIVE' ? 'border-[#8C6D3B] bg-[#8C6D3B]' : 'border-[#D0C6BB] bg-white'
+                    }`}>
+                      {selectedTrack === 'MARKET_ADAPTIVE' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </span>
+                    <span className="text-xs sm:text-sm font-black text-[#1B382E]">
+                      Track B: 외부시장 탄력 고도화 모드 (주중·주말·성수기 낙폭 연동형)
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-[#8C6D3B] text-white">
+                    추천 고도화
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-[#5A6B63] mb-3 leading-relaxed">
+                  4대 경쟁사 성수기 과열 강도 + 주중 숄더 시장 강세 + 토요일 대비 평일 가격 낙폭(Spread) 연속 함수 반영
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2.5 border-t border-[#D0C6BB]/50">
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                    <span className="text-[10px] text-[#5A6B63] block font-medium">30일 신규 픽업 매출 순증</span>
+                    <strong className="text-xs sm:text-sm font-black text-[#8C6D3B] font-financial">
+                      {formatSignedWon(trackB?.expectedRevenueGain)}
+                    </strong>
+                    <span className="text-[10px] font-extrabold text-[#8C6D3B] ml-1">
+                      ({formatSignedPct(trackB?.expectedRevenueGainPct)})
+                    </span>
+                  </div>
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                    <span className="text-[10px] text-[#5A6B63] block font-medium">30일 순공헌이익 순증</span>
+                    <strong className="text-xs sm:text-sm font-black text-[#1E523F] font-financial">
+                      {formatSignedWon(trackB?.expectedNetContributionMarginGain)}
+                    </strong>
+                    <span className="text-[10px] font-extrabold text-[#1E523F] ml-1">
+                      ({formatSignedPct(trackB?.expectedNetContributionMarginGainPct)})
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* 고도화 Track B 효과 차액 배지 */}
+            {trackDelta && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-[#FAF6ED] to-[#FAF9F5] p-3 rounded-xl border border-[#E5DAC1] text-xs">
+                <div className="flex items-center gap-2 font-extrabold text-[#8C6D3B]">
+                  <TrendingUp size={15} />
+                  <span>
+                    🚀 고도화(Track B) 전환 시 기대 추가 효과 ({dualTrackSummary?.trackBAdjustedDaysCount != null ? formatNum(dualTrackSummary.trackBAdjustedDaysCount) : '-'}개 숙박일 정밀 보정):
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs shrink-0 font-financial">
+                  <span>추가 매출 <strong className="text-[#8C6D3B] font-black">{formatSignedWon(trackDelta.pickupRevenueDiffKrw)}</strong></span>
+                  <span>추가 순공헌이익 <strong className="text-[#1E523F] font-black">{formatSignedWon(trackDelta.netContributionMarginDiffKrw)}</strong></span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Room Type Quick Filter Pills & Accordion Toggle Buttons */}
@@ -1291,6 +1616,13 @@ export default function RoomDynamicPricing() {
                               {day.competitorBenchmark.uiBadge.badgeLabel}
                             </div>
                           )}
+                          {day.dualTrack?.trackDelta?.recommendedAdrDeltaKrw != null && day.dualTrack.trackDelta.recommendedAdrDeltaKrw !== 0 && (
+                            <div className={`text-[9px] font-black truncate max-w-[105px] mt-0.5 ${
+                              isSel ? 'text-[#FAF6ED]' : day.dualTrack.trackDelta.recommendedAdrDeltaKrw > 0 ? 'text-[#8C6D3B]' : 'text-[#8B2635]'
+                            }`}>
+                              B: {formatSignedWon(day.dualTrack.trackDelta.recommendedAdrDeltaKrw)}
+                            </div>
+                          )}
                         </button>
                       );
                     })}
@@ -1344,6 +1676,15 @@ export default function RoomDynamicPricing() {
                           );
                         })()}
                         {getUrgencyBadge(selectedDayItem.marketing?.urgencyLevel)}
+                        {selectedDayItem.dualTrack?.trackDelta?.recommendedAdrDeltaKrw != null && selectedDayItem.dualTrack.trackDelta.recommendedAdrDeltaKrw !== 0 && (
+                          <span
+                            title={selectedDayItem.dualTrack.trackBReason || selectedDayItem.dualTrack.trackB_marketAdaptive?.externalSpreadFactors?.trackBReason || '외부시장 탄력(Track B) 보정 적용'}
+                            className="px-2.5 py-1 rounded-xl text-xs font-black bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1] flex items-center gap-1 shadow-2xs"
+                          >
+                            <TrendingUp size={12} />
+                            <span>Track B 고도화 {formatSignedWon(selectedDayItem.dualTrack.trackDelta.recommendedAdrDeltaKrw)}</span>
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs sm:text-sm font-bold text-[#284F42]">
                         👉 {getActionBadgeStyle(selectedDayItem.marketing?.actionCode).easyAction}
@@ -1360,6 +1701,11 @@ export default function RoomDynamicPricing() {
                         <div className="text-[10px] font-bold text-[#5A6B63]">
                           기준가 {formatWon(selectedDayItem.pricing?.baselineAdr)} ({formatSignedPct(selectedDayItem.pricing?.priceAdjustmentPct)})
                         </div>
+                        {selectedDayItem.dualTrack?.trackDelta?.recommendedAdrDeltaKrw != null && selectedDayItem.dualTrack.trackDelta.recommendedAdrDeltaKrw !== 0 && (
+                          <div className="text-[10px] font-extrabold text-[#8C6D3B]">
+                            Track A 대비 {formatSignedWon(selectedDayItem.dualTrack.trackDelta.recommendedAdrDeltaKrw)}
+                          </div>
+                        )}
                       </div>
 
                       <div className="bg-white px-4 py-2.5 rounded-xl border border-[#D0C6BB]/80 text-right">
@@ -2208,6 +2554,16 @@ export default function RoomDynamicPricing() {
                               <div className="text-[11px] text-[#5A6B63]">
                                 25년 실측 {formatWon(day.pricing?.yoy2025RetailAdr)} | 가드레일 {formatWon(day.pricing?.floorAdr)} ~ {formatWon(day.pricing?.ceilingAdr)}
                               </div>
+                              {day.dualTrack?.trackDelta?.recommendedAdrDeltaKrw != null && day.dualTrack.trackDelta.recommendedAdrDeltaKrw !== 0 && (
+                                <div className="flex items-center justify-end gap-1 mt-0.5">
+                                  <span
+                                    title={day.dualTrack.trackBReason || day.dualTrack.trackB_marketAdaptive?.externalSpreadFactors?.trackBReason || '외부시장 탄력(Track B) 보정'}
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1]"
+                                  >
+                                    Track B 보정 {formatSignedWon(day.dualTrack.trackDelta.recommendedAdrDeltaKrw)}
+                                  </span>
+                                </div>
+                              )}
                             </td>
 
                             {/* 3. 마케팅 액션 배지 */}
@@ -2550,6 +2906,81 @@ export default function RoomDynamicPricing() {
 
               {showLogicExplanationAccordion && (
                 <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-6">
+                  {/* 0. 투트랙(Two-Track: Standard vs Market-Adaptive) 엔진 아키텍처 & 외부 시장 탄력 연동 3대 원리 */}
+                  <div className="bg-white p-5 rounded-2xl border-2 border-[#8C6D3B]/80 shadow-2xs space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D0C6BB]/60 pb-3">
+                      <div className="flex items-center gap-2 text-sm font-black text-[#8C6D3B]">
+                        <Compass size={17} />
+                        <span>0. 투트랙(Two-Track: Standard vs Market-Adaptive) 엔진 아키텍처 & 외부 시장 탄력 연동 3대 원리</span>
+                      </div>
+                      <span className="text-[11px] font-extrabold text-[#8C6D3B] bg-[#FAF6ED] px-3 py-1 rounded-xl border border-[#E5DAC1]">
+                        상단 원클릭 전환 지원 (Track A ↔ Track B)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* Track A 카드 */}
+                      <div className="bg-[#FAF9F6] p-4 rounded-xl border border-[#D0C6BB]/70 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <strong className="text-[#1B382E] text-xs font-black">🅰️ Track A: STANDARD (내부수요 중심 · 기본형)</strong>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#E8F2EE] text-[#1E523F]">안정적 방어</span>
+                        </div>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          벨포레 자체 잔여 키(175키 기준)와 일자별 잔여 리드타임(D-k) 매트릭스를 기반으로 요일별 기준가를 조정하고, 충청권 4대 경쟁사 과열 시 고정 보너스(+1.5%p ~ +3.5%p)를 가산합니다.
+                        </p>
+                      </div>
+
+                      {/* Track B 카드 */}
+                      <div className="bg-[#FAF6ED] p-4 rounded-xl border border-[#E5DAC1] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <strong className="text-[#8C6D3B] text-xs font-black">🅱️ Track B: MARKET_ADAPTIVE (외부시장 탄력 고도화)</strong>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#8C6D3B] text-white">초과이익 극대화</span>
+                        </div>
+                        <p className="text-[#5A6B63] leading-relaxed">
+                          매일 밤 23:30 KST 수집되는 4대 경쟁사 실시간 오퍼 및 S3 영구 SQLite 다년도 시계열 DB와 연동하여, 주중·주말 가격 스프레드(낙폭)와 성수기 과열 강도를 연속 함수로 반영합니다.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* OTB 격리 보호 대원칙 배너 */}
+                    <div className="bg-[#E8F2EE] p-3.5 rounded-xl border border-[#B4C6C1] text-xs space-y-1">
+                      <div className="flex items-center gap-1.5 font-black text-[#1E523F]">
+                        <ShieldCheck size={14} />
+                        <span>불변의 대원칙: 기확정 생존 OTB 매출 격리 보호 (고정 상수, Δ = 0원)</span>
+                      </div>
+                      <p className="text-[#284F42] leading-relaxed">
+                        어떤 트랙을 선택하든 이미 예약 완료된 <strong>기확정 생존 OTB 매출({formatWon(pricingRec?.lockedOtbRevenueTotal)})</strong>은 1원도 변하지 않는 고정 상수입니다. 다이나믹 프라이싱은 오늘 이후 새로 들어올 <strong>신규 픽업 예상 물량({formatNum(pricingRec?.counterfactualEvaluation?.totalDynamicNewPickupUnits ?? pricingRec?.expectedAdditionalKeys)}키)</strong>에만 철저히 적용되어 확정 매출을 보호합니다.
+                      </p>
+                    </div>
+
+                    {/* Track B 3대 고도화 알고리즘 */}
+                    <div className="space-y-2 pt-1">
+                      <div className="text-xs font-extrabold text-[#1B382E]">
+                        📐 Track B 외부 시장 연동 3대 핵심 알고리즘:
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                          <span className="font-extrabold text-[#1B382E] block">① 경쟁사 성수기 과열 강도 연동</span>
+                          <p className="text-[#5A6B63] leading-relaxed">
+                            경쟁사 과열 강도 지수(0.0~1.0)에 비례하여 단풍·피크 주말에 최대 +3.0%p ~ +5.0%p 추가 상향(Yield-Up)하여 조기 매진 기회손실을 회수합니다.
+                          </p>
+                        </div>
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                          <span className="font-extrabold text-[#1B382E] block">② 주중·일요 숄더 외부 강세 감지</span>
+                          <p className="text-[#5A6B63] leading-relaxed">
+                            경쟁사 주중 품절률 40% 이상 또는 잔여율 30% 미만 시 외부 관광객 낙수수요를 선제 포착하여 주중/일요 요금을 +2.0%p 선제 방어합니다.
+                          </p>
+                        </div>
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60 space-y-1">
+                          <span className="font-extrabold text-[#1B382E] block">③ 임박 주중 덤핑 방어 & 번들 승부</span>
+                          <p className="text-[#5A6B63] leading-relaxed">
+                            경쟁사가 평일 요금을 50% 이상 폭락 덤핑할 때, 벨포레는 가격 출혈경쟁 대신 2026년 기준가를 지키고 레저 2인 특전 번들로 승부합니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* 1. 예측 및 적용 기간 안내 */}
                   <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/75 shadow-2xs space-y-3">
                     <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">

@@ -853,24 +853,26 @@ export default function RoomDynamicPricing() {
         {/* 2. 평형별 가격 비교 (Tier Comparison) & 최근 예약 유입 속도 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* 35평형 가격 비교 */}
-          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-[#1B382E]">35평형 요금 경쟁력</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-[#D0C6BB]/60 text-[#284F42]">
-                {t16_35?.positioningStatus || '비교'}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between pt-1">
-              <span className="text-[11px] text-[#5A6B63]">벨포레 추천 요금 (1박)</span>
-              <span className="text-sm font-black text-[#1B3B2B] font-financial">
-                {formatWon(t16_35?.belleforetRecommendedAdr)}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between text-[11px] text-[#5A6B63]">
-              <span>주변 최저가 ({t16_35?.lowestCompetitorName || '-'})</span>
-              <span className="font-bold text-[#1B382E] font-financial">
-                {formatWon(t16_35?.competitorMinPrice)}
-              </span>
+          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-[#1B382E]">35평형 요금 경쟁력</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-[#D0C6BB]/60 text-[#284F42]">
+                  {t16_35?.positioningStatus || '비교'}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between pt-1">
+                <span className="text-[11px] text-[#5A6B63]">벨포레 추천 요금 (1박)</span>
+                <span className="text-sm font-black text-[#1B3B2B] font-financial">
+                  {formatWon(t16_35?.belleforetRecommendedAdr)}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between text-[11px] text-[#5A6B63]">
+                <span>주변 최저가 ({t16_35?.lowestCompetitorName || '-'})</span>
+                <span className="font-bold text-[#1B382E] font-financial">
+                  {formatWon(t16_35?.competitorMinPrice)}
+                </span>
+              </div>
             </div>
             <div className="flex items-baseline justify-between text-xs pt-1.5 border-t border-[#D0C6BB]/40 font-bold">
               <span className="text-[#5A6B63]">경쟁사 대비 요금 차이 (우위)</span>
@@ -883,24 +885,26 @@ export default function RoomDynamicPricing() {
           </div>
 
           {/* 51평형 가격 비교 */}
-          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-[#1B382E]">51평형 요금 경쟁력</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-[#D0C6BB]/60 text-[#284F42]">
-                {t51?.positioningStatus || '비교'}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between pt-1">
-              <span className="text-[11px] text-[#5A6B63]">벨포레 추천 요금 (1박)</span>
-              <span className="text-sm font-black text-[#1B3B2B] font-financial">
-                {formatWon(t51?.belleforetRecommendedAdr)}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between text-[11px] text-[#5A6B63]">
-              <span>주변 최저가 ({t51?.lowestCompetitorName || '-'})</span>
-              <span className="font-bold text-[#1B382E] font-financial">
-                {formatWon(t51?.competitorMinPrice)}
-              </span>
+          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-[#1B382E]">51평형 요금 경쟁력</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-[#D0C6BB]/60 text-[#284F42]">
+                  {t51?.positioningStatus || '비교'}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between pt-1">
+                <span className="text-[11px] text-[#5A6B63]">벨포레 추천 요금 (1박)</span>
+                <span className="text-sm font-black text-[#1B3B2B] font-financial">
+                  {formatWon(t51?.belleforetRecommendedAdr)}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between text-[11px] text-[#5A6B63]">
+                <span>주변 최저가 ({t51?.lowestCompetitorName || '-'})</span>
+                <span className="font-bold text-[#1B382E] font-financial">
+                  {formatWon(t51?.competitorMinPrice)}
+                </span>
+              </div>
             </div>
             <div className="flex items-baseline justify-between text-xs pt-1.5 border-t border-[#D0C6BB]/40 font-bold">
               <span className="text-[#5A6B63]">경쟁사 대비 요금 차이 (우위)</span>
@@ -913,24 +917,26 @@ export default function RoomDynamicPricing() {
           </div>
 
           {/* 최근 신규 예약 유입 속도 */}
-          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-[#1B382E]">최근 신규 예약 유입 속도</span>
-              <span className="text-[10px] font-black px-2 py-0.5 rounded bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
-                {pv?.spilloverMomentumStatus || '정상'}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between pt-1 text-xs">
-              <span className="text-[#5A6B63] font-medium">최근 3일간 신규 예약</span>
-              <span className="font-extrabold text-[#1B382E]">
-                {formatNum(pv?.recent3dBookedRooms)}실
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between text-xs">
-              <span className="text-[#5A6B63] font-medium">최근 7일간 신규 예약</span>
-              <span className="font-black text-[#1E523F]">
-                {formatNum(pv?.recent7dBookedRooms)}실 ({formatNum(pv?.recent7dOccupiedKeys)}키)
-              </span>
+          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-[#1B382E]">최근 신규 예약 유입 속도</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                  {pv?.spilloverMomentumStatus || '정상'}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between pt-1 text-xs">
+                <span className="text-[#5A6B63] font-medium">최근 3일간 신규 예약</span>
+                <span className="font-extrabold text-[#1B382E]">
+                  {formatNum(pv?.recent3dBookedRooms)}실
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between text-xs">
+                <span className="text-[#5A6B63] font-medium">최근 7일간 신규 예약</span>
+                <span className="font-black text-[#1E523F]">
+                  {formatNum(pv?.recent7dBookedRooms)}실 ({formatNum(pv?.recent7dOccupiedKeys)}키)
+                </span>
+              </div>
             </div>
             <div className="pt-1.5 border-t border-[#D0C6BB]/40 text-[10px] text-[#5A6B63]">
               주변 리조트가 만실일 때 벨포레로 예약이 몰리는 속도를 실시간 감지합니다.
@@ -1242,83 +1248,114 @@ export default function RoomDynamicPricing() {
           </div>
 
           {/* 슬림 투트랙 모드 전환 바 & 핵심 성과 한 줄 요약 */}
-          <div className="mt-4 pt-4 border-t border-[#D0C6BB]/60 space-y-3">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-[#FAF9F5] p-3.5 rounded-2xl border border-[#D0C6BB]/80">
-              {/* 좌측: 원클릭 투트랙 스위치 */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-black text-[#1B382E] flex items-center gap-1.5 mr-1">
-                  <Zap size={14} className="text-[#8C6D3B]" />
-                  <span>가격 추천 방식:</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTrack('STANDARD')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border ${
-                    selectedTrack === 'STANDARD'
-                      ? 'bg-[#1B3B2B] text-white border-[#1B3B2B] shadow-xs'
-                      : 'bg-white text-[#5A6B63] border-[#D0C6BB] hover:text-[#1B382E]'
-                  }`}
-                >
-                  <span>🅰️ 기본 추천 (우리 리조트 예약 중심)</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-financial ${
-                    selectedTrack === 'STANDARD' ? 'bg-white/20 text-white' : 'bg-[#F4F3EE] text-[#1E523F]'
-                  }`}>
-                    {formatSignedWon(trackA?.expectedRevenueGain)}
-                  </span>
-                </button>
+          <div className="mt-4 pt-4 border-t border-[#D0C6BB]/60">
+            <div className="bg-[#FAF9F5] p-3.5 sm:p-4 rounded-2xl border border-[#D0C6BB]/80 space-y-3">
+              {/* 1행: 가격 추천 방식 (A vs B 버튼 그룹) & 핵심 성과 요약 배지 */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                {/* 좌측: 가격 추천 방식 라벨 + A/B 버튼 그룹 (완벽한 열 정렬 및 그룹화) */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-[#1B382E] shrink-0">
+                    <Zap size={14} className="text-[#8C6D3B]" />
+                    <span>가격 추천 방식:</span>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedTrack('MARKET_ADAPTIVE')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border ${
-                    selectedTrack === 'MARKET_ADAPTIVE'
-                      ? 'bg-[#8C6D3B] text-white border-[#8C6D3B] shadow-xs'
-                      : 'bg-white text-[#8C6D3B] border-[#E5DAC1] hover:bg-[#FAF6ED]'
-                  }`}
-                >
-                  <span>🅱️ 시장 연동 추천 (주변 경쟁사 만실 반영)</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-financial ${
-                    selectedTrack === 'MARKET_ADAPTIVE' ? 'bg-white/20 text-white' : 'bg-[#FAF6ED] text-[#8C6D3B]'
-                  }`}>
-                    {formatSignedWon(trackB?.expectedRevenueGain)}
+                  <div className="inline-flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTrack('STANDARD')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border whitespace-nowrap ${
+                        selectedTrack === 'STANDARD'
+                          ? 'bg-[#1B3B2B] text-white border-[#1B3B2B] shadow-xs ring-1 ring-[#1B3B2B]'
+                          : 'bg-white text-[#5A6B63] border-[#D0C6BB] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
+                      }`}
+                    >
+                      <span>🅰️ 기본 추천 (우리 리조트 예약 중심)</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-financial shrink-0 ${
+                        selectedTrack === 'STANDARD' ? 'bg-white/20 text-white' : 'bg-[#F4F3EE] text-[#1E523F]'
+                      }`}>
+                        {formatSignedWon(trackA?.expectedRevenueGain)}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTrack('MARKET_ADAPTIVE')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border whitespace-nowrap ${
+                        selectedTrack === 'MARKET_ADAPTIVE'
+                          ? 'bg-[#8C6D3B] text-white border-[#8C6D3B] shadow-xs ring-1 ring-[#8C6D3B]'
+                          : 'bg-white text-[#8C6D3B] border-[#E5DAC1] hover:bg-[#FAF6ED]'
+                      }`}
+                    >
+                      <span>🅱️ 시장 연동 추천 (주변 경쟁사 만실 반영)</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-financial shrink-0 ${
+                        selectedTrack === 'MARKET_ADAPTIVE' ? 'bg-white/20 text-white' : 'bg-[#FAF6ED] text-[#8C6D3B]'
+                      }`}>
+                        {formatSignedWon(trackB?.expectedRevenueGain)}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 우측: 핵심 수익 요약 배지 */}
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="px-3 py-1.5 rounded-xl bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1] font-extrabold font-financial">
+                    30일 예상 추가 수익: {formatSignedWon(pricingRec?.expectedRevenueGain)} ({formatSignedPct(pricingRec?.expectedRevenueGainPct)})
                   </span>
-                </button>
+                  <span className="px-3 py-1.5 rounded-xl bg-white text-[#284F42] border border-[#D0C6BB] font-bold font-financial">
+                    현재 확정 예약 매출: {formatWon(trackA?.lockedOtbRevenueTotal || pricingRec?.lockedOtbRevenueTotal)} (고정)
+                  </span>
+                </div>
               </div>
 
-              {/* 우측: 핵심 요약 배지 & 도움말 버튼 */}
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="px-3 py-1.5 rounded-xl bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1] font-extrabold font-financial">
-                  30일 예상 추가 수익: {formatSignedWon(pricingRec?.expectedRevenueGain)} ({formatSignedPct(pricingRec?.expectedRevenueGainPct)})
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-white text-[#284F42] border border-[#D0C6BB] font-bold font-financial">
-                  현재 확정 예약 매출: {formatWon(trackA?.lockedOtbRevenueTotal || pricingRec?.lockedOtbRevenueTotal)} (고정)
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowTrackComparisonAccordion(!showTrackComparisonAccordion)}
-                  className="px-3 py-1.5 rounded-xl bg-[#FAF6ED] text-[#8C6D3B] border border-[#E5DAC1] font-extrabold flex items-center gap-1 cursor-pointer hover:bg-[#F3EBD8]"
-                >
-                  <span>추천방식 1:1 비교</span>
-                  {showTrackComparisonAccordion ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowGuideAccordion(!showGuideAccordion)}
-                  className="px-3 py-1.5 rounded-xl bg-white text-[#1B382E] border border-[#D0C6BB] font-extrabold flex items-center gap-1 cursor-pointer hover:bg-[#F4F3EE]"
-                >
-                  <HelpCircle size={13} />
-                  <span>화면 가이드</span>
-                  {showGuideAccordion ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowSignalsAccordion(!showSignalsAccordion)}
-                  className="px-3 py-1.5 rounded-xl bg-white text-[#5A6B63] border border-[#D0C6BB] font-bold flex items-center gap-1 cursor-pointer hover:bg-[#F4F3EE]"
-                >
-                  <Database size={13} />
-                  <span>연동 데이터({formatNum(meta?.dataSignalsUsed?.length)}개)</span>
-                  {showSignalsAccordion ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                </button>
+              {/* 2행: 보조 안내 텍스트 & 도구 아코디언 버튼 그룹 (추천방식 1:1 비교, 화면 가이드, 연동 데이터) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-[#D0C6BB]/50 text-xs">
+                <div className="text-[11px] text-[#5A6B63] font-medium flex items-center gap-1.5">
+                  <span>💡 현재 추천:</span>
+                  <strong className={selectedTrack === 'STANDARD' ? 'text-[#1B3B2B]' : 'text-[#8C6D3B]'}>
+                    {selectedTrack === 'STANDARD' ? '🅰️ 기본 추천 (우리 리조트 예약 상황 중심)' : '🅱️ 시장 연동 추천 (주변 경쟁사 만실 및 요금 변동 실시간 반영)'}
+                  </strong>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTrackComparisonAccordion(!showTrackComparisonAccordion)}
+                    className={`px-3 py-1.5 rounded-xl font-extrabold flex items-center gap-1 cursor-pointer transition-all border ${
+                      showTrackComparisonAccordion
+                        ? 'bg-[#8C6D3B] text-white border-[#8C6D3B]'
+                        : 'bg-[#FAF6ED] text-[#8C6D3B] border-[#E5DAC1] hover:bg-[#F3EBD8]'
+                    }`}
+                  >
+                    <span>추천방식 1:1 비교</span>
+                    {showTrackComparisonAccordion ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowGuideAccordion(!showGuideAccordion)}
+                    className={`px-3 py-1.5 rounded-xl font-extrabold flex items-center gap-1 cursor-pointer transition-all border ${
+                      showGuideAccordion
+                        ? 'bg-[#1B382E] text-white border-[#1B382E]'
+                        : 'bg-white text-[#1B382E] border-[#D0C6BB] hover:bg-[#F4F3EE]'
+                    }`}
+                  >
+                    <HelpCircle size={13} />
+                    <span>화면 가이드</span>
+                    {showGuideAccordion ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSignalsAccordion(!showSignalsAccordion)}
+                    className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 cursor-pointer transition-all border ${
+                      showSignalsAccordion
+                        ? 'bg-[#284F42] text-white border-[#284F42]'
+                        : 'bg-white text-[#5A6B63] border-[#D0C6BB] hover:bg-[#F4F3EE]'
+                    }`}
+                  >
+                    <Database size={13} />
+                    <span>연동 데이터({formatNum(meta?.dataSignalsUsed?.length)}개)</span>
+                    {showSignalsAccordion ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1327,30 +1364,32 @@ export default function RoomDynamicPricing() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
                 <div
                   onClick={() => setSelectedTrack('STANDARD')}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                     selectedTrack === 'STANDARD'
                       ? 'bg-[#F4F3EE] border-2 border-[#1B3B2B] shadow-xs'
-                      : 'bg-white border-[#D0C6BB]/80'
+                      : 'bg-white border-[#D0C6BB]/80 hover:bg-[#FAF9F6]'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs sm:text-sm font-black text-[#1B382E]">
-                      🅰️ 기본 추천 (우리 리조트 예약 상황 중심)
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#E8F2EE] text-[#1E523F]">
-                      안정 방어형
-                    </span>
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs sm:text-sm font-black text-[#1B382E]">
+                        🅰️ 기본 추천 (우리 리조트 예약 상황 중심)
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#E8F2EE] text-[#1E523F]">
+                        안정 방어형
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6B63] mb-3 leading-relaxed">
+                      우리 리조트의 현재 남은 방과 예약 속도 중심 + 주변 리조트 만실 시 보너스(+1.5%p ~ +3.5%p) 가산
+                    </p>
                   </div>
-                  <p className="text-[11px] text-[#5A6B63] mb-2.5">
-                    우리 리조트의 현재 남은 방과 예약 속도 중심 + 주변 리조트 만실 시 보너스(+1.5%p ~ +3.5%p) 가산
-                  </p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-white p-2 rounded-xl border border-[#D0C6BB]/50">
+                    <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
                       <span className="text-[10px] text-[#5A6B63] block">30일 신규 예약 예상 매출</span>
                       <strong className="font-black text-[#1B382E] font-financial">{formatSignedWon(trackA?.expectedRevenueGain)}</strong>
                       <span className="text-[10px] font-bold text-[#1E523F] ml-1">({formatSignedPct(trackA?.expectedRevenueGainPct)})</span>
                     </div>
-                    <div className="bg-white p-2 rounded-xl border border-[#D0C6BB]/50">
+                    <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
                       <span className="text-[10px] text-[#5A6B63] block">30일 예상 추가 순이익</span>
                       <strong className="font-black text-[#1E523F] font-financial">{formatSignedWon(trackA?.expectedNetContributionMarginGain)}</strong>
                       <span className="text-[10px] font-bold text-[#1E523F] ml-1">({formatSignedPct(trackA?.expectedNetContributionMarginGainPct)})</span>
@@ -1360,30 +1399,32 @@ export default function RoomDynamicPricing() {
 
                 <div
                   onClick={() => setSelectedTrack('MARKET_ADAPTIVE')}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                     selectedTrack === 'MARKET_ADAPTIVE'
                       ? 'bg-[#FAF6ED] border-2 border-[#8C6D3B] shadow-xs'
-                      : 'bg-white border-[#D0C6BB]/80'
+                      : 'bg-white border-[#D0C6BB]/80 hover:bg-[#FAF9F6]'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs sm:text-sm font-black text-[#8C6D3B]">
-                      🅱️ 시장 연동 추천 (주변 경쟁사 만실 및 요금 변동 실시간 반영)
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#8C6D3B] text-white">
-                      추천 ({dualTrackSummary?.trackBAdjustedDaysCount != null ? formatNum(dualTrackSummary.trackBAdjustedDaysCount) : '-'}일 보정)
-                    </span>
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs sm:text-sm font-black text-[#8C6D3B]">
+                        🅱️ 시장 연동 추천 (주변 경쟁사 만실 및 요금 변동 실시간 반영)
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#8C6D3B] text-white">
+                        추천 ({dualTrackSummary?.trackBAdjustedDaysCount != null ? formatNum(dualTrackSummary.trackBAdjustedDaysCount) : '-'}일 보정)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6B63] mb-3 leading-relaxed">
+                      주변 4대 리조트의 만실 현황 및 요금 차이를 실시간 반영 (기본 추천 대비 추가 수익 {formatSignedWon(trackDelta?.pickupRevenueDiffKrw)})
+                    </p>
                   </div>
-                  <p className="text-[11px] text-[#5A6B63] mb-2.5">
-                    주변 4대 리조트의 만실 현황 및 주중·주말 요금 차이를 실시간 반영 (기본 추천 대비 추가 수익 {formatSignedWon(trackDelta?.pickupRevenueDiffKrw)})
-                  </p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-white p-2 rounded-xl border border-[#D0C6BB]/50">
+                    <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
                       <span className="text-[10px] text-[#5A6B63] block">30일 신규 예약 예상 매출</span>
                       <strong className="font-black text-[#8C6D3B] font-financial">{formatSignedWon(trackB?.expectedRevenueGain)}</strong>
                       <span className="text-[10px] font-bold text-[#8C6D3B] ml-1">({formatSignedPct(trackB?.expectedRevenueGainPct)})</span>
                     </div>
-                    <div className="bg-white p-2 rounded-xl border border-[#D0C6BB]/50">
+                    <div className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/50">
                       <span className="text-[10px] text-[#5A6B63] block">30일 예상 추가 순이익</span>
                       <strong className="font-black text-[#1E523F] font-financial">{formatSignedWon(trackB?.expectedNetContributionMarginGain)}</strong>
                       <span className="text-[10px] font-bold text-[#1E523F] ml-1">({formatSignedPct(trackB?.expectedNetContributionMarginGainPct)})</span>
@@ -1852,33 +1893,42 @@ export default function RoomDynamicPricing() {
                           key={day.date}
                           type="button"
                           onClick={() => setSelectedDateStr(day.date)}
-                          className={`px-3.5 py-2.5 rounded-2xl border text-left transition-all shrink-0 cursor-pointer min-w-[115px] ${
+                          className={`px-3.5 py-2.5 rounded-2xl border text-left transition-all shrink-0 cursor-pointer min-w-[120px] h-[88px] flex flex-col justify-between ${
                             isSel
                               ? 'bg-[#1B3B2B] text-white border-[#0F291E] shadow-md scale-[1.02]'
                               : 'bg-[#FAF9F6] hover:bg-[#F4F3EE] text-[#1B382E] border-[#D0C6BB]/80'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-1.5">
-                            <span className={`text-xs font-black ${
-                              isSel ? 'text-white' : isSat ? 'text-[#8C6D3B]' : isSunOrHol ? 'text-[#8B2635]' : 'text-[#1B382E]'
-                            }`}>
-                              {formatShortDate(day.date)}({day.dayOfWeek})
-                            </span>
-                            <span className={`w-2 h-2 rounded-full ${isSel ? 'bg-[#B59269]' : st.dot}`} />
-                          </div>
-                          <div className={`text-xs font-extrabold mt-1 font-financial ${isSel ? 'text-[#EAE3D2]' : 'text-[#284F42]'}`}>
-                            추천 {formatWon(day.pricing?.recommendedAdr)}
-                          </div>
-                          <div className={`text-[10px] mt-0.5 font-medium ${isSel ? 'text-white/80' : 'text-[#5A6B63]'}`}>
-                            빈방 {formatNum(day.inventory?.remainingKeys)}실 · D-{day.leadDays ?? '-'}
-                          </div>
-                          {day.dualTrack?.trackDelta?.recommendedAdrDeltaKrw != null && day.dualTrack.trackDelta.recommendedAdrDeltaKrw !== 0 && (
-                            <div className={`text-[9px] font-black truncate max-w-[105px] mt-0.5 ${
-                              isSel ? 'text-[#FAF6ED]' : day.dualTrack.trackDelta.recommendedAdrDeltaKrw > 0 ? 'text-[#8C6D3B]' : 'text-[#8B2635]'
-                            }`}>
-                              시장: {formatSignedWon(day.dualTrack.trackDelta.recommendedAdrDeltaKrw)}
+                          <div>
+                            <div className="flex items-center justify-between gap-1.5">
+                              <span className={`text-xs font-black ${
+                                isSel ? 'text-white' : isSat ? 'text-[#8C6D3B]' : isSunOrHol ? 'text-[#8B2635]' : 'text-[#1B382E]'
+                              }`}>
+                                {formatShortDate(day.date)}({day.dayOfWeek})
+                              </span>
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${isSel ? 'bg-[#B59269]' : st.dot}`} />
                             </div>
-                          )}
+                            <div className={`text-xs font-extrabold mt-0.5 font-financial ${isSel ? 'text-[#EAE3D2]' : 'text-[#284F42]'}`}>
+                              추천 {formatWon(day.pricing?.recommendedAdr)}
+                            </div>
+                          </div>
+
+                          <div className="pt-1 border-t border-black/5 flex items-center justify-between text-[10px]">
+                            <span className={`font-medium ${isSel ? 'text-white/80' : 'text-[#5A6B63]'}`}>
+                              남은 방 {formatNum(day.inventory?.remainingKeys)}실
+                            </span>
+                            {day.dualTrack?.trackDelta?.recommendedAdrDeltaKrw != null && day.dualTrack.trackDelta.recommendedAdrDeltaKrw !== 0 ? (
+                              <span className={`text-[9px] font-black truncate max-w-[50px] ${
+                                isSel ? 'text-[#FAF6ED]' : day.dualTrack.trackDelta.recommendedAdrDeltaKrw > 0 ? 'text-[#8C6D3B]' : 'text-[#8B2635]'
+                              }`}>
+                                B{formatSignedWon(day.dualTrack.trackDelta.recommendedAdrDeltaKrw)}
+                              </span>
+                            ) : (
+                              <span className={`text-[9px] ${isSel ? 'text-white/60' : 'text-[#5A6B63]'}`}>
+                                D-{day.leadDays ?? '-'}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       );
                     })}
@@ -2636,49 +2686,57 @@ export default function RoomDynamicPricing() {
                 <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {/* KPI 1 */}
-                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2">
-                      <div className="text-xs font-extrabold text-[#5A6B63]">1. 30일간 현재 예약 완료 (예약률)</div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-black text-[#1B382E] font-financial">{formatPct(currentOtb?.currentOtbOccupancyPct)}</span>
-                        <span className="text-xs font-extrabold text-[#1E523F]">➔ 최종 예상 {formatPct(currentOtb?.projectedOccupancyPct)}</span>
+                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-extrabold text-[#5A6B63]">1. 30일간 현재 예약 완료 (예약률)</div>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-2xl font-black text-[#1B382E] font-financial">{formatPct(currentOtb?.currentOtbOccupancyPct)}</span>
+                          <span className="text-xs font-extrabold text-[#1E523F]">➔ 최종 예상 {formatPct(currentOtb?.projectedOccupancyPct)}</span>
+                        </div>
                       </div>
-                      <div className="text-xs text-[#5A6B63]">
+                      <div className="text-xs text-[#5A6B63] pt-1 border-t border-[#D0C6BB]/30">
                         확정 {formatNum(currentOtb?.totalOccupiedKeys)} / 총 {formatNum(currentOtb?.totalCapacityKeys)}실 (예약 {formatNum(currentOtb?.totalBookedRooms)}건)
                       </div>
                     </div>
 
                     {/* KPI 2 */}
-                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2">
-                      <div className="text-xs font-extrabold text-[#5A6B63]">2. 2025 vs 2026 실제 판매 요금 비교</div>
-                      <div className="flex items-baseline gap-2 font-financial">
-                        <span className="text-sm text-[#5A6B63] line-through">{formatWon(hist2025?.retailAdr)}</span>
-                        <span className="text-2xl font-black text-[#1B382E]">{formatWon(recent2026?.retailAdr)}</span>
+                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-extrabold text-[#5A6B63]">2. 2025 vs 2026 실제 판매 요금 비교</div>
+                        <div className="flex items-baseline gap-2 font-financial mt-1">
+                          <span className="text-sm text-[#5A6B63] line-through">{formatWon(hist2025?.retailAdr)}</span>
+                          <span className="text-2xl font-black text-[#1B382E]">{formatWon(recent2026?.retailAdr)}</span>
+                        </div>
                       </div>
-                      <div className="text-xs font-extrabold text-[#1E523F]">
+                      <div className="text-xs font-extrabold text-[#1E523F] pt-1 border-t border-[#D0C6BB]/30">
                         작년 대비 {formatSignedPct(recent2026?.yoyRetailAdrGrowthPct)} 인상 적용
                       </div>
                     </div>
 
                     {/* KPI 3 */}
-                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2">
-                      <div className="text-xs font-extrabold text-[#5A6B63]">3. 향후 30일 추천 평균 요금 (1박)</div>
-                      <div className="flex items-baseline gap-2 font-financial">
-                        <span className="text-2xl font-black text-[#1B3B2B]">{formatWon(pricingRec?.avgRecommendedAdr)}</span>
-                        <span className="text-xs font-extrabold text-[#1E523F]">({formatSignedPct(pricingRec?.avgAdrLiftPct)})</span>
+                    <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-extrabold text-[#5A6B63]">3. 향후 30일 추천 평균 요금 (1박)</div>
+                        <div className="flex items-baseline gap-2 font-financial mt-1">
+                          <span className="text-2xl font-black text-[#1B3B2B]">{formatWon(pricingRec?.avgRecommendedAdr)}</span>
+                          <span className="text-xs font-extrabold text-[#1E523F]">({formatSignedPct(pricingRec?.avgAdrLiftPct)})</span>
+                        </div>
                       </div>
-                      <div className="text-xs text-[#5A6B63]">
+                      <div className="text-xs text-[#5A6B63] pt-1 border-t border-[#D0C6BB]/30">
                         기본 정가 평균: {formatWon(pricingRec?.avgBaselineAdr)}
                       </div>
                     </div>
 
                     {/* KPI 4 */}
-                    <div className="bg-[#1B3B2B] text-white rounded-2xl p-5 space-y-2">
-                      <div className="text-xs font-extrabold text-white/80">4. 30일 추천 요금 적용 시 추가 수익</div>
-                      <div className="flex items-baseline gap-2 font-financial">
-                        <span className="text-2xl font-black text-[#EAE3D2]">{formatSignedWon(pricingRec?.expectedRevenueGain)}</span>
-                        <span className="text-xs font-extrabold text-[#B59269]">({formatSignedPct(pricingRec?.expectedRevenueGainPct)})</span>
+                    <div className="bg-[#1B3B2B] text-white rounded-2xl p-5 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-extrabold text-white/80">4. 30일 추천 요금 적용 시 추가 수익</div>
+                        <div className="flex items-baseline gap-2 font-financial mt-1">
+                          <span className="text-2xl font-black text-[#EAE3D2]">{formatSignedWon(pricingRec?.expectedRevenueGain)}</span>
+                          <span className="text-xs font-extrabold text-[#B59269]">({formatSignedPct(pricingRec?.expectedRevenueGainPct)})</span>
+                        </div>
                       </div>
-                      <div className="text-xs text-white/80 font-financial">
+                      <div className="text-xs text-white/80 font-financial pt-1 border-t border-white/20">
                         총 예상 매출 (전체): {formatWon(pricingRec?.dynamicProjectedRevenue)}
                       </div>
                     </div>

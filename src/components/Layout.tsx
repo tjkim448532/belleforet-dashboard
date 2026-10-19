@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
@@ -9,6 +9,18 @@ import {
 } from 'lucide-react';
 
 export default function Layout() {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const isEmbed = searchParams.get('embed') === 'true' || location.pathname.startsWith('/embed');
+
+  if (isEmbed) {
+    return (
+      <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E]">
+        <Outlet />
+      </div>
+    );
+  }
+
   const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
   const [isPinned, setIsPinned] = useState<boolean>(() => {

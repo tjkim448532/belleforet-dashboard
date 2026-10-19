@@ -45,13 +45,21 @@ import GroupVenuePreferenceSection from './components/dashboard/GroupVenuePrefer
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, authReady } = useAuth();
   const isSessionAuth = sessionStorage.getItem('auth') === 'true';
-  
+  const isEmbed = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).get('embed') === 'true' ||
+    window.location.pathname.startsWith('/embed')
+  );
+
+  if (isEmbed) {
+    return <>{children}</>;
+  }
+
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-800">
+      <div className="min-h-screen bg-[#F4F3EE] flex items-center justify-center text-[#1B382E]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium text-slate-500">인증 확인 중...</p>
+          <div className="w-8 h-8 border-4 border-[#284F42] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium text-[#6C7A73]">인증 확인 중...</p>
         </div>
       </div>
     );
@@ -114,6 +122,7 @@ export function App() {
                   <Route path="matrix-weekly" element={<MatrixWeeklyDashboard />} />
                   <Route path="day-of-week-sales" element={<MatrixWeeklyDashboard defaultTab="day-of-week" />} />
                   <Route path="facility-trend" element={<FacilityTrend />} />
+                  <Route path="embed/facility-trend" element={<FacilityTrend />} />
                   <Route path="members" element={<Members />} />
                   <Route path="etl-status" element={<DataSyncStatus />} />
                   <Route path="synergy" element={<Synergy />} />

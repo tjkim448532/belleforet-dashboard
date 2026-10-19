@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { secureFetcher } from '../lib/secureFetcher';
 import ReactECharts from 'echarts-for-react';
 import { Store, TrendingUp, Calendar, AlertCircle, RefreshCw, Scale, TreePine, Sparkles, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -32,8 +33,13 @@ interface MonthlyDataPoint {
 }
 
 export default function FacilityTrend() {
+  const [searchParams] = useSearchParams();
+  const queryFacility = searchParams.get('facility');
+  const validInitialFacility = queryFacility && FACILITIES.includes(queryFacility) ? queryFacility : '전체';
+  const initialTab = searchParams.get('tab') === 'seasonality' ? 'SEASONALITY' : 'TREND';
+
   const { startDate, endDate } = useDate();
-  const [selectedFacility, setSelectedFacility] = useState<string>('전체');
+  const [selectedFacility, setSelectedFacility] = useState<string>(validInitialFacility);
   const [golfViewMode, setGolfViewMode] = useState<GolfViewMode>('COMPARE');
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<{ facility: string; monthlyData: MonthlyDataPoint[] } | null>(null);
@@ -45,7 +51,7 @@ export default function FacilityTrend() {
   }>>({});
 
   // 🌟 V6 2026 vs 2025 월별 시즌성 매트릭스 (monthly-seasonality-matrix 완제품 바인딩)
-  const [activeTab, setActiveTab] = useState<'TREND' | 'SEASONALITY'>('TREND');
+  const [activeTab, setActiveTab] = useState<'TREND' | 'SEASONALITY'>(initialTab);
   const [seasonalityData, setSeasonalityData] = useState<MonthlySeasonalityMatrixResponse | null>(null);
   const [loadingSeasonality, setLoadingSeasonality] = useState<boolean>(false);
 

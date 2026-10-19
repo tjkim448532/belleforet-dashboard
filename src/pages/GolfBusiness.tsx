@@ -9,7 +9,8 @@ import {
   DollarSign,
   UtensilsCrossed,
   Clock,
-  UserCheck
+  UserCheck,
+  Flag
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
@@ -282,110 +283,117 @@ export default function GolfBusiness() {
   const membershipAnalysis = effectiveData?.membershipAnalysis || (summary as any)?.membershipAnalysis;
 
   return (
-    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       
-      {/* 🏛️ Institutional Deep Slate Navy Banner with Mint Rim Light */}
-      <div className="w-full bg-gradient-to-r from-[#071322] via-[#0b1d33] to-[#0f172a] h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[32px] border-b border-white/10 shadow-lg">
-        <div className="absolute top-0 right-0 w-[500px] h-[220px] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#00ae95]/15 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute -top-12 left-1/4 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+      {/* 🌲 Luxury Deep Forest Banner with Ambient Glow (Home Style) */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
 
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-8">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
           <div className="text-white">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-3xl tracking-widest bg-white text-[#00ae95] px-3 py-1 rounded-sm shadow-md">
-                BELLE FORET
-              </span>
-              <span className="font-bold text-2xl tracking-wide ml-1">RESORT</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+              <span>BELLEFORET RESORT · 골프사업본부</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-3">골프사업본부 경영 현황 ⛳</h1>
-            <p className="text-sm text-white/80 mt-1">골프 부문별 영업장 실적 및 실질 수익성 종합 리포트입니다. (순매출/부가세 별도)</p>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Flag className="w-7 h-7 text-[#B59269] shrink-0" />
+              <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight break-keep whitespace-nowrap">
+                골프사업본부 경영 현황
+              </h1>
+            </div>
+            <p className="text-sm text-white/80 mt-1 break-keep">
+              골프 부문별 영업장 실적 및 실질 수익성 종합 리포트 (순매출/부가세 별도)
+            </p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <GlobalDatePicker />
           </div>
         </div>
 
-        {/* Overview Stats (3-Grid) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
+        {/* Overview Stats (3-Grid Bento Cards) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
           {/* Golf Revenue */}
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group border border-slate-200/90 flex flex-col justify-between h-full">
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group flex flex-col justify-between h-full">
             <div>
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-                <Coins className="w-4 h-4 text-[#00ae95]" /> 
-                <span>{isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}</span>
+              <h2 className="text-xs lg:text-sm font-bold text-[#5A6B63] mb-3 flex items-center gap-1.5">
+                <Coins className="w-5 h-5 text-[#284F42]" /> 
+                <span className="text-[#1B382E]">{isRangeMode ? '선택 기간 골프 총매출' : '금일 골프 총매출'}</span>
                 <MetricExplainerTooltip presetKey="netRevenue" align="left" />
               </h2>
-              <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
                 {summary.totalGolfRevenueFormatted}원
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">그린피 + 카트대여 + 부대시설 순매출(Net) 총합</p>
+            <p className="text-[11px] text-[#6C7A73] mt-auto pt-3 border-t border-[#D0C6BB]/40 break-keep">그린피 + 카트대여 + 부대시설 순매출(Net) 총합</p>
           </div>
 
           {/* Visited Players */}
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group border border-slate-200/90 flex flex-col justify-between h-full">
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group flex flex-col justify-between h-full">
             <div>
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-[#00ae95]" /> 
-                <span>실제 총 내장객 수</span>
+              <h2 className="text-xs lg:text-sm font-bold text-[#5A6B63] mb-3 flex items-center gap-1.5">
+                <Users className="w-5 h-5 text-[#284F42]" /> 
+                <span className="text-[#1B382E]">실제 총 내장객 수</span>
                 <MetricExplainerTooltip presetKey="visitorCount" align="center" />
               </h2>
-              <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
                 {summary.totalPlayersFormatted}명
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">총 {summary.totalTransactions.toLocaleString()} 결제/거래 건</p>
+            <p className="text-[11px] text-[#6C7A73] mt-auto pt-3 border-t border-[#D0C6BB]/40 break-keep">총 {summary.totalTransactions.toLocaleString()} 결제/거래 건</p>
           </div>
 
           {/* Avg ARPU */}
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-300 relative group border border-slate-200/90 flex flex-col justify-between h-full">
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group flex flex-col justify-between h-full">
             <div>
-              <h2 className="text-xs lg:text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4 text-[#00ae95]" /> 
-                <span>1인당 객단가 (ARPU)</span>
+              <h2 className="text-xs lg:text-sm font-bold text-[#5A6B63] mb-3 flex items-center gap-1.5">
+                <TrendingUp className="w-5 h-5 text-[#B59269]" /> 
+                <span className="text-[#1B382E]">1인당 객단가 (ARPU)</span>
                 <MetricExplainerTooltip presetKey="arpu" align="left" />
               </h2>
-              <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-financial">
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
                 {summary.arpuFormatted && summary.arpuFormatted !== '-' ? `${summary.arpuFormatted}원` : '-'}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-auto pt-3 border-t border-slate-100/60 break-keep">내장객 1인당 평균 골프 소비액</p>
+            <p className="text-[11px] text-[#6C7A73] mt-auto pt-3 border-t border-[#D0C6BB]/40 break-keep">내장객 1인당 평균 골프 소비액</p>
           </div>
         </div>
 
         {/* 📊 골프 경영 핵심 분석 및 수익성 진단 */}
-        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-xs border border-slate-200/90 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-2 border-b border-slate-100 gap-2">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-[#D0C6BB]/60 gap-2">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   경영 전략 의사결정 지표
                 </span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/60">
                   공식 실적 데이터 기반
                 </span>
               </div>
-              <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
-                📈 골프 경영 핵심 분석 및 수익 구조 진단
+              <h2 className="text-lg lg:text-xl font-extrabold text-[#1B382E] flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#B59269]" />
+                <span>골프 경영 핵심 분석 및 수익 구조 진단</span>
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#5A6B63] mt-1">
                 코스 본원 매출(그린피/카트비)과 클럽 부대시설(식음/용품)의 수익 기여도를 진단합니다.
               </p>
             </div>
-            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+            <span className="text-xs font-bold text-[#B59269] bg-[#B59269]/15 px-3 py-1.5 rounded-xl border border-[#B59269]/20 self-start sm:self-auto">
               경영진 전용 분석
             </span>
           </div>
 
-          {/* 소프트 슬레이트 패널 (사용자 지정 SSOT 스타일) */}
-          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80">
-            <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 text-xs flex items-center justify-between">
+          {/* 웜 리넨 소프트 패널 */}
+          <div className="bg-[#F4F3EE] p-5 rounded-2xl border border-[#D0C6BB]/70">
+            <h4 className="font-bold text-[#1B382E] mb-3 border-b border-[#D0C6BB]/60 pb-2 text-xs flex items-center justify-between">
               <span>코스 본원 및 클럽 부대시설 수익 구조 (그린피 · 카트대여 · 식음 · 프로샵)</span>
-              <span className="text-[11px] text-slate-400 font-normal">공식 골프 마트 원천 확정 기준</span>
+              <span className="text-[11px] text-[#5A6B63] font-normal">공식 골프 마트 원천 확정 기준</span>
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -638,22 +646,22 @@ export default function GolfBusiness() {
         </div>
 
         {/* 🏆 골프 부문별 영업장 실적 및 점유율 분석 섹션 */}
-        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-xs border border-slate-200/90 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-2">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-[#D0C6BB]/60 pb-4 gap-2">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   영업장별 실적
                 </span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/60">
                   순매출/VAT 제외 기준
                 </span>
               </div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Share2 className="text-emerald-600" size={24} /> 🏆 골프 부문별 영업장 실적, 판매량 및 점유율 분석
+              <h2 className="text-xl font-extrabold text-[#1B382E] flex items-center gap-2">
+                <Share2 className="text-[#284F42]" size={24} /> 🏆 골프 부문별 영업장 실적, 판매량 및 점유율 분석
               </h2>
             </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto">
+            <span className="text-xs font-bold text-[#B59269] bg-[#B59269]/15 px-3 py-1.5 rounded-xl border border-[#B59269]/20 self-start sm:self-auto">
               공식 마트 데이터 ({normalizedChannels.length}개 유효 부문)
             </span>
           </div>
@@ -663,42 +671,42 @@ export default function GolfBusiness() {
             {normalizedChannels.map((ch, idx) => (
               <div 
                 key={`${ch.productGroup}-${ch.venueName}-${idx}`}
-                className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between"
+                className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-xs hover:border-[#284F42]/40 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between mb-1 gap-2">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                      <span className="text-xs font-bold text-[#1B382E] flex items-center gap-1">
                         {idx === 0 && <Award className="w-3.5 h-3.5 text-amber-500" />}
                         {ch.displayName}
                       </span>
                       {ch.description && (
-                        <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                        <span className="text-[10px] text-[#6C7A73] font-medium mt-0.5">
                           {ch.description}
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap border border-slate-200/60">
+                    <span className="text-[11px] font-bold bg-[#F4F3EE] text-[#1B382E] px-2 py-0.5 rounded-full whitespace-nowrap border border-[#D0C6BB]/60">
                       {ch.revenueSharePct !== null && ch.revenueSharePct !== undefined ? `점유 ${ch.revenueSharePct}%` : '점유 -'}
                     </span>
                   </div>
                   
-                  <div className="text-2xl font-black text-slate-900 my-2 tabular-nums">
-                    {ch.displayCountFormatted} <span className="text-xs font-normal text-slate-400">{ch.displayUnit}</span>
+                  <div className="text-2xl font-black text-[#1B382E] my-2 tabular-nums">
+                    {ch.displayCountFormatted} <span className="text-xs font-normal text-[#6C7A73]">{ch.displayUnit}</span>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-100 tabular-nums font-financial">
+                <div className="space-y-1.5 text-[11px] text-[#5A6B63] mt-2 pt-2 border-t border-[#D0C6BB]/40 tabular-nums font-financial">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">상품 분류:</span>
-                    <strong className="text-slate-700">{ch.productGroup}</strong>
+                    <span className="text-[#6C7A73]">상품 분류:</span>
+                    <strong className="text-[#1B382E]">{ch.productGroup}</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">평균 단가:</span>
+                    <span className="text-[#6C7A73]">평균 단가:</span>
                     <strong>{ch.unitPriceFormatted !== '-' ? `${ch.unitPriceFormatted}원` : '-'}</strong>
                   </div>
-                  <div className="flex justify-between pt-1 border-t border-slate-100 text-slate-900 font-black">
-                    <span className="text-slate-500 font-normal">순매출:</span>
+                  <div className="flex justify-between pt-1 border-t border-[#D0C6BB]/40 text-[#1B382E] font-black">
+                    <span className="text-[#6C7A73] font-normal">순매출:</span>
                     <span>{ch.revenueFormatted}원</span>
                   </div>
                 </div>
@@ -708,8 +716,8 @@ export default function GolfBusiness() {
 
           {/* 종합 비교 테이블 */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden whitespace-nowrap min-w-[900px]">
-              <thead className="bg-slate-100/80 text-slate-600 font-bold">
+            <table className="w-full text-left text-xs border border-[#D0C6BB]/75 rounded-2xl overflow-hidden whitespace-nowrap min-w-[900px]">
+              <thead className="bg-[#F4F3EE] text-[#1B382E] font-bold border-b border-[#D0C6BB]/75">
                 <tr>
                   <th className="py-3 px-4 text-left">영업장 / 시설명</th>
                   <th className="py-3 px-4 text-left">상품 분류</th>

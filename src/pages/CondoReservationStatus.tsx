@@ -414,7 +414,7 @@ export default function CondoReservationStatus() {
       if (groupSegmentFilter === 'SEMINAR') {
         result = result.filter(g => g.category === 'SEMINAR' || (g.categoryName && g.categoryName.includes('세미나')));
       } else if (groupSegmentFilter === 'COMP') {
-        result = result.filter(g => g.b2bSegment === 'COMP' || (g.b2bSegmentName && g.b2bSegmentName.includes('무상')));
+        result = result.filter(g => (g.b2bSegment === 'COMP' || (g.b2bSegmentName && g.b2bSegmentName.includes('무상'))) && g.category !== 'SEMINAR');
       } else if (groupSegmentFilter === 'MICE') {
         result = result.filter(g => (g.categoryName && g.categoryName.includes('MICE')) || (g.b2bSegmentName && g.b2bSegmentName.includes('MICE')));
       } else if (groupSegmentFilter === 'CORP') {
@@ -1293,11 +1293,14 @@ export default function CondoReservationStatus() {
                     const rooms = group.spendingBreakdown?.roomsCount ?? group.roomsCount ?? 0;
                     const roomTypes = group.spendingBreakdown?.roomTypesUsed || [];
 
+                    const isSeminar = group.category === 'SEMINAR' || (group.categoryName && group.categoryName.includes('세미나'));
+                    const isComp = !isSeminar && (group.b2bSegment === 'COMP' || (group.b2bSegmentName && group.b2bSegmentName.includes('무상')));
+
                     const segmentBadge =
-                      group.b2bSegment === 'COMP'
-                        ? 'bg-purple-50 text-purple-700 border-purple-200'
-                        : group.category === 'SEMINAR'
+                      isSeminar
                         ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : isComp
+                        ? 'bg-purple-50 text-purple-700 border-purple-200'
                         : 'bg-emerald-50 text-emerald-800 border-emerald-200';
 
                     return (
@@ -1328,7 +1331,7 @@ export default function CondoReservationStatus() {
                           {/* 3. 유형 */}
                           <td className="py-3.5 px-3 whitespace-nowrap">
                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${segmentBadge}`}>
-                              {group.categoryName || group.b2bSegmentName || '일반단체'}
+                              {isSeminar ? '기업 세미나' : isComp ? '무상/사내' : (group.categoryName || group.b2bSegmentName || '일반단체')}
                             </span>
                           </td>
 

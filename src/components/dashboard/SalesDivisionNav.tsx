@@ -45,17 +45,17 @@ export default function SalesDivisionNav() {
   const location = useLocation();
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs">
+    <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 p-3.5 shadow-[0_4px_24px_rgba(40,79,66,0.06)]">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 px-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200 shrink-0">
-            <Briefcase size={15} />
+        <div className="flex items-center gap-2.5 px-2">
+          <div className="w-8 h-8 rounded-xl bg-[#284F42]/10 text-[#284F42] flex items-center justify-center border border-[#284F42]/20 shrink-0">
+            <Briefcase size={16} />
           </div>
           <div>
-            <span className="text-xs font-extrabold text-slate-800 tracking-tight">
+            <span className="text-xs font-extrabold text-[#1B382E] tracking-tight">
               세일즈본부 세부 리포트 메뉴
             </span>
-            <span className="hidden sm:inline-block text-[11px] text-slate-400 ml-2">
+            <span className="hidden sm:inline-block text-[11px] text-[#284F42]/70 ml-2">
               원하시는 분석 영역을 선택하세요
             </span>
           </div>
@@ -68,17 +68,17 @@ export default function SalesDivisionNav() {
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-left transition-all ${
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-left transition-all ${
                   isActive
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-slate-50/70 hover:bg-slate-100 text-slate-700 border-slate-200/80'
+                    ? 'bg-[#284F42] text-white border-[#1B382E] shadow-sm'
+                    : 'bg-[#F4F3EE]/80 hover:bg-[#F4F3EE] text-[#1B382E] border-[#D0C6BB]/70'
                 }`}
               >
                 <div
-                  className={`p-1.5 rounded-lg shrink-0 ${
+                  className={`p-1.5 rounded-xl shrink-0 ${
                     isActive
-                      ? 'bg-brand-mint/20 text-brand-mint'
-                      : 'bg-white text-slate-500 border border-slate-200/80'
+                      ? 'bg-[#1B382E] text-[#B59269]'
+                      : 'bg-white text-[#284F42]/70 border border-[#D0C6BB]/70'
                   }`}
                 >
                   {item.icon}
@@ -86,7 +86,7 @@ export default function SalesDivisionNav() {
                 <div className="min-w-0">
                   <div
                     className={`text-xs font-extrabold truncate ${
-                      isActive ? 'text-white' : 'text-slate-800'
+                      isActive ? 'text-white' : 'text-[#1B382E]'
                     }`}
                     title={item.label}
                   >
@@ -94,7 +94,7 @@ export default function SalesDivisionNav() {
                   </div>
                   <div
                     className={`text-[10px] truncate ${
-                      isActive ? 'text-slate-300' : 'text-slate-400'
+                      isActive ? 'text-white/70' : 'text-[#284F42]/60'
                     }`}
                     title={item.sublabel}
                   >

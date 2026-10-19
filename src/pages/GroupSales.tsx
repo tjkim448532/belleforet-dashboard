@@ -800,77 +800,86 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
   }[pageSection];
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       
-      {/* 0. 세일즈본부 4대 세부 페이지 공통 네비게이션 */}
-      <SalesDivisionNav />
-
-      {/* 1. Header with Institutional Polish (GROUP_VENUE_PREFERENCE는 자체 헤더 보유) */}
-      {pageSection !== 'GROUP_VENUE_PREFERENCE' && (
-      <div className="bg-white p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3.5 bg-brand-mint/10 text-brand-mint rounded-2xl border border-brand-mint/20">
-            <Building2 className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight break-keep whitespace-nowrap">
-                {pageHeaderMeta.title}
-              </h1>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {pageHeaderMeta.badge}
-              </span>
-            </div>
-            <p className="text-sm text-slate-500 mt-1 break-keep">
-              {pageHeaderMeta.desc}
-            </p>
-          </div>
-        </div>
-
-        {/* Global Date & Action Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
-            {[
-              { key: 'WEEK', label: '최근 7일' },
-              { key: 'MTD', label: '당월' },
-              { key: 'PAST_6M', label: '6개월' },
-              { key: 'YTD', label: '연간' }
-            ].map(p => {
-              const active = isPresetActive(p.key as DatePresetType);
-              return (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => applyPreset(p.key as DatePresetType)}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    active ? 'bg-brand-mint text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-          <GlobalDatePicker showPresets={false} />
-          <button
-            onClick={fetchSalesData}
-            disabled={loading}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            조회
-          </button>
-        </div>
+      {/* 🌲 Luxury Deep Forest Banner with Ambient Glow (Home Style) */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
-      )}
+
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-6">
+        
+        {/* 0. 세일즈본부 4대 세부 페이지 공통 네비게이션 */}
+        <SalesDivisionNav />
+
+        {/* 1. Header with Institutional Polish (GROUP_VENUE_PREFERENCE는 자체 헤더 보유) */}
+        {pageSection !== 'GROUP_VENUE_PREFERENCE' && (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+            <div className="text-white">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+                <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+                <span>BELLEFORET RESORT · 세일즈본부</span>
+              </div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <Briefcase className="w-7 h-7 text-[#B59269] shrink-0" />
+                <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight break-keep whitespace-nowrap">
+                  {pageHeaderMeta.title}
+                </h1>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20">
+                  {pageHeaderMeta.badge}
+                </span>
+              </div>
+              <p className="text-sm text-white/80 mt-1 break-keep">
+                {pageHeaderMeta.desc}
+              </p>
+            </div>
+
+            {/* Global Date & Action Bar */}
+            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-[#1B382E]/70 p-1.5 rounded-xl text-xs overflow-x-auto border border-white/10">
+                {[
+                  { key: 'WEEK', label: '최근 7일' },
+                  { key: 'MTD', label: '당월' },
+                  { key: 'PAST_6M', label: '6개월' },
+                  { key: 'YTD', label: '연간' }
+                ].map(p => {
+                  const active = isPresetActive(p.key as DatePresetType);
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => applyPreset(p.key as DatePresetType)}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        active ? 'bg-[#B59269] text-white shadow-xs' : 'text-white/70 hover:text-white'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <GlobalDatePicker showPresets={false} />
+              <button
+                onClick={fetchSalesData}
+                disabled={loading}
+                className="px-4 py-2 bg-[#B59269] hover:bg-[#a38058] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                <span>조회</span>
+              </button>
+            </div>
+          </div>
+        )}
 
       {pageSection === 'ROOM_CHANNELS' && (
       <>
       {/* 🌟 2. 전체 객실 대비 단체영업(세미나) 점유율 분석 (통합 / 주중 / 주말 3단 패널 with YoY 비교) */}
-      <div className="bg-white p-6 lg:p-7 rounded-3xl border border-slate-200/90 shadow-xs">
+      <div className="bg-white p-6 lg:p-7 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group">
         
-        {/* 소프트 슬레이트 패널 (사용자 지정 SSOT 스타일) */}
-        <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80">
+        {/* 소프트 패널 (Bento Style) */}
+        <div className="bg-[#F4F3EE]/70 p-5 rounded-2xl border border-[#D0C6BB]/70">
           {/* Title Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 mb-5">
             <div className="flex items-center gap-3">
@@ -2923,25 +2932,26 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
       )}
 
       {/* 7. Strategy Insight Footer */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
-            <Sparkles size={20} />
+      <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 shrink-0">
+            <Sparkles size={22} />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-slate-900">세일즈본부 단체영업(세미나) 주력 전략 인사이트</h4>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h4 className="font-bold text-sm text-[#1B382E]">세일즈본부 단체영업(세미나) 주력 전략 인사이트</h4>
+            <p className="text-xs text-[#284F42]/70 mt-0.5">
               세미나/기업연수 등 대량 단체 고객을 위한 16평/35평 패키지 견적과 F&B 연계 시너지를 분석하여 객단가를 방어하세요.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-          <span className="text-[11px] font-bold bg-teal-50 text-teal-800 px-3 py-1.5 rounded-lg border border-teal-100">
+          <span className="text-[11px] font-bold bg-[#284F42]/10 text-[#284F42] px-3.5 py-1.5 rounded-xl border border-[#284F42]/20">
             세일즈본부 공식 집계
           </span>
         </div>
       </div>
 
+      </div>
     </div>
   );
 }

@@ -1075,22 +1075,13 @@ export default function RoomDynamicPricing() {
         <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.08)]">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
             <div>
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B3B2B] border border-[#0F291E] text-white text-xs font-semibold shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
-                  <span>BELLEFORET RESORT · DYNAMIC PRICING & YIELD ENGINE V2</span>
-                </div>
-                {meta?.pricingArchitecture && (
-                  <span className="px-3 py-1 rounded-full bg-[#1B3B2B] text-[#EAE3D2] border border-[#2F5548] text-xs font-extrabold shadow-2xs">
-                    ⚡ {meta.pricingArchitecture}
-                  </span>
-                )}
-                {meta && (
+              {meta && (
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="px-3 py-1 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1] text-xs font-extrabold">
                     {meta.startDate} ~ {meta.endDate} ({formatNum(meta.totalDays)}일간) · 물리 객실 모수 {formatNum(meta.physicalKeysCapacity)}키 (월 고정 모수 {formatNum(meta.fixedMonthlyCapacity)}실 / 기준 점유율 {meta.fixedOccupancyBenchmarkPct != null ? `${meta.fixedOccupancyBenchmarkPct}%` : '-'})
                   </span>
-                )}
-              </div>
+                </div>
+              )}
 
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B382E] tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="p-2.5 rounded-2xl bg-[#1B3B2B] text-white shadow-xs inline-flex">

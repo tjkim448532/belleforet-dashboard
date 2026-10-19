@@ -213,26 +213,26 @@ export default function Home() {
 
   if (loading || !displayData) {
     return (
-      <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
-        <div className="w-full bg-gradient-to-r from-[#071322] via-[#0b1d33] to-[#0f172a] h-[220px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[32px] border-b border-white/10" />
-        <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+      <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
+        <div className="w-full bg-[#284F42] h-[180px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+          <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+          <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+          <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+        </div>
+        <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
             <div className="text-white">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold text-3xl tracking-widest bg-white text-[#00ae95] px-3 py-1 rounded-sm shadow-md">
-                  BELLE FORET
-                </span>
-                <span className="font-bold text-2xl tracking-wide ml-1">RESORT</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+                <span>BELLEFORET RESORT · 통합 경영 대시보드</span>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-3">Welcome ALL BELLER! 👋</h1>
-              <p className="text-sm text-white/80 mt-1">오늘도 화기애애한 벨포레 리조트 통합 경영 현황입니다.</p>
             </div>
             <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <GlobalDatePicker />
             </div>
           </div>
           <div className="flex items-center gap-2.5 mb-4 bg-white/10 backdrop-blur-md text-white text-xs px-4 py-2 rounded-full w-fit border border-white/20 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-ping" />
             <span className="font-medium">벨포레 실시간 리조트 경영 데이터를 안전하게 동기화하고 있습니다...</span>
           </div>
           <SkeletonBentoGrid />
@@ -355,7 +355,7 @@ export default function Home() {
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       
       {/* 🌲 Luxury Deep Forest Banner with Ambient Glow (Reference Style) */}
-      <div className="w-full bg-[#284F42] h-[240px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+      <div className="w-full bg-[#284F42] h-[180px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
         {/* Organic circular highlights matching reference #2F5548 & warm camel light */}
         <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
         <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
@@ -371,26 +371,13 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <div className="text-white">
             {/* Pill Badge from Reference: "● Portfolio Demo · 랜딩페이지" style */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold mb-3 backdrop-blur-xs shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
               <span>BELLEFORET RESORT · 통합 경영 대시보드</span>
             </div>
-
-            {/* Headline with Box Highlight: "소상공인 맞춤 / 랜딩페이지 제작" style */}
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="font-black text-2xl lg:text-3xl tracking-tight bg-white/20 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg border border-white/15">
-                실시간 경영 현황
-              </span>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">
-                Welcome ALL BELLER! 👋
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-white/75 mt-1">
-              에듀팜 특구 · 벨포레 리조트 공식 단일 진실 공급원(SSOT) 경영 데이터 모니터링입니다.
-            </p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <GlobalDatePicker />
@@ -398,7 +385,7 @@ export default function Home() {
         </div>
 
         {/* 🏛️ Executive Bento Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* 🌟 Card 1: 전사 순매출 (Hero Bento Card) */}

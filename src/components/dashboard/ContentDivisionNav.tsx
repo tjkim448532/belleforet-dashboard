@@ -30,7 +30,7 @@ const CONTENT_PAGES = [
 
 export default function ContentDivisionNav() {
   return (
-    <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+    <div className="bg-white rounded-2xl p-2 border border-[#D0C6BB]/75 shadow-xs grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
       {CONTENT_PAGES.map((item) => {
         const Icon = item.icon;
         return (
@@ -40,8 +40,8 @@ export default function ContentDivisionNav() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                 isActive
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-slate-50/70 hover:bg-slate-100 text-slate-700'
+                  ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                  : 'bg-[#F4F3EE]/70 hover:bg-[#F4F3EE] text-[#5A6B63] hover:text-[#1B382E] border border-[#D0C6BB]/40'
               }`
             }
           >
@@ -50,8 +50,8 @@ export default function ContentDivisionNav() {
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     isActive
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                      : 'bg-white text-slate-600 border border-slate-200'
+                      ? 'bg-white/15 text-[#5FB878] border border-white/20'
+                      : 'bg-white text-[#284F42] border border-[#D0C6BB]/60 shadow-2xs'
                   }`}
                 >
                   <Icon size={18} />
@@ -62,7 +62,7 @@ export default function ContentDivisionNav() {
                   </div>
                   <div
                     className={`text-[11px] truncate ${
-                      isActive ? 'text-slate-300' : 'text-slate-400'
+                      isActive ? 'text-white/80' : 'text-[#8C9E96]'
                     }`}
                     title={item.desc}
                   >

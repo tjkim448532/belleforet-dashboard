@@ -330,20 +330,20 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
     <div className={embedded ? 'w-full space-y-6' : 'w-full max-w-[1920px] mx-auto p-4 md:p-8 pt-6 space-y-6'}>
       {/* Filter Toolbar */}
       {embedded ? (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white rounded-2xl p-4 md:p-5 border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white rounded-3xl p-4 md:p-5 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
+            <div className="p-2.5 bg-[#E8F2EE] text-[#1E523F] rounded-2xl">
               <BarChart2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">요일별·부문별 매출 분석</h2>
-              <p className="text-xs text-slate-500">조직도별 요일 점유율 및 성수기/비수기 히트맵 패턴</p>
+              <h2 className="text-lg font-bold text-[#1B382E]">요일별·부문별 매출 분석</h2>
+              <p className="text-xs text-[#5A6B63]">조직도별 요일 점유율 및 성수기/비수기 히트맵 패턴</p>
             </div>
           </div>
           
           <div className="flex items-center gap-3 flex-wrap">
             <select 
-              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 min-w-[200px] shadow-xs cursor-pointer"
+              className="px-3.5 py-2 rounded-xl border border-[#D0C6BB]/75 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#284F42]/30 text-[#1B382E] min-w-[200px] shadow-xs cursor-pointer"
               value={`${activeFilter.type}|${activeFilter.value}`}
               onChange={(e) => {
                 const [type, value] = e.target.value.split('|');
@@ -367,13 +367,13 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       ) : (
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-2">
           <div className="flex items-center gap-3">
-            <BarChart2 className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-medium tracking-tight text-slate-900">요일별·부문별 매출 분석</h1>
+            <BarChart2 className="w-8 h-8 text-[#284F42]" />
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#1B382E]">요일별·부문별 매출 분석</h1>
           </div>
           
           <div className="flex items-center gap-4 flex-wrap">
             <select 
-              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 min-w-[200px] shadow-xs cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-[#D0C6BB]/75 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#284F42]/30 text-[#1B382E] min-w-[200px] shadow-xs cursor-pointer"
               value={`${activeFilter.type}|${activeFilter.value}`}
               onChange={(e) => {
                 const [type, value] = e.target.value.split('|');
@@ -400,38 +400,39 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
 
       {/* 상단 메인 KPI 및 3분할 휴일 요약 패널 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-        <div className="bg-gradient-to-br from-emerald-800 via-[#00ae95] to-slate-900 rounded-2xl p-6 shadow-sm text-white flex flex-col justify-between border border-emerald-900/20">
-          <div className="flex justify-between items-start mb-3">
+        <div className="bg-[#284F42] rounded-3xl p-6 shadow-md text-white flex flex-col justify-between border border-[#1B382E] relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+          <div className="flex justify-between items-start mb-3 relative z-10">
             <div className="flex items-center gap-2 font-medium text-white/90 text-sm">
-              <TrendingUp className="w-4 h-4 text-emerald-200" /> 종합 매출
+              <TrendingUp className="w-4 h-4 text-[#5FB878]" /> 종합 매출
             </div>
-            <div className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold text-white">
+            <div className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold text-white border border-white/20">
               전년비 {summary.growthRateFormatted}
             </div>
           </div>
-          <div className="text-2xl lg:text-3xl font-bold tracking-tight mb-2">
+          <div className="text-2xl lg:text-3xl font-extrabold tracking-tight mb-2 relative z-10 font-financial">
             {summary.totalRevenueFormatted}
           </div>
-          <div className="text-xs text-white/70">
-            최고 실적: <span className="text-white font-semibold">{summary.peakDayName}</span> ({summary.peakMonth}월)
+          <div className="text-xs text-white/80 relative z-10">
+            최고 실적: <span className="text-white font-bold">{summary.peakDayName}</span> ({summary.peakMonth}월)
           </div>
         </div>
         {[
-          { title: '순수 평일 일평균', data: summary.weekday, icon: <CalendarDays className="w-4 h-4 text-emerald-600" /> },
-          { title: '순수 주말 일평균', data: summary.weekend, icon: <Activity className="w-4 h-4 text-emerald-600" /> },
-          { title: '주중 공휴일 일평균', data: summary.publicHoliday, icon: <MapIcon className="w-4 h-4 text-rose-500" /> },
+          { title: '순수 평일 일평균', data: summary.weekday, icon: <CalendarDays className="w-4 h-4 text-[#284F42]" /> },
+          { title: '순수 주말 일평균', data: summary.weekend, icon: <Activity className="w-4 h-4 text-[#284F42]" /> },
+          { title: '주중 공휴일 일평균', data: summary.publicHoliday, icon: <MapIcon className="w-4 h-4 text-[#B59269]" /> },
         ].map((item, idx) => (
-          <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div className="flex items-center gap-2 text-slate-600 font-medium text-sm mb-3">
-              <div className="p-1.5 bg-slate-50 rounded-lg">{item.icon}</div>
+          <div key={idx} className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 flex flex-col justify-between hover:border-[#284F42]/30 transition-all">
+            <div className="flex items-center gap-2 text-[#5A6B63] font-medium text-sm mb-3">
+              <div className="p-1.5 bg-[#F4F3EE] rounded-xl">{item.icon}</div>
               {item.title}
             </div>
-            <div className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight mb-2">
+            <div className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight mb-2 font-financial">
               {item.data?.dailyAvgFormatted || '0'}
             </div>
-            <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-              <span className="text-slate-400 font-medium">총 {item.data?.daysCount || 0}일</span>
-              <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-[#D0C6BB]/40">
+              <span className="text-[#6C7A73] font-medium">총 {item.data?.daysCount || 0}일</span>
+              <span className="font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-2 py-0.5 rounded-md">
                 {item.data?.sharePctFormatted || '0.0%'}
               </span>
             </div>
@@ -440,44 +441,44 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       </div>
 
       {/* 요일별 종합 비교 테이블 */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 overflow-hidden">
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 overflow-hidden">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
-            <h2 className="text-lg lg:text-xl font-bold text-slate-900">요일별 실적 종합 비교표</h2>
+            <div className="w-1.5 h-5 bg-[#284F42] rounded-full" />
+            <h2 className="text-lg lg:text-xl font-bold text-[#1B382E]">요일별 실적 종합 비교표</h2>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/70 rounded-full">
             누적 요일 실적
           </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600 border-collapse">
-            <thead className="bg-slate-50/80 text-slate-700 text-xs font-bold uppercase tracking-wider border-y border-slate-200">
+          <table className="w-full text-left text-sm text-[#1B382E] border-collapse">
+            <thead className="bg-[#F4F3EE] text-[#1B382E] text-xs font-bold uppercase tracking-wider border-y border-[#D0C6BB]/75">
               <tr>
                 <th className="px-4 py-3.5 text-left w-24">요일</th>
                 <th className="px-4 py-3.5 text-right">매출액 (Share)</th>
                 <th className="px-4 py-3.5 text-right">전년 동기간 매출액</th>
                 <th className="px-4 py-3.5 text-right">증감률</th>
-                <th className="px-4 py-3.5 text-right bg-emerald-50/30">일평균 매출</th>
-                <th className="px-4 py-3.5 text-right bg-emerald-50/30">누적 일수</th>
+                <th className="px-4 py-3.5 text-right bg-[#E8F2EE]/60 text-[#1E523F]">일평균 매출</th>
+                <th className="px-4 py-3.5 text-right bg-[#E8F2EE]/60 text-[#1E523F]">누적 일수</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#D0C6BB]/40">
               {dayOfWeekSummary.map((d: any, idx: number) => (
-                <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3.5 font-bold text-slate-800">{d.dayName}</td>
+                <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                  <td className="px-4 py-3.5 font-bold text-[#1B382E]">{d.dayName}</td>
                   <td className="px-4 py-3.5 text-right">
-                    <div className="font-bold text-slate-900">{d.totalRevenueFormatted}</div>
-                    <div className="text-xs text-emerald-600 font-semibold">{d.sharePctFormatted}</div>
+                    <div className="font-extrabold text-[#1B382E] font-financial">{d.totalRevenueFormatted}</div>
+                    <div className="text-xs text-[#284F42] font-semibold">{d.sharePctFormatted}</div>
                   </td>
-                  <td className="px-4 py-3.5 text-right text-slate-500">{d.lyRevenueFormatted}</td>
-                  <td className="px-4 py-3.5 text-right">
-                    <span className={`font-bold ${Number(d.growthRate) > 0 ? 'text-emerald-600' : Number(d.growthRate) < 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                  <td className="px-4 py-3.5 text-right text-[#5A6B63] font-financial">{d.lyRevenueFormatted}</td>
+                  <td className="px-4 py-3.5 text-right font-financial">
+                    <span className={`font-bold ${Number(d.growthRate) > 0 ? 'text-[#1E523F]' : Number(d.growthRate) < 0 ? 'text-rose-600' : 'text-[#8F9E96]'}`}>
                       {Number(d.growthRate) > 0 ? '▲' : Number(d.growthRate) < 0 ? '▼' : '-'} {Math.abs(Number(d.growthRate))}%
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-right bg-emerald-50/20 font-bold text-slate-800">{d.dailyAvgRevenueFormatted}</td>
-                  <td className="px-4 py-3.5 text-right bg-emerald-50/20 text-slate-500">{d.daysCount}일</td>
+                  <td className="px-4 py-3.5 text-right bg-[#E8F2EE]/30 font-bold text-[#1B382E] font-financial">{d.dailyAvgRevenueFormatted}</td>
+                  <td className="px-4 py-3.5 text-right bg-[#E8F2EE]/30 text-[#5A6B63] font-financial">{d.daysCount}일</td>
                 </tr>
               ))}
             </tbody>
@@ -487,19 +488,19 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
 
       {/* 2-Column: Pie Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
-            <h2 className="text-lg lg:text-xl font-bold text-slate-900">본부별 종합 점유율</h2>
+            <div className="w-1.5 h-5 bg-[#284F42] rounded-full" />
+            <h2 className="text-lg lg:text-xl font-bold text-[#1B382E]">본부별 종합 점유율</h2>
           </div>
           <div className="h-[300px]">
             <ReactECharts option={getPieOptions('', totalPieData, 0)} style={{ height: '100%', width: '100%' }} />
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
-            <h2 className="text-lg lg:text-xl font-bold text-slate-900">레저/콘텐츠 영업장별 비중</h2>
+            <div className="w-1.5 h-5 bg-[#284F42] rounded-full" />
+            <h2 className="text-lg lg:text-xl font-bold text-[#1B382E]">레저/콘텐츠 영업장별 비중</h2>
           </div>
           <div className="h-[300px]">
             <ReactECharts option={getPieOptions('', leisurePieData, 2.5)} style={{ height: '100%', width: '100%' }} />
@@ -509,20 +510,20 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
 
       {/* 2-Column: Bar Chart & Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
-              <h2 className="text-lg font-bold text-slate-900">요일별 전체 매출 흐름</h2>
+              <div className="w-1.5 h-5 bg-[#284F42] rounded-full" />
+              <h2 className="text-lg font-bold text-[#1B382E]">요일별 전체 매출 흐름</h2>
             </div>
-            <p className="text-xs text-slate-400 mb-4 ml-4">요일별 총매출 집계 및 부서별 점유율 칩</p>
+            <p className="text-xs text-[#5A6B63] mb-4 ml-4">요일별 총매출 집계 및 부서별 점유율 칩</p>
             <div className="h-[270px]">
               <ReactECharts option={barOptions} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
           
           {/* 요일별 칩 범례 (Chips) */}
-          <div className="pt-4 grid grid-cols-7 gap-1.5 border-t border-slate-100">
+          <div className="pt-4 grid grid-cols-7 gap-1.5 border-t border-[#D0C6BB]/40">
             {dayOfWeekSummary.map((d: any, idx: number) => {
               const isSelected = selectedDay === idx;
               return (
@@ -531,11 +532,11 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                   onClick={() => setSelectedDay(isSelected ? null : idx)}
                   className={`flex flex-col items-center px-1.5 py-2.5 rounded-xl border transition-all cursor-pointer group relative w-full ${
                     isSelected 
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-xs' 
-                      : 'bg-slate-50/80 border-slate-200/80 hover:bg-slate-100 text-slate-700'
+                      ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1E523F] shadow-xs' 
+                      : 'bg-[#F4F3EE] border-[#D0C6BB]/70 hover:bg-[#E8F2EE]/50 text-[#1B382E]'
                   }`}
                 >
-                  <span className={`text-xs font-bold mb-1.5 whitespace-nowrap ${isSelected ? 'text-emerald-700' : 'text-slate-800'}`}>
+                  <span className={`text-xs font-bold mb-1.5 whitespace-nowrap ${isSelected ? 'text-[#1E523F]' : 'text-[#1B382E]'}`}>
                     {d.dayShort} ({d.daysCount}일)
                   </span>
                   <div className="flex flex-col gap-1 items-center w-full">
@@ -544,8 +545,8 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                         key={sIdx} 
                         className={`text-[11px] font-semibold px-1 py-0.5 border rounded leading-none whitespace-nowrap ${
                           isSelected 
-                            ? 'text-emerald-700 bg-white border-emerald-200' 
-                            : 'text-slate-500 bg-white border-slate-200'
+                            ? 'text-[#1E523F] bg-white border-[#B4C6C1]/70' 
+                            : 'text-[#5A6B63] bg-white border-[#D0C6BB]/70'
                         }`}
                       >
                         {s.badgeText}
@@ -558,18 +559,18 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
           </div>
         </div>
         
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">월 × 요일 매트릭스 (Heatmap)</h2>
+            <div className="w-1.5 h-5 bg-[#284F42] rounded-full" />
+            <h2 className="text-lg font-bold text-[#1B382E]">월 × 요일 매트릭스 (Heatmap)</h2>
           </div>
           
-          <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3.5 mb-5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-            <p className="text-xs text-slate-800 font-bold mb-1 flex items-center gap-1.5">
+          <div className="bg-[#F4F3EE]/80 border border-[#D0C6BB]/75 rounded-2xl p-4 mb-5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#284F42]"></div>
+            <p className="text-xs text-[#1B382E] font-bold mb-1 flex items-center gap-1.5">
               <span>💡</span> 1년 중 어느 달, 무슨 요일에 매출이 가장 많이 발생할까요?
             </p>
-            <p className="text-[11px] text-slate-500 leading-relaxed break-keep">
+            <p className="text-[11px] text-[#5A6B63] leading-relaxed break-keep">
               각 셀의 <strong>매출이 높을수록 짙은 민트/청록색</strong>으로 표시되는 매출 패턴 지도입니다. 
               성수기 주말과 비수기 평일 구간을 직관적으로 파악할 수 있습니다.
             </p>
@@ -581,20 +582,20 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
       </div>
 
       {/* 8대 부서 계층형 드릴다운 테이블 */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 overflow-hidden">
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 overflow-hidden">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">8대 부서 상세 계층 드릴다운</h2>
+            <div className="w-1.5 h-5 bg-[#284F42] rounded-full" />
+            <h2 className="text-lg font-bold text-[#1B382E]">8대 부서 상세 계층 드릴다운</h2>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 rounded-full">
             부서별 상세 현황
           </span>
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600 border-collapse">
-            <thead className="bg-slate-50/80 text-slate-700 font-bold text-xs uppercase tracking-wider border-y border-slate-200">
+          <table className="w-full text-left text-sm text-[#1B382E] border-collapse">
+            <thead className="bg-[#F4F3EE] text-[#1B382E] font-bold text-xs uppercase tracking-wider border-y border-[#D0C6BB]/75">
               <tr>
                 <th className="px-4 py-3.5 text-left w-1/2">부서 / 파트 / 영업장</th>
                 <th className="px-4 py-3.5 text-right">매출액</th>
@@ -607,15 +608,15 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                 return (
                   <React.Fragment key={org.orgDivision}>
                     <tr 
-                      className="border-b border-slate-200 bg-slate-50/60 hover:bg-emerald-50/40 cursor-pointer select-none transition-colors"
+                      className="border-b border-[#D0C6BB]/60 bg-[#F4F3EE]/40 hover:bg-[#E8F2EE]/40 cursor-pointer select-none transition-colors"
                       onClick={() => toggleOrg(org.orgDivision)}
                     >
-                      <td className="px-4 py-3.5 font-bold text-slate-900 flex items-center gap-2">
-                        {isOrgExpanded ? <ChevronDown size={17} className="text-emerald-600" /> : <ChevronRight size={17} className="text-slate-400" />}
+                      <td className="px-4 py-3.5 font-bold text-[#1B382E] flex items-center gap-2">
+                        {isOrgExpanded ? <ChevronDown size={17} className="text-[#284F42]" /> : <ChevronRight size={17} className="text-[#8F9E96]" />}
                         {org.orgDivision}
                       </td>
-                      <td className="px-4 py-3.5 text-right font-bold text-slate-900 text-base">{org.revenueFormatted}</td>
-                      <td className="px-4 py-3.5 text-right font-bold text-slate-800">{org.sharePctFormatted}</td>
+                      <td className="px-4 py-3.5 text-right font-extrabold text-[#1B382E] text-base font-financial">{org.revenueFormatted}</td>
+                      <td className="px-4 py-3.5 text-right font-bold text-[#1B382E]">{org.sharePctFormatted}</td>
                     </tr>
 
                     {isOrgExpanded && (org.parts || []).map((part: any) => {
@@ -624,22 +625,22 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
                       return (
                         <React.Fragment key={partKey}>
                           <tr 
-                            className="border-b border-slate-100 bg-slate-50/30 hover:bg-slate-100/70 cursor-pointer select-none transition-colors"
+                            className="border-b border-[#D0C6BB]/40 bg-[#F4F3EE]/20 hover:bg-[#F4F3EE]/60 cursor-pointer select-none transition-colors"
                             onClick={() => togglePart(org.orgDivision, part.partName)}
                           >
-                            <td className="px-4 py-3 font-semibold text-slate-800 pl-8 flex items-center gap-2">
-                              {isPartExpanded ? <ChevronDown size={15} className="text-emerald-500" /> : <ChevronRight size={15} className="text-slate-400" />}
+                            <td className="px-4 py-3 font-semibold text-[#1B382E] pl-8 flex items-center gap-2">
+                              {isPartExpanded ? <ChevronDown size={15} className="text-[#284F42]" /> : <ChevronRight size={15} className="text-[#8F9E96]" />}
                               {part.partName}
                             </td>
-                            <td className="px-4 py-3 text-right font-bold text-slate-700">{part.revenueFormatted}</td>
-                            <td className="px-4 py-3 text-right text-slate-400">-</td>
+                            <td className="px-4 py-3 text-right font-bold text-[#5A6B63] font-financial">{part.revenueFormatted}</td>
+                            <td className="px-4 py-3 text-right text-[#8F9E96]">-</td>
                           </tr>
 
                           {isPartExpanded && (part.venues || []).map((venue: any) => (
-                            <tr key={`${partKey}|${venue.venueName}`} className="border-b border-slate-50 bg-white hover:bg-slate-50/60 transition-colors">
-                              <td className="px-4 py-2.5 text-slate-600 pl-14 font-medium">{venue.venueName}</td>
-                              <td className="px-4 py-2.5 text-right font-medium text-slate-600">{venue.revenueFormatted}</td>
-                              <td className="px-4 py-2.5 text-right text-slate-400">-</td>
+                            <tr key={`${partKey}|${venue.venueName}`} className="border-b border-[#D0C6BB]/20 bg-white hover:bg-[#F4F3EE]/40 transition-colors">
+                              <td className="px-4 py-2.5 text-[#5A6B63] pl-14 font-medium">{venue.venueName}</td>
+                              <td className="px-4 py-2.5 text-right font-medium text-[#5A6B63] font-financial">{venue.revenueFormatted}</td>
+                              <td className="px-4 py-2.5 text-right text-[#8F9E96]">-</td>
                             </tr>
                           ))}
                         </React.Fragment>
@@ -660,7 +661,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
   }
 
   return (
-    <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 tracking-tight pb-16">
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       {content}
     </div>
   );

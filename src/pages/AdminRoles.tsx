@@ -282,18 +282,18 @@ export default function AdminRoles() {
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-medium text-slate-800 flex items-center gap-2 break-keep whitespace-nowrap">
-            <Users className="text-brand-mint shrink-0" />
+          <h1 className="text-2xl font-bold text-[#1B382E] flex items-center gap-2 break-keep whitespace-nowrap">
+            <Users className="text-[#284F42] shrink-0" />
             임직원 대시보드 권한 관리
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">등록된 임직원 목록에서 권한을 직접 수정하거나, 신규 임직원을 등록합니다.</p>
+          <p className="text-[#5A6B63] mt-1 text-sm font-medium">등록된 임직원 목록에서 권한을 직접 수정하거나, 신규 임직원을 등록합니다.</p>
         </div>
         <div className="flex flex-col gap-1 w-full max-w-lg">
           <div className="flex items-center gap-2">
             <button
               onClick={handleSyncAuthUsers}
               disabled={saving}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-[#284F42] hover:bg-[#1B382E] text-white text-xs font-bold rounded-xl transition-colors whitespace-nowrap shadow-xs flex items-center gap-1.5 cursor-pointer"
               title="Firebase Authentication에 가입되어 있거나 접속했던 실계정을 불러와 자동 추가합니다"
             >
               🔥 Firebase Auth 계정 동기화
@@ -301,7 +301,7 @@ export default function AdminRoles() {
             <button
               onClick={handlePurgeFakeAccounts}
               disabled={saving}
-              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors whitespace-nowrap border border-rose-200"
+              className="px-3 py-2 bg-[#FDF0ED] hover:bg-[#FCE7E2] text-[#8B2635] text-xs font-bold rounded-xl transition-colors whitespace-nowrap border border-[#EAC5BD] cursor-pointer"
               title="테스트용 가짜 예시 계정을 모두 정리합니다"
             >
               🗑️ 테스트 계정 정리
@@ -311,34 +311,34 @@ export default function AdminRoles() {
               placeholder="구글 시트 공유 링크 (옵션)..." 
               value={sheetUrl}
               onChange={(e) => setSheetUrl(e.target.value)}
-              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+              className="flex-1 px-3 py-2 border border-[#D0C6BB] bg-[#F4F3EE] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#284F42] text-[#1B382E]"
             />
             <button
               onClick={handleBulkImport}
               disabled={importing || !sheetUrl}
-              className="px-3.5 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs"
+              className="px-3.5 py-2 bg-[#B59269] hover:bg-[#a38058] text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs cursor-pointer"
             >
               {importing ? '전송 중...' : '시트 동기화'}
             </button>
           </div>
-          <span className="text-[11px] text-slate-500 flex items-center gap-1 pl-1">
+          <span className="text-[11px] text-[#5A6B63] flex items-center gap-1 pl-1">
             💡 <strong>시트 동기화 용도:</strong> 인사팀 구글 엑셀 시트[이름, 이메일, 부서명] 명단을 1초 만에 전사 일괄 등록합니다.
           </span>
         </div>
       </div>
 
       {/* Add or Update Role Form */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-medium text-slate-800 mb-4 flex items-center justify-between">
+      <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 p-6 lg:p-7">
+        <h2 className="text-lg font-bold text-[#1B382E] mb-4 flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Plus size={20} className="text-emerald-500" />
+            <Plus size={20} className="text-[#284F42]" />
             {editingEmail ? `임직원 정보/권한 수정 (${editingEmail})` : '임직원 신규 권한 등록 및 수정'}
           </span>
           {editingEmail && (
             <button 
               type="button" 
               onClick={() => { setEditingEmail(null); setNewName(''); setNewEmail(''); setNewRole('guest'); }}
-              className="text-xs text-slate-400 hover:text-slate-600 underline font-medium"
+              className="text-xs text-[#5A6B63] hover:text-[#1B382E] underline font-bold cursor-pointer"
             >
               신규 등록 모드로 전환
             </button>
@@ -346,33 +346,33 @@ export default function AdminRoles() {
         </h2>
         <form onSubmit={handleAddOrUpdateRole} className="flex flex-col md:flex-row gap-4 items-end">
           <div className="w-full md:w-48">
-            <label className="block text-sm font-medium text-slate-600 mb-1">임직원 이름</label>
+            <label className="block text-sm font-bold text-[#1B382E] mb-1">임직원 이름</label>
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="임직원 성명 입력"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+              className="w-full px-4 py-2 border border-[#D0C6BB] bg-[#F4F3EE] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#284F42] text-sm text-[#1B382E]"
               required
             />
           </div>
           <div className="flex-1 w-full">
-            <label className="block text-sm font-medium text-slate-600 mb-1">회사 이메일 계정</label>
+            <label className="block text-sm font-bold text-[#1B382E] mb-1">회사 이메일 계정</label>
             <input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="user@bsbelleforet.com"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50"
+              className="w-full px-4 py-2 border border-[#D0C6BB] bg-[#F4F3EE] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#284F42] text-sm text-[#1B382E]"
               required
             />
           </div>
           <div className="w-full md:w-56">
-            <label className="block text-sm font-medium text-slate-600 mb-1">부여할 대시보드 권한 (역할)</label>
+            <label className="block text-sm font-bold text-[#1B382E] mb-1">부여할 대시보드 권한 (역할)</label>
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint/50 bg-white"
+              className="w-full px-4 py-2 border border-[#D0C6BB] bg-[#F4F3EE] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#284F42] text-sm text-[#1B382E] cursor-pointer"
             >
               <option value="admin">👑 슈퍼 관리자 (전체 제어)</option>
               <option value="executive">⭐ CEO / 임원 (전사 대시보드)</option>
@@ -388,26 +388,26 @@ export default function AdminRoles() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full md:w-auto px-6 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
+            className="w-full md:w-auto px-6 py-2.5 bg-[#284F42] hover:bg-[#1B382E] text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap cursor-pointer shadow-xs"
           >
             <Save size={18} />
             {saving ? '저장 중...' : editingEmail ? '수정 내용 저장' : '권한 등록/저장'}
           </button>
         </form>
-        <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 flex items-start gap-3">
-          <ShieldAlert className="text-amber-500 shrink-0 mt-0.5" size={18} />
-          <div className="text-xs text-amber-800">
-            <strong>권한 안내:</strong> 하단 <strong>등록된 사용자 리스트</strong>에서 드롭다운을 직접 바꾸시면 1초 만에 즉시 수정됩니다.
+        <div className="mt-4 p-3.5 bg-[#F4F3EE] rounded-2xl border border-[#D0C6BB]/60 flex items-start gap-3">
+          <ShieldAlert className="text-[#284F42] shrink-0 mt-0.5" size={18} />
+          <div className="text-xs text-[#5A6B63]">
+            <strong className="text-[#1B382E]">권한 안내:</strong> 하단 <strong>등록된 사용자 리스트</strong>에서 드롭다운을 직접 바꾸시면 1초 만에 즉시 수정됩니다.
           </div>
         </div>
       </div>
 
       {/* Role List with Search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50">
+      <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 overflow-hidden">
+        <div className="p-6 border-b border-[#D0C6BB]/60 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#F4F3EE]/60">
           <div>
-            <h2 className="text-lg font-medium text-slate-800">전체 등록 임직원 명단 및 권한 리스트</h2>
-            <p className="text-xs text-slate-400 mt-0.5">등록된 사용자의 권한을 아래 테이블에서 바로 변경하거나 수정 버튼을 눌러 관리하세요.</p>
+            <h2 className="text-lg font-bold text-[#1B382E]">전체 등록 임직원 명단 및 권한 리스트</h2>
+            <p className="text-xs text-[#5A6B63] mt-0.5">등록된 사용자의 권한을 아래 테이블에서 바로 변경하거나 수정 버튼을 눌러 관리하세요.</p>
           </div>
           <div className="flex items-center gap-3">
             <input 
@@ -415,25 +415,25 @@ export default function AdminRoles() {
               placeholder="이름, 이메일, 권한 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3.5 py-1.5 border border-slate-300 rounded-xl text-xs outline-none focus:border-emerald-500 w-56"
+              className="px-3.5 py-1.5 border border-[#D0C6BB] bg-white rounded-xl text-xs outline-none focus:border-[#284F42] text-[#1B382E] w-56 shadow-2xs"
             />
-            <span className="text-xs font-bold text-slate-600 bg-slate-200 px-3 py-1.5 rounded-xl whitespace-nowrap">
+            <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-3 py-1.5 rounded-xl whitespace-nowrap">
               총 {filteredRoles.length}명 / {roles.length}명
             </span>
           </div>
         </div>
         
         {loading ? (
-          <div className="p-12 text-center text-slate-400 font-medium animate-pulse">데이터를 불러오는 중입니다...</div>
+          <div className="p-12 text-center text-[#5A6B63] font-medium animate-pulse">데이터를 불러오는 중입니다...</div>
         ) : filteredRoles.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 space-y-4">
+          <div className="p-12 text-center text-[#5A6B63] space-y-4">
             <p className="text-sm font-medium">아직 등록된 임직원 명단 데이터가 없습니다.</p>
-            <p className="text-xs text-slate-400">상단 양식에서 신규 임직원을 직접 등록하시거나, 아래 버튼을 눌러 초기 명단을 자동 생성하세요.</p>
+            <p className="text-xs text-[#5A6B63]/80">상단 양식에서 신규 임직원을 직접 등록하시거나, 아래 버튼을 눌러 초기 명단을 자동 생성하세요.</p>
             <button
               type="button"
               onClick={handleSyncAuthUsers}
               disabled={saving}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
+              className="px-5 py-2.5 bg-[#284F42] hover:bg-[#1B382E] text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               🔥 Firebase Auth 가입 계정 자동 가져오기
             </button>
@@ -442,32 +442,32 @@ export default function AdminRoles() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 uppercase tracking-wider">
-                  <th className="px-6 py-3.5 font-semibold text-left whitespace-nowrap">임직원 성명</th>
-                  <th className="px-6 py-3.5 font-semibold text-left whitespace-nowrap">회사 이메일 계정</th>
-                  <th className="px-6 py-3.5 font-semibold text-left whitespace-nowrap">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
-                  <th className="px-6 py-3.5 font-semibold text-right whitespace-nowrap">수정 / 삭제</th>
+                <tr className="bg-[#F4F3EE] text-[#1B382E] text-xs border-b border-[#D0C6BB]/75 uppercase tracking-wider font-bold">
+                  <th className="px-6 py-3.5 font-bold text-left whitespace-nowrap">임직원 성명</th>
+                  <th className="px-6 py-3.5 font-bold text-left whitespace-nowrap">회사 이메일 계정</th>
+                  <th className="px-6 py-3.5 font-bold text-left whitespace-nowrap">부여된 대시보드 권한 (드롭다운 즉시 변경)</th>
+                  <th className="px-6 py-3.5 font-bold text-right whitespace-nowrap">수정 / 삭제</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-[#D0C6BB]/30 text-sm">
                 {filteredRoles.map((roleObj: UserRole) => (
-                  <tr key={roleObj.email} className={`hover:bg-slate-50 transition-colors ${editingEmail === roleObj.email ? 'bg-emerald-50/60' : ''}`}>
-                    <td className="px-6 py-4 text-slate-800 font-semibold">{roleObj.name || '-'}</td>
-                    <td className="px-6 py-4 text-slate-600 font-medium">{roleObj.email}</td>
+                  <tr key={roleObj.email} className={`hover:bg-[#F4F3EE]/50 transition-colors ${editingEmail === roleObj.email ? 'bg-[#E8F2EE]/40 font-semibold' : ''}`}>
+                    <td className="px-6 py-4 text-[#1B382E] font-bold">{roleObj.name || '-'}</td>
+                    <td className="px-6 py-4 text-[#5A6B63] font-medium">{roleObj.email}</td>
                     <td className="px-6 py-4">
                       <select
                         value={roleObj.role}
                         onChange={(e) => handleInlineRoleChange(roleObj.email, e.target.value)}
-                        className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold border-0 cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs
-                          ${roleObj.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                            roleObj.role === 'executive' ? 'bg-amber-100 text-amber-800' :
-                            roleObj.role === 'leisure' ? 'bg-blue-100 text-blue-800' :
-                            roleObj.role === 'resort' ? 'bg-emerald-100 text-emerald-800' :
-                            roleObj.role === 'sales' ? 'bg-orange-100 text-orange-800' :
-                            roleObj.role === 'fnb' ? 'bg-amber-100 text-amber-800' :
-                            roleObj.role === 'management' ? 'bg-indigo-100 text-indigo-800' :
-                            roleObj.role === 'content' ? 'bg-pink-100 text-pink-800' :
-                            'bg-slate-100 text-slate-800'}
+                        className={`inline-block px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer focus:ring-2 focus:ring-[#284F42] outline-none shadow-xs
+                          ${roleObj.role === 'admin' ? 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70' : 
+                            roleObj.role === 'executive' ? 'bg-[#FDF0ED] text-[#B59269] border-[#D0C6BB]/70' :
+                            roleObj.role === 'leisure' ? 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70' :
+                            roleObj.role === 'resort' ? 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70' :
+                            roleObj.role === 'sales' ? 'bg-[#FDF0ED] text-[#B59269] border-[#D0C6BB]/70' :
+                            roleObj.role === 'fnb' ? 'bg-[#FDF0ED] text-[#B59269] border-[#D0C6BB]/70' :
+                            roleObj.role === 'management' ? 'bg-[#F4F3EE] text-[#1B382E] border-[#D0C6BB]/70' :
+                            roleObj.role === 'content' ? 'bg-[#F4F3EE] text-[#1B382E] border-[#D0C6BB]/70' :
+                            'bg-[#F4F3EE] text-[#5A6B63] border-[#D0C6BB]/60'}
                         `}
                       >
                         <option value="admin">👑 슈퍼 관리자 (전체 제어)</option>
@@ -485,14 +485,14 @@ export default function AdminRoles() {
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleSelectUserForEdit(roleObj)}
-                          className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-800 font-semibold rounded-lg transition-colors flex items-center gap-1"
+                          className="px-2.5 py-1 text-xs bg-[#F4F3EE] hover:bg-[#E8F2EE] text-[#1B382E] hover:text-[#1E523F] font-bold rounded-lg transition-colors flex items-center gap-1 border border-[#D0C6BB]/60 cursor-pointer"
                           title="상단 양식에서 수정"
                         >
                           ✎ 수정
                         </button>
                         <button
                           onClick={() => handleDeleteRole(roleObj.email)}
-                          className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          className="text-[#8B2635] hover:text-[#5A1923] p-1.5 hover:bg-[#FDF0ED] rounded-lg transition-colors cursor-pointer"
                           title="권한 삭제"
                         >
                           <Trash2 size={16} />

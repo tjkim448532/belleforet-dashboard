@@ -1156,165 +1156,171 @@ export default function StrategicSimulator() {
   }, [effectiveCategories]);
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
-      
-      {/* 1. Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-[32px] p-8 lg:p-10 text-white relative overflow-hidden shadow-xl border border-indigo-900/50">
-        <div className="absolute -right-16 -top-16 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute right-32 -bottom-20 w-64 h-64 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
+      {/* Ambient Forest Banner */}
+      <div className="w-full bg-[#284F42] h-[200px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-teal-400 animate-pulse" />
-              <span className="font-bold tracking-wider text-xs lg:text-sm text-teal-300 uppercase">
-                BELLE FORET STRATEGIC TARGET ENGINE [PRO]
-              </span>
+        {/* 1. Header Banner */}
+        <div className="bg-[#284F42] rounded-3xl p-7 lg:p-8 text-white relative overflow-hidden shadow-xl border border-[#1B382E]">
+          <div className="absolute -right-16 -top-16 w-80 h-80 bg-[#5FB878]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute right-32 -bottom-20 w-64 h-64 bg-[#B59269]/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+                <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+                <span>BELLEFORET RESORT · STRATEGIC TARGET ENGINE</span>
+              </div>
+              <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3 break-keep whitespace-nowrap">
+                {input.targetYear}년 목표수립 시뮬레이터 v2
+                <span className="text-xs bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[#E8F2EE] border border-white/20 font-bold whitespace-nowrap">
+                  PRO Engine v6.0
+                </span>
+              </h1>
+              <p className="text-[#E8F2EE]/80 text-xs lg:text-sm mt-2 font-normal max-w-3xl">
+                경영진이 부서별 전략 승수를 적용하여 <strong>실시간 시뮬레이션</strong>을 수행하고, <strong>1원 단위 정합성</strong> 및 <strong>다년도 기상 보정</strong>을 적용하는 전사 경영 계획 엔진입니다.
+              </p>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3 break-keep whitespace-nowrap">
-              {input.targetYear}년 목표수립 시뮬레이터 v2
-              <span className="text-xs bg-indigo-600/60 backdrop-blur-md px-3 py-1 rounded-full text-teal-200 border border-indigo-400/40 font-bold whitespace-nowrap">
-                PRO Engine v6.0
-              </span>
-            </h1>
-            <p className="text-slate-300 text-xs lg:text-sm mt-2 font-normal max-w-3xl">
-              경영진이 부서별 전략 승수를 적용하여 <strong>실시간 시뮬레이션</strong>을 수행하고, <strong>1원 단위 정합성</strong> 및 <strong>다년도 기상 보정</strong>을 적용하는 전사 경영 계획 엔진입니다.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setBaselineMode(prev => prev === 'SINGLE_YEAR' ? 'WMA_2YEAR' : 'SINGLE_YEAR')}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex items-center gap-2 shadow-xs cursor-pointer ${
-                baselineMode === 'WMA_2YEAR'
-                  ? 'bg-teal-500 text-slate-950 border-teal-300 font-black'
-                  : 'bg-white/10 text-white hover:bg-white/20 border-white/15'
-              }`}
-            >
-              <CloudRain size={16} />
-              {baselineMode === 'WMA_2YEAR' ? '🌧️ 2개년 WMA 기상보정 가동중' : '📊 직전 1개년 실적 기준선'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setBaselineMode(prev => prev === 'SINGLE_YEAR' ? 'WMA_2YEAR' : 'SINGLE_YEAR')}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex items-center gap-2 shadow-xs cursor-pointer ${
+                  baselineMode === 'WMA_2YEAR'
+                    ? 'bg-[#B59269] text-white border-[#B59269] font-black'
+                    : 'bg-white/10 text-white hover:bg-white/20 border-white/15'
+                }`}
+              >
+                <CloudRain size={16} />
+                {baselineMode === 'WMA_2YEAR' ? '🌧️ 2개년 WMA 기상보정 가동중' : '📊 직전 1개년 실적 기준선'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 1.5 Tab Switcher: Target Simulator vs Business Plan vs Package Generator */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
-        <button
-          type="button"
-          onClick={() => setActiveTab('TARGET_SIM')}
-          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'TARGET_SIM'
-              ? 'bg-slate-900 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Target size={17} />
-          <span>🎯 전사 전략 목표 & 리밸런싱</span>
-        </button>
+        {/* 1.5 Tab Switcher: Target Simulator vs Business Plan vs Package Generator */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-2 rounded-2xl border border-[#D0C6BB]/75 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('TARGET_SIM')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'TARGET_SIM'
+                ? 'bg-[#284F42] text-white shadow-md'
+                : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
+            }`}
+          >
+            <Target size={17} />
+            <span>🎯 전사 전략 목표 & 리밸런싱</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('BUSINESS_PLAN')}
-          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'BUSINESS_PLAN'
-              ? 'bg-gradient-to-r from-indigo-700 to-indigo-900 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <FileSpreadsheet size={17} />
-          <span>📋 매출목표 (영업장별 목표 & 엑셀)</span>
-          <span className="text-[10px] bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
-            다운로드 지원
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('BUSINESS_PLAN')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'BUSINESS_PLAN'
+                ? 'bg-[#284F42] text-white shadow-md'
+                : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
+            }`}
+          >
+            <FileSpreadsheet size={17} />
+            <span>📋 매출목표 (영업장별 목표 & 엑셀)</span>
+            <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold hidden lg:inline-block">
+              다운로드 지원
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('PACKAGE_GEN')}
-          className={`flex-1 py-3 px-4 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'PACKAGE_GEN'
-              ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Package size={17} />
-          <span>📦 비수기 패키지 시뮬레이터</span>
-          <span className="text-[10px] bg-teal-100 text-teal-900 px-2 py-0.5 rounded-full font-black hidden lg:inline-block">
-            TrevPAR 기반
-          </span>
-        </button>
-      </div>
-
-      {/* Server Power-saving / Operational Notice */}
-      {forecastNotice && (
-        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 text-xs font-semibold text-amber-900 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
-            <span>{forecastNotice}</span>
-          </div>
-          <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-mono">
-            절전 모드 대기
-          </span>
+          <button
+            type="button"
+            onClick={() => setActiveTab('PACKAGE_GEN')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'PACKAGE_GEN'
+                ? 'bg-[#284F42] text-white shadow-md'
+                : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
+            }`}
+          >
+            <Package size={17} />
+            <span>📦 비수기 패키지 시뮬레이터</span>
+            <span className="text-[10px] bg-[#E8F2EE] text-[#1E523F] px-2 py-0.5 rounded-full font-bold hidden lg:inline-block">
+              TrevPAR 기반
+            </span>
+          </button>
         </div>
-      )}
 
-      {/* Server Forecast Summary Bar */}
-      {serverForecastData && (
-        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-indigo-400" />
-            <span className="text-xs font-bold text-white">전사 12개월 매출 예측 시뮬레이터</span>
-            {isForecastComputing && <span className="text-[11px] text-indigo-300 font-semibold animate-pulse">연산 중...</span>}
+        {/* Server Power-saving / Operational Notice */}
+        {forecastNotice && (
+          <div className="bg-[#B59269]/10 border border-[#B59269]/30 rounded-2xl p-4 text-xs font-semibold text-[#1B382E] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-[#B59269] shrink-0" />
+              <span>{forecastNotice}</span>
+            </div>
+            <span className="text-[10px] text-[#B59269] bg-[#B59269]/15 px-2 py-0.5 rounded font-mono font-bold">
+              절전 모드 대기
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-5 text-xs">
-            {serverForecastData.annualTotal !== undefined && (
-              <div>
-                <span className="text-slate-300">연간 총예측: </span>
-                <b className="font-mono text-emerald-400 font-bold">{serverForecastData.annualTotal.toLocaleString()}원</b>
-              </div>
-            )}
-            {serverForecastData.annualMaxCapacity !== undefined && (
-              <div>
-                <span className="text-slate-300">물리 최대 Capa: </span>
-                <b className="font-mono text-slate-200">{serverForecastData.annualMaxCapacity.toLocaleString()}원</b>
-              </div>
-            )}
-            {serverForecastData.utilizationRate !== undefined && (
-              <div>
-                <span className="text-slate-300">가동률: </span>
-                <b className="font-mono text-indigo-300">{serverForecastData.utilizationRate}%</b>
-              </div>
-            )}
-            {serverForecastData.goalAchievementPct !== undefined && (
-              <div>
-                <span className="text-slate-300">목표 달성률: </span>
-                <b className="font-mono text-amber-400 font-black">{serverForecastData.goalAchievementPct}%</b>
-              </div>
-            )}
+        )}
+
+        {/* Server Forecast Summary Bar */}
+        {serverForecastData && (
+          <div className="bg-[#284F42] text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-[#1B382E]">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-[#B59269]" />
+              <span className="text-xs font-bold text-white">전사 12개월 매출 예측 시뮬레이터</span>
+              {isForecastComputing && <span className="text-[11px] text-[#E8F2EE]/70 font-semibold animate-pulse">연산 중...</span>}
+            </div>
+            <div className="flex flex-wrap items-center gap-5 text-xs">
+              {serverForecastData.annualTotal !== undefined && (
+                <div>
+                  <span className="text-[#E8F2EE]/70">연간 총예측: </span>
+                  <b className="font-mono text-[#5FB878] font-bold">{serverForecastData.annualTotal.toLocaleString()}원</b>
+                </div>
+              )}
+              {serverForecastData.annualMaxCapacity !== undefined && (
+                <div>
+                  <span className="text-[#E8F2EE]/70">물리 최대 Capa: </span>
+                  <b className="font-mono text-white">{serverForecastData.annualMaxCapacity.toLocaleString()}원</b>
+                </div>
+              )}
+              {serverForecastData.utilizationRate !== undefined && (
+                <div>
+                  <span className="text-[#E8F2EE]/70">가동률: </span>
+                  <b className="font-mono text-[#E8F2EE]">{serverForecastData.utilizationRate}%</b>
+                </div>
+              )}
+              {serverForecastData.goalAchievementPct !== undefined && (
+                <div>
+                  <span className="text-[#E8F2EE]/70">목표 달성률: </span>
+                  <b className="font-mono text-[#B59269] font-black">{serverForecastData.goalAchievementPct}%</b>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {activeTab === 'PACKAGE_GEN' ? (
         <PackageGeneratorSimulator />
       ) : activeTab === 'BUSINESS_PLAN' ? (
         <div className="space-y-6">
           {/* Top Control Header Card */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-indigo-50 text-indigo-700 rounded-xl">
+                <span className="p-2 bg-[#284F42]/10 text-[#284F42] rounded-xl">
                   <FileSpreadsheet size={22} />
                 </span>
-                <h2 className="text-xl font-black text-slate-900">
+                <h2 className="text-xl font-black text-[#1B382E]">
                   {input.targetYear}년 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '1~12월 월별' : selectedMonthLabel} 영업장별 매출목표
                 </h2>
-                <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-black rounded-lg">
+                <span className="px-2.5 py-1 bg-[#E8F2EE] text-[#1E523F] text-xs font-bold rounded-lg border border-[#B4C6C1]/70">
                   {isLoadingMatrix ? '12개월 동기화 중...' : '목표 정규 시뮬레이션'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#5A6B63]">
                 시뮬레이터 설정 성장률(+{input.targetGrowthRate}%) 및 비례 배분이 적용된 {businessPlanViewMode === 'MONTHLY_MATRIX' ? '12개월 월별 전체 목표 매트릭스' : `${selectedMonthLabel} 상세 목표치`}입니다.
               </p>
             </div>
@@ -1323,7 +1329,7 @@ export default function StrategicSimulator() {
               <button
                 type="button"
                 onClick={() => setActiveTab('TARGET_SIM')}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-[#1B382E] bg-[#F4F3EE] hover:bg-[#D0C6BB]/40 border border-[#D0C6BB]/60 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Sliders size={14} />
                 <span>성장률 / 전략승수 조절</span>
@@ -1331,7 +1337,7 @@ export default function StrategicSimulator() {
               <button
                 type="button"
                 onClick={handleExportExcel}
-                className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#B59269] hover:bg-[#a38058] shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Download size={15} />
                 <span>엑셀 (.xlsx) 다운로드</span>
@@ -1343,15 +1349,15 @@ export default function StrategicSimulator() {
           </div>
 
           {/* 🎛️ Business Plan Year & Growth Rate Simulator Control Bar */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-4 text-white shadow-md space-y-3">
+          <div className="bg-[#284F42] rounded-2xl p-4 text-white shadow-md space-y-3 border border-[#1B382E]">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               {/* Year Selection */}
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Calendar size={14} className="text-indigo-400" />
+                <span className="text-xs font-bold text-[#E8F2EE]/80 flex items-center gap-1.5">
+                  <Calendar size={14} className="text-[#B59269]" />
                   비교 연도 선택:
                 </span>
-                <div className="flex flex-wrap items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700 text-xs">
+                <div className="flex flex-wrap items-center gap-1 bg-[#1B382E]/80 p-1 rounded-xl border border-white/10 text-xs">
                   {YEAR_PAIRS.map(yp => {
                     const isSelected = input.baseYear === yp.baseYear && input.targetYear === yp.targetYear;
                     return (
@@ -1361,8 +1367,8 @@ export default function StrategicSimulator() {
                         onClick={() => setInput(prev => ({ ...prev, baseYear: yp.baseYear, targetYear: yp.targetYear }))}
                         className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-indigo-600 text-white shadow-xs font-black'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                            ? 'bg-[#284F42] text-white shadow-xs font-black border border-white/20'
+                            : 'text-[#E8F2EE]/70 hover:text-white hover:bg-white/10'
                         }`}
                       >
                         {yp.label}
@@ -1375,8 +1381,8 @@ export default function StrategicSimulator() {
               {/* Growth Rate Controls */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-300">목표 성장률:</span>
-                  <div className="flex items-center gap-1 bg-slate-800/90 px-2.5 py-1 rounded-xl border border-slate-700">
+                  <span className="text-xs font-bold text-[#E8F2EE]/80">목표 성장률:</span>
+                  <div className="flex items-center gap-1 bg-[#1B382E]/80 px-2.5 py-1 rounded-xl border border-white/10">
                     <input
                       type="range"
                       min={-20}
@@ -1384,9 +1390,9 @@ export default function StrategicSimulator() {
                       step={0.5}
                       value={input.targetGrowthRate}
                       onChange={(e) => setInput(prev => ({ ...prev, targetGrowthRate: Number(e.target.value) }))}
-                      className="accent-teal-400 w-24 sm:w-32 cursor-pointer"
+                      className="accent-[#B59269] w-24 sm:w-32 cursor-pointer"
                     />
-                    <span className="text-xs font-black text-teal-300 font-mono w-14 text-right">
+                    <span className="text-xs font-black text-[#5FB878] font-mono w-14 text-right">
                       {input.targetGrowthRate > 0 ? `+${input.targetGrowthRate.toFixed(1)}` : input.targetGrowthRate.toFixed(1)}%
                     </span>
                   </div>
@@ -1401,8 +1407,8 @@ export default function StrategicSimulator() {
                       onClick={() => setInput(prev => ({ ...prev, targetGrowthRate: pct }))}
                       className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
                         input.targetGrowthRate === pct
-                          ? 'bg-teal-500 text-slate-950 border-teal-400 font-black shadow-2xs'
-                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                          ? 'bg-[#B59269] text-white border-[#B59269] font-black shadow-2xs'
+                          : 'bg-[#1B382E]/60 text-[#E8F2EE]/70 border-white/10 hover:bg-white/10'
                       }`}
                     >
                       {pct > 0 ? `+${pct}%` : `${pct}%`}
@@ -1411,12 +1417,12 @@ export default function StrategicSimulator() {
                 </div>
 
                 {/* Include Golf Toggle */}
-                <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700 text-xs">
+                <div className="flex items-center bg-[#1B382E]/80 p-1 rounded-xl border border-white/10 text-xs">
                   <button
                     type="button"
                     onClick={() => setInput(prev => ({ ...prev, includeGolf: true }))}
                     className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                      input.includeGolf ? 'bg-teal-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                      input.includeGolf ? 'bg-[#B59269] text-white font-black' : 'text-[#E8F2EE]/70 hover:text-white'
                     }`}
                   >
                     골프 포함
@@ -1425,7 +1431,7 @@ export default function StrategicSimulator() {
                     type="button"
                     onClick={() => setInput(prev => ({ ...prev, includeGolf: false }))}
                     className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                      !input.includeGolf ? 'bg-rose-500 text-white font-black' : 'text-slate-400 hover:text-white'
+                      !input.includeGolf ? 'bg-[#8B2635] text-white font-black' : 'text-[#E8F2EE]/70 hover:text-white'
                     }`}
                   >
                     골프 제외
@@ -1435,11 +1441,11 @@ export default function StrategicSimulator() {
             </div>
 
             {input.targetYear === 2027 && (
-              <div className="flex items-center justify-between text-[11px] text-slate-300 bg-indigo-900/40 px-3 py-1.5 rounded-xl border border-indigo-800/50">
+              <div className="flex items-center justify-between text-[11px] text-[#E8F2EE]/80 bg-[#1B382E]/60 px-3 py-1.5 rounded-xl border border-white/10">
                 <span>
                   💡 <strong>연말 매출목표 수립 모드:</strong> {input.baseYear}년 실적 데이터를 기저로 목표 성장률({input.targetGrowthRate > 0 ? `+${input.targetGrowthRate}%` : `${input.targetGrowthRate}%`})을 적용하여 {input.targetYear}년 31개 영업장별 1~12월 목표를 자동 추산합니다.
                 </span>
-                <span className="text-[10px] text-amber-300 font-bold hidden md:inline-block">
+                <span className="text-[10px] text-[#B59269] font-bold hidden md:inline-block">
                   * 11~12월은 2026년 연말 결산 완료 시 실측치가 100% 자동 완결됩니다
                 </span>
               </div>
@@ -1448,19 +1454,19 @@ export default function StrategicSimulator() {
 
           {/* DB Server Status / Error Alert Banner */}
           {(fetchError || (!isLoadingMatrix && filteredMatrixFacilities.length === 0 && !apiData)) && (
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+            <div className="bg-[#B59269]/10 border border-[#B59269]/30 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-amber-100 text-amber-800 rounded-xl shrink-0 mt-0.5">
+                <div className="p-2 bg-[#B59269]/20 text-[#B59269] rounded-xl shrink-0 mt-0.5">
                   <AlertTriangle size={22} className="animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-amber-950 flex items-center gap-2">
+                  <h4 className="text-sm font-black text-[#1B382E] flex items-center gap-2">
                     <span>데이터베이스 서버 중지(STOPPED) 또는 연결 대기 중</span>
-                    <span className="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md font-mono font-bold">
+                    <span className="text-[10px] px-2 py-0.5 bg-[#B59269]/20 text-[#B59269] rounded-md font-mono font-bold">
                       서버 점검/수면 모드
                     </span>
                   </h4>
-                  <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                  <p className="text-xs text-[#5A6B63] mt-1 leading-relaxed">
                     {fetchError || '현재 AWS RDS 데이터베이스 서버가 심야/주말 절전(STOPPED) 상태이거나 네트워크 점검 중입니다.'}
                     <br />
                     관리자 콘솔에서 데이터베이스 서버가 가동되면 1~12월 전체 영업장별 매출목표 데이터가 자동으로 표시됩니다.
@@ -1473,7 +1479,7 @@ export default function StrategicSimulator() {
                   setFetchError(null);
                   setRetryTrigger(prev => prev + 1);
                 }}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                className="px-4 py-2 bg-[#B59269] hover:bg-[#a38058] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
               >
                 <RotateCcw size={14} />
                 <span>데이터 다시 불러오기</span>
@@ -1483,33 +1489,33 @@ export default function StrategicSimulator() {
 
           {/* Loading Indicator Banner */}
           {isLoadingMatrix && (
-            <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-6 text-center shadow-xs flex flex-col items-center justify-center gap-2 animate-in fade-in duration-300">
-              <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs font-black text-indigo-900 mt-1">
+            <div className="bg-[#E8F2EE] border border-[#B4C6C1]/70 rounded-2xl p-6 text-center shadow-xs flex flex-col items-center justify-center gap-2 animate-in fade-in duration-300">
+              <div className="w-8 h-8 border-3 border-[#284F42] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs font-black text-[#1B382E] mt-1">
                 1~12월 전체 영업장별 매출목표 데이터를 동기화하는 중입니다...
               </p>
-              <p className="text-[11px] text-indigo-600">
+              <p className="text-[11px] text-[#5A6B63]">
                 전체 12개월의 마트 실적 데이터를 취합하고 있습니다.
               </p>
             </div>
           )}
 
           {/* Filter & Selector Bar */}
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+          <div className="bg-white rounded-2xl p-4 border border-[#D0C6BB]/75 space-y-3 shadow-xs">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               {/* Dropdowns */}
               <div className="flex flex-wrap items-center gap-4">
                 {/* Category Dropdown */}
                 <div className="flex items-center gap-2">
-                  <label htmlFor="categoryFilterSelect" className="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                    <Filter size={15} className="text-indigo-600" />
+                  <label htmlFor="categoryFilterSelect" className="text-xs font-black text-[#1B382E] flex items-center gap-1.5 whitespace-nowrap">
+                    <Filter size={15} className="text-[#284F42]" />
                     <span>대분류(본부):</span>
                   </label>
                   <select
                     id="categoryFilterSelect"
                     value={selectedCategoryFilter}
                     onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                    className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[210px] cursor-pointer"
+                    className="bg-white border border-[#D0C6BB] text-[#1B382E] font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#284F42] focus:outline-none shadow-xs min-w-[210px] cursor-pointer"
                   >
                     <option value="ALL">
                       전체 부문 (전사 총괄{isLoadingMatrix ? ' - 동기화 중...' : totalFacilityCount > 0 ? ` - ${totalFacilityCount}개 영업장` : ''})
@@ -1524,8 +1530,8 @@ export default function StrategicSimulator() {
 
                 {/* Period/Month Dropdown */}
                 <div className="flex items-center gap-2">
-                  <label htmlFor="periodFilterSelect" className="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                    <Calendar size={15} className="text-indigo-600" />
+                  <label htmlFor="periodFilterSelect" className="text-xs font-black text-[#1B382E] flex items-center gap-1.5 whitespace-nowrap">
+                    <Calendar size={15} className="text-[#284F42]" />
                     <span>조회 기간(월):</span>
                   </label>
                   <select
@@ -1543,7 +1549,7 @@ export default function StrategicSimulator() {
                         setBusinessPlanViewMode('SINGLE_MONTH');
                       }
                     }}
-                    className="bg-white border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs min-w-[220px] cursor-pointer"
+                    className="bg-white border border-[#D0C6BB] text-[#1B382E] font-bold text-xs sm:text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#284F42] focus:outline-none shadow-xs min-w-[220px] cursor-pointer"
                   >
                     <option value="MATRIX">📅 1~12월 전체 월별 매트릭스</option>
                     <option value="ANNUAL">📅 연간 종합 (1~12월 합산)</option>
@@ -1557,14 +1563,14 @@ export default function StrategicSimulator() {
               </div>
 
               {/* View Mode Toggle Button */}
-              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs self-start lg:self-auto">
+              <div className="flex items-center gap-1 bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/60 shadow-2xs self-start lg:self-auto">
                 <button
                   type="button"
                   onClick={() => setBusinessPlanViewMode('MONTHLY_MATRIX')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     businessPlanViewMode === 'MONTHLY_MATRIX'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                      ? 'bg-[#284F42] text-white shadow-xs'
+                      : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
                 >
                   <Calendar size={13} />
@@ -1580,8 +1586,8 @@ export default function StrategicSimulator() {
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     businessPlanViewMode === 'SINGLE_MONTH'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                      ? 'bg-[#284F42] text-white shadow-xs'
+                      : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
                 >
                   <FileText size={13} />
@@ -1591,15 +1597,15 @@ export default function StrategicSimulator() {
             </div>
 
             {/* Quick Month Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-200/80 pb-1 text-xs">
-              <span className="text-[11px] font-black text-slate-500 mr-1 shrink-0">빠른 월 선택:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-[#D0C6BB]/40 pb-1 text-xs">
+              <span className="text-[11px] font-black text-[#5A6B63] mr-1 shrink-0">빠른 월 선택:</span>
               <button
                 type="button"
                 onClick={() => setBusinessPlanViewMode('MONTHLY_MATRIX')}
                 className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
                   businessPlanViewMode === 'MONTHLY_MATRIX'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    ? 'bg-[#284F42] text-white shadow-xs'
+                    : 'bg-white text-[#5A6B63] hover:bg-[#F4F3EE] border border-[#D0C6BB]/60'
                 }`}
               >
                 📅 1~12월 전체 매트릭스
@@ -1612,8 +1618,8 @@ export default function StrategicSimulator() {
                 }}
                 className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
                   businessPlanViewMode === 'SINGLE_MONTH' && input.selectedMonth === 'ANNUAL'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    ? 'bg-[#284F42] text-white shadow-xs'
+                    : 'bg-white text-[#5A6B63] hover:bg-[#F4F3EE] border border-[#D0C6BB]/60'
                 }`}
               >
                 연간 종합
@@ -1630,8 +1636,8 @@ export default function StrategicSimulator() {
                     }}
                     className={`px-2.5 py-1 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        ? 'bg-[#284F42] text-white shadow-xs'
+                        : 'bg-white text-[#5A6B63] hover:bg-[#F4F3EE] border border-[#D0C6BB]/60'
                     }`}
                   >
                     {m.shortLabel}
@@ -1644,108 +1650,108 @@ export default function StrategicSimulator() {
           {/* 4 Summary KPI Cards */}
           {businessPlanViewMode === 'MONTHLY_MATRIX' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">대상 영업장 수</div>
-                  <div className="text-2xl font-black text-slate-800 font-mono tabular-nums">
+                  <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">대상 영업장 수</div>
+                  <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
                     {isLoadingMatrix ? '...' : `${filteredMatrixFacilities.length}개`}
-                    <span className="text-xs font-bold text-slate-500 ml-1 font-sans">영업장</span>
+                    <span className="text-xs font-bold text-[#5A6B63] ml-1 font-sans">영업장</span>
                   </div>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   전체 {totalFacilityCount}개 영업장 중
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30 min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#B4C6C1]/70 shadow-[0_4px_24px_rgba(40,79,66,0.06)] bg-[#E8F2EE]/40 min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-indigo-700 uppercase tracking-tight mb-1">{input.targetYear}년 연간 목표 합계</div>
-                  <div className="text-2xl font-black text-indigo-700 font-mono tabular-nums">
+                  <div className="text-[11px] font-bold text-[#1E523F] uppercase tracking-tight mb-1">{input.targetYear}년 연간 목표 합계</div>
+                  <div className="text-2xl font-black text-[#1E523F] font-mono tabular-nums">
                     {isLoadingMatrix ? '동기화 중...' : filteredMatrixFacilities.length > 0 ? `${formatCurrency(matrixMonthlyTotals.grandYearTotal)}원` : '-'}
                   </div>
                 </div>
-                <div className="text-[11px] text-indigo-500 mt-1 font-medium">
+                <div className="text-[11px] text-[#1E523F] mt-1 font-medium">
                   1~12월 월별 목표치 합계
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">12개월 월평균 목표</div>
-                  <div className="text-2xl font-black text-slate-800 font-mono tabular-nums">
+                  <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">12개월 월평균 목표</div>
+                  <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
                     {isLoadingMatrix ? '동기화 중...' : filteredMatrixFacilities.length > 0 ? `${formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 12))}원` : '-'}
                   </div>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   일평균 약 {filteredMatrixFacilities.length > 0 ? formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 365)) : '0'}원
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs bg-amber-50/30 min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#B59269]/40 shadow-[0_4px_24px_rgba(40,79,66,0.06)] bg-[#B59269]/10 min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-amber-800 uppercase tracking-tight mb-1">최대 매출 피크 월</div>
-                  <div className="text-2xl font-black text-amber-900 font-mono tabular-nums flex items-baseline gap-1.5">
+                  <div className="text-[11px] font-bold text-[#B59269] uppercase tracking-tight mb-1">최대 매출 피크 월</div>
+                  <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums flex items-baseline gap-1.5">
                     {isLoadingMatrix ? '...' : filteredMatrixFacilities.length > 0 ? (
                       <>
                         <span>{matrixMonthlyTotals.peakMonth}월</span>
-                        <span className="text-sm font-bold text-amber-700 font-mono">
+                        <span className="text-sm font-bold text-[#B59269] font-mono">
                           ({formatCurrency(matrixMonthlyTotals.peakVal)}원)
                         </span>
                       </>
                     ) : '-'}
                   </div>
                 </div>
-                <div className="text-[11px] text-amber-700 mt-1 font-medium">
+                <div className="text-[11px] text-[#B59269] mt-1 font-medium">
                   선택 부문 연간 최고 매출 시즌
                 </div>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">대상 영업장 수</div>
-                  <div className="text-2xl font-black text-slate-800 font-mono tabular-nums">
+                  <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">대상 영업장 수</div>
+                  <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
                     {businessPlanTotals.facilityCount}
-                    <span className="text-xs font-bold text-slate-500 ml-1 font-sans">개 영업장</span>
+                    <span className="text-xs font-bold text-[#5A6B63] ml-1 font-sans">개 영업장</span>
                   </div>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   전체 {totalFacilityCount}개 영업장 중
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">{input.baseYear}년 기준 실적</div>
-                  <div className="text-2xl font-black text-slate-800 font-mono tabular-nums">
+                  <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">{input.baseYear}년 기준 실적</div>
+                  <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
                     {flatBusinessPlanFacilities.length > 0 ? `${formatCurrency(businessPlanTotals.baseActualSum)}원` : '-'}
                   </div>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   순매출 (VAT 별도)
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-indigo-200 shadow-xs bg-gradient-to-br from-white to-indigo-50/30 min-h-[116px] flex flex-col justify-between">
+              <div className="bg-white p-5 rounded-3xl border border-[#B4C6C1]/70 shadow-[0_4px_24px_rgba(40,79,66,0.06)] bg-[#E8F2EE]/40 min-h-[116px] flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-indigo-700 uppercase tracking-tight mb-1">{input.targetYear}년 매출목표 합계</div>
-                  <div className="text-2xl font-black text-indigo-700 font-mono tabular-nums">
+                  <div className="text-[11px] font-bold text-[#1E523F] uppercase tracking-tight mb-1">{input.targetYear}년 매출목표 합계</div>
+                  <div className="text-2xl font-black text-[#1E523F] font-mono tabular-nums">
                     {flatBusinessPlanFacilities.length > 0 ? `${formatCurrency(businessPlanTotals.targetRevenueSum)}원` : '-'}
                   </div>
                 </div>
-                <div className="text-[11px] text-indigo-500 mt-1 font-medium">
+                <div className="text-[11px] text-[#1E523F] mt-1 font-medium">
                   시뮬레이터 목표 안분 합계
                 </div>
               </div>
 
-              <div className={`p-5 rounded-2xl border shadow-xs min-h-[116px] flex flex-col justify-between ${
-                businessPlanTotals.diffSum >= 0 ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'
+              <div className={`p-5 rounded-3xl border shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between ${
+                businessPlanTotals.diffSum >= 0 ? 'bg-[#E8F2EE]/50 border-[#B4C6C1]/70' : 'bg-[#FDF0ED] border-[#EAC5BD]/70'
               }`}>
                 <div>
-                  <div className="text-[11px] font-bold text-slate-600 uppercase tracking-tight mb-1">목표 증감액 & 성장률</div>
+                  <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">목표 증감액 & 성장률</div>
                   <div className={`text-2xl font-black font-mono tabular-nums ${
-                    businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                    businessPlanTotals.diffSum >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                   }`}>
                     {flatBusinessPlanFacilities.length > 0 ? (
                       <>
@@ -1756,12 +1762,12 @@ export default function StrategicSimulator() {
                   </div>
                 </div>
                 <div className={`text-xs font-black font-mono mt-1 ${
-                  businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                  businessPlanTotals.growthRateSum >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                 }`}>
                   {flatBusinessPlanFacilities.length > 0 ? (
                     <>
                       {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
-                      <span className="text-[10px] text-slate-500 font-normal ml-1 font-sans">vs {input.baseYear}년</span>
+                      <span className="text-[10px] text-[#5A6B63] font-normal ml-1 font-sans">vs {input.baseYear}년</span>
                     </>
                   ) : '-'}
                 </div>
@@ -1772,24 +1778,24 @@ export default function StrategicSimulator() {
           {/* Business Plan Table Rendering (Matrix vs Single Month) */}
           {businessPlanViewMode === 'MONTHLY_MATRIX' ? (
             /* 1~12월 전체 월별 매트릭스 테이블 */
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80">
+            <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
+              <div className="p-4 border-b border-[#D0C6BB]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F4F3EE]/80">
                 <div className="flex items-center gap-2">
-                  <FileSpreadsheet size={17} className="text-indigo-600" />
-                  <h3 className="text-sm font-black text-slate-900">
+                  <FileSpreadsheet size={17} className="text-[#284F42]" />
+                  <h3 className="text-sm font-black text-[#1B382E]">
                     영업장별 1~12월 월별 매출목표 매트릭스
                   </h3>
-                  <span className="text-xs text-slate-500 font-medium">
+                  <span className="text-xs text-[#5A6B63] font-medium">
                     ({filteredMatrixFacilities.length}개 라인)
                   </span>
                 </div>
-                <div className="text-xs text-indigo-700 font-bold flex items-center gap-1.5">
+                <div className="text-xs text-[#1E523F] font-bold flex items-center gap-1.5">
                   <CheckCircle2 size={13} />
                   <span>12개월 월별 합계 = 연간 목표치 1원 단위 무결성 보존</span>
                 </div>
               </div>
 
-              <div className="overflow-x-auto border-t border-slate-200">
+              <div className="overflow-x-auto border-t border-[#D0C6BB]/40">
                 <table className="w-full text-xs text-left border-collapse table-fixed">
                   <colgroup>
                     <col style={{ width: '48px' }} />
@@ -1800,46 +1806,46 @@ export default function StrategicSimulator() {
                     ))}
                     <col style={{ width: '135px' }} />
                   </colgroup>
-                  <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
+                  <thead className="bg-[#F4F3EE] text-[#1B382E] font-bold text-[11px] border-b border-[#D0C6BB]/75">
                     <tr>
-                      <th className="py-2.5 px-1 text-center w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-slate-100 z-30 border-b border-slate-200">No</th>
-                      <th className="py-2.5 px-2.5 text-left w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-slate-100 z-30 border-b border-slate-200">대분류(본부)</th>
-                      <th className="py-2.5 px-3 text-left w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-slate-100 z-30 border-b border-r border-slate-300 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">영업장명 (파트)</th>
+                      <th className="py-2.5 px-1 text-center w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-[#F4F3EE] z-30 border-b border-[#D0C6BB]/75">No</th>
+                      <th className="py-2.5 px-2.5 text-left w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-[#F4F3EE] z-30 border-b border-[#D0C6BB]/75">대분류(본부)</th>
+                      <th className="py-2.5 px-3 text-left w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-[#F4F3EE] z-30 border-b border-r border-[#D0C6BB]/60 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">영업장명 (파트)</th>
                       {Array.from({ length: 12 }, (_, i) => {
                         const m = i + 1;
                         const hasCustom = monthlyGrowthRates[m] !== undefined;
                         const rateVal = monthlyGrowthRates[m] ?? input.targetGrowthRate;
                         return (
-                          <th key={m} className="py-2.5 px-2.5 text-right w-[105px] min-w-[105px] max-w-[105px] whitespace-nowrap border-b border-slate-200">
+                          <th key={m} className="py-2.5 px-2.5 text-right w-[105px] min-w-[105px] max-w-[105px] whitespace-nowrap border-b border-[#D0C6BB]/75">
                             <div className="flex items-center justify-end gap-1">
-                              <span className="font-bold text-slate-700">{m}월</span>
-                              {hasCustom && <span className="text-teal-600 text-[9px] font-black" title="개별 설정값 기억 중">●</span>}
+                              <span className="font-bold text-[#1B382E]">{m}월</span>
+                              {hasCustom && <span className="text-[#5FB878] text-[9px] font-black" title="개별 설정값 기억 중">●</span>}
                             </div>
-                            <div className={`text-[10px] font-mono tabular-nums ${hasCustom ? 'text-teal-700 font-black' : 'text-slate-400 font-normal'}`}>
+                            <div className={`text-[10px] font-mono tabular-nums ${hasCustom ? 'text-[#1E523F] font-black' : 'text-[#5A6B63] font-normal'}`}>
                               {rateVal > 0 ? `+${rateVal}%` : `${rateVal}%`}
                             </div>
                           </th>
                         );
                       })}
-                      <th className="py-2.5 px-4 text-right w-[135px] min-w-[135px] text-indigo-950 bg-indigo-50/70 font-black whitespace-nowrap border-b border-l border-slate-200">
+                      <th className="py-2.5 px-4 text-right w-[135px] min-w-[135px] text-[#1B382E] bg-[#E8F2EE] font-bold whitespace-nowrap border-b border-l border-[#D0C6BB]/60">
                         연간 합계
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#D0C6BB]/30">
                     {filteredMatrixFacilities.length === 0 ? (
                       <tr>
-                        <td colSpan={15} className="py-12 text-center text-slate-400">
+                        <td colSpan={15} className="py-12 text-center text-[#5A6B63]">
                           {isLoadingMatrix ? (
                             <div className="flex flex-col items-center justify-center gap-2">
-                              <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                              <span className="font-bold text-slate-600">1~12월 매출목표 매트릭스 데이터를 동기화하고 있습니다...</span>
+                              <Loader2 className="w-6 h-6 animate-spin text-[#284F42]" />
+                              <span className="font-bold text-[#1B382E]">1~12월 매출목표 매트릭스 데이터를 동기화하고 있습니다...</span>
                             </div>
                           ) : fetchError ? (
-                            <div className="flex flex-col items-center justify-center gap-2 text-amber-700">
-                              <AlertTriangle className="w-6 h-6 text-amber-500" />
+                            <div className="flex flex-col items-center justify-center gap-2 text-[#8B2635]">
+                              <AlertTriangle className="w-6 h-6 text-[#8B2635]" />
                               <span className="font-bold">데이터베이스 서버 응답 대기 중 ({fetchError})</span>
-                              <span className="text-xs text-slate-500">서버가 정상 가동되면 상단의 [데이터 다시 불러오기]를 눌러주십시오.</span>
+                              <span className="text-xs text-[#5A6B63]">서버가 정상 가동되면 상단의 [데이터 다시 불러오기]를 눌러주십시오.</span>
                             </div>
                           ) : (
                             <span>선택한 부문에 해당하는 영업장 데이터가 없습니다.</span>
@@ -1848,17 +1854,17 @@ export default function StrategicSimulator() {
                       </tr>
                     ) : (
                       filteredMatrixFacilities.map(f => (
-                        <tr key={`${f.categoryCode}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors group">
-                          <td className="py-2.5 px-1 text-center font-mono text-slate-400 text-[11px] w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-white group-hover:bg-slate-50 z-10">
+                        <tr key={`${f.categoryCode}_${f.facilityName}`} className="hover:bg-[#F4F3EE]/50 transition-colors group">
+                          <td className="py-2.5 px-1 text-center font-mono text-[#5A6B63] text-[11px] w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-white group-hover:bg-[#F4F3EE]/50 z-10">
                             {f.no}
                           </td>
-                          <td className="py-2.5 px-2.5 font-bold text-slate-700 whitespace-nowrap w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-white group-hover:bg-slate-50 z-10 truncate" title={f.divisionName}>
+                          <td className="py-2.5 px-2.5 font-bold text-[#1B382E] whitespace-nowrap w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-white group-hover:bg-[#F4F3EE]/50 z-10 truncate" title={f.divisionName}>
                             <span className="mr-1">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
                             {f.divisionName}
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-white group-hover:bg-slate-50 z-10 border-r border-slate-300 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
-                            <div className="font-black text-slate-900 truncate leading-tight" title={f.facilityName}>{f.facilityName}</div>
-                            <div className="text-[10px] text-slate-400 font-medium truncate leading-none mt-0.5" title={f.partName}>{f.partName}</div>
+                          <td className="py-2.5 px-3 font-bold text-[#1B382E] whitespace-nowrap w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-white group-hover:bg-[#F4F3EE]/50 z-10 border-r border-[#D0C6BB]/60 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                            <div className="font-black text-[#1B382E] truncate leading-tight" title={f.facilityName}>{f.facilityName}</div>
+                            <div className="text-[10px] text-[#5A6B63] font-medium truncate leading-none mt-0.5" title={f.partName}>{f.partName}</div>
                           </td>
                           {Array.from({ length: 12 }, (_, i) => {
                             const m = i + 1;
@@ -1866,14 +1872,14 @@ export default function StrategicSimulator() {
                             return (
                               <td key={m} className="py-2.5 px-2.5 text-right tabular-nums whitespace-nowrap w-[105px] min-w-[105px]">
                                 {val > 0 ? (
-                                  <span className="font-mono font-bold text-slate-800 text-[11px]">{formatCurrency(val)}원</span>
+                                  <span className="font-mono font-bold text-[#1B382E] text-[11px]">{formatCurrency(val)}원</span>
                                 ) : (
-                                  <span className="font-mono text-slate-300 text-[11px] font-normal">-</span>
+                                  <span className="font-mono text-[#D0C6BB] text-[11px] font-normal">-</span>
                                 )}
                               </td>
                             );
                           })}
-                          <td className="py-2.5 px-4 text-right tabular-nums font-mono font-black text-indigo-950 bg-indigo-50/30 whitespace-nowrap border-l border-slate-100 text-xs w-[135px] min-w-[135px]">
+                          <td className="py-2.5 px-4 text-right tabular-nums font-mono font-black text-[#1B382E] bg-[#E8F2EE]/30 whitespace-nowrap border-l border-[#D0C6BB]/40 text-xs w-[135px] min-w-[135px]">
                             {formatCurrency(f.yearTotal)}원
                           </td>
                         </tr>
@@ -1881,25 +1887,25 @@ export default function StrategicSimulator() {
                     )}
                   </tbody>
                   {filteredMatrixFacilities.length > 0 && (
-                    <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                    <tfoot className="bg-[#284F42] text-white font-bold border-t-2 border-[#1B382E]">
                       <tr>
-                        <td className="py-3 px-1 text-center w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-slate-100 z-20 font-bold text-slate-600">합계</td>
-                        <td className="py-3 px-2.5 font-black whitespace-nowrap w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-slate-100 z-20 truncate" title={selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}>
+                        <td className="py-3 px-1 text-center w-[48px] min-w-[48px] max-w-[48px] sticky left-0 bg-[#284F42] z-20 font-bold text-[#E8F2EE]">합계</td>
+                        <td className="py-3 px-2.5 font-black whitespace-nowrap w-[110px] min-w-[110px] max-w-[110px] sticky left-[48px] bg-[#284F42] z-20 truncate text-[#B59269]" title={selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}>
                           {selectedCategoryFilter === 'ALL' ? '전체 부문' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
                         </td>
-                        <td className="py-3 px-3 font-black whitespace-nowrap w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-slate-100 z-20 border-r border-slate-300 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                        <td className="py-3 px-3 font-black whitespace-nowrap w-[160px] min-w-[160px] max-w-[160px] sticky left-[158px] bg-[#284F42] z-20 border-r border-[#1B382E] shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)] text-white">
                           총 {filteredMatrixFacilities.length}개 영업장
                         </td>
                         {Array.from({ length: 12 }, (_, i) => {
                           const m = i + 1;
                           const mSum = matrixMonthlyTotals.monthSums[m] || 0;
                           return (
-                            <td key={m} className="py-3 px-2.5 text-right tabular-nums font-mono font-black whitespace-nowrap text-slate-900 text-xs w-[105px] min-w-[105px]">
+                            <td key={m} className="py-3 px-2.5 text-right tabular-nums font-mono font-black whitespace-nowrap text-white text-xs w-[105px] min-w-[105px]">
                               {formatCurrency(mSum)}원
                             </td>
                           );
                         })}
-                        <td className="py-3 px-4 text-right tabular-nums font-mono font-black text-indigo-900 bg-indigo-100/70 whitespace-nowrap text-sm border-l border-indigo-200 w-[135px] min-w-[135px]">
+                        <td className="py-3 px-4 text-right tabular-nums font-mono font-black text-[#B59269] bg-[#1B382E] whitespace-nowrap text-sm border-l border-white/20 w-[135px] min-w-[135px]">
                           {formatCurrency(matrixMonthlyTotals.grandYearTotal)}원
                         </td>
                       </tr>
@@ -1910,27 +1916,27 @@ export default function StrategicSimulator() {
             </div>
           ) : (
             /* 단일 월 상세 비교 테이블 */
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80">
+            <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
+              <div className="p-4 border-b border-[#D0C6BB]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F4F3EE]/80">
                 <div className="flex items-center gap-2">
-                  <FileText size={17} className="text-indigo-600" />
-                  <h3 className="text-sm font-black text-slate-900">
+                  <FileText size={17} className="text-[#284F42]" />
+                  <h3 className="text-sm font-black text-[#1B382E]">
                     영업장별 {selectedMonthLabel} 매출목표 세부 내역
                   </h3>
-                  <span className="text-xs text-slate-500 font-medium">
+                  <span className="text-xs text-[#5A6B63] font-medium">
                     ({flatBusinessPlanFacilities.length}개 라인)
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>녹색: 목표 상향(▲)</span>
-                  <span className="text-slate-300">|</span>
-                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span>적색: 목표 조정(▼)</span>
+                <div className="text-xs text-[#5A6B63] flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#1E523F]"></span>
+                  <span>상향(▲)</span>
+                  <span className="text-[#D0C6BB]">|</span>
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#8B2635]"></span>
+                  <span>조정(▼)</span>
                 </div>
               </div>
 
-              <div className="overflow-x-auto border-t border-slate-200">
+              <div className="overflow-x-auto border-t border-[#D0C6BB]/40">
                 <table className="w-full text-xs text-left border-collapse table-fixed min-w-[1050px]">
                   <colgroup>
                     <col style={{ width: '48px' }} />
@@ -1942,17 +1948,17 @@ export default function StrategicSimulator() {
                     <col style={{ width: '135px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '85px' }} />
-                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '110px' }} />
                   </colgroup>
-                  <thead className="bg-slate-100 text-slate-600 font-black uppercase text-[11px] border-b border-slate-200">
+                  <thead className="bg-[#F4F3EE] text-[#1B382E] font-bold text-[11px] border-b border-[#D0C6BB]/75">
                     <tr>
-                      <th className="py-2.5 px-1 text-center w-[48px]">No</th>
+                      <th className="py-2.5 px-2 text-center">No</th>
                       <th className="py-2.5 px-3 text-left">대분류(본부)</th>
                       <th className="py-2.5 px-3 text-left">중분류(파트)</th>
                       <th className="py-2.5 px-3 text-left">영업장명</th>
                       <th className="py-2.5 px-3 text-right">전략 비중</th>
                       <th className="py-2.5 px-3 text-right">{input.baseYear}년 실적</th>
-                      <th className="py-2.5 px-3 text-right text-indigo-950 bg-indigo-50/70 border-l border-slate-200">
+                      <th className="py-2.5 px-3 text-right text-[#1B382E] bg-[#E8F2EE] border-l border-[#D0C6BB]/60">
                         {input.targetYear}년 매출목표
                       </th>
                       <th className="py-2.5 px-3 text-right">목표 증감액</th>
@@ -1960,15 +1966,15 @@ export default function StrategicSimulator() {
                       <th className="py-2.5 px-3 text-center">전략 방향</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#D0C6BB]/30">
                     {flatBusinessPlanFacilities.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="py-12 text-center text-slate-400">
+                        <td colSpan={10} className="py-12 text-center text-[#5A6B63]">
                           {fetchError ? (
-                            <div className="flex flex-col items-center justify-center gap-2 text-amber-700">
-                              <AlertTriangle className="w-6 h-6 text-amber-500" />
+                            <div className="flex flex-col items-center justify-center gap-2 text-[#8B2635]">
+                              <AlertTriangle className="w-6 h-6 text-[#8B2635]" />
                               <span className="font-bold">데이터베이스 서버 응답 대기 중 ({fetchError})</span>
-                              <span className="text-xs text-slate-500">서버가 정상 가동되면 상단의 [데이터 다시 불러오기]를 눌러주십시오.</span>
+                              <span className="text-xs text-[#5A6B63]">서버가 정상 가동되면 상단의 [데이터 다시 불러오기]를 눌러주십시오.</span>
                             </div>
                           ) : (
                             <span>선택한 부문에 해당하는 영업장 데이터가 없습니다.</span>
@@ -1977,50 +1983,50 @@ export default function StrategicSimulator() {
                       </tr>
                     ) : (
                       flatBusinessPlanFacilities.map(f => (
-                        <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-2.5 px-1 text-center font-mono text-slate-400 text-[11px]">
+                        <tr key={`${f.categoryCode}_${f.partName}_${f.facilityName}`} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                          <td className="py-2.5 px-1 text-center font-mono text-[#5A6B63] text-[11px]">
                             {f.no}
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-slate-700 whitespace-nowrap truncate" title={f.divisionName}>
+                          <td className="py-2.5 px-3 font-bold text-[#1B382E] whitespace-nowrap truncate" title={f.divisionName}>
                             <span className="mr-1.5">{getCategoryIcon(f.categoryName, f.categoryCode)}</span>
                             {f.divisionName}
                           </td>
-                          <td className="py-2.5 px-3 font-medium text-slate-600 whitespace-nowrap truncate" title={f.partName}>
+                          <td className="py-2.5 px-3 font-medium text-[#5A6B63] whitespace-nowrap truncate" title={f.partName}>
                             {f.partName}
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap truncate" title={f.facilityName}>
+                          <td className="py-2.5 px-3 font-bold text-[#1B382E] whitespace-nowrap truncate" title={f.facilityName}>
                             {f.facilityName}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 font-medium">
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#5A6B63] font-medium">
                             {f.weight.toFixed(2)}%
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 font-medium whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#5A6B63] font-medium whitespace-nowrap">
                             {formatCurrency(f.baseActual)}원
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono tabular-nums font-black text-indigo-950 bg-indigo-50/30 whitespace-nowrap border-l border-slate-100">
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums font-black text-[#1B382E] bg-[#E8F2EE]/30 whitespace-nowrap border-l border-[#D0C6BB]/30">
                             {formatCurrency(f.targetRevenue)}원
                           </td>
                           <td className={`py-2.5 px-3 text-right font-mono tabular-nums font-bold whitespace-nowrap ${
-                            f.diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                            f.diff >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}>
                             {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
                           </td>
                           <td className={`py-2.5 px-3 text-right font-mono tabular-nums font-black whitespace-nowrap ${
-                            f.growthRate >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                            f.growthRate >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}>
                             {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
                           </td>
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
                               f.strategyBadge === 'ADR 레버리지 권장'
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                ? 'bg-[#B59269]/15 text-[#B59269] border border-[#B59269]/30'
                                 : f.strategyBadge === '핵심 볼륨 견인'
-                                ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                ? 'bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20'
                                 : f.diff > 0
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70'
                                 : f.diff < 0
-                                ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                                : 'bg-slate-100 text-slate-700'
+                                ? 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70'
+                                : 'bg-[#F4F3EE] text-[#5A6B63]'
                             }`}>
                               {f.strategyBadge}
                             </span>
@@ -2030,37 +2036,37 @@ export default function StrategicSimulator() {
                     )}
                   </tbody>
                   {flatBusinessPlanFacilities.length > 0 && (
-                    <tfoot className="bg-slate-100/90 font-black border-t-2 border-slate-300 text-slate-900">
+                    <tfoot className="bg-[#284F42] text-white font-bold border-t-2 border-[#1B382E]">
                       <tr>
-                        <td className="py-3 px-1 text-center font-bold text-slate-600">합계</td>
-                        <td className="py-3 px-3 font-black whitespace-nowrap truncate" title={selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}>
+                        <td className="py-3 px-1 text-center font-bold text-[#E8F2EE]">합계</td>
+                        <td className="py-3 px-3 font-black whitespace-nowrap truncate text-[#B59269]" title={selectedCategoryFilter === 'ALL' ? '전체 부문 (전사 총괄)' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}>
                           {selectedCategoryFilter === 'ALL' ? '전체 부문' : (effectiveCategories.find(c => c.categoryCode === selectedCategoryFilter)?.categoryName || selectedCategoryFilter)}
                         </td>
-                        <td className="py-3 px-3 text-slate-500 font-normal">-</td>
-                        <td className="py-3 px-3 font-black whitespace-nowrap">
+                        <td className="py-3 px-3 text-[#E8F2EE]/70 font-normal">-</td>
+                        <td className="py-3 px-3 font-black whitespace-nowrap text-white">
                           총 {businessPlanTotals.facilityCount}개 영업장
                         </td>
-                        <td className="py-3 px-3 text-right font-mono tabular-nums text-indigo-700 font-black">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums text-[#5FB878] font-black">
                           100.0%
                         </td>
-                        <td className="py-3 px-3 text-right font-mono tabular-nums font-bold whitespace-nowrap">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums font-bold whitespace-nowrap text-white">
                           {formatCurrency(businessPlanTotals.baseActualSum)}원
                         </td>
-                        <td className="py-3 px-3 text-right font-mono tabular-nums font-black text-indigo-900 bg-indigo-100/60 whitespace-nowrap text-sm border-l border-indigo-200">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums font-black text-[#B59269] bg-[#1B382E] whitespace-nowrap text-sm border-l border-white/20">
                           {formatCurrency(businessPlanTotals.targetRevenueSum)}원
                         </td>
                         <td className={`py-3 px-3 text-right font-mono tabular-nums font-black whitespace-nowrap ${
-                          businessPlanTotals.diffSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                          businessPlanTotals.diffSum >= 0 ? 'text-[#5FB878]' : 'text-[#EAC5BD]'
                         }`}>
                           {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
                         </td>
                         <td className={`py-3 px-3 text-right font-mono tabular-nums font-black whitespace-nowrap ${
-                          businessPlanTotals.growthRateSum >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                          businessPlanTotals.growthRateSum >= 0 ? 'text-[#5FB878]' : 'text-[#EAC5BD]'
                         }`}>
                           {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
                         </td>
                         <td className="py-3 px-3 text-center whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                             <CheckCircle2 size={12} />
                             정합성 배분 완료
                           </span>
@@ -2074,20 +2080,20 @@ export default function StrategicSimulator() {
           )}
 
           {/* Business Plan Guidance Notes */}
-          <div className="bg-indigo-50/60 rounded-2xl p-4 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-3">
-            <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg shrink-0 mt-0.5">
+          <div className="bg-[#F4F3EE]/80 rounded-2xl p-4 border border-[#D0C6BB]/60 text-xs text-[#1B382E] flex items-start gap-3">
+            <span className="p-1.5 bg-[#284F42]/10 text-[#284F42] rounded-lg shrink-0 mt-0.5">
               <FileSpreadsheet size={16} />
             </span>
             <div className="space-y-1">
               <p className="font-bold">
                 💡 매출목표 월별 매트릭스 & 엑셀 다운로드 안내
               </p>
-              <p className="text-indigo-800/80 leading-relaxed text-[11px]">
-                • <strong className="text-indigo-950 font-bold">[1~12월 월별 매트릭스]</strong>를 통해 썸머랜드(여름 피크), 사계절썰매장, 골프, 콘도 등 리조트 각 영업장의 계절성(Seasonality)이 반영된 12개월 월별 전체 목표치를 한눈에 비교·검토하실 수 있습니다.
+              <p className="text-[#5A6B63] leading-relaxed text-[11px]">
+                • <strong className="text-[#1B382E] font-bold">[1~12월 월별 매트릭스]</strong>를 통해 썸머랜드(여름 피크), 사계절썰매장, 골프, 콘도 등 리조트 각 영업장의 계절성(Seasonality)이 반영된 12개월 월별 전체 목표치를 한눈에 비교·검토하실 수 있습니다.
                 <br />
                 • 상단 빠른 월 선택 탭(1월~12월)을 클릭하면 해당 월의 전년 실적 대비 증감액, 성장률 및 전략 방향을 상세 조회할 수 있습니다.
                 <br />
-                • 우측 상단의 <strong className="text-indigo-950 font-bold">[엑셀 (.xlsx) 다운로드]</strong> 버튼을 누르시면 <strong>[1~12월_월별매출목표]</strong> 매트릭스 시트와 <strong>[{selectedMonthLabel}_상세내역]</strong> 시트가 모두 포함된 통합 Excel 파일로 즉시 내려받아집니다.
+                • 우측 상단의 <strong className="text-[#1B382E] font-bold">[엑셀 (.xlsx) 다운로드]</strong> 버튼을 누르시면 <strong>[1~12월_월별매출목표]</strong> 매트릭스 시트와 <strong>[{selectedMonthLabel}_상세내역]</strong> 시트가 모두 포함된 통합 Excel 파일로 즉시 내려받아집니다.
               </p>
             </div>
           </div>
@@ -2095,21 +2101,21 @@ export default function StrategicSimulator() {
       ) : (
         <>
           {/* 2. 🎛️ Master Target Console */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6">
+          <div className="bg-[#284F42] p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6 border border-[#1B382E]">
         
         {/* Top Control Bar: Year Selection & Golf Toggle */}
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-700/80 pb-5">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-bold text-slate-400">비교 연도:</span>
-            <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+            <span className="text-xs font-bold text-[#E8F2EE]/70">비교 연도:</span>
+            <div className="flex items-center gap-1.5 bg-[#1B382E]/80 p-1 rounded-xl border border-white/10 text-xs">
               {YEAR_PAIRS.map(yp => (
                 <button
                   key={`${yp.baseYear}-${yp.targetYear}`}
                   onClick={() => setInput(prev => ({ ...prev, baseYear: yp.baseYear, targetYear: yp.targetYear }))}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                     input.baseYear === yp.baseYear && input.targetYear === yp.targetYear
-                      ? 'bg-indigo-600 text-white shadow-xs font-black' 
-                      : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                      ? 'bg-[#284F42] text-white shadow-xs font-black border border-white/20' 
+                      : 'text-[#E8F2EE]/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   {yp.label}
@@ -2119,11 +2125,11 @@ export default function StrategicSimulator() {
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+            <div className="flex items-center bg-[#1B382E]/80 p-1 rounded-xl border border-white/10 text-xs">
               <button
                 onClick={() => setInput(prev => ({ ...prev, includeGolf: true }))}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                  input.includeGolf ? 'bg-teal-500 text-slate-950 shadow-xs font-black' : 'text-slate-400 hover:text-white'
+                  input.includeGolf ? 'bg-[#B59269] text-white shadow-xs font-black' : 'text-[#E8F2EE]/70 hover:text-white'
                 }`}
               >
                 ⛳ 골프 포함 (전사)
@@ -2131,7 +2137,7 @@ export default function StrategicSimulator() {
               <button
                 onClick={() => setInput(prev => ({ ...prev, includeGolf: false }))}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                  !input.includeGolf ? 'bg-sky-500 text-slate-950 shadow-xs font-black' : 'text-slate-400 hover:text-white'
+                  !input.includeGolf ? 'bg-[#8B2635] text-white shadow-xs font-black' : 'text-[#E8F2EE]/70 hover:text-white'
                 }`}
               >
                 🏨 골프 제외 (순수 리조트)
@@ -2142,12 +2148,12 @@ export default function StrategicSimulator() {
 
         {/* Month Selector Bar */}
         <div className="relative z-10 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+          <div className="flex items-center justify-between text-xs font-bold text-[#E8F2EE]/90">
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-teal-400" />
+              <Calendar className="w-4 h-4 text-[#B59269]" />
               시뮬레이션 대상 월 선택 ({baselineMode === 'WMA_2YEAR' ? '2개년 가중이동평균(2025: 60%, 2024: 40%) 기상정규화 비중 대입' : `${input.baseYear}년 실측 비중 대입`})
             </span>
-            <span className="text-teal-300 font-extrabold">
+            <span className="text-[#B59269] font-extrabold">
               현재 선택: {input.targetYear}년 {selectedMonthLabel} ({periodDays}일 기준)
             </span>
           </div>
@@ -2166,20 +2172,20 @@ export default function StrategicSimulator() {
                   onClick={() => setInput(prev => ({ ...prev, selectedMonth: m.id as any }))}
                   className={`h-[66px] min-h-[66px] max-h-[66px] px-1 py-2 rounded-xl text-center transition-all cursor-pointer flex flex-col justify-between items-center border relative ${
                     isSelected
-                      ? 'bg-teal-400 text-slate-950 font-black border-teal-300 shadow-md scale-[1.02]'
-                      : 'bg-white/10 text-slate-200 hover:bg-white/20 border-white/10 font-bold'
+                      ? 'bg-[#B59269] text-white font-black border-[#B59269] shadow-md scale-[1.02]'
+                      : 'bg-white/10 text-[#E8F2EE] hover:bg-white/20 border-white/10 font-bold'
                   }`}
                 >
                   <span className="text-[12px] font-black leading-none">{m.shortLabel}</span>
-                  <span className={`text-[9px] font-medium leading-none truncate max-w-full px-0.5 ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}`} title={m.season}>
+                  <span className={`text-[9px] font-medium leading-none truncate max-w-full px-0.5 ${isSelected ? 'text-white font-bold' : 'text-[#E8F2EE]/60'}`} title={m.season}>
                     {m.season}
                   </span>
                   <span className={`text-[10px] font-mono font-black leading-none px-1.5 py-0.5 rounded ${
                     isSelected
-                      ? 'bg-slate-900 text-teal-300'
+                      ? 'bg-[#1B382E] text-[#B59269]'
                       : hasCustomRate
-                        ? 'bg-teal-400/25 text-teal-300 border border-teal-400/50'
-                        : 'text-slate-400'
+                        ? 'bg-[#5FB878]/25 text-[#5FB878] border border-[#5FB878]/50'
+                        : 'text-[#E8F2EE]/60'
                   }`}>
                     {hasCustomRate && '● '}{monthRate > 0 ? `+${monthRate}%` : `${monthRate}%`}
                   </span>
@@ -2195,12 +2201,12 @@ export default function StrategicSimulator() {
           {/* Left: Growth Rate Slider */}
           <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[#B59269] flex items-center gap-1.5">
                 {isMonthView ? (
                   <>
                     <span>📅 {input.targetYear}년 {currentMonthNum}월 ({MONTH_NAMES.find(m => m.id === currentMonthNum)?.season}) 목표 성장률 개별 설정</span>
                     {monthlyGrowthRates[currentMonthNum!] !== undefined && (
-                      <span className="text-[10px] px-1.5 py-0.5 bg-teal-400 text-slate-950 font-black rounded-md">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-[#B59269] text-white font-black rounded-md">
                         개별 기억 중
                       </span>
                     )}
@@ -2208,23 +2214,23 @@ export default function StrategicSimulator() {
                 ) : (
                   <>
                     <span>🚀 {input.targetYear}년 전사 연간 일괄 목표 성장률 설정</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-indigo-500/40 text-indigo-200 font-bold rounded-md">
+                    <span className="text-[10px] px-1.5 py-0.5 bg-white/15 text-[#E8F2EE] font-bold rounded-md">
                       연간 기준
                     </span>
                   </>
                 )}
               </span>
-              <span className="text-[11px] text-slate-300 font-medium">
+              <span className="text-[11px] text-[#E8F2EE]/70 font-medium">
                 {baselineMode === 'WMA_2YEAR' ? '2개년 WMA 대비' : `${input.baseYear}년 실측 대비`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-black tabular-nums text-teal-300">
+                <span className="text-3xl font-black tabular-nums text-[#5FB878]">
                   {currentActiveGrowthRate > 0 ? `+${currentActiveGrowthRate}%` : `${currentActiveGrowthRate}%`}
                 </span>
-                <span className="text-xs text-slate-300 font-semibold">
+                <span className="text-xs text-[#E8F2EE]/80 font-semibold">
                   {isMonthView ? `${currentMonthNum}월 개별 목표 대입` : '전사 연간 기본 일괄 적용'}
                 </span>
               </div>
@@ -2240,7 +2246,7 @@ export default function StrategicSimulator() {
                       return updated;
                     });
                   }}
-                  className="text-[10px] text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 px-2.5 py-1 rounded-lg border border-amber-400/30 transition-all cursor-pointer font-bold"
+                  className="text-[10px] text-[#B59269] hover:text-white bg-[#B59269]/20 hover:bg-[#B59269]/30 px-2.5 py-1 rounded-lg border border-[#B59269]/30 transition-all cursor-pointer font-bold"
                 >
                   연간 일괄값(+{input.targetGrowthRate}%)으로 복원
                 </button>
@@ -2258,7 +2264,7 @@ export default function StrategicSimulator() {
                       // ignore
                     }
                   }}
-                  className="text-[10px] text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 px-2.5 py-1 rounded-lg border border-amber-400/30 transition-all cursor-pointer font-bold"
+                  className="text-[10px] text-[#B59269] hover:text-white bg-[#B59269]/20 hover:bg-[#B59269]/30 px-2.5 py-1 rounded-lg border border-[#B59269]/30 transition-all cursor-pointer font-bold"
                 >
                   개별 설정 {Object.keys(monthlyGrowthRates).length}개 월 일괄 초기화
                 </button>
@@ -2279,7 +2285,7 @@ export default function StrategicSimulator() {
                   setInput(prev => ({ ...prev, targetGrowthRate: val }));
                 }
               }}
-              className="w-full h-2.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-400"
+              className="w-full h-2.5 bg-[#1B382E] rounded-lg appearance-none cursor-pointer accent-[#B59269]"
             />
 
             {/* Quick Growth Presets */}
@@ -2297,8 +2303,8 @@ export default function StrategicSimulator() {
                   }}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     currentActiveGrowthRate === r 
-                      ? 'bg-teal-400 text-slate-950 font-black' 
-                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                      ? 'bg-[#B59269] text-white font-black' 
+                      : 'bg-white/10 text-[#E8F2EE]/70 hover:bg-white/20'
                   }`}
                 >
                   {r > 0 ? `+${r}%` : `${r}%`}
@@ -2307,7 +2313,7 @@ export default function StrategicSimulator() {
             </div>
 
             {/* Hint Notice */}
-            <div className="text-[11px] text-slate-400 pt-1">
+            <div className="text-[11px] text-[#E8F2EE]/60 pt-1">
               {isMonthView ? (
                 <span>💡 {currentMonthNum}월의 슬라이더를 조절하면 <strong>{currentMonthNum}월의 목표만 독립적으로 기억</strong>되어 [매출목표] 12개월 매트릭스에 즉시 반영됩니다.</span>
               ) : (
@@ -2319,14 +2325,14 @@ export default function StrategicSimulator() {
           {/* Right: Strategic Multiplier Preset Controls */}
           <div className="lg:col-span-6 bg-white/10 p-5 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between space-y-3">
             <div>
-              <div className="text-xs font-bold text-indigo-300 flex items-center justify-between">
+              <div className="text-xs font-bold text-[#E8F2EE] flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <Sliders className="w-4 h-4 text-indigo-400" />
+                  <Sliders className="w-4 h-4 text-[#B59269]" />
                   전략 승수 (β_f) Zero-Sum 리밸런싱 프리셋
                 </span>
                 <button
                   onClick={resetMultipliers}
-                  className="text-[10px] text-slate-300 hover:text-white flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded cursor-pointer"
+                  className="text-[10px] text-[#E8F2EE]/80 hover:text-white flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded cursor-pointer"
                 >
                   <RotateCcw size={11} /> 초기화 (All 1.0)
                 </button>
@@ -2338,30 +2344,30 @@ export default function StrategicSimulator() {
                   className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-left border border-white/10 transition-all cursor-pointer"
                 >
                   <div className="text-xs font-bold text-white">⚖️ 현행 균형 유지</div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">과거 실측 비중 100% 준용</div>
+                  <div className="text-[10px] text-[#E8F2EE]/70 mt-0.5">과거 실측 비중 100% 준용</div>
                 </button>
 
                 <button
                   onClick={() => applyPreset('GROWTH_FNB_LEISURE')}
-                  className="p-2.5 bg-indigo-600/40 hover:bg-indigo-600/60 rounded-xl text-left border border-indigo-400/40 transition-all cursor-pointer"
+                  className="p-2.5 bg-[#B59269]/30 hover:bg-[#B59269]/40 rounded-xl text-left border border-[#B59269]/40 transition-all cursor-pointer"
                 >
-                  <div className="text-xs font-bold text-teal-300">🔥 F&B·레저 집중 육성</div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">F&B 1.30x / 레저 1.25x</div>
+                  <div className="text-xs font-bold text-[#B59269]">🔥 F&B·레저 집중 육성</div>
+                  <div className="text-[10px] text-[#E8F2EE]/70 mt-0.5">F&B 1.30x / 레저 1.25x</div>
                 </button>
 
                 <button
                   onClick={() => applyPreset('MAX_PROFIT')}
-                  className="p-2.5 bg-emerald-600/40 hover:bg-emerald-600/60 rounded-xl text-left border border-emerald-400/40 transition-all cursor-pointer"
+                  className="p-2.5 bg-[#5FB878]/30 hover:bg-[#5FB878]/40 rounded-xl text-left border border-[#5FB878]/40 transition-all cursor-pointer"
                 >
-                  <div className="text-xs font-bold text-emerald-300">💎 고마진 수익성 극대화</div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">객실 1.25x / 골프 1.20x</div>
+                  <div className="text-xs font-bold text-[#5FB878]">💎 고마진 수익성 극대화</div>
+                  <div className="text-[10px] text-[#E8F2EE]/70 mt-0.5">객실 1.25x / 골프 1.20x</div>
                 </button>
               </div>
             </div>
 
-            <div className="text-[11px] text-slate-300 bg-slate-950/50 px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
+            <div className="text-[11px] text-[#E8F2EE]/80 bg-[#1B382E]/60 px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
               <span>수식: <code>w'_f = (w_f * β_f) / Σ(w_j * β_j)</code></span>
-              <span className="text-teal-300 font-bold">Zero-Sum 보존 (총매출 불변)</span>
+              <span className="text-[#5FB878] font-bold">Zero-Sum 보존 (총매출 불변)</span>
             </div>
           </div>
 
@@ -2372,65 +2378,65 @@ export default function StrategicSimulator() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
         {/* Card 1: 목표 총매출 */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
           <div>
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
+            <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">
               {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '연간' : `${input.selectedMonth}월`} 총매출
             </div>
-            <div className="text-2xl font-black text-slate-900 font-mono tabular-nums">
-              {(grandTargetTotal / 100000000).toFixed(2)} <span className="text-sm font-normal text-slate-500 font-sans">억원</span>
+            <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
+              {(grandTargetTotal / 100000000).toFixed(2)} <span className="text-sm font-normal text-[#5A6B63] font-sans">억원</span>
             </div>
           </div>
-          <div className="text-xs text-teal-700 font-bold mt-1 font-mono">
+          <div className="text-xs text-[#1E523F] font-bold mt-1 font-mono">
             기준선 대비 +{input.targetGrowthRate}% (+{((grandTargetTotal - wmaBaselineData.activeBaselineRevenue) / 100000000).toFixed(2)}억)
           </div>
         </div>
 
         {/* Card 2: Dual TrevPAR */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
           <div>
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
+            <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">
               목표 {input.includeGolf ? '전사 Total' : '순수 리조트'} TrevPAR
             </div>
-            <div className="text-2xl font-black text-teal-800 font-mono tabular-nums">
-              {formatCurrency(Number((apiData?.summary as any)?.dailyTrevPar ?? apiData?.summary?.dailyTrevPAR ?? 0))}원 <span className="text-sm font-normal text-slate-500 font-sans">/실</span>
+            <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
+              {formatCurrency(Number((apiData?.summary as any)?.dailyTrevPar ?? apiData?.summary?.dailyTrevPAR ?? 0))}원 <span className="text-sm font-normal text-[#5A6B63] font-sans">/실</span>
             </div>
           </div>
-          <div className="text-xs text-slate-500 mt-1">
+          <div className="text-xs text-[#5A6B63] mt-1">
             공식 가동 물리 객실({apiData?.summary?.totalRoomCap?.toLocaleString() || 0}실) 기준
           </div>
         </div>
 
         {/* Card 3: WMA 기상 보정 상태 */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
           <div>
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
+            <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">
               기준선 산출 방식
             </div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 truncate" title={baselineMode === 'WMA_2YEAR' ? '2개년 WMA 가중평균' : `${input.baseYear}년 실측 단독`}>
+            <div className="text-xl sm:text-2xl font-black text-[#1B382E] truncate" title={baselineMode === 'WMA_2YEAR' ? '2개년 WMA 가중평균' : `${input.baseYear}년 실측 단독`}>
               {baselineMode === 'WMA_2YEAR' ? '🌧️ 2개년 WMA 가중평균' : `📊 ${input.baseYear}년 실측 단독`}
             </div>
           </div>
-          <div className="text-xs text-slate-500 mt-1">
+          <div className="text-xs text-[#5A6B63] mt-1">
             {baselineMode === 'WMA_2YEAR' ? `스무딩: ${wmaBaselineData.smoothingRate > 0 ? '+' : ''}${wmaBaselineData.smoothingRate}%` : '작년 단일 실적 기준'}
           </div>
         </div>
 
         {/* Card 4: 실제 진도율 (100% Real SSOT Data - No Hardcoded Numbers) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs min-h-[116px] flex flex-col justify-between">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between">
+          <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1 flex items-center justify-between">
             <span>{input.targetYear}년 실제 달성률</span>
             {actualExecutionStats.isUpcoming ? (
-              <Clock size={12} className="text-slate-400" />
+              <Clock size={12} className="text-[#5A6B63]" />
             ) : (
-              <CheckCircle2 size={12} className="text-emerald-500" />
+              <CheckCircle2 size={12} className="text-[#1E523F]" />
             )}
           </div>
-          <div className="text-2xl font-black text-emerald-700 font-mono tabular-nums flex items-center gap-1">
-            <TrendingUp className="w-6 h-6 text-emerald-600" />
+          <div className="text-2xl font-black text-[#1E523F] font-mono tabular-nums flex items-center gap-1">
+            <TrendingUp className="w-6 h-6 text-[#1E523F]" />
             <span>{actualExecutionStats.displayRate}</span>
           </div>
-          <div className="text-xs text-slate-500 mt-1 truncate" title={actualExecutionStats.statusText}>
+          <div className="text-xs text-[#5A6B63] mt-1 truncate" title={actualExecutionStats.statusText}>
             {actualExecutionStats.revenue > 0 ? `실적: ${(actualExecutionStats.revenue / 100000000).toFixed(2)}억원` : actualExecutionStats.statusText}
           </div>
         </div>
@@ -2453,14 +2459,14 @@ export default function StrategicSimulator() {
       )}
 
       {/* 5. 🎛️ 부문별 전략 승수 (β_f) 세부 조절 슬라이더 */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
+      <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#D0C6BB]/40 gap-3">
           <div>
-            <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-indigo-600" />
+            <h3 className="font-black text-base text-[#1B382E] flex items-center gap-2">
+              <Sliders className="w-5 h-5 text-[#284F42]" />
               부문별 전략 승수 (β_f) 세부 조절 슬라이더
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-[#5A6B63] mt-0.5">
               경영진이 부서별 가중치를 조절하면 Zero-Sum 공식에 의해 전사 총목표를 보존하며 타 부문과 상호 재분배됩니다.
             </p>
           </div>
@@ -2477,13 +2483,13 @@ export default function StrategicSimulator() {
                   OTHER: 1.0
                 });
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#1B382E] bg-[#F4F3EE] hover:bg-[#D0C6BB]/40 border border-[#D0C6BB]/60 rounded-xl transition-colors cursor-pointer"
               title="모든 승수를 1.00x 기본값으로 초기화합니다"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              <RotateCcw className="w-3.5 h-3.5 text-[#5A6B63]" />
               승수 초기화
             </button>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-100">
+            <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-1.5 rounded-xl border border-[#B4C6C1]/70">
               Zero-Sum Active
             </span>
           </div>
@@ -2497,13 +2503,13 @@ export default function StrategicSimulator() {
             if (isNonGolf) return null;
 
             return (
-              <div key={divKey} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100 hover:border-slate-200 transition-colors">
+              <div key={divKey} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60 hover:border-[#284F42]/30 transition-colors">
                 <div className="flex items-center gap-2.5 w-full sm:w-40 shrink-0">
                   <span className="text-xl">{meta.icon}</span>
                   <div>
-                    <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    <div className="text-xs font-black text-[#1B382E] flex items-center gap-1.5">
                       <span>{meta.code}</span>
-                      <span className="text-[10px] font-normal text-slate-500">({meta.name})</span>
+                      <span className="text-[10px] font-normal text-[#5A6B63]">({meta.name})</span>
                     </div>
                   </div>
                 </div>
@@ -2516,9 +2522,9 @@ export default function StrategicSimulator() {
                     step="0.05"
                     value={val}
                     onChange={(e) => handleMultiplierChange(divKey, Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    className="w-full h-2 bg-[#D0C6BB]/60 rounded-lg appearance-none cursor-pointer accent-[#284F42]"
                   />
-                  <span className="text-xs font-black tabular-nums w-12 text-right text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 shrink-0">
+                  <span className="text-xs font-black tabular-nums w-12 text-right text-[#1B382E] bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/60 shrink-0">
                     {val.toFixed(2)}x
                   </span>
                 </div>
@@ -2527,7 +2533,7 @@ export default function StrategicSimulator() {
                   <button
                     onClick={() => handleMultiplierChange(divKey, 1.2)}
                     className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                      val === 1.2 ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                      val === 1.2 ? 'bg-[#284F42] text-white shadow-xs' : 'bg-white text-[#5A6B63] border border-[#D0C6BB]/60 hover:bg-[#F4F3EE]'
                     }`}
                   >
                     육성 (+20%)
@@ -2535,7 +2541,7 @@ export default function StrategicSimulator() {
                   <button
                     onClick={() => handleMultiplierChange(divKey, 0.8)}
                     className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                      val === 0.8 ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                      val === 0.8 ? 'bg-[#284F42] text-white shadow-xs' : 'bg-white text-[#5A6B63] border border-[#D0C6BB]/60 hover:bg-[#F4F3EE]'
                     }`}
                   >
                     축소 (-20%)
@@ -2543,7 +2549,7 @@ export default function StrategicSimulator() {
                   <button
                     onClick={() => handleMultiplierChange(divKey, 1.0)}
                     className={`px-2 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                      val === 1.0 ? 'bg-slate-700 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-100 hover:text-slate-600'
+                      val === 1.0 ? 'bg-[#284F42] text-white' : 'bg-white text-[#5A6B63] border border-[#D0C6BB]/60 hover:bg-[#F4F3EE]'
                     }`}
                     title="1.00x 기본값"
                   >
@@ -2557,26 +2563,26 @@ export default function StrategicSimulator() {
       </div>
 
       {/* 5. 📊 ECharts 부문별 목표 비중 도넛 차트 */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-indigo-600" />
+      <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-3">
+        <div className="flex items-center justify-between pb-3 border-b border-[#D0C6BB]/40">
+          <h3 className="font-black text-base text-[#1B382E] flex items-center gap-2">
+            <PieChart className="w-5 h-5 text-[#284F42]" />
             전략 승수(β_f) 적용 후 부문별 목표 매출 구성비
           </h3>
-          <span className="text-xs font-bold text-slate-500">전사 목표 총액: {(grandTargetTotal / 100000000).toFixed(2)}억원</span>
+          <span className="text-xs font-bold text-[#5A6B63]">전사 목표 총액: {(grandTargetTotal / 100000000).toFixed(2)}억원</span>
         </div>
         <ReactECharts option={categoryPieOptions} style={{ height: '300px', width: '100%' }} />
       </div>
 
       {/* 6. 📂 3-Depth 아코디언 테이블 & 스마트 뱃지 */}
-      <div className="bg-white rounded-[32px] p-7 border border-slate-200 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+      <div className="bg-white rounded-3xl p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D0C6BB]/40">
           <div>
-            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <Target className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-black text-[#1B382E] flex items-center gap-2">
+              <Target className="w-5 h-5 text-[#284F42]" />
               영업장별 세부 실행 목표 3-Depth 아코디언 ({input.targetYear}년 {selectedMonthLabel})
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-[#5A6B63] mt-0.5">
               전략 승수(β_f)가 반영된 <strong>[부문 ➔ 파트 ➔ 소속 영업장]</strong> 1원 단위 정규화 결과입니다.
             </p>
           </div>
@@ -2584,27 +2590,27 @@ export default function StrategicSimulator() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab('BUSINESS_PLAN')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#1B382E] bg-[#F4F3EE] hover:bg-[#D0C6BB]/40 border border-[#D0C6BB]/60 rounded-xl transition-all cursor-pointer shadow-2xs"
             >
               <FileSpreadsheet size={14} />
               <span>매출목표 시트 보기</span>
             </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl transition-all cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#B59269] hover:bg-[#a38058] active:scale-95 rounded-xl transition-all cursor-pointer shadow-xs"
               title="현재 시뮬레이션 목표치를 엑셀(.xlsx)로 다운로드합니다"
             >
               <Download size={14} />
               <span>엑셀 다운로드</span>
             </button>
 
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs overflow-x-auto">
+            <div className="flex items-center gap-1 bg-[#F4F3EE] p-1 rounded-xl text-xs overflow-x-auto border border-[#D0C6BB]/50">
               {availableCategoryFilters.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategoryFilter(cat.id)}
                   className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    selectedCategoryFilter === cat.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                    selectedCategoryFilter === cat.id ? 'bg-[#284F42] text-white shadow-xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
                 >
                   {cat.label}
@@ -2625,50 +2631,50 @@ export default function StrategicSimulator() {
             return (
               <div 
                 key={cat.categoryCode}
-                className="rounded-2xl border border-slate-200/90 overflow-hidden bg-white shadow-2xs transition-all"
+                className="rounded-2xl border border-[#D0C6BB]/75 overflow-hidden bg-white shadow-2xs transition-all"
               >
                 {/* Depth 1 Header */}
                 <div 
                   onClick={() => setOpenCategories(prev => ({ ...prev, [cat.categoryCode]: !isCatOpen }))}
                   className={`p-4.5 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
-                    isCatOpen ? 'bg-slate-50/90 border-b border-slate-200/80' : 'bg-white hover:bg-slate-50/50'
+                    isCatOpen ? 'bg-[#F4F3EE]/80 border-b border-[#D0C6BB]/60' : 'bg-white hover:bg-[#F4F3EE]/40'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <button className="text-slate-400 hover:text-slate-600 transition-transform">
+                    <button className="text-[#5A6B63] hover:text-[#1B382E] transition-transform">
                       {isCatOpen ? (
-                        <ChevronDown className="w-5 h-5 text-indigo-600" />
+                        <ChevronDown className="w-5 h-5 text-[#284F42]" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-slate-400" />
+                        <ChevronRight className="w-5 h-5 text-[#5A6B63]" />
                       )}
                     </button>
                     
                     <div className="flex items-center gap-2.5">
                       <span className="text-2xl">{catIcon}</span>
-                      <span className="text-xl font-black text-slate-900">
+                      <span className="text-xl font-black text-[#1B382E]">
                         {getCategoryDisplayName(cat)}
                       </span>
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#D0C6BB]/40 text-[#1B382E]">
                         {cat.categoryCode}
                       </span>
-                      <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                      <span className="text-xs text-[#1E523F] font-bold bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70">
                         {partGroups.length}개 파트 · {cat.facilityCount}개 영업장
                       </span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
-                    <div className="text-slate-600 whitespace-nowrap">
-                      전략 비중: <span className="font-extrabold text-slate-900">{cat.totalWeight}%</span>
+                    <div className="text-[#5A6B63] whitespace-nowrap">
+                      전략 비중: <span className="font-extrabold text-[#1B382E]">{cat.totalWeight}%</span>
                     </div>
-                    <div className="text-slate-600 whitespace-nowrap">
-                      {input.baseYear}년 실적: <span className="font-extrabold text-slate-700 tabular-nums">{formatCurrency(cat.totalActual2025)}원</span>
+                    <div className="text-[#5A6B63] whitespace-nowrap">
+                      {input.baseYear}년 실적: <span className="font-extrabold text-[#1B382E] tabular-nums">{formatCurrency(cat.totalActual2025)}원</span>
                     </div>
-                    <div className="text-indigo-900 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 whitespace-nowrap">
-                      {input.targetYear}년 목표: <span className="font-black text-indigo-700 tabular-nums">{formatCurrency(cat.totalTarget2026)}원</span>
+                    <div className="text-[#1E523F] bg-[#E8F2EE] px-3 py-1 rounded-lg border border-[#B4C6C1]/70 whitespace-nowrap">
+                      {input.targetYear}년 목표: <span className="font-black text-[#1E523F] tabular-nums">{formatCurrency(cat.totalTarget2026)}원</span>
                     </div>
                     <div className={`px-3 py-1 rounded-lg border font-bold tabular-nums whitespace-nowrap ${
-                      catDiff >= 0 ? 'text-teal-900 bg-teal-50 border-teal-200' : 'text-rose-900 bg-rose-50 border-rose-200'
+                      catDiff >= 0 ? 'text-[#1E523F] bg-[#E8F2EE] border-[#B4C6C1]/70' : 'text-[#8B2635] bg-[#FDF0ED] border-[#EAC5BD]/70'
                     }`}>
                       증감: {catDiff >= 0 ? '+' : ''}{formatCurrency(catDiff)}원
                     </div>
@@ -2677,44 +2683,44 @@ export default function StrategicSimulator() {
 
                 {/* Depth 2 & 3 Parts & Facilities Table */}
                 {isCatOpen && (
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-[#D0C6BB]/30">
                     {partGroups.map((part) => {
                       const isPartOpen = openParts[part.partKey] !== undefined ? openParts[part.partKey] : true;
                       const partIcon = getPartIcon(part.partName);
                       const partDiff = part.totalTarget2026 - part.totalActual2025;
 
                       return (
-                        <div key={part.partKey} className="bg-slate-50/40">
+                        <div key={part.partKey} className="bg-[#F4F3EE]/30">
                           
                           {/* Depth 2 Part Header */}
                           <div 
                             onClick={() => setOpenParts(prev => ({ ...prev, [part.partKey]: !isPartOpen }))}
-                            className="p-3.5 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-slate-100/60 transition-colors border-b border-slate-100"
+                            className="p-3.5 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-[#F4F3EE]/60 transition-colors border-b border-[#D0C6BB]/40"
                           >
                             <div className="flex items-center gap-2.5">
-                              <button className="text-slate-400 hover:text-slate-600">
+                              <button className="text-[#5A6B63] hover:text-[#1B382E]">
                                 {isPartOpen ? (
-                                  <ChevronDown className="w-4 h-4 text-teal-600" />
+                                  <ChevronDown className="w-4 h-4 text-[#284F42]" />
                                 ) : (
-                                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                                  <ChevronRight className="w-4 h-4 text-[#5A6B63]" />
                                 )}
                               </button>
                               <span className="text-lg">{partIcon}</span>
-                              <span className="text-sm font-black text-slate-800">{part.partName} 파트</span>
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 whitespace-nowrap">
+                              <span className="text-sm font-black text-[#1B382E]">{part.partName} 파트</span>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#D0C6BB]/40 text-[#1B382E] whitespace-nowrap">
                                 {part.facilityCount}개 영업장
                               </span>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3.5 text-xs font-semibold">
-                              <div className="text-slate-600 whitespace-nowrap">
-                                {input.baseYear}년: <span className="font-bold text-slate-700 tabular-nums">{formatCurrency(part.totalActual2025)}원</span>
+                              <div className="text-[#5A6B63] whitespace-nowrap">
+                                {input.baseYear}년: <span className="font-bold text-[#1B382E] tabular-nums">{formatCurrency(part.totalActual2025)}원</span>
                               </div>
-                              <div className="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 whitespace-nowrap">
-                                목표: <span className="font-black text-teal-700 tabular-nums">{formatCurrency(part.totalTarget2026)}원</span>
+                              <div className="text-[#1B382E] bg-[#F4F3EE] px-2.5 py-0.5 rounded-md border border-[#D0C6BB]/60 whitespace-nowrap">
+                                목표: <span className="font-black text-[#1E523F] tabular-nums">{formatCurrency(part.totalTarget2026)}원</span>
                               </div>
                               <div className={`px-2.5 py-0.5 rounded-md border font-bold tabular-nums whitespace-nowrap ${
-                                partDiff >= 0 ? 'text-teal-800 bg-teal-50 border-teal-100' : 'text-rose-800 bg-rose-50 border-rose-100'
+                                partDiff >= 0 ? 'text-[#1E523F] bg-[#E8F2EE] border-[#B4C6C1]/70' : 'text-[#8B2635] bg-[#FDF0ED] border-[#EAC5BD]/70'
                               }`}>
                                 증감: {partDiff >= 0 ? '+' : ''}{formatCurrency(partDiff)}원
                               </div>
@@ -2733,49 +2739,49 @@ export default function StrategicSimulator() {
                                   <col style={{ width: '150px' }} />
                                   <col style={{ width: '130px' }} />
                                 </colgroup>
-                                <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                <thead className="bg-[#F4F3EE] text-[#1B382E] font-bold border-b border-[#D0C6BB]/75">
                                   <tr>
                                     <th className="py-2.5 px-2 w-[48px] text-center whitespace-nowrap">No</th>
                                     <th className="py-2.5 px-4 text-left whitespace-nowrap">영업장명 및 전략 뱃지</th>
                                     <th className="py-2.5 px-4 text-right whitespace-nowrap">전략 비중 (%)</th>
                                     <th className="py-2.5 px-4 text-right whitespace-nowrap">{input.baseYear}년 실적</th>
-                                    <th className="py-2.5 px-4 text-right font-black text-indigo-950 whitespace-nowrap bg-indigo-50/50">{input.targetYear}년 목표 매출</th>
-                                    <th className="py-2.5 px-4 text-right font-bold text-teal-800 whitespace-nowrap">목표 증감액 (Δ)</th>
+                                    <th className="py-2.5 px-4 text-right font-black text-[#1B382E] whitespace-nowrap bg-[#E8F2EE]/40">{input.targetYear}년 목표 매출</th>
+                                    <th className="py-2.5 px-4 text-right font-bold text-[#1E523F] whitespace-nowrap">목표 증감액 (Δ)</th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-slate-800">
+                                <tbody className="divide-y divide-[#D0C6BB]/30 text-[#1B382E]">
                                   {part.facilities.map((fac) => {
                                     const facDiff = fac.target2026 - fac.actual2025;
                                     return (
-                                      <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-400 whitespace-nowrap">
+                                      <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                                        <td className="py-2.5 px-2 text-center font-mono font-bold text-[#5A6B63] whitespace-nowrap">
                                           {fac.no}
                                         </td>
-                                        <td className="py-2.5 px-4 font-bold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
+                                        <td className="py-2.5 px-4 font-bold text-[#1B382E] text-xs sm:text-sm whitespace-nowrap">
                                           <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
                                             <span className="whitespace-nowrap">{fac.facilityName}</span>
                                             {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="성수기 집중 매출 강도 및 ADR(객단가) 전략을 통해 매출 목표를 달성합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-[#B59269] bg-[#B59269]/15 border border-[#B59269]/30 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="성수기 집중 매출 강도 및 ADR(객단가) 전략을 통해 매출 목표를 달성합니다.">
                                                 ADR 레버리지 권장
                                               </span>
                                             ) : (fac.weight >= 10 && input.targetGrowthRate >= 15) ? (
-                                              <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
+                                              <span className="inline-flex items-center text-[10px] font-bold text-[#284F42] bg-[#284F42]/10 border border-[#284F42]/20 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="충분한 수용 여력을 기반으로 입장객 수량 증대를 통해 전사 목표를 견인합니다.">
                                                 핵심 볼륨 견인
                                               </span>
                                             ) : null}
                                           </div>
                                         </td>
-                                        <td className="py-2.5 px-4 text-right font-mono tabular-nums text-slate-500 font-semibold whitespace-nowrap">
+                                        <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#5A6B63] font-semibold whitespace-nowrap">
                                           {fac.weight}%
                                         </td>
-                                        <td className="py-2.5 px-4 text-right font-mono tabular-nums text-slate-600 whitespace-nowrap">
+                                        <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#5A6B63] whitespace-nowrap">
                                           {formatCurrency(fac.actual2025)}원
                                         </td>
-                                        <td className="py-2.5 px-4 text-right font-mono tabular-nums font-black text-indigo-950 bg-indigo-50/30 text-xs sm:text-sm whitespace-nowrap">
+                                        <td className="py-2.5 px-4 text-right font-mono tabular-nums font-black text-[#1B382E] bg-[#E8F2EE]/20 text-xs sm:text-sm whitespace-nowrap">
                                           {formatCurrency(fac.target2026)}원
                                         </td>
                                         <td className={`py-2.5 px-4 text-right font-mono tabular-nums font-bold whitespace-nowrap ${
-                                          facDiff >= 0 ? 'text-teal-700 bg-teal-50/20' : 'text-rose-700 bg-rose-50/20'
+                                          facDiff >= 0 ? 'text-[#1E523F] bg-[#E8F2EE]/20' : 'text-[#8B2635] bg-[#FDF0ED]/40'
                                         }`}>
                                           {facDiff >= 0 ? '+' : ''}{formatCurrency(facDiff)}원
                                         </td>
@@ -2801,6 +2807,7 @@ export default function StrategicSimulator() {
         </>
       )}
 
+      </div>
     </div>
   );
 }

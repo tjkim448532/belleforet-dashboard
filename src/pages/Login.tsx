@@ -23,28 +23,30 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-800 font-sans relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#F4F3EE] text-[#1B382E] font-sans relative overflow-hidden">
       
       {/* Decorative Background */}
-      <div className="absolute top-0 left-0 w-full h-[40vh] bg-brand-mint rounded-b-[60px] z-0" />
-      <div className="absolute top-10 left-10 w-48 h-48 bg-white/20 rounded-full blur-2xl z-0" />
-      <div className="absolute top-20 right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl z-0" />
+      <div className="absolute top-0 left-0 w-full h-[40vh] bg-[#284F42] rounded-b-[60px] z-0 overflow-hidden shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
 
-      <div className="w-full max-w-md p-8 md:p-10 rounded-[32px] bg-white shadow-[0_20px_60px_rgb(0,0,0,0.08)] relative z-10 mx-4">
+      <div className="w-full max-w-md p-8 md:p-10 rounded-[32px] bg-white border border-[#D0C6BB]/75 shadow-[0_20px_60px_rgba(40,79,66,0.12)] relative z-10 mx-4">
         
         <div className="relative z-10 text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[24px] bg-brand-mint/10 text-brand-mint mb-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[24px] bg-[#E8F2EE] text-[#284F42] border border-[#B4C6C1]/60 mb-6 shadow-xs">
             <Lock size={36} strokeWidth={2.5} />
           </div>
-          <div className="font-emphatic text-3xl tracking-widest text-brand-mint mb-2">BELLE FORET</div>
-          <h1 className="text-2xl font-medium tracking-tight mb-3 break-keep whitespace-nowrap">임직원 전용 대시보드</h1>
-          <p className="text-sm text-slate-500 font-medium">벨포레 회사 이메일로 로그인하세요.</p>
+          <div className="font-emphatic text-3xl tracking-widest text-[#284F42] mb-2 font-black">BELLE FORET</div>
+          <h1 className="text-2xl font-bold tracking-tight mb-2 text-[#1B382E] break-keep whitespace-nowrap">임직원 전용 대시보드</h1>
+          <p className="text-sm text-[#5A6B63] font-medium">벨포레 회사 이메일로 로그인하세요.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="relative z-10 space-y-5">
           <div>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#5A6B63]">
                 <Mail size={20} />
               </div>
               <input
@@ -52,10 +54,10 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="회사 이메일 (@bsbelleforet.com)"
-                className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border focus:ring-4 outline-none transition-all font-medium ${
+                className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-[#F4F3EE] border focus:ring-4 outline-none transition-all font-medium text-[#1B382E] ${
                   error 
                     ? 'border-red-300 focus:ring-red-500/20 text-red-500' 
-                    : 'border-slate-200 focus:border-brand-mint focus:ring-brand-mint/20'
+                    : 'border-[#D0C6BB] focus:border-[#284F42] focus:ring-[#284F42]/20'
                 }`}
                 required
               />
@@ -64,7 +66,7 @@ export default function Login() {
 
           <div>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#5A6B63]">
                 <Lock size={20} />
               </div>
               <input
@@ -72,16 +74,16 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호"
-                className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border focus:ring-4 outline-none transition-all font-medium ${
+                className={`w-full pl-12 pr-5 py-4 rounded-2xl bg-[#F4F3EE] border focus:ring-4 outline-none transition-all font-medium text-[#1B382E] ${
                   error 
                     ? 'border-red-300 focus:ring-red-500/20 text-red-500' 
-                    : 'border-slate-200 focus:border-brand-mint focus:ring-brand-mint/20'
+                    : 'border-[#D0C6BB] focus:border-[#284F42] focus:ring-[#284F42]/20'
                 }`}
                 required
               />
             </div>
             {error && (
-              <p className="text-red-500 text-sm mt-3 font-medium px-2 text-center animate-pulse">
+              <p className="text-[#8B2635] text-sm mt-3 font-medium px-2 text-center animate-pulse">
                 이메일 도메인 또는 비밀번호가 올바르지 않습니다.
               </p>
             )}
@@ -89,7 +91,7 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full py-4 mt-4 rounded-2xl font-medium flex items-center justify-center gap-2 transition-all text-white bg-brand-mint hover:bg-[#009c85] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 text-lg"
+            className="w-full py-4 mt-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all text-white bg-[#284F42] hover:bg-[#1B382E] hover:shadow-lg active:scale-98 text-lg cursor-pointer shadow-xs"
           >
             <LogIn size={22} />
             로그인

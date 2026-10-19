@@ -61,160 +61,194 @@ export const DataSyncStatus: React.FC = () => {
   const totalRecords = 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 font-sans">
-      
-      {/* Header Section - High-tech Financial Look */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-slate-800 pb-6">
-        <div>
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-emerald-400 font-medium tracking-widest uppercase">System Online</span>
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative font-sans">
+      {/* Ambient Forest Banner */}
+      <div className="w-full bg-[#284F42] h-[200px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        
+        {/* Header Section */}
+        <div className="bg-[#284F42] rounded-3xl p-7 lg:p-8 text-white relative overflow-hidden shadow-xl border border-[#1B382E]">
+          <div className="absolute -right-16 -top-16 w-80 h-80 bg-[#5FB878]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute right-32 -bottom-20 w-64 h-64 bg-[#B59269]/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+                <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+                <span>SYSTEM ONLINE · AWS-RDS-APNE2</span>
+              </div>
+              <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight flex items-center break-keep whitespace-nowrap">
+                데이터 동기화 및 파이프라인 상태
+              </h1>
+              <p className="text-sm text-white/80 mt-1">
+                ETL 로그 및 골드 마트 실시간 적재 현황 모니터링 (SSOT)
+              </p>
             </div>
-            <div className="text-[10px] text-slate-500 font-mono tracking-wider">NODE: AWS-RDS-APNE2</div>
+            
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-[10px] text-white/70 uppercase tracking-widest font-semibold mb-1">Last Sync Check</p>
+                <p className="text-sm font-mono text-white bg-white/10 px-3 py-1 border border-white/20 rounded-xl backdrop-blur-md">
+                  {lastUpdated || 'WAITING...'}
+                </p>
+              </div>
+              <button 
+                onClick={fetchLogs}
+                disabled={loading}
+                className="flex items-center space-x-2 bg-[#B59269] hover:bg-[#a38058] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span className="text-xs tracking-wider uppercase">동기화 새로고침</span>
+              </button>
+            </div>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center break-keep whitespace-nowrap">
-            DATA WAREHOUSE <span className="text-slate-600 mx-3">/</span> <span className="text-blue-400 font-light">SYNC STATUS</span>
-          </h1>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Last Sync Check</p>
-            <p className="text-sm font-mono text-slate-300 bg-slate-900 px-3 py-1 border border-slate-800 rounded-md">
-              {lastUpdated || 'WAITING...'}
-            </p>
-          </div>
-          <button 
-            onClick={fetchLogs}
-            disabled={loading}
-            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-sm transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="text-xs font-medium tracking-widest uppercase">Force Sync</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Global Metrics Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-900/80 border-l-2 border-blue-500 border-y border-r border-slate-800 p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-            <Database className="w-16 h-16" />
-          </div>
-          <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest mb-1">Active Data Nodes</p>
-          <p className="text-3xl font-light font-mono text-white">{logs.length}<span className="text-sm text-slate-500 ml-2">FILES</span></p>
-        </div>
-        
-        <div className="bg-slate-900/80 border-l-2 border-purple-500 border-y border-r border-slate-800 p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-            <Activity className="w-16 h-16" />
-          </div>
-          <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest mb-1">Total Records Synced</p>
-          <p className="text-3xl font-light font-mono text-white">{totalRecords.toLocaleString()}<span className="text-sm text-slate-500 ml-2">ROWS</span></p>
         </div>
 
-        <div className="bg-slate-900/80 border-l-2 border-emerald-500 border-y border-r border-slate-800 p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-            <Server className="w-16 h-16" />
+        {/* Global Metrics Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs lg:text-sm font-bold text-[#5A6B63] tracking-wider uppercase whitespace-nowrap">Active Data Nodes</span>
+              <div className="w-10 h-10 rounded-2xl bg-[#E8F2EE] text-[#1E523F] flex items-center justify-center">
+                <Database size={20} />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2 whitespace-nowrap">
+              <span className="text-2xl lg:text-3xl font-black font-mono text-[#1B382E]">{logs.length}</span>
+              <span className="text-sm font-bold text-[#5A6B63]">FILES</span>
+            </div>
+            <div className="text-xs text-[#5A6B63] mt-2 font-medium">
+              S3 적재 기준 데이터 소스 파일
+            </div>
           </div>
-          <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest mb-1">Storage Status</p>
-          <p className="text-3xl font-light font-mono text-emerald-400">OPTIMAL</p>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-sm flex items-start space-x-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 animate-pulse" />
-          <p className="text-sm font-mono">{error}</p>
-        </div>
-      )}
-
-      {loading && logs.length === 0 ? (
-        <div className="flex flex-col justify-center items-center h-64 bg-slate-900/50 border border-slate-800">
-          <div className="w-48 h-1 bg-slate-800 overflow-hidden relative">
-            <div 
-              className="absolute top-0 left-0 h-full bg-blue-500 w-1/3" 
-              style={{ animation: 'slide 1.5s ease-in-out infinite' }}
-            />
-            <style>{`
-              @keyframes slide {
-                0% { transform: translateX(-100%); }
-                100% { transform: translateX(300%); }
-              }
-            `}</style>
+          
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs lg:text-sm font-bold text-[#5A6B63] tracking-wider uppercase whitespace-nowrap">Total Records Synced</span>
+              <div className="w-10 h-10 rounded-2xl bg-[#F4F3EE] text-[#B59269] flex items-center justify-center">
+                <Activity size={20} />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2 whitespace-nowrap">
+              <span className="text-2xl lg:text-3xl font-black font-mono text-[#1B382E]">{totalRecords.toLocaleString()}</span>
+              <span className="text-sm font-bold text-[#5A6B63]">ROWS</span>
+            </div>
+            <div className="text-xs text-[#5A6B63] mt-2 font-medium">
+              통합 파이프라인 공식 집계 행수
+            </div>
           </div>
-          <p className="text-xs font-mono text-blue-400 mt-4 tracking-widest">ESTABLISHING SECURE CONNECTION...</p>
+
+          <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs lg:text-sm font-bold text-[#5A6B63] tracking-wider uppercase whitespace-nowrap">Storage Status</span>
+              <div className="w-10 h-10 rounded-2xl bg-[#E8F2EE] text-[#1E523F] flex items-center justify-center">
+                <Server size={20} />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2 whitespace-nowrap">
+              <span className="text-2xl lg:text-3xl font-black font-mono text-[#1E523F]">OPTIMAL</span>
+            </div>
+            <div className="text-xs text-[#5A6B63] mt-2 font-medium">
+              MariaDB 골드 마트 정상 운영 중
+            </div>
+          </div>
         </div>
-      ) : logs.length === 0 ? (
-        <div className="flex flex-col justify-center items-center h-64 bg-slate-900/50 border border-slate-800 text-slate-500">
-          <Database className="w-10 h-10 mb-4 opacity-20" />
-          <p className="text-xs font-mono tracking-widest">NO SYNCED DATA FOUND</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {logs.map((log, idx) => (
-            <div 
-              key={idx} 
-              className="bg-slate-900/60 border border-slate-800 hover:border-slate-600 transition-colors group relative flex flex-col"
-            >
-              {/* Top Accent Line */}
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-blue-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-1">
-                      <FileBox className="w-5 h-5 text-blue-400/70" />
+
+        {error && (
+          <div className="bg-[#FDF0ED] border border-[#EAC5BD] text-[#8B2635] p-5 rounded-2xl flex items-start space-x-3">
+            <div className="w-2 h-2 rounded-full bg-[#8B2635] mt-1.5 animate-pulse" />
+            <p className="text-sm font-mono">{error}</p>
+          </div>
+        )}
+
+        {loading && logs.length === 0 ? (
+          <div className="flex flex-col justify-center items-center h-64 bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-xs">
+            <div className="w-48 h-1 bg-[#F4F3EE] overflow-hidden relative rounded-full">
+              <div 
+                className="absolute top-0 left-0 h-full bg-[#284F42] w-1/3" 
+                style={{ animation: 'slide 1.5s ease-in-out infinite' }}
+              />
+              <style>{`
+                @keyframes slide {
+                  0% { transform: translateX(-100%); }
+                  100% { transform: translateX(300%); }
+                }
+              `}</style>
+            </div>
+            <p className="text-xs font-mono text-[#284F42] mt-4 tracking-widest font-bold">ESTABLISHING SECURE CONNECTION...</p>
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="flex flex-col justify-center items-center h-64 bg-white rounded-3xl border border-[#D0C6BB]/75 text-[#5A6B63] shadow-xs">
+            <Database className="w-10 h-10 mb-4 opacity-30 text-[#284F42]" />
+            <p className="text-xs font-mono tracking-widest font-bold">NO SYNCED DATA FOUND</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+            {logs.map((log, idx) => (
+              <div 
+                key={idx} 
+                className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 p-6 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#F4F3EE] text-[#284F42] flex items-center justify-center shrink-0 border border-[#D0C6BB]/60">
+                        <FileBox className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base text-[#1B382E] font-bold tracking-tight">
+                          {getFileName(log.source_file_name)}
+                        </h3>
+                        <p className="text-xs text-[#5A6B63] font-mono mt-1 break-all">
+                          {log.source_file_name}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm text-slate-200 font-medium tracking-wide">
-                        {getFileName(log.source_file_name)}
-                      </h3>
-                      <p className="text-[10px] text-slate-500 font-mono mt-1 break-all">
-                        {log.source_file_name}
-                      </p>
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center space-x-1.5 bg-[#E8F2EE] text-[#1E523F] px-2.5 py-1 rounded-full border border-[#B4C6C1]/70 mb-2 whitespace-nowrap shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-[10px] font-bold tracking-wider">SYNCED</span>
+                      </div>
+                      <span className="text-2xl font-black font-mono text-[#1B382E] tabular-nums">
+                        {log.record_count.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] text-[#5A6B63] font-bold tracking-widest uppercase">Rows Processed</span>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center space-x-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-sm border border-emerald-500/20 mb-2 whitespace-nowrap shrink-0">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                      <span className="text-[9px] text-emerald-400 font-medium tracking-wider whitespace-nowrap">SYNCED</span>
-                    </div>
-                    <span className="text-2xl font-light font-mono text-white tabular-nums">
-                      {log.record_count.toLocaleString()}
-                    </span>
-                    <span className="text-[9px] text-slate-500 tracking-widest uppercase">Rows Processed</span>
                   </div>
                 </div>
 
                 {/* Timeline Visualization */}
-                <div className="mt-auto pt-5 border-t border-slate-800/50">
+                <div className="pt-4 border-t border-[#D0C6BB]/40">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest flex items-center">
-                      <CalendarRange className="w-3 h-3 mr-1.5" /> Data Horizon
+                    <span className="text-xs text-[#5A6B63] font-bold uppercase tracking-wider flex items-center">
+                      <CalendarRange className="w-3.5 h-3.5 mr-1.5 text-[#284F42]" /> Data Horizon
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-xs text-[#5A6B63] font-mono">
                       LOADED: {formatDate(log.upload_date)}
                     </span>
                   </div>
                   
                   <div className="relative pt-2 pb-1">
-                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-blue-500/40 via-purple-500/40 to-blue-500/40 w-full" />
+                    <div className="h-1.5 w-full bg-[#F4F3EE] rounded-full overflow-hidden border border-[#D0C6BB]/30">
+                      <div className="h-full bg-[#284F42] w-full" />
                     </div>
-                    <div className="flex justify-between mt-2">
-                      <span className="text-xs font-mono text-blue-300">{formatDate(log.min_date)}</span>
-                      <span className="text-[10px] text-slate-600">➔</span>
-                      <span className="text-xs font-mono text-purple-300">{formatDate(log.max_date)}</span>
+                    <div className="flex justify-between mt-2 font-mono text-xs font-bold">
+                      <span className="text-[#1B382E]">{formatDate(log.min_date)}</span>
+                      <span className="text-[#5A6B63]">➔</span>
+                      <span className="text-[#1B382E]">{formatDate(log.max_date)}</span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -247,79 +247,87 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
   const isDirectoryMode = viewMode === 'DIRECTORY';
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1650px] mx-auto space-y-6">
-      {/* 1. 상단 헤더 배너 (통합 화이트 표준 스타일) */}
-      <div className="bg-white p-6 sm:p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3.5 bg-teal-50 text-teal-700 rounded-2xl border border-teal-200 shrink-0">
-            <Utensils className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight break-keep">
-                {isDirectoryMode
-                  ? '외주식음 영업장 종합 일람표 및 정기 휴무일·운영안내'
-                  : '외주식음 영업장별 매출 · 점유비율 및 인기 메뉴 Top 3'}
-              </h1>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                컨텐츠기획본부 · 외주식음
-              </span>
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
+      {/* Ambient Forest Glow Banner */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        {/* 1. 상단 헤더 배너 (Luxury Bento Grid Header) */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3.5 bg-[#284F42] text-white rounded-2xl border border-[#1B382E] shrink-0 shadow-xs">
+              <Utensils className="w-7 h-7" />
             </div>
-            <p className="text-sm text-slate-500 mt-1 break-keep max-w-3xl leading-relaxed">
-              {isDirectoryMode
-                ? '전체 외주식음 영업장의 당일·당월·연간 매출 및 점유비율을 표로 한눈에 대조하고, 공식 홈페이지 크롤링 기반 정기 휴무일·운영시간·연락처 정보를 안내합니다.'
-                : '당일·당월·연간 외주식음 총매출 현황과 각 영업장의 외주식음 내 매출 비중(%), 영업장별 매출 상위 메뉴 Top 3를 집중 분석합니다.'}
-            </p>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight break-keep">
+                  {isDirectoryMode
+                    ? '외주식음 영업장 종합 일람표 및 정기 휴무일·운영안내'
+                    : '외주식음 영업장별 매출 · 점유비율 및 인기 메뉴 Top 3'}
+                </h1>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
+                  컨텐츠기획본부 · 외주식음
+                </span>
+              </div>
+              <p className="text-sm text-[#5A6B63] mt-1 break-keep max-w-3xl leading-relaxed">
+                {isDirectoryMode
+                  ? '전체 외주식음 영업장의 당일·당월·연간 매출 및 점유비율을 표로 한눈에 대조하고, 공식 홈페이지 크롤링 기반 정기 휴무일·운영시간·연락처 정보를 안내합니다.'
+                  : '당일·당월·연간 외주식음 총매출 현황과 각 영업장의 외주식음 내 매출 비중(%), 영업장별 매출 상위 메뉴 Top 3를 집중 분석합니다.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <GlobalDatePicker />
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-          <GlobalDatePicker />
-        </div>
-      </div>
+        {/* 컨텐츠기획본부 4대 페이지 상단 탭 네비게이션 */}
+        <ContentDivisionNav />
 
-      {/* 컨텐츠기획본부 4대 페이지 상단 탭 네비게이션 */}
-      <ContentDivisionNav />
-
-      {/* 2. 크롤링 휴무일 동기화 배지 & 상태 안내 */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-2xl border border-slate-200/90 shadow-2xs text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-            <CheckCircle2 size={14} className="text-emerald-600" />
-            휴무일 크롤링 동기화: {catalogLastUpdated}
-          </span>
-          <span className="text-slate-600 font-medium flex flex-wrap items-center gap-1.5">
-            <span>정기 휴무 매장:</span>
-            {venues.filter((v) => v.closedDay && (v.closedDay.includes('휴무') || v.closedDay.includes('휴장')))
-              .length > 0 ? (
-              venues
-                .filter((v) => v.closedDay && (v.closedDay.includes('휴무') || v.closedDay.includes('휴장')))
-                .map((v, i, arr) => (
-                  <span key={v.venueName} className="inline-flex items-center">
-                    <strong className="text-rose-600">
-                      {v.venueName}({v.closedDay})
-                    </strong>
-                    {i < arr.length - 1 && <span className="text-slate-400 mx-1">·</span>}
-                  </span>
-                ))
-            ) : (
-              <span className="text-slate-400">-</span>
-            )}
-          </span>
-        </div>
-
-        {isDedicatedApiLive && !loading ? (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
-            <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-            <span>외주식음 매출 현황 및 Top 3 메뉴 실시간 연동</span>
+        {/* 2. 크롤링 휴무일 동기화 배지 & 상태 안내 */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-2xl border border-[#D0C6BB]/75 shadow-xs text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-2.5 py-1 rounded-lg">
+              <CheckCircle2 size={14} className="text-[#1E523F]" />
+              휴무일 크롤링 동기화: {catalogLastUpdated}
+            </span>
+            <span className="text-[#5A6B63] font-medium flex flex-wrap items-center gap-1.5">
+              <span>정기 휴무 매장:</span>
+              {venues.filter((v) => v.closedDay && (v.closedDay.includes('휴무') || v.closedDay.includes('휴장')))
+                .length > 0 ? (
+                venues
+                  .filter((v) => v.closedDay && (v.closedDay.includes('휴무') || v.closedDay.includes('휴장')))
+                  .map((v, i, arr) => (
+                    <span key={v.venueName} className="inline-flex items-center">
+                      <strong className="text-[#8B2635] bg-[#FDF0ED] px-1.5 py-0.5 rounded border border-[#EAC5BD]/70">
+                        {v.venueName}({v.closedDay})
+                      </strong>
+                      {i < arr.length - 1 && <span className="text-[#8C9E96] mx-1">·</span>}
+                    </span>
+                  ))
+              ) : (
+                <span className="text-[#8C9E96]">-</span>
+              )}
+            </span>
           </div>
-        ) : !loading ? (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
-            <AlertCircle size={14} className="text-amber-600 shrink-0" />
-            <span>점유비율(%) 및 POS 실매출 Top 3 메뉴 데이터 연동 준비 중</span>
-          </div>
-        ) : null}
-      </div>
+
+          {isDedicatedApiLive && !loading ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#E8F2EE] border border-[#B4C6C1]/70 text-[#1E523F] font-semibold">
+              <CheckCircle2 size={14} className="text-[#1E523F] shrink-0" />
+              <span>외주식음 매출 현황 및 Top 3 메뉴 실시간 연동</span>
+            </div>
+          ) : !loading ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#B59269]/15 border border-[#B59269]/30 text-[#B59269] font-semibold">
+              <AlertCircle size={14} className="text-[#B59269] shrink-0" />
+              <span>점유비율(%) 및 POS 실매출 Top 3 메뉴 데이터 연동 준비 중</span>
+            </div>
+          ) : null}
+        </div>
 
       {/* 3. 전체 외주식음 요약 KPI 카드 (3종: 당일/선택기간, 당월 MTD, 올해 누적 YTD) */}
       {loading ? (
@@ -341,60 +349,62 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
           <span>{error}</span>
         </div>
       ) : summary ? (
-        <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 mb-6">
-          {/* 소프트 슬레이트 패널 (사용자 지정 SSOT 스타일) */}
-          <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 text-xs flex items-center justify-between">
-            <span>외주식음 매출 및 누계 실적 (당일 · 당월 MTD · 올해 YTD)</span>
-            <span className="text-[11px] text-slate-400 font-normal">카드를 클릭하여 조회 기준을 변경할 수 있습니다</span>
+        <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] mb-6">
+          <h4 className="font-bold text-[#1B382E] mb-4 border-b border-[#D0C6BB]/60 pb-3 text-xs flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#284F42]" />
+              외주식음 매출 및 누계 실적 (당일 · 당월 MTD · 올해 YTD)
+            </span>
+            <span className="text-[11px] text-[#8C9E96] font-normal">카드를 클릭하여 조회 기준을 변경할 수 있습니다</span>
           </h4>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* KPI 1: 당일 / 선택 기간 총매출 */}
             <div
               onClick={() => setMetricTab('today')}
-              className={`cursor-pointer rounded-xl p-5 border transition-all flex flex-col justify-between ${
+              className={`cursor-pointer rounded-2xl p-5 border transition-all flex flex-col justify-between ${
                 metricTab === 'today'
-                  ? 'bg-white border-teal-200/80 shadow-xs'
-                  : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
+                  ? 'bg-white border-2 border-[#284F42] shadow-md ring-2 ring-[#284F42]/10'
+                  : 'bg-white border border-[#D0C6BB]/75 shadow-xs hover:border-[#B59269]/70'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-bold ${metricTab === 'today' ? 'text-teal-900' : 'text-slate-700'}`}>
+                  <span className={`text-xs font-bold ${metricTab === 'today' ? 'text-[#284F42]' : 'text-[#5A6B63]'}`}>
                     {isRangeMode ? '선택 기간 외주식음 총매출' : '당일 외주식음 총매출 (Today)'}
                   </span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                      metricTab === 'today' ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'
+                      metricTab === 'today' ? 'bg-[#284F42] text-white' : 'bg-[#F4F3EE] text-[#5A6B63]'
                     }`}
                   >
                     {metricTab === 'today' ? '선택됨' : '클릭하여 전환'}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight tabular-nums text-slate-900">
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight tabular-nums text-[#1B382E]">
                   {formatNum(summary.todayActual)}
-                  <span className="text-xs font-normal text-slate-400 ml-1">원</span>
+                  <span className="text-xs font-normal text-[#8C9E96] ml-1">원</span>
                 </div>
-                <div className={`p-2 rounded-lg font-mono text-[11px] font-bold border my-2 text-center tabular-nums ${
-                  metricTab === 'today' ? 'bg-teal-50/70 text-teal-900 border-teal-100' : 'bg-slate-100 text-slate-800 border-slate-200/60'
+                <div className={`p-2 rounded-xl font-mono text-[11px] font-bold border my-2 text-center tabular-nums ${
+                  metricTab === 'today' ? 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20' : 'bg-[#F4F3EE] text-[#5A6B63] border-[#D0C6BB]/60'
                 }`}>
                   {isRangeMode ? '선택 기간 합산' : '금일 확정 마감 실적'}
                 </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
+              <div className="mt-2 pt-2 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs">
+                <span className="text-[#5A6B63]">
                   전년 동기: {formatNum(summary.todayLy)}원
                 </span>
                 {summary.todayGrowth !== null && summary.todayGrowth !== undefined ? (
                   <span
                     className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
-                      summary.todayGrowth >= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                      summary.todayGrowth >= 0 ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70' : 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70'
                     }`}
                   >
                     {summary.todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(summary.todayGrowth).toFixed(1)}%
                   </span>
                 ) : (
-                  <span className="text-slate-400">-</span>
+                  <span className="text-[#8C9E96]">-</span>
                 )}
               </div>
             </div>
@@ -402,49 +412,49 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
             {/* KPI 2: 당월 누계 (MTD) */}
             <div
               onClick={() => setMetricTab('mtd')}
-              className={`cursor-pointer rounded-xl p-5 border transition-all flex flex-col justify-between ${
+              className={`cursor-pointer rounded-2xl p-5 border transition-all flex flex-col justify-between ${
                 metricTab === 'mtd'
-                  ? 'bg-white border-teal-200/80 shadow-xs'
-                  : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
+                  ? 'bg-white border-2 border-[#284F42] shadow-md ring-2 ring-[#284F42]/10'
+                  : 'bg-white border border-[#D0C6BB]/75 shadow-xs hover:border-[#B59269]/70'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-bold ${metricTab === 'mtd' ? 'text-teal-900' : 'text-slate-700'}`}>
+                  <span className={`text-xs font-bold ${metricTab === 'mtd' ? 'text-[#284F42]' : 'text-[#5A6B63]'}`}>
                     당월 누적 외주식음 총매출 (MTD)
                   </span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                      metricTab === 'mtd' ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'
+                      metricTab === 'mtd' ? 'bg-[#284F42] text-white' : 'bg-[#F4F3EE] text-[#5A6B63]'
                     }`}
                   >
                     {metricTab === 'mtd' ? '선택됨' : '클릭하여 전환'}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight tabular-nums text-slate-900">
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight tabular-nums text-[#1B382E]">
                   {formatNum(summary.mtdActual)}
-                  <span className="text-xs font-normal text-slate-400 ml-1">원</span>
+                  <span className="text-xs font-normal text-[#8C9E96] ml-1">원</span>
                 </div>
-                <div className={`p-2 rounded-lg font-mono text-[11px] font-bold border my-2 text-center tabular-nums ${
-                  metricTab === 'mtd' ? 'bg-teal-50/70 text-teal-900 border-teal-100' : 'bg-slate-100 text-slate-800 border-slate-200/60'
+                <div className={`p-2 rounded-xl font-mono text-[11px] font-bold border my-2 text-center tabular-nums ${
+                  metricTab === 'mtd' ? 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20' : 'bg-[#F4F3EE] text-[#5A6B63] border-[#D0C6BB]/60'
                 }`}>
                   당월 1일부터 현재까지 누적 합산
                 </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
+              <div className="mt-2 pt-2 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs">
+                <span className="text-[#5A6B63]">
                   전년 당월: {formatNum(summary.mtdLy)}원
                 </span>
                 {summary.mtdGrowth !== null && summary.mtdGrowth !== undefined ? (
                   <span
                     className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
-                      summary.mtdGrowth >= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                      summary.mtdGrowth >= 0 ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70' : 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70'
                     }`}
                   >
                     {summary.mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(summary.mtdGrowth).toFixed(1)}%
                   </span>
                 ) : (
-                  <span className="text-slate-400">-</span>
+                  <span className="text-[#8C9E96]">-</span>
                 )}
               </div>
             </div>
@@ -452,58 +462,58 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
             {/* KPI 3: 올해 누적 (YTD) */}
             <div
               onClick={() => setMetricTab('ytd')}
-              className={`cursor-pointer rounded-xl p-5 border transition-all flex flex-col justify-between ${
+              className={`cursor-pointer rounded-2xl p-5 border transition-all flex flex-col justify-between ${
                 metricTab === 'ytd'
-                  ? 'bg-white border-teal-200/80 shadow-xs'
-                  : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
+                  ? 'bg-white border-2 border-[#284F42] shadow-md ring-2 ring-[#284F42]/10'
+                  : 'bg-white border border-[#D0C6BB]/75 shadow-xs hover:border-[#B59269]/70'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-bold ${metricTab === 'ytd' ? 'text-teal-900' : 'text-slate-700'}`}>
+                  <span className={`text-xs font-bold ${metricTab === 'ytd' ? 'text-[#284F42]' : 'text-[#5A6B63]'}`}>
                     연간 누적 외주식음 총매출 (YTD)
                   </span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                      metricTab === 'ytd' ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'
+                      metricTab === 'ytd' ? 'bg-[#284F42] text-white' : 'bg-[#F4F3EE] text-[#5A6B63]'
                     }`}
                   >
                     {metricTab === 'ytd' ? '선택됨 (기본)' : '클릭하여 전환'}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight tabular-nums text-slate-900">
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight tabular-nums text-[#1B382E]">
                   {formatNum(summary.ytdActual)}
-                  <span className="text-xs font-normal text-slate-400 ml-1">원</span>
+                  <span className="text-xs font-normal text-[#8C9E96] ml-1">원</span>
                 </div>
-                <div className={`p-2 rounded-lg font-mono text-[11px] font-bold border my-2 text-center tabular-nums ${
-                  metricTab === 'ytd' ? 'bg-teal-50/70 text-teal-900 border-teal-100' : 'bg-slate-100 text-slate-800 border-slate-200/60'
+                <div className={`p-2 rounded-xl font-mono text-[11px] font-bold border my-2 text-center tabular-nums ${
+                  metricTab === 'ytd' ? 'bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20' : 'bg-[#F4F3EE] text-[#5A6B63] border-[#D0C6BB]/60'
                 }`}>
                   올해 1월 1일부터 현재까지 누적 실적
                 </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
+              <div className="mt-2 pt-2 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs">
+                <span className="text-[#5A6B63]">
                   전년 누적: {formatNum(summary.ytdLy)}원
                 </span>
                 {summary.ytdGrowth !== null && summary.ytdGrowth !== undefined ? (
                   <span
                     className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
-                      summary.ytdGrowth >= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                      summary.ytdGrowth >= 0 ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70' : 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70'
                     }`}
                   >
                     {summary.ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(summary.ytdGrowth).toFixed(1)}%
                   </span>
                 ) : (
-                  <span className="text-slate-400">-</span>
+                  <span className="text-[#8C9E96]">-</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* 하단 공식 기준 배너 */}
-          <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl mt-4 border border-teal-100 font-medium flex items-center justify-between flex-wrap gap-2">
+          <div className="text-xs text-[#1E523F] bg-[#E8F2EE] p-3.5 rounded-2xl mt-5 border border-[#B4C6C1]/70 font-medium flex items-center justify-between flex-wrap gap-2">
             <span><strong>공식 산출 기준:</strong> 외주식음 매출 및 점유비율(%)은 벨포레 단지 내 공식 입점 식음 영업장들의 확정 실적을 기준으로 산출됩니다.</span>
-            <span className="text-[11px] text-teal-600 font-mono font-normal">F&B SSOT</span>
+            <span className="text-[11px] text-[#284F42] font-mono font-bold">F&B SSOT</span>
           </div>
         </div>
       ) : null}
@@ -514,20 +524,20 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
       {!isDirectoryMode && !loading && sortedVenues.length > 0 && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <Store size={20} className="text-emerald-600" />
+            <h2 className="text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
+              <Store size={20} className="text-[#284F42]" />
               <span>외주식음 영업장별 매출 · 점유비율 · Top 3 메뉴 · 휴무일 상세</span>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-2.5 py-0.5 rounded-full">
                 총 {sortedVenues.length}개 영업장
               </span>
             </h2>
 
-            <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <div className="inline-flex items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/70 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setMetricTab('ytd')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  metricTab === 'ytd' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  metricTab === 'ytd' ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
                 올해 누적 (YTD) 기준
@@ -536,7 +546,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                 type="button"
                 onClick={() => setMetricTab('mtd')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  metricTab === 'mtd' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  metricTab === 'mtd' ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
                 당월 누적 (MTD) 기준
@@ -545,7 +555,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                 type="button"
                 onClick={() => setMetricTab('today')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  metricTab === 'today' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  metricTab === 'today' ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
                 {isRangeMode ? '선택 기간 기준' : '당일 (Today) 기준'}
@@ -565,7 +575,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
               return (
                 <div
                   key={venue.venueName}
-                  className="bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all p-6 flex flex-col justify-between space-y-5"
+                  className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all p-6 flex flex-col justify-between space-y-5"
                 >
                   <div className="space-y-4">
                     {/* 카드 상단: 순위, 영업장명, 휴무일 배지 */}
@@ -574,23 +584,23 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                         <span
                           className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-extrabold shrink-0 ${
                             idx === 0
-                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              ? 'bg-[#B59269] text-white shadow-2xs'
                               : idx === 1
-                              ? 'bg-slate-200 text-slate-800'
+                              ? 'bg-[#284F42] text-white shadow-2xs'
                               : idx === 2
-                              ? 'bg-orange-100 text-orange-800'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-[#284F42]/20 text-[#1B382E]'
+                              : 'bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/60'
                           }`}
                         >
                           {idx + 1}
                         </span>
                         <div>
-                          <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                          <h3 className="text-lg font-extrabold text-[#1B382E] tracking-tight">
                             {venue.venueName}
                           </h3>
                           {venue.location && (
-                            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                              <MapPin size={11} className="text-slate-400 shrink-0" />
+                            <p className="text-[11px] text-[#5A6B63] flex items-center gap-1 mt-0.5">
+                              <MapPin size={11} className="text-[#8C9E96] shrink-0" />
                               <span className="truncate" title={venue.location}>
                                 {venue.location}
                               </span>
@@ -604,7 +614,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                           href={venue.officialUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="text-xs text-[#8C9E96] hover:text-[#284F42] p-1.5 rounded-lg hover:bg-[#F4F3EE] transition-colors"
                           title="공식 홈페이지 매장 상세 보기"
                         >
                           <ExternalLink size={15} />
@@ -614,37 +624,37 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
 
                     {/* 크롤링 기반 휴무일 및 운영시간 박스 */}
                     <div
-                      className={`p-3 rounded-2xl border text-xs space-y-1.5 ${
+                      className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
                         hasRegularClosedDay
-                          ? 'bg-rose-50/70 border-rose-200/80'
-                          : 'bg-slate-50 border-slate-200/70'
+                          ? 'bg-[#FDF0ED] border-[#EAC5BD]'
+                          : 'bg-[#F4F3EE]/80 border-[#D0C6BB]/60'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                        <span className="font-bold text-[#1B382E] flex items-center gap-1.5">
                           <CalendarOff
                             size={13}
-                            className={hasRegularClosedDay ? 'text-rose-600' : 'text-emerald-600'}
+                            className={hasRegularClosedDay ? 'text-[#8B2635]' : 'text-[#1E523F]'}
                           />
                           휴무일 (크롤링)
                         </span>
                         <span
                           className={`font-extrabold px-2 py-0.5 rounded-md ${
                             hasRegularClosedDay
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-[#8B2635] text-white'
+                              : 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70'
                           }`}
                         >
                           {venue.closedDay}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600">
+                      <div className="flex items-center justify-between gap-2 text-[11px] text-[#5A6B63]">
                         <span className="flex items-center gap-1.5 font-medium">
-                          <Clock size={12} className="text-slate-400" />
+                          <Clock size={12} className="text-[#8C9E96]" />
                           운영시간
                         </span>
                         <span
-                          className="font-mono font-semibold text-slate-800 truncate"
+                          className="font-mono font-semibold text-[#1B382E] truncate"
                           title={venue.operatingHours}
                         >
                           {venue.operatingHours}
@@ -653,9 +663,9 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                     </div>
 
                     {/* 매출 및 전체 외주식음 내 차지 비율(%) 박스 */}
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                    <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-600 font-bold">
+                        <span className="text-xs text-[#5A6B63] font-bold">
                           {metricTab === 'ytd'
                             ? '올해 누적 매출 (YTD)'
                             : metricTab === 'mtd'
@@ -666,8 +676,8 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                           <span
                             className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
                               activeGrowth >= 0
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-rose-50 text-rose-600 border-rose-200'
+                                ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70'
+                                : 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70'
                             }`}
                           >
                             전년비 {activeGrowth >= 0 ? '▲' : '▼'} {Math.abs(activeGrowth).toFixed(1)}%
@@ -676,13 +686,13 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       </div>
 
                       <div className="flex items-baseline justify-between gap-2">
-                        <div className="text-2xl font-black font-mono tracking-tight text-slate-900 tabular-nums">
+                        <div className="text-2xl font-black font-mono tracking-tight text-[#1B382E] tabular-nums">
                           {formatNum(activeRev)}
-                          <span className="text-xs font-normal text-slate-400 ml-1">원</span>
+                          <span className="text-xs font-normal text-[#8C9E96] ml-1">원</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-[10px] text-slate-500 font-medium">전체 외주식음 내 비중</div>
-                          <div className="text-base font-black text-teal-700 font-mono flex items-center justify-end gap-1">
+                          <div className="text-[10px] text-[#5A6B63] font-medium">전체 외주식음 내 비중</div>
+                          <div className="text-base font-black text-[#284F42] font-mono flex items-center justify-end gap-1">
                             <PieChart size={13} />
                             <span>{showPct(activeSharePct)}</span>
                           </div>
@@ -691,14 +701,14 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
 
                       {/* 비중 프로그레스 바 */}
                       {activeSharePct !== null && activeSharePct !== undefined ? (
-                        <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-[#D0C6BB]/40 h-2 rounded-full overflow-hidden">
                           <div
-                            className="bg-teal-600 h-full rounded-full transition-all duration-500"
+                            className="bg-[#284F42] h-full rounded-full transition-all duration-500"
                             style={{ width: `${Math.min(100, Math.max(0, Number(activeSharePct)))}%` }}
                           />
                         </div>
                       ) : (
-                        <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200">
+                        <div className="text-[11px] text-[#5A6B63] flex items-center justify-between pt-1 border-t border-[#D0C6BB]/40">
                           <span>전년 실적: {formatNum(activeLyRev)}원</span>
                           <span>비율(%): 집계 데이터 없음</span>
                         </div>
@@ -708,11 +718,11 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                     {/* 매출 상위 메뉴 Top 3 섹션 */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                          <Trophy size={14} className="text-amber-500" />
+                        <span className="text-xs font-extrabold text-[#1B382E] flex items-center gap-1.5">
+                          <Trophy size={14} className="text-[#B59269]" />
                           매출 상위 메뉴 Top 3
                         </span>
-                        <span className="text-[11px] text-slate-400 font-medium">
+                        <span className="text-[11px] text-[#8C9E96] font-medium">
                           {venue.topMenus.length > 0 ? 'POS 실측 판매금액 순' : 'POS 단일 정산'}
                         </span>
                       </div>
@@ -722,27 +732,27 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                           {venue.topMenus.slice(0, 3).map((menu, mIdx) => (
                             <div
                               key={`${venue.venueName}-menu-${mIdx}`}
-                              className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs"
+                              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#D0C6BB]/60 text-xs shadow-2xs"
                             >
                               <div className="flex items-center gap-2 min-w-0">
                                 <span
                                   className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 ${
                                     mIdx === 0
-                                      ? 'bg-amber-400 text-slate-950'
+                                      ? 'bg-[#B59269] text-white'
                                       : mIdx === 1
-                                      ? 'bg-slate-300 text-slate-800'
-                                      : 'bg-amber-700/20 text-amber-900'
+                                      ? 'bg-[#284F42] text-white'
+                                      : 'bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/60'
                                   }`}
                                 >
                                   {menu.rank ?? '-'}
                                 </span>
-                                <span className="font-bold text-slate-800 truncate" title={menu.menuName}>
+                                <span className="font-bold text-[#1B382E] truncate" title={menu.menuName}>
                                   {menu.menuName}
                                 </span>
                               </div>
                               <div className="text-right shrink-0 font-mono">
-                                <span className="font-extrabold text-slate-900">{formatNum(menu.sales)}원</span>
-                                <span className="text-[10px] text-slate-500 ml-1.5">
+                                <span className="font-extrabold text-[#1B382E]">{formatNum(menu.sales)}원</span>
+                                <span className="text-[10px] text-[#8C9E96] ml-1.5">
                                   ({formatNum(menu.quantity)}건)
                                 </span>
                               </div>
@@ -750,25 +760,25 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                           ))}
                         </div>
                       ) : (
-                        <div className="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-300 text-xs space-y-2">
-                          <div className="text-slate-700 font-semibold flex items-center gap-1.5">
-                            <Sparkles size={13} className="text-amber-500 shrink-0" />
+                        <div className="p-3.5 rounded-2xl bg-[#F4F3EE]/80 border border-dashed border-[#D0C6BB] text-xs space-y-2">
+                          <div className="text-[#1B382E] font-semibold flex items-center gap-1.5">
+                            <Sparkles size={13} className="text-[#B59269] shrink-0" />
                             <span>POS 단일 정산 매장 (개별 메뉴 미집계)</span>
                           </div>
                           {venue.crawledMenus && venue.crawledMenus.length > 0 && (
-                            <div className="pt-1.5 border-t border-slate-200/80 space-y-1">
-                              <div className="text-[10px] font-bold text-slate-400">
+                            <div className="pt-2 border-t border-[#D0C6BB]/60 space-y-1">
+                              <div className="text-[10px] font-bold text-[#8C9E96]">
                                 공식 홈페이지 크롤링 대표 메뉴 (참고용 · 매출액 미집계)
                               </div>
                               {venue.crawledMenus.slice(0, 3).map((cm, cIdx) => (
                                 <div
                                   key={cIdx}
-                                  className="flex items-center justify-between text-[11px] text-slate-600"
+                                  className="flex items-center justify-between text-[11px] text-[#5A6B63]"
                                 >
                                   <span className="truncate" title={cm.name}>
                                     • {cm.name}
                                   </span>
-                                  <span className="font-mono text-slate-500 shrink-0 ml-2">{cm.price}</span>
+                                  <span className="font-mono text-[#1B382E] font-semibold shrink-0 ml-2">{cm.price}</span>
                                 </div>
                               ))}
                             </div>
@@ -779,11 +789,11 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                   </div>
 
                   {/* 하단 당일 / 당월 / 연누적 3단 요약 푸터 */}
-                  <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-[11px]">
-                    <div className="bg-slate-50 p-2 rounded-xl">
-                      <div className="text-slate-400 font-medium">{isRangeMode ? '기간' : '당일'}</div>
+                  <div className="pt-3 border-t border-[#D0C6BB]/40 grid grid-cols-3 gap-2 text-center text-[11px]">
+                    <div className="bg-[#F4F3EE]/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                      <div className="text-[#8C9E96] font-medium">{isRangeMode ? '기간' : '당일'}</div>
                       <div
-                        className="font-bold text-slate-800 font-mono mt-0.5 truncate"
+                        className="font-bold text-[#1B382E] font-mono mt-0.5 truncate"
                         title={`${formatNum(venue.todayActual)}원`}
                       >
                         {formatNum(venue.todayActual)}원
@@ -791,20 +801,20 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       {venue.todayGrowth !== null && venue.todayGrowth !== undefined ? (
                         <div
                           className={`text-[10px] font-bold mt-0.5 ${
-                            venue.todayGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            venue.todayGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}
                         >
                           전년비 {venue.todayGrowth >= 0 ? '▲' : '▼'}
                           {Math.abs(venue.todayGrowth).toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="text-[10px] text-slate-400 mt-0.5">-</div>
+                        <div className="text-[10px] text-[#8C9E96] mt-0.5">-</div>
                       )}
                     </div>
-                    <div className="bg-slate-50 p-2 rounded-xl">
-                      <div className="text-slate-400 font-medium">당월(MTD)</div>
+                    <div className="bg-[#F4F3EE]/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                      <div className="text-[#8C9E96] font-medium">당월(MTD)</div>
                       <div
-                        className="font-bold text-blue-800 font-mono mt-0.5 truncate"
+                        className="font-bold text-[#284F42] font-mono mt-0.5 truncate"
                         title={`${formatNum(venue.mtdActual)}원`}
                       >
                         {formatNum(venue.mtdActual)}원
@@ -812,20 +822,20 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       {venue.mtdGrowth !== null && venue.mtdGrowth !== undefined ? (
                         <div
                           className={`text-[10px] font-bold mt-0.5 ${
-                            venue.mtdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            venue.mtdGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}
                         >
                           전년비 {venue.mtdGrowth >= 0 ? '▲' : '▼'}
                           {Math.abs(venue.mtdGrowth).toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="text-[10px] text-slate-400 mt-0.5">-</div>
+                        <div className="text-[10px] text-[#8C9E96] mt-0.5">-</div>
                       )}
                     </div>
-                    <div className="bg-slate-50 p-2 rounded-xl">
-                      <div className="text-slate-400 font-medium">연간(YTD)</div>
+                    <div className="bg-[#F4F3EE]/80 p-2 rounded-xl border border-[#D0C6BB]/40">
+                      <div className="text-[#8C9E96] font-medium">연간(YTD)</div>
                       <div
-                        className="font-bold text-indigo-800 font-mono mt-0.5 truncate"
+                        className="font-bold text-[#B59269] font-mono mt-0.5 truncate"
                         title={`${formatNum(venue.ytdActual)}원`}
                       >
                         {formatNum(venue.ytdActual)}원
@@ -833,14 +843,14 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       {venue.ytdGrowth !== null && venue.ytdGrowth !== undefined ? (
                         <div
                           className={`text-[10px] font-bold mt-0.5 ${
-                            venue.ytdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            venue.ytdGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}
                         >
                           전년비 {venue.ytdGrowth >= 0 ? '▲' : '▼'}
                           {Math.abs(venue.ytdGrowth).toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="text-[10px] text-slate-400 mt-0.5">-</div>
+                        <div className="text-[10px] text-[#8C9E96] mt-0.5">-</div>
                       )}
                     </div>
                   </div>
@@ -855,24 +865,24 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
       {/* [PAGE 4 모드: DIRECTORY] 전체 외주식음 영업장 종합 일람표 & 휴무일 안내 */}
       {/* ================================================================= */}
       {isDirectoryMode && !loading && sortedVenues.length > 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-xs overflow-hidden">
+          <div className="p-6 border-b border-[#D0C6BB]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                <TrendingUp size={18} className="text-emerald-600" />
+              <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
+                <TrendingUp size={18} className="text-[#284F42]" />
                 <span>외주식음 영업장별 매출 · 점유비율 · Top 3 메뉴 · 휴무일 종합 일람표</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-[#5A6B63] mt-0.5">
                 모든 수치는 정산 집계 데이터 및 공식 홈페이지 안내 정보를 기준으로 표출합니다.
               </p>
             </div>
 
-            <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <div className="inline-flex items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/70 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setMetricTab('ytd')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  metricTab === 'ytd' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  metricTab === 'ytd' ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
                 올해 누적 (YTD) 순
@@ -881,7 +891,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                 type="button"
                 onClick={() => setMetricTab('mtd')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  metricTab === 'mtd' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  metricTab === 'mtd' ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
                 당월 누적 (MTD) 순
@@ -890,7 +900,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                 type="button"
                 onClick={() => setMetricTab('today')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  metricTab === 'today' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  metricTab === 'today' ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
                 {isRangeMode ? '선택 기간 순' : '당일 (Today) 순'}
@@ -901,109 +911,109 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
+                <tr className="bg-[#F4F3EE] text-[#1B382E] font-extrabold border-b border-[#D0C6BB]/75">
                   <th className="py-3.5 px-4 text-center">순위</th>
                   <th className="py-3.5 px-4 text-left">영업장명 / 연락처</th>
                   <th className="py-3.5 px-4 text-left">휴무일 (크롤링)</th>
                   <th className="py-3.5 px-4 text-left">운영시간</th>
                   <th className="py-3.5 px-4 text-right">
                     <div>{isRangeMode ? '선택기간 매출' : '당일 매출'}</div>
-                    <div className="text-[10px] text-slate-400 font-normal">금액 / 전년비(%)</div>
+                    <div className="text-[10px] text-[#5A6B63] font-normal">금액 / 전년비(%)</div>
                   </th>
                   <th className="py-3.5 px-4 text-right">
                     <div>당월 누적 (MTD)</div>
-                    <div className="text-[10px] text-blue-500 font-normal">금액 / 전년비(%)</div>
+                    <div className="text-[10px] text-[#284F42] font-normal">금액 / 전년비(%)</div>
                   </th>
                   <th className="py-3.5 px-4 text-right">
                     <div>연간 누적 (YTD)</div>
-                    <div className="text-[10px] text-indigo-500 font-normal">금액 / 전년비(%)</div>
+                    <div className="text-[10px] text-[#B59269] font-normal">금액 / 전년비(%)</div>
                   </th>
                   <th className="py-3.5 px-4 text-right">
                     <div>외주식음 내 비율(%)</div>
                     {!isDedicatedApiLive && (
-                      <div className="text-[10px] text-slate-400 font-normal">비율 집계 준비 중</div>
+                      <div className="text-[10px] text-[#8C9E96] font-normal">비율 집계 준비 중</div>
                     )}
                   </th>
                   <th className="py-3.5 px-4 text-left">매출 상위 메뉴 Top 3</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#D0C6BB]/40">
                 {sortedVenues.map((v, i) => {
                   const hasClosed = v.closedDay.includes('휴무') || v.closedDay.includes('휴장');
                   return (
-                    <tr key={v.venueName} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 text-center font-extrabold text-slate-700">{i + 1}</td>
-                      <td className="py-3.5 px-4 text-left font-extrabold text-slate-900">
+                    <tr key={v.venueName} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-extrabold text-[#1B382E]">{i + 1}</td>
+                      <td className="py-3.5 px-4 text-left font-extrabold text-[#1B382E]">
                         <div className="flex items-center gap-2">
                           <span>{v.venueName}</span>
                           {v.contact && (
-                            <span className="text-[10px] font-normal text-slate-400 flex items-center gap-0.5">
+                            <span className="text-[10px] font-normal text-[#8C9E96] flex items-center gap-0.5">
                               <Phone size={10} />
                               {v.contact}
                             </span>
                           )}
                         </div>
                         {v.location && (
-                          <div className="text-[10px] font-normal text-slate-400 mt-0.5">{v.location}</div>
+                          <div className="text-[10px] font-normal text-[#8C9E96] mt-0.5">{v.location}</div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-left">
                         <span
                           className={`px-2.5 py-1 rounded-full font-bold text-[11px] ${
-                            hasClosed ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-800'
+                            hasClosed ? 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70' : 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70'
                           }`}
                         >
                           {v.closedDay}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-left font-mono text-slate-600">{v.operatingHours}</td>
+                      <td className="py-3.5 px-4 text-left font-mono text-[#5A6B63]">{v.operatingHours}</td>
                       <td className="py-3.5 px-4 text-right font-mono">
-                        <div className="font-bold text-slate-800">{formatNum(v.todayActual)}원</div>
+                        <div className="font-bold text-[#1B382E]">{formatNum(v.todayActual)}원</div>
                         {v.todayGrowth !== null && v.todayGrowth !== undefined ? (
                           <div
                             className={`text-[11px] font-semibold mt-0.5 ${
-                              v.todayGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                              v.todayGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                             }`}
                           >
                             전년비 {v.todayGrowth >= 0 ? '▲' : '▼'} {Math.abs(v.todayGrowth).toFixed(1)}%
                           </div>
                         ) : (
-                          <div className="text-[11px] text-slate-400 mt-0.5">-</div>
+                          <div className="text-[11px] text-[#8C9E96] mt-0.5">-</div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono">
-                        <div className="font-bold text-blue-800">{formatNum(v.mtdActual)}원</div>
+                        <div className="font-bold text-[#284F42]">{formatNum(v.mtdActual)}원</div>
                         {v.mtdGrowth !== null && v.mtdGrowth !== undefined ? (
                           <div
                             className={`text-[11px] font-semibold mt-0.5 ${
-                              v.mtdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                              v.mtdGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                             }`}
                           >
                             전년비 {v.mtdGrowth >= 0 ? '▲' : '▼'} {Math.abs(v.mtdGrowth).toFixed(1)}%
                           </div>
                         ) : (
-                          <div className="text-[11px] text-slate-400 mt-0.5">-</div>
+                          <div className="text-[11px] text-[#8C9E96] mt-0.5">-</div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono">
-                        <div className="font-extrabold text-indigo-900">{formatNum(v.ytdActual)}원</div>
+                        <div className="font-extrabold text-[#B59269]">{formatNum(v.ytdActual)}원</div>
                         {v.ytdGrowth !== null && v.ytdGrowth !== undefined ? (
                           <div
                             className={`text-[11px] font-semibold mt-0.5 ${
-                              v.ytdGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                              v.ytdGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                             }`}
                           >
                             전년비 {v.ytdGrowth >= 0 ? '▲' : '▼'} {Math.abs(v.ytdGrowth).toFixed(1)}%
                           </div>
                         ) : (
-                          <div className="text-[11px] text-slate-400 mt-0.5">-</div>
+                          <div className="text-[11px] text-[#8C9E96] mt-0.5">-</div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono">
                         {getActiveSharePct(v) !== null && getActiveSharePct(v) !== undefined ? (
-                          <span className="font-extrabold text-emerald-700">{showPct(getActiveSharePct(v))}</span>
+                          <span className="font-extrabold text-[#1E523F]">{showPct(getActiveSharePct(v))}</span>
                         ) : (
-                          <span className="text-slate-400 font-normal" title="점유비율 집계 준비 중">
+                          <span className="text-[#8C9E96] font-normal" title="점유비율 집계 준비 중">
                             -
                           </span>
                         )}
@@ -1014,20 +1024,20 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                             {v.topMenus.slice(0, 3).map((m, idx2) => (
                               <span
                                 key={idx2}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-semibold text-[11px]"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#D0C6BB]/60 text-[#1B382E] font-semibold text-[11px] shadow-2xs"
                               >
-                                <strong>{m.rank != null ? `${m.rank}위` : '-'}</strong> {m.menuName} (
+                                <strong className="text-[#B59269]">{m.rank != null ? `${m.rank}위` : '-'}</strong> {m.menuName} (
                                 {formatNum(m.sales)}원)
                               </span>
                             ))}
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F4F3EE] text-[#5A6B63] font-medium text-[11px] border border-[#D0C6BB]/50">
                               POS 단일 정산 매장 (개별 메뉴 미집계)
                             </span>
                             {v.crawledMenus && v.crawledMenus.length > 0 && (
-                              <span className="text-[10px] text-slate-400">
+                              <span className="text-[10px] text-[#8C9E96]">
                                 (홈페이지 대표: {v.crawledMenus.slice(0, 2).map((c) => c.name).join(', ')})
                               </span>
                             )}
@@ -1040,7 +1050,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
               </tbody>
               {summary && (
                 <tfoot>
-                  <tr className="bg-slate-900 text-white font-extrabold text-xs">
+                  <tr className="bg-[#284F42] text-white font-extrabold text-xs">
                     <td colSpan={4} className="py-4 px-4 text-center">
                       [콘텐츠기획본부 외주식음 전체 총합]
                     </td>
@@ -1049,7 +1059,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       {summary.todayGrowth !== null && summary.todayGrowth !== undefined && (
                         <div
                           className={`text-[11px] font-bold ${
-                            summary.todayGrowth >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                            summary.todayGrowth >= 0 ? 'text-[#5FB878]' : 'text-rose-300'
                           }`}
                         >
                           전년비 {summary.todayGrowth >= 0 ? '▲' : '▼'}{' '}
@@ -1058,11 +1068,11 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       )}
                     </td>
                     <td className="py-4 px-4 text-right font-mono">
-                      <div className="text-emerald-300">{formatNum(summary.mtdActual)}원</div>
+                      <div className="text-[#5FB878]">{formatNum(summary.mtdActual)}원</div>
                       {summary.mtdGrowth !== null && summary.mtdGrowth !== undefined && (
                         <div
                           className={`text-[11px] font-bold ${
-                            summary.mtdGrowth >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                            summary.mtdGrowth >= 0 ? 'text-[#5FB878]' : 'text-rose-300'
                           }`}
                         >
                           전년비 {summary.mtdGrowth >= 0 ? '▲' : '▼'}{' '}
@@ -1071,11 +1081,11 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                       )}
                     </td>
                     <td className="py-4 px-4 text-right font-mono">
-                      <div className="text-amber-300">{formatNum(summary.ytdActual)}원</div>
+                      <div className="text-[#B59269]">{formatNum(summary.ytdActual)}원</div>
                       {summary.ytdGrowth !== null && summary.ytdGrowth !== undefined && (
                         <div
                           className={`text-[11px] font-bold ${
-                            summary.ytdGrowth >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                            summary.ytdGrowth >= 0 ? 'text-[#5FB878]' : 'text-rose-300'
                           }`}
                         >
                           전년비 {summary.ytdGrowth >= 0 ? '▲' : '▼'}{' '}
@@ -1083,10 +1093,10 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
                         </div>
                       )}
                     </td>
-                    <td className="py-4 px-4 text-right font-mono text-slate-400">
+                    <td className="py-4 px-4 text-right font-mono text-white/80">
                       {isDedicatedApiLive ? showPct(100) : '-'}
                     </td>
-                    <td className="py-4 px-4 text-slate-300 font-normal">외주식음 전체 합계</td>
+                    <td className="py-4 px-4 text-white/80 font-normal">외주식음 전체 합계</td>
                   </tr>
                 </tfoot>
               )}
@@ -1094,6 +1104,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

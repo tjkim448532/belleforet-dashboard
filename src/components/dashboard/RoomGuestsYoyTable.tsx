@@ -170,23 +170,23 @@ export default function RoomGuestsYoyTable() {
   };
 
   return (
-    <div className="col-span-1 lg:col-span-12 w-full bg-white rounded-[32px] border border-slate-200/80 p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+    <div className="col-span-1 lg:col-span-12 w-full bg-white rounded-3xl border border-[#D0C6BB]/75 p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-6">
       
       {/* 1. Header & Title Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#D0C6BB]/40">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-[#E8F2EE] text-[#1E523F] flex items-center justify-center">
               {metricMode === 'GUESTS' ? <Users size={18} /> : <BedDouble size={18} />}
             </div>
-            <h3 className="text-lg lg:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg lg:text-xl font-bold text-[#1B382E] tracking-tight flex items-center gap-2 flex-wrap">
               <span>연도별 벨포레 {metricMode === 'GUESTS' ? '숙박객' : '실제 판매 방수'} 및 객실 소계 매출 매트릭스</span>
-              <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100/80 px-2.5 py-0.5 rounded-full font-bold">
+              <span className="text-xs bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 px-2.5 py-0.5 rounded-full font-bold">
                 {years.join(' · ')}년 (1월 ~ 12월)
               </span>
             </h3>
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
+          <p className="text-xs text-[#5A6B63] leading-relaxed max-w-3xl">
             {metricMode === 'GUESTS' ? (
               <>
                 관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 <strong>전체 숙박객(진성 투숙객 인원수 모수)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
@@ -197,7 +197,7 @@ export default function RoomGuestsYoyTable() {
               </>
             )}
             {years.length > 0 && (
-              <span className="ml-1 text-indigo-600 font-semibold">
+              <span className="ml-1 text-[#284F42] font-semibold">
                 (신규 연도 도래 시 컬럼이 자동 확장됩니다)
               </span>
             )}
@@ -206,13 +206,13 @@ export default function RoomGuestsYoyTable() {
 
         <div className="flex items-center gap-2.5 self-start md:self-center shrink-0">
           {/* Segmented Mode Switcher: 숙박객수(명) vs 실제 판매 방수(실) */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center bg-[#F4F3EE] p-1 rounded-2xl border border-[#D0C6BB]/60 shadow-2xs">
             <button
               onClick={() => setMetricMode('GUESTS')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 metricMode === 'GUESTS'
-                  ? 'bg-white text-indigo-700 shadow-2xs font-black'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#284F42] text-white shadow-2xs font-bold'
+                  : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
               title="관리자 설정 정원 기준 환산 숙박객 수(인원·명) 표출"
             >
@@ -223,8 +223,8 @@ export default function RoomGuestsYoyTable() {
               onClick={() => setMetricMode('ROOMS')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 metricMode === 'ROOMS'
-                  ? 'bg-indigo-600 text-white shadow-2xs font-black'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#284F42] text-white shadow-2xs font-bold'
+                  : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
               title="PMS 확정 실제 판매된 방수(실) 표출"
             >
@@ -236,9 +236,9 @@ export default function RoomGuestsYoyTable() {
           <button
             onClick={fetchData}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-xs font-bold rounded-xl transition-all border border-slate-200 shadow-2xs cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-[#F4F3EE] text-[#1B382E] text-xs font-bold rounded-xl transition-all border border-[#D0C6BB]/75 shadow-2xs cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw size={13} className={isLoading ? 'animate-spin text-indigo-600' : ''} />
+            <RefreshCw size={13} className={isLoading ? 'animate-spin text-[#284F42]' : ''} />
             새로고침
           </button>
         </div>
@@ -247,18 +247,18 @@ export default function RoomGuestsYoyTable() {
       {/* 2. Loading & Error States */}
       {isLoading && (
         <div className="py-16 flex flex-col items-center justify-center gap-3">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs font-semibold text-slate-400">숙박객 및 객실 소계 매트릭스 데이터를 불러오는 중...</p>
+          <div className="w-8 h-8 border-4 border-[#284F42] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-[#5A6B63]">숙박객 및 객실 소계 매트릭스 데이터를 불러오는 중...</p>
         </div>
       )}
 
       {error && !isLoading && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-700 text-xs">
+        <div className="p-4 bg-[#FDF0ED] border border-[#EAC5BD] rounded-2xl flex items-center gap-3 text-[#8B2635] text-xs">
           <AlertCircle size={18} className="shrink-0" />
           <div className="flex-1 font-medium">{error}</div>
           <button
             onClick={fetchData}
-            className="px-3 py-1 bg-white border border-rose-300 rounded-lg font-bold text-rose-800 hover:bg-rose-100 transition-colors shadow-2xs"
+            className="px-3 py-1 bg-white border border-[#EAC5BD] rounded-lg font-bold text-[#8B2635] hover:bg-[#FDF0ED] transition-colors shadow-2xs"
           >
             다시 시도
           </button>
@@ -267,10 +267,10 @@ export default function RoomGuestsYoyTable() {
 
       {/* 3. Matrix Table */}
       {!isLoading && !error && data && (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-2xl border border-[#D0C6BB]/75">
           <table className="w-full text-left border-collapse whitespace-nowrap min-w-[850px]">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+              <tr className="bg-[#F4F3EE] border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E] uppercase tracking-wider">
                 <th className="py-4 px-6 text-center w-28">월 (Month)</th>
                 {years.map((yr) => {
                   const isLatest = yr === latestYear;
@@ -279,7 +279,7 @@ export default function RoomGuestsYoyTable() {
                       key={yr} 
                       className={`py-4 px-6 text-center ${
                         isLatest 
-                          ? 'bg-indigo-50/70 text-indigo-900 font-extrabold border-x border-indigo-100/80' 
+                          ? 'bg-[#284F42]/10 text-[#1B382E] font-extrabold border-x border-[#D0C6BB]/75' 
                           : ''
                       }`}
                     >
@@ -287,12 +287,12 @@ export default function RoomGuestsYoyTable() {
                         <div className="flex items-center gap-1.5">
                           <span>{yr}년 실적</span>
                           {isLatest && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-600 text-white font-bold">
+                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#284F42] text-white font-bold">
                               최신
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] font-normal text-slate-400">
+                        <span className="text-[10px] font-normal text-[#5A6B63]">
                           ({metricMode === 'GUESTS' ? '숙박객' : '판매방수'} / 객실소계)
                         </span>
                       </div>
@@ -300,10 +300,10 @@ export default function RoomGuestsYoyTable() {
                   );
                 })}
                 {prevYear && (
-                  <th className="py-4 px-6 text-center bg-slate-50 text-slate-700">
+                  <th className="py-4 px-6 text-center bg-[#F4F3EE] text-[#1B382E]">
                     <div className="flex flex-col items-center justify-center gap-0.5">
                       <span>YoY 증감 ({latestYear.slice(2)}년 vs {prevYear.slice(2)}년)</span>
-                      <span className="text-[10px] font-normal text-slate-400">
+                      <span className="text-[10px] font-normal text-[#5A6B63]">
                         ({metricMode === 'GUESTS' ? '인원 증감' : '방수 증감'} / 매출 증감)
                       </span>
                     </div>
@@ -311,7 +311,7 @@ export default function RoomGuestsYoyTable() {
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-[#D0C6BB]/40 text-xs">
               {data.matrix.map((row: RoomGuestsYoyRow) => {
                 const monthNum = row.month;
                 const isSelectedMonth = monthNum === currentMonthNum;
@@ -342,16 +342,16 @@ export default function RoomGuestsYoyTable() {
                     key={monthNum}
                     className={`transition-colors ${
                       isSelectedMonth
-                        ? 'bg-indigo-50/40 font-semibold'
-                        : 'hover:bg-slate-50/80'
+                        ? 'bg-[#284F42]/5 font-semibold'
+                        : 'hover:bg-[#F4F3EE]/50'
                     }`}
                   >
                     {/* Month Cell */}
-                    <td className="py-4 px-6 text-center font-extrabold text-slate-800 bg-slate-50/40 text-sm">
+                    <td className="py-4 px-6 text-center font-extrabold text-[#1B382E] bg-[#F4F3EE]/50 text-sm">
                       <div className="flex items-center justify-center gap-1.5">
                         <span>{monthNum}월</span>
                         {isSelectedMonth && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#B59269]/20 text-[#B59269]">
                             당월
                           </span>
                         )}
@@ -374,7 +374,7 @@ export default function RoomGuestsYoyTable() {
                           key={yr}
                           className={`py-4 px-6 text-center tabular-nums ${
                             isLatest
-                              ? 'bg-indigo-50/30 border-x border-indigo-100/60'
+                              ? 'bg-[#284F42]/5 border-x border-[#D0C6BB]/50'
                               : ''
                           }`}
                         >
@@ -383,23 +383,23 @@ export default function RoomGuestsYoyTable() {
                             <div className="flex items-center gap-1">
                               {metricMode === 'GUESTS' ? (
                                 guests > 0 ? (
-                                  <span className={`font-mono ${isLatest ? 'text-sm font-black text-indigo-950' : 'text-xs font-bold text-slate-800'}`}>
+                                  <span className={`font-mono ${isLatest ? 'text-sm font-black text-[#1B382E]' : 'text-xs font-bold text-[#1B382E]'}`}>
                                     {formatGuests(guests)}
                                   </span>
                                 ) : isFuture ? (
-                                  <span className="text-slate-300 font-mono text-xs">미도래</span>
+                                  <span className="text-[#8C9E96] font-mono text-xs">미도래</span>
                                 ) : (
-                                  <span className="text-slate-300 font-mono text-xs">-</span>
+                                  <span className="text-[#8C9E96] font-mono text-xs">-</span>
                                 )
                               ) : (
                                 roomsSold > 0 ? (
-                                  <span className={`font-mono ${isLatest ? 'text-sm font-black text-indigo-950' : 'text-xs font-bold text-slate-800'}`}>
+                                  <span className={`font-mono ${isLatest ? 'text-sm font-black text-[#1B382E]' : 'text-xs font-bold text-[#1B382E]'}`}>
                                     {formatRooms(roomsSold)}
                                   </span>
                                 ) : isFuture ? (
-                                  <span className="text-slate-300 font-mono text-xs">미도래</span>
+                                  <span className="text-[#8C9E96] font-mono text-xs">미도래</span>
                                 ) : (
-                                  <span className="text-slate-300 font-mono text-xs">-</span>
+                                  <span className="text-[#8C9E96] font-mono text-xs">-</span>
                                 )
                               )}
                             </div>
@@ -409,14 +409,14 @@ export default function RoomGuestsYoyTable() {
                               <div className="flex items-center gap-1">
                                 <span className={`font-mono text-[11px] px-2 py-0.5 rounded-md ${
                                   isLatest 
-                                    ? 'text-indigo-800 bg-indigo-100/90 font-black' 
-                                    : 'text-slate-600 bg-slate-100 font-semibold'
+                                    ? 'text-[#284F42] bg-[#284F42]/10 font-black border border-[#284F42]/20' 
+                                    : 'text-[#5A6B63] bg-[#F4F3EE] font-semibold border border-[#D0C6BB]/50'
                                 }`}>
                                   {formatCurrency(revenue)}원
                                 </span>
                               </div>
                             ) : hasPrimaryVal ? (
-                              <span className="text-[10px] text-slate-300 font-mono">-</span>
+                              <span className="text-[10px] text-[#8C9E96] font-mono">-</span>
                             ) : null}
                           </div>
                         </td>
@@ -430,46 +430,46 @@ export default function RoomGuestsYoyTable() {
                           <div className="flex flex-col items-center gap-1.5 font-mono text-xs">
                             {/* 인원 증감 또는 방수 증감 */}
                             <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-400 font-sans font-bold">
+                              <span className="text-[10px] text-[#5A6B63] font-sans font-bold">
                                 {metricMode === 'GUESTS' ? '인원' : '방수'}
                               </span>
                               {yoyPrimaryDiff > 0 ? (
-                                <span className="inline-flex items-center gap-0.5 text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                <span className="inline-flex items-center gap-0.5 text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-lg font-bold border border-[#B4C6C1]/70">
                                   <ArrowUpRight size={12} className="stroke-[2.5]" />
                                   +{yoyPrimaryDiff.toLocaleString()}{metricMode === 'GUESTS' ? '명' : '실'} ({yoyPrimaryPct > 0 ? `+${yoyPrimaryPct.toFixed(1)}%` : `${yoyPrimaryPct.toFixed(1)}%`})
                                 </span>
                               ) : yoyPrimaryDiff < 0 ? (
-                                <span className="inline-flex items-center gap-0.5 text-rose-800 bg-rose-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                <span className="inline-flex items-center gap-0.5 text-[#8B2635] bg-[#FDF0ED] px-2 py-0.5 rounded-lg font-bold border border-[#EAC5BD]/70">
                                   <ArrowDownRight size={12} className="stroke-[2.5]" />
                                   {yoyPrimaryDiff.toLocaleString()}{metricMode === 'GUESTS' ? '명' : '실'} ({yoyPrimaryPct.toFixed(1)}%)
                                 </span>
                               ) : (
-                                <span className="text-slate-500 font-bold">0{metricMode === 'GUESTS' ? '명' : '실'} (0.0%)</span>
+                                <span className="text-[#5A6B63] font-bold">0{metricMode === 'GUESTS' ? '명' : '실'} (0.0%)</span>
                               )}
                             </div>
 
                             {/* 매출 증감 */}
                             {yoyRevDiff !== null && yoyRevPct !== null ? (
                               <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-indigo-400 font-sans font-bold">매출</span>
+                                <span className="text-[10px] text-[#B59269] font-sans font-bold">매출</span>
                                 {yoyRevDiff > 0 ? (
-                                  <span className="inline-flex items-center gap-0.5 text-indigo-900 bg-indigo-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                  <span className="inline-flex items-center gap-0.5 text-[#284F42] bg-[#284F42]/10 px-2 py-0.5 rounded-lg font-bold border border-[#284F42]/20">
                                     <ArrowUpRight size={12} className="stroke-[2.5]" />
                                     +{formatCompactCurrency(yoyRevDiff)}원 ({yoyRevPct > 0 ? `+${yoyRevPct.toFixed(1)}%` : `${yoyRevPct.toFixed(1)}%`})
                                   </span>
                                 ) : yoyRevDiff < 0 ? (
-                                  <span className="inline-flex items-center gap-0.5 text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                  <span className="inline-flex items-center gap-0.5 text-[#8B2635] bg-[#FDF0ED] px-2 py-0.5 rounded-lg font-bold border border-[#EAC5BD]/70">
                                     <ArrowDownRight size={12} className="stroke-[2.5]" />
                                     -{formatCompactCurrency(yoyRevDiff)}원 ({yoyRevPct.toFixed(1)}%)
                                   </span>
                                 ) : (
-                                  <span className="text-slate-500 font-bold">0원 (0.0%)</span>
+                                  <span className="text-[#5A6B63] font-bold">0원 (0.0%)</span>
                                 )}
                               </div>
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-slate-300 font-mono">-</span>
+                          <span className="text-[#8C9E96] font-mono">-</span>
                         )}
                       </td>
                     )}
@@ -479,11 +479,11 @@ export default function RoomGuestsYoyTable() {
             </tbody>
             {/* ⭐ 연간 총합 (totals) 행 (NO SLICE SUMMATION: 백엔드 공식 집계 완제품 바인딩) */}
             {data?.totals && (
-              <tfoot className="bg-indigo-50/70 border-t-2 border-indigo-200 text-xs font-bold text-indigo-950">
+              <tfoot className="bg-[#F4F3EE] border-t-2 border-[#D0C6BB] text-xs font-bold text-[#1B382E]">
                 <tr>
-                  <td className="py-4 px-6 text-center font-black text-sm bg-indigo-100/60 sticky left-0 z-10 border-r border-indigo-200">
+                  <td className="py-4 px-6 text-center font-black text-sm bg-[#F4F3EE] sticky left-0 z-10 border-r border-[#D0C6BB]">
                     <div>연간 총합</div>
-                    <div className="text-[10px] text-indigo-700 font-semibold">
+                    <div className="text-[10px] text-[#5A6B63] font-semibold">
                       {metricMode === 'GUESTS' ? '(공식 집계)' : '(월별 실측 제공)'}
                     </div>
                   </td>
@@ -494,11 +494,11 @@ export default function RoomGuestsYoyTable() {
                       <td
                         key={`total_${yr}`}
                         className={`py-4 px-6 text-center ${
-                          isLatest ? 'bg-indigo-100/80 border-x border-indigo-200' : ''
+                          isLatest ? 'bg-[#284F42]/10 border-x border-[#D0C6BB]' : ''
                         }`}
                       >
                         <div className="flex flex-col items-center gap-0.5">
-                          <span className={`font-mono ${isLatest ? 'text-base font-black text-indigo-950' : 'text-sm font-bold text-slate-800'}`}>
+                          <span className={`font-mono ${isLatest ? 'text-base font-black text-[#1B382E]' : 'text-sm font-bold text-[#1B382E]'}`}>
                             {metricMode === 'GUESTS'
                               ? (guestTotal !== undefined ? `${guestTotal.toLocaleString('ko-KR')}명` : '-')
                               : '-'
@@ -509,33 +509,33 @@ export default function RoomGuestsYoyTable() {
                     );
                   })}
                   {prevYear && latestYear && (
-                    <td className="py-4 px-6 text-center bg-indigo-50/50">
+                    <td className="py-4 px-6 text-center bg-[#F4F3EE]">
                       {metricMode === 'GUESTS' ? (() => {
                         const diff = (data.totals as any)?.yoyGuestsDiff ?? (data.totals as any)?.guestsDiff ?? (data.totals as any)?.yoy?.guestsDiff ?? null;
                         const pct: number | null = (data.totals as any)?.yoyGuestsPct ?? (data.totals as any)?.guestsYoyPct ?? (data.totals as any)?.yoyPct ?? (data.totals as any)?.yoy?.guestsPct ?? null;
-                        if (diff === null || diff === undefined) return <span className="text-slate-300 font-mono">-</span>;
+                        if (diff === null || diff === undefined) return <span className="text-[#8C9E96] font-mono">-</span>;
                         return (
                           <div className="flex flex-col items-center gap-1 font-mono text-xs">
                             <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-400 font-sans font-bold">인원</span>
+                              <span className="text-[10px] text-[#5A6B63] font-sans font-bold">인원</span>
                               {diff > 0 ? (
-                                <span className="inline-flex items-center gap-0.5 text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                <span className="inline-flex items-center gap-0.5 text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-lg font-bold border border-[#B4C6C1]/70">
                                   <ArrowUpRight size={12} className="stroke-[2.5]" />
                                   +{diff.toLocaleString()}명 {pct !== null && pct !== undefined ? `(+${pct.toFixed(1)}%)` : ''}
                                 </span>
                               ) : diff < 0 ? (
-                                <span className="inline-flex items-center gap-0.5 text-rose-800 bg-rose-100/90 px-2 py-0.5 rounded-lg font-bold">
+                                <span className="inline-flex items-center gap-0.5 text-[#8B2635] bg-[#FDF0ED] px-2 py-0.5 rounded-lg font-bold border border-[#EAC5BD]/70">
                                   <ArrowDownRight size={12} className="stroke-[2.5]" />
                                   {diff.toLocaleString()}명 {pct !== null && pct !== undefined ? `(${pct.toFixed(1)}%)` : ''}
                                 </span>
                               ) : (
-                                <span className="text-slate-500 font-bold">0명 (0.0%)</span>
+                                <span className="text-[#5A6B63] font-bold">0명 (0.0%)</span>
                               )}
                             </div>
                           </div>
                         );
                       })() : (
-                        <span className="text-slate-300 font-mono">-</span>
+                        <span className="text-[#8C9E96] font-mono">-</span>
                       )}
                     </td>
                   )}
@@ -547,14 +547,14 @@ export default function RoomGuestsYoyTable() {
       )}
 
       {/* 4. Footer Note */}
-      <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-500 gap-2">
+      <div className="p-4 bg-[#F4F3EE]/80 rounded-2xl border border-[#D0C6BB]/70 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-[#5A6B63] gap-2">
         <div className="flex items-center gap-1.5">
-          <HelpCircle size={14} className="text-indigo-400 shrink-0" />
+          <HelpCircle size={14} className="text-[#284F42] shrink-0" />
           <span>
             <b>각 셀 표기:</b> [상단] {metricMode === 'GUESTS' ? '숙박객 수(인원·명)' : '실제 판매 방수(객실·실)'}, [하단] 객실 소계 매출(ROOM + ROOM OTHER, 원)
           </span>
         </div>
-        <span className="text-slate-400">
+        <span className="text-[#8C9E96]">
           데이터 소스: V6 정밀 데이터 마트 API (/api/v6/report/room-guests-yoy, /api/v6/report/monthly-room-efficiency)
         </span>
       </div>

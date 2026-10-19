@@ -1,44 +1,38 @@
-import { Hotel } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import RoomGuestsYoyTable from '../components/dashboard/RoomGuestsYoyTable';
 
 export default function ResortRoomGuestsYoy() {
   return (
-    <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 pb-32 lg:pb-12 max-w-[1600px] mx-auto">
-      {/* 1. Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-slate-800 rounded-[32px] p-6 lg:p-10 text-white relative overflow-hidden shadow-lg">
-        <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute right-32 -bottom-20 w-48 h-48 bg-indigo-400/20 rounded-full blur-2xl"></div>
-        
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2 opacity-90">
-              <Hotel size={22} className="text-indigo-200" />
-              <span className="font-semibold tracking-wider text-xs lg:text-sm text-indigo-100 uppercase whitespace-nowrap">
-                BELLE FORET RESORT DIVISION · ROOM GUEST & REVENUE MATRIX
-              </span>
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
+      {/* Decorative Ambient Header Background */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-6">
+        {/* 1. Header Banner */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
+          <div className="text-white">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+              <span>BELLEFORET RESORT · 리조트사업본부 연도별 숙박객 및 객실 소계</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-3 flex-wrap break-keep">
-              <span className="whitespace-nowrap">리조트사업본부 연도별 숙박객 및 객실 소계 매출 매트릭스</span>
-              <span className="text-xs bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white font-medium whitespace-nowrap">
-                24 · 25 · 26 연도별 YoY 정밀 분석
-              </span>
-            </h1>
-            <p className="text-indigo-100 text-sm mt-2 font-normal opacity-90 break-keep max-w-3xl leading-relaxed">
-              관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객(진성 투숙객 모수)과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 월별 실적 추이입니다.
+            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">리조트사업본부 연도별 숙박객 및 객실 소계</h1>
+            <p className="text-sm text-white/80 mt-1 break-keep">
+              관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객과 객실 소계 매출의 연도별 YoY 정밀 분석
             </p>
           </div>
 
-          <div className="flex items-center gap-3 w-full lg:w-auto">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-1.5 border border-white/20">
-              <GlobalDatePicker showPresets={false} />
-            </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <GlobalDatePicker showPresets={false} />
           </div>
         </div>
-      </div>
 
-      {/* 2. Room Guests YoY Matrix Table */}
-      <RoomGuestsYoyTable />
+        {/* 2. Room Guests YoY Matrix Table */}
+        <RoomGuestsYoyTable />
+      </div>
     </div>
   );
 }

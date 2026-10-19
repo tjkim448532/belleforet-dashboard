@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { NavLink } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { getPresetDateRange, type DatePresetType } from '../lib/dateUtils';
 import { secureFetcher } from '../lib/secureFetcher';
+import SynergyNav from '../components/dashboard/SynergyNav';
 import { 
   Zap, Building2, TrendingUp, Sparkles, 
-  Hotel, Activity, Calendar, RefreshCw, ShieldCheck, CreditCard,
-  Globe, Smartphone, PhoneCall, Users, Layers, Landmark, CloudRain
+  Hotel, Activity, Calendar, RefreshCw, CreditCard,
+  Globe, Smartphone, PhoneCall, Users, Layers, Landmark
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -436,90 +436,55 @@ export default function Synergy() {
   }, [channelData, summaryData, selectedChannel, isActualRange]);
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50">
-      
-      {/* Top Banner Header with Navigation Sub-Tabs */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 rounded-[32px] p-8 text-white mb-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
+      {/* Ambient Forest Glow Banner */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        {/* Top Header Card */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-[#D0C6BB]/80 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col xl:flex-row xl:items-center justify-between gap-5">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-emerald-400/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/30 tracking-wide">
-                벨포레 채널별 시너지 분석
-              </span>
-              <span className="bg-white/10 text-slate-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10 font-medium">
-                <ShieldCheck size={14} className="text-emerald-400" /> 실시간 통합 정산 기준
-              </span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+              <span>BELLEFORET RESORT · 시너지 인텔리전스</span>
+              <span className="text-white/60">|</span>
+              <span className="text-white/90">실시간 통합 정산 기준</span>
             </div>
             
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mt-1 flex items-center gap-3 flex-wrap break-keep">
-              <Sparkles className="text-emerald-400 shrink-0" size={32} />
-              <span className="break-keep">객실 판매 채널별 연계 시너지 대시보드</span>
+            <h1 className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight flex items-center gap-3 flex-wrap break-keep">
+              <div className="p-2.5 bg-[#284F42] text-white rounded-2xl shadow-xs">
+                <Sparkles size={24} />
+              </div>
+              <span>객실 판매 채널별 연계 시너지 대시보드</span>
             </h1>
-            <p className="text-emerald-100 mt-2 text-sm lg:text-base font-normal max-w-2xl leading-relaxed break-keep">
+            <p className="text-sm text-[#5A6B63] mt-2 max-w-2xl leading-relaxed break-keep">
               숙박객 유입 채널(자사몰, 온라인여행사, 휴양소, 단체영업 등)별 객실 판매와 타 부대시설(골프, 식음, 레저) 간의 복합 시너지 효과를 분석합니다.
             </p>
-
-            {/* Navigation Sub-Tabs Bar */}
-            <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10 flex-wrap">
-              <NavLink 
-                to="/synergy" 
-                end
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
-                  isActive ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
-              >
-                <Sparkles size={14} className="shrink-0" /> <span className="whitespace-nowrap">1. 객실 세그먼트/채널 시너지 분석</span>
-              </NavLink>
-
-              <NavLink 
-                to="/synergy/correlation" 
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
-                  isActive ? 'bg-indigo-500 text-white shadow-md ring-2 ring-indigo-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
-              >
-                <Zap size={14} className="shrink-0" /> <span className="whitespace-nowrap">2. 앵커시설 순수 인과 & CAPA 분석</span>
-              </NavLink>
-
-              <NavLink 
-                to="/synergy/weather-sales" 
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
-                  isActive ? 'bg-sky-500 text-white shadow-md ring-2 ring-sky-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
-              >
-                <CloudRain size={14} className="shrink-0" /> <span className="whitespace-nowrap">3. 🌦️ 날씨-매출 상관관계 분석</span>
-              </NavLink>
-
-              <NavLink 
-                to="/synergy/forecast" 
-                className={({ isActive }) => `px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
-                  isActive ? 'bg-teal-500 text-white shadow-md ring-2 ring-teal-400/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                }`}
-              >
-                <TrendingUp size={14} className="shrink-0" /> <span className="whitespace-nowrap">4. 🔮 당일·익일 매출 예상</span>
-              </NavLink>
-            </div>
           </div>
 
           {/* Period Range Selection Bar */}
-          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex flex-col gap-3 w-full xl:w-auto xl:min-w-[380px]">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5 whitespace-nowrap">
-                <Calendar size={14} /> 조회 기간 설정
+          <div className="bg-[#F4F3EE]/80 rounded-2xl p-4 border border-[#D0C6BB]/70 flex flex-col gap-3 w-full xl:w-auto xl:min-w-[380px]">
+            <div className="flex items-center justify-between border-b border-[#D0C6BB]/50 pb-2">
+              <span className="text-xs font-bold text-[#1B382E] flex items-center gap-1.5 whitespace-nowrap">
+                <Calendar size={14} className="text-[#284F42]" /> 조회 기간 설정
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#D0C6BB]/60 text-xs font-bold">
                 <button
                   onClick={() => setIsRangeMode(false)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                    !isRangeMode ? 'bg-emerald-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    !isRangeMode ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
                 >
                   단일 1일
                 </button>
                 <button
                   onClick={() => setIsRangeMode(true)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                    isRangeMode ? 'bg-emerald-500 text-white shadow-sm' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    isRangeMode ? 'bg-[#284F42] text-white shadow-2xs font-bold' : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
                 >
                   기간 범위
@@ -529,11 +494,11 @@ export default function Synergy() {
 
             {/* Quick Presets */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium whitespace-nowrap">오늘</button>
-              <button onClick={() => applyPreset('WEEK')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium whitespace-nowrap">최근 7일</button>
-              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium whitespace-nowrap">금월 (1일~오늘)</button>
-              <button onClick={() => applyPreset('H1')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium whitespace-nowrap">상반기</button>
-              <button onClick={() => applyPreset('YTD')} className="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-emerald-200 font-medium whitespace-nowrap">연누계 (YTD)</button>
+              <button onClick={() => applyPreset('TODAY')} className="px-2.5 py-1 bg-white hover:bg-[#F4F3EE] rounded-lg text-xs text-[#1B382E] border border-[#D0C6BB]/60 font-medium whitespace-nowrap shadow-2xs cursor-pointer">오늘</button>
+              <button onClick={() => applyPreset('WEEK')} className="px-2.5 py-1 bg-white hover:bg-[#F4F3EE] rounded-lg text-xs text-[#1B382E] border border-[#D0C6BB]/60 font-medium whitespace-nowrap shadow-2xs cursor-pointer">최근 7일</button>
+              <button onClick={() => applyPreset('MTD')} className="px-2.5 py-1 bg-white hover:bg-[#F4F3EE] rounded-lg text-xs text-[#1B382E] border border-[#D0C6BB]/60 font-medium whitespace-nowrap shadow-2xs cursor-pointer">금월 (1일~오늘)</button>
+              <button onClick={() => applyPreset('H1')} className="px-2.5 py-1 bg-white hover:bg-[#F4F3EE] rounded-lg text-xs text-[#1B382E] border border-[#D0C6BB]/60 font-medium whitespace-nowrap shadow-2xs cursor-pointer">상반기</button>
+              <button onClick={() => applyPreset('YTD')} className="px-2.5 py-1 bg-white hover:bg-[#F4F3EE] rounded-lg text-xs text-[#1B382E] border border-[#D0C6BB]/60 font-medium whitespace-nowrap shadow-2xs cursor-pointer">연누계 (YTD)</button>
             </div>
 
             {/* Inputs & Apply Button */}
@@ -542,17 +507,17 @@ export default function Synergy() {
                 type="date" 
                 value={startDate} 
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 outline-none focus:border-emerald-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                className="bg-white border border-[#D0C6BB]/75 text-[#1B382E] text-xs rounded-xl px-3 py-1.5 outline-hidden focus:border-[#284F42] cursor-pointer shadow-2xs w-full"
               />
               
               {isRangeMode && (
                 <>
-                  <span className="text-slate-400 text-xs">~</span>
+                  <span className="text-[#8C9E96] text-xs">~</span>
                   <input 
                     type="date" 
                     value={endDate} 
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-black/30 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 outline-none focus:border-emerald-400 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                    className="bg-white border border-[#D0C6BB]/75 text-[#1B382E] text-xs rounded-xl px-3 py-1.5 outline-hidden focus:border-[#284F42] cursor-pointer shadow-2xs w-full"
                   />
                 </>
               )}
@@ -560,20 +525,22 @@ export default function Synergy() {
               <button 
                 onClick={handleSearch}
                 disabled={loading}
-                className="ml-auto bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold px-4 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1.5"
+                className="ml-auto bg-[#B59269] hover:bg-[#a38058] text-white text-xs font-bold px-4 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 조회
               </button>
             </div>
 
-            <div className="text-xs text-slate-300 bg-white/5 px-3 py-1.5 rounded-xl flex items-center justify-between">
-              <span>조회 기간: <strong className="text-white">{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
-              <span className="text-emerald-300 font-bold">{isActualRange ? `총 ${totalDays}일간 합계` : '단일 1일 실적'}</span>
+            <div className="text-xs text-[#5A6B63] bg-white/70 px-3 py-1.5 rounded-xl border border-[#D0C6BB]/40 flex items-center justify-between">
+              <span>조회 기간: <strong className="text-[#1B382E]">{startDate}</strong> {isRangeMode && endDate ? `~ ${endDate}` : ''}</span>
+              <span className="text-[#284F42] font-bold">{isActualRange ? `총 ${totalDays}일간 합계` : '단일 1일 실적'}</span>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Synergy Navigation Sub-tabs */}
+        <SynergyNav />
 
       {/* Top Overview KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -601,123 +568,150 @@ export default function Synergy() {
           </div>
         </div>
 
-        {/* KPI 2: Room Revenue */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
-                <Building2 size={20} />
+        {/* Top Overview KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* KPI 1: Rooms Sold */}
+          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shadow-2xs">
+                  <Hotel size={20} />
+                </div>
+                <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-3 py-0.5 rounded-full">
+                  총 {grandTotal.rooms.toLocaleString()}실
+                </span>
               </div>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-0.5 rounded-full whitespace-nowrap">
-                객실 순매출
+              <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
+                {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
               </span>
+              <div className="text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
+                {grandTotal.rooms.toLocaleString()} <span className="text-base text-[#8C9E96] font-normal">실</span>
+              </div>
             </div>
-            <span className="text-xs font-bold text-slate-500 block mb-1 whitespace-nowrap">
-              {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
-            </span>
-            <div className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight tabular-nums whitespace-nowrap">
-              {formatCurrency(grandTotal.revenue)} <span className="text-base text-slate-500 font-normal">원</span>
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63]">
+              <span className="whitespace-nowrap">객실 평균 단가 (ADR)</span>
+              <strong className="text-[#1B382E] font-bold tabular-nums whitespace-nowrap">{grandTotal.adr > 0 ? `${formatCurrency(grandTotal.adr)}원` : '-'}</strong>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="whitespace-nowrap">순매출 기준</span>
-            <span className="text-slate-600 font-medium whitespace-nowrap">부가세(VAT) 별도</span>
-          </div>
-        </div>
 
-        {/* KPI 3: Spillover Synergy */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
-                <Zap size={20} />
+          {/* KPI 2: Room Revenue */}
+          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shadow-2xs">
+                  <Building2 size={20} />
+                </div>
+                <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-3 py-0.5 rounded-full whitespace-nowrap">
+                  객실 순매출
+                </span>
               </div>
-              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-0.5 rounded-full whitespace-nowrap">
-                부대시설 연계매출
+              <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
+                {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
               </span>
+              <div className="text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
+                {formatCurrency(grandTotal.revenue)} <span className="text-base text-[#8C9E96] font-normal">원</span>
+              </div>
             </div>
-            <span className="text-xs font-bold text-slate-500 block mb-1 whitespace-nowrap">
-              {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
-            </span>
-            <div className="text-3xl lg:text-4xl font-black text-amber-600 tracking-tight tabular-nums whitespace-nowrap">
-              {formatCurrency(totalSynergySum)} <span className="text-base text-slate-500 font-normal">원</span>
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63]">
+              <span className="whitespace-nowrap">순매출 기준</span>
+              <span className="text-[#8C9E96] font-medium whitespace-nowrap">부가세(VAT) 별도</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="whitespace-nowrap">연계 창출 부대시설</span>
-            <span className="text-amber-800 font-bold whitespace-nowrap">골프 · 식음 · 레저</span>
-          </div>
-        </div>
 
-        {/* KPI 4: TRevPOR */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
-                <TrendingUp size={20} />
+          {/* KPI 3: Spillover Synergy */}
+          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#B59269]/15 border border-[#B59269]/30 flex items-center justify-center text-[#B59269] shadow-2xs">
+                  <Zap size={20} />
+                </div>
+                <span className="text-xs font-bold text-[#B59269] bg-[#B59269]/15 border border-[#B59269]/30 px-3 py-0.5 rounded-full whitespace-nowrap">
+                  부대시설 연계매출
+                </span>
               </div>
-              <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-3 py-0.5 rounded-full whitespace-nowrap">
-                전사 통합 1실 가치
+              <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
+                {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
               </span>
+              <div className="text-3xl lg:text-4xl font-black text-[#B59269] tracking-tight tabular-nums whitespace-nowrap">
+                {formatCurrency(totalSynergySum)} <span className="text-base text-[#8C9E96] font-normal">원</span>
+              </div>
             </div>
-            <span className="text-xs font-bold text-slate-500 block mb-1 whitespace-nowrap">
-              통합 객실당 가치 (TRevPOR · 골프 포함)
-            </span>
-            <div className="text-3xl lg:text-4xl font-black text-indigo-600 tracking-tight tabular-nums whitespace-nowrap">
-              {formatCurrency(parseNum(summaryData?.summary?.totalTrevPOR || 0))} <span className="text-base text-slate-500 font-normal">원/실</span>
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63]">
+              <span className="whitespace-nowrap">연계 창출 부대시설</span>
+              <span className="text-[#1B382E] font-bold whitespace-nowrap">골프 · 식음 · 레저</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="whitespace-nowrap">(객실 + 골프 + 식음 + 레저) ÷ 판매 객실수</span>
-            <span className="text-indigo-700 font-bold whitespace-nowrap">전사 총합 기준</span>
+
+          {/* KPI 4: TRevPOR */}
+          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shadow-2xs">
+                  <TrendingUp size={20} />
+                </div>
+                <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-3 py-0.5 rounded-full whitespace-nowrap">
+                  전사 통합 1실 가치
+                </span>
+              </div>
+              <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
+                통합 객실당 가치 (TRevPOR · 골프 포함)
+              </span>
+              <div className="text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
+                {formatCurrency(parseNum(summaryData?.summary?.totalTrevPOR || 0))} <span className="text-base text-[#8C9E96] font-normal">원/실</span>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63]">
+              <span className="whitespace-nowrap">(객실 + 골프 + 식음 + 레저) ÷ 판매 객실수</span>
+              <span className="text-[#284F42] font-bold whitespace-nowrap">전사 총합 기준</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Section 1: Segment Breakdown Grid */}
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-8">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-5 border-b border-slate-100 pb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-                <Building2 size={18} />
+        {/* Main Section 1: Segment Breakdown Grid */}
+        <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)]">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-5 border-b border-[#D0C6BB]/50 pb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shrink-0">
+                  <Building2 size={18} />
+                </div>
+                <h2 className="text-xl font-extrabold text-[#1B382E] tracking-tight whitespace-nowrap">
+                  객실 판매 채널별 연계 기여도
+                </h2>
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight whitespace-nowrap">
-                객실 판매 채널별 연계 기여도
-              </h2>
+              <p className="text-xs text-[#5A6B63] font-medium ml-10 break-keep">
+                자사채널, 여행사, 휴양소, 기업단체, 예약실 기준 객실 실적 및 부대시설 연계 기여도입니다.
+              </p>
             </div>
-            <p className="text-xs text-slate-500 font-medium ml-10 break-keep">
-              자사채널, 여행사, 휴양소, 기업단체, 예약실 기준 객실 실적 및 부대시설 연계 기여도입니다.
-            </p>
-          </div>
 
-          {/* Segment Filter Pills */}
-          <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 p-1.5 rounded-2xl border border-slate-200 self-start xl:self-auto">
-            <button
-              onClick={() => setSelectedChannel('ALL')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                selectedChannel === 'ALL' 
-                  ? 'bg-slate-900 text-white shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              전체 채널
-            </button>
-            {channelNames.map((name, idx) => (
+            {/* Segment Filter Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap bg-[#F4F3EE] p-1.5 rounded-2xl border border-[#D0C6BB]/70 self-start xl:self-auto">
               <button
-                key={idx}
-                onClick={() => setSelectedChannel(name)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  selectedChannel === name 
-                    ? 'bg-emerald-600 text-white shadow-xs' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                onClick={() => setSelectedChannel('ALL')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  selectedChannel === 'ALL' 
+                    ? 'bg-[#284F42] text-white shadow-2xs font-extrabold' 
+                    : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-white/80'
                 }`}
               >
-                {name}
+                전체 채널
               </button>
-            ))}
+              {channelNames.map((name, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedChannel(name)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    selectedChannel === name 
+                      ? 'bg-[#284F42] text-white shadow-2xs font-extrabold' 
+                      : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-white/80'
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
         {/* Bento Channel Cards Grid (3 Columns, Perfect '오와열' Alignment) */}
         {segmentSummaries.length > 0 ? (
@@ -730,41 +724,41 @@ export default function Synergy() {
               return (
                 <div 
                   key={idx} 
-                  className={`bg-white rounded-3xl p-6 border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.06)] hover:-translate-y-1 ${meta.borderHover} transition-all duration-300 flex flex-col justify-between group`}
+                  className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.04)] hover:shadow-[0_12px_28px_rgba(40,79,66,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
                 >
                   {/* Card Header: Rank, Icon, Channel Name & Share Badge */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs ${meta.rankBadge}`}>
+                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-extrabold ${idx === 0 ? 'bg-[#B59269] text-white shadow-2xs' : idx === 1 ? 'bg-[#284F42] text-white shadow-2xs' : 'bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/60'}`}>
                           {rank}
                         </span>
-                        <div className={`w-7 h-7 rounded-xl ${meta.iconBg} ${meta.iconColor} flex items-center justify-center flex-shrink-0 border border-slate-100`}>
+                        <div className="w-7 h-7 rounded-xl bg-[#284F42]/10 text-[#284F42] flex items-center justify-center shrink-0 border border-[#284F42]/20">
                           <ChannelIcon size={15} />
                         </div>
-                        <h3 className="font-bold text-base text-slate-900 truncate" title={item.name}>
+                        <h3 className="font-extrabold text-base text-[#1B382E] truncate" title={item.name}>
                           {item.name}
                         </h3>
                       </div>
-                      <span className={`text-xs font-black px-2.5 py-1 rounded-full border ${meta.badgeStyle} flex-shrink-0`}>
+                      <span className="text-xs font-black px-2.5 py-1 rounded-full border bg-[#284F42]/10 text-[#284F42] border-[#284F42]/20 shrink-0">
                         비중 {item.sharePct}%
                       </span>
                     </div>
 
                     {/* Hero Metric: Revenue */}
-                    <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-100/90 mb-4">
-                      <div className="text-[11px] font-semibold text-slate-400 mb-1">
+                    <div className="bg-[#F4F3EE]/70 rounded-2xl p-4 border border-[#D0C6BB]/60 mb-4">
+                      <div className="text-[11px] font-semibold text-[#8C9E96] mb-1">
                         객실 순매출 (VAT 별도)
                       </div>
-                      <div className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight tabular-nums flex items-baseline">
+                      <div className="text-2xl lg:text-3xl font-black text-[#1B382E] tracking-tight tabular-nums flex items-baseline">
                         <span>{formatCurrency(item.revenue)}</span>
-                        <span className="text-sm font-bold text-slate-500 ml-1">원</span>
+                        <span className="text-sm font-bold text-[#8C9E96] ml-1">원</span>
                       </div>
 
                       {/* Contribution Progress Bar */}
-                      <div className="w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden mt-3">
+                      <div className="w-full bg-[#D0C6BB]/40 h-1.5 rounded-full overflow-hidden mt-3">
                         <div 
-                          className={`h-full bg-gradient-to-r ${meta.barColor} rounded-full transition-all duration-500`}
+                          className="h-full bg-[#284F42] rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(100, Math.max(0, Number(item.sharePct)))}%` }}
                         />
                       </div>
@@ -772,24 +766,24 @@ export default function Synergy() {
                   </div>
 
                   {/* Financial Stats Matrix (오와열 완벽 정렬 2-Column Box) */}
-                  <div className="bg-white rounded-2xl p-3.5 border border-slate-200/80 grid grid-cols-2 divide-x divide-slate-100 text-xs">
+                  <div className="bg-white rounded-2xl p-3.5 border border-[#D0C6BB]/60 grid grid-cols-2 divide-x divide-[#D0C6BB]/40 text-xs">
                     <div className="pr-3 flex flex-col justify-center">
-                      <span className="text-[11px] font-medium text-slate-400 mb-0.5">판매 객실수</span>
-                      <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                      <span className="text-[11px] font-medium text-[#8C9E96] mb-0.5">판매 객실수</span>
+                      <span className="text-base font-extrabold text-[#1B382E] tabular-nums">
                         {item.rooms > 0 ? (
-                          <>{item.rooms.toLocaleString()}<span className="text-xs font-medium text-slate-500 ml-0.5">실</span></>
+                          <>{item.rooms.toLocaleString()}<span className="text-xs font-medium text-[#8C9E96] ml-0.5">실</span></>
                         ) : (
-                          <span className="text-xs font-bold text-slate-500">부대 정산</span>
+                          <span className="text-xs font-bold text-[#8C9E96]">부대 정산</span>
                         )}
                       </span>
                     </div>
                     <div className="pl-3.5 flex flex-col justify-center">
-                      <span className="text-[11px] font-medium text-slate-400 mb-0.5">객실 단가 (ADR)</span>
-                      <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                      <span className="text-[11px] font-medium text-[#8C9E96] mb-0.5">객실 단가 (ADR)</span>
+                      <span className="text-base font-extrabold text-[#1B382E] tabular-nums">
                         {item.adr > 0 ? (
-                          <>{formatCurrency(item.adr)}<span className="text-xs font-medium text-slate-500 ml-0.5">원</span></>
+                          <>{formatCurrency(item.adr)}<span className="text-xs font-medium text-[#8C9E96] ml-0.5">원</span></>
                         ) : (
-                          <span className="text-xs font-bold text-slate-400">-</span>
+                          <span className="text-xs font-bold text-[#8C9E96]">-</span>
                         )}
                       </span>
                     </div>
@@ -799,28 +793,28 @@ export default function Synergy() {
             })}
           </div>
         ) : (
-          <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+          <div className="p-12 text-center text-[#8C9E96] bg-[#F4F3EE]/50 rounded-3xl border border-dashed border-[#D0C6BB]">
             조회된 세그먼트 데이터가 없습니다.
           </div>
         )}
       </div>
 
       {/* Main Section 2: Table 2 - 상세 판매 채널별 통합 실적 리포트 */}
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-[#D0C6BB]/50 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+              <div className="w-8 h-8 rounded-xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42]">
                 <Activity size={18} />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-xl font-extrabold text-[#1B382E] tracking-tight">
                 상세 판매 채널별 실적 현황
               </h2>
-              <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-2.5 py-0.5 rounded-full">
                 실시간 집계
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium ml-10">
+            <p className="text-xs text-[#5A6B63] font-medium ml-10">
               온라인 여행사(OTA), 전화/메신저, 기업영업 등 상세 채널별 객실 판매 실적 합계입니다.
             </p>
           </div>
@@ -829,7 +823,7 @@ export default function Synergy() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm whitespace-nowrap min-w-[950px]">
             <thead className="whitespace-nowrap">
-              <tr className="border-b border-slate-200/80 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/80 whitespace-nowrap">
+              <tr className="border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E] uppercase tracking-wider bg-[#F4F3EE] whitespace-nowrap">
                 <th className="py-3.5 px-6 text-left rounded-l-2xl whitespace-nowrap">판매 채널명</th>
                 <th className="py-3.5 px-6 text-right whitespace-nowrap">조회기간 판매 객실수</th>
                 <th className="py-3.5 px-6 text-right whitespace-nowrap">조회기간 객실 순매출</th>
@@ -838,17 +832,17 @@ export default function Synergy() {
                 <th className="py-3.5 px-6 text-right rounded-r-2xl whitespace-nowrap">월누계(MTD) 객실매출</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#D0C6BB]/40">
               {filteredTableRows.length > 0 ? (
                 filteredTableRows.map((item: any, idx: number) => {
                   const isGrand = item.isGrandTotal || item.channelName === '전체 합계';
                   const isSub = item.isChannelSubtotal;
                   
                   const rowClass = isGrand 
-                    ? 'bg-slate-900 text-white font-extrabold shadow-sm'
+                    ? 'bg-[#284F42] text-white font-extrabold shadow-sm'
                     : isSub 
-                    ? 'bg-emerald-50/90 font-bold text-emerald-950 border-y border-emerald-100' 
-                    : 'hover:bg-slate-50/80 transition-colors text-slate-700';
+                    ? 'bg-[#284F42]/10 font-bold text-[#1B382E] border-y border-[#284F42]/20' 
+                    : 'hover:bg-[#F4F3EE]/50 transition-colors text-[#1B382E]';
 
                   const rooms = parseNum(isActualRange ? (item.mtdRooms || 0) : (item.todayRooms || 0));
                   const rev = parseNum(isActualRange ? (item.mtdRevenue || 0) : (item.todayRevenue || 0));
@@ -870,16 +864,16 @@ export default function Synergy() {
                       <td className="py-4 px-6 text-right font-semibold tabular-nums whitespace-nowrap">
                         {adr > 0 ? `${formatCurrency(adr)}원` : '-'}
                       </td>
-                      <td className={`py-4 px-6 text-right font-medium tabular-nums whitespace-nowrap ${isGrand ? 'text-slate-200' : 'text-slate-500'}`}>
+                      <td className={`py-4 px-6 text-right font-medium tabular-nums whitespace-nowrap ${isGrand ? 'text-white/80' : 'text-[#8C9E96]'}`}>
                         {`${mtdRooms.toLocaleString()}실`}
                       </td>
-                      <td className={`py-4 px-6 text-right font-bold tabular-nums whitespace-nowrap ${isGrand ? 'text-emerald-400' : 'text-slate-600'}`}>{formatCurrency(mtdRev)}원</td>
+                      <td className={`py-4 px-6 text-right font-bold tabular-nums whitespace-nowrap ${isGrand ? 'text-[#5FB878]' : 'text-[#284F42]'}`}>{formatCurrency(mtdRev)}원</td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap">
+                  <td colSpan={6} className="py-12 text-center text-[#8C9E96] whitespace-nowrap">
                     조회된 채널 실적 데이터가 없습니다.
                   </td>
                 </tr>
@@ -890,33 +884,33 @@ export default function Synergy() {
       </div>
 
       {/* [Ticket 36] 고객 여정 체류시간(duration_minutes) 구간별 객단가 및 복합 소비 시너지 분석 */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden mt-8">
-        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-teal-50/50 via-white to-indigo-50/30">
+      <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-xs overflow-hidden mt-8">
+        <div className="p-6 border-b border-[#D0C6BB]/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#F4F3EE]/70">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-teal-600 text-white shadow-xs shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-[#284F42] text-white shadow-2xs shrink-0 mt-0.5">
               <Zap size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-lg font-extrabold text-[#1B382E]">
                   고객 여정 체류시간(Stay Duration) 구간별 1인당 객단가 및 복합 소비 시너지
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   체류시간 및 소비 분석
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#5A6B63] mt-1">
                 고객 결제 여정의 최초 결제➔최종 결제 체류시간 구간별 평균 소비액과 동선 결합 시너지를 분석합니다.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {stayDurationIntel ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                 정규 마트 연동 완료
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#B59269]/15 text-[#B59269] border border-[#B59269]/30">
                 Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/customer-stay-duration-synergy)
               </span>
             )}
@@ -924,34 +918,34 @@ export default function Synergy() {
         </div>
 
         {!stayDurationIntel ? (
-          <div className="p-8 bg-slate-50/60">
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
-              <h4 className="text-sm font-extrabold text-slate-800">
+          <div className="p-8 bg-[#F4F3EE]/50">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-[#D0C6BB] p-6 text-center space-y-3">
+              <h4 className="text-sm font-extrabold text-[#1B382E]">
                 [Zero-Fake / Fail-Stop] 고객 여정 체류시간 구간별 객단가 시너지 데이터 미수신 또는 조회 구간 내역 없음
               </h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/customer-stay-duration-synergy</code> 응답이 없거나 선택 구간 데이터가 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              <p className="text-xs text-[#5A6B63] leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-[#F4F3EE] rounded text-[#1B382E] font-mono border border-[#D0C6BB]/60">GET /api/v6/report/customer-stay-duration-synergy</code> 응답이 없거나 선택 구간 데이터가 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">단발 결제 (0분 · 단일업장)</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">단일 업장 평균 객단가 집계 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#8C9E96]">단발 결제 (0분 · 단일업장)</div>
+                  <div className="text-base font-black text-[#8C9E96] mt-1">-</div>
+                  <div className="text-[10px] text-[#8C9E96] mt-0.5">단일 업장 평균 객단가 집계 대기</div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">1~3시간 체류 여정</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">레저+식음 연계 객단가 상승폭 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#8C9E96]">1~3시간 체류 여정</div>
+                  <div className="text-base font-black text-[#8C9E96] mt-1">-</div>
+                  <div className="text-[10px] text-[#8C9E96] mt-0.5">레저+식음 연계 객단가 상승폭 대기</div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">3~6시간 체류 여정</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">반나절 체류 고객 평균 소비액 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#8C9E96]">3~6시간 체류 여정</div>
+                  <div className="text-base font-black text-[#8C9E96] mt-1">-</div>
+                  <div className="text-[10px] text-[#8C9E96] mt-0.5">반나절 체류 고객 평균 소비액 대기</div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">6시간+ 숙박·종일 체류</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">종일 체류 VIP 객단가 배수 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#8C9E96]">6시간+ 숙박·종일 체류</div>
+                  <div className="text-base font-black text-[#8C9E96] mt-1">-</div>
+                  <div className="text-[10px] text-[#8C9E96] mt-0.5">종일 체류 VIP 객단가 배수 대기</div>
                 </div>
               </div>
             </div>
@@ -959,52 +953,52 @@ export default function Synergy() {
         ) : (
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">총 분석 고객 여정 수</div>
-                <div className="text-xl font-black text-slate-900 mt-1">
+              <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                <div className="text-xs font-bold text-[#5A6B63]">총 분석 고객 여정 수</div>
+                <div className="text-xl font-black text-[#1B382E] mt-1">
                   {stayDurationIntel.summary?.totalJourneys != null ? `${Number(stayDurationIntel.summary.totalJourneys).toLocaleString()}건` : '-'}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#8C9E96] mt-1">
                   복합 소비 여정: {(stayDurationIntel.summary?.multiStopJourneys ?? stayDurationIntel.summary?.totalSynergyJourneys) != null ? `${Number(stayDurationIntel.summary?.multiStopJourneys ?? stayDurationIntel.summary?.totalSynergyJourneys).toLocaleString()}건` : '-'}
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">고객 평균 체류시간</div>
-                <div className="text-xl font-black text-slate-700 mt-1">
+              <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                <div className="text-xs font-bold text-[#5A6B63]">고객 평균 체류시간</div>
+                <div className="text-xl font-black text-[#1B382E] mt-1">
                   {stayDurationIntel.summary?.avgStayMinutes != null ? `${stayDurationIntel.summary.avgStayMinutes}분` : (stayDurationIntel.summary?.singleStopAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.singleStopAvgSpent)}원` : '-')}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#8C9E96] mt-1">
                   최초 결제 ➔ 최종 결제 구간
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">복합 소비 시너지 비중</div>
-                <div className="text-xl font-black text-teal-700 mt-1">
+              <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB]/60">
+                <div className="text-xs font-bold text-[#5A6B63]">복합 소비 시너지 비중</div>
+                <div className="text-xl font-black text-[#284F42] mt-1">
                   {stayDurationIntel.summary?.synergySharePct != null ? `${stayDurationIntel.summary.synergySharePct}%` : (stayDurationIntel.summary?.midStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.midStayAvgSpent)}원` : '-')}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#8C9E96] mt-1">
                   2개 이상 업장 복합 결제율
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200">
-                <div className="text-xs font-bold text-indigo-700">단독 업장 소비 여정</div>
-                <div className="text-lg font-black text-indigo-900 mt-1">
+              <div className="p-4 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20">
+                <div className="text-xs font-bold text-[#284F42]">단독 업장 소비 여정</div>
+                <div className="text-lg font-black text-[#1B382E] mt-1">
                   {(stayDurationIntel.summary?.golfOnlyJourneys != null && stayDurationIntel.summary?.roomOnlyJourneys != null) ? `골프 ${Number(stayDurationIntel.summary.golfOnlyJourneys).toLocaleString()} / 객실 ${Number(stayDurationIntel.summary.roomOnlyJourneys).toLocaleString()}건` : (stayDurationIntel.summary?.longStayAvgSpent != null ? `${formatCurrency(stayDurationIntel.summary.longStayAvgSpent)}원` : '-')}
                 </div>
-                <div className="text-[11px] text-indigo-600 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   단일 시설 집중 고객군
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 overflow-hidden">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-800">체류시간 구간별 여정 수 · 비중 · 복합 시너지 분석</span>
-                <span className="text-[11px] text-slate-500">fact_customer_journeys 기준</span>
+            <div className="rounded-2xl border border-[#D0C6BB]/75 overflow-hidden">
+              <div className="px-4 py-3 bg-[#F4F3EE] border-b border-[#D0C6BB]/75 flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[#1B382E]">체류시간 구간별 여정 수 · 비중 · 복합 시너지 분석</span>
+                <span className="text-[11px] text-[#8C9E96]">fact_customer_journeys 기준</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
-                  <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200">
+                  <thead className="bg-[#F4F3EE]/80 text-[#5A6B63] border-b border-[#D0C6BB]/60">
                     <tr>
                       <th className="py-2.5 px-4 text-left font-bold">체류시간 구간</th>
                       <th className="py-2.5 px-4 text-right font-bold">여정 건수</th>
@@ -1013,20 +1007,20 @@ export default function Synergy() {
                       <th className="py-2.5 px-4 text-right font-bold">복합 시너지율</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#D0C6BB]/40">
                     {(stayDurationIntel.durationTiers || stayDurationIntel.durationBuckets || []).map((b: any, idx: number) => (
-                      <tr key={b.durationTier || b.stayBucket || idx} className="hover:bg-slate-50/80">
-                        <td className="py-3 px-4 font-bold text-slate-800">{b.durationTierName ?? b.stayBucket ?? '-'}</td>
-                        <td className="py-3 px-4 text-right text-slate-700">
+                      <tr key={b.durationTier || b.stayBucket || idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                        <td className="py-3 px-4 font-bold text-[#1B382E]">{b.durationTierName ?? b.stayBucket ?? '-'}</td>
+                        <td className="py-3 px-4 text-right text-[#1B382E]">
                           {(b.journeyCount ?? b.journeys) != null ? `${Number(b.journeyCount ?? b.journeys).toLocaleString()}건` : '-'}
                         </td>
-                        <td className="py-3 px-4 text-right text-slate-600">
+                        <td className="py-3 px-4 text-right text-[#5A6B63]">
                           {b.sharePct != null ? `${b.sharePct}%` : (b.avgStops != null ? `${b.avgStops}곳` : '-')}
                         </td>
-                        <td className="py-3 px-4 text-right font-bold text-teal-700">
+                        <td className="py-3 px-4 text-right font-bold text-[#284F42]">
                           {b.roomGolfSynergyCount != null ? `${Number(b.roomGolfSynergyCount).toLocaleString()}건` : (b.avgSpent != null ? `${formatCurrency(b.avgSpent)}원` : '-')}
                         </td>
-                        <td className="py-3 px-4 text-right font-extrabold text-slate-900">
+                        <td className="py-3 px-4 text-right font-extrabold text-[#1B382E]">
                           {b.synergyRate != null ? `${b.synergyRate}%` : (b.totalRevenue != null ? `${formatCurrency(b.totalRevenue)}원` : '-')}
                         </td>
                       </tr>
@@ -1038,7 +1032,7 @@ export default function Synergy() {
           </div>
         )}
       </div>
-
+      </div>
     </div>
   );
 }

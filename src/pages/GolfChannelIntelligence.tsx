@@ -769,96 +769,93 @@ export default function GolfChannelIntelligence() {
   const memberSynergyTeams = (data.memberSynergy as any)?.totalAnchorTeams != null ? Number((data.memberSynergy as any).totalAnchorTeams) : null;
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-300">
-      
-      {/* 🌟 Header Section */}
-      <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 uppercase tracking-wider">
-                Golf Intelligence Platform
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                주요 채널 전수 분석
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
-                수율 관리 (Yield Mgmt)
-              </span>
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
+      {/* Decorative Ambient Header Background */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-6">
+        
+        {/* 🌟 Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
+          <div className="text-white">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+              <span>BELLEFORET RESORT · 골프 채널 & 예약 인텔리전스</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-              <Flag className="text-[#00ae95] w-8 h-8" />
-              골프 채널&예약 ⛳
-            </h1>
-            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-              주요 상세 판매 채널의 실현 단가, 3인 플레이 공실 손실액, 회원 앵커 효과, 그리고 2024~2026 연도별 추이를 정밀 분석합니다.
+            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">골프 채널 & 예약 인텔리전스 ⛳</h1>
+            <p className="text-sm text-white/80 mt-1 break-keep">
+              주요 상세 판매 채널의 실현 단가, 3인 플레이 공실 손실액, 회원 앵커 효과, 그리고 2024~2026 연도별 추이 정밀 분석
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex items-center gap-3">
             <GlobalDatePicker />
             <button
               onClick={fetchIntelligenceData}
               disabled={loading}
-              className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+              className="p-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-2xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs flex items-center justify-center gap-1.5 backdrop-blur-xs"
+              title="실적 새로고침"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="text-xs font-bold sm:hidden">새로고침</span>
             </button>
           </div>
         </div>
-      </div>
 
-      {/* 🌟 Scope Mode Switcher & Date Badge */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
-            데이터 집계 범위:
-          </span>
-          <div className="inline-flex p-1 bg-slate-100 rounded-2xl gap-1">
-            <button
-              type="button"
-              onClick={() => setViewScope('SELECTED_DATE')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                viewScope === 'SELECTED_DATE'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              📅 {isRangeMode ? `선택 기간 실적 (${startDate} ~ ${endDate})` : `단일 1일 실적 (${startDate})`}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewScope('FULL_ASSET')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                viewScope === 'FULL_ASSET'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              🏛️ 2026년 DB 전수 누적
-            </button>
+        {/* 🌟 Scope Mode Switcher & Date Badge */}
+        <div className="bg-white p-5 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="text-xs font-bold text-[#5A6B63] whitespace-nowrap">
+              데이터 집계 범위:
+            </span>
+            <div className="inline-flex p-1 bg-[#F4F3EE] rounded-2xl gap-1 border border-[#D0C6BB]/60">
+              <button
+                type="button"
+                onClick={() => setViewScope('SELECTED_DATE')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  viewScope === 'SELECTED_DATE'
+                    ? 'bg-[#284F42] text-white shadow-xs'
+                    : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-white/60'
+                }`}
+              >
+                📅 {isRangeMode ? `선택 기간 실적 (${startDate} ~ ${endDate})` : `단일 1일 실적 (${startDate})`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewScope('FULL_ASSET')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  viewScope === 'FULL_ASSET'
+                    ? 'bg-[#284F42] text-white shadow-xs'
+                    : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-white/60'
+                }`}
+              >
+                🏛️ 2026년 DB 전수 누적
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="text-xs font-medium text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200/60 flex items-center gap-2">
-          {viewScope === 'SELECTED_DATE' ? (
-            isRangeMode ? (
-              <span>
-                ✨ 글로벌 달력에서 지정한 <strong className="text-emerald-700 font-bold">{startDate} ~ {endDate}</strong> 기간의 실시간 집계 실적입니다.
-              </span>
+          <div className="text-xs font-medium text-[#5A6B63] bg-[#F4F3EE] px-3.5 py-2 rounded-xl border border-[#D0C6BB]/60 flex items-center gap-2">
+            {viewScope === 'SELECTED_DATE' ? (
+              isRangeMode ? (
+                <span>
+                  ✨ 글로벌 달력에서 지정한 <strong className="text-[#1E523F] font-bold">{startDate} ~ {endDate}</strong> 기간의 실시간 집계 실적입니다.
+                </span>
+              ) : (
+                <span>
+                  ✨ <strong className="text-[#1E523F] font-bold">{startDate} 당일 1일</strong>에 정산 완료된 실제 티타임 실적입니다. (하루 실측 {data.summary.totalTeams.toLocaleString()}팀 / {data.summary.totalPlayers.toLocaleString()}명)
+                </span>
+              )
             ) : (
               <span>
-                ✨ <strong className="text-emerald-700 font-bold">{startDate} 당일 1일</strong>에 정산 완료된 실제 티타임 실적입니다. (하루 실측 {data.summary.totalTeams.toLocaleString()}팀 / {data.summary.totalPlayers.toLocaleString()}명)
+                ✨ <strong className="text-[#1B382E] font-bold">2026년 골프장 전수 누적({data.summary.totalTeams.toLocaleString()}팀 / {data.summary.totalPlayers.toLocaleString()}명)</strong> 종합 분석 자산입니다.
               </span>
-            )
-          ) : (
-            <span>
-              ✨ <strong className="text-slate-900 font-bold">2026년 골프장 전수 누적({data.summary.totalTeams.toLocaleString()}팀 / {data.summary.totalPlayers.toLocaleString()}명)</strong> 종합 분석 자산입니다.
-            </span>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
       {/* 🌟 4대 핵심 경영 KPI 바 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -973,7 +970,7 @@ export default function GolfChannelIntelligence() {
       </div>
 
       {/* 🌟 Section 1: [수익성 평가] 채널별 예약 기여도 vs 실현 평균 그린피 매트릭스 */}
-      <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -1094,7 +1091,7 @@ export default function GolfChannelIntelligence() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* 2-A: 팀 구성 분포 및 3인 플레이 공실 손실 */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div>
@@ -1129,7 +1126,7 @@ export default function GolfChannelIntelligence() {
         </div>
 
         {/* 2-B: 🌟 조인(1~2인) 고객 주 이용 판매 채널 랭킹 */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div>
@@ -1193,7 +1190,7 @@ export default function GolfChannelIntelligence() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Section 3: 회원 앵커 효과 */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div>
@@ -1257,7 +1254,7 @@ export default function GolfChannelIntelligence() {
         </div>
 
         {/* Section 4: 티업 시간대별 수율 관리 2D 히트맵 */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div>
@@ -1312,7 +1309,7 @@ export default function GolfChannelIntelligence() {
       </div>
 
       {/* 🌟 Section 5: [시계열 YoY] 2024, 2025, 2026~ 연도별·월별 그린피 & 이용 팀 수 추이 */}
-      <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -1443,7 +1440,7 @@ export default function GolfChannelIntelligence() {
       </div>
 
       {/* 🌟 Section 6: 거래처별 상세 피벗 테이블 */}
-      <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -1748,6 +1745,7 @@ export default function GolfChannelIntelligence() {
         )}
       </div>
 
+      </div>
     </div>
   );
 }

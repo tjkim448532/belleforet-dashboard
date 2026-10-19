@@ -245,7 +245,7 @@ export default function Members() {
           data: roomsData.map((val, idx) => ({
             value: val,
             itemStyle: {
-              color: isMemberRateCategory(labels[idx]) ? '#00ae95' : '#94a3b8',
+              color: isMemberRateCategory(labels[idx]) ? '#284F42' : '#D0C6BB',
               borderRadius: [8, 8, 0, 0]
             }
           }))
@@ -257,7 +257,7 @@ export default function Members() {
           data: adrData,
           smooth: true,
           symbolSize: 8,
-          itemStyle: { color: '#4f46e5' },
+          itemStyle: { color: '#B59269' },
           lineStyle: { width: 3 }
         }
       ]
@@ -265,259 +265,265 @@ export default function Members() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50 space-y-8">
-      
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-emerald-900 via-[#00ae95] to-slate-900 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/20 tracking-wide uppercase whitespace-nowrap">
-                BELLEFORET MEMBERSHIP & LOYALTY INTELLIGENCE
-              </span>
-              <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/20 font-medium whitespace-nowrap">
-                <Calendar size={12} className="text-white shrink-0" />
-                조회기간: <strong className="ml-1">{startDate} {isEffectiveRange && endDate ? `~ ${endDate}` : ''}</strong>
-              </span>
-            </div>
-            
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-1 flex items-center gap-3 break-keep">
-              <Award className="text-white shrink-0" size={32} />
-              <span className="break-keep">
-                통합 회원권 및 멤버십 분석 대시보드
-              </span>
-            </h1>
-            <p className="text-sm text-white/85 mt-2 font-normal max-w-4xl break-keep">
-              콘도 분양회원(기명·구좌 / 무기명), 법인 휴양소 협약 회원사, 골프장 분양회원(법인 풀구좌·콘도 구좌) 및 동반 앵커 효과, 디지털 온라인 멤버십까지 벨포레 전 부문의 회원 데이터를 통합 분석합니다.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 self-start 2xl:self-center">
-            <GlobalDatePicker showPresets={true} />
-            <button
-              onClick={fetchAllMemberIntelligence}
-              disabled={loading}
-              className="px-4 py-2.5 bg-brand-mint hover:bg-emerald-400 active:bg-emerald-600 active:scale-90 text-white rounded-xl text-xs font-bold transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer select-none whitespace-nowrap shrink-0"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              새로고침
-            </button>
-          </div>
-        </div>
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
+      {/* Ambient Forest Glow Banner */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
 
-      {apiError && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-sm font-semibold">
-          {apiError}
-        </div>
-      )}
-
-      {/* 4대 핵심 회원 그룹 요약 KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="relative z-10 max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         
-        {/* KPI 1: 콘도 기명/구좌회원 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                <Hotel size={16} className="text-emerald-600 shrink-0" /> 콘도 기명/구좌회원
-              </span>
-              <span className="text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                정규 분양회원
-              </span>
+        {/* Top Header Card */}
+        <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] relative overflow-hidden">
+          <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
+            <div className="flex-1 min-w-0">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+                <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+                <span>BELLEFORET RESORT · MEMBERSHIP & LOYALTY INTELLIGENCE</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="bg-[#E8F2EE] text-[#1E523F] text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border border-[#B4C6C1]/70 font-bold whitespace-nowrap">
+                  <Calendar size={12} className="text-[#284F42] shrink-0" />
+                  조회기간: <strong className="ml-1 text-[#1B382E]">{startDate} {isEffectiveRange && endDate ? `~ ${endDate}` : ''}</strong>
+                </span>
+              </div>
+              
+              <h1 className="text-2xl lg:text-3xl font-black text-[#1B382E] tracking-tight mt-1 flex items-center gap-3 break-keep">
+                <Award className="text-[#284F42] shrink-0" size={32} />
+                <span>통합 회원권 및 멤버십 분석 대시보드</span>
+              </h1>
+              <p className="text-sm text-[#5A6B63] mt-2 font-normal max-w-4xl break-keep">
+                콘도 분양회원(기명·구좌 / 무기명), 법인 휴양소 협약 회원사, 골프장 분양회원(법인 풀구좌·콘도 구좌) 및 동반 앵커 효과, 디지털 온라인 멤버십까지 벨포레 전 부문의 회원 데이터를 통합 분석합니다.
+              </p>
             </div>
-            <div className="text-3xl font-black text-slate-900 my-1 font-financial">
-              {loading ? (
-                <div className="animate-pulse h-9 w-28 bg-slate-200 rounded-lg inline-block" />
-              ) : (
-                <>
-                  {formatNum(memberRoomRow?.todayRooms || 0)}
-                  <span className="text-sm font-semibold text-slate-500 ml-1">실</span>
-                  <span className="text-base font-bold text-emerald-700 ml-2.5">
-                    ({formatNum(memberRoomRow?.todayRevenue || 0)}원)
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="text-xs text-slate-600 mt-1 font-financial">
-              조회기간 객단가(ADR): <strong className="text-slate-900">{formatNum(memberRoomRow?.todayAdr || 0)}원</strong>
-            </div>
-          </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-4 rounded-b-[28px] text-[11px] text-slate-600 space-y-1 font-financial">
-            <div className="flex justify-between">
-              <span className="text-slate-500">당월 누적(MTD)</span>
-              <strong className="text-slate-800">
-                {formatNum(memberRoomRow?.mtdRooms || 0)}실 · {formatNum(memberRoomRow?.mtdRevenue || 0)}원
-              </strong>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">연간 누적(YTD)</span>
-              <strong className="text-emerald-700">
-                {formatNum(memberRoomRow?.ytdRooms || 0)}실 · {formatNum(memberRoomRow?.ytdRevenue || 0)}원
-              </strong>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 self-start 2xl:self-center">
+              <GlobalDatePicker showPresets={true} />
+              <button
+                onClick={fetchAllMemberIntelligence}
+                disabled={loading}
+                className="px-4 py-2.5 bg-[#B59269] hover:bg-[#a38058] active:scale-95 text-white rounded-xl text-xs font-bold transition-all duration-150 shadow-2xs flex items-center justify-center gap-2 cursor-pointer select-none whitespace-nowrap shrink-0"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                새로고침
+              </button>
             </div>
           </div>
         </div>
 
-        {/* KPI 2: 콘도 무기명회원 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                <Award size={16} className="text-teal-600 shrink-0" /> 콘도 무기명회원 (Bearer)
-              </span>
-              <span className="text-[11px] font-bold bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full border border-teal-200">
-                무기명 분양권
-              </span>
+        {apiError && (
+          <div className="bg-[#FDF0ED] border border-[#EAC5BD] text-[#8B2635] rounded-2xl p-4 text-sm font-semibold">
+            {apiError}
+          </div>
+        )}
+
+        {/* 4대 핵심 회원 그룹 요약 KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          
+          {/* KPI 1: 콘도 기명/구좌회원 */}
+          <div className="bg-white p-6 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#5A6B63] flex items-center gap-1.5">
+                  <Hotel size={16} className="text-[#284F42] shrink-0" /> 콘도 기명/구좌회원
+                </span>
+                <span className="text-[11px] font-bold bg-[#E8F2EE] text-[#1E523F] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70">
+                  정규 분양회원
+                </span>
+              </div>
+              <div className="text-3xl font-black text-[#1B382E] my-1 font-financial">
+                {loading ? (
+                  <div className="animate-pulse h-9 w-28 bg-[#F4F3EE] rounded-lg inline-block" />
+                ) : (
+                  <>
+                    {formatNum(memberRoomRow?.todayRooms || 0)}
+                    <span className="text-sm font-semibold text-[#5A6B63] ml-1">실</span>
+                    <span className="text-base font-bold text-[#284F42] ml-2.5">
+                      ({formatNum(memberRoomRow?.todayRevenue || 0)}원)
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="text-xs text-[#5A6B63] mt-1 font-financial">
+                조회기간 객단가(ADR): <strong className="text-[#1B382E]">{formatNum(memberRoomRow?.todayAdr || 0)}원</strong>
+              </div>
             </div>
-            <div className="text-3xl font-black text-slate-900 my-1 font-financial">
-              {loading ? (
-                <div className="animate-pulse h-9 w-28 bg-slate-200 rounded-lg inline-block" />
-              ) : (
-                <>
-                  {formatNum(bearerRoomRow?.todayRooms || 0)}
-                  <span className="text-sm font-semibold text-slate-500 ml-1">실</span>
-                  <span className="text-base font-bold text-teal-700 ml-2.5">
-                    ({formatNum(bearerRoomRow?.todayRevenue || 0)}원)
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="text-xs text-slate-600 mt-1 font-financial">
-              조회기간 객단가(ADR): <strong className="text-slate-900">{formatNum(bearerRoomRow?.todayAdr || 0)}원</strong>
+
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 bg-[#F4F3EE]/80 -mx-6 -mb-6 p-4 rounded-b-3xl text-[11px] text-[#5A6B63] space-y-1 font-financial">
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">당월 누적(MTD)</span>
+                <strong className="text-[#1B382E]">
+                  {formatNum(memberRoomRow?.mtdRooms || 0)}실 · {formatNum(memberRoomRow?.mtdRevenue || 0)}원
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">연간 누적(YTD)</span>
+                <strong className="text-[#1E523F]">
+                  {formatNum(memberRoomRow?.ytdRooms || 0)}실 · {formatNum(memberRoomRow?.ytdRevenue || 0)}원
+                </strong>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-4 rounded-b-[28px] text-[11px] text-slate-600 space-y-1 font-financial">
-            <div className="flex justify-between">
-              <span className="text-slate-500">당월 누적(MTD)</span>
-              <strong className="text-slate-800">
-                {formatNum(bearerRoomRow?.mtdRooms || 0)}실 · {formatNum(bearerRoomRow?.mtdRevenue || 0)}원
-              </strong>
+          {/* KPI 2: 콘도 무기명회원 */}
+          <div className="bg-white p-6 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#5A6B63] flex items-center gap-1.5">
+                  <Award size={16} className="text-[#284F42] shrink-0" /> 콘도 무기명회원 (Bearer)
+                </span>
+                <span className="text-[11px] font-bold bg-[#F4F3EE] text-[#1B382E] px-2.5 py-0.5 rounded-full border border-[#D0C6BB]/70">
+                  무기명 분양권
+                </span>
+              </div>
+              <div className="text-3xl font-black text-[#1B382E] my-1 font-financial">
+                {loading ? (
+                  <div className="animate-pulse h-9 w-28 bg-[#F4F3EE] rounded-lg inline-block" />
+                ) : (
+                  <>
+                    {formatNum(bearerRoomRow?.todayRooms || 0)}
+                    <span className="text-sm font-semibold text-[#5A6B63] ml-1">실</span>
+                    <span className="text-base font-bold text-[#1B382E] ml-2.5">
+                      ({formatNum(bearerRoomRow?.todayRevenue || 0)}원)
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="text-xs text-[#5A6B63] mt-1 font-financial">
+                조회기간 객단가(ADR): <strong className="text-[#1B382E]">{formatNum(bearerRoomRow?.todayAdr || 0)}원</strong>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">연간 누적(YTD)</span>
-              <strong className="text-teal-700">
-                {formatNum(bearerRoomRow?.ytdRooms || 0)}실 · {formatNum(bearerRoomRow?.ytdRevenue || 0)}원
-              </strong>
+
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 bg-[#F4F3EE]/80 -mx-6 -mb-6 p-4 rounded-b-3xl text-[11px] text-[#5A6B63] space-y-1 font-financial">
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">당월 누적(MTD)</span>
+                <strong className="text-[#1B382E]">
+                  {formatNum(bearerRoomRow?.mtdRooms || 0)}실 · {formatNum(bearerRoomRow?.mtdRevenue || 0)}원
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">연간 누적(YTD)</span>
+                <strong className="text-[#1B382E]">
+                  {formatNum(bearerRoomRow?.ytdRooms || 0)}실 · {formatNum(bearerRoomRow?.ytdRevenue || 0)}원
+                </strong>
+              </div>
             </div>
           </div>
+
+          {/* KPI 3: 골프장 분양회원 */}
+          <div className="bg-white p-6 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#5A6B63] flex items-center gap-1.5">
+                  <Flag size={16} className="text-[#284F42] shrink-0" /> 골프 분양회원 내장·매출
+                </span>
+                <span className="text-[11px] font-bold bg-[#E8F2EE] text-[#1E523F] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70">
+                  비중 {golfMemberSummary?.totalBunyangPlayerRatio ?? 0}%
+                </span>
+              </div>
+              <div className="text-3xl font-black text-[#284F42] my-1 font-financial">
+                {loading ? (
+                  <div className="animate-pulse h-9 w-28 bg-[#F4F3EE] rounded-lg inline-block" />
+                ) : (
+                  <>
+                    {formatNum(golfMemberSummary?.totalBunyangPlayers || 0)}
+                    <span className="text-sm font-semibold text-[#5A6B63] ml-1">명</span>
+                    <span className="text-base font-bold text-[#1E523F] ml-2">
+                      ({formatNum(golfMemberSummary?.totalBunyangTeams || 0)}팀)
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="text-xs text-[#5A6B63] mt-1 font-financial">
+                분양회원 그린피 매출: <strong className="text-[#1B382E]">{formatNum(golfMemberSummary?.totalBunyangRevenue || 0)}원</strong>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 bg-[#F4F3EE]/80 -mx-6 -mb-6 p-4 rounded-b-3xl text-[11px] text-[#5A6B63] space-y-1 font-financial">
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">회원 동반 비회원 앵커 매출</span>
+                <strong className="text-[#1E523F]">
+                  +{formatNum(golfMemberSynergy?.totalAnchorRevenue || 0)}원
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">회원 1인당 그린피 우대차액</span>
+                <strong className="text-[#1B382E]">
+                  {golfMembershipAnalysis?.greenFeeGapFormatted ? `-${golfMembershipAnalysis.greenFeeGapFormatted}원` : '-'}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI 4: 디지털 온라인/모바일 회원 */}
+          <div className="bg-white p-6 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#5A6B63] flex items-center gap-1.5">
+                  <Smartphone size={16} className="text-[#B59269] shrink-0" /> 온라인·모바일 통합 회원
+                </span>
+                <span className="text-[11px] font-bold bg-[#B59269]/15 text-[#B59269] px-2.5 py-0.5 rounded-full border border-[#B59269]/30">
+                  활성률 {onlineSummary?.recentActiveRate ?? 0}%
+                </span>
+              </div>
+              <div className="text-3xl font-black text-[#1B382E] my-1 font-financial">
+                {loading ? (
+                  <div className="animate-pulse h-9 w-28 bg-[#F4F3EE] rounded-lg inline-block" />
+                ) : (
+                  <>
+                    {formatNum(onlineSummary?.totalCumulativeMembers || 0)}
+                    <span className="text-sm font-semibold text-[#5A6B63] ml-1">명</span>
+                  </>
+                )}
+              </div>
+              <div className="text-xs text-[#5A6B63] mt-1 font-financial">
+                최근 활성 회원: <strong className="text-[#284F42]">{formatNum(onlineSummary?.recentActiveMembers || 0)}명</strong> · 다회 재구매: <strong className="text-[#1B382E]">{formatNum(onlineSummary?.repeatBuyers || 0)}명</strong>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 bg-[#F4F3EE]/80 -mx-6 -mb-6 p-4 rounded-b-3xl text-[11px] text-[#5A6B63] space-y-1 font-financial">
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">다부문 교차 이용 VIP</span>
+                <strong className="text-[#284F42]">
+                  {formatNum(onlineChannelBreakdown?.multiChannel || 0)}명 ({onlineChannelBreakdown?.multiChannelRatio ?? 0}%)
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#5A6B63]">진성 다회 방문자 (True Repeat)</span>
+                <strong className="text-[#1B382E]">
+                  {formatNum(onlineSummary?.trueRepeatBuyers || 0)}명 ({onlineSummary?.trueRepeatRate ?? 0}%)
+                </strong>
+              </div>
+            </div>
+          </div>
+
         </div>
-
-        {/* KPI 3: 골프장 분양회원 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                <Flag size={16} className="text-blue-600 shrink-0" /> 골프 분양회원 내장·매출
-              </span>
-              <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
-                비중 {golfMemberSummary?.totalBunyangPlayerRatio ?? 0}%
-              </span>
-            </div>
-            <div className="text-3xl font-black text-slate-900 my-1 font-financial">
-              {loading ? (
-                <div className="animate-pulse h-9 w-28 bg-slate-200 rounded-lg inline-block" />
-              ) : (
-                <>
-                  {formatNum(golfMemberSummary?.totalBunyangPlayers || 0)}
-                  <span className="text-sm font-semibold text-slate-500 ml-1">명</span>
-                  <span className="text-base font-bold text-blue-700 ml-2">
-                    ({formatNum(golfMemberSummary?.totalBunyangTeams || 0)}팀)
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="text-xs text-slate-600 mt-1 font-financial">
-              분양회원 그린피 매출: <strong className="text-slate-900">{formatNum(golfMemberSummary?.totalBunyangRevenue || 0)}원</strong>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-4 rounded-b-[28px] text-[11px] text-slate-600 space-y-1 font-financial">
-            <div className="flex justify-between">
-              <span className="text-slate-500">회원 동반 비회원 앵커 매출</span>
-              <strong className="text-blue-700">
-                +{formatNum(golfMemberSynergy?.totalAnchorRevenue || 0)}원
-              </strong>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">회원 1인당 그린피 우대차액</span>
-              <strong className="text-slate-800">
-                {golfMembershipAnalysis?.greenFeeGapFormatted ? `-${golfMembershipAnalysis.greenFeeGapFormatted}원` : '-'}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 4: 디지털 온라인/모바일 회원 */}
-        <div className="bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                <Smartphone size={16} className="text-indigo-600 shrink-0" /> 온라인·모바일 통합 회원
-              </span>
-              <span className="text-[11px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                활성률 {onlineSummary?.recentActiveRate ?? 0}%
-              </span>
-            </div>
-            <div className="text-3xl font-black text-slate-900 my-1 font-financial">
-              {loading ? (
-                <div className="animate-pulse h-9 w-28 bg-slate-200 rounded-lg inline-block" />
-              ) : (
-                <>
-                  {formatNum(onlineSummary?.totalCumulativeMembers || 0)}
-                  <span className="text-sm font-semibold text-slate-500 ml-1">명</span>
-                </>
-              )}
-            </div>
-            <div className="text-xs text-slate-600 mt-1 font-financial">
-              최근 활성 회원: <strong className="text-indigo-700">{formatNum(onlineSummary?.recentActiveMembers || 0)}명</strong> · 다회 재구매: <strong className="text-slate-900">{formatNum(onlineSummary?.repeatBuyers || 0)}명</strong>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-4 rounded-b-[28px] text-[11px] text-slate-600 space-y-1 font-financial">
-            <div className="flex justify-between">
-              <span className="text-slate-500">다부문 교차 이용 VIP</span>
-              <strong className="text-indigo-700">
-                {formatNum(onlineChannelBreakdown?.multiChannel || 0)}명 ({onlineChannelBreakdown?.multiChannelRatio ?? 0}%)
-              </strong>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">진성 다회 방문자 (True Repeat)</span>
-              <strong className="text-slate-800">
-                {formatNum(onlineSummary?.trueRepeatBuyers || 0)}명 ({onlineSummary?.trueRepeatRate ?? 0}%)
-              </strong>
-            </div>
-          </div>
-        </div>
-
-      </div>
 
       {/* SECTION 1: 콘도(객실) 회원권 & 요금타입별 정밀 실적 분석 */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-xs border border-slate-200/80 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#D0C6BB]/60 pb-5">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                 콘도 분양회원 및 요금 유형 분석
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
-              <Hotel className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-xl font-black text-[#1B382E] mt-1.5 flex items-center gap-2">
+              <Hotel className="w-5 h-5 text-[#284F42]" />
               콘도 회원권(기명·무기명·휴양소·임직원) 및 요금타입별 객실 실적
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#5A6B63] mt-1">
               산하 PMS 요금타입(Rate Type) 원장 기준 회원권 객실과 일반/비회원 객실의 조회기간·당월(MTD)·연간(YTD) 판매 객실수, 순매출, 객단가(ADR) 및 전년 동기(LY) 실적을 대조합니다.
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start lg:self-center">
+          <div className="flex items-center gap-1.5 bg-[#F4F3EE] p-1 rounded-xl self-start lg:self-center border border-[#D0C6BB]/60">
             <button
               onClick={() => setRatePeriodMode('today')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ratePeriodMode === 'today' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                ratePeriodMode === 'today' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
             >
               조회기간 실적
@@ -525,7 +531,7 @@ export default function Members() {
             <button
               onClick={() => setRatePeriodMode('mtd')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ratePeriodMode === 'mtd' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                ratePeriodMode === 'mtd' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
             >
               당월 누적 (MTD)
@@ -533,7 +539,7 @@ export default function Members() {
             <button
               onClick={() => setRatePeriodMode('ytd')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ratePeriodMode === 'ytd' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                ratePeriodMode === 'ytd' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
             >
               연간 누적 (YTD)
@@ -543,17 +549,17 @@ export default function Members() {
 
         {/* 콘도 회원권 vs 비회원 비교 차트 */}
         {!loading && segmentRateRows.length > 0 && (
-          <div className="bg-slate-50/60 rounded-2xl p-4 border border-slate-100">
+          <div className="bg-[#F4F3EE]/80 rounded-2xl p-4 border border-[#D0C6BB]/60">
             <div className="flex items-center justify-between mb-2 px-2">
-              <span className="text-xs font-bold text-slate-700">
+              <span className="text-xs font-bold text-[#1B382E]">
                 요금타입(회원권 vs 비회원) 객실 판매량 및 평균 객단가(ADR) 비교 ({ratePeriodMode === 'today' ? '조회기간' : ratePeriodMode === 'mtd' ? '당월 MTD' : '연간 YTD'})
               </span>
               <div className="flex items-center gap-3 text-[11px]">
-                <span className="flex items-center gap-1 text-emerald-700 font-semibold">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#00ae95] inline-block" /> 회원권/협약 그룹
+                <span className="flex items-center gap-1 text-[#1E523F] font-bold">
+                  <span className="w-2.5 h-2.5 rounded-xs bg-[#284F42] inline-block" /> 회원권/협약 그룹
                 </span>
-                <span className="flex items-center gap-1 text-slate-500 font-semibold">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-slate-400 inline-block" /> 일반/비회원 그룹
+                <span className="flex items-center gap-1 text-[#5A6B63] font-semibold">
+                  <span className="w-2.5 h-2.5 rounded-xs bg-[#D0C6BB] inline-block" /> 일반/비회원 그룹
                 </span>
               </div>
             </div>
@@ -564,25 +570,25 @@ export default function Members() {
         )}
 
         {/* 콘도 회원권 & 요금타입 전체 정산 테이블 */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl border border-[#D0C6BB]/75">
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[1050px]">
             <thead>
-              <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
+              <tr className="border-b-2 border-[#1B382E] text-xs font-bold text-[#1B382E] bg-[#F4F3EE]">
                 <th className="py-3.5 px-5 text-left">구분 (회원권 / 요금타입)</th>
                 <th className="py-3.5 px-3 text-center">분류</th>
-                <th className="py-3.5 px-4 text-right bg-emerald-50/40">조회기간 객실</th>
-                <th className="py-3.5 px-4 text-right bg-emerald-50/40">조회기간 순매출</th>
-                <th className="py-3.5 px-4 text-right bg-emerald-50/40">조회기간 ADR</th>
+                <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/50">조회기간 객실</th>
+                <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/50">조회기간 순매출</th>
+                <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/50">조회기간 ADR</th>
                 <th className="py-3.5 px-4 text-right">전년동기(LY) 객실</th>
                 <th className="py-3.5 px-4 text-right">전년동기(LY) 매출</th>
-                <th className="py-3.5 px-4 text-right bg-slate-100/60">당월(MTD) 객실</th>
-                <th className="py-3.5 px-4 text-right bg-slate-100/60">당월(MTD) 매출</th>
-                <th className="py-3.5 px-4 text-right bg-indigo-50/30">연간(YTD) 객실</th>
-                <th className="py-3.5 px-4 text-right bg-indigo-50/30">연간(YTD) 매출</th>
-                <th className="py-3.5 px-5 text-right bg-indigo-50/30">연간(YTD) ADR</th>
+                <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/60">당월(MTD) 객실</th>
+                <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/60">당월(MTD) 매출</th>
+                <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/80">연간(YTD) 객실</th>
+                <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/80">연간(YTD) 매출</th>
+                <th className="py-3.5 px-5 text-right bg-[#F4F3EE]/80">연간(YTD) ADR</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#D0C6BB]/30">
               {segmentRateRows.map((row, idx) => {
                 const rName = String(row.rateName || row.segmentName || '-');
                 const isMember = isMemberRateCategory(rName);
@@ -593,52 +599,52 @@ export default function Members() {
                 return (
                   <tr
                     key={idx}
-                    className={`transition-colors ${
-                      isMember ? 'bg-emerald-50/15 hover:bg-emerald-50/40' : 'hover:bg-slate-50'
+                    className={`transition-colors text-[#1B382E] ${
+                      isMember ? 'bg-[#E8F2EE]/30 hover:bg-[#E8F2EE]/60' : 'hover:bg-[#F4F3EE]/50'
                     }`}
                   >
-                    <td className="py-3.5 px-5 font-extrabold text-slate-900 whitespace-nowrap">
+                    <td className="py-3.5 px-5 font-black text-[#1B382E] whitespace-nowrap">
                       {rName}
                     </td>
                     <td className="py-3.5 px-3 text-center whitespace-nowrap">
                       {isMember ? (
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                           회원·협약
                         </span>
                       ) : (
-                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/60">
                           일반·비회원
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-slate-900 bg-emerald-50/20 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-bold text-[#1B382E] bg-[#E8F2EE]/20 whitespace-nowrap">
                       {formatNum(row.todayRooms || 0)}실
                     </td>
-                    <td className="py-3.5 px-4 text-right font-extrabold text-emerald-800 bg-emerald-50/20 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-black text-[#284F42] bg-[#E8F2EE]/20 whitespace-nowrap">
                       {formatNum(row.todayRevenue || 0)}원
                     </td>
-                    <td className="py-3.5 px-4 text-right font-semibold text-slate-700 bg-emerald-50/20 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-semibold text-[#5A6B63] bg-[#E8F2EE]/20 whitespace-nowrap">
                       {Number(row.todayAdr || 0) > 0 ? `${formatNum(row.todayAdr)}원` : '-'}
                     </td>
-                    <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right text-[#5A6B63] whitespace-nowrap">
                       {lyMatch ? `${formatNum(lyMatch.todayRooms || 0)}실` : '-'}
                     </td>
-                    <td className="py-3.5 px-4 text-right text-slate-500 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right text-[#5A6B63] whitespace-nowrap">
                       {lyMatch ? `${formatNum(lyMatch.todayRevenue || 0)}원` : '-'}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-semibold text-slate-800 bg-slate-50/60 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-semibold text-[#1B382E] bg-[#F4F3EE]/40 whitespace-nowrap">
                       {formatNum(row.mtdRooms || 0)}실
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-slate-900 bg-slate-50/60 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-bold text-[#1B382E] bg-[#F4F3EE]/40 whitespace-nowrap">
                       {formatNum(row.mtdRevenue || 0)}원
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-indigo-900 bg-indigo-50/15 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-bold text-[#1B382E] bg-[#F4F3EE]/60 whitespace-nowrap">
                       {formatNum(row.ytdRooms || 0)}실
                     </td>
-                    <td className="py-3.5 px-4 text-right font-extrabold text-indigo-700 bg-indigo-50/15 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right font-black text-[#284F42] bg-[#F4F3EE]/60 whitespace-nowrap">
                       {formatNum(row.ytdRevenue || 0)}원
                     </td>
-                    <td className="py-3.5 px-5 text-right font-semibold text-slate-700 bg-indigo-50/15 whitespace-nowrap">
+                    <td className="py-3.5 px-5 text-right font-semibold text-[#5A6B63] bg-[#F4F3EE]/60 whitespace-nowrap">
                       {Number(row.ytdAdr || 0) > 0 ? `${formatNum(row.ytdAdr)}원` : '-'}
                     </td>
                   </tr>
@@ -647,29 +653,29 @@ export default function Members() {
 
               {/* 백엔드 공식 총합계 Row (isGrandTotal) */}
               {grandTotalRoomRow && (
-                <tr className="bg-slate-900 text-white font-bold border-t-2 border-slate-900">
+                <tr className="bg-[#284F42] text-white font-bold border-t-2 border-[#1B382E]">
                   <td className="py-4 px-5 whitespace-nowrap">전체 객실 총합계</td>
                   <td className="py-4 px-3 text-center whitespace-nowrap">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-white/15 text-emerald-300">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-white/15 text-emerald-200">
                       공식 합계
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-right text-emerald-300 whitespace-nowrap">
+                  <td className="py-4 px-4 text-right text-emerald-200 whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.todayRooms || 0)}실
                   </td>
-                  <td className="py-4 px-4 text-right text-emerald-300 whitespace-nowrap">
+                  <td className="py-4 px-4 text-right text-emerald-200 whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.todayRevenue || 0)}원
                   </td>
                   <td className="py-4 px-4 text-right text-white whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.todayAdr || 0)}원
                   </td>
-                  <td className="py-4 px-4 text-right text-slate-300 whitespace-nowrap">
+                  <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
                     {(() => {
                       const lyGrand = lyRateRows.find(r => r.isGrandTotal || r.rateName === '총합계');
                       return lyGrand ? `${formatNum(lyGrand.todayRooms || 0)}실` : '-';
                     })()}
                   </td>
-                  <td className="py-4 px-4 text-right text-slate-300 whitespace-nowrap">
+                  <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
                     {(() => {
                       const lyGrand = lyRateRows.find(r => r.isGrandTotal || r.rateName === '총합계');
                       return lyGrand ? `${formatNum(lyGrand.todayRevenue || 0)}원` : '-';
@@ -681,10 +687,10 @@ export default function Members() {
                   <td className="py-4 px-4 text-right text-white whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.mtdRevenue || 0)}원
                   </td>
-                  <td className="py-4 px-4 text-right text-amber-300 whitespace-nowrap">
+                  <td className="py-4 px-4 text-right text-[#B59269] whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.ytdRooms || 0)}실
                   </td>
-                  <td className="py-4 px-4 text-right text-amber-300 whitespace-nowrap">
+                  <td className="py-4 px-4 text-right text-[#B59269] whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.ytdRevenue || 0)}원
                   </td>
                   <td className="py-4 px-5 text-right text-white whitespace-nowrap">
@@ -701,64 +707,64 @@ export default function Members() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         
         {/* Left (7 cols): 골프 분양회원 세부 유형별 내장 및 단가 분석 */}
-        <div className="xl:col-span-7 bg-white rounded-[32px] p-6 lg:p-8 shadow-xs border border-slate-200/80 space-y-6">
-          <div className="border-b border-slate-100 pb-4">
+        <div className="xl:col-span-7 bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-6">
+          <div className="border-b border-[#D0C6BB]/60 pb-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                 GOLF MEMBERSHIP BREAKDOWN
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-[#5A6B63] font-mono">
                 API: /api/v6/report/golf-channel-intelligence
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
-              <Flag className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-black text-[#1B382E] mt-1.5 flex items-center gap-2">
+              <Flag className="w-5 h-5 text-[#284F42]" />
               골프장 분양회원(법인 풀구좌 · 콘도 구좌) vs 비회원 실적 분석
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#5A6B63] mt-1">
               골프 내장객 중 법인 풀구좌 분양회원, 콘도 구좌 분양회원(본인/지정), 일반 대중(비회원)의 팀수·인원수·그린피 매출 및 평균 단가를 비교합니다.
             </p>
           </div>
 
           {/* 회원 vs 비회원 그린피 단가 비교 요약 배너 */}
           {golfMembershipAnalysis && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/70 font-financial">
-              <div className="bg-white p-4 rounded-xl border border-slate-100">
-                <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-[#F4F3EE]/80 p-4 rounded-2xl border border-[#D0C6BB]/60 font-financial">
+              <div className="bg-white p-4 rounded-xl border border-[#D0C6BB]/60 shadow-2xs">
+                <div className="flex items-center justify-between text-xs text-[#5A6B63] font-bold">
                   <span>골프 회원 평균 그린피</span>
-                  <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <span className="text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/60">
                     인원 비중 {golfMembershipAnalysis.member?.playerRatio ?? 0}%
                   </span>
                 </div>
-                <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="text-2xl font-black text-[#284F42] mt-1">
                   {golfMembershipAnalysis.member?.avgGreenFeeFormatted || '0'}원
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   내장 {golfMembershipAnalysis.member?.playersFormatted || '0'}명 · 매출 {golfMembershipAnalysis.member?.greenFeeRevenueFormatted || '0'}원
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-slate-100">
-                <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
+              <div className="bg-white p-4 rounded-xl border border-[#D0C6BB]/60 shadow-2xs">
+                <div className="flex items-center justify-between text-xs text-[#5A6B63] font-bold">
                   <span>비회원(Public) 평균 그린피</span>
-                  <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                  <span className="text-[#5A6B63] bg-[#F4F3EE] px-2 py-0.5 rounded-full border border-[#D0C6BB]/60">
                     인원 비중 {golfMembershipAnalysis.nonMember?.playerRatio ?? 0}%
                   </span>
                 </div>
-                <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="text-2xl font-black text-[#1B382E] mt-1">
                   {golfMembershipAnalysis.nonMember?.avgGreenFeeFormatted || '0'}원
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   내장 {golfMembershipAnalysis.nonMember?.playersFormatted || '0'}명 · 매출 {golfMembershipAnalysis.nonMember?.greenFeeRevenueFormatted || '0'}원
                 </div>
               </div>
 
-              <div className="bg-blue-950 text-white p-4 rounded-xl flex flex-col justify-between">
-                <div className="text-xs font-bold text-blue-200">회원 1인당 그린피 우대 혜택</div>
-                <div className="text-2xl font-black text-amber-300 mt-1">
+              <div className="bg-[#284F42] text-white p-4 rounded-xl flex flex-col justify-between shadow-2xs">
+                <div className="text-xs font-bold text-emerald-200">회원 1인당 그린피 우대 혜택</div>
+                <div className="text-2xl font-black text-[#B59269] mt-1">
                   -{golfMembershipAnalysis.greenFeeGapFormatted || '0'}원
                 </div>
-                <div className="text-[11px] text-blue-200/80 mt-1">
+                <div className="text-[11px] text-white/80 mt-1">
                   비회원가 대비 회원 평균 할인폭
                 </div>
               </div>
@@ -766,10 +772,10 @@ export default function Members() {
           )}
 
           {/* 분양회원 세부 유형 테이블 */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-2xl border border-[#D0C6BB]/75">
             <table className="w-full border-collapse text-left text-sm font-financial">
               <thead>
-                <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
+                <tr className="border-b-2 border-[#1B382E] text-xs font-bold text-[#1B382E] bg-[#F4F3EE]">
                   <th className="py-3 px-4 text-left">회원권 구분</th>
                   <th className="py-3 px-3 text-right">라운딩 팀수</th>
                   <th className="py-3 px-3 text-right">내장 인원</th>
@@ -778,37 +784,37 @@ export default function Members() {
                   <th className="py-3 px-4 text-right">1인 평균 그린피</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#D0C6BB]/30">
                 {golfMemberBreakdown.map((item, idx) => {
                   const isBunyang = item.type !== 'PUBLIC';
                   return (
                     <tr
                       key={idx}
-                      className={isBunyang ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-slate-50'}
+                      className={isBunyang ? 'bg-[#E8F2EE]/30 hover:bg-[#E8F2EE]/60 text-[#1B382E]' : 'hover:bg-[#F4F3EE]/50 text-[#1B382E]'}
                     >
-                      <td className="py-3.5 px-4 font-extrabold text-slate-900">
+                      <td className="py-3.5 px-4 font-black text-[#1B382E]">
                         <div className="flex items-center gap-2">
                           <span>{item.name}</span>
                           {isBunyang && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                               분양회원
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3.5 px-3 text-right font-bold text-slate-800">
+                      <td className="py-3.5 px-3 text-right font-bold text-[#1B382E]">
                         {formatNum(item.teams || 0)}팀 ({item.teamRatio ?? 0}%)
                       </td>
-                      <td className="py-3.5 px-3 text-right font-bold text-slate-900">
+                      <td className="py-3.5 px-3 text-right font-black text-[#284F42]">
                         {formatNum(item.players || 0)}명
                       </td>
-                      <td className="py-3.5 px-3 text-right font-semibold text-blue-700">
+                      <td className="py-3.5 px-3 text-right font-semibold text-[#1E523F]">
                         {item.playerRatio ?? 0}%
                       </td>
-                      <td className="py-3.5 px-4 text-right font-extrabold text-slate-900">
+                      <td className="py-3.5 px-4 text-right font-black text-[#1B382E]">
                         {formatNum(item.revenue || 0)}원
                       </td>
-                      <td className="py-3.5 px-4 text-right font-semibold text-slate-700">
+                      <td className="py-3.5 px-4 text-right font-semibold text-[#5A6B63]">
                         {formatNum(item.avgGreenFee || 0)}원
                       </td>
                     </tr>
@@ -816,21 +822,21 @@ export default function Members() {
                 })}
 
                 {golfMemberSummary && (
-                  <tr className="bg-slate-900 text-white font-bold">
+                  <tr className="bg-[#284F42] text-white font-bold">
                     <td className="py-3.5 px-4">분양회원 소계 (법인 + 콘도 구좌)</td>
-                    <td className="py-3.5 px-3 text-right text-amber-300">
+                    <td className="py-3.5 px-3 text-right text-[#B59269]">
                       {formatNum(golfMemberSummary.totalBunyangTeams || 0)}팀 ({golfMemberSummary.totalBunyangRatio ?? 0}%)
                     </td>
-                    <td className="py-3.5 px-3 text-right text-amber-300">
+                    <td className="py-3.5 px-3 text-right text-[#B59269]">
                       {formatNum(golfMemberSummary.totalBunyangPlayers || 0)}명
                     </td>
-                    <td className="py-3.5 px-3 text-right text-amber-300">
+                    <td className="py-3.5 px-3 text-right text-[#B59269]">
                       {golfMemberSummary.totalBunyangPlayerRatio ?? 0}%
                     </td>
-                    <td className="py-3.5 px-4 text-right text-emerald-300">
+                    <td className="py-3.5 px-4 text-right text-emerald-200">
                       {formatNum(golfMemberSummary.totalBunyangRevenue || 0)}원
                     </td>
-                    <td className="py-3.5 px-4 text-right text-slate-300">
+                    <td className="py-3.5 px-4 text-right text-[#D0C6BB]">
                       분양회원 전용 집계
                     </td>
                   </tr>
@@ -841,32 +847,32 @@ export default function Members() {
         </div>
 
         {/* Right (5 cols): 골프 회원 동반 비회원 앵커 효과 (Member Anchor Synergy) */}
-        <div className="xl:col-span-5 bg-white rounded-[32px] p-6 lg:p-8 shadow-xs border border-slate-200/80 flex flex-col justify-between space-y-6">
+        <div className="xl:col-span-5 bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col justify-between space-y-6">
           <div>
-            <div className="border-b border-slate-100 pb-4">
+            <div className="border-b border-[#D0C6BB]/60 pb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#B59269]/15 text-[#B59269] border border-[#B59269]/30">
                   MEMBER ANCHOR SYNERGY
                 </span>
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
+              <h2 className="text-xl font-black text-[#1B382E] mt-1.5 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#B59269]" />
                 회원 동반 비회원 유치(Anchor) 매출 기여도
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#5A6B63] mt-1">
                 분양회원이 라운딩 시 동반 유치한 비회원(정상가 결제)이 창출한 순수 추가 그린피 매출입니다.
               </p>
             </div>
 
             {/* 총 앵커 매출 하이라이트 */}
-            <div className="mt-5 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-5 rounded-2xl shadow-md font-financial">
-              <div className="text-xs font-semibold text-emerald-300">
+            <div className="mt-5 bg-[#284F42] text-white p-5 rounded-2xl shadow-md font-financial relative overflow-hidden">
+              <div className="text-xs font-semibold text-emerald-200">
                 회원이 동반 유치한 비회원 그린피 창출액 (Anchor Revenue)
               </div>
-              <div className="text-3xl font-black text-amber-300 mt-1">
+              <div className="text-3xl font-black text-[#B59269] mt-1">
                 +{formatNum(golfMemberSynergy?.totalAnchorRevenue || 0)}원
               </div>
-              <p className="text-[11px] text-slate-300 mt-1.5">
+              <p className="text-[11px] text-white/80 mt-1.5">
                 회원 1~2인이 포함된 팀에서 동반 비회원(2~3인)이 지불한 순수 그린피 합계
               </p>
             </div>
@@ -874,69 +880,69 @@ export default function Members() {
             {/* 팀 구성별 앵커 내역 */}
             {golfMemberSynergy && (
               <div className="mt-5 space-y-3 font-financial">
-                <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/70 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-[#E8F2EE] border border-[#B4C6C1]/70 flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-extrabold text-slate-900">
+                    <div className="text-sm font-bold text-[#1B382E]">
                       회원 1명 + 비회원 3명 동반 팀
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5">
-                      총 <strong>{formatNum(golfMemberSynergy.member1Non3?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.member1Non3?.ratio ?? 0}%)
+                    <div className="text-xs text-[#5A6B63] mt-0.5">
+                      총 <strong className="text-[#1B382E]">{formatNum(golfMemberSynergy.member1Non3?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.member1Non3?.ratio ?? 0}%)
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[11px] text-emerald-700 font-bold">동반 비회원 3인 창출 매출</div>
-                    <div className="text-base font-black text-emerald-900">
+                    <div className="text-[11px] text-[#1E523F] font-bold">동반 비회원 3인 창출 매출</div>
+                    <div className="text-base font-black text-[#284F42]">
                       {formatNum(golfMemberSynergy.member1Non3?.nonMemberRevenue || 0)}원
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-teal-50/50 border border-teal-200/70 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]/70 flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-extrabold text-slate-900">
+                    <div className="text-sm font-bold text-[#1B382E]">
                       회원 2명 + 비회원 2명 동반 팀
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5">
-                      총 <strong>{formatNum(golfMemberSynergy.member2Non2?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.member2Non2?.ratio ?? 0}%)
+                    <div className="text-xs text-[#5A6B63] mt-0.5">
+                      총 <strong className="text-[#1B382E]">{formatNum(golfMemberSynergy.member2Non2?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.member2Non2?.ratio ?? 0}%)
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[11px] text-teal-700 font-bold">동반 비회원 2인 창출 매출</div>
-                    <div className="text-base font-black text-teal-900">
+                    <div className="text-[11px] text-[#284F42] font-bold">동반 비회원 2인 창출 매출</div>
+                    <div className="text-base font-black text-[#1B382E]">
                       {formatNum(golfMemberSynergy.member2Non2?.nonMemberRevenue || 0)}원
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-white border border-[#D0C6BB]/60 flex items-center justify-between shadow-2xs">
                   <div>
-                    <div className="text-sm font-bold text-slate-800">
+                    <div className="text-sm font-bold text-[#1B382E]">
                       회원 3~4명 중심 팀
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      총 <strong>{formatNum(golfMemberSynergy.member3to4?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.member3to4?.ratio ?? 0}%)
+                    <div className="text-xs text-[#5A6B63] mt-0.5">
+                      총 <strong className="text-[#1B382E]">{formatNum(golfMemberSynergy.member3to4?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.member3to4?.ratio ?? 0}%)
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[11px] text-slate-500 font-semibold">팀 그린피 매출</div>
-                    <div className="text-base font-bold text-slate-800">
+                    <div className="text-[11px] text-[#5A6B63] font-semibold">팀 그린피 매출</div>
+                    <div className="text-base font-black text-[#1B382E]">
                       {formatNum(golfMemberSynergy.member3to4?.revenue || 0)}원
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-white border border-[#D0C6BB]/60 flex items-center justify-between shadow-2xs">
                   <div>
-                    <div className="text-sm font-bold text-slate-800">
+                    <div className="text-sm font-bold text-[#1B382E]">
                       순수 비회원 4인 팀 (Public)
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      총 <strong>{formatNum(golfMemberSynergy.pureNonMember?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.pureNonMember?.ratio ?? 0}%)
+                    <div className="text-xs text-[#5A6B63] mt-0.5">
+                      총 <strong className="text-[#1B382E]">{formatNum(golfMemberSynergy.pureNonMember?.teams || 0)}팀</strong> (전체 팀의 {golfMemberSynergy.pureNonMember?.ratio ?? 0}%)
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[11px] text-slate-500 font-semibold">팀 그린피 매출</div>
-                    <div className="text-base font-bold text-slate-800">
+                    <div className="text-[11px] text-[#5A6B63] font-semibold">팀 그린피 매출</div>
+                    <div className="text-base font-black text-[#1B382E]">
                       {formatNum(golfMemberSynergy.pureNonMember?.revenue || 0)}원
                     </div>
                   </div>
@@ -949,43 +955,43 @@ export default function Members() {
       </div>
 
       {/* SECTION 3: 법인 휴양소 협약 회원사 & 다회 재방문 단골 단체 실적 */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-xs border border-slate-200/80 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#D0C6BB]/40 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#1B382E]/5 text-[#1B382E] border border-[#D0C6BB]/60">
                 CORPORATE RETREAT & REPEAT MEMBER GROUPS
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-[#5A6B63] font-mono">
                 API: /api/v6/report/corporate-group-sales
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-purple-600" />
+            <h2 className="text-xl font-bold text-[#1B382E] mt-1.5 flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-[#B59269]" />
               기업 휴양소(협약 회원사) 및 다회 재방문(Loyalty) 법인·단체 이용 원장
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#5A6B63] mt-1">
               기업 하계/연중 휴양소 계약 회원사(`CORP_FIT`) 및 올해 2회 이상 재방문한 우수 법인·단체의 객실·식음·골프·레저 통합 소비 실적입니다.
             </p>
           </div>
 
           {corpFitSummary && (
             <div className="flex flex-wrap items-center gap-3 font-financial">
-              <div className="bg-purple-50 border border-purple-200 px-4 py-2 rounded-2xl text-xs">
-                <span className="text-purple-700 font-semibold block">기업 휴양소 이용</span>
-                <strong className="text-slate-900 text-sm">
+              <div className="bg-[#F4F3EE] border border-[#D0C6BB]/60 px-4 py-2 rounded-2xl text-xs">
+                <span className="text-[#5A6B63] font-semibold block">기업 휴양소 이용</span>
+                <strong className="text-[#1B382E] text-sm">
                   {formatNum(corpFitSummary.groupsCount || 0)}개사 · {formatNum(corpFitSummary.roomsCount || 0)}실 ({formatNum(corpFitSummary.totalPax || 0)}명)
                 </strong>
               </div>
-              <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl text-xs">
-                <span className="text-emerald-700 font-semibold block">기업 휴양소 매출</span>
-                <strong className="text-emerald-900 text-sm">
+              <div className="bg-[#E8F2EE] border border-[#B4C6C1]/70 px-4 py-2 rounded-2xl text-xs">
+                <span className="text-[#1E523F] font-semibold block">기업 휴양소 매출</span>
+                <strong className="text-[#1B382E] text-sm">
                   {corpFitSummary.totalRevenueFormatted || formatNum(corpFitSummary.totalRevenue || 0)}원
                 </strong>
               </div>
-              <div className="bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs">
-                <span className="text-amber-800 font-semibold block">재방문 단골 단체</span>
-                <strong className="text-amber-900 text-sm">
+              <div className="bg-[#B59269]/10 border border-[#B59269]/30 px-4 py-2 rounded-2xl text-xs">
+                <span className="text-[#B59269] font-semibold block">재방문 단골 단체</span>
+                <strong className="text-[#1B382E] text-sm">
                   {formatNum(corpSummary?.repeatGroupsCount || 0)}곳 (재방문율 {corpSummary?.repeatGroupRate ?? 0}%)
                 </strong>
               </div>
@@ -995,8 +1001,8 @@ export default function Members() {
 
         <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[950px]">
-            <thead className="sticky top-0 z-10 bg-slate-50">
-              <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700">
+            <thead className="sticky top-0 z-10 bg-[#F4F3EE]">
+              <tr className="border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E]">
                 <th className="py-3 px-4 text-left">입실일 ~ 퇴실일</th>
                 <th className="py-3 px-4 text-left">법인 / 휴양소 협약 회원사명</th>
                 <th className="py-3 px-3 text-center">회원사 분류</th>
@@ -1008,54 +1014,54 @@ export default function Members() {
                 <th className="py-3 px-4 text-right">통합 발생 매출</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#D0C6BB]/30">
               {memberCorpGroups.length > 0 ? (
                 memberCorpGroups.slice(0, 30).map((g, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                  <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                    <td className="py-3 px-4 text-[#5A6B63] whitespace-nowrap">
                       {g.checkInDate || '-'}
                       {g.stayDays ? (
-                        <span className="text-[11px] text-slate-400 ml-1">({g.stayDays}박)</span>
+                        <span className="text-[11px] text-[#5A6B63]/70 ml-1">({g.stayDays}박)</span>
                       ) : null}
                     </td>
-                    <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                    <td className="py-3 px-4 font-extrabold text-[#1B382E] whitespace-nowrap">
                       {g.groupName || g.corporateName || '-'}
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#1B382E]/5 text-[#1B382E] border border-[#D0C6BB]/60">
                         {g.categoryName || g.b2bSegmentName || '기업 임직원 휴양소'}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/50">
                         {g.paymentMethod || '-'}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-right font-semibold text-slate-800 whitespace-nowrap">
+                    <td className="py-3 px-3 text-right font-semibold text-[#1B382E] whitespace-nowrap">
                       {formatNum(g.spendingBreakdown?.roomsCount || 0)}실
                       {g.spendingBreakdown?.roomTypesUsed?.length > 0 && (
-                        <span className="text-[11px] text-slate-400 ml-1">
+                        <span className="text-[11px] text-[#5A6B63] ml-1">
                           ({g.spendingBreakdown.roomTypesUsed.join(', ')})
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-right text-slate-700 whitespace-nowrap">
+                    <td className="py-3 px-3 text-right text-[#5A6B63] whitespace-nowrap">
                       {g.paxCountFormatted || formatNum(g.paxCount || 0)}명
                     </td>
-                    <td className="py-3 px-4 text-right font-semibold text-slate-800 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right font-semibold text-[#1B382E] whitespace-nowrap">
                       {formatNum(g.spendingBreakdown?.roomRevenue || 0)}원
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-600 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right text-[#5A6B63] whitespace-nowrap">
                       {formatNum(g.avgSpendPerPax || 0)}원
                     </td>
-                    <td className="py-3 px-4 text-right font-extrabold text-emerald-800 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right font-extrabold text-[#1E523F] whitespace-nowrap">
                       {g.totalRevenueFormatted || formatNum(g.totalRevenue || 0)}원
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-[#5A6B63]">
                     선택하신 조회기간에 해당하는 기업 휴양소 협약 회원사 데이터가 없습니다.
                   </td>
                 </tr>
@@ -1066,21 +1072,21 @@ export default function Members() {
       </div>
 
       {/* SECTION 4: 디지털 온라인/모바일 회원 부문별 교차 이용 & 최근 활동 회원 원장 */}
-      <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-xs border border-slate-200/80 space-y-6">
-        <div className="border-b border-slate-100 pb-4">
+      <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group space-y-6">
+        <div className="border-b border-[#D0C6BB]/40 pb-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#1B382E]/5 text-[#1B382E] border border-[#D0C6BB]/60">
               DIGITAL ONLINE MEMBERSHIP & CRM LEDGER
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-[#5A6B63] font-mono">
               API: /api/v6/report/online-members
             </span>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-xl font-bold text-[#1B382E] mt-1.5 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-[#284F42]" />
             온라인·모바일 통합 회원 부문별 이용 분포 및 최근 활동 회원 명단
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-[#5A6B63] mt-1">
             홈페이지 및 모바일 앱 통합 회원({formatNum(onlineSummary?.totalCumulativeMembers || 0)}명)의 부문별(객실·골프·레저·교차이용) 분포와 최근 예약/이용 활동 내역입니다.
           </p>
         </div>
@@ -1088,62 +1094,62 @@ export default function Members() {
         {/* 부문별 온라인 회원 분포 4대 카드 */}
         {onlineChannelBreakdown && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-financial">
-            <div className="p-4 rounded-2xl bg-indigo-950 text-white">
-              <div className="flex items-center justify-between text-xs text-indigo-200 font-bold">
+            <div className="p-4 rounded-2xl bg-[#284F42] text-white shadow-xs">
+              <div className="flex items-center justify-between text-xs text-[#E8F2EE] font-bold">
                 <span>다부문 교차 이용 VIP 회원</span>
-                <span className="bg-white/15 text-amber-300 px-2 py-0.5 rounded-full">
+                <span className="bg-white/15 text-[#B59269] px-2 py-0.5 rounded-full">
                   {onlineChannelBreakdown.multiChannelRatio ?? 0}%
                 </span>
               </div>
-              <div className="text-2xl font-black text-amber-300 mt-1.5">
+              <div className="text-2xl font-black text-[#F4F3EE] mt-1.5">
                 {formatNum(onlineChannelBreakdown.multiChannel || 0)}명
               </div>
-              <div className="text-[11px] text-indigo-200/80 mt-1">
+              <div className="text-[11px] text-[#E8F2EE]/80 mt-1">
                 객실·골프·레저 중 2개 부문 이상 복합 이용
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div className="flex items-center justify-between text-xs text-slate-600 font-bold">
+            <div className="p-4 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+              <div className="flex items-center justify-between text-xs text-[#5A6B63] font-bold">
                 <span>객실(콘도) 전용 이용 회원</span>
-                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="bg-[#E8F2EE] text-[#1E523F] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
                   {onlineChannelBreakdown.roomOnlyRatio ?? 0}%
                 </span>
               </div>
-              <div className="text-2xl font-black text-slate-900 mt-1.5">
+              <div className="text-2xl font-black text-[#1B382E] mt-1.5">
                 {formatNum(onlineChannelBreakdown.roomOnly || 0)}명
               </div>
-              <div className="text-[11px] text-slate-500 mt-1">
+              <div className="text-[11px] text-[#5A6B63] mt-1">
                 공식 홈페이지/앱 객실 예약 회원
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div className="flex items-center justify-between text-xs text-slate-600 font-bold">
+            <div className="p-4 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+              <div className="flex items-center justify-between text-xs text-[#5A6B63] font-bold">
                 <span>레저/티켓 전용 이용 회원</span>
-                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                <span className="bg-[#B59269]/15 text-[#B59269] px-2 py-0.5 rounded-full border border-[#B59269]/30">
                   {onlineChannelBreakdown.ticketOnlyRatio ?? 0}%
                 </span>
               </div>
-              <div className="text-2xl font-black text-slate-900 mt-1.5">
+              <div className="text-2xl font-black text-[#1B382E] mt-1.5">
                 {formatNum(onlineChannelBreakdown.ticketOnly || 0)}명
               </div>
-              <div className="text-[11px] text-slate-500 mt-1">
+              <div className="text-[11px] text-[#5A6B63] mt-1">
                 루지·목장·썰매장 등 온라인 티켓 구매 회원
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div className="flex items-center justify-between text-xs text-slate-600 font-bold">
+            <div className="p-4 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+              <div className="flex items-center justify-between text-xs text-[#5A6B63] font-bold">
                 <span>골프 예약 전용 회원</span>
-                <span className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full border border-teal-200">
+                <span className="bg-[#284F42]/10 text-[#284F42] px-2 py-0.5 rounded-full border border-[#284F42]/20">
                   {onlineChannelBreakdown.golfOnlyRatio ?? 0}%
                 </span>
               </div>
-              <div className="text-2xl font-black text-slate-900 mt-1.5">
+              <div className="text-2xl font-black text-[#1B382E] mt-1.5">
                 {formatNum(onlineChannelBreakdown.golfOnly || 0)}명
               </div>
-              <div className="text-[11px] text-slate-500 mt-1">
+              <div className="text-[11px] text-[#5A6B63] mt-1">
                 벨포레 골프 CC 온라인 부킹 회원
               </div>
             </div>
@@ -1153,8 +1159,8 @@ export default function Members() {
         {/* 최근 활동 온라인 회원 테이블 */}
         <div className="overflow-x-auto max-h-[380px] overflow-y-auto">
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[850px]">
-            <thead className="sticky top-0 z-10 bg-slate-50">
-              <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700">
+            <thead className="sticky top-0 z-10 bg-[#F4F3EE]">
+              <tr className="border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E]">
                 <th className="py-3 px-4 text-left">고객번호</th>
                 <th className="py-3 px-4 text-left">회원명</th>
                 <th className="py-3 px-4 text-left">온라인 ID</th>
@@ -1165,29 +1171,29 @@ export default function Members() {
                 <th className="py-3 px-4 text-right">누적 예약/결제 건수</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#D0C6BB]/30">
               {recentOnlineMembers.length > 0 ? (
                 recentOnlineMembers.slice(0, 20).map((m, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="py-3 px-4 font-mono text-xs text-slate-500">{m.custNo || '-'}</td>
-                    <td className="py-3 px-4 font-extrabold text-slate-900">{m.custName || '-'}</td>
-                    <td className="py-3 px-4 text-slate-600 font-mono text-xs">{m.onlineId || '-'}</td>
-                    <td className="py-3 px-4 text-slate-600">{m.phone || '-'}</td>
+                  <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                    <td className="py-3 px-4 font-mono text-xs text-[#5A6B63]">{m.custNo || '-'}</td>
+                    <td className="py-3 px-4 font-extrabold text-[#1B382E]">{m.custName || '-'}</td>
+                    <td className="py-3 px-4 text-[#5A6B63] font-mono text-xs">{m.onlineId || '-'}</td>
+                    <td className="py-3 px-4 text-[#5A6B63]">{m.phone || '-'}</td>
                     <td className="py-3 px-3 text-center">
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#1B382E]/5 text-[#1B382E] border border-[#D0C6BB]/60">
                         {m.channelSource || m.firstChannel || '-'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-600">{m.firstActivityDate || '-'}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-800">{m.lastActivityDate || '-'}</td>
-                    <td className="py-3 px-4 text-right font-extrabold text-indigo-700">
+                    <td className="py-3 px-4 text-[#5A6B63]">{m.firstActivityDate || '-'}</td>
+                    <td className="py-3 px-4 font-semibold text-[#1B382E]">{m.lastActivityDate || '-'}</td>
+                    <td className="py-3 px-4 text-right font-extrabold text-[#284F42]">
                       {formatNum(m.totalBookings || 0)}건
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-slate-400">
+                  <td colSpan={8} className="py-10 text-center text-[#5A6B63]">
                     최근 활동 온라인 회원 내역이 없습니다.
                   </td>
                 </tr>
@@ -1198,24 +1204,24 @@ export default function Members() {
       </div>
 
       {/* SECTION 5: [Ticket 28 완제품] 콘도 분양회원 구좌별 연간 잔여박수 소진율 및 당일 방문 회원별 리조트 통합 LTV 원장 */}
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#D0C6BB]/40">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <CheckCircle2 size={12} /> 회원 분석 집계 완료
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mt-1.5 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-xl font-bold text-[#1B382E] mt-1.5 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-[#284F42]" />
               콘도 분양회원 구좌별 연간 잔여박수 소진율 및 당일 방문 회원별 리조트 통합 LTV 원장
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#5A6B63] mt-1">
               기명·무기명·창립·법인 825개 분양구좌의 연간 부여 박수(Quota 41,190박) 실시간 소진율과, 조회기간 투숙/방문 회원의 객실·골프·식음·레저 통합 LTV 원장입니다.
             </p>
           </div>
-          <div className="shrink-0 flex items-center gap-2 text-xs font-bold text-emerald-900 bg-emerald-50 px-4 py-2.5 rounded-xl border border-emerald-200">
-            <Layers size={15} className="text-emerald-600" />
+          <div className="shrink-0 flex items-center gap-2 text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-4 py-2.5 rounded-xl border border-[#B4C6C1]/70">
+            <Layers size={15} className="text-[#284F42]" />
             <span>회계 및 정산 무결성 검증</span>
           </div>
         </div>
@@ -1225,62 +1231,62 @@ export default function Members() {
             {/* 1. 분양구좌 전체 개요 4대 KPI 요약 카드 */}
             {quotaLtvData.accountQuotaOverview && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-financial">
-                <div className="p-4 rounded-2xl bg-slate-900 text-white shadow-xs">
-                  <div className="flex items-center justify-between text-xs text-slate-300 font-bold">
+                <div className="p-4 rounded-2xl bg-[#284F42] text-white shadow-xs">
+                  <div className="flex items-center justify-between text-xs text-[#E8F2EE] font-bold">
                     <span>전체 분양구좌 수</span>
-                    <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded-full text-[11px]">
+                    <span className="bg-white/15 text-[#B59269] px-2 py-0.5 rounded-full text-[11px]">
                       활성율 {(quotaLtvData.accountQuotaOverview as any).activeRatePct != null ? `${(quotaLtvData.accountQuotaOverview as any).activeRatePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl font-black text-white mt-1.5 tabular-nums">
                     {formatNum(quotaLtvData.accountQuotaOverview.totalAccounts)}구좌
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">
+                  <div className="text-[11px] text-[#E8F2EE]/80 mt-1">
                     실 이용 구좌: {formatNum(quotaLtvData.accountQuotaOverview.activeAccounts)}구좌
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center justify-between text-xs text-slate-600 font-bold">
+                <div className="p-4 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+                  <div className="flex items-center justify-between text-xs text-[#5A6B63] font-bold">
                     <span>연간 총 부여 박수 (Quota)</span>
-                    <span className="bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded-full text-[11px]">
+                    <span className="bg-[#D0C6BB]/40 text-[#1B382E] px-2 py-0.5 rounded-full text-[11px]">
                       연간 기준
                     </span>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mt-1.5 tabular-nums">
+                  <div className="text-2xl font-black text-[#1B382E] mt-1.5 tabular-nums">
                     {formatNum(quotaLtvData.accountQuotaOverview.quotaNights)}박
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-1">
+                  <div className="text-[11px] text-[#5A6B63] mt-1">
                     잔여 박수: {formatNum(quotaLtvData.accountQuotaOverview.remainingNights)}박
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
-                  <div className="flex items-center justify-between text-xs text-emerald-900 font-bold">
+                <div className="p-4 rounded-2xl bg-[#E8F2EE] border border-[#B4C6C1]/70">
+                  <div className="flex items-center justify-between text-xs text-[#1E523F] font-bold">
                     <span>연간 누적 박수 소진율</span>
-                    <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[11px] font-bold">
+                    <span className="bg-[#1E523F]/15 text-[#1E523F] px-2 py-0.5 rounded-full text-[11px] font-bold">
                       {quotaLtvData.accountQuotaOverview.burnRatePct ?? 0}% 소진
                     </span>
                   </div>
-                  <div className="text-2xl font-black text-emerald-700 mt-1.5 tabular-nums">
+                  <div className="text-2xl font-black text-[#1E523F] mt-1.5 tabular-nums">
                     {formatNum(quotaLtvData.accountQuotaOverview.usedNights)}박 소진
                   </div>
-                  <div className="text-[11px] text-emerald-800/80 mt-1">
+                  <div className="text-[11px] text-[#1E523F]/80 mt-1">
                     전체 부여 41,190박 중 실 투숙 소진분
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80">
-                  <div className="flex items-center justify-between text-xs text-amber-900 font-bold">
+                <div className="p-4 rounded-2xl bg-[#B59269]/10 border border-[#B59269]/30">
+                  <div className="flex items-center justify-between text-xs text-[#B59269] font-bold">
                     <span>분양회원 연간 누적 통합 LTV</span>
-                    <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[11px] font-bold">
+                    <span className="bg-[#B59269]/20 text-[#B59269] px-2 py-0.5 rounded-full text-[11px] font-bold">
                       리조트 전체
                     </span>
                   </div>
-                  <div className="text-2xl font-black text-amber-900 mt-1.5 tabular-nums">
+                  <div className="text-2xl font-black text-[#1B382E] mt-1.5 tabular-nums">
                     {formatNum(quotaLtvData.accountQuotaOverview.ytdTotalSpend)}원
                   </div>
-                  <div className="text-[11px] text-amber-800/80 mt-1 truncate" title={`골프 ${formatNum(quotaLtvData.accountQuotaOverview.ytdGolfSpend)}원 · 객실 ${formatNum(quotaLtvData.accountQuotaOverview.ytdRoomSpend)}원`}>
+                  <div className="text-[11px] text-[#5A6B63] mt-1 truncate" title={`골프 ${formatNum(quotaLtvData.accountQuotaOverview.ytdGolfSpend)}원 · 객실 ${formatNum(quotaLtvData.accountQuotaOverview.ytdRoomSpend)}원`}>
                     골프 {formatNum(quotaLtvData.accountQuotaOverview.ytdGolfSpend)}원 · 객실 {formatNum(quotaLtvData.accountQuotaOverview.ytdRoomSpend)}원
                   </div>
                 </div>
@@ -1290,16 +1296,16 @@ export default function Members() {
             {/* 2. 분양 회원권 구분별 연간 부여박수 소진율 및 LTV 매트릭스 표 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                  <Coins className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-bold text-[#1B382E] flex items-center gap-1.5">
+                  <Coins className="w-4 h-4 text-[#B59269]" />
                   분양 회원권 구분별(기명·무기명·창립·법인) 연간 부여박수 소진율 및 LTV 매트릭스
                 </h3>
-                <span className="text-[11px] text-slate-500 font-medium">단위: 구좌, 박, 원</span>
+                <span className="text-[11px] text-[#5A6B63] font-medium">단위: 구좌, 박, 원</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left text-sm font-financial min-w-[960px]">
                   <thead>
-                    <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700 bg-slate-50">
+                    <tr className="border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E] bg-[#F4F3EE]">
                       <th className="py-3 px-4 text-left">회원권 구분</th>
                       <th className="py-3 px-3 text-right">총 구좌수</th>
                       <th className="py-3 px-3 text-right">실이용 구좌</th>
@@ -1312,39 +1318,39 @@ export default function Members() {
                       <th className="py-3 px-4 text-right">구좌당 평균 LTV</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#D0C6BB]/30">
                     {quotaLtvData.accountQuotaSummary
                       .filter((row: any) => !row.isGrandTotal)
                       .map((row: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-4 font-bold text-slate-900">
+                        <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                          <td className="py-3 px-4 font-bold text-[#1B382E]">
                             {row.accountTypeKo || row.accountType}
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-800 font-semibold">
+                          <td className="py-3 px-3 text-right text-[#1B382E] font-semibold">
                             {formatNum(row.totalAccounts)}구좌
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600">
+                          <td className="py-3 px-3 text-right text-[#5A6B63]">
                             {formatNum(row.activeAccounts)}구좌
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600">
+                          <td className="py-3 px-3 text-right text-[#5A6B63]">
                             {formatNum(row.annualQuotaNights ?? row.quotaNights)}박
                           </td>
-                          <td className="py-3 px-3 text-right font-bold text-emerald-700">
+                          <td className="py-3 px-3 text-right font-bold text-[#1E523F]">
                             {formatNum(row.ytdUsedNights ?? row.usedNights)}박
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600">
+                          <td className="py-3 px-3 text-right text-[#5A6B63]">
                             {formatNum(row.remainingNights)}박
                           </td>
-                          <td className="py-3 px-3 text-right font-bold text-emerald-700">
+                          <td className="py-3 px-3 text-right font-bold text-[#1E523F]">
                             {row.burnRatePct ?? row.exhaustionRate ?? 0}%
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600">
+                          <td className="py-3 px-3 text-right text-[#5A6B63]">
                             {formatNum(row.ytdVisitCount)}회
                           </td>
-                          <td className="py-3 px-4 text-right font-black text-slate-900">
+                          <td className="py-3 px-4 text-right font-black text-[#1B382E]">
                             {formatNum(row.ytdTotalSpend)}원
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold text-slate-700">
+                          <td className="py-3 px-4 text-right font-semibold text-[#5A6B63]">
                             {formatNum(row.avgLtvPerAccount)}원
                           </td>
                         </tr>
@@ -1355,33 +1361,33 @@ export default function Members() {
                     {quotaLtvData.accountQuotaSummary
                       .filter((row: any) => row.isGrandTotal)
                       .map((row: any, idx: number) => (
-                        <tr key={idx} className="bg-slate-900 text-white font-bold text-sm border-t-2 border-slate-950">
+                        <tr key={idx} className="bg-[#284F42] text-white font-bold text-sm border-t-2 border-[#1B382E]">
                           <td className="py-3.5 px-4">총합계</td>
-                          <td className="py-3.5 px-3 text-right text-amber-300 font-black">
+                          <td className="py-3.5 px-3 text-right text-[#B59269] font-black">
                             {formatNum(row.totalAccounts)}구좌
                           </td>
-                          <td className="py-3.5 px-3 text-right text-slate-200">
+                          <td className="py-3.5 px-3 text-right text-[#E8F2EE]">
                             {formatNum(row.activeAccounts)}구좌
                           </td>
-                          <td className="py-3.5 px-3 text-right text-slate-200">
+                          <td className="py-3.5 px-3 text-right text-[#E8F2EE]">
                             {formatNum(row.annualQuotaNights ?? row.quotaNights)}박
                           </td>
-                          <td className="py-3.5 px-3 text-right text-emerald-300 font-black">
+                          <td className="py-3.5 px-3 text-right text-[#5FB878] font-black">
                             {formatNum(row.ytdUsedNights ?? row.usedNights)}박
                           </td>
-                          <td className="py-3.5 px-3 text-right text-slate-200">
+                          <td className="py-3.5 px-3 text-right text-[#E8F2EE]">
                             {formatNum(row.remainingNights)}박
                           </td>
-                          <td className="py-3.5 px-3 text-right text-emerald-300 font-black">
+                          <td className="py-3.5 px-3 text-right text-[#5FB878] font-black">
                             {row.burnRatePct ?? row.exhaustionRate ?? 0}%
                           </td>
-                          <td className="py-3.5 px-3 text-right text-slate-200">
+                          <td className="py-3.5 px-3 text-right text-[#E8F2EE]">
                             {formatNum(row.ytdVisitCount)}회
                           </td>
-                          <td className="py-3.5 px-4 text-right text-amber-300 font-black">
+                          <td className="py-3.5 px-4 text-right text-[#B59269] font-black">
                             {formatNum(row.ytdTotalSpend)}원
                           </td>
-                          <td className="py-3.5 px-4 text-right text-slate-200">
+                          <td className="py-3.5 px-4 text-right text-[#E8F2EE]">
                             {formatNum(row.avgLtvPerAccount)}원
                           </td>
                         </tr>
@@ -1392,17 +1398,17 @@ export default function Members() {
             </div>
 
             {/* 3. 당일/기간 방문 분양회원 개인별 통합 LTV 원장 (검색 및 필터 지원) */}
-            <div className="space-y-4 pt-4 border-t border-slate-200">
+            <div className="space-y-4 pt-4 border-t border-[#D0C6BB]/40">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <UserCheck className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-base font-bold text-[#1B382E] flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-[#284F42]" />
                     당일/기간 투숙 분양회원 개인별 리조트 통합 LTV 원장
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1B382E]/5 text-[#1B382E] border border-[#D0C6BB]/60">
                       실시간 {quotaLtvData.visitedMembersLedger?.length || 0}건
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-[#5A6B63] mt-0.5">
                     조회 기간 동안 체크인/이용한 분양회원의 구좌 번호, 평형, 소진율 및 크로스 소비(골프·객실·F&B·레저) 내역입니다.
                   </p>
                 </div>
@@ -1410,24 +1416,24 @@ export default function Members() {
                 {/* 검색창 & 필터 버튼 */}
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-[#5A6B63] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="회원명, 구좌번호 검색..."
                       value={memberLedgerSearch}
                       onChange={(e) => setMemberLedgerSearch(e.target.value)}
-                      className="pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-brand-mint w-44"
+                      className="pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#D0C6BB] bg-white focus:outline-none focus:border-[#284F42] w-44"
                     />
                   </div>
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
+                  <div className="flex items-center gap-1 bg-[#F4F3EE] p-1 rounded-xl text-xs font-medium border border-[#D0C6BB]/50">
                     {['ALL', '법인', '기명', '무기명', '창립'].map((f) => (
                       <button
                         key={f}
                         onClick={() => setMemberLedgerFilter(f)}
                         className={`px-2.5 py-1 rounded-lg transition-colors ${
                           memberLedgerFilter === f
-                            ? 'bg-white text-indigo-700 font-bold shadow-2xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-[#284F42] text-white font-bold shadow-2xs'
+                            : 'text-[#5A6B63] hover:text-[#1B382E]'
                         }`}
                       >
                         {f === 'ALL' ? '전체' : f}
@@ -1440,8 +1446,8 @@ export default function Members() {
               {/* 회원 원장 테이블 */}
               <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
                 <table className="w-full border-collapse text-left text-sm font-financial min-w-[980px]">
-                  <thead className="sticky top-0 z-10 bg-slate-50 shadow-2xs">
-                    <tr className="border-b-2 border-slate-800 text-xs font-bold text-slate-700">
+                  <thead className="sticky top-0 z-10 bg-[#F4F3EE] shadow-2xs">
+                    <tr className="border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E]">
                       <th className="py-3 px-4 text-left">구좌번호</th>
                       <th className="py-3 px-4 text-left">회원명</th>
                       <th className="py-3 px-3 text-center">회원 구분</th>
@@ -1453,7 +1459,7 @@ export default function Members() {
                       <th className="py-3 px-4 text-right">연간 누적 통합 LTV</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#D0C6BB]/30">
                     {quotaLtvData.visitedMembersLedger
                       ?.filter((m: any) => {
                         const q = memberLedgerSearch.trim().toLowerCase();
@@ -1469,48 +1475,48 @@ export default function Members() {
                         const golfSpend = m.ytdGolfSpend || m.golfSpend || 0;
                         const roomSpend = m.ytdRoomSpend || m.roomSpend || 0;
                         return (
-                          <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                            <td className="py-3 px-4 font-mono text-xs font-bold text-slate-700">
+                          <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                            <td className="py-3 px-4 font-mono text-xs font-bold text-[#5A6B63]">
                               {m.membershipNo || m.certNo || '-'}
                             </td>
-                            <td className="py-3 px-4 font-black text-slate-900">
+                            <td className="py-3 px-4 font-black text-[#1B382E]">
                               {m.memberName || '-'}
                             </td>
                             <td className="py-3 px-3 text-center">
                               <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                                 String(m.accountType || '').includes('법인')
-                                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                  ? 'bg-[#1B382E]/5 text-[#1B382E] border-[#D0C6BB]/60'
                                   : String(m.accountType || '').includes('무기명')
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  ? 'bg-[#B59269]/15 text-[#B59269] border-[#B59269]/30'
+                                  : 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70'
                               }`}>
                                 {m.accountTypeKo || m.accountType || '-'}
                               </span>
                             </td>
-                            <td className="py-3 px-3 text-center text-xs text-slate-600">
+                            <td className="py-3 px-3 text-center text-xs text-[#5A6B63]">
                               {m.shareType || '-'}
                             </td>
                             <td className="py-3 px-3 text-center">
-                              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-800">
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[#F4F3EE] text-[#1B382E] border border-[#D0C6BB]/50">
                                 {m.roomType || '-'}
                               </span>
                             </td>
-                            <td className="py-3 px-3 text-right text-xs tabular-nums text-slate-600">
+                            <td className="py-3 px-3 text-right text-xs tabular-nums text-[#5A6B63]">
                               <span>{formatNum(m.annualQuotaNights ?? m.quotaNights)}박 / </span>
-                              <span className="font-bold text-emerald-700">{formatNum(m.ytdUsedNights ?? m.usedNights)}박 / </span>
-                              <span className="text-slate-400">{formatNum(m.remainingNights)}박</span>
+                              <span className="font-bold text-[#1E523F]">{formatNum(m.ytdUsedNights ?? m.usedNights)}박 / </span>
+                              <span className="text-[#5A6B63]/70">{formatNum(m.remainingNights)}박</span>
                             </td>
-                            <td className="py-3 px-3 text-right font-black text-emerald-700 text-xs">
+                            <td className="py-3 px-3 text-right font-black text-[#1E523F] text-xs">
                               {m.burnRatePct ?? m.exhaustionRate ?? 0}%
                             </td>
-                            <td className="py-3 px-4 text-right font-bold text-slate-900 tabular-nums">
+                            <td className="py-3 px-4 text-right font-bold text-[#1B382E] tabular-nums">
                               {formatNum(m.periodTotalSpend || 0)}원
                             </td>
                             <td className="py-3 px-4 text-right tabular-nums">
-                              <div className="font-black text-indigo-700 text-sm">
+                              <div className="font-black text-[#284F42] text-sm">
                                 {formatNum(m.ytdTotalSpend || m.totalLtv || 0)}원
                               </div>
-                              <div className="text-[10px] text-slate-500 font-medium">
+                              <div className="text-[10px] text-[#5A6B63] font-medium">
                                 골프 {formatNum(golfSpend)}원 · 객실 {formatNum(roomSpend)}원
                               </div>
                             </td>
@@ -1519,7 +1525,7 @@ export default function Members() {
                       })}
                     {(!quotaLtvData.visitedMembersLedger || quotaLtvData.visitedMembersLedger.length === 0) && (
                       <tr>
-                        <td colSpan={9} className="py-12 text-center text-slate-400">
+                        <td colSpan={9} className="py-12 text-center text-[#5A6B63]">
                           해당 기간 방문/투숙한 분양회원 원장 데이터가 없습니다.
                         </td>
                       </tr>
@@ -1530,41 +1536,41 @@ export default function Members() {
             </div>
           </div>
         ) : (
-          <div className="py-12 text-center text-slate-400 text-xs">
+          <div className="py-12 text-center text-[#5A6B63] text-xs">
             분양회원 구좌별 소진율 및 통합 LTV 데이터를 불러오는 중입니다...
           </div>
         )}
       </div>
 
       {/* [Ticket 35] 디지털 온라인 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션 분석 */}
-      <div className="bg-white rounded-[32px] border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-violet-50/50 via-white to-cyan-50/30">
+      <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group overflow-hidden">
+        <div className="p-6 border-b border-[#D0C6BB]/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#F4F3EE]/40">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-violet-600 text-white shadow-xs shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-[#284F42] text-white shadow-xs shrink-0 mt-0.5">
               <Smartphone size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-lg font-extrabold text-[#1B382E]">
                   온라인 통합 회원 이용횟수 등급별 분포 및 6개월 미방문 휴면 단골(Win-back) 리텐션
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-100 text-violet-800 border border-violet-200">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                   온라인 회원 분석
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#5A6B63] mt-1">
                 디지털 온라인 회원 데이터베이스의 누적 방문 횟수 등급(1회 단발 · 2~3회 재방문 · 4~9회 단골 · 10회+ 충성고객)과 최근 6개월 이상 미방문 휴면 단골(Win-back 핀셋 타겟)을 추적합니다.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {onlineDormancyIntel ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                 <CheckCircle2 size={14} />
                 정규 마트 연동 완료
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70">
                 Fail-Stop · 조회 구간 데이터 없음 (/api/v6/report/online-member-dormancy)
               </span>
             )}
@@ -1572,34 +1578,34 @@ export default function Members() {
         </div>
 
         {!onlineDormancyIntel ? (
-          <div className="p-8 bg-slate-50/60">
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center space-y-3">
-              <h4 className="text-sm font-extrabold text-slate-800">
+          <div className="p-8 bg-[#F4F3EE]/60">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-dashed border-[#D0C6BB] p-6 text-center space-y-3">
+              <h4 className="text-sm font-extrabold text-[#1B382E]">
                 [Zero-Fake / Fail-Stop] 온라인 단골 휴면(Churn Risk) 및 Win-back 타겟 조회 데이터 없음
               </h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                백엔드 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">GET /api/v6/report/online-member-dormancy</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
+              <p className="text-xs text-[#5A6B63] leading-relaxed">
+                백엔드 <code className="px-1.5 py-0.5 bg-[#F4F3EE] rounded text-[#1B382E] font-mono border border-[#D0C6BB]/50">GET /api/v6/report/online-member-dormancy</code> 응답 데이터가 없거나 비어 있을 경우 클라이언트 임의 추론이나 가짜 숫자를 생성하지 않고 <strong>Fail-Stop(결함 노출)</strong> 상태를 유지합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-left">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">단골 회원 (4~9회 방문)</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">6개월 미방문 휴면 비율 집계 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#5A6B63]">단골 회원 (4~9회 방문)</div>
+                  <div className="text-base font-black text-[#5A6B63] mt-1">-</div>
+                  <div className="text-[10px] text-[#5A6B63] mt-0.5">6개월 미방문 휴면 비율 집계 대기</div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">충성 고객 (10회+ 방문)</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">최상위 VIP 이탈 감지 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#5A6B63]">충성 고객 (10회+ 방문)</div>
+                  <div className="text-base font-black text-[#5A6B63] mt-1">-</div>
+                  <div className="text-[10px] text-[#5A6B63] mt-0.5">최상위 VIP 이탈 감지 대기</div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">핀셋 Win-back 타겟 모수</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">4회+ 방문 후 6개월 미방문 단골</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#5A6B63]">핀셋 Win-back 타겟 모수</div>
+                  <div className="text-base font-black text-[#5A6B63] mt-1">-</div>
+                  <div className="text-[10px] text-[#5A6B63] mt-0.5">4회+ 방문 후 6개월 미방문 단골</div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] font-bold text-slate-400">최근 6개월 활성 유지율</div>
-                  <div className="text-base font-black text-slate-400 mt-1">-</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">등급별 리텐션 코호트 집계 대기</div>
+                <div className="p-3.5 rounded-xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+                  <div className="text-[11px] font-bold text-[#5A6B63]">최근 6개월 활성 유지율</div>
+                  <div className="text-base font-black text-[#5A6B63] mt-1">-</div>
+                  <div className="text-[10px] text-[#5A6B63] mt-0.5">등급별 리텐션 코호트 집계 대기</div>
                 </div>
               </div>
             </div>
@@ -1607,39 +1613,39 @@ export default function Members() {
         ) : (
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">전체 온라인 통합 회원</div>
-                <div className="text-xl font-black text-slate-900 mt-1">
+              <div className="p-4 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/60">
+                <div className="text-xs font-bold text-[#5A6B63]">전체 온라인 통합 회원</div>
+                <div className="text-xl font-black text-[#1B382E] mt-1">
                   {(onlineDormancyIntel.summary?.totalOnlineMembers ?? onlineDormancyIntel.summary?.totalMembers) != null ? `${formatNum(onlineDormancyIntel.summary?.totalOnlineMembers ?? onlineDormancyIntel.summary?.totalMembers)}명` : '-'}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#5A6B63] mt-1">
                   최근 6개월 활성: {(onlineDormancyIntel.summary?.activeMembers ?? onlineDormancyIntel.summary?.activeWithin6m) != null ? `${formatNum(onlineDormancyIntel.summary?.activeMembers ?? onlineDormancyIntel.summary?.activeWithin6m)}명` : '-'}
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">단골 회원 (4~9회 방문) 휴면율</div>
-                <div className="text-xl font-black text-rose-600 mt-1">
+              <div className="p-4 rounded-2xl bg-[#FDF0ED] border border-[#EAC5BD]/70">
+                <div className="text-xs font-bold text-[#8B2635]">단골 회원 (4~9회 방문) 휴면율</div>
+                <div className="text-xl font-black text-[#8B2635] mt-1">
                   {(onlineDormancyIntel.summary?.regularDormantRatePct ?? onlineDormancyIntel.tiers?.[2]?.dormancyRate ?? onlineDormancyIntel.tiers?.[2]?.dormantRatePct) != null ? `${onlineDormancyIntel.summary?.regularDormantRatePct ?? onlineDormancyIntel.tiers?.[2]?.dormancyRate ?? onlineDormancyIntel.tiers?.[2]?.dormantRatePct}%` : '-'}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#8B2635]/80 mt-1">
                   휴면 단골: {onlineDormancyIntel.summary?.regularDormantCount != null ? `${formatNum(onlineDormancyIntel.summary.regularDormantCount)}명` : '-'}
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <div className="text-xs font-bold text-slate-500">충성 고객 (10회+ 방문) 휴면율</div>
-                <div className="text-xl font-black text-amber-600 mt-1">
+              <div className="p-4 rounded-2xl bg-[#B59269]/10 border border-[#B59269]/30">
+                <div className="text-xs font-bold text-[#B59269]">충성 고객 (10회+ 방문) 휴면율</div>
+                <div className="text-xl font-black text-[#B59269] mt-1">
                   {(onlineDormancyIntel.summary?.loyalDormantRatePct ?? onlineDormancyIntel.tiers?.[3]?.dormancyRate ?? onlineDormancyIntel.tiers?.[3]?.dormantRatePct) != null ? `${onlineDormancyIntel.summary?.loyalDormantRatePct ?? onlineDormancyIntel.tiers?.[3]?.dormancyRate ?? onlineDormancyIntel.tiers?.[3]?.dormantRatePct}%` : '-'}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[11px] text-[#B59269]/80 mt-1">
                   휴면 충성고객: {onlineDormancyIntel.summary?.loyalDormantCount != null ? `${formatNum(onlineDormancyIntel.summary.loyalDormantCount)}명` : '-'}
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-violet-50/70 border border-violet-200">
-                <div className="text-xs font-bold text-violet-700">핵심 단골 Win-back 핀셋 타겟</div>
-                <div className="text-xl font-black text-violet-900 mt-1">
+              <div className="p-4 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20">
+                <div className="text-xs font-bold text-[#284F42]">핵심 단골 Win-back 핀셋 타겟</div>
+                <div className="text-xl font-black text-[#284F42] mt-1">
                   {(onlineDormancyIntel.summary?.winbackTargetsTotal ?? onlineDormancyIntel.summary?.winbackTargetCount) != null ? `${formatNum(onlineDormancyIntel.summary?.winbackTargetsTotal ?? onlineDormancyIntel.summary?.winbackTargetCount)}명` : '-'}
                 </div>
-                <div className="text-[11px] text-violet-600 mt-1">
+                <div className="text-[11px] text-[#284F42]/80 mt-1">
                   4회 이상 방문 이력 보유 · 6개월 미방문
                 </div>
               </div>
@@ -1647,7 +1653,7 @@ export default function Members() {
           </div>
         )}
       </div>
-
+    </div>
     </div>
   );
 }

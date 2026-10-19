@@ -4,7 +4,8 @@ import {
   ArrowUpRight, ArrowDownRight, ShieldCheck, Layers,
   Tag, Zap, Flame, AlertCircle, HelpCircle, BookOpen,
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  Compass, Package, Target, Info, Database, Flag
+  Compass, Package, Target, Info, Database, Flag,
+  Radio, BarChart3, Activity
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 
@@ -80,14 +81,178 @@ export interface PricingRecommendationSummary {
     sunday?: number | null;
     weekday?: number | null;
   };
+  lockedOtbRevenueTotal?: number | null;
+  baselinePickupRevenueTotal?: number | null;
+  dynamicPickupRevenueTotal?: number | null;
   baselineProjectedRevenue: number | null;
   dynamicProjectedRevenue: number | null;
   expectedRevenueGain: number | null;
   expectedRevenueGainPct: number | null;
+  counterfactualEvaluation?: {
+    totalSurvivingOtbUnits?: number | null;
+    totalBaselineNewPickupUnits?: number | null;
+    totalDynamicNewPickupUnits?: number | null;
+    netPickupUnitVolumeDelta?: number | null;
+    totalBaselineSoldUnits?: number | null;
+    totalDynamicSoldUnits?: number | null;
+    netUnitVolumeDelta?: number | null;
+    variableCostPerKeyKrw?: number | null;
+    blendedChannelFeeRate?: number | null;
+    bundleMarginalCostPerUnit?: number | null;
+    totalBundleMarketingCost?: number | null;
+    lockedOtbContributionMarginTotal?: number | null;
+    baselinePickupContributionMarginTotal?: number | null;
+    dynamicPickupContributionMarginTotal?: number | null;
+    baselineTotalContributionMargin?: number | null;
+    dynamicTotalContributionMargin?: number | null;
+    expectedNetContributionMarginGain?: number | null;
+    expectedNetContributionMarginGainPct?: number | null;
+    otbRevenueNeutralityCheckDeltaKrw?: number | null;
+    methodologyNote?: string | null;
+  };
   yieldUpDays: number | null;
   holdDays: number | null;
   bundlePromoDays: number | null;
   flashSaleDays: number | null;
+}
+
+export interface CompetitorMarketSummary {
+  snapshotCollectedAt?: string;
+  source?: string;
+  dbMetadata?: {
+    dbEngine?: string;
+    retentionPolicy?: string;
+    s3Uri?: string;
+    mariaDbContactCount?: number;
+    snapshotDate?: string;
+    totalSnapshotsStored?: number;
+    totalDailyMartRows?: number;
+    totalRawOffersStored?: number;
+  };
+  targetResorts?: string[];
+  weekdayBaselineMinPrices?: Record<string, number>;
+  highCompressionDaysCount?: number | null;
+  momentumSurgeDaysCount?: number | null;
+  weekdayDumpingAlertDaysCount?: number | null;
+  empiricalSpilloverAnalysis?: {
+    pickupLookbackWindow?: {
+      recent3dFrom?: string;
+      recent7dFrom?: string;
+      asOfBaseDate?: string;
+    };
+    highCompressionGroup?: {
+      daysCount?: number | null;
+      avgOtbOccupancyPct?: number | null;
+      totalRecent3dPickupRooms?: number | null;
+      totalRecent7dPickupRooms?: number | null;
+      totalRecent7dPickupKeys?: number | null;
+      avgRecent7dPickupRoomsPerDay?: number | null;
+      avgTier35PriceCushionKrw?: number | null;
+    };
+    normalMarketGroup?: {
+      daysCount?: number | null;
+      avgOtbOccupancyPct?: number | null;
+      totalRecent3dPickupRooms?: number | null;
+      totalRecent7dPickupRooms?: number | null;
+      totalRecent7dPickupKeys?: number | null;
+      avgRecent7dPickupRoomsPerDay?: number | null;
+      avgTier35PriceCushionKrw?: number | null;
+    };
+    spilloverPickupVelocityRatio?: number | null;
+    crossElasticitySummary?: string | null;
+  };
+  yearlyMonthlySummary?: Array<{
+    stayYear: string;
+    stayYearMonth: string;
+    resortName: string;
+    dayType: string;
+    observations: number;
+    soldOutRatePct: number;
+    avgMinPrice: number | null;
+    avgMedianPrice: number | null;
+    avgTier16_35Price: number | null;
+    avgTier51Price: number | null;
+  }>;
+}
+
+export interface CompetitorResortDetail {
+  resortName: string;
+  isSoldOut: boolean;
+  isNewlySoldOut?: boolean;
+  minPrice: number | null;
+  medianPrice?: number | null;
+  tier16_35Price?: number | null;
+  tier16_35MinPrice?: number | null;
+  tier51Price?: number | null;
+  tier51MinPrice?: number | null;
+  change1dPct?: number | null;
+  priceChange1dPct?: number | null;
+  change7dKrw?: number | null;
+  priceChange7dKrw?: number | null;
+  lowestChannel?: string;
+  lowestRoomName?: string;
+  offerCount?: number;
+  vsBelleforetGapKrw?: number | null;
+}
+
+export interface CompetitorBenchmarkItem {
+  snapshotCollectedAt?: string;
+  marketStatus?: string;
+  soldOutResortCount?: number;
+  avgCompetitorSurgePct?: number;
+  marketPositioningNote?: string;
+  uiBadge?: {
+    badgeCode: string;
+    badgeLabel: string;
+    badgeColorTone: 'RED' | 'ORANGE' | 'AMBER' | 'PURPLE' | 'GREEN' | 'BLUE' | string;
+    tooltipText: string;
+  };
+  momentumSignals?: {
+    newlySoldOutResortCount?: number;
+    maxCompetitor1dSurgePct?: number;
+    minCompetitor1dDropPct?: number;
+    maxCompetitor7dSurgeKrw?: number;
+    isCompetitorMomentumSurge?: boolean;
+    isCompetitorWeekdayDumping?: boolean;
+  };
+  tierComparison?: {
+    tier16_35?: {
+      belleforetRoomType?: string;
+      belleforetRecommendedAdr?: number | null;
+      competitorMinPrice?: number | null;
+      lowestCompetitorName?: string;
+      priceCushionKrw?: number | null;
+      priceCushionPct?: number | null;
+      positioningStatus?: string;
+    };
+    tier51?: {
+      belleforetRoomType?: string;
+      belleforetRecommendedAdr?: number | null;
+      competitorMinPrice?: number | null;
+      lowestCompetitorName?: string;
+      priceCushionKrw?: number | null;
+      priceCushionPct?: number | null;
+      positioningStatus?: string;
+    };
+  };
+  recentPickupVelocity?: {
+    recent3dBookedRooms?: number | null;
+    recent7dBookedRooms?: number | null;
+    recent7dOccupiedKeys?: number | null;
+    spilloverMomentumStatus?: string;
+  };
+  resorts?: CompetitorResortDetail[];
+}
+
+export interface Connecting51BidPriceAdvisory {
+  availSingle51Keys?: number | null;
+  availConnecting51Pairs?: number | null;
+  single16SellProb?: number | null;
+  single35SellProb?: number | null;
+  expectedDisplacementCm51?: number | null;
+  connecting51BidPriceFloor?: number | null;
+  recommended51Adr?: number | null;
+  allocationStatus?: string;
 }
 
 export interface RoomTypeBenchmarkItem {
@@ -182,6 +347,7 @@ export interface DailyCalendarItem {
     baselineProjectedRevenue: number | null;
     dynamicProjectedRevenue: number | null;
     expectedRevenueDelta: number | null;
+    connecting51BidPriceAdvisory?: Connecting51BidPriceAdvisory;
   };
   marketing: {
     actionCode: DynamicActionCode;
@@ -191,6 +357,8 @@ export interface DailyCalendarItem {
     promoBundleItem: string;
     recommendationText: string;
   };
+  competitorBenchmark?: CompetitorBenchmarkItem;
+  connecting51BidPriceAdvisory?: Connecting51BidPriceAdvisory;
   roomTypes: DailyRoomTypeDetail[];
 }
 
@@ -201,6 +369,7 @@ export interface RoomDynamicPricingResponse {
     historical2025: HistoricalPeriodSummary;
     recent2026: HistoricalPeriodSummary;
     currentOtb: CurrentOtbSummary;
+    competitorMarket?: CompetitorMarketSummary;
     pricingRecommendation: PricingRecommendationSummary;
   };
   roomTypeBenchmarks: RoomTypeBenchmarkItem[];
@@ -319,6 +488,66 @@ const getActionBadgeStyle = (actionCode: DynamicActionCode) => {
   }
 };
 
+const getCompetitorBadgeStyle = (tone?: string) => {
+  switch (tone) {
+    case 'RED':
+      return {
+        bg: 'bg-[#FDF0ED]',
+        text: 'text-[#8B2635]',
+        border: 'border-[#EAC5BD]',
+        badgeBg: 'bg-[#8B2635]',
+        badgeText: 'text-white',
+        dot: 'bg-[#8B2635]'
+      };
+    case 'ORANGE':
+      return {
+        bg: 'bg-[#FAF0E6]',
+        text: 'text-[#C05621]',
+        border: 'border-[#FBD38D]',
+        badgeBg: 'bg-[#C05621]',
+        badgeText: 'text-white',
+        dot: 'bg-[#C05621]'
+      };
+    case 'AMBER':
+      return {
+        bg: 'bg-[#FAF6ED]',
+        text: 'text-[#8C6D3B]',
+        border: 'border-[#E5DAC1]',
+        badgeBg: 'bg-[#8C6D3B]',
+        badgeText: 'text-white',
+        dot: 'bg-[#8C6D3B]'
+      };
+    case 'PURPLE':
+      return {
+        bg: 'bg-[#F3E8FF]',
+        text: 'text-[#6B21A8]',
+        border: 'border-[#D8B4FE]',
+        badgeBg: 'bg-[#6B21A8]',
+        badgeText: 'text-white',
+        dot: 'bg-[#6B21A8]'
+      };
+    case 'GREEN':
+      return {
+        bg: 'bg-[#E8F2EE]',
+        text: 'text-[#1E523F]',
+        border: 'border-[#B4C6C1]',
+        badgeBg: 'bg-[#1E523F]',
+        badgeText: 'text-white',
+        dot: 'bg-[#1E523F]'
+      };
+    case 'BLUE':
+    default:
+      return {
+        bg: 'bg-[#EFF6FF]',
+        text: 'text-[#1E40AF]',
+        border: 'border-[#BFDBFE]',
+        badgeBg: 'bg-[#1E40AF]',
+        badgeText: 'text-white',
+        dot: 'bg-[#1E40AF]'
+      };
+  }
+};
+
 const getUrgencyBadge = (urgency: string | null | undefined) => {
   if (!urgency) return null;
   if (urgency === 'HIGH') {
@@ -364,6 +593,8 @@ export default function RoomDynamicPricing() {
   const [showBenchmarkAccordion, setShowBenchmarkAccordion] = useState<boolean>(false);
   const [showSummaryDetailAccordion, setShowSummaryDetailAccordion] = useState<boolean>(false);
   const [showLogicExplanationAccordion, setShowLogicExplanationAccordion] = useState<boolean>(false);
+  const [showCompetitorTimeseriesAccordion, setShowCompetitorTimeseriesAccordion] = useState<boolean>(false);
+  const [selectedCompetitorResortFilter, setSelectedCompetitorResortFilter] = useState<string>('ALL');
 
   const fetchDynamicPricing = async () => {
     setLoading(true);
@@ -404,6 +635,10 @@ export default function RoomDynamicPricing() {
   const recent2026 = summary?.recent2026;
   const currentOtb = summary?.currentOtb;
   const pricingRec = summary?.pricingRecommendation;
+  const competitorMarket = summary?.competitorMarket;
+  const spillover = competitorMarket?.empiricalSpilloverAnalysis;
+  const counterfactual = pricingRec?.counterfactualEvaluation;
+  const yearlyMonthlySummary = competitorMarket?.yearlyMonthlySummary || [];
   const benchmarks = data?.roomTypeBenchmarks || [];
   const dailyCalendar = data?.dailyCalendar || [];
 
@@ -415,6 +650,248 @@ export default function RoomDynamicPricing() {
   const selectedDayItem = selectedDayIndex >= 0
     ? dailyCalendar[selectedDayIndex]
     : dailyCalendar[0] || null;
+
+  const filteredYearlySummary = selectedCompetitorResortFilter === 'ALL'
+    ? yearlyMonthlySummary
+    : yearlyMonthlySummary.filter((row) => row.resortName === selectedCompetitorResortFilter);
+
+  const renderCompetitorDrawer = (targetDay: DailyCalendarItem) => {
+    const cb = targetDay.competitorBenchmark;
+    const adv = targetDay.pricing?.connecting51BidPriceAdvisory || targetDay.connecting51BidPriceAdvisory;
+    if (!cb && !adv) return null;
+
+    const t16_35 = cb?.tierComparison?.tier16_35;
+    const t51 = cb?.tierComparison?.tier51;
+    const pv = cb?.recentPickupVelocity;
+    const resorts = cb?.resorts || [];
+    const bStyle = getCompetitorBadgeStyle(cb?.uiBadge?.badgeColorTone);
+
+    return (
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D0C6BB]/85 shadow-2xs space-y-4">
+        {/* 1. 상단 타이틀 & 경쟁사 상태 배지 & 수집 시점 */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#D0C6BB]/60 pb-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="p-1.5 rounded-lg bg-[#1B3B2B] text-white">
+                <Radio size={15} />
+              </span>
+              <h4 className="text-sm sm:text-base font-black text-[#1B382E]">
+                충청권 4대 경쟁사 실시간 비교 레이더 & 평형별 가격 쿠션 (Spillover Radar)
+              </h4>
+              {cb?.uiBadge && (
+                <span
+                  title={cb.uiBadge.tooltipText}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-black border flex items-center gap-1 ${bStyle.bg} ${bStyle.text} ${bStyle.border}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${bStyle.dot}`} />
+                  <span>{cb.uiBadge.badgeLabel}</span>
+                </span>
+              )}
+            </div>
+            {cb?.marketPositioningNote && (
+              <p className="text-xs font-bold text-[#284F42]">
+                👉 {cb.marketPositioningNote}
+              </p>
+            )}
+          </div>
+
+          {cb?.snapshotCollectedAt && (
+            <div className="text-[11px] font-bold text-[#5A6B63] shrink-0 flex items-center gap-1">
+              <Activity size={12} className="text-[#284F42]" />
+              <span>수집 시점: {cb.snapshotCollectedAt}</span>
+            </div>
+          )}
+        </div>
+
+        {/* 2. 평형별 가격 쿠션 (Tier Comparison) & 최근 픽업 속도 그리드 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* 35평형 가격 쿠션 */}
+          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-extrabold text-[#1B382E]">35평형 가격 포지셔닝</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-[#D0C6BB]/60 text-[#284F42]">
+                {t16_35?.positioningStatus || '비교'}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between pt-1">
+              <span className="text-[11px] text-[#5A6B63]">벨포레 추천가</span>
+              <span className="text-sm font-black text-[#1B3B2B] font-financial">
+                {formatWon(t16_35?.belleforetRecommendedAdr)}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between text-[11px] text-[#5A6B63]">
+              <span>경쟁사 최저 ({t16_35?.lowestCompetitorName || '-'})</span>
+              <span className="font-bold text-[#1B382E] font-financial">
+                {formatWon(t16_35?.competitorMinPrice)}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between text-xs pt-1.5 border-t border-[#D0C6BB]/40 font-bold">
+              <span className="text-[#5A6B63]">가격 쿠션 (우위 Δ)</span>
+              <span className={`font-black font-financial ${
+                (t16_35?.priceCushionKrw ?? 0) >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
+              }`}>
+                {formatSignedWon(t16_35?.priceCushionKrw)} ({formatSignedPct(t16_35?.priceCushionPct)})
+              </span>
+            </div>
+          </div>
+
+          {/* 51평형 가격 쿠션 */}
+          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-extrabold text-[#1B382E]">51평형 가격 포지셔닝</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-[#D0C6BB]/60 text-[#284F42]">
+                {t51?.positioningStatus || '비교'}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between pt-1">
+              <span className="text-[11px] text-[#5A6B63]">벨포레 추천가</span>
+              <span className="text-sm font-black text-[#1B3B2B] font-financial">
+                {formatWon(t51?.belleforetRecommendedAdr)}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between text-[11px] text-[#5A6B63]">
+              <span>경쟁사 최저 ({t51?.lowestCompetitorName || '-'})</span>
+              <span className="font-bold text-[#1B382E] font-financial">
+                {formatWon(t51?.competitorMinPrice)}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between text-xs pt-1.5 border-t border-[#D0C6BB]/40 font-bold">
+              <span className="text-[#5A6B63]">가격 쿠션 (우위 Δ)</span>
+              <span className={`font-black font-financial ${
+                (t51?.priceCushionKrw ?? 0) >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
+              }`}>
+                {formatSignedWon(t51?.priceCushionKrw)} ({formatSignedPct(t51?.priceCushionPct)})
+              </span>
+            </div>
+          </div>
+
+          {/* 최근 신규 픽업 모멘텀 속도 */}
+          <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-extrabold text-[#1B382E]">최근 신규 예약 유입 속도</span>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                {pv?.spilloverMomentumStatus || '정상'}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between pt-1 text-xs">
+              <span className="text-[#5A6B63] font-medium">최근 3일 신규 유입</span>
+              <span className="font-extrabold text-[#1B382E]">
+                {formatNum(pv?.recent3dBookedRooms)}실
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between text-xs">
+              <span className="text-[#5A6B63] font-medium">최근 7일 신규 유입</span>
+              <span className="font-black text-[#1E523F]">
+                {formatNum(pv?.recent7dBookedRooms)}실 ({formatNum(pv?.recent7dOccupiedKeys)}키)
+              </span>
+            </div>
+            <div className="pt-1.5 border-t border-[#D0C6BB]/40 text-[10px] text-[#5A6B63]">
+              과열 구간 낙수수요 유입 여부를 실시간 추적합니다.
+            </div>
+          </div>
+        </div>
+
+        {/* 3. 4대 경쟁 리조트 상세 비교표 */}
+        {resorts.length > 0 && (
+          <div className="rounded-xl border border-[#D0C6BB]/70 overflow-x-auto">
+            <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
+              <thead>
+                <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/70">
+                  <th className="py-2 px-3.5">경쟁 리조트</th>
+                  <th className="py-2 px-3.5 text-center">판매 상태</th>
+                  <th className="py-2 px-3.5 text-right">당일 최저가</th>
+                  <th className="py-2 px-3.5 text-right">중형 (16~35평)</th>
+                  <th className="py-2 px-3.5 text-right">대형 (51평)</th>
+                  <th className="py-2 px-3.5 text-right">전일 대비 변동률</th>
+                  <th className="py-2 px-3.5 text-right">전주 대비 변동액</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D0C6BB]/40">
+                {resorts.map((r) => (
+                  <tr key={r.resortName} className="hover:bg-[#FAF9F6]">
+                    <td className="py-2 px-3.5 font-bold text-[#1B382E]">{r.resortName}</td>
+                    <td className="py-2 px-3.5 text-center">
+                      {r.isSoldOut ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
+                          마감·품절
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                          판매중
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 px-3.5 text-right font-black text-[#1B382E] font-financial">
+                      {formatWon(r.minPrice)}
+                    </td>
+                    <td className="py-2 px-3.5 text-right text-[#5A6B63] font-financial">
+                      {formatWon(r.tier16_35MinPrice ?? r.tier16_35Price)}
+                    </td>
+                    <td className="py-2 px-3.5 text-right text-[#5A6B63] font-financial">
+                      {formatWon(r.tier51MinPrice ?? r.tier51Price)}
+                    </td>
+                    <td className={`py-2 px-3.5 text-right font-bold ${
+                      ((r.priceChange1dPct ?? r.change1dPct) ?? 0) > 0 ? 'text-[#8B2635]' : ((r.priceChange1dPct ?? r.change1dPct) ?? 0) < 0 ? 'text-[#1E523F]' : 'text-[#5A6B63]'
+                    }`}>
+                      {formatSignedPct(r.priceChange1dPct ?? r.change1dPct)}
+                    </td>
+                    <td className={`py-2 px-3.5 text-right font-bold font-financial ${
+                      ((r.priceChange7dKrw ?? r.change7dKrw) ?? 0) > 0 ? 'text-[#8B2635]' : ((r.priceChange7dKrw ?? r.change7dKrw) ?? 0) < 0 ? 'text-[#1E523F]' : 'text-[#5A6B63]'
+                    }`}>
+                      {formatSignedWon(r.priceChange7dKrw ?? r.change7dKrw)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 4. 51평 조립형 커넥팅 기회비용 바닥가 조언 (Connecting 51 Advisory) */}
+        {adv && (
+          <div className="bg-[#FAF6ED] rounded-xl p-3.5 border border-[#E5DAC1] space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 font-black text-[#8C6D3B]">
+                <ShieldCheck size={14} className="text-[#8C6D3B]" />
+                <span>51평 조립형 커넥팅룸 기회비용 바닥가(Floor Bid Price) 통제</span>
+              </div>
+              {adv.allocationStatus && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white text-[#8C6D3B] border border-[#E5DAC1]">
+                  {adv.allocationStatus}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
+              <div className="bg-white p-2 rounded-lg border border-[#E5DAC1]/60">
+                <span className="text-[#5A6B63] block">단독 51평 / 조립 쌍</span>
+                <strong className="text-[#1B382E]">
+                  {formatNum(adv.availSingle51Keys)}실 / {formatNum(adv.availConnecting51Pairs)}쌍
+                </strong>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-[#E5DAC1]/60">
+                <span className="text-[#5A6B63] block">단독 16평·35평 매진확률</span>
+                <strong className="text-[#1B382E]">
+                  {adv.single16SellProb != null ? formatPct(adv.single16SellProb * 100) : '-'} · {adv.single35SellProb != null ? formatPct(adv.single35SellProb * 100) : '-'}
+                </strong>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-[#E5DAC1]/60">
+                <span className="text-[#5A6B63] block">16+35 단독 판매 기회비용</span>
+                <strong className="text-[#8C6D3B] font-financial">
+                  {formatWon(adv.expectedDisplacementCm51)}
+                </strong>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-[#E5DAC1]/60">
+                <span className="text-[#5A6B63] block">51평 바닥 권장가 (Floor)</span>
+                <strong className="text-[#1E523F] font-financial">
+                  {formatWon(adv.connecting51BidPriceFloor)}
+                </strong>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handlePrevDay = () => {
     if (selectedDayIndex > 0) {
@@ -807,6 +1284,13 @@ export default function RoomDynamicPricing() {
                           <div className={`text-[10px] mt-0.5 font-medium ${isSel ? 'text-white/80' : 'text-[#5A6B63]'}`}>
                             잔여 {formatNum(day.inventory?.remainingKeys)}키 · D-{day.leadDays ?? '-'}
                           </div>
+                          {day.competitorBenchmark?.uiBadge && (
+                            <div className={`text-[9px] font-black truncate max-w-[105px] mt-0.5 ${
+                              isSel ? 'text-[#B59269]' : getCompetitorBadgeStyle(day.competitorBenchmark.uiBadge.badgeColorTone).text
+                            }`}>
+                              {day.competitorBenchmark.uiBadge.badgeLabel}
+                            </div>
+                          )}
                         </button>
                       );
                     })}
@@ -837,6 +1321,19 @@ export default function RoomDynamicPricing() {
                             연휴 마감 (일요요금)
                           </span>
                         )}
+                        {selectedDayItem.competitorBenchmark?.uiBadge && (() => {
+                          const b = selectedDayItem.competitorBenchmark.uiBadge;
+                          const bStyle = getCompetitorBadgeStyle(b.badgeColorTone);
+                          return (
+                            <span
+                              title={b.tooltipText}
+                              className={`px-2.5 py-1 rounded-xl text-xs font-black border flex items-center gap-1.5 shadow-2xs ${bStyle.bg} ${bStyle.text} ${bStyle.border}`}
+                            >
+                              <span className={`w-2 h-2 rounded-full ${bStyle.dot}`} />
+                              <span>{b.badgeLabel}</span>
+                            </span>
+                          );
+                        })()}
                         {(() => {
                           const st = getActionBadgeStyle(selectedDayItem.marketing?.actionCode);
                           return (
@@ -949,6 +1446,9 @@ export default function RoomDynamicPricing() {
                       </div>
                     </div>
                   </div>
+
+                  {/* 당일 충청권 4대 경쟁사 실시간 비교 레이더 & 평형별 가격 쿠션 (Spillover Radar) */}
+                  {selectedDayItem && renderCompetitorDrawer(selectedDayItem)}
                 </div>
 
                 {/* 1-C. 🌟 평형별 "이 가격에 파세요!" 대형 직관적 가격표 카드 그리드 */}
@@ -1379,6 +1879,128 @@ export default function RoomDynamicPricing() {
                   </div>
                 </div>
               </div>
+
+              {/* 충청권 4대 경쟁사 레이더 & 낙수수요(Spillover) 실측 교차 탄력성 분석 배너 */}
+              {competitorMarket && (
+                <div className="bg-gradient-to-br from-[#FAF9F5] via-white to-[#F4F3EE] rounded-3xl p-6 border-2 border-[#1B3B2B]/20 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#D0C6BB]/70 pb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="p-1.5 rounded-lg bg-[#1B3B2B] text-white">
+                          <Radio size={16} />
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-[#1B382E]">
+                          충청권 4대 경쟁 리조트 야간 실시간 레이더 & 낙수수요(Spillover) 실측 교차 탄력성 분석
+                        </h3>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
+                          경쟁사 과열·품절 {formatNum(competitorMarket.highCompressionDaysCount)}일
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                          낙수 유입 가속비 {spillover?.spilloverPickupVelocityRatio != null ? `${spillover.spilloverPickupVelocityRatio}배` : '-'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#5A6B63] font-medium">
+                        매일 밤 23:30 KST 야간 자동 크롤링 · AWS S3 영구 SQLite 다년도 시계열 DB 연동 · 소노벨 단양 · 롯데리조트 부여 · 레스트리 리솜 · 포레스트 리솜
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#5A6B63] shrink-0">
+                      <span className="px-3 py-1.5 rounded-xl bg-white border border-[#D0C6BB]/80 flex items-center gap-1.5 shadow-2xs">
+                        <Activity size={13} className="text-[#284F42]" />
+                        <span>수집: {competitorMarket.snapshotCollectedAt || '-'}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 낙수수요 실측 교차 탄력성 핵심 지표 그리드 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    {/* 1. 과열 구간 예약 속도 */}
+                    <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/80 shadow-2xs">
+                      <div className="text-[11px] font-bold text-[#8B2635] mb-1 flex items-center justify-between">
+                        <span>🔥 경쟁사 과열 구간 (총 {formatNum(spillover?.highCompressionGroup?.daysCount)}일)</span>
+                        <span className="text-[10px] bg-[#FDF0ED] px-2 py-0.5 rounded-md font-extrabold">품절 2곳 이상</span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-black text-[#1B382E] font-financial">
+                        {spillover?.highCompressionGroup?.avgRecent7dPickupRoomsPerDay != null ? `${spillover.highCompressionGroup.avgRecent7dPickupRoomsPerDay}실/일` : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
+                        최근 7일 유입: <strong className="text-[#1B382E]">{formatNum(spillover?.highCompressionGroup?.totalRecent7dPickupRooms)}실</strong> ({formatNum(spillover?.highCompressionGroup?.totalRecent7dPickupKeys)}키)
+                      </div>
+                      <div className="text-[10px] text-[#1E523F] font-bold mt-0.5">
+                        벨포레 35평 가격 우위: {formatSignedWon(spillover?.highCompressionGroup?.avgTier35PriceCushionKrw)}
+                      </div>
+                    </div>
+
+                    {/* 2. 일반 구간 예약 속도 */}
+                    <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/80 shadow-2xs">
+                      <div className="text-[11px] font-bold text-[#5A6B63] mb-1 flex items-center justify-between">
+                        <span>경쟁사 일반 구간 (총 {formatNum(spillover?.normalMarketGroup?.daysCount)}일)</span>
+                        <span className="text-[10px] bg-[#F4F3EE] px-2 py-0.5 rounded-md font-bold">정상 판매</span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-black text-[#5A6B63] font-financial">
+                        {spillover?.normalMarketGroup?.avgRecent7dPickupRoomsPerDay != null ? `${spillover.normalMarketGroup.avgRecent7dPickupRoomsPerDay}실/일` : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
+                        최근 7일 유입: <strong className="text-[#1B382E]">{formatNum(spillover?.normalMarketGroup?.totalRecent7dPickupRooms)}실</strong> ({formatNum(spillover?.normalMarketGroup?.totalRecent7dPickupKeys)}키)
+                      </div>
+                      <div className="text-[10px] text-[#5A6B63] font-bold mt-0.5">
+                        벨포레 35평 가격 우위: {formatSignedWon(spillover?.normalMarketGroup?.avgTier35PriceCushionKrw)}
+                      </div>
+                    </div>
+
+                    {/* 3. 기확정 생존 OTB 매출 (소급 0원 고정) */}
+                    <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/80 shadow-2xs">
+                      <div className="text-[11px] font-bold text-[#284F42] mb-1 flex items-center justify-between">
+                        <span>기확정 생존 OTB 매출</span>
+                        <span className="text-[10px] bg-[#E8F2EE] text-[#1E523F] px-2 py-0.5 rounded-md font-extrabold">소급 0원 고정</span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-black text-[#1B382E] font-financial">
+                        {formatWon(pricingRec?.lockedOtbRevenueTotal)}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
+                        생존 OTB <strong className="text-[#1B382E]">{formatNum(counterfactual?.totalSurvivingOtbUnits)}실</strong> 기준
+                      </div>
+                      <div className="text-[10px] text-[#1E523F] font-bold mt-0.5">
+                        확정 기여 공헌이익: {formatWon(counterfactual?.lockedOtbContributionMarginTotal)}
+                      </div>
+                    </div>
+
+                    {/* 4. 신규 픽업 순공헌이익 순증 (Counterfactual) */}
+                    <div className="bg-gradient-to-br from-[#1B3B2B] to-[#0F291E] text-white p-4 rounded-2xl border border-[#0F291E] shadow-2xs">
+                      <div className="text-[11px] font-bold text-white/80 mb-1 flex items-center justify-between">
+                        <span>신규 픽업 순공헌이익 순증</span>
+                        <span className="text-[10px] bg-[#B59269] text-white px-2 py-0.5 rounded-md font-black">Counterfactual</span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-black text-[#EAE3D2] font-financial">
+                        {formatSignedWon(counterfactual?.expectedNetContributionMarginGain)}
+                      </div>
+                      <div className="text-[11px] text-white/80 mt-1 font-medium">
+                        매출 순증: <strong className="text-white">{formatSignedWon(pricingRec?.expectedRevenueGain)} ({formatSignedPct(pricingRec?.expectedRevenueGainPct)})</strong>
+                      </div>
+                      <div className="text-[10px] text-[#B59269] font-black mt-0.5">
+                        공헌이익 순증률: {formatSignedPct(counterfactual?.expectedNetContributionMarginGainPct)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 교차 탄력성 분석 종합 한 줄 요약 & 방법론 주석 */}
+                  {spillover?.crossElasticitySummary && (
+                    <div className="bg-white p-4 rounded-2xl border border-[#D0C6BB]/75 flex items-start gap-3 text-xs leading-relaxed">
+                      <Sparkles size={16} className="text-[#B59269] shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-extrabold text-[#1B382E]">
+                          {spillover.crossElasticitySummary}
+                        </p>
+                        {counterfactual?.methodologyNote && (
+                          <p className="text-[11px] text-[#5A6B63] font-medium pt-1 border-t border-[#D0C6BB]/40">
+                            ※ 평가 방법론: {counterfactual.methodologyNote}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ====================================================================
@@ -1544,6 +2166,19 @@ export default function RoomDynamicPricing() {
                                         연휴마감
                                       </span>
                                     )}
+                                    {day.competitorBenchmark?.uiBadge && (() => {
+                                      const b = day.competitorBenchmark.uiBadge;
+                                      const bStyle = getCompetitorBadgeStyle(b.badgeColorTone);
+                                      return (
+                                        <span
+                                          title={b.tooltipText}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-black border flex items-center gap-1 ${bStyle.bg} ${bStyle.text} ${bStyle.border}`}
+                                        >
+                                          <span className={`w-1.5 h-1.5 rounded-full ${bStyle.dot}`} />
+                                          <span>{b.badgeLabel}</span>
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
                                   <div className="text-[11px] text-[#5A6B63] mt-0.5">
                                     {day.dayTypeLabel} · 매칭 (25년 {day.yoyMatchDate || '-'} / 24년 {day.yoy2024MatchDate || '-'})
@@ -1727,6 +2362,9 @@ export default function RoomDynamicPricing() {
                                       </tbody>
                                     </table>
                                   </div>
+
+                                  {/* 당일 충청권 4대 경쟁사 실시간 비교 레이더 & 평형별 가격 쿠션 (Spillover Radar) */}
+                                  {renderCompetitorDrawer(day)}
                                 </div>
                               </td>
                             </tr>
@@ -2135,6 +2773,168 @@ export default function RoomDynamicPricing() {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ====================================================================
+                6. [아코디언 F] 충청권 4대 경쟁사 다년도 시계열 레이더 (S3 SQLite 영구 DB 연동)
+               ==================================================================== */}
+            <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowCompetitorTimeseriesAccordion(!showCompetitorTimeseriesAccordion)}
+                className="w-full p-6 bg-white hover:bg-[#FAF9F6] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left cursor-pointer"
+              >
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <BarChart3 size={19} className="text-[#1B3B2B]" />
+                    <h2 className="text-lg font-extrabold text-[#1B382E]">
+                      충청권 4대 경쟁사 다년도 시계열 레이더 (AWS S3 영구 SQLite DB 연동)
+                    </h2>
+                    <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]">
+                      시계열 분석 아코디언
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5A6B63] mt-1 font-medium">
+                    소노벨 단양 · 롯데리조트 부여 · 레스트리 리솜 · 포레스트 리솜의 연도·월별·요일군별 품절률 및 가격 시계열 트렌드 ({formatNum(yearlyMonthlySummary.length)}개 집계 구간)
+                  </p>
+                </div>
+
+                <div className="px-4 py-2 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB] text-xs font-extrabold text-[#1B382E] flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                  <span>{showCompetitorTimeseriesAccordion ? '시계열 레이더 접기' : '시계열 레이더 펼치기'}</span>
+                  {showCompetitorTimeseriesAccordion ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                </div>
+              </button>
+
+              {showCompetitorTimeseriesAccordion && (
+                <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-5">
+                  {/* 영구 DB 파이프라인 메타데이터 카드 */}
+                  {competitorMarket?.dbMetadata && (
+                    <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/80 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
+                          <Database size={16} className="text-[#284F42]" />
+                          <span>AWS S3 영구 다년도 시계열 데이터베이스 메타데이터 (Zero DB Load)</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-3 py-1 rounded-xl border border-[#B4C6C1]">
+                          RDS 접속 부하: {formatNum(competitorMarket.dbMetadata.mariaDbContactCount)}회 (0-Load)
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                          <span className="text-[#5A6B63] block font-medium">영구 DB 엔진</span>
+                          <strong className="text-[#1B382E] block mt-0.5 truncate">{competitorMarket.dbMetadata.dbEngine || '-'}</strong>
+                        </div>
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                          <span className="text-[#5A6B63] block font-medium">데이터 보존 정책</span>
+                          <strong className="text-[#1B382E] block mt-0.5 truncate">{competitorMarket.dbMetadata.retentionPolicy || '-'}</strong>
+                        </div>
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                          <span className="text-[#5A6B63] block font-medium">누적 마트 행 / 스냅샷</span>
+                          <strong className="text-[#1B382E] block mt-0.5">
+                            {formatNum(competitorMarket.dbMetadata.totalDailyMartRows)}행 ({formatNum(competitorMarket.dbMetadata.totalSnapshotsStored)}회)
+                          </strong>
+                        </div>
+                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
+                          <span className="text-[#5A6B63] block font-medium">총 원천 오퍼 저장 건수</span>
+                          <strong className="text-[#284F42] block mt-0.5">
+                            {formatNum(competitorMarket.dbMetadata.totalRawOffersStored)}건
+                          </strong>
+                        </div>
+                      </div>
+                      {competitorMarket.dbMetadata.s3Uri && (
+                        <div className="text-[11px] text-[#5A6B63] font-mono bg-[#FAF9F6] px-3 py-1.5 rounded-lg border border-[#D0C6BB]/50 truncate">
+                          S3 Storage: {competitorMarket.dbMetadata.s3Uri}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 경쟁 리조트 4대 필터 탭 */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-extrabold text-[#1B382E] mr-1">리조트 선택 필터:</span>
+                    {['ALL', '소노벨 단양', '롯데리조트 부여', '레스트리 리솜', '포레스트 리솜'].map((resortName) => (
+                      <button
+                        key={resortName}
+                        type="button"
+                        onClick={() => setSelectedCompetitorResortFilter(resortName)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer border ${
+                          selectedCompetitorResortFilter === resortName
+                            ? 'bg-[#1B382E] text-white border-[#1B382E] shadow-2xs'
+                            : 'bg-white text-[#5A6B63] border-[#D0C6BB]/80 hover:bg-[#F4F3EE]'
+                        }`}
+                      >
+                        {resortName === 'ALL' ? '전체 (4대 리조트)' : resortName}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 시계열 요약 테이블 */}
+                  <div className="bg-white rounded-2xl border border-[#D0C6BB]/75 overflow-x-auto shadow-2xs">
+                    <table className="w-full text-left border-collapse whitespace-nowrap text-xs min-w-[760px]">
+                      <thead>
+                        <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/75">
+                          <th className="py-2.5 px-4">대상 연월</th>
+                          <th className="py-2.5 px-4">리조트명</th>
+                          <th className="py-2.5 px-4 text-center">요일군</th>
+                          <th className="py-2.5 px-4 text-right">관측 표본</th>
+                          <th className="py-2.5 px-4 text-right">품절률</th>
+                          <th className="py-2.5 px-4 text-right">평균 최저가</th>
+                          <th className="py-2.5 px-4 text-right">중위가 (Median)</th>
+                          <th className="py-2.5 px-4 text-right">중형 (16~35평)</th>
+                          <th className="py-2.5 px-4 text-right">대형 (51평)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#D0C6BB]/40">
+                        {filteredYearlySummary.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="py-8 text-center text-[#5A6B63] font-medium">
+                              선택한 조건의 시계열 집계 데이터가 없습니다.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredYearlySummary.map((row, rIdx) => (
+                            <tr key={`${row.stayYearMonth}-${row.resortName}-${row.dayType}-${rIdx}`} className="hover:bg-[#FAF9F6]">
+                              <td className="py-2.5 px-4 font-black text-[#1B382E]">{row.stayYearMonth}</td>
+                              <td className="py-2.5 px-4 font-bold text-[#1B382E]">{row.resortName}</td>
+                              <td className="py-2.5 px-4 text-center">
+                                <span className={`px-2 py-0.5 rounded text-[11px] font-extrabold ${
+                                  row.dayType === 'SAT_PEAK' || row.dayType === 'SAT_HOLIDAY'
+                                    ? 'bg-[#FAF6ED] text-[#8C6D3B]'
+                                    : row.dayType === 'FRIDAY'
+                                    ? 'bg-[#F4F3EE] text-[#1B382E]'
+                                    : row.dayType === 'SUNDAY'
+                                    ? 'bg-[#F4F3EE] text-[#5A6B63]'
+                                    : 'bg-[#E8F2EE] text-[#1E523F]'
+                                }`}>
+                                  {row.dayType}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-4 text-right text-[#5A6B63]">{formatNum(row.observations)}건</td>
+                              <td className="py-2.5 px-4 text-right">
+                                <span className={`font-black ${row.soldOutRatePct >= 50 ? 'text-[#8B2635]' : 'text-[#1E523F]'}`}>
+                                  {formatPct(row.soldOutRatePct)}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-4 text-right font-bold text-[#1B382E] font-financial">
+                                {formatWon(row.avgMinPrice)}
+                              </td>
+                              <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">
+                                {formatWon(row.avgMedianPrice)}
+                              </td>
+                              <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">
+                                {formatWon(row.avgTier16_35Price)}
+                              </td>
+                              <td className="py-2.5 px-4 text-right text-[#5A6B63] font-financial">
+                                {formatWon(row.avgTier51Price)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}

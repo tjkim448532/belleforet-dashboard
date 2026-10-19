@@ -30,7 +30,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(false);
   const [golfOpen, setGolfOpen] = useState(false);
-  const [resortOpen, setResortOpen] = useState(() => location.pathname.startsWith('/resort') || location.pathname.includes('reservation-status'));
+  const [resortOpen, setResortOpen] = useState(() => location.pathname.startsWith('/resort') || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
   const [leisureOpen, setLeisureOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(false);
@@ -303,6 +303,18 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   예약현황
+                </NavLink>
+                <NavLink
+                  to="/condo/dynamic-pricing"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive || window.location.pathname === '/resort/dynamic-pricing'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Sparkles size={14} className="shrink-0 text-[#CAAC86]" />
+                  30일 다이나믹 프라이싱 (ADR 제안)
                 </NavLink>
                 <NavLink
                   to="/resort/room-guest-analysis"

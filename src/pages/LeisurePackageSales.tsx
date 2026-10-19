@@ -149,41 +149,50 @@ export default function LeisurePackageSales() {
   }, [venues, selectedVenue, searchTerm]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1650px] mx-auto space-y-6">
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
       
-      {/* 1. 상단 헤더 배너 (통합 화이트 표준 스타일) */}
-      <div className="bg-white p-6 sm:p-7 rounded-[32px] border border-slate-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3.5 bg-teal-50 text-teal-700 rounded-2xl border border-teal-200 shrink-0">
-            <Package className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight break-keep">
+      {/* 🌲 Luxury Deep Forest Banner with Ambient Glow */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-6">
+        
+        {/* Header Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+          <div className="text-white">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
+              <span>BELLEFORET RESORT · 레저본부 패키지 안분 SSOT</span>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Package className="w-7 h-7 text-[#B59269] shrink-0" />
+              <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight break-keep whitespace-nowrap">
                 레저 영업장별 패키지(복합권) 매출 비중 & 이용객 기여도 분석
               </h1>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                레저본부 · 패키지 안분 SSOT
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20">
+                1:N 안분 마트
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-1 break-keep max-w-3xl leading-relaxed">
+            <p className="text-sm text-white/80 mt-1 break-keep">
               마운틴카트 그랜드포렛, 익스트림루지 등 각 영업장 총매출 및 이용객 중 패밀리4종 패스 등 복합 패키지가 차지하는 기여도를 정밀 분석합니다.
             </p>
           </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-          <GlobalDatePicker />
-          <button
-            onClick={fetchPackageSales}
-            disabled={loading}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            새로고침
-          </button>
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <GlobalDatePicker />
+            <button
+              onClick={fetchPackageSales}
+              disabled={loading}
+              className="px-4 py-2 bg-[#B59269] hover:bg-[#a38058] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              <span>새로고침</span>
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* 2. 상단 4대 핵심 요약 패널 (소프트 슬레이트-50 패널 + 화이트 카드 표준) */}
       {summary ? (
@@ -309,54 +318,53 @@ export default function LeisurePackageSales() {
           <p className="text-sm font-bold text-slate-700">레저 영업장별 패키지 매출 및 이용객 실측 데이터를 조회 중입니다...</p>
         </div>
       ) : !data || venues.length === 0 ? (
-        /* Zero-Fake / Fail-Stop 원칙: 백엔드 API 미완성 시 임의의 Mock 데이터를 만들지 않고 명확히 Fail-Stop 결함 상태를 폭로 */
-        <div className="bg-white rounded-3xl border border-amber-200 p-8 shadow-xs space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
-              <AlertCircle size={22} />
+        <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 p-7 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#B59269]/15 text-[#B59269] flex items-center justify-center shrink-0 border border-[#B59269]/30">
+              <AlertCircle size={24} />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-black text-slate-900">
+                <h3 className="text-lg font-extrabold text-[#1B382E]">
                   [Zero-Fake / Fail-Stop] 레저 영업장별 패키지 매출·이용객 분석 API 연동 대기
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                <span className="px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20">
                   GET /api/v6/report/leisure-package-sales
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              <p className="text-xs text-[#284F42]/70 mt-1 leading-relaxed">
                 대표님 절대 지침에 따라 프론트엔드 단독의 임의 사칙연산이나 가짜 숫자(Mock Data) 주입을 영구 금지하며, 백엔드 정규 마트 API 배포 전까지 <strong>Fail-Stop(결함 노출 및 대기)</strong> 상태를 유지합니다.
               </p>
               {error && (
-                <div className="mt-2 p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs font-semibold">
-                  API 응답 메시지: {error}
+                <div className="mt-2.5 p-3 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 text-[#1B382E] text-xs font-medium">
+                  API 응답 메시지: <span className="font-mono text-rose-600 font-bold">{error}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 text-xs space-y-3">
-            <div className="font-bold text-slate-800 flex items-center gap-1.5">
-              <CheckCircle2 size={15} className="text-teal-700" />
+          <div className="bg-[#F4F3EE]/80 p-5 rounded-2xl border border-[#D0C6BB]/70 text-xs space-y-3">
+            <div className="font-extrabold text-[#1B382E] flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-[#284F42]" />
               <span>백엔드 데이터 엔지니어링팀 공식 요청 명세 ([Ticket 51])</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200">
-                <div className="font-bold text-slate-800">1. 마운틴카트 그랜드포렛 패키지 분배</div>
-                <p className="text-slate-500 mt-1 leading-relaxed">
-                  '패밀리4종 패스' 등 복합 패키지가 판매되었을 때 <code className="font-mono text-teal-700">dim_ticket_split_rule</code>에 의해 마운틴카트 그랜드포렛에 배분된 매출액, 매출 비중(%), 그리고 유입된 이용객수(명) 및 이용객 점유율(%)을 1-Call 완제품으로 서빙합니다.
+              <div className="bg-white p-4 rounded-xl border border-[#D0C6BB]/70">
+                <div className="font-bold text-[#1B382E]">1. 마운틴카트 그랜드포렛 패키지 분배</div>
+                <p className="text-[#284F42]/70 mt-1 leading-relaxed text-xs">
+                  '패밀리4종 패스' 등 복합 패키지가 판매되었을 때 <code className="font-mono text-[#284F42] bg-[#F4F3EE] px-1 py-0.5 rounded border border-[#D0C6BB]/60">dim_ticket_split_rule</code>에 의해 마운틴카트 그랜드포렛에 배분된 매출액, 매출 비중(%), 그리고 유입된 이용객수(명) 및 이용객 점유율(%)을 1-Call 완제품으로 서빙합니다.
                 </p>
               </div>
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200">
-                <div className="font-bold text-slate-800">2. 다중 영업장 1:N 패키지 전체 전개</div>
-                <p className="text-slate-500 mt-1 leading-relaxed">
+              <div className="bg-white p-4 rounded-xl border border-[#D0C6BB]/70">
+                <div className="font-bold text-[#1B382E]">2. 다중 영업장 1:N 패키지 전체 전개</div>
+                <p className="text-[#284F42]/70 mt-1 leading-relaxed text-xs">
                   익스트림루지, 벨포레 목장, 사계절썰매장, 미디어아트센터, 놀이동산 등 레저본부 전 영업장의 총매출 중 패키지 차지 비율과 세부 권종 목록을 사전 연산하여 반환합니다.
                 </p>
               </div>
             </div>
-            <div className="text-[11px] text-slate-500 bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-2">
-              <span>백엔드 요청서 상세: <strong className="text-slate-800">backend_request.md [Ticket 51]</strong> 참조</span>
-              <span className="font-mono text-teal-700">Status: WAITING_FOR_BACKEND</span>
+            <div className="text-[11px] text-[#284F42]/70 bg-white p-3 rounded-xl border border-[#D0C6BB]/70 flex items-center justify-between flex-wrap gap-2">
+              <span>백엔드 요청서 상세: <strong className="text-[#1B382E]">backend_request.md [Ticket 51]</strong> 참조</span>
+              <span className="font-mono text-[#284F42] font-bold">Status: WAITING_FOR_BACKEND</span>
             </div>
           </div>
         </div>
@@ -569,25 +577,26 @@ export default function LeisurePackageSales() {
       )}
 
       {/* 5. 하단 전략 가이드 배너 */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
-            <Sparkles size={20} />
+      <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20 shrink-0">
+            <Sparkles size={22} />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-slate-900">레저 복합 패키지 수익화 및 체류시간 전략 인사이트</h4>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h4 className="font-bold text-sm text-[#1B382E]">레저 복합 패키지 수익화 및 체류시간 전략 인사이트</h4>
+            <p className="text-xs text-[#284F42]/70 mt-0.5">
               마운틴카트·루지 등 인기 앵커 시설의 패키지 묶음 판매 비중을 분석하여, 단품 객단가 방어와 리조트 전체 체류시간 증대 시너지를 도출하세요.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-          <span className="text-[11px] font-bold bg-teal-50 text-teal-800 px-3 py-1.5 rounded-lg border border-teal-100">
+          <span className="text-[11px] font-bold bg-[#284F42]/10 text-[#284F42] px-3.5 py-1.5 rounded-xl border border-[#284F42]/20">
             레저본부 공식 집계
           </span>
         </div>
       </div>
 
+      </div>
     </div>
   );
 }

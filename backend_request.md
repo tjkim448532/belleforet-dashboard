@@ -42,6 +42,7 @@
 | **P0 (완료)** | 데이터 정합성 | **[Ticket 46] 레저 할인 누수 마트(`mat_v6_leisure_discount_audit_daily`) 내 외주식음·골프 POS 격리** | [배포/검증완료] `dim_facility_team_mapping` 레저본부/모토아레나 전속 조인 강제 및 마트 재집계 완료 (정상가 1,928만원 / 할인 56만원 / 실징수율 96%) |
 | **P0 (긴급)** | 데이터 정합성 | **[Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) 판매수량의 레저 이용객수 둔갑 및 가짜 숫자 적재 시정** | [긴급] 카페 음료 70잔·스낵 4개가 이용객수로 둔갑된 결함: `dim_pos_menu_visitor_rule` 배수 0(`is_visitor_count = 0`) 적용 및 마트 백필 |
 | **P1 (신규)** | 정규 API | **[Ticket 51] 레저본부 영업장별 패키지(복합권) 매출·이용객 점유비율(%) 분석 API** | 마운틴카트 그랜드포렛 등 영업장별 패밀리4종 패스 등 복합 패키지 귀속 매출, 비중(%), 유입 이용객수(명), 이용객 점유율(%) 1-Call 완제품 제공 (`leisure-package-sales`) |
+| **P0 (긴급)** | 데이터 정합성 | **[Ticket 52] 기업 세미나 단체 후정산 미청구건(매출 0원)의 'COMP/사내' 오분류 결함 시정** | [긴급] KSS해운, 지구업 등 유상 기업 세미나(125건)가 후정산 미청구(`totalRevenue: 0`) 상태라는 이유로 `COMP/사내`로 둔갑되는 심각한 왜곡: 행사 카테고리(`category = 'SEMINAR'`) 기반 세그먼트 보존 및 후정산 상태 플래그(`settlementStatus`) 분리 (`corporate-group-sales`) |
 
 ---
 
@@ -3745,5 +3746,52 @@ ORDER BY venue_name, rn;
 ### 16-5. 프론트엔드 구현 상태
 - 신규 페이지: `src/pages/LeisurePackageSales.tsx` 구현 완료
 - 라우트 및 사이드바: `/leisure/package-sales` 및 레저본부 아코디언 메뉴 등록 완료
-- 디자인: 소프트 슬레이트-50 컨테이너 + 순백색 카드 + 필박스 + 틸 하이라이트 + 공식 SSOT 배너 적용
+- 디자인: 럭셔리 애플 이그제큐티브 딥 포레스트 그린 배너 + 웜 리넨(#F4F3EE) 벤토 그리드 적용
 - 무결성 가드: 임의 Mocking 차단 및 백엔드 배포 전까지 Fail-Stop(결함 노출 및 대기) 상태 유지 완료
+
+---
+
+## 17. 🚨 [Ticket 52 / P0 긴급 데이터 정합성] 기업 세미나 단체 후정산 미청구건(매출 0원)의 'COMP/사내' 오분류 결함 시정 (2026-10-19)
+
+### 17-1. 대상 엔드포인트
+- `GET /api/v6/report/corporate-group-sales?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+- `GET /api/v6/report/corporate-group-sales?date=YYYY-MM-DD`
+
+### 17-2. 현상 및 실측 데이터 감사 결과 (Zero-Hallucination Stdout)
+- **현상**:
+  - `CondoReservationStatus` (콘도 예약 현황) 화면에서 **`KSS해운`**, **`주식회사 지구업`** 등 정상적인 기업 세미나/워크샵 행사 단체가 `COMP/사내` 탭으로 분류되어 무상 투숙으로 표시되는 치명적인 데이터 왜곡 발생.
+- **실측 터미널 Audit**:
+  - 조회 기간(2026-10-19 ~ 2026-11-18) 내 `/api/v6/report/corporate-group-sales` 응답 134건 전수 조사 결과:
+    ```text
+    - b2bSegment === 'COMP': 총 125건
+    - 이 중 totalRevenue === 0: 125건 (100%)
+    - 이 중 실제 행사 category === 'SEMINAR': 다수 포함 (예: KSS해운, 주식회사 지구업 등)
+    ```
+  - 즉, 백엔드 파이프라인에서 **"매출액이 0원이면 무조건 COMP(무상/사내)로 둔갑"**시키는 로직이 작동하여, 행사 종료 후 일괄 청구하는 정상 유상 세미나 고객 125건이 모조리 '사내 무상 투숙'으로 오분류되고 있었습니다.
+
+### 17-3. 근본 원인
+- 백엔드 집계 프로시저 또는 ETL 스크립트에서 비즈니스 세그먼트(`b2bSegment`)를 결정할 때:
+  ```sql
+  -- [결함 로직 추정]
+  CASE 
+    WHEN totalRevenue = 0 THEN 'COMP'   -- 🚨 결함: 후정산 세미나 단체까지 무상으로 둔갑
+    WHEN category = 'SEMINAR' THEN 'SEMINAR'
+    ...
+  ```
+- 행사 성격(PMS 단체 유형, 예약 행사명, `category`)을 무시하고 오직 현재 시점의 실시간 매출 집계액(`totalRevenue === 0`)만으로 `b2bSegment = 'COMP'`, `b2bSegmentName = '무상/사내 (후정산)'`으로 덮어쓰고 있습니다.
+
+### 17-4. 백엔드 시정 요구사항
+1. **행사 카테고리(`category`) 최우선 보존**:
+   - `category = 'SEMINAR'` (또는 기업 단체 세미나)인 경우, 매출액이 0원이라도 `b2bSegment`는 반드시 `'SEMINAR'` (기업 세미나)로 유지해야 합니다.
+2. **후정산 상태 플래그(`settlementStatus`) 신설**:
+   - 단체의 정산 상태를 표현할 수 있도록 메타데이터 필드를 분리 제공해 주십시오:
+     - `settlementStatus: "PENDING_POST_BILLING"` (후정산 청구 대기)
+     - `settlementStatus: "COMPLETED"` (정산 완료)
+     - `settlementStatus: "COMPLIMENTARY"` (순수 무상/임직원 사내 투숙)
+3. **순수 사내/무상(`COMP`) 격리**:
+   - `b2bSegment = 'COMP'`는 벨포레 임직원 워크샵, 인플루언서 팸투어, 모기업 무상 지원 등 **실제 무료 투숙 건에만 국한**하여 부여해 주시기 바랍니다.
+
+### 17-5. 프론트엔드 임시 조치 사항
+- 프론트엔드는 현재 무결성 원칙을 지키면서 왜곡을 방지하기 위해 `src/pages/CondoReservationStatus.tsx`에서 `category === 'SEMINAR'`를 최우선 판별하여 `기업 세미나` 탭에 정상 표출되도록 방어 코드를 적용해 두었습니다.
+- 백엔드 파이프라인(`corporate-group-sales`)에서 `b2bSegment` 산출 로직을 공식 교정해 주시면 프론트엔드와 100% 일치하게 됩니다.
+

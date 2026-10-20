@@ -314,7 +314,7 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   <Sparkles size={14} className="shrink-0 text-[#CAAC86]" />
-                  30일 다이나믹 프라이싱 (ADR 제안)
+                  객실 추천 요금
                 </NavLink>
                 <NavLink
                   to="/resort/room-guest-analysis"

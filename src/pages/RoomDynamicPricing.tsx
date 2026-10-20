@@ -1310,7 +1310,7 @@ export default function RoomDynamicPricing() {
                 <span className="p-2.5 rounded-2xl bg-[#1B3B2B] text-white shadow-xs inline-flex">
                   <Sparkles size={22} className="text-[#B59269]" />
                 </span>
-                <span>콘도본부 30일 실시간 추천 객실 요금 & 판매 전략</span>
+                <span>콘도본부 객실 추천 요금 & 판매 전략</span>
               </h1>
               <p className="text-xs sm:text-sm text-[#5A6B63] mt-1.5 font-medium">
                 <strong>2026년 공식 인상 정가</strong>를 완벽히 준수하며, 오늘 각 평형별 <strong>추천 판매 요금(1박)</strong>과 상황별 판매 전략을 즉시 확인합니다.

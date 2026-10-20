@@ -219,10 +219,10 @@ export default function Home() {
           <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
           <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
         </div>
-        <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8">
+        <div className="w-full max-w-[1920px] mx-auto p-3 sm:p-4 md:p-8 relative z-10 pt-4 sm:pt-6 md:pt-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
             <div className="text-white">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-[11px] sm:text-xs font-semibold backdrop-blur-xs shadow-xs">
                 <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
                 <span>BELLEFORET RESORT · 통합 경영 대시보드</span>
               </div>
@@ -362,7 +362,7 @@ export default function Home() {
         <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
 
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8">
+      <div className="w-full max-w-[1920px] mx-auto p-3 sm:p-4 md:p-8 relative z-10 pt-4 sm:pt-6 md:pt-8">
         
         {apiError && (
           <div className="bg-[#9E372E] text-white p-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg">
@@ -374,7 +374,7 @@ export default function Home() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <div className="text-white">
             {/* Pill Badge from Reference: "● Portfolio Demo · 랜딩페이지" style */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-[11px] sm:text-xs font-semibold backdrop-blur-xs shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
               <span>BELLEFORET RESORT · 통합 경영 대시보드</span>
             </div>
@@ -385,11 +385,11 @@ export default function Home() {
         </div>
 
         {/* 🏛️ Executive Bento Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mt-4 sm:mt-6">
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             
             {/* 🌟 Card 1: 전사 순매출 (Hero Bento Card) */}
-            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group flex flex-col justify-between">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between flex-wrap gap-1.5">
                   <div className="flex items-center gap-1.5">
@@ -484,7 +484,7 @@ export default function Home() {
             </div>
 
             {/* 🌟 Card 2: 누적 매출 (YTD & MTD) 및 객실 판매 */}
-            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between">
               
               {/* 1. 올해 누적 매출 (YTD) */}
               <div className="flex flex-col gap-2">
@@ -710,7 +710,7 @@ export default function Home() {
             </div>
 
             {/* 🌟 Card 3: 통합 숙박객 수 & 레저 어트랙션 이용객 */}
-            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between">
               <div>
                 <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
@@ -859,7 +859,7 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-12 flex flex-col gap-6">
-            <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-xs">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-xs">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="text-base font-bold text-[#1B382E] flex items-center gap-2">
                   <Coins className="w-5 h-5 text-[#284F42]" /> 객실 및 복합 리조트 핵심 운영 지표
@@ -880,7 +880,7 @@ export default function Home() {
               </div>
               
               {/* 소프트 스톤 패널 컨테이너 (Forest & Warm Sand SSOT 스타일) */}
-              <div className="bg-[#EAE6DF]/70 p-5 rounded-2xl border border-[#D0C6BB]/70 mb-6">
+              <div className="bg-[#EAE6DF]/70 p-3.5 sm:p-5 rounded-2xl border border-[#D0C6BB]/70 mb-6">
                 <h4 className="font-bold text-[#1B382E] mb-3 border-b border-[#D0C6BB]/70 pb-2 text-xs flex items-center justify-between">
                   <span>핵심 경영 지표 실측치 (TrevPAR · ADR · RevPAR · Occ)</span>
                   <span className="text-[11px] text-[#6C7A73] font-normal">공식 PMS/POS 원천 확정 기준</span>
@@ -1306,7 +1306,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setIsGuideOpen(!isGuideOpen)}
-                className="w-full p-6 flex items-center justify-between text-left hover:bg-[#F4F3EE]/80 transition-colors cursor-pointer"
+                className="w-full p-4 sm:p-6 flex items-center justify-between text-left hover:bg-[#F4F3EE]/80 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-[#284F42]" />
@@ -1324,7 +1324,7 @@ export default function Home() {
               </button>
 
               {isGuideOpen && (
-                <div className="p-6 pt-0 border-t border-[#D0C6BB]/50">
+                <div className="p-4 sm:p-6 pt-0 border-t border-[#D0C6BB]/50">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
                     {/* Resort & Room Indicators: TrevPAR, ADR, RevPAR, Occ */}
                     <div className="bg-[#F4F3EE] p-5 rounded-2xl flex flex-col justify-between border border-[#D0C6BB]/70 lg:col-span-2">

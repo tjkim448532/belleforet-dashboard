@@ -52,7 +52,7 @@ export default function GlobalDatePicker({ showPresets = true }: { showPresets?:
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-[#1B382E]/90 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 text-white shadow-xl flex-wrap lg:flex-nowrap transition-all duration-200">
+    <div className="flex items-center gap-1.5 bg-[#1B382E]/90 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 text-white shadow-xl flex-wrap lg:flex-nowrap transition-all duration-200 w-full sm:w-auto max-w-full justify-between sm:justify-start">
       
       {/* Mode Switcher Buttons */}
       <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl flex-shrink-0">
@@ -117,7 +117,7 @@ export default function GlobalDatePicker({ showPresets = true }: { showPresets?:
           type="date" 
           value={draftStart} 
           onChange={(e) => setDraftStart(e.target.value)}
-          className="bg-black/30 hover:bg-black/40 focus:bg-black/50 border border-white/20 text-white text-xs font-medium rounded-xl px-2.5 py-1.5 outline-none focus:border-[#B59269] focus:ring-1 focus:ring-[#B59269] cursor-pointer [&::-webkit-calendar-picker-indicator]:invert whitespace-nowrap transition-colors"
+          className="bg-black/30 hover:bg-black/40 focus:bg-black/50 border border-white/20 text-white text-xs font-medium rounded-xl px-2 sm:px-2.5 py-1.5 max-w-[125px] sm:max-w-none outline-none focus:border-[#B59269] focus:ring-1 focus:ring-[#B59269] cursor-pointer [&::-webkit-calendar-picker-indicator]:invert whitespace-nowrap transition-colors"
         />
 
         {isRangeMode && (
@@ -127,7 +127,7 @@ export default function GlobalDatePicker({ showPresets = true }: { showPresets?:
               type="date" 
               value={draftEnd} 
               onChange={(e) => setDraftEnd(e.target.value)}
-              className="bg-black/30 hover:bg-black/40 focus:bg-black/50 border border-white/20 text-white text-xs font-medium rounded-xl px-2.5 py-1.5 outline-none focus:border-[#B59269] focus:ring-1 focus:ring-[#B59269] cursor-pointer [&::-webkit-calendar-picker-indicator]:invert whitespace-nowrap transition-colors"
+              className="bg-black/30 hover:bg-black/40 focus:bg-black/50 border border-white/20 text-white text-xs font-medium rounded-xl px-2 sm:px-2.5 py-1.5 max-w-[125px] sm:max-w-none outline-none focus:border-[#B59269] focus:ring-1 focus:ring-[#B59269] cursor-pointer [&::-webkit-calendar-picker-indicator]:invert whitespace-nowrap transition-colors"
             />
           </>
         )}

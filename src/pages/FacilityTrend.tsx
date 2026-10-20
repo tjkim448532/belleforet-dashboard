@@ -786,7 +786,7 @@ export default function FacilityTrend() {
         {/* Top Annual Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Revenue YoY */}
-          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#5A6B63] uppercase tracking-wider">
                 {isAll ? '연간 누적 매출 (전사 전체)' : `연간 누적 매출 (${facility})`}
@@ -813,7 +813,7 @@ export default function FacilityTrend() {
           </div>
 
           {/* Card 2: Visitors YoY */}
-          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#5A6B63] uppercase tracking-wider">
                 {isAll ? '연간 총이용객 (전사 전체)' : `연간 총이용객 (${facility})`}
@@ -841,7 +841,7 @@ export default function FacilityTrend() {
 
           {/* Card 3: TRevPAR YoY (전체 선택 시) 또는 전사 기여 비중 (영업장 선택 시) */}
           {isAll ? (
-            <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#5A6B63] uppercase tracking-wider">연간 TRevPAR (YoY)</span>
                 <span className="text-[10px] bg-[#B59269]/15 text-[#B59269] px-2 py-0.5 rounded-full font-bold">총체류매출</span>
@@ -865,7 +865,7 @@ export default function FacilityTrend() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#5A6B63] uppercase tracking-wider">전사 매출 기여도</span>
                 <span className="text-[10px] bg-[#B59269]/15 text-[#B59269] px-2 py-0.5 rounded-full font-bold">매출 비중</span>
@@ -887,7 +887,7 @@ export default function FacilityTrend() {
         </div>
 
         {/* 12-Month YoY EChart */}
-        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
+        <div className="bg-white rounded-3xl p-3.5 sm:p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
@@ -915,7 +915,7 @@ export default function FacilityTrend() {
         </div>
 
         {/* 12-Month Seasonality Grid Table */}
-        <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 space-y-4">
+        <div className="bg-white rounded-3xl p-3.5 sm:p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 space-y-4">
           <div>
             <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
               <Calendar className="w-5 h-5 text-[#284F42]" />
@@ -1075,24 +1075,24 @@ export default function FacilityTrend() {
         <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
 
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8 space-y-6">
+      <div className="w-full max-w-[1920px] mx-auto p-3 sm:p-4 md:p-8 relative z-10 pt-4 sm:pt-6 md:pt-8 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
           <div className="text-white">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-[11px] sm:text-xs font-semibold backdrop-blur-xs shadow-xs mb-2 sm:mb-3">
               <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
               <span>BELLEFORET RESORT · 영업장별 월별 실적 추이</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">영업장별 월별 실적 추이</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">영업장별 월별 실적 추이</h1>
             <p className="text-sm text-white/80 mt-1 break-keep">
               선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 {selectedFacility === '전체' ? '객실 투숙객' : '방문객'} 추이 비교
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* 전체 선택 시에만 3-Way 골프 분리 세그먼트 컨트롤 표출 */}
             {selectedFacility === '전체' && (
-              <div className="flex items-center bg-white p-1 rounded-2xl border border-[#D0C6BB]/75 text-xs font-bold shadow-xs">
+              <div className="flex items-center bg-white p-1 rounded-2xl border border-[#D0C6BB]/75 text-xs font-bold shadow-xs overflow-x-auto max-w-full">
                 <button
                   onClick={() => setGolfViewMode('COMPARE')}
                   className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -1132,12 +1132,12 @@ export default function FacilityTrend() {
               </div>
             )}
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-[#D0C6BB]/75 shadow-xs">
+            <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-[#D0C6BB]/75 shadow-xs w-full sm:w-auto justify-between sm:justify-start">
               <Store className="text-[#5A6B63] w-5 h-5 ml-1" />
               <select
                 value={selectedFacility}
                 onChange={(e) => setSelectedFacility(e.target.value)}
-                className="bg-transparent border-0 text-[#1B382E] text-sm font-bold block w-52 p-2 outline-none cursor-pointer"
+                className="bg-transparent border-0 text-[#1B382E] text-xs sm:text-sm font-bold block flex-1 sm:w-52 p-2 outline-none cursor-pointer"
               >
                 {FACILITIES.map(fac => (
                   <option key={fac} value={fac}>
@@ -1199,7 +1199,7 @@ export default function FacilityTrend() {
             ) : data?.monthlyData && data.monthlyData.length > 0 ? (
               <div className="space-y-6">
                 {/* Chart Card */}
-                <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
+                <div className="bg-white rounded-3xl p-3.5 sm:p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-[#D0C6BB]/40 gap-3">
                     <h2 className="text-lg lg:text-xl font-bold text-[#1B382E] flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-[#284F42]" />
@@ -1237,7 +1237,7 @@ export default function FacilityTrend() {
                 </div>
 
                 {/* Data Table Card */}
-                <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
+                <div className="bg-white rounded-3xl p-3.5 sm:p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-[#D0C6BB]/40 gap-3">
                     <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
                       <Store className="w-5 h-5 text-[#284F42]" />

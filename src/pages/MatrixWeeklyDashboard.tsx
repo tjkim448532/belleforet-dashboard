@@ -98,17 +98,17 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
         <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
 
-      <div className="w-full max-w-[1920px] mx-auto p-4 md:p-8 relative z-10 pt-8">
+      <div className="w-full max-w-[1920px] mx-auto p-3 sm:p-4 md:p-8 relative z-10 pt-4 sm:pt-6 md:pt-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <div className="text-white">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-[11px] sm:text-xs font-semibold backdrop-blur-xs shadow-xs mb-2 sm:mb-3">
               <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
               <span>BELLEFORET RESORT · 부문·요일별 통합 정산 및 매출 분석</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">부문·요일별 통합 정산 및 매출 분석</h1>
-            <p className="text-sm text-white/80 mt-1 break-keep">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">부문·요일별 통합 정산 및 매출 분석</h1>
+            <p className="text-xs sm:text-sm text-white/80 mt-1 break-keep">
               부문별 조직 정산 및 요일별 매출 흐름 통합 대시보드
             </p>
           </div>
@@ -128,10 +128,10 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
         </div>
 
         {/* Tab Controls */}
-        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl w-fit shadow-[0_4px_20px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 mb-6">
+        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl w-full sm:w-fit overflow-x-auto max-w-full shadow-[0_4px_20px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 mb-4 sm:mb-6">
           <button
             onClick={() => handleTabChange('matrix')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'matrix'
                 ? 'bg-[#284F42] text-white shadow-sm'
                 : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
@@ -142,7 +142,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
           </button>
           <button
             onClick={() => handleTabChange('day-of-week')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'day-of-week'
                 ? 'bg-[#284F42] text-white shadow-sm'
                 : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
@@ -153,7 +153,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
           </button>
           <button
             onClick={() => handleTabChange('all')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'all'
                 ? 'bg-[#284F42] text-white shadow-sm'
                 : 'text-[#5A6B63] hover:text-[#1B382E] hover:bg-[#F4F3EE]'
@@ -166,7 +166,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
 
         {/* Dynamic Content Views */}
         {activeTab === 'matrix' && (
-          <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 p-6 md:p-8">
+          <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 p-3.5 sm:p-6 md:p-8">
             <V6DashboardViewer />
           </div>
         )}
@@ -190,7 +190,7 @@ export default function MatrixWeeklyDashboard({ defaultTab = 'matrix' }: MatrixW
                   </span>
                 </div>
               </div>
-              <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 p-6 md:p-8">
+              <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 p-3.5 sm:p-6 md:p-8">
                 <V6DashboardViewer />
               </div>
             </div>

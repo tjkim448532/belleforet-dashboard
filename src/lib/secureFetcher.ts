@@ -28,6 +28,12 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
     
     console.log(`[API Validator] ${url.split('?')[0]} | Status: ${status} | Time: ${duration}ms | Rows: ${rowCount}`);
 
+    // 카탈로그 / 요금표 공시 API(pricing-catalog 등)는 고시 요금 문자열 표기('197,000원', '150,000원~160,000원')가 표준이므로 회계 지표 강제 감사 대상에서 제외
+    if (url.includes('/pricing-catalog') || url.includes('/catalog')) {
+        console.log(`✅ [Data Integrity PASSED] ${url.split('?')[0]} - Catalog / Tariff Sheet (Exempt from strict metric audit)`);
+        return;
+    }
+
     // 2. 숫자(Number) 무결성 및 타입 강제 검증 (Data Level)
     const errors: string[] = [];
     
@@ -70,6 +76,8 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
             !key.toLowerCase().includes('status') &&
             !key.toLowerCase().includes('category') &&
             !key.toLowerCase().includes('count') &&
+            !key.toLowerCase().includes('weekday') &&
+            !key.toLowerCase().includes('weekend') &&
             !key.match(/^(ly|target|base|year)?month$/i);
 
             if (isMetricKey) {
@@ -136,6 +144,8 @@ const sanitizePayloadNumbers = (node: any) => {
         !key.toLowerCase().includes('status') &&
         !key.toLowerCase().includes('category') &&
         !key.toLowerCase().includes('count') &&
+        !key.toLowerCase().includes('weekday') &&
+        !key.toLowerCase().includes('weekend') &&
         !key.match(/^(ly|target|base|year)?month$/i);
 
         if (typeof value === 'string' && isMetricKey) {

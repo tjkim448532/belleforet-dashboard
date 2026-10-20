@@ -50,7 +50,7 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
                 continue;
             }
             
-            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드, 코드, 일자/연월 식별자 등 제외)
+            // 금액/지표 관련 필드명 매칭 (날씨 설명, 명칭, 텍스트 필드, 코드, 일자/연월 식별자, 시설명, 등급, 카운트 등 제외)
             const isMetricKey = (
                 key.match(/(revenue|actual|growth|diff|amount|fee|ratio|trevpar|trevpor|revpar|occ|rooms|gross)/i) ||
                 key.match(/(today|mtd|ytd|last|roomcap)ly/i) ||
@@ -62,6 +62,14 @@ const validatePayloadIntegrity = (data: any, url: string, startTime: number, sta
             !key.toLowerCase().includes('name') && 
             !key.toLowerCase().includes('code') && 
             !key.toLowerCase().includes('formatted') &&
+            !key.toLowerCase().includes('venue') &&
+            !key.toLowerCase().includes('grade') &&
+            !key.toLowerCase().includes('level') &&
+            !key.toLowerCase().includes('type') &&
+            !key.toLowerCase().includes('tier') &&
+            !key.toLowerCase().includes('status') &&
+            !key.toLowerCase().includes('category') &&
+            !key.toLowerCase().includes('count') &&
             !key.match(/^(ly|target|base|year)?month$/i);
 
             if (isMetricKey) {
@@ -120,6 +128,14 @@ const sanitizePayloadNumbers = (node: any) => {
         !key.toLowerCase().includes('name') && 
         !key.toLowerCase().includes('code') && 
         !key.toLowerCase().includes('formatted') &&
+        !key.toLowerCase().includes('venue') &&
+        !key.toLowerCase().includes('grade') &&
+        !key.toLowerCase().includes('level') &&
+        !key.toLowerCase().includes('type') &&
+        !key.toLowerCase().includes('tier') &&
+        !key.toLowerCase().includes('status') &&
+        !key.toLowerCase().includes('category') &&
+        !key.toLowerCase().includes('count') &&
         !key.match(/^(ly|target|base|year)?month$/i);
 
         if (typeof value === 'string' && isMetricKey) {

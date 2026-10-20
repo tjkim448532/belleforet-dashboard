@@ -278,11 +278,11 @@ export const secureFetcher = async (rawUrl: string, options: RequestInit = {}, m
       throw error;
     }
     
-    // 데이터 정합성 QA 전수 검증 인터셉터 호출 (백엔드 계약 위반 감지)
-    validatePayloadIntegrity(data, url, startTime, response.status);
-    
-    // UI 런타임 안정성을 위한 방어적 정규화 (문자열 숫자를 안전한 Number로 보정)
+    // 1. UI 런타임 안정성을 위한 방어적 정규화 (문자열 숫자를 안전한 Number로 보정)
     sanitizePayloadNumbers(data);
+
+    // 2. 데이터 정합성 QA 전수 검증 인터셉터 호출 (백엔드 계약 위반 감지)
+    validatePayloadIntegrity(data, url, startTime, response.status);
     
     return data;
   };

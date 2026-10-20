@@ -8,6 +8,8 @@ interface AuthContextType {
   userEmail: string | null;
   isAdmin: boolean;
   userRole: string | null;
+  userRoles: string[];
+  hasRole: (role: string | string[]) => boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; errorMsg?: string }>;
   logout: () => void;
   updateUserPassword: (newPassword: string) => Promise<{ success: boolean; errorMsg?: string }>;
@@ -33,6 +35,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sessionStorage.getItem('userRole');
   });
 
+  const [userRoles, setUserRoles] = useState<string[]>(() => {
+    try {
+      const stored = sessionStorage.getItem('userRoles');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    const single = sessionStorage.getItem('userRole');
+    return single ? [single] : [];
+  });
+
   const [authReady, setAuthReady] = useState(false);
 
   React.useEffect(() => {
@@ -48,11 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           sessionStorage.removeItem('userEmail');
           sessionStorage.removeItem('isAdmin');
           sessionStorage.removeItem('userRole');
+          sessionStorage.removeItem('userRoles');
           sessionStorage.removeItem('token');
           setIsAuthenticated(false);
           setUserEmail(null);
           setIsAdmin(false);
           setUserRole(null);
+          setUserRoles([]);
         }
       }
     });
@@ -76,6 +94,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const hasRole = (target: string | string[]): boolean => {
+    // 슈퍼 관리자는 모든 권한 상속
+    if (isAdmin || userRoles.includes('admin') || userRole === 'admin') return true;
+    if (!target) return true;
+    if (Array.isArray(target)) {
+      return target.some(t => userRoles.includes(t) || userRole === t);
+    }
+    return userRoles.includes(target) || userRole === target;
+  };
+
   const login = async (email: string, password: string) => {
     try {
       // 1. Firebase Auth 로그인
@@ -87,10 +115,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const roleDocRef = doc(db, 'userRoles', email);
       
       let role = 'guest'; // 기본 권한
+      let roles: string[] = ['guest'];
       try {
         const roleSnap: any = await getDoc(roleDocRef);
         if (roleSnap.exists()) {
-          role = roleSnap.data().role;
+          const docData = roleSnap.data();
+          if (Array.isArray(docData.roles) && docData.roles.length > 0) {
+            roles = docData.roles;
+            role = docData.role || roles[0];
+          } else if (docData.role) {
+            role = docData.role;
+            roles = [docData.role];
+          }
         }
       } catch (firestoreError) {
         console.warn('Firestore 권한 조회 실패:', firestoreError);
@@ -99,19 +135,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // [긴급 권한 복구] 대표님 계정은 어떤 상황에서도 무조건 슈퍼 관리자로 접속되도록 하드코딩 보호
       if (email === 'tjkim@bsbelleforet.com' || email === 'tjkim448532@gmail.com') {
         role = 'admin';
+        if (!roles.includes('admin')) roles = ['admin', ...roles];
       }
 
-      // role이 admin이면 기존의 슈퍼 관리자 권한도 부여
-      const isSuperAdmin = role === 'admin';
+      // role이 admin이거나 roles에 admin이 포함되어 있으면 기존의 슈퍼 관리자 권한도 부여
+      const isSuperAdmin = role === 'admin' || roles.includes('admin');
+      if (isSuperAdmin && !roles.includes('admin')) {
+        roles = ['admin', ...roles];
+      }
 
       setIsAuthenticated(true);
       setUserEmail(email);
       setIsAdmin(isSuperAdmin);
       setUserRole(role);
+      setUserRoles(roles);
       
       sessionStorage.setItem('auth', 'true');
       sessionStorage.setItem('userEmail', email);
       sessionStorage.setItem('userRole', role);
+      sessionStorage.setItem('userRoles', JSON.stringify(roles));
       if (isSuperAdmin) {
         sessionStorage.setItem('isAdmin', 'true');
       } else {
@@ -138,10 +180,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserEmail(null);
     setIsAdmin(false);
     setUserRole(null);
+    setUserRoles([]);
     sessionStorage.removeItem('auth');
     sessionStorage.removeItem('userEmail');
     sessionStorage.removeItem('isAdmin');
     sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('userRoles');
     sessionStorage.removeItem('token');
   };
 
@@ -162,7 +206,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  return <AuthContext.Provider value={{ isAuthenticated, userEmail, isAdmin, userRole, login, logout, updateUserPassword, authReady }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      userEmail, 
+      isAdmin, 
+      userRole, 
+      userRoles, 
+      hasRole, 
+      login, 
+      logout, 
+      updateUserPassword, 
+      authReady 
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {

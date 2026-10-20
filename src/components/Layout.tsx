@@ -21,7 +21,7 @@ export default function Layout() {
     );
   }
 
-  const { logout, isAdmin, userRole, updateUserPassword, userEmail } = useAuth();
+  const { logout, isAdmin, hasRole, updateUserPassword, userEmail } = useAuth();
   const navigate = useNavigate();
   const [isPinned, setIsPinned] = useState<boolean>(() => {
     const saved = localStorage.getItem('belleforet_sidebar_pinned');
@@ -80,12 +80,12 @@ export default function Layout() {
   };
 
   const menuItems = [
-    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb'] },
+    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb', 'golf'] },
     { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive', 'management'] },
     { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} />, roles: ['admin', 'executive', 'fnb', 'leisure', 'resort'] },
   ];
 
-  const visibleMenuItems = menuItems.filter(item => !userRole || item.roles.includes(userRole));
+  const visibleMenuItems = menuItems.filter(item => hasRole(item.roles));
 
   return (
     <div className="min-h-screen bg-[#F4F3EE] text-[#1B382E] font-sans flex">
@@ -171,7 +171,7 @@ export default function Layout() {
           ))}
 
           {/* 세일즈본부 Accordion */}
-          {(!userRole || ['admin', 'executive', 'sales', 'resort', 'management'].includes(userRole)) && (
+          {hasRole(['sales', 'resort', 'management', 'executive']) && (
             <div className="mt-2">
               <button
                 onClick={() => setSalesOpen(!salesOpen)}
@@ -230,7 +230,7 @@ export default function Layout() {
           )}
 
           {/* 골프사업본부 Accordion */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
+          {hasRole(['golf', 'executive', 'leisure']) && (
             <div className="mt-2">
               <button
                 onClick={() => setGolfOpen(!golfOpen)}
@@ -269,7 +269,7 @@ export default function Layout() {
           )}
 
           {/* 2. 리조트사업본부 Accordion */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'resort') && (
+          {hasRole(['resort', 'executive']) && (
             <div className="mt-2">
             <button
               onClick={() => setResortOpen(!resortOpen)}
@@ -349,7 +349,7 @@ export default function Layout() {
           )}
 
           {/* 3. 레저본부 Accordion (리조트사업본부 바로 아래) */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'leisure') && (
+          {hasRole(['leisure', 'executive']) && (
           <div className="mt-2">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
@@ -428,7 +428,7 @@ export default function Layout() {
           )}
 
           {/* 4. 컨텐츠기획본부 Accordion (4대 분류 페이지) */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'content' || userRole === 'fnb' || userRole === 'leisure') && (
+          {hasRole(['content', 'fnb', 'leisure', 'executive']) && (
             <div className="mt-2">
               <button
                 onClick={() => setContentOpen(!contentOpen)}
@@ -557,7 +557,7 @@ export default function Layout() {
           </div>
 
           {/* 6. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
-          {(userRole === 'admin' || userRole === 'executive' || userRole === 'management') && (
+          {hasRole(['management', 'executive']) && (
             <div className="mt-3 pt-2 border-t border-white/10 space-y-1">
               <NavLink
                 to="/strategic-simulator"

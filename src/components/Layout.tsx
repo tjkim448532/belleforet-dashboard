@@ -79,13 +79,12 @@ export default function Layout() {
     }
   };
 
-  const menuItems = [
-    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} />, roles: ['admin', 'executive', 'sales', 'leisure', 'resort', 'management', 'content', 'guest', 'fnb', 'golf'] },
-    { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} />, roles: ['admin', 'executive', 'management'] },
-    { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} />, roles: ['admin', 'executive', 'fnb', 'leisure', 'resort'] },
+  // 전사 공통 3대 대시보드 (모든 로그인 임직원 공통 노출)
+  const commonMenuItems = [
+    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
+    { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} /> },
+    { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} /> },
   ];
-
-  const visibleMenuItems = menuItems.filter(item => hasRole(item.roles));
 
   return (
     <div className="min-h-screen bg-[#F4F3EE] text-[#1B382E] font-sans flex">
@@ -149,7 +148,7 @@ export default function Layout() {
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
           <div className="text-[11px] font-semibold text-white/45 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
           
-          {visibleMenuItems.map((item, idx) => (
+          {commonMenuItems.map((item, idx) => (
             <NavLink
               key={idx}
               to={item.path}
@@ -171,7 +170,7 @@ export default function Layout() {
           ))}
 
           {/* 세일즈본부 Accordion */}
-          {hasRole(['sales', 'resort', 'management', 'executive']) && (
+          {hasRole('sales') && (
             <div className="mt-2">
               <button
                 onClick={() => setSalesOpen(!salesOpen)}
@@ -230,7 +229,7 @@ export default function Layout() {
           )}
 
           {/* 골프사업본부 Accordion */}
-          {hasRole(['golf', 'executive', 'leisure']) && (
+          {hasRole('golf') && (
             <div className="mt-2">
               <button
                 onClick={() => setGolfOpen(!golfOpen)}
@@ -269,7 +268,7 @@ export default function Layout() {
           )}
 
           {/* 2. 리조트사업본부 Accordion */}
-          {hasRole(['resort', 'executive']) && (
+          {hasRole('resort') && (
             <div className="mt-2">
             <button
               onClick={() => setResortOpen(!resortOpen)}
@@ -349,7 +348,7 @@ export default function Layout() {
           )}
 
           {/* 3. 레저본부 Accordion (리조트사업본부 바로 아래) */}
-          {hasRole(['leisure', 'executive']) && (
+          {hasRole('leisure') && (
           <div className="mt-2">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
@@ -428,7 +427,7 @@ export default function Layout() {
           )}
 
           {/* 4. 컨텐츠기획본부 Accordion (4대 분류 페이지) */}
-          {hasRole(['content', 'fnb', 'leisure', 'executive']) && (
+          {hasRole(['content', 'fnb']) && (
             <div className="mt-2">
               <button
                 onClick={() => setContentOpen(!contentOpen)}
@@ -485,7 +484,8 @@ export default function Layout() {
           )}
 
           {/* 5. 시너지 분석 Accordion (컨텐츠기획본부 아래) */}
-          <div className="mt-2">
+          {hasRole('management') && (
+            <div className="mt-2">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
               className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
@@ -555,9 +555,10 @@ export default function Layout() {
               </div>
             )}
           </div>
+          )}
 
           {/* 6. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
-          {hasRole(['management', 'executive']) && (
+          {hasRole('management') && (
             <div className="mt-3 pt-2 border-t border-white/10 space-y-1">
               <NavLink
                 to="/strategic-simulator"
@@ -581,7 +582,9 @@ export default function Layout() {
           
         {/* 하단 유틸리티 및 관리자 메뉴 */}
         <div className="p-4 space-y-2 border-t border-white/10">
-            <NavLink
+            {hasRole('leisure') && (
+
+              <NavLink
               to="/leisure/pricing"
               className={({ isActive }) => `w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
                 isActive 
@@ -593,6 +596,8 @@ export default function Layout() {
               <Tag size={20} />
               영업장 이용안내
             </NavLink>
+
+            )}
 
             <button
               onClick={() => setPwdModalOpen(true)}

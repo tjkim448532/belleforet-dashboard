@@ -95,8 +95,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasRole = (target: string | string[]): boolean => {
-    // 슈퍼 관리자는 모든 권한 상속
-    if (isAdmin || userRoles.includes('admin') || userRole === 'admin') return true;
+    // 슈퍼 관리자와 CEO/임원은 모든 권한 상속 (전사 대시보드)
+    if (
+      isAdmin || 
+      userRoles.includes('admin') || 
+      userRole === 'admin' || 
+      userRoles.includes('executive') || 
+      userRole === 'executive'
+    ) {
+      return true;
+    }
     if (!target) return true;
     if (Array.isArray(target)) {
       return target.some(t => userRoles.includes(t) || userRole === t);

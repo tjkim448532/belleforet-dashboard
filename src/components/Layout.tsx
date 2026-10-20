@@ -107,10 +107,10 @@ export default function Layout() {
 
       {/* Sidebar - Forest & Stone Luxury Theme */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#284F42] text-white transform transition-transform duration-300 flex flex-col border-r border-[#1B382E] shadow-2xl ${
-          isPinned 
-            ? 'translate-x-0' 
-            : (sidebarOpen ? 'translate-x-0' : '-translate-x-full')
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] bg-[#284F42] text-white transform transition-transform duration-300 ease-in-out flex flex-col border-r border-[#1B382E] shadow-2xl ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          isPinned ? 'lg:translate-x-0' : (sidebarOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full')
         }`}
         onMouseLeave={() => {
           if (!isPinned) setSidebarOpen(false);
@@ -137,10 +137,15 @@ export default function Layout() {
             </button>
             {/* Mobile Close Button */}
             <button 
-              onClick={() => setSidebarOpen(false)} 
-              className="lg:hidden text-white/60 hover:text-white transition-colors p-1"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(false);
+              }} 
+              className="lg:hidden p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer select-none"
+              title="메뉴 닫기"
             >
-              <X size={20} />
+              <X size={22} />
             </button>
           </div>
         </div>
@@ -647,7 +652,12 @@ export default function Layout() {
         {/* Topbar for mobile */}
         <header className="lg:hidden h-16 bg-[#284F42] border-b border-[#1B382E] flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm text-white">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="text-white/80 hover:text-white">
+            <button 
+              type="button"
+              onClick={() => setSidebarOpen(true)} 
+              className="p-2 -ml-2 rounded-xl text-white/90 hover:text-white hover:bg-white/10 transition-colors cursor-pointer select-none"
+              title="메뉴 열기"
+            >
               <Menu size={24} />
             </button>
             <h1 className="font-emphatic text-xl tracking-widest text-white font-black mt-1">BELLE FORET</h1>

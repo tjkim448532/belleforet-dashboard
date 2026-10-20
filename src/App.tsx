@@ -29,6 +29,7 @@ import LeisureUsageRate from './pages/LeisureUsageRate';
 import LeisureSimulator from './pages/LeisureSimulator';
 import LeisurePricing from './pages/LeisurePricing';
 import LeisurePackageSales from './pages/LeisurePackageSales';
+import LeisureGiftShop from './pages/LeisureGiftShop';
 import Members from './pages/Members';
 import { DataSyncStatus } from './pages/DataSyncStatus';
 
@@ -116,6 +117,8 @@ export function App() {
                     <Route path="pricing" element={<LeisurePricing />} />
                     <Route path="leisure/package-sales" element={<LeisurePackageSales />} />
                     <Route path="leisure-package-sales" element={<LeisurePackageSales />} />
+                    <Route path="leisure/gift-shop" element={<LeisureGiftShop />} />
+                    <Route path="leisure-gift-shop" element={<LeisureGiftShop />} />
                     <Route path="content/outsourced-fnb" element={<OutsourcedFnbDashboard viewMode="CARDS" />} />
                     <Route path="outsourced-fnb" element={<OutsourcedFnbDashboard viewMode="CARDS" />} />
                     <Route path="content/group-rankings" element={<GroupVenuePreferenceSection mode="RANKINGS_ONLY" isStandalonePage={true} />} />

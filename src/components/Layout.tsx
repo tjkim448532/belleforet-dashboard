@@ -5,7 +5,7 @@ import {
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
   Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Tag,
-  Palette, Package
+  Palette, Package, Gift
 } from 'lucide-react';
 
 export default function Layout() {
@@ -410,6 +410,16 @@ export default function Layout() {
                 >
                   <Package size={14} className="shrink-0 text-white" />
                   영업장별 패키지 매출 비중
+                </NavLink>
+                <NavLink
+                  to="/leisure/gift-shop"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Gift size={14} className="shrink-0 text-white" />
+                  기념품 샵
                 </NavLink>
 
               </div>

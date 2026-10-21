@@ -543,35 +543,9 @@ export default function Synergy() {
         <SynergyNav />
 
       {/* Top Overview KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* KPI 1: Rooms Sold */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shadow-xs">
-                <Hotel size={20} />
-              </div>
-              <span className="text-xs font-bold text-teal-800 bg-teal-100 px-3 py-0.5 rounded-full">
-                총 {grandTotal.rooms.toLocaleString()}실
-              </span>
-            </div>
-            <span className="text-xs font-bold text-slate-500 block mb-1 whitespace-nowrap">
-              {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
-            </span>
-            <div className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight tabular-nums whitespace-nowrap">
-              {grandTotal.rooms.toLocaleString()} <span className="text-base text-slate-500 font-normal">실</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="whitespace-nowrap">객실 평균 단가 (ADR)</span>
-            <strong className="text-slate-900 font-bold tabular-nums whitespace-nowrap">{grandTotal.adr > 0 ? `${formatCurrency(grandTotal.adr)}원` : '-'}</strong>
-          </div>
-        </div>
-
-        {/* Top Overview KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {/* KPI 1: Rooms Sold */}
-          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shadow-2xs">
@@ -584,7 +558,7 @@ export default function Synergy() {
               <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
                 {isActualRange ? '구간 총 점유 객실수' : '금일 점유 객실수'}
               </span>
-              <div className="text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
                 {grandTotal.rooms.toLocaleString()} <span className="text-base text-[#8C9E96] font-normal">실</span>
               </div>
             </div>
@@ -595,7 +569,7 @@ export default function Synergy() {
           </div>
 
           {/* KPI 2: Room Revenue */}
-          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shadow-2xs">
@@ -608,7 +582,7 @@ export default function Synergy() {
               <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
                 {isActualRange ? '구간 객실 총 순매출' : '금일 객실 총 순매출'}
               </span>
-              <div className="text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
                 {formatCurrency(grandTotal.revenue)} <span className="text-base text-[#8C9E96] font-normal">원</span>
               </div>
             </div>
@@ -619,7 +593,7 @@ export default function Synergy() {
           </div>
 
           {/* KPI 3: Spillover Synergy */}
-          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#B59269]/15 border border-[#B59269]/30 flex items-center justify-center text-[#B59269] shadow-2xs">
@@ -632,7 +606,7 @@ export default function Synergy() {
               <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
                 {isActualRange ? '구간 부대시설 연계 시너지' : '금일 부대시설 연계 시너지'}
               </span>
-              <div className="text-3xl lg:text-4xl font-black text-[#B59269] tracking-tight tabular-nums whitespace-nowrap">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#B59269] tracking-tight tabular-nums whitespace-nowrap">
                 {formatCurrency(totalSynergySum)} <span className="text-base text-[#8C9E96] font-normal">원</span>
               </div>
             </div>
@@ -643,7 +617,7 @@ export default function Synergy() {
           </div>
 
           {/* KPI 4: TRevPOR */}
-          <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#284F42]/10 border border-[#284F42]/20 flex items-center justify-center text-[#284F42] shadow-2xs">
@@ -656,7 +630,7 @@ export default function Synergy() {
               <span className="text-xs font-bold text-[#5A6B63] block mb-1 whitespace-nowrap">
                 통합 객실당 가치 (TRevPOR · 골프 포함)
               </span>
-              <div className="text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B382E] tracking-tight tabular-nums whitespace-nowrap">
                 {formatCurrency(parseNum(summaryData?.summary?.totalTrevPOR || 0))} <span className="text-base text-[#8C9E96] font-normal">원/실</span>
               </div>
             </div>
@@ -666,7 +640,6 @@ export default function Synergy() {
             </div>
           </div>
         </div>
-      </div>
 
         {/* Main Section 1: Segment Breakdown Grid */}
         <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)]">

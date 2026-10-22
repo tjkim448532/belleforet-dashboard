@@ -1172,7 +1172,45 @@ export default function ResortBusiness() {
                 </button>
               </div>
 
-              {showLyCompareTable && (
+              {showLyCompareTable && (() => {
+                const dtSummary = resortSummary?.dayTypeComparison?.summary;
+                const dtWeekday = resortSummary?.dayTypeComparison?.weekday;
+                const dtWeekend = resortSummary?.dayTypeComparison?.weekend;
+                const pyeongComp = resortSummary?.pyeongComparison;
+
+                const weekdayRevGrowth = dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekdayRevenueGrowth ?? (lodgingStats as any).weekdayRevenueGrowth;
+                const weekendRevGrowth = dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekendRevenueGrowth ?? (lodgingStats as any).weekendRevenueGrowth;
+
+                const weekdayRoomsGrowth = dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekdayRoomsGrowth ?? (lodgingStats as any).weekdayRoomsGrowth;
+                const weekendRoomsGrowth = dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekendRoomsGrowth ?? (lodgingStats as any).weekendRoomsGrowth;
+
+                const weekdayAdrGrowth = dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekdayAdrGrowth ?? (lodgingStats as any).weekdayAdrGrowth;
+                const weekendAdrGrowth = dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekendAdrGrowth ?? (lodgingStats as any).weekendAdrGrowth;
+
+                const pyeongAdrGrowth16 = pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? (lodgingStats as any).adrGrowth16;
+                const pyeongAdrGrowth35 = pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? (lodgingStats as any).adrGrowth35;
+                const pyeongAdrGrowth51 = pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? (lodgingStats as any).adrGrowth51;
+
+                const renderYoYGrowth = (growth: number | null | undefined) => {
+                  if (growth === null || growth === undefined || isNaN(growth)) {
+                    return <span className="text-slate-400 font-bold">-</span>;
+                  }
+                  const isPos = growth >= 0;
+                  return (
+                    <span className={`font-extrabold ${isPos ? "text-emerald-700" : "text-rose-600"}`}>
+                      {isPos ? "▲" : "▼"} {Math.abs(growth)}%
+                    </span>
+                  );
+                };
+
+                const getRoomRevGrowth = (roomSize: string) => {
+                  if (roomSize === "16평") return pyeongComp?.revGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.revGrowth;
+                  if (roomSize === "35평") return pyeongComp?.revGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.revGrowth;
+                  if (roomSize === "51평") return pyeongComp?.revGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.revGrowth;
+                  return resortSummary?.rooms?.find(r => r.roomType === roomSize)?.revGrowth;
+                };
+
+                return (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left whitespace-nowrap min-w-[720px]">
                     <thead>
@@ -1193,11 +1231,11 @@ export default function ResortBusiness() {
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(revCurrent)}원</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(revLy)}원</td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${revDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {revDiff > 0 ? '+' : ''}{formatCurrency(revDiff)}원
+                        <td className={`py-3.5 px-4 text-right font-bold ${revDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          {revDiff > 0 ? "+" : ""}{formatCurrency(revDiff)}원
                         </td>
-                        <td className={`py-3.5 px-4 text-right font-extrabold ${revGrowth !== null && revGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {revGrowth !== null ? `${revGrowth >= 0 ? '▲' : '▼'} ${Math.abs(revGrowth)}%` : '-'}
+                        <td className="py-3.5 px-4 text-right text-xs">
+                          {renderYoYGrowth(revGrowth)}
                         </td>
                       </tr>
                       {/* 세부: 주중/휴일전일 매출 */}
@@ -1207,15 +1245,11 @@ export default function ResortBusiness() {
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayRevenue)}원</td>
                         <td className="py-2.5 px-4 text-right text-xs">
                           {lodgingStats.weekdayRevenue !== undefined && lyStats.weekdayRevenue !== undefined
-                            ? `${lodgingStats.weekdayRevenue - lyStats.weekdayRevenue > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayRevenue - lyStats.weekdayRevenue)}원`
-                            : '-'}
+                            ? `${lodgingStats.weekdayRevenue - lyStats.weekdayRevenue > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayRevenue - lyStats.weekdayRevenue)}원`
+                            : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {(lodgingStats as any).weekdayRevenueGrowth != null ? (
-                            <span className={(lodgingStats as any).weekdayRevenueGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                              {(lodgingStats as any).weekdayRevenueGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekdayRevenueGrowth))}%
-                            </span>
-                          ) : '-'}
+                          {renderYoYGrowth(weekdayRevGrowth)}
                         </td>
                       </tr>
                       <tr className="text-slate-500 hover:bg-slate-50/40">
@@ -1224,15 +1258,11 @@ export default function ResortBusiness() {
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendRevenue)}원</td>
                         <td className="py-2.5 px-4 text-right text-xs">
                           {lodgingStats.weekendRevenue !== undefined && lyStats.weekendRevenue !== undefined
-                            ? `${lodgingStats.weekendRevenue - lyStats.weekendRevenue > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendRevenue - lyStats.weekendRevenue)}원`
-                            : '-'}
+                            ? `${lodgingStats.weekendRevenue - lyStats.weekendRevenue > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendRevenue - lyStats.weekendRevenue)}원`
+                            : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {(lodgingStats as any).weekendRevenueGrowth != null ? (
-                            <span className={(lodgingStats as any).weekendRevenueGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                              {(lodgingStats as any).weekendRevenueGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekendRevenueGrowth))}%
-                            </span>
-                          ) : '-'}
+                          {renderYoYGrowth(weekendRevGrowth)}
                         </td>
                       </tr>
 
@@ -1244,11 +1274,11 @@ export default function ResortBusiness() {
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(roomsCurrent)}건</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(roomsLy)}건</td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${roomsDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {roomsDiff > 0 ? '+' : ''}{formatCurrency(roomsDiff)}건
+                        <td className={`py-3.5 px-4 text-right font-bold ${roomsDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          {roomsDiff > 0 ? "+" : ""}{formatCurrency(roomsDiff)}건
                         </td>
-                        <td className={`py-3.5 px-4 text-right font-extrabold ${roomsGrowth !== null && roomsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {roomsGrowth !== null ? `${roomsGrowth >= 0 ? '▲' : '▼'} ${Math.abs(roomsGrowth)}%` : '-'}
+                        <td className="py-3.5 px-4 text-right text-xs">
+                          {renderYoYGrowth(roomsGrowth)}
                         </td>
                       </tr>
                       {/* 세부: 주중/휴일전일 판매 */}
@@ -1258,15 +1288,11 @@ export default function ResortBusiness() {
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayRoomsSold)}건</td>
                         <td className="py-2.5 px-4 text-right text-xs">
                           {lodgingStats.weekdayRoomsSold !== undefined && lyStats.weekdayRoomsSold !== undefined
-                            ? `${lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold)}건`
-                            : '-'}
+                            ? `${lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold)}건`
+                            : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {(lodgingStats as any).weekdayRoomsGrowth != null ? (
-                            <span className={(lodgingStats as any).weekdayRoomsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                              {(lodgingStats as any).weekdayRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekdayRoomsGrowth))}%
-                            </span>
-                          ) : '-'}
+                          {renderYoYGrowth(weekdayRoomsGrowth)}
                         </td>
                       </tr>
                       <tr className="text-slate-500 hover:bg-slate-50/40">
@@ -1275,15 +1301,11 @@ export default function ResortBusiness() {
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendRoomsSold)}건</td>
                         <td className="py-2.5 px-4 text-right text-xs">
                           {lodgingStats.weekendRoomsSold !== undefined && lyStats.weekendRoomsSold !== undefined
-                            ? `${lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold)}건`
-                            : '-'}
+                            ? `${lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold)}건`
+                            : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {(lodgingStats as any).weekendRoomsGrowth != null ? (
-                            <span className={(lodgingStats as any).weekendRoomsGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                              {(lodgingStats as any).weekendRoomsGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekendRoomsGrowth))}%
-                            </span>
-                          ) : '-'}
+                          {renderYoYGrowth(weekendRoomsGrowth)}
                         </td>
                       </tr>
 
@@ -1293,48 +1315,40 @@ export default function ResortBusiness() {
                           <Coins className="w-4 h-4 text-sky-600" />
                           <span>객실 평균 단가 (ADR)</span>
                         </td>
-                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{adrCurrent && adrCurrent > 0 ? `${formatCurrency(adrCurrent)}원` : '-'}</td>
-                        <td className="py-3.5 px-4 text-right text-slate-600">{adrLy && adrLy > 0 ? `${formatCurrency(adrLy)}원` : '-'}</td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${adrDiff !== null && adrDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {adrDiff !== null ? `${adrDiff > 0 ? '+' : ''}${formatCurrency(adrDiff)}원` : '-'}
+                        <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{adrCurrent && adrCurrent > 0 ? `${formatCurrency(adrCurrent)}원` : "-"}</td>
+                        <td className="py-3.5 px-4 text-right text-slate-600">{adrLy && adrLy > 0 ? `${formatCurrency(adrLy)}원` : "-"}</td>
+                        <td className={`py-3.5 px-4 text-right font-bold ${adrDiff !== null && adrDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          {adrDiff !== null ? `${adrDiff > 0 ? "+" : ""}${formatCurrency(adrDiff)}원` : "-"}
                         </td>
-                        <td className={`py-3.5 px-4 text-right font-extrabold ${adrGrowth !== null && adrGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {adrGrowth !== null ? `${adrGrowth >= 0 ? '▲' : '▼'} ${Math.abs(adrGrowth)}%` : '-'}
+                        <td className="py-3.5 px-4 text-right text-xs">
+                          {renderYoYGrowth(adrGrowth)}
                         </td>
                       </tr>
                       {/* 세부: 주중/휴일전일 ADR */}
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 주중 평균 ADR</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekdayAdr && lodgingStats.weekdayAdr > 0 ? `${formatCurrency(lodgingStats.weekdayAdr)}원` : '-'}</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekdayAdr && lyStats.weekdayAdr > 0 ? `${formatCurrency(lyStats.weekdayAdr)}원` : '-'}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekdayAdr && lodgingStats.weekdayAdr > 0 ? `${formatCurrency(lodgingStats.weekdayAdr)}원` : "-"}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekdayAdr && lyStats.weekdayAdr > 0 ? `${formatCurrency(lyStats.weekdayAdr)}원` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
                           {lodgingStats.weekdayAdr !== undefined && lyStats?.weekdayAdr !== undefined
-                            ? `${lodgingStats.weekdayAdr - lyStats.weekdayAdr > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekdayAdr - lyStats.weekdayAdr)}원`
-                            : '-'}
+                            ? `${lodgingStats.weekdayAdr - lyStats.weekdayAdr > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayAdr - lyStats.weekdayAdr)}원`
+                            : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {(lodgingStats as any).weekdayAdrGrowth != null ? (
-                            <span className={(lodgingStats as any).weekdayAdrGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                              {(lodgingStats as any).weekdayAdrGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekdayAdrGrowth))}%
-                            </span>
-                          ) : '-'}
+                          {renderYoYGrowth(weekdayAdrGrowth)}
                         </td>
                       </tr>
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 평균 ADR</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekendAdr && lodgingStats.weekendAdr > 0 ? `${formatCurrency(lodgingStats.weekendAdr)}원` : '-'}</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekendAdr && lyStats.weekendAdr > 0 ? `${formatCurrency(lyStats.weekendAdr)}원` : '-'}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekendAdr && lodgingStats.weekendAdr > 0 ? `${formatCurrency(lodgingStats.weekendAdr)}원` : "-"}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekendAdr && lyStats.weekendAdr > 0 ? `${formatCurrency(lyStats.weekendAdr)}원` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
                           {lodgingStats.weekendAdr !== undefined && lyStats?.weekendAdr !== undefined
-                            ? `${lodgingStats.weekendAdr - lyStats.weekendAdr > 0 ? '+' : ''}${formatCurrency(lodgingStats.weekendAdr - lyStats.weekendAdr)}원`
-                            : '-'}
+                            ? `${lodgingStats.weekendAdr - lyStats.weekendAdr > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendAdr - lyStats.weekendAdr)}원`
+                            : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {(lodgingStats as any).weekendAdrGrowth != null ? (
-                            <span className={(lodgingStats as any).weekendAdrGrowth >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                              {(lodgingStats as any).weekendAdrGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).weekendAdrGrowth))}%
-                            </span>
-                          ) : '-'}
+                          {renderYoYGrowth(weekendAdrGrowth)}
                         </td>
                       </tr>
                       {/* 세부: 평형별 평균 ADR (16평, 35평, 51평) */}
@@ -1344,17 +1358,13 @@ export default function ResortBusiness() {
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>• 16평 평균 ADR</span>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr16 > 0 ? `${formatCurrency(adr16)}원` : '-'}</td>
-                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 ? `${formatCurrency(lyAdr16)}원` : '-'}</td>
-                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff16 !== null && adrDiff16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            {adrDiff16 !== null ? `${adrDiff16 > 0 ? '+' : ''}${formatCurrency(adrDiff16)}원` : '-'}
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr16 > 0 ? `${formatCurrency(adr16)}원` : "-"}</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 ? `${formatCurrency(lyAdr16)}원` : "-"}</td>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff16 !== null && adrDiff16 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                            {adrDiff16 !== null ? `${adrDiff16 > 0 ? "+" : ""}${formatCurrency(adrDiff16)}원` : "-"}
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-bold">
-                            {(lodgingStats as any).adrGrowth16 != null ? (
-                              <span className={(lodgingStats as any).adrGrowth16 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                                {(lodgingStats as any).adrGrowth16 >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).adrGrowth16))}%
-                              </span>
-                            ) : '-'}
+                          <td className="py-2.5 px-4 text-right text-xs">
+                            {renderYoYGrowth(pyeongAdrGrowth16)}
                           </td>
                         </tr>
                       )}
@@ -1364,17 +1374,13 @@ export default function ResortBusiness() {
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>• 35평 평균 ADR</span>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr35 > 0 ? `${formatCurrency(adr35)}원` : '-'}</td>
-                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 ? `${formatCurrency(lyAdr35)}원` : '-'}</td>
-                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff35 !== null && adrDiff35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            {adrDiff35 !== null ? `${adrDiff35 > 0 ? '+' : ''}${formatCurrency(adrDiff35)}원` : '-'}
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr35 > 0 ? `${formatCurrency(adr35)}원` : "-"}</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 ? `${formatCurrency(lyAdr35)}원` : "-"}</td>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff35 !== null && adrDiff35 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                            {adrDiff35 !== null ? `${adrDiff35 > 0 ? "+" : ""}${formatCurrency(adrDiff35)}원` : "-"}
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-bold">
-                            {(lodgingStats as any).adrGrowth35 != null ? (
-                              <span className={(lodgingStats as any).adrGrowth35 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                                {(lodgingStats as any).adrGrowth35 >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).adrGrowth35))}%
-                              </span>
-                            ) : '-'}
+                          <td className="py-2.5 px-4 text-right text-xs">
+                            {renderYoYGrowth(pyeongAdrGrowth35)}
                           </td>
                         </tr>
                       )}
@@ -1384,17 +1390,13 @@ export default function ResortBusiness() {
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>• 51평 평균 ADR</span>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr51 > 0 ? `${formatCurrency(adr51)}원` : '-'}</td>
-                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 ? `${formatCurrency(lyAdr51)}원` : '-'}</td>
-                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff51 !== null && adrDiff51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            {adrDiff51 !== null ? `${adrDiff51 > 0 ? '+' : ''}${formatCurrency(adrDiff51)}원` : '-'}
+                          <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr51 > 0 ? `${formatCurrency(adr51)}원` : "-"}</td>
+                          <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 ? `${formatCurrency(lyAdr51)}원` : "-"}</td>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff51 !== null && adrDiff51 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                            {adrDiff51 !== null ? `${adrDiff51 > 0 ? "+" : ""}${formatCurrency(adrDiff51)}원` : "-"}
                           </td>
-                          <td className="py-2.5 px-4 text-right text-xs font-bold">
-                            {(lodgingStats as any).adrGrowth51 != null ? (
-                              <span className={(lodgingStats as any).adrGrowth51 >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
-                                {(lodgingStats as any).adrGrowth51 >= 0 ? '▲' : '▼'} {Math.abs(Number((lodgingStats as any).adrGrowth51))}%
-                              </span>
-                            ) : '-'}
+                          <td className="py-2.5 px-4 text-right text-xs">
+                            {renderYoYGrowth(pyeongAdrGrowth51)}
                           </td>
                         </tr>
                       )}
@@ -1406,13 +1408,13 @@ export default function ResortBusiness() {
                           <span>실운영 객실 가동률 (Occupancy)</span>
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">
-                          {occCurrent !== undefined ? `${occCurrent}%` : '-'}
+                          {occCurrent !== undefined ? `${occCurrent}%` : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-600">
-                          {occLy !== null ? `${occLy}%` : '-'}
+                          {occLy !== null ? `${occLy}%` : "-"}
                         </td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${occDiff !== null && occDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {occDiff !== null ? `${occDiff > 0 ? '+' : ''}${occDiff}%p` : '-'}
+                        <td className={`py-3.5 px-4 text-right font-bold ${occDiff !== null && occDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          {occDiff !== null ? `${occDiff > 0 ? "+" : ""}${occDiff}%p` : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-400 text-xs">
                           (물리 인벤토리 기준)
@@ -1424,30 +1426,27 @@ export default function ResortBusiness() {
                         <tr key={row.roomSize} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-3 px-4 font-semibold text-slate-800 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span>{row.roomSize} (판매 {row.sold}건 vs 전년 {row.lySold ?? '-'}건)</span>
+                            <span>{row.roomSize} (판매 {row.sold}건 vs 전년 {row.lySold ?? "-"}건)</span>
                           </td>
                           <td className="py-3 px-4 text-right font-bold text-slate-800">
                             {formatCurrency(row.revenue)}원 <span className="text-xs text-slate-400 font-normal">({row.displayRate})</span>
                           </td>
                           <td className="py-3 px-4 text-right text-slate-600">
-                            {row.lyRev !== null ? `${formatCurrency(row.lyRev)}원` : '-'} <span className="text-xs text-slate-400">({row.lyRate !== null ? `${row.lyRate}%` : '-'})</span>
+                            {row.lyRev !== null ? `${formatCurrency(row.lyRev)}원` : "-"} <span className="text-xs text-slate-400">({row.lyRate !== null ? `${row.lyRate}%` : "-"})</span>
                           </td>
-                          <td className={`py-3 px-4 text-right font-bold ${row.lyRev !== null && row.revenue >= row.lyRev ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            {row.lyRev !== null ? `${row.revenue - row.lyRev > 0 ? '+' : ''}${formatCurrency(row.revenue - row.lyRev)}원` : '-'}
+                          <td className={`py-3 px-4 text-right font-bold ${row.lyRev !== null && row.revenue >= row.lyRev ? "text-emerald-700" : "text-rose-600"}`}>
+                            {row.lyRev !== null ? `${row.revenue - row.lyRev > 0 ? "+" : ""}${formatCurrency(row.revenue - row.lyRev)}원` : "-"}
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            {(row as any).revGrowth != null ? (
-                              <span className={(row as any).revGrowth >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
-                                {(row as any).revGrowth >= 0 ? '▲' : '▼'} {Math.abs(Number((row as any).revGrowth))}%
-                              </span>
-                            ) : '-'}
+                          <td className="py-3 px-4 text-right text-xs">
+                            {renderYoYGrowth(getRoomRevGrowth(row.roomSize) ?? (row as any).revGrowth)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 

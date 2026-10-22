@@ -1205,18 +1205,39 @@ export default function ResortBusiness() {
                 const dtWeekend = resortSummary?.dayTypeComparison?.weekend;
                 const pyeongComp = resortSummary?.pyeongComparison;
 
-                const weekdayRevGrowth = dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekdayRevenueGrowth ?? lodgingStats.weekdayRevenueGrowth;
-                const weekendRevGrowth = dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekendRevenueGrowth ?? lodgingStats.weekendRevenueGrowth;
+                // 🚨 [Pure Consumer / Fail-Stop] 백엔드 완제품 모수 기간 일치 검증:
+                // dayType 및 pyeongComparison의 실측 모수가 현재 선택 기간과 15% 이상 괴리된 경우(YTD 누적 오염)
+                // 왜곡된 가짜 숫자를 표출하지 않고 안전하게 '-' (Fail-Stop)로 격리
+                const isDayTypeMatched = dtWeekday?.tyRevenue !== undefined && lodgingStats.weekdayRevenue !== undefined && lodgingStats.weekdayRevenue > 0
+                  ? Math.abs(dtWeekday.tyRevenue - lodgingStats.weekdayRevenue) / Math.max(dtWeekday.tyRevenue, lodgingStats.weekdayRevenue, 1) < 0.15
+                  : false;
 
-                const weekdayRoomsGrowth = dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekdayRoomsGrowth ?? lodgingStats.weekdayRoomsGrowth;
-                const weekendRoomsGrowth = dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekendRoomsGrowth ?? lodgingStats.weekendRoomsGrowth;
+                const weekdayRevGrowth = isDayTypeMatched ? (dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekdayRevenueGrowth ?? lodgingStats.weekdayRevenueGrowth) : null;
+                const weekendRevGrowth = isDayTypeMatched ? (dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekendRevenueGrowth ?? lodgingStats.weekendRevenueGrowth) : null;
 
-                const weekdayAdrGrowth = dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekdayAdrGrowth ?? lodgingStats.weekdayAdrGrowth;
-                const weekendAdrGrowth = dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekendAdrGrowth ?? lodgingStats.weekendAdrGrowth;
+                const weekdayRoomsGrowth = isDayTypeMatched ? (dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekdayRoomsGrowth ?? lodgingStats.weekdayRoomsGrowth) : null;
+                const weekendRoomsGrowth = isDayTypeMatched ? (dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekendRoomsGrowth ?? lodgingStats.weekendRoomsGrowth) : null;
 
-                const pyeongAdrGrowth16 = pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? lodgingStats.adrGrowth16;
-                const pyeongAdrGrowth35 = pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? lodgingStats.adrGrowth35;
-                const pyeongAdrGrowth51 = pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? lodgingStats.adrGrowth51;
+                const weekdayAdrGrowth = isDayTypeMatched ? (dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekdayAdrGrowth ?? lodgingStats.weekdayAdrGrowth) : null;
+                const weekendAdrGrowth = isDayTypeMatched ? (dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekendAdrGrowth ?? lodgingStats.weekendAdrGrowth) : null;
+
+                const getRoomRevGrowth = (roomSize: string) => {
+                  const pItem = pyeongComp?.items?.find(it => it.roomType === roomSize);
+                  const curRow = roomOccupancyData.find(r => r.roomSize === roomSize);
+                  // 백엔드 실측 모수가 현재 테이블의 선택 기간 실적과 일치할 때만 완제품 증감률 바인딩
+                  const isPyeongMatched = pItem?.todayRevenue !== undefined && curRow?.revenue !== undefined && curRow.revenue > 0
+                    ? Math.abs(pItem.todayRevenue - curRow.revenue) / Math.max(pItem.todayRevenue, curRow.revenue, 1) < 0.15
+                    : false;
+                  if (!isPyeongMatched) return null;
+                  if (roomSize === "16평") return pyeongComp?.revGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.revGrowth;
+                  if (roomSize === "35평") return pyeongComp?.revGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.revGrowth;
+                  if (roomSize === "51평") return pyeongComp?.revGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.revGrowth;
+                  return resortSummary?.rooms?.find(r => r.roomType === roomSize)?.revGrowth;
+                };
+
+                const pyeongAdrGrowth16 = getRoomRevGrowth("16평") !== null ? (pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? lodgingStats.adrGrowth16) : null;
+                const pyeongAdrGrowth35 = getRoomRevGrowth("35평") !== null ? (pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? lodgingStats.adrGrowth35) : null;
+                const pyeongAdrGrowth51 = getRoomRevGrowth("51평") !== null ? (pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? lodgingStats.adrGrowth51) : null;
 
                 const renderYoYGrowth = (growth: number | null | undefined) => {
                   if (growth === null || growth === undefined || isNaN(growth)) {
@@ -1228,13 +1249,6 @@ export default function ResortBusiness() {
                       {isPos ? "▲" : "▼"} {Math.abs(growth)}%
                     </span>
                   );
-                };
-
-                const getRoomRevGrowth = (roomSize: string) => {
-                  if (roomSize === "16평") return pyeongComp?.revGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.revGrowth;
-                  if (roomSize === "35평") return pyeongComp?.revGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.revGrowth;
-                  if (roomSize === "51평") return pyeongComp?.revGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.revGrowth;
-                  return resortSummary?.rooms?.find(r => r.roomType === roomSize)?.revGrowth;
                 };
 
                 return (

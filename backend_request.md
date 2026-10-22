@@ -45,6 +45,7 @@
 | **P0 (완료)** | 데이터 정합성 | **[Ticket 52] 기업 세미나 단체 후정산 미청구건(매출 0원)의 'COMP/사내' 오분류 결함 시정** | [배포/검증완료] KSS해운, 지구업 등 유상 기업 세미나 후정산 미청구(`totalRevenue: 0`) 건에 대해 `category = 'SEMINAR'` 기반 `b2bSegment: 'SEMINAR'` 보존 및 `settlementStatus: 'PENDING_POST_BILLING'` 분리 완료 (`corporate-group-sales`) |
 | **P1 (높음)** | 알고리즘 | **[Ticket 53] 다이나믹 프라이싱 2026년 전략 인상 단가(18만원대) 앵커링 및 과거 단순평균 배제** | [요청서 발행] 2025년 과거 단가에 앵커되어 3.6만원 디스카운트 추천되는 역효과 방지, 2026년 실측 Retail ADR 기준 상향 프라이싱 요청 (`room-dynamic-pricing`) |
 | **P1 (긴급)** | 데이터 동기화 | **[Ticket 54] 메인 대시보드 골프 1·2·3부 완주 팀수(`visitedTeams`) 0팀 고착 결함 해소** | [요청서 발행] `revenue-summary`가 마감된 골프 티타임 완제품(`golf-channel-teetime-analysis-v2` 113팀)을 동기화하지 않고 0팀으로 출력되는 결함 해소 요청 |
+| **P1 (긴급)** | 데이터 정합성 | **[Ticket 55] 리조트 정밀 대조표 내 주중/주말 및 평형별 증감률(YoY)의 기간(MTD) 동적 집계 수정** | [요청서 발행] `resort-business-summary`가 기간 조회 시에도 YTD 연간 누적 성장률(+24.3%)을 고정 반환하여 당월 실적(-88만원)과 부호가 엇갈리는 결함 해소 요청 |
 
 ---
 
@@ -3872,3 +3873,32 @@ ORDER BY venue_name, rn;
 ### 19-3. 요청 조치 사항
 1. `revenue-summary`의 `golfParts` 블록에서 `golf-channel-teetime-analysis-v2`와 동일하게 마감된 골프 1·2·3부 실측 완주 팀수(`visitedTeams`) 및 부별 실현 매출(`revenue`), 실현단가(`avgGreenFee`)가 사전 집계(Pre-aggregation)되어 동기화되도록 서브쿼리 수정 및 ETL 파이프라인 점검 요청.
 2. 프론트엔드는 R&R 경계 준수 원칙(Zero-Proxy, Zero-Simulation)에 따라 백엔드 DB/서버 코드를 직접 수정하지 않고 공식 요청서(Ticket 54)를 발행하며, 백엔드 완제품이 배포되는 즉시 메인 대시보드 골프 예약 현황 카드에 100% 정상 자동 노출됩니다.
+
+
+---
+
+## 20. 🏨 [Ticket 55 / 긴급 데이터 정합성] `resort-business-summary` 내 주중/주말 및 평형별 전년 대비 증감률(YoY Growth)의 기간(MTD/기간조회) 동적 집계 수정 요청 (2026-10-22)
+
+### 20-1. 대상 엔드포인트 및 집계 블록
+- 대상 엔드포인트: `GET /api/v6/report/resort-business-summary?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+- 문제 블록: `dayTypeComparison` (주중/주말 비교), `pyeongComparison` (평형별 비교)
+
+### 20-2. 실측 분석 결과 (Zero-Hallucination 실측 델타)
+- **실측 조회 조건**: `startDate=2026-10-01&endDate=2026-10-21` (10월 3주간 조회)
+- **현상 및 불일치 결함**:
+  1. `lodgingStats`의 실측 데이터:
+     - 10월 1~21일 객실 총매출: **317,782,775원** (전년 338,643,063원 대비 **-20,860,288원 감소 / -6.2%**)
+     - 16평 매출: **74,483,403원** (전년 75,367,864원 대비 **-884,461원 감소**)
+     - 주중 객실 매출: **174,258,573원** (전년 197,397,899원 대비 **-23,139,326원 감소**)
+  2. 그러나 `dayTypeComparison` 및 `pyeongComparison`의 응답:
+     - `dayTypeComparison.weekday.tyRevenue`: **2,292,266,024원** (10월 당월 실적 1.74억이 아닌 **1년 치 연간 누적 YTD 실적**)
+     - `dayTypeComparison.summary.weekdayRevenueGrowth`: **+10.5%** (연간 누적 성장률)
+     - `pyeongComparison.revGrowth16`: **+24.3%** (연간 누적 9.95억 vs 전년 8.00억 기준 성장률)
+- **왜곡 결과**:
+  - 경영진 대시보드의 '객실 경영 실적 전년 동일기간 정밀 대조표'에서 금액 컬럼은 **10월 실적 (-88만 원 감소)**으로 나오는데, 증감률 컬럼에는 백엔드가 반환한 **연간 누적 성장률 (▲ 24.3% 증가)**이 표출되어 **"감소했는데 왜 상승 화살표가 뜨는가?"**라는 심각한 데이터 신뢰성 의문이 발생함.
+
+### 20-3. 요청 조치 사항
+1. `resort-business-summary` API가 `startDate`와 `endDate` 쿼리 파라미터를 수신했을 때, `dayTypeComparison`과 `pyeongComparison`의 집계 모수를 연간 누적(YTD) 고정이 아닌 **요청된 선택 기간(Period/MTD) 실측 데이터 기준으로 동적 집계(Pre-aggregation)**하여 전년 동기간 대비 정합한 증감률(`revGrowth`, `roomsGrowth`, `adrGrowth`)을 완제품으로 반환하도록 백엔드 프로시저 수정 요청.
+2. **프론트엔드 안전 조치 완료**:
+   - 벨포레 프론트엔드 헌법 6조(Zero-Proxy, Fail-Stop)에 따라, 백엔드가 선택 기간에 일치하는 정합한 성장률을 내려줄 때까지 기간 불일치 세부 항목을 안전하게 `-` (Fail-Stop)로 격리하였습니다.
+   - 백엔드에서 본 티켓이 반영되어 선택 기간 일치 완제품이 배포되면, 프론트엔드 수정 없이 즉시 자동으로 정상 수치가 표출됩니다.

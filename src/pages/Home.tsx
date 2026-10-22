@@ -346,9 +346,7 @@ export default function Home() {
   // 🚗 주차관제 기반 워크인 및 데일리 차량 수 (Firebase ATS3000_Bell SSOT 완제품)
   const parkingSummary = coreData.core?.parkingSummary || (coreData as any).parkingSummary;
   const walkInVisitors = parkingSummary?.walkInVisitors != null ? parseNum(parkingSummary.walkInVisitors) : null;
-  const uniquePureDailyCars = parkingSummary?.uniquePureDailyCars != null ? parseNum(parkingSummary.uniquePureDailyCars) : null;
-  const uniqueBelleforetVisitors = parkingSummary?.uniqueBelleforetVisitors != null ? parseNum(parkingSummary.uniqueBelleforetVisitors) : null;
-  const uniqueCondoCars = parkingSummary?.uniqueCondoCars != null ? parseNum(parkingSummary.uniqueCondoCars) : null;
+  const actualWalkInCars = parkingSummary?.actualWalkInCars != null ? parseNum(parkingSummary.actualWalkInCars) : null;
 
   const golfReservedTeams = displayData?.golfSummary?.reservedTeams || 0;
 
@@ -813,26 +811,12 @@ export default function Home() {
                   </div>
 
                   {parkingSummary && (
-                    <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-2xs font-financial">
-                      <div className="flex items-center gap-1.5 text-[#1B382E] font-medium flex-wrap">
-                        <span className="bg-[#B59269] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">순수 데일리</span>
-                        <span className="font-bold text-[#1B382E]">
-                          {uniquePureDailyCars !== null ? `${new Intl.NumberFormat('ko-KR').format(uniquePureDailyCars)}대` : '-'}
-                        </span>
-                        <span className="text-[#6C7A73] text-[11px]">
-                          (직원·골프·콘도 제외 순수 당일)
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#6C7A73]">
-                        <span>
-                          순수방문 총 <strong className="text-[#284F42] font-semibold">{uniqueBelleforetVisitors !== null ? new Intl.NumberFormat('ko-KR').format(uniqueBelleforetVisitors) : '-'}</strong>대
-                        </span>
-                        {uniqueCondoCars !== null && (
-                          <span className="text-[#8C9A93]">
-                            (콘도 {new Intl.NumberFormat('ko-KR').format(uniqueCondoCars)}대)
-                          </span>
-                        )}
-                      </div>
+                    <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 flex flex-wrap items-center gap-1.5 text-xs shadow-2xs font-financial">
+                      <span className="bg-[#B59269] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">미등록 워크인</span>
+                      <span className="font-bold text-[#1B382E]">
+                        {actualWalkInCars !== null ? `${new Intl.NumberFormat('ko-KR').format(actualWalkInCars)}대` : '-'}
+                      </span>
+                      <span className="text-[#6C7A73] text-[11px]">(주차관제 미등록 순수 당일 차량)</span>
                     </div>
                   )}
                 </div>

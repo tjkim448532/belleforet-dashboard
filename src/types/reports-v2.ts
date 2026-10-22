@@ -871,6 +871,28 @@ export interface ResortDayTypeComparisonSummary {
 
 export interface ResortDayTypeComparison {
   summary?: ResortDayTypeComparisonSummary;
+  weekday?: {
+    tyRevenue?: number;
+    lyRevenue?: number;
+    tyRooms?: number;
+    lyRooms?: number;
+    tyAdr?: number;
+    lyAdr?: number;
+    revenueGrowth?: number;
+    roomsGrowth?: number;
+    adrGrowth?: number;
+  };
+  weekend?: {
+    tyRevenue?: number;
+    lyRevenue?: number;
+    tyRooms?: number;
+    lyRooms?: number;
+    tyAdr?: number;
+    lyAdr?: number;
+    revenueGrowth?: number;
+    roomsGrowth?: number;
+    adrGrowth?: number;
+  };
   weekdayRevenueGrowth?: number;
   weekendRevenueGrowth?: number;
   weekdayRoomsGrowth?: number;

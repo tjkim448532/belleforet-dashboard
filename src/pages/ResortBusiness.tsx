@@ -1023,70 +1023,64 @@ export default function ResortBusiness() {
               </div>
 
               {/* Day Type Comparison (주중 vs 주말·공휴일) */}
-              {resortSummary.dayTypeComparison && (
-                <div>
-                  <h3 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
-                    <CalendarDays size={14} className="text-blue-600" />
-                    <span>주중 vs 주말·공휴일 전년 동기 대비 성장률</span>
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 매출 성장</span>
-                      <span className={`text-base font-black font-financial ${
-                        (resortSummary.dayTypeComparison.weekdayRevenueGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}>
-                        {(resortSummary.dayTypeComparison.weekdayRevenueGrowth ?? 0) >= 0 ? '+' : ''}
-                        {resortSummary.dayTypeComparison.weekdayRevenueGrowth ?? '-'}%
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 매출 성장</span>
-                      <span className={`text-base font-black font-financial ${
-                        (resortSummary.dayTypeComparison.weekendRevenueGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}>
-                        {(resortSummary.dayTypeComparison.weekendRevenueGrowth ?? 0) >= 0 ? '+' : ''}
-                        {resortSummary.dayTypeComparison.weekendRevenueGrowth ?? '-'}%
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 판매실수 성장</span>
-                      <span className={`text-base font-black font-financial ${
-                        (resortSummary.dayTypeComparison.weekdayRoomsGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}>
-                        {(resortSummary.dayTypeComparison.weekdayRoomsGrowth ?? 0) >= 0 ? '+' : ''}
-                        {resortSummary.dayTypeComparison.weekdayRoomsGrowth ?? '-'}%
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 판매실수 성장</span>
-                      <span className={`text-base font-black font-financial ${
-                        (resortSummary.dayTypeComparison.weekendRoomsGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}>
-                        {(resortSummary.dayTypeComparison.weekendRoomsGrowth ?? 0) >= 0 ? '+' : ''}
-                        {resortSummary.dayTypeComparison.weekendRoomsGrowth ?? '-'}%
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 ADR 성장</span>
-                      <span className={`text-base font-black font-financial ${
-                        (resortSummary.dayTypeComparison.weekdayAdrGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}>
-                        {(resortSummary.dayTypeComparison.weekdayAdrGrowth ?? 0) >= 0 ? '+' : ''}
-                        {resortSummary.dayTypeComparison.weekdayAdrGrowth ?? '-'}%
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 ADR 성장</span>
-                      <span className={`text-base font-black font-financial ${
-                        (resortSummary.dayTypeComparison.weekendAdrGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}>
-                        {(resortSummary.dayTypeComparison.weekendAdrGrowth ?? 0) >= 0 ? '+' : ''}
-                        {resortSummary.dayTypeComparison.weekendAdrGrowth ?? '-'}%
-                      </span>
+              {resortSummary.dayTypeComparison && (() => {
+                const dt = resortSummary.dayTypeComparison;
+                const dtSummary = dt.summary;
+
+                const weekdayRevGrowth = dtSummary?.weekdayRevenueGrowth ?? dt.weekday?.revenueGrowth ?? dt.weekdayRevenueGrowth;
+                const weekendRevGrowth = dtSummary?.weekendRevenueGrowth ?? dt.weekend?.revenueGrowth ?? dt.weekendRevenueGrowth;
+                const weekdayRoomsGrowth = dtSummary?.weekdayRoomsGrowth ?? dt.weekday?.roomsGrowth ?? dt.weekdayRoomsGrowth;
+                const weekendRoomsGrowth = dtSummary?.weekendRoomsGrowth ?? dt.weekend?.roomsGrowth ?? dt.weekendRoomsGrowth;
+                const weekdayAdrGrowth = dtSummary?.weekdayAdrGrowth ?? dt.weekday?.adrGrowth ?? dt.weekdayAdrGrowth;
+                const weekendAdrGrowth = dtSummary?.weekendAdrGrowth ?? dt.weekend?.adrGrowth ?? dt.weekendAdrGrowth;
+
+                const renderGrowth = (val: number | null | undefined) => {
+                  if (val === null || val === undefined || isNaN(val)) {
+                    return <span className="text-slate-400 font-bold">-</span>;
+                  }
+                  const isPos = val >= 0;
+                  return (
+                    <span className={`text-base font-black font-financial ${isPos ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {isPos ? `+${val}%` : `${val}%`}
+                    </span>
+                  );
+                };
+
+                return (
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+                      <CalendarDays size={14} className="text-blue-600" />
+                      <span>주중 vs 주말·공휴일 전년 동기 대비 성장률</span>
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                        <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 매출 성장</span>
+                        {renderGrowth(weekdayRevGrowth)}
+                      </div>
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                        <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 매출 성장</span>
+                        {renderGrowth(weekendRevGrowth)}
+                      </div>
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                        <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 판매실수 성장</span>
+                        {renderGrowth(weekdayRoomsGrowth)}
+                      </div>
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                        <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 판매실수 성장</span>
+                        {renderGrowth(weekendRoomsGrowth)}
+                      </div>
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                        <span className="text-[11px] text-slate-500 font-bold block mb-1">주중 ADR 성장</span>
+                        {renderGrowth(weekdayAdrGrowth)}
+                      </div>
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                        <span className="text-[11px] text-slate-500 font-bold block mb-1">주말 ADR 성장</span>
+                        {renderGrowth(weekendAdrGrowth)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Pyeong Comparison (16평, 35평, 51평) */}
               {resortSummary.pyeongComparison?.items && (
@@ -1107,27 +1101,33 @@ export default function ResortBusiness() {
                         <div className="grid grid-cols-3 gap-2 text-center text-xs">
                           <div>
                             <span className="text-[10px] text-slate-400 font-medium block">매출 성장</span>
-                            <span className={`font-bold font-financial ${
-                              (item.revGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                            }`}>
-                              {(item.revGrowth ?? 0) >= 0 ? '+' : ''}{item.revGrowth ?? '-'}%
-                            </span>
+                            {item.revGrowth != null && !isNaN(item.revGrowth) ? (
+                              <span className={`font-bold font-financial ${item.revGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {item.revGrowth >= 0 ? `+${item.revGrowth}%` : `${item.revGrowth}%`}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-bold">-</span>
+                            )}
                           </div>
                           <div>
                             <span className="text-[10px] text-slate-400 font-medium block">객실수 성장</span>
-                            <span className={`font-bold font-financial ${
-                              (item.roomsGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                            }`}>
-                              {(item.roomsGrowth ?? 0) >= 0 ? '+' : ''}{item.roomsGrowth ?? '-'}%
-                            </span>
+                            {item.roomsGrowth != null && !isNaN(item.roomsGrowth) ? (
+                              <span className={`font-bold font-financial ${item.roomsGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {item.roomsGrowth >= 0 ? `+${item.roomsGrowth}%` : `${item.roomsGrowth}%`}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-bold">-</span>
+                            )}
                           </div>
                           <div>
                             <span className="text-[10px] text-slate-400 font-medium block">ADR 성장</span>
-                            <span className={`font-bold font-financial ${
-                              (item.adrGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                            }`}>
-                              {(item.adrGrowth ?? 0) >= 0 ? '+' : ''}{item.adrGrowth ?? '-'}%
-                            </span>
+                            {item.adrGrowth != null && !isNaN(item.adrGrowth) ? (
+                              <span className={`font-bold font-financial ${item.adrGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {item.adrGrowth >= 0 ? `+${item.adrGrowth}%` : `${item.adrGrowth}%`}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-bold">-</span>
+                            )}
                           </div>
                         </div>
                         <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 font-financial">

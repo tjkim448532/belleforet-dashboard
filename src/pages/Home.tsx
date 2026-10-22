@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { CalendarDays, Building2, Coins, AlertCircle, Calculator, Users, BedDouble, Package, ChevronDown, ChevronUp, Car } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 import { useDate } from '../contexts/DateContext';
 import { useCoreData } from '../contexts/CoreDataContext';
@@ -342,6 +342,13 @@ export default function Home() {
   const roomCapLy = coreData.core?.summary?.totalRoomCapLy;
   const roomCapGrowth = coreData.core?.summary?.roomCapGrowth;
   const roomCapDiff = coreData.core?.summary?.roomCapDiff;
+
+  // 🚗 주차관제 기반 워크인 및 데일리 차량 수 (Firebase ATS3000_Bell SSOT 완제품)
+  const parkingSummary = coreData.core?.parkingSummary || (coreData as any).parkingSummary;
+  const walkInVisitors = parkingSummary?.walkInVisitors != null ? parseNum(parkingSummary.walkInVisitors) : null;
+  const uniquePureDailyCars = parkingSummary?.uniquePureDailyCars != null ? parseNum(parkingSummary.uniquePureDailyCars) : null;
+  const uniqueBelleforetVisitors = parkingSummary?.uniqueBelleforetVisitors != null ? parseNum(parkingSummary.uniqueBelleforetVisitors) : null;
+  const uniqueCondoCars = parkingSummary?.uniqueCondoCars != null ? parseNum(parkingSummary.uniqueCondoCars) : null;
 
   const golfReservedTeams = displayData?.golfSummary?.reservedTeams || 0;
 
@@ -775,6 +782,61 @@ export default function Home() {
                   </div>
                 )}
                 
+                {/* 🚗 2. 워크인(Walk-in) 방문객 수 (주차관제 Firebase SSOT 완제품) */}
+                <div className="pt-3 pb-1 border-t border-[#D0C6BB]/40">
+                  <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Car className="w-5 h-5 text-[#284F42] shrink-0" />
+                      <span className="text-sm font-bold text-[#1B382E]">워크인(Walk-in) 방문객 수</span>
+                      <MetricExplainerTooltip presetKey="walkInVisitor" />
+                      <span className="text-xs text-[#6C7A73] font-normal">(주차관제 기반)</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
+                      {isRangeMode ? '선택 기간 누적' : '당일 워크인 집계'}
+                    </span>
+                  </div>
+
+                  <div className="mb-2">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
+                        {walkInVisitors !== null
+                          ? new Intl.NumberFormat('ko-KR').format(walkInVisitors)
+                          : '-'}
+                      </span>
+                      <span className="text-base font-semibold text-[#6C7A73]">명</span>
+                      {walkInVisitors !== null && (
+                        <span className="text-[11px] font-bold text-[#284F42] bg-[#E8F2EE] px-2 py-0.5 rounded-md border border-[#B4C6C1]/70 font-financial">
+                          차량 1대당 3명 환산 완제품
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {parkingSummary && (
+                    <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-2xs font-financial">
+                      <div className="flex items-center gap-1.5 text-[#1B382E] font-medium flex-wrap">
+                        <span className="bg-[#B59269] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">순수 데일리</span>
+                        <span className="font-bold text-[#1B382E]">
+                          {uniquePureDailyCars !== null ? `${new Intl.NumberFormat('ko-KR').format(uniquePureDailyCars)}대` : '-'}
+                        </span>
+                        <span className="text-[#6C7A73] text-[11px]">
+                          (직원·골프·콘도 제외 순수 당일)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#6C7A73]">
+                        <span>
+                          순수방문 총 <strong className="text-[#284F42] font-semibold">{uniqueBelleforetVisitors !== null ? new Intl.NumberFormat('ko-KR').format(uniqueBelleforetVisitors) : '-'}</strong>대
+                        </span>
+                        {uniqueCondoCars !== null && (
+                          <span className="text-[#8C9A93]">
+                            (콘도 {new Intl.NumberFormat('ko-KR').format(uniqueCondoCars)}대)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Major Leisure Facilities Visitors Breakdown (Accordion) */}
                 <div className="mt-3 pt-3 border-t border-[#D0C6BB]/40 relative z-10">
                   <button

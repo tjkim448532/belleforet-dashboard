@@ -21,6 +21,7 @@ export interface CoreDataState {
   core: any | null;
   summary: any | null;
   matrix: any | null;
+  parkingSummary?: any | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -34,6 +35,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     core: null,
     summary: null,
     matrix: null,
+    parkingSummary: null,
     isLoading: true,
     error: null
   });
@@ -59,6 +61,11 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         : `date=${validStart || todayStr}&_t=${Date.now()}`;
 
       try {
+        // [Parallel SSOT Call] Fetch Firebase parking-summary in parallel with revenue-summary
+        const parkingPromise = secureFetcher(`${API_BASE}/api/v6/dashboard/parking-summary?${queryParams}`, {
+          signal: abortController.signal
+        }).catch(() => null);
+
         // [V6 SSOT Direct Call] 1. Fetch primary SSOT revenue-summary first (~400ms fast path)
         const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`, {
           signal: abortController.signal
@@ -66,6 +73,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (abortController.signal.aborted) return;
 
         const payload = (res?.summary ? res : res?.data) || res || {};
+        const parkingRes = await parkingPromise;
+        const initialParkingSummary = parkingRes?.summary || parkingRes?.data?.summary || null;
 
         const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false, pm: any = null) => {
           // 100% SSOT Direct Binding: 프론트엔드 임의 키워드 필터링 및 reduce 클라이언트 합산 전면 철거
@@ -114,6 +123,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         const corePayload = {
           ...payload,
           physicalRoomMaster: null,
+          parkingSummary: initialParkingSummary,
           date: payload.targetDate || validStart || todayStr,
           salesByCategory: payload.salesByCategory || [],
           salesByFacility: payload.salesByFacility || [],
@@ -128,6 +138,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
           core: corePayload,
           summary: initialSummary,
           matrix: payload.gridData || [],
+          parkingSummary: initialParkingSummary,
           isLoading: false,
           error: null
         });

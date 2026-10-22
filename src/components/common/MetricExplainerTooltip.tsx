@@ -17,7 +17,8 @@ export type MetricPresetKey =
   | 'leadTime'
   | 'cancellationRate'
   | 'waitingReservation'
-  | 'unitWearSpread';
+  | 'unitWearSpread'
+  | 'walkInVisitor';
 
 interface MetricExplainerData {
   title: string;
@@ -132,6 +133,13 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
     definition: '조회 기간 중 실제 투숙객이 배정되어 가동된 물리 호실(객실번호)의 수와, 최다 배정 호실 대비 최소 배정 호실 간의 회전율 격차(배수)입니다.',
     formula: '가동 호실 수 = 배정 1회 이상 고유 호실 수 / 편차 = 최다 배정 호실 횟수 ÷ 최소 배정 호실 횟수',
     insight: '특정 선호 동·층·뷰 호실에만 배정이 집중되면 침구·가구·설비 노후화(감가상각)가 편중됩니다. 프런트 자동 배정 로테이션을 통해 175개 전 호실의 컨디션을 균등하게 유지해야 합니다.'
+  },
+  walkInVisitor: {
+    title: '워크인 방문객 (Walk-in Visitors)',
+    badge: '주차관제 SSOT',
+    definition: '숙박(콘도)이나 골프 목적이 아닌, 당일 리조트 시설 및 레저를 이용하기 위해 자가용으로 내장한 순수 당일 방문객 수입니다.',
+    formula: '순수 데일리 방문차량(전체 고유차량 - 직원차량 - 골프차량 - 콘도차량) × 3명 (탑승객 배수 SSOT)',
+    insight: '사내 주차관제 시스템(ATS3000_Bell)의 고유 차량번호 1일 1대 중복 제거 원장을 기반으로 산출되며, 콘도 투숙객(객실 PMS)과 함께 리조트 전체 진성 유입 인구를 구성합니다.'
   }
 };
 

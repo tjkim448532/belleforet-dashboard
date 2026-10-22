@@ -519,7 +519,7 @@ export default function TomorrowRevenueForecast() {
                       <Flag size={16} className="text-[#284F42]" /> 골프 부문 (GOLF)
                     </span>
                     <span className="bg-[#E8F2EE] text-[#1E523F] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                      비중 {(summary as any)?.golfSharePct != null ? `${(summary as any).golfSharePct}%` : '-'}
+                      비중 {summary?.golfSharePct != null ? `${summary.golfSharePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl xl:text-3xl font-black text-[#284F42] tabular-nums">
@@ -541,7 +541,7 @@ export default function TomorrowRevenueForecast() {
                       <UtensilsCrossed size={16} className="text-[#284F42]" /> 식음 부문 (FNB)
                     </span>
                     <span className="bg-[#F4F3EE] text-[#1B382E] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D0C6BB]/70">
-                      비중 {(summary as any)?.fnbSharePct != null ? `${(summary as any).fnbSharePct}%` : '-'}
+                      비중 {summary?.fnbSharePct != null ? `${summary.fnbSharePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl xl:text-3xl font-black text-[#1B382E] tabular-nums">
@@ -563,7 +563,7 @@ export default function TomorrowRevenueForecast() {
                       <Compass size={16} className="text-[#284F42]" /> 레저본부 (TICKET)
                     </span>
                     <span className="bg-[#E8F2EE] text-[#1E523F] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                      비중 {(summary as any)?.leisureSharePct != null ? `${(summary as any).leisureSharePct}%` : '-'}
+                      비중 {summary?.leisureSharePct != null ? `${summary.leisureSharePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl xl:text-3xl font-black text-[#284F42] tabular-nums">
@@ -585,7 +585,7 @@ export default function TomorrowRevenueForecast() {
                       <Hotel size={16} className="text-[#284F42]" /> 콘도 부문 (ROOM)
                     </span>
                     <span className="bg-[#F4F3EE] text-[#1B382E] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D0C6BB]/70">
-                      비중 {(summary as any)?.roomSharePct != null ? `${(summary as any).roomSharePct}%` : '-'}
+                      비중 {summary?.roomSharePct != null ? `${summary.roomSharePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl xl:text-3xl font-black text-[#1B382E] tabular-nums">
@@ -607,7 +607,7 @@ export default function TomorrowRevenueForecast() {
                       <Zap size={16} className="text-[#B59269]" /> 모토아레나 (MOTO)
                     </span>
                     <span className="bg-[#B59269]/15 text-[#B59269] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#B59269]/30">
-                      비중 {(summary as any)?.motoSharePct != null ? `${(summary as any).motoSharePct}%` : '-'}
+                      비중 {summary?.motoSharePct != null ? `${summary.motoSharePct}%` : '-'}
                     </span>
                   </div>
                   <div className="text-2xl xl:text-3xl font-black text-[#B59269] tabular-nums">
@@ -1135,8 +1135,8 @@ export default function TomorrowRevenueForecast() {
                       {formatCurrency(summary?.totalWeatherImpactDelta)}원
                     </div>
                     <div className="text-[10px] text-rose-300 mt-1 font-semibold">
-                      {(summary as any)?.weatherImpactDeltaPct != null
-                        ? `${(summary as any).weatherImpactDeltaPct}% 변동`
+                      {summary?.weatherImpactDeltaPct != null
+                        ? `${summary.weatherImpactDeltaPct}% 변동`
                         : '정상 기상'}
                     </div>
                   </div>
@@ -1144,14 +1144,14 @@ export default function TomorrowRevenueForecast() {
                   {/* Metric 3 */}
                   <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15">
                     <div className="text-xs text-[#B59269] mb-1">야외 액티비티 급감</div>
-                    <div className="text-xl font-black text-[#B59269]">{(summary as any)?.outdoorActivityDropRange ?? '-'}</div>
+                    <div className="text-xl font-black text-[#B59269]">{summary?.outdoorActivityDropRange ?? '-'}</div>
                     <div className="text-[10px] text-white/70 mt-1">루지, 놀이동산, 썰매, 목장 집중 타격</div>
                   </div>
 
                   {/* Metric 4 */}
                   <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15">
                     <div className="text-xs text-[#5FB878] mb-1">실내 시설 우천 부스트</div>
-                    <div className="text-xl font-black text-[#5FB878]">{(summary as any)?.indoorActivityBoostRange ?? '-'}</div>
+                    <div className="text-xl font-black text-[#5FB878]">{summary?.indoorActivityBoostRange ?? '-'}</div>
                     <div className="text-[10px] text-white/70 mt-1">쿠치나, CU편의점, BHC, 기프트샵</div>
                   </div>
                 </div>

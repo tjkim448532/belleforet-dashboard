@@ -23,6 +23,7 @@ interface NextDayGolfData {
   visitedTeams: number;
   canceledTeams: number;
   pendingTeams: number;
+  cancelRate?: number | null;
   part1Reserved: number | null;
   part2Reserved: number | null;
   part3Reserved: number | null;
@@ -98,6 +99,7 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
             visitedTeams: parseNum(s.totalGolfVisitedTeams || s.totalGolfTeams || 0),
             canceledTeams: parseNum(s.totalGolfCanceledTeams || 0),
             pendingTeams: parseNum(s.totalGolfPendingTeams || 0),
+            cancelRate: s.cancelRate !== undefined && s.cancelRate !== null ? Number(s.cancelRate) : (s.golfCancelRate !== undefined ? Number(s.golfCancelRate) : null),
             part1Reserved: p1 !== null && p1 !== undefined ? parseNum(p1) : null,
             part2Reserved: p2 !== null && p2 !== undefined ? parseNum(p2) : null,
             part3Reserved: p3 !== null && p3 !== undefined ? parseNum(p3) : null,
@@ -235,9 +237,9 @@ export default function GolfReservationCard({ currentDate, todaySummary, isRange
                 </div>
                 <div 
                   className="text-[11px] text-[#6C7A73] font-medium mt-0.5 truncate"
-                  title={`취소율 ${(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}`}
+                  title={`취소율 ${nextDayGolf?.cancelRate != null ? `${nextDayGolf.cancelRate}%` : '-'}`}
                 >
-                  취소율 {(nextDayGolf as any)?.cancelRate != null ? `${(nextDayGolf as any).cancelRate}%` : '-'}
+                  취소율 {nextDayGolf?.cancelRate != null ? `${nextDayGolf.cancelRate}%` : '-'}
                 </div>
               </div>
             </div>

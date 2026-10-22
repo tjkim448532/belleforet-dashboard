@@ -210,26 +210,69 @@ export interface DailyMemberVisitorsV2Response {
       spendPerVisitorFormatted: string;
     };
   };
-  venueVisitors: Array<{
-    category_code: string;
-    venue_name: string;
-    ticket_group: string;
-    visitor_count: number;
-    visitor_count_formatted: string;
-    revenue: number;
-    revenue_formatted: string;
-    visitor_share_pct: number;
+  venueVisitors?: Array<{
+    category_code?: string;
+    categoryCode?: string;
+    venue_name?: string;
+    venueName?: string;
+    ticket_group?: string;
+    ticketGroup?: string;
+    visitor_count?: number;
+    visitorCount?: number;
+    visitor_count_formatted?: string;
+    visitorCountFormatted?: string;
+    revenue?: number;
+    revenueFormatted?: string;
+    revenue_formatted?: string;
+    visitor_share_pct?: number;
+    visitorSharePct?: number;
   }>;
-  dailyVisitors: Array<{
-    date_id: string;
-    sales_date: string;
-    daily_visitors: number;
-    daily_visitors_formatted: string;
-    daily_room_guests: number;
-    daily_golf_players: number;
-    daily_leisure_visitors: number;
-    daily_revenue: number;
-    daily_revenue_formatted: string;
+  venues?: Array<{
+    category_code?: string;
+    categoryCode?: string;
+    venue_name?: string;
+    venueName?: string;
+    ticket_group?: string;
+    ticketGroup?: string;
+    visitor_count?: number;
+    visitorCount?: number;
+    visitor_count_formatted?: string;
+    visitorCountFormatted?: string;
+    revenue?: number;
+    revenueFormatted?: string;
+    revenue_formatted?: string;
+    visitor_share_pct?: number;
+    visitorSharePct?: number;
+  }>;
+  dailyVisitors?: Array<{
+    date_id?: string;
+    sales_date?: string;
+    date?: string;
+    daily_visitors?: number;
+    daily_visitors_formatted?: string;
+    daily_room_guests?: number;
+    dailyRoomGuests?: number;
+    daily_golf_players?: number;
+    dailyGolfPlayers?: number;
+    daily_leisure_visitors?: number;
+    daily_revenue?: number;
+    dailyRevenue?: number;
+    daily_revenue_formatted?: string;
+  }>;
+  dailyTrends?: Array<{
+    date_id?: string;
+    sales_date?: string;
+    date?: string;
+    daily_visitors?: number;
+    daily_visitors_formatted?: string;
+    daily_room_guests?: number;
+    dailyRoomGuests?: number;
+    daily_golf_players?: number;
+    dailyGolfPlayers?: number;
+    daily_leisure_visitors?: number;
+    daily_revenue?: number;
+    dailyRevenue?: number;
+    daily_revenue_formatted?: string;
   }>;
 }
 
@@ -388,6 +431,7 @@ export interface RoomGuestsYoyResponse {
 export interface MonthlySeasonalityMonthRow {
   month: number;
   monthName?: string;
+  facilities?: any[];
   revenue2026?: number;
   revenue2025?: number;
   tyRevenue?: number;
@@ -424,6 +468,7 @@ export interface MonthlySeasonalityMonthRow {
 
 export interface MonthlySeasonalityMatrixResponse {
   success: boolean;
+  data?: any;
   months?: MonthlySeasonalityMonthRow[];
   monthly?: MonthlySeasonalityMonthRow[];
   annual?: Record<string, any>;
@@ -753,6 +798,14 @@ export interface AncillaryForecastSummary {
   avgDayOfWeekMultiplier?: number;
   modelName?: string;
   methodology?: string;
+  golfSharePct?: number | null;
+  fnbSharePct?: number | null;
+  leisureSharePct?: number | null;
+  roomSharePct?: number | null;
+  motoSharePct?: number | null;
+  weatherImpactDeltaPct?: number | null;
+  outdoorActivityDropRange?: string | null;
+  indoorActivityBoostRange?: string | null;
 }
 
 export interface AncillaryVenueSegmentBreakdown {
@@ -822,6 +875,16 @@ export interface ResortLodgingStats {
   todayAdr: number;
   mtdAdr: number;
   ytdAdr: number;
+  adrGrowth?: number | null;
+  weekdayRevenueGrowth?: number | null;
+  weekendRevenueGrowth?: number | null;
+  weekdayRoomsGrowth?: number | null;
+  weekendRoomsGrowth?: number | null;
+  weekdayAdrGrowth?: number | null;
+  weekendAdrGrowth?: number | null;
+  adrGrowth16?: number | null;
+  adrGrowth35?: number | null;
+  adrGrowth51?: number | null;
 }
 
 export interface ResortPyeongItem {

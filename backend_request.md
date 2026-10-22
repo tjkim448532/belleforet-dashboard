@@ -43,6 +43,8 @@
 | **P0 (긴급)** | 데이터 정합성 | **[Ticket 47] 식음·카페 매장(얼룩말카페·핏스탑) 판매수량의 레저 이용객수 둔갑 및 가짜 숫자 적재 시정** | [긴급] 카페 음료 70잔·스낵 4개가 이용객수로 둔갑된 결함: `dim_pos_menu_visitor_rule` 배수 0(`is_visitor_count = 0`) 적용 및 마트 백필 |
 | **P1 (완료)** | 정규 API | **[Ticket 51] 레저본부 영업장별 패키지(복합권) 매출·이용객 점유비율(%) 분석 API** | [배포/검증완료] 마운틴카트 그랜드포렛 등 영업장별 복합 패키지 귀속 매출, 비중(%), 유입 이용객수(명), 이용객 점유율(%) 1-Call 완제품 제공 (`leisure-package-sales`, 프로덕션 9a94c201 연동 완료) |
 | **P0 (완료)** | 데이터 정합성 | **[Ticket 52] 기업 세미나 단체 후정산 미청구건(매출 0원)의 'COMP/사내' 오분류 결함 시정** | [배포/검증완료] KSS해운, 지구업 등 유상 기업 세미나 후정산 미청구(`totalRevenue: 0`) 건에 대해 `category = 'SEMINAR'` 기반 `b2bSegment: 'SEMINAR'` 보존 및 `settlementStatus: 'PENDING_POST_BILLING'` 분리 완료 (`corporate-group-sales`) |
+| **P1 (높음)** | 알고리즘 | **[Ticket 53] 다이나믹 프라이싱 2026년 전략 인상 단가(18만원대) 앵커링 및 과거 단순평균 배제** | [요청서 발행] 2025년 과거 단가에 앵커되어 3.6만원 디스카운트 추천되는 역효과 방지, 2026년 실측 Retail ADR 기준 상향 프라이싱 요청 (`room-dynamic-pricing`) |
+| **P1 (긴급)** | 데이터 동기화 | **[Ticket 54] 메인 대시보드 골프 1·2·3부 완주 팀수(`visitedTeams`) 0팀 고착 결함 해소** | [요청서 발행] `revenue-summary`가 마감된 골프 티타임 완제품(`golf-channel-teetime-analysis-v2` 113팀)을 동기화하지 않고 0팀으로 출력되는 결함 해소 요청 |
 
 ---
 
@@ -3835,3 +3837,38 @@ ORDER BY venue_name, rn;
    - 요일별 기준가(`baselineByDayType`) 및 추천 ADR의 시작점을 2026년 최근 실측 수준(18만 원대)으로 맞추고, 수요 강도에 따라 그 위로 **Yield-Up(상향)**하거나 **Floor~Ceiling 방어선**을 형성하도록 수식을 개편해 주십시오.
 3. **경영 목표와의 정합성 확보**:
    - 2026년 경영 기조인 '객단가 고도화'에 맞추어, 다이나믹 프라이싱 추천가가 2026년 실측 단가를 갉아먹지 않고 그 이상으로 추가 수익을 견인할 수 있도록 파라미터를 교정해 주시기 바랍니다.
+
+
+---
+
+## 19. ⛳ [Ticket 54 / 긴급 데이터 동기화] `revenue-summary` 내 골프 1·2·3부 완주 팀수(`visitedTeams`) 0팀 고착 결함 해소 및 `golf-channel-teetime-analysis-v2` 마트 동기화 요청 (2026-10-22)
+
+### 19-1. 대상 엔드포인트
+- 문제 엔드포인트: `GET /api/v6/dashboard/revenue-summary?date={YYYY-MM-DD}`
+- 정상 대조 엔드포인트: `GET /api/v6/report/golf-channel-teetime-analysis-v2?date={YYYY-MM-DD}`
+
+### 19-2. 실측 분석 결과 (Zero-Hallucination 실측 델타)
+- **실측 일자**: `2026-10-21` (실제 운영 마감 완료일)
+- **`revenue-summary` 응답 결함**:
+  ```json
+  "golfParts": [
+    { "part": 1, "partName": "1부", "visitedTeams": 0, "targetTeams": 44, "revenue": 0 },
+    { "part": 2, "partName": "2부", "visitedTeams": 0, "targetTeams": 44, "revenue": 0 },
+    { "part": 3, "partName": "3부", "visitedTeams": 0, "targetTeams": 30, "revenue": 0 }
+  ]
+  ```
+- **`golf-channel-teetime-analysis-v2` 정상 실측 완제품**:
+  ```json
+  "golfParts": [
+    { "part": 1, "partName": "1부", "teams": 42, "avgGreenFee": 142000, "revenue": 23856000 },
+    { "part": 2, "partName": "2부", "teams": 42, "avgGreenFee": 148000, "revenue": 24864000 },
+    { "part": 3, "partName": "3부", "teams": 29, "avgGreenFee": 125000, "revenue": 14500000 }
+  ]
+  // 총 113팀 완주 실측 데이터 정상 적재 완료!
+  ```
+- **원인 분석**:
+  - 메인 대시보드 API(`revenue-summary`)의 `golfParts` 집계 서브쿼리에서 마감된 골프 티타임 완제품 마트(`mat_v6_golf_teetime_daily` 등)를 조인하지 않고 초기화된 임시 필드 또는 미동기화 서브쿼리를 바라보고 있어 `visitedTeams`가 전부 0으로 누출되고 있음.
+
+### 19-3. 요청 조치 사항
+1. `revenue-summary`의 `golfParts` 블록에서 `golf-channel-teetime-analysis-v2`와 동일하게 마감된 골프 1·2·3부 실측 완주 팀수(`visitedTeams`) 및 부별 실현 매출(`revenue`), 실현단가(`avgGreenFee`)가 사전 집계(Pre-aggregation)되어 동기화되도록 서브쿼리 수정 및 ETL 파이프라인 점검 요청.
+2. 프론트엔드는 R&R 경계 준수 원칙(Zero-Proxy, Zero-Simulation)에 따라 백엔드 DB/서버 코드를 직접 수정하지 않고 공식 요청서(Ticket 54)를 발행하며, 백엔드 완제품이 배포되는 즉시 메인 대시보드 골프 예약 현황 카드에 100% 정상 자동 노출됩니다.

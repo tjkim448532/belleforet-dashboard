@@ -58,6 +58,10 @@ export interface GolfIntelligenceData {
     threePlayerLostRevenue: number;
     joinTeamsCount: number;
     memberAnchorRevenue: number;
+    directAvgGreenFee?: number;
+    otaAvgGreenFee?: number;
+    diffAvgGreenFee?: number | null;
+    avgPlayersPerTeam?: number | null;
   };
   channels: ChannelSummaryItem[];
   teamSize: {
@@ -73,6 +77,7 @@ export interface GolfIntelligenceData {
     member2Non2: { teams: number; ratio: number; nonMemberRevenue: number };
     member3to4: { teams: number; ratio: number; revenue: number };
     totalAnchorRevenue: number;
+    totalAnchorTeams?: number | null;
   };
   timeSlotYield: {
     dayOfWeek: string;
@@ -81,6 +86,7 @@ export interface GolfIntelligenceData {
     dayIndex: number;
     occupancy: number;
     avgGreenFee: number;
+    teams?: number;
   }[];
   monthlyYoy: MonthlyYoyTrendItem[];
 }
@@ -558,7 +564,7 @@ export default function GolfChannelIntelligence() {
     const timeSlots = ['06~08 (얼리)', '08~11 (1부)', '11~14 (2부)', '14~ (레이트)'];
 
     const heatmapData = data.timeSlotYield.map(item => {
-      return [item.timeSlotIndex, item.dayIndex, item.occupancy, item.avgGreenFee, (item as any).teams || 0];
+      return [item.timeSlotIndex, item.dayIndex, item.occupancy, item.avgGreenFee, item.teams || 0];
     });
 
     return {
@@ -758,15 +764,15 @@ export default function GolfChannelIntelligence() {
     };
   };
 
-  const directAvg = Number((data.summary as any)?.directAvgGreenFee || 0);
-  const otaAvg = Number((data.summary as any)?.otaAvgGreenFee || 0);
-  const diffAvg = (data.summary as any)?.diffAvgGreenFee != null ? Number((data.summary as any).diffAvgGreenFee) : null;
+  const directAvg = Number(data.summary?.directAvgGreenFee || 0);
+  const otaAvg = Number(data.summary?.otaAvgGreenFee || 0);
+  const diffAvg = data.summary?.diffAvgGreenFee != null ? Number(data.summary.diffAvgGreenFee) : null;
 
   const validSlots = data.timeSlotYield.filter(s => s.occupancy > 0);
   const bestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => b.occupancy - a.occupancy)[0] : null;
   const lowestSlot = validSlots.length > 0 ? [...validSlots].sort((a, b) => a.occupancy - b.occupancy)[0] : null;
 
-  const memberSynergyTeams = (data.memberSynergy as any)?.totalAnchorTeams != null ? Number((data.memberSynergy as any).totalAnchorTeams) : null;
+  const memberSynergyTeams = data.memberSynergy?.totalAnchorTeams != null ? Number(data.memberSynergy.totalAnchorTeams) : null;
 
   return (
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">
@@ -877,7 +883,7 @@ export default function GolfChannelIntelligence() {
               <span className="text-base font-normal text-slate-400 ml-1">팀</span>
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              내장객 <strong className="text-slate-800">{data.summary.totalPlayers.toLocaleString()}명</strong> {(data.summary as any).avgPlayersPerTeam ? `(팀당 평균 ${(data.summary as any).avgPlayersPerTeam}명)` : ''}
+              내장객 <strong className="text-slate-800">{data.summary.totalPlayers.toLocaleString()}명</strong> {data.summary.avgPlayersPerTeam ? `(팀당 평균 ${data.summary.avgPlayersPerTeam}명)` : ''}
             </div>
           </div>
           <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
@@ -1291,13 +1297,13 @@ export default function GolfChannelIntelligence() {
             <div className="flex justify-between">
               <span>• 최고 가동 시간대:</span>
               <strong className="text-[#284F42]">
-                {bestSlot ? `${bestSlot.dayOfWeek}요일 ${bestSlot.timeSlot} (가동률 ${bestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(bestSlot.avgGreenFee)}원, ${(bestSlot as any).teams || 0}팀)` : '-'}
+                {bestSlot ? `${bestSlot.dayOfWeek}요일 ${bestSlot.timeSlot} (가동률 ${bestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(bestSlot.avgGreenFee)}원, ${bestSlot.teams || 0}팀)` : '-'}
               </strong>
             </div>
             <div className="flex justify-between">
               <span>• 잔여 공실 시간대:</span>
               <strong className="text-slate-600">
-                {lowestSlot ? `${lowestSlot.dayOfWeek}요일 ${lowestSlot.timeSlot} (가동률 ${lowestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(lowestSlot.avgGreenFee)}원, ${(lowestSlot as any).teams || 0}팀)` : '-'}
+                {lowestSlot ? `${lowestSlot.dayOfWeek}요일 ${lowestSlot.timeSlot} (가동률 ${lowestSlot.occupancy.toFixed(1)}%, 실현 그린피 ${formatCurrency(lowestSlot.avgGreenFee)}원, ${lowestSlot.teams || 0}팀)` : '-'}
               </strong>
             </div>
             <p className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200 leading-relaxed">

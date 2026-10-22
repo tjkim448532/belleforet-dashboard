@@ -29,6 +29,7 @@ interface MonthMeta {
   estimatedOcc: number; // 0.0 ~ 1.0
   headroom: number;    // 1 - estimatedOcc
   baseRevenue: number;
+  targetRevenue?: number;
 }
 
 const SEASON_TAGS: Record<number, string> = {
@@ -212,7 +213,7 @@ export default function MonthlyDynamicRebalancer({
     monthlyMetaList.forEach(m => {
       if (lockedMonths[m.month]) {
         const rate = growthRates[m.month] ?? annualGrowthRate;
-        const tgt = (m as any).targetRevenue ?? Math.round(m.baseRevenue * (1 + rate / 100));
+        const tgt = m.targetRevenue ?? Math.round(m.baseRevenue * (1 + rate / 100));
         targets[m.month] = tgt;
         sumFixed += tgt;
       } else {

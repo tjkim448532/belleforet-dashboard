@@ -58,11 +58,37 @@ function getLyDateStr(dateStr: string): string {
   return `${y}-${m}-${d}`;
 }
 
+interface RoomOccupancyItem {
+  sold: number;
+  cap: number;
+  rev: number;
+  occupancyRate?: number | null;
+  adr?: number | string | null;
+  dynamicCapacity?: number | null;
+  dynamicOccupancyRate?: number | null;
+  revGrowth?: number | null;
+}
+
+interface PhysicalRoomMetrics {
+  totalRoomsSold?: number;
+  physicalOccupiedUnits?: number;
+  physicalOccupancyRate?: number;
+  denominatorUnits?: number;
+  roomsGrowth?: number | null;
+  breakdownOccupied?: any;
+  [key: string]: any;
+}
+
+interface PhysicalRoomMaster {
+  metrics?: PhysicalRoomMetrics;
+  [key: string]: any;
+}
+
 export default function ResortBusiness() {
   const [data, setData] = useState<any>(null);
   const [lyData, setLyData] = useState<any>(null);
-  const [physicalRoomMaster, setPhysicalRoomMaster] = useState<any>(null);
-  const [lyPhysicalRoomMaster, setLyPhysicalRoomMaster] = useState<any>(null);
+  const [physicalRoomMaster, setPhysicalRoomMaster] = useState<PhysicalRoomMaster | null>(null);
+  const [lyPhysicalRoomMaster, setLyPhysicalRoomMaster] = useState<PhysicalRoomMaster | null>(null);
   const [loading, setLoading] = useState(true);
   const { startDate, endDate, isRange: isGlobalRange } = useDate();
   const [showLyCompareTable, setShowLyCompareTable] = useState<boolean>(true);
@@ -297,7 +323,7 @@ export default function ResortBusiness() {
   const roomsDiff = roomsLy > 0 ? roomsCurrent - roomsLy : 0;
   const roomsGrowth = lodgingStats.roomsGrowth !== undefined && lodgingStats.roomsGrowth !== null
     ? lodgingStats.roomsGrowth
-    : ((curPhysicalMetrics as any)?.roomsGrowth ?? null);
+    : (curPhysicalMetrics?.roomsGrowth ?? null);
 
   // 3. 실운영 점유실 (물리) & 점유율 - physicalRoomMaster.metrics 우선 바인딩 (167실, 95.4%)
   const summary = data?.summary || {};
@@ -350,13 +376,13 @@ export default function ResortBusiness() {
   const adrCurrent = lodgingStats.adr;
   const adrLy = lyStats?.adr !== undefined && lyStats.adr > 0 ? lyStats.adr : null;
   const adrDiff = adrCurrent !== undefined && adrLy !== null ? adrCurrent - adrLy : null;
-  const adrGrowth = (lodgingStats as any).adrGrowth ?? (summary as any).adrGrowth ?? null;
+  const adrGrowth = lodgingStats.adrGrowth ?? summary.adrGrowth ?? null;
   
   const roomOccupancyData = (() => {
     if (!data?.roomOccupancyMap) return [];
     
-    const groups = data.roomOccupancyMap;
-    const lyGroups = lyData?.roomOccupancyMap || {};
+    const groups: Record<string, RoomOccupancyItem> = data.roomOccupancyMap;
+    const lyGroups: Record<string, RoomOccupancyItem> = lyData?.roomOccupancyMap || {};
     const result = [];
     const keys = Object.keys(groups);
     for (const key of keys) {
@@ -372,11 +398,11 @@ export default function ResortBusiness() {
       const lySold = lyG?.sold ?? null;
       const lyCap = lyG?.cap ?? null;
       const lyRev = lyG?.rev ?? null;
-      const lyAdr = (lyG as any)?.adr !== null && (lyG as any)?.adr !== undefined ? Number((lyG as any).adr) : null;
+      const lyAdr = lyG?.adr !== null && lyG?.adr !== undefined ? Number(lyG.adr) : null;
       const lyRate = lyG?.occupancyRate ?? null;
       const rateDiff = rate !== null && lyRate !== null ? Number((rate - lyRate).toFixed(1)) : null;
       const soldDiff = lySold !== null ? g.sold - lySold : null;
-      const adrDiff = ((g as any).adr !== null && (g as any).adr !== undefined && lyAdr !== null) ? Number((g as any).adr) - lyAdr : null;
+      const adrDiff = (g.adr !== null && g.adr !== undefined && lyAdr !== null) ? Number(g.adr) - lyAdr : null;
 
       result.push({
         roomSize: key,
@@ -386,10 +412,10 @@ export default function ResortBusiness() {
         rawRate: rate,
         displayRate,
         revenue: g.rev,
-        adr: (g as any).adr !== null && (g as any).adr !== undefined ? Number((g as any).adr) : null,
+        adr: g.adr !== null && g.adr !== undefined ? Number(g.adr) : null,
         isConnectedType: key === '51평',
-        dynamicCapacity: (g as any).dynamicCapacity,
-        dynamicOccupancyRate: (g as any).dynamicOccupancyRate,
+        dynamicCapacity: g.dynamicCapacity,
+        dynamicOccupancyRate: g.dynamicOccupancyRate,
         // 전년 동기
         lySold,
         lyCap,
@@ -398,7 +424,8 @@ export default function ResortBusiness() {
         lyRate,
         rateDiff,
         soldDiff,
-        adrDiff
+        adrDiff,
+        revGrowth: g.revGrowth ?? null
       });
     }
 
@@ -458,7 +485,7 @@ export default function ResortBusiness() {
         soldDiff,
         revDiff,
         revGrowth,
-        adrDiff
+        adrDiff,
       };
     });
   }, [data?.channelAdrData, lyData?.channelAdrData]);
@@ -488,7 +515,7 @@ export default function ResortBusiness() {
         soldDiff,
         revDiff,
         revGrowth,
-        adrDiff
+        adrDiff,
       };
     });
   }, [data?.rateAdrData, lyData?.rateAdrData]);
@@ -1178,18 +1205,18 @@ export default function ResortBusiness() {
                 const dtWeekend = resortSummary?.dayTypeComparison?.weekend;
                 const pyeongComp = resortSummary?.pyeongComparison;
 
-                const weekdayRevGrowth = dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekdayRevenueGrowth ?? (lodgingStats as any).weekdayRevenueGrowth;
-                const weekendRevGrowth = dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekendRevenueGrowth ?? (lodgingStats as any).weekendRevenueGrowth;
+                const weekdayRevGrowth = dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekdayRevenueGrowth ?? lodgingStats.weekdayRevenueGrowth;
+                const weekendRevGrowth = dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekendRevenueGrowth ?? lodgingStats.weekendRevenueGrowth;
 
-                const weekdayRoomsGrowth = dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekdayRoomsGrowth ?? (lodgingStats as any).weekdayRoomsGrowth;
-                const weekendRoomsGrowth = dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekendRoomsGrowth ?? (lodgingStats as any).weekendRoomsGrowth;
+                const weekdayRoomsGrowth = dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekdayRoomsGrowth ?? lodgingStats.weekdayRoomsGrowth;
+                const weekendRoomsGrowth = dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekendRoomsGrowth ?? lodgingStats.weekendRoomsGrowth;
 
-                const weekdayAdrGrowth = dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekdayAdrGrowth ?? (lodgingStats as any).weekdayAdrGrowth;
-                const weekendAdrGrowth = dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? (resortSummary?.dayTypeComparison as any)?.weekendAdrGrowth ?? (lodgingStats as any).weekendAdrGrowth;
+                const weekdayAdrGrowth = dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekdayAdrGrowth ?? lodgingStats.weekdayAdrGrowth;
+                const weekendAdrGrowth = dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekendAdrGrowth ?? lodgingStats.weekendAdrGrowth;
 
-                const pyeongAdrGrowth16 = pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? (lodgingStats as any).adrGrowth16;
-                const pyeongAdrGrowth35 = pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? (lodgingStats as any).adrGrowth35;
-                const pyeongAdrGrowth51 = pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? (lodgingStats as any).adrGrowth51;
+                const pyeongAdrGrowth16 = pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? lodgingStats.adrGrowth16;
+                const pyeongAdrGrowth35 = pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? lodgingStats.adrGrowth35;
+                const pyeongAdrGrowth51 = pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? lodgingStats.adrGrowth51;
 
                 const renderYoYGrowth = (growth: number | null | undefined) => {
                   if (growth === null || growth === undefined || isNaN(growth)) {
@@ -1317,7 +1344,7 @@ export default function ResortBusiness() {
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{adrCurrent && adrCurrent > 0 ? `${formatCurrency(adrCurrent)}원` : "-"}</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{adrLy && adrLy > 0 ? `${formatCurrency(adrLy)}원` : "-"}</td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${adrDiff !== null && adrDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                        <td className={`py-3.5 px-4 text-right font-bold ${adrDiff === null ? "text-slate-400" : adrDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                           {adrDiff !== null ? `${adrDiff > 0 ? "+" : ""}${formatCurrency(adrDiff)}원` : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-right text-xs">
@@ -1360,7 +1387,7 @@ export default function ResortBusiness() {
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr16 > 0 ? `${formatCurrency(adr16)}원` : "-"}</td>
                           <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr16 !== undefined && lyAdr16 !== null && lyAdr16 > 0 ? `${formatCurrency(lyAdr16)}원` : "-"}</td>
-                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff16 !== null && adrDiff16 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff16 === null ? "text-slate-400" : adrDiff16 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                             {adrDiff16 !== null ? `${adrDiff16 > 0 ? "+" : ""}${formatCurrency(adrDiff16)}원` : "-"}
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs">
@@ -1376,7 +1403,7 @@ export default function ResortBusiness() {
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr35 > 0 ? `${formatCurrency(adr35)}원` : "-"}</td>
                           <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr35 !== undefined && lyAdr35 !== null && lyAdr35 > 0 ? `${formatCurrency(lyAdr35)}원` : "-"}</td>
-                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff35 !== null && adrDiff35 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff35 === null ? "text-slate-400" : adrDiff35 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                             {adrDiff35 !== null ? `${adrDiff35 > 0 ? "+" : ""}${formatCurrency(adrDiff35)}원` : "-"}
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs">
@@ -1392,7 +1419,7 @@ export default function ResortBusiness() {
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs font-semibold">{adr51 > 0 ? `${formatCurrency(adr51)}원` : "-"}</td>
                           <td className="py-2.5 px-4 text-right text-xs text-slate-500">{lyAdr51 !== undefined && lyAdr51 !== null && lyAdr51 > 0 ? `${formatCurrency(lyAdr51)}원` : "-"}</td>
-                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff51 !== null && adrDiff51 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          <td className={`py-2.5 px-4 text-right text-xs font-medium ${adrDiff51 === null ? "text-slate-400" : adrDiff51 >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                             {adrDiff51 !== null ? `${adrDiff51 > 0 ? "+" : ""}${formatCurrency(adrDiff51)}원` : "-"}
                           </td>
                           <td className="py-2.5 px-4 text-right text-xs">
@@ -1413,7 +1440,7 @@ export default function ResortBusiness() {
                         <td className="py-3.5 px-4 text-right text-slate-600">
                           {occLy !== null ? `${occLy}%` : "-"}
                         </td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${occDiff !== null && occDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                        <td className={`py-3.5 px-4 text-right font-bold ${occDiff === null ? "text-slate-400" : occDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                           {occDiff !== null ? `${occDiff > 0 ? "+" : ""}${occDiff}%p` : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-400 text-xs">
@@ -1438,7 +1465,7 @@ export default function ResortBusiness() {
                             {row.lyRev !== null ? `${row.revenue - row.lyRev > 0 ? "+" : ""}${formatCurrency(row.revenue - row.lyRev)}원` : "-"}
                           </td>
                           <td className="py-3 px-4 text-right text-xs">
-                            {renderYoYGrowth(getRoomRevGrowth(row.roomSize) ?? (row as any).revGrowth)}
+                            {renderYoYGrowth(getRoomRevGrowth(row.roomSize) ?? row.revGrowth)}
                           </td>
                         </tr>
                       ))}

@@ -264,23 +264,23 @@ export default function GolfBusiness() {
     c !== greenFeeItem && c !== cartFeeItem && c !== startHouseItem && c !== restaurantItem && c !== proShopItem
   );
 
-  const totalCourseRevenue = (summary as any).courseCoreRevenue !== undefined && (summary as any).courseCoreRevenue !== null
-    ? Number((summary as any).courseCoreRevenue)
+  const totalCourseRevenue = summary.courseCoreRevenue !== undefined && summary.courseCoreRevenue !== null
+    ? Number(summary.courseCoreRevenue)
     : null;
 
-  const totalAmenityRevenue = (summary as any).amenityRevenue !== undefined && (summary as any).amenityRevenue !== null
-    ? Number((summary as any).amenityRevenue)
+  const totalAmenityRevenue = summary.amenityRevenue !== undefined && summary.amenityRevenue !== null
+    ? Number(summary.amenityRevenue)
     : null;
 
-  const totalAmenityQuantity = (summary as any).amenityQuantity !== undefined && (summary as any).amenityQuantity !== null
-    ? Number((summary as any).amenityQuantity)
+  const totalAmenityQuantity = summary.amenityQuantity !== undefined && summary.amenityQuantity !== null
+    ? Number(summary.amenityQuantity)
     : null;
 
-  const courseCoreRatio = (summary as any).courseCoreRatio ?? null;
-  const amenityRatio = (summary as any).amenityRatio ?? null;
+  const courseCoreRatio = summary.courseCoreRatio ?? null;
+  const amenityRatio = summary.amenityRatio ?? null;
 
-  const partAnalysis = effectiveData?.partAnalysis || (summary as any)?.partAnalysis;
-  const membershipAnalysis = effectiveData?.membershipAnalysis || (summary as any)?.membershipAnalysis;
+  const partAnalysis = effectiveData?.partAnalysis || summary?.partAnalysis;
+  const membershipAnalysis = effectiveData?.membershipAnalysis || summary?.membershipAnalysis;
 
   return (
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16">

@@ -123,6 +123,7 @@ interface ApiPartGroup {
 
 interface ApiCategory {
   categoryCode: string;
+  parts?: any[];
   categoryName: string;
   teamName: string;
   facilityCount: number;
@@ -163,6 +164,7 @@ interface ApiSummary {
   overallAchievementRate?: number;
   dailyTargetRevenue?: number;
   dailyTrevPAR?: number;
+  dailyTrevPar?: number;
   monthlyTrevPAR?: number;
   weekdayDays?: number;
   preHolidayDays?: number;
@@ -688,7 +690,7 @@ export default function StrategicSimulator() {
   // Group Category Facilities into 2-Depth Part Groups (백엔드 parts 사전 집계 우선 바인딩)
   const getCategoryParts = useMemo(() => {
     return (cat: ApiCategory): ApiPartGroup[] => {
-      const backendParts = (cat as any).parts;
+      const backendParts = cat.parts;
       if (Array.isArray(backendParts) && backendParts.length > 0) {
         return backendParts.map((p: any) => {
           const rawPart = String(p.partName || p.teamName || '일반').trim();
@@ -2399,7 +2401,7 @@ export default function StrategicSimulator() {
               목표 {input.includeGolf ? '전사 Total' : '순수 리조트'} TrevPAR
             </div>
             <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
-              {formatCurrency(Number((apiData?.summary as any)?.dailyTrevPar ?? apiData?.summary?.dailyTrevPAR ?? 0))}원 <span className="text-sm font-normal text-[#5A6B63] font-sans">/실</span>
+              {formatCurrency(Number(apiData?.summary?.dailyTrevPar ?? apiData?.summary?.dailyTrevPAR ?? 0))}원 <span className="text-sm font-normal text-[#5A6B63] font-sans">/실</span>
             </div>
           </div>
           <div className="text-xs text-[#5A6B63] mt-1">

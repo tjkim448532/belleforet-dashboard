@@ -58,9 +58,18 @@ interface RawChannelRoomItem {
   todayGuests?: number | string;
   guests?: number | string;
   mtdGuests?: number | string;
+  totalRooms?: number | string;
+  totalRevenue?: number | string;
+  totalGuests?: number | string;
+  averageAdr?: number | string;
+  revenueSharePct?: number | string;
   channelSharePct?: number | string;
   sharePct?: number | string;
   grandSharePct?: number | string;
+  isGrandTotal?: boolean;
+  isChannelSubtotal?: boolean;
+  isSubtotal?: boolean;
+  isRoomTypeSubtotal?: boolean;
 }
 
 interface SegmentItem {
@@ -146,6 +155,32 @@ export interface RawGroupItem {
   };
   paymentMethod?: string;
   notes?: string;
+  visitCount?: number | null;
+  organizationTotalRooms?: number | null;
+  organizationTotalPax?: number | null;
+  organizationTotalRevenue?: number | null;
+  isRepeatCustomer?: boolean | null;
+  firstCheckIn?: string;
+  lastCheckIn?: string;
+}
+
+export interface CorporateSummaryData {
+  totalPax?: number;
+  totalGroups?: number;
+  repeatGroupsCount?: number;
+  mice?: {
+    totalPax?: number;
+    roomsCount?: number;
+    groupsCount?: number;
+  };
+  corpFit?: {
+    totalPax?: number;
+  };
+  seminar?: {
+    repeatGroupsCount?: number;
+    totalRooms?: number;
+    totalGroupsCount?: number;
+  };
 }
 
 export interface GroupVisitDetail {
@@ -215,7 +250,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
   const [channelRawData, setChannelRawData] = useState<RawChannelRoomItem[]>([]);
   const [seminarShare, setSeminarShare] = useState<SeminarDayTypeShare | null>(null);
   const [rawGroupData, setRawGroupData] = useState<RawGroupItem[]>([]);
-  const [corporateSummary, setCorporateSummary] = useState<any>(null);
+  const [corporateSummary, setCorporateSummary] = useState<CorporateSummaryData | null>(null);
   const [groupSearchKeyword, setGroupSearchKeyword] = useState<string>('');
   const [groupFilterTab, setGroupFilterTab] = useState<'ALL' | 'REPEAT' | 'LARGE' | 'SINGLE'>('ALL');
   const [expandedGroupNames, setExpandedGroupNames] = useState<Set<string>>(new Set());
@@ -376,11 +411,11 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
       const channel = String(item.channelName || item.channel_name || item.channel || '기타채널').trim();
       const room = String(item.roomType || item.room_type || '기타').trim();
 
-      if ((item as any).isGrandTotal || channel === '총합계') {
+      if (item.isGrandTotal || channel === '총합계') {
         grandTotalRecord = item;
         return;
       }
-      if ((item as any).isChannelSubtotal || (item as any).isSubtotal || room === '전체') {
+      if (item.isChannelSubtotal || item.isSubtotal || room === '전체') {
         subtotalMap.set(channel, item);
         return;
       }
@@ -429,12 +464,12 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
 
       const meta = getChannelMeta(chName);
 
-      const subtotalItem = subtotalMap.get(chName) || items.find(i => (i as any).isChannelSubtotal || (i as any).isSubtotal);
-      const subtotalRooms = Number((subtotalItem as any)?.todayRooms ?? (subtotalItem as any)?.mtdRooms ?? (subtotalItem as any)?.totalRooms ?? 0);
-      const subtotalRev = Number((subtotalItem as any)?.todayRevenue ?? (subtotalItem as any)?.mtdRevenue ?? (subtotalItem as any)?.totalRevenue ?? 0);
-      const subtotalGuests = Number((subtotalItem as any)?.todayGuests ?? (subtotalItem as any)?.guests ?? (subtotalItem as any)?.mtdGuests ?? (subtotalItem as any)?.totalGuests ?? 0);
-      const subtotalAdr = Number(subtotalItem?.adr ?? (subtotalItem as any)?.todayAdr ?? (subtotalItem as any)?.averageAdr ?? 0);
-      const rawSubtotalShare = (subtotalItem as any)?.revenueSharePct ?? (subtotalItem as any)?.sharePct;
+      const subtotalItem = subtotalMap.get(chName) || items.find(i => i.isChannelSubtotal || i.isSubtotal);
+      const subtotalRooms = Number(subtotalItem?.todayRooms ?? subtotalItem?.mtdRooms ?? subtotalItem?.totalRooms ?? 0);
+      const subtotalRev = Number(subtotalItem?.todayRevenue ?? subtotalItem?.mtdRevenue ?? subtotalItem?.totalRevenue ?? 0);
+      const subtotalGuests = Number(subtotalItem?.todayGuests ?? subtotalItem?.guests ?? subtotalItem?.mtdGuests ?? subtotalItem?.totalGuests ?? 0);
+      const subtotalAdr = Number(subtotalItem?.adr ?? subtotalItem?.todayAdr ?? subtotalItem?.averageAdr ?? 0);
+      const rawSubtotalShare = subtotalItem?.revenueSharePct ?? subtotalItem?.sharePct;
       const channelSharePct = rawSubtotalShare != null ? Number(rawSubtotalShare) : null;
 
       groups.push({
@@ -456,30 +491,30 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
     const sortedRoomTypes = Array.from(roomTypeSet).sort((a, b) => a.localeCompare(b));
 
     const grandRev = Number(
-      (grandTotalRecord as any)?.todayRevenue ??
-      (grandTotalRecord as any)?.mtdRevenue ??
-      (grandTotalRecord as any)?.totalRevenue ??
+      grandTotalRecord?.todayRevenue ??
+      grandTotalRecord?.mtdRevenue ??
+      grandTotalRecord?.totalRevenue ??
       seminarShare?.total?.totalRevenue ??
       0
     );
     const grandRms = Number(
-      (grandTotalRecord as any)?.todayRooms ??
-      (grandTotalRecord as any)?.mtdRooms ??
-      (grandTotalRecord as any)?.totalRooms ??
+      grandTotalRecord?.todayRooms ??
+      grandTotalRecord?.mtdRooms ??
+      grandTotalRecord?.totalRooms ??
       seminarShare?.total?.totalRooms ??
       0
     );
     const grandGsts = Number(
-      (grandTotalRecord as any)?.todayGuests ??
-      (grandTotalRecord as any)?.guests ??
-      (grandTotalRecord as any)?.mtdGuests ??
-      (grandTotalRecord as any)?.totalGuests ??
+      grandTotalRecord?.todayGuests ??
+      grandTotalRecord?.guests ??
+      grandTotalRecord?.mtdGuests ??
+      grandTotalRecord?.totalGuests ??
       0
     );
     const grandAdrVal = Number(
       grandTotalRecord?.adr ??
-      (grandTotalRecord as any)?.todayAdr ??
-      (grandTotalRecord as any)?.averageAdr ??
+      grandTotalRecord?.todayAdr ??
+      grandTotalRecord?.averageAdr ??
       0
     );
 
@@ -660,10 +695,10 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
         isWeekend
       };
 
-      const backendVisitCount = (g as any).visitCount != null ? Number((g as any).visitCount) : null;
-      const backendOrgRooms = (g as any).organizationTotalRooms != null ? Number((g as any).organizationTotalRooms) : null;
-      const backendOrgPax = (g as any).organizationTotalPax != null ? Number((g as any).organizationTotalPax) : null;
-      const backendOrgRev = (g as any).organizationTotalRevenue != null ? Number((g as any).organizationTotalRevenue) : null;
+      const backendVisitCount = g.visitCount != null ? Number(g.visitCount) : null;
+      const backendOrgRooms = g.organizationTotalRooms != null ? Number(g.organizationTotalRooms) : null;
+      const backendOrgPax = g.organizationTotalPax != null ? Number(g.organizationTotalPax) : null;
+      const backendOrgRev = g.organizationTotalRevenue != null ? Number(g.organizationTotalRevenue) : null;
 
       if (!orgMap.has(name)) {
         orgMap.set(name, {
@@ -671,13 +706,13 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
           corporateName: g.corporateName || name,
           categoryName: g.categoryName || '기업 세미나/워크샵',
           visitCount: backendVisitCount,
-          isRepeatCustomer: Boolean((g as any).isRepeatCustomer ?? (backendVisitCount != null && backendVisitCount > 1)),
+          isRepeatCustomer: Boolean(g.isRepeatCustomer ?? (backendVisitCount != null && backendVisitCount > 1)),
           totalRooms: backendOrgRooms ?? rooms,
           totalPax: backendOrgPax ?? pax,
           totalRevenue: backendOrgRev ?? rev,
           roomTypesSummary: [...types],
-          firstCheckIn: (g as any).firstCheckIn || checkIn,
-          lastCheckIn: (g as any).lastCheckIn || checkIn,
+          firstCheckIn: g.firstCheckIn || checkIn,
+          lastCheckIn: g.lastCheckIn || checkIn,
           primaryContact: g.contactName || '',
           primaryPhone: g.contactPhone || '',
           salesManager: g.salesManager || '',
@@ -713,12 +748,12 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
       return (b.totalRooms ?? 0) - (a.totalRooms ?? 0);
     });
 
-    const repeats = Number((corporateSummary as any)?.repeatGroupsCount ?? (corporateSummary as any)?.seminar?.repeatGroupsCount ?? 0);
-    const totalRooms = Number((corporateSummary as any)?.mice?.roomsCount ?? (corporateSummary as any)?.seminar?.totalRooms ?? 0);
+    const repeats = Number(corporateSummary?.repeatGroupsCount ?? corporateSummary?.seminar?.repeatGroupsCount ?? 0);
+    const totalRooms = Number(corporateSummary?.mice?.roomsCount ?? corporateSummary?.seminar?.totalRooms ?? 0);
 
     return {
       organizedGroups: list,
-      totalSeminarGroupsCount: Number((corporateSummary as any)?.mice?.groupsCount ?? (corporateSummary as any)?.seminar?.totalGroupsCount ?? (corporateSummary as any)?.totalGroups ?? 0),
+      totalSeminarGroupsCount: Number(corporateSummary?.mice?.groupsCount ?? corporateSummary?.seminar?.totalGroupsCount ?? corporateSummary?.totalGroups ?? 0),
       repeatGroupsCount: repeats,
       totalBookedRoomsInGroups: totalRooms
     };
@@ -1827,7 +1862,7 @@ export default function GroupSales({ pageSection = 'ROOM_CHANNELS' }: GroupSales
                   </td>
                   {uniqueRoomTypes.map(rt => {
                     const rtTotalItem = channelRawData.find(
-                      r => (r.channelName === '총합계' || r.channel_name === '총합계' || (r as any).isRoomTypeSubtotal) &&
+                      r => (r.channelName === '총합계' || r.channel_name === '총합계' || r.isRoomTypeSubtotal) &&
                            (r.roomType === rt || r.room_type === rt)
                     );
                     const colRooms = rtTotalItem ? Number(rtTotalItem.todayRooms ?? rtTotalItem.mtdRooms ?? 0) : null;

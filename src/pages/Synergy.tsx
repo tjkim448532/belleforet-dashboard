@@ -65,6 +65,12 @@ interface RoomChannelSalesItem {
   todayAdr?: number;
   mtdAdr?: number;
   ytdAdr?: number;
+  sharePct?: number | null;
+  revenueSharePct?: number | null;
+  sharePercent?: number | null;
+  pct?: number | null;
+  percent?: number | null;
+  weight?: number | null;
   isChannelSubtotal?: boolean;
   isGrandTotal?: boolean;
 }
@@ -338,7 +344,7 @@ export default function Synergy() {
           const cleanName = (item.channelName || '').trim();
           const rooms = parseNum(isActualRange ? (item.mtdRooms || item.todayRooms || 0) : (item.todayRooms || 0));
           const revenue = parseNum(isActualRange ? (item.mtdRevenue || item.todayRevenue || 0) : (item.todayRevenue || 0));
-          const backendShare = (item as any).sharePct ?? (item as any).revenueSharePct ?? (item as any).sharePercent ?? (item as any).pct ?? (item as any).percent ?? (item as any).weight ?? null;
+          const backendShare = item.sharePct ?? item.revenueSharePct ?? item.sharePercent ?? item.pct ?? item.percent ?? item.weight ?? null;
 
           return {
             name: cleanName,

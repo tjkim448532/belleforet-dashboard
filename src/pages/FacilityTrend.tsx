@@ -644,7 +644,7 @@ export default function FacilityTrend() {
 
     // 선택된 영업장 연간 요약 매핑
     const selectedFacilityAnnual = !isAll
-      ? (seasonalityData.facilities || (seasonalityData as any).data?.facilities || []).find(
+      ? (seasonalityData.facilities || seasonalityData.data?.facilities || []).find(
           (f: any) => f.venueName === facility || f.facilityName === facility || f.displayName === facility || f.categoryName === facility
         )
       : null;
@@ -654,7 +654,7 @@ export default function FacilityTrend() {
     // 월별 영업장 데이터 추출 헬퍼 (개별 영업장 누락 시 전사 총계로 오염되지 않도록 0값 보장)
     const getFacilityMonth = (m: MonthlySeasonalityMonthRow) => {
       if (isAll) return m;
-      const f = ((m as any).facilities || []).find(
+      const f = (m.facilities || []).find(
         (x: any) => x.venueName === facility || x.facilityName === facility || x.displayName === facility || x.categoryName === facility
       );
       return f || {

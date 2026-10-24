@@ -174,7 +174,7 @@ export default function LeisureUsageRate() {
                 row[yr] = {
                   usageRate: pt.usageRate,
                   visitors: pt.visitors,
-                  roomGuests: pt.exGolfVisitors ?? pt.exGolfNetPhysicalResortGuests ?? pt.totalRoomGuests,
+                  roomGuests: pt.totalRoomGuests ?? pt.exGolfVisitors ?? pt.exGolfNetPhysicalResortGuests,
                 };
               } else {
                 row[yr] = { usageRate: 0, visitors: 0, roomGuests: 0 };
@@ -316,7 +316,7 @@ export default function LeisureUsageRate() {
       const selCum = yoyData?.facilityPeriodCumulative?.[targetFacilityName]?.[yrKey]
         || yoyData?.facilityPeriodCumulative?.[selectedFacility]?.[yrKey];
       const selVisitors = selCum?.visitors ?? 0;
-      const selDenominator = (selCum as any)?.exGolfVisitors ?? (selCum as any)?.exGolfNetPhysicalResortGuests ?? selCum?.roomGuests ?? 0;
+      const selDenominator = selCum?.roomGuests ?? (selCum as any)?.exGolfVisitors ?? (selCum as any)?.exGolfNetPhysicalResortGuests ?? 0;
       const selRate = selCum?.usageRate ?? 0;
 
       let topVenue = { name: '-', visitors: 0, usageRate: 0 };
@@ -348,7 +348,7 @@ export default function LeisureUsageRate() {
       const selPoint = selSeries?.data.find((d) => d.month === m);
       const selRate = selPoint?.usageRate ?? 0;
       const selVisitors = selPoint?.visitors ?? 0;
-      const roomGuests = selPoint?.exGolfVisitors ?? selPoint?.exGolfNetPhysicalResortGuests ?? selPoint?.totalRoomGuests ?? 0;
+      const roomGuests = selPoint?.totalRoomGuests ?? selPoint?.exGolfVisitors ?? selPoint?.exGolfNetPhysicalResortGuests ?? 0;
 
       let topVenue = { name: '-', usageRate: 0, visitors: 0 };
       for (const s of usageData.series) {
@@ -407,7 +407,7 @@ export default function LeisureUsageRate() {
       const isCurrentYear = yr === latestYear;
       const dataPoints = rows.map((r) => {
         const item = r[yr] as LeisureYoyYearData | undefined;
-        const denom = item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? item?.roomGuests ?? 0;
+        const denom = item?.roomGuests ?? item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? 0;
         // Don't show line drop to 0 for unarrived future months in latestYear
         if (yr === latestYear && item && denom === 0 && item.visitors === 0) {
           return null;
@@ -545,7 +545,7 @@ export default function LeisureUsageRate() {
         return {
           value: point ? point.usageRate : 0,
           visitors: point?.visitors || 0,
-          roomGuests: point?.exGolfVisitors ?? point?.exGolfNetPhysicalResortGuests ?? point?.totalRoomGuests ?? 0,
+          roomGuests: point?.totalRoomGuests ?? point?.exGolfVisitors ?? point?.exGolfNetPhysicalResortGuests ?? 0,
         };
       });
 
@@ -636,7 +636,7 @@ export default function LeisureUsageRate() {
       const item: any = cumMap[yr];
       result[yr] = {
         visitors: item?.visitors ?? 0,
-        roomGuests: item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? item?.roomGuests ?? 0,
+        roomGuests: item?.roomGuests ?? item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? 0,
         usageRate: item?.usageRate ?? 0,
         yoyUsageRateDiff: item?.yoyUsageRateDiff ?? null,
         yoyVisitorsDiff: item?.yoyVisitorsDiff ?? null,
@@ -673,7 +673,7 @@ export default function LeisureUsageRate() {
         const item: any = cumMap[yr];
         result[key][yr] = {
           visitors: item?.visitors ?? 0,
-          roomGuests: item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? item?.roomGuests ?? 0,
+          roomGuests: item?.roomGuests ?? item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? 0,
           usageRate: item?.usageRate ?? 0,
           yoyUsageRateDiff: item?.yoyUsageRateDiff ?? null,
           yoyVisitorsDiff: item?.yoyVisitorsDiff ?? null,
@@ -818,11 +818,11 @@ export default function LeisureUsageRate() {
       const cB: any = cum?.[expYearB];
 
       const vA = cA?.visitors ?? 0;
-      const rA = cA?.exGolfVisitors ?? cA?.exGolfNetPhysicalResortGuests ?? cA?.roomGuests ?? 0;
+      const rA = cA?.roomGuests ?? cA?.exGolfVisitors ?? cA?.exGolfNetPhysicalResortGuests ?? 0;
       const uA = cA?.usageRate ?? 0;
 
       const vB = cB?.visitors ?? 0;
-      const rB = cB?.exGolfVisitors ?? cB?.exGolfNetPhysicalResortGuests ?? cB?.roomGuests ?? 0;
+      const rB = cB?.roomGuests ?? cB?.exGolfVisitors ?? cB?.exGolfNetPhysicalResortGuests ?? 0;
       const uB = cB?.usageRate ?? 0;
 
       const rawRateDiff = cum?.yearDiffs?.[`${expYearB}_${expYearA}`]?.usageRateDiff ?? cB?.yoyUsageRateDiff ?? null;
@@ -889,7 +889,7 @@ export default function LeisureUsageRate() {
 
         availableYears.forEach((yr) => {
           const d = mRow?.[yr] as LeisureYoyYearData | undefined;
-          const denom = d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? d?.roomGuests ?? 0;
+          const denom = d?.roomGuests ?? d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? 0;
           const hasData = d && (d.visitors > 0 || denom > 0);
           rowData.push(d?.visitors ?? 0);
           rowData.push(denom);
@@ -1746,7 +1746,7 @@ export default function LeisureUsageRate() {
 
                         {availableYears.map((yr) => {
                           const d = row[yr] as LeisureYoyYearData | undefined;
-                          const denom = d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? d?.roomGuests ?? 0;
+                          const denom = d?.roomGuests ?? d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? 0;
                           const hasData = d && (denom > 0 || d.visitors > 0);
                           const isLatest = yr === latestYear;
 

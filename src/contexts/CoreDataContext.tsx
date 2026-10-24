@@ -94,6 +94,10 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
             // TrevPAR 대소문자 호환성 (trevPar vs trevPAR)
             trevPAR: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
             trevPar: payloadSummary?.trevPar ?? payloadSummary?.trevPAR,
+            trevParExGolf: payloadSummary?.trevParExGolf ?? payloadSummary?.trevPARExGolf,
+            trevPARExGolf: payloadSummary?.trevParExGolf ?? payloadSummary?.trevPARExGolf,
+            trevParExGolfLy: payloadSummary?.trevParExGolfLy ?? payloadSummary?.trevPARExGolfLy,
+            trevParExGolfGrowth: payloadSummary?.trevParExGolfGrowth,
             // 골프 예약/내장/취소 팀수
             totalGolfReservedTeams: Number(payloadSummary?.totalGolfReservedTeams || gs.totalGolfReservedTeams || gs.totalReservedTeams || 0),
             totalGolfTeams: Number(payloadSummary?.totalGolfTeams || gs.totalGolfTeams || gs.totalVisitedTeams || 0),

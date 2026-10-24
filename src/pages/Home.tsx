@@ -979,11 +979,7 @@ export default function Home() {
                       </p>
                       {(() => {
                         const trevParTotal = (coreData.core?.summary?.trevPar ?? coreData.core?.summary?.trevPAR) || displayData?.kpiMetrics?.trevPAR;
-                        const golfSales = coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'GOLF')?.todayActual 
-                                       || coreData.core?.summary?.golfGreenFeeRevenue 
-                                       || 0;
-                        const netRevWithoutGolf = Math.max(0, (coreData.core?.summary?.totalRevenue || 0) - golfSales);
-                        const trevParExGolf = Math.round(netRevWithoutGolf / 175);
+                        const trevParExGolf = coreData.core?.summary?.trevParExGolf ?? coreData.core?.summary?.trevPARExGolf;
                         const activeTrevPar = trevparViewMode === 'EX_GOLF' ? trevParExGolf : trevParTotal;
 
                         return activeTrevPar !== undefined && activeTrevPar !== null && Number(activeTrevPar) > 0 ? (
@@ -994,7 +990,7 @@ export default function Home() {
                             {isKpiFormulasOpen && (
                               <div className="mt-2 pt-2 border-t border-[#D0C6BB]/50">
                                 <div className="p-2 rounded-lg bg-[#F4F3EE] font-mono text-[11px] text-[#1B382E] font-bold border border-[#D0C6BB]/70 mb-2 text-center">
-                                  {trevparViewMode === 'EX_GOLF' ? '리조트(골프제외) ÷ 가용 175실' : '전사 총매출 ÷ 전체 가용 175실'}
+                                  {trevparViewMode === 'EX_GOLF' ? '리조트(골프제외) ÷ 총 가용 175실(기간 반영)' : '전사 총매출 ÷ 전체 가용 175실(기간 반영)'}
                                 </div>
                                 <p className="text-[#1B382E] text-[11px] leading-relaxed">
                                   {trevparViewMode === 'EX_GOLF' 
@@ -1006,8 +1002,8 @@ export default function Home() {
                             <div className="flex items-center justify-between pt-2 mt-2 border-t border-[#D0C6BB]/50 text-[10px]">
                               <span className="text-[#6C7A73] font-financial">
                                 {trevparViewMode === 'EX_GOLF' 
-                                  ? `골프포함: ${formatRevenue(trevParTotal)}원` 
-                                  : `골프제외: ${formatRevenue(trevParExGolf)}원`}
+                                  ? `골프포함: ${trevParTotal ? `${formatRevenue(trevParTotal)}원` : '-'}` 
+                                  : `골프제외: ${trevParExGolf ? `${formatRevenue(trevParExGolf)}원` : '-'}`}
                               </span>
                               <Link 
                                 to="/strategic-simulator?tab=package" 
@@ -1021,7 +1017,7 @@ export default function Home() {
                           </>
                         ) : (
                           <div className="text-xs text-slate-400 font-medium py-4 text-center">
-                            TrevPAR 산출 불가
+                            TrevPAR 산출 대기
                           </div>
                         );
                       })()}

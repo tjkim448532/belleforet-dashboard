@@ -3902,3 +3902,52 @@ ORDER BY venue_name, rn;
 2. **프론트엔드 안전 조치 완료**:
    - 벨포레 프론트엔드 헌법 6조(Zero-Proxy, Fail-Stop)에 따라, 백엔드가 선택 기간에 일치하는 정합한 성장률을 내려줄 때까지 기간 불일치 세부 항목을 안전하게 `-` (Fail-Stop)로 격리하였습니다.
    - 백엔드에서 본 티켓이 반영되어 선택 기간 일치 완제품이 배포되면, 프론트엔드 수정 없이 즉시 자동으로 정상 수치가 표출됩니다.
+
+---
+
+## 21. 🚨 [Ticket 56 / 핵심 경영지표] `revenue-summary` 내 '골프제외 순수리조트 TrevPAR (`trevParExGolf`)' 기간 가중치 반영 완제품 신설 요청 (2026-10-24)
+
+### 21-1. 대상 엔드포인트 및 필드
+- **대상 API**:
+  - 단일 일자: `GET /api/v6/dashboard/revenue-summary?date={YYYY-MM-DD}`
+  - 기간 조회: `GET /api/v6/dashboard/revenue-summary?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+- **신설 요청 필드**: `summary.trevParExGolf` (골프 제외 순수 리조트 TrevPAR, 원 단위 정수 Integer)
+
+---
+
+### 21-2. 결함 발견 및 실측 데이터 감사 (Zero-Hallucination 실측 검증)
+
+- **실측 조회 조건**: `startDate=2026-09-01&endDate=2026-09-30` (9월 전체 30일간 기간 조회)
+- **백엔드 실측 수치**:
+  - `summary.totalRevenue`: `2,507,051,279원` (30일간 누적 전사 총매출)
+  - `salesByCategory (GOLF)`: `938,322,036원` (30일간 누적 골프 매출)
+  - 골프 제외 순수 리조트 매출: `1,568,729,243원`
+  - 30일간 총 가용 객실수 (정상 분모): `175실 × 30일 = 5,250실`
+  - 백엔드 공식 전사 TrevPAR (`summary.trevPar`): `2,507,051,279원 ÷ 5,250실 = 477,534원` (정상 완제품)
+
+- **문제점 및 수치 왜곡 (8,964,167원 표출)**:
+  - 현재 백엔드가 '골프 제외 TrevPAR' 필드를 별도로 제공하지 않아, 프론트엔드가 과거 코드 레벨에서 `Math.round(netRevWithoutGolf / 175)`라는 인라인 나눗셈을 임의 수행하고 있었습니다.
+  - 단일 일자(1일)에서는 분모가 175실이라 성립했으나, **30일간 기간 조회 시 누적 매출(15.68억원)을 30일치 객실수(5,250실)가 아닌 단 1일치 객실수(175실)로 그대로 나누는 심각한 분모 왜곡이 발생**했습니다:
+    $$\frac{1,568,729,243\text{원}}{175\text{실}} = \mathbf{8,964,167\text{원}} \quad (\text{정상 1일치 298,806원의 30배 왜곡})$$
+  - 정상 1일 평균 골프제외 TrevPAR는 아래와 같이 산출되어야 합니다:
+    $$\frac{1,568,729,243\text{원}}{5,250\text{실}\text{ (175실 × 30일)}} = \mathbf{298,806\text{원}}$$
+
+---
+
+### 21-3. 백엔드 요청 조치 사항 (Zero-Proxy 절대 원칙)
+
+프론트엔드 무관용 헌법(프랑켄슈타인 땜방 엄금 및 Zero-Proxy)에 따라, 클라이언트 단에서 날짜 수를 임의로 세어 `÷ (175 * days)`를 계산하는 로컬 사칙연산 패치를 전면 영구 금지합니다. 이에 따라 백엔드 데이터 마트에서 아래와 같이 완제품 필드를 제공해 주시기를 요청합니다.
+
+1. **`summary.trevParExGolf` 완제품 신설**:
+   - **단일 일자 (`date=YYYY-MM-DD`) 산출 공식**:
+     $$\text{trevParExGolf} = \left\lfloor \frac{\text{당일 전사 순매출} - \text{당일 골프 순매출}}{175\text{실}} \right\rfloor$$
+   - **기간 조회 (`startDate` ~ `endDate`) 산출 공식**:
+     $$\text{trevParExGolf} = \left\lfloor \frac{\text{선택 기간 전사 순매출} - \text{선택 기간 골프 순매출}}{175\text{실} \times \text{조회 일수}(N)} \right\rfloor$$
+   - 반환 데이터 형식: 소수점이 제거된 100% 순수 정수형(Integer).
+
+2. **(선택 사항) 전년 동기 대비 비교 필드**:
+   - `summary.trevParExGolfLy`: 전년 동기간 골프제외 TrevPAR
+   - `summary.trevParExGolfGrowth`: 전년 대비 증감률 (%)
+
+3. **프론트엔드 연동 방침**:
+   - 백엔드 배포 완료 시 프론트엔드는 어떠한 클라이언트 연산 없이 `summary.trevParExGolf` 필드를 1:1 직결(Pure Consumer) 표출합니다.

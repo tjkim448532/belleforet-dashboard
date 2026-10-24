@@ -817,6 +817,9 @@ export default function Home() {
                         {actualWalkInCars !== null ? `${new Intl.NumberFormat('ko-KR').format(actualWalkInCars)}대` : '-'}
                       </span>
                       <span className="text-[#6C7A73] text-[11px]">(주차관제 미등록 순수 당일 차량)</span>
+                      <p className="w-full text-[11px] text-[#6C7A73] leading-relaxed font-normal mt-1 border-t border-[#D0C6BB]/40 pt-1.5">
+                        주차 정산·할인 및 사전등록 내역을 기반으로 직원·숙박·업무·단순 회차 차량을 제외하고 산출한 순수 당일 방문 차량/추정 인원(대당 3인) 지표입니다.
+                      </p>
                     </div>
                   )}
                 </div>

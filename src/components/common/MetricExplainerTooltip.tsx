@@ -137,7 +137,7 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
   walkInVisitor: {
     title: '워크인 방문객 (Walk-in Visitors)',
     badge: '주차관제 SSOT',
-    definition: '주차관제상 미등록(직원·골프·콘도·업무 등 제외) 순수 당일 차량으로 내장한 워크인 방문객 수입니다.',
+    definition: '주차 정산·할인 및 사전등록 내역을 기반으로 직원·숙박·업무·단순 회차 차량을 제외하고 산출한 순수 당일 방문 차량/추정 인원(대당 3인) 지표입니다.',
     formula: '미등록 순수 워크인 차량(actualWalkInCars) × 3명 (탑승객 배수, 백엔드 완제품)',
     insight: '사내 주차관제 시스템(ATS3000_Bell)의 고유 차량번호 1일 1대 중복 제거 원장을 기반으로 산출되며, 콘도 투숙객(객실 PMS)과 함께 리조트 전체 진성 유입 인구를 구성합니다.'
   }

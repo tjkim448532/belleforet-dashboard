@@ -64,7 +64,8 @@ export default function FacilityTrend() {
     const fetchSeasonality = async () => {
       setLoadingSeasonality(true);
       try {
-        const res: MonthlySeasonalityMatrixResponse = await secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix`);
+        const query = golfViewMode === 'EX_GOLF' ? '?includeGolf=false' : '';
+        const res: MonthlySeasonalityMatrixResponse = await secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix${query}`);
         if (isMounted) {
           setSeasonalityData((res as any)?.data ?? res);
         }
@@ -76,19 +77,17 @@ export default function FacilityTrend() {
     };
     fetchSeasonality();
     return () => { isMounted = false; };
-  }, []);
+  }, [golfViewMode]);
 
   const fetchFacilityTrend = async () => {
     setLoading(true);
     try {
       if (selectedFacility === '전체') {
         // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 연도별 VM 및 인원수 골프포함/골프제외 완제품)
-        const [res2024, res2025, res2026, season2024Res, season2026Res] = await Promise.all([
+        const [res2024, res2025, res2026] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2024`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2025`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2026`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix?year=2024`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix?year=2026`).catch(() => null),
         ]);
 
         const monthlyDataMap = new Map<string, {
@@ -196,59 +195,22 @@ export default function FacilityTrend() {
           exGolfVisitors?: number;
         }> = {};
 
-        const s2024Payload = season2024Res?.data ?? season2024Res;
-        const s2026Payload = season2026Res?.data ?? season2026Res;
-        const s2024Annual = s2024Payload?.annual ?? s2024Payload?.totals;
-        const s2026Annual = s2026Payload?.annual ?? s2026Payload?.totals;
-
-        const resolveTotalVisitors = (yr: string, res: any) => {
+        const resolveTotalVisitors = (res: any) => {
           const vm = res?.ValidationMaster;
-          if (vm?.grandTotalVisitors !== undefined && vm.grandTotalVisitors !== null) {
-            return Math.round(Number(vm.grandTotalVisitors));
-          }
-          if (yr === '2024') {
-            const v = s2024Annual?.tyVisitors ?? s2024Annual?.visitors2026;
-            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
-          }
-          if (yr === '2025') {
-            const v = s2024Annual?.fullYearLyVisitors ?? s2024Annual?.fullYearVisitors2025 ?? s2026Annual?.fullYearLyVisitors ?? s2026Annual?.fullYearVisitors2025;
-            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
-          }
-          if (yr === '2026') {
-            const v = s2026Annual?.tyVisitors ?? s2026Annual?.visitors2026;
-            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
-          }
-          return undefined;
+          const v = vm?.grandTotalVisitors ?? vm?.grandNetPhysicalResortGuests ?? vm?.totalVisitors;
+          return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
         };
 
-        const resolveExGolfVisitors = (yr: string, res: any) => {
-          // 백엔드 ValidationMaster.grandExGolfVisitors 또는 seasonality annual.exGolfVisitors 완제품만 직결 바인딩 (Zero-Proxy)
+        const resolveExGolfVisitors = (res: any) => {
           const vm = res?.ValidationMaster;
-          if (vm?.grandExGolfVisitors !== undefined && vm.grandExGolfVisitors !== null) {
-            return Math.round(Number(vm.grandExGolfVisitors));
-          }
-          if (vm?.exGolfVisitors !== undefined && vm.exGolfVisitors !== null) {
-            return Math.round(Number(vm.exGolfVisitors));
-          }
-          if (yr === '2024') {
-            const v = s2024Annual?.exGolfVisitors ?? s2024Annual?.tyExGolfVisitors;
-            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
-          }
-          if (yr === '2025') {
-            const v = s2024Annual?.fullYearLyExGolfVisitors ?? s2026Annual?.fullYearLyExGolfVisitors;
-            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
-          }
-          if (yr === '2026') {
-            const v = s2026Annual?.exGolfVisitors ?? s2026Annual?.tyExGolfVisitors;
-            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
-          }
-          return undefined;
+          const v = vm?.grandExGolfVisitors ?? vm?.grandExGolfNetPhysicalResortGuests ?? vm?.exGolfVisitors;
+          return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
         };
 
         const vm2024 = parseVM(res2024);
         if (vm2024) {
-          const totVis = resolveTotalVisitors('2024', res2024);
-          const exGVis = resolveExGolfVisitors('2024', res2024);
+          const totVis = resolveTotalVisitors(res2024);
+          const exGVis = resolveExGolfVisitors(res2024);
           totalsByYear['2024'] = {
             ...vm2024,
             visitors: totVis,
@@ -259,8 +221,8 @@ export default function FacilityTrend() {
 
         const vm2025 = parseVM(res2025);
         if (vm2025) {
-          const totVis = resolveTotalVisitors('2025', res2025);
-          const exGVis = resolveExGolfVisitors('2025', res2025);
+          const totVis = resolveTotalVisitors(res2025);
+          const exGVis = resolveExGolfVisitors(res2025);
           totalsByYear['2025'] = {
             ...vm2025,
             visitors: totVis,
@@ -271,8 +233,8 @@ export default function FacilityTrend() {
 
         const vm2026 = parseVM(res2026);
         if (vm2026) {
-          const totVis = resolveTotalVisitors('2026', res2026);
-          const exGVis = resolveExGolfVisitors('2026', res2026);
+          const totVis = resolveTotalVisitors(res2026);
+          const exGVis = resolveExGolfVisitors(res2026);
           totalsByYear['2026'] = {
             ...vm2026,
             visitors: totVis,

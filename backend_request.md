@@ -4124,3 +4124,33 @@ ORDER BY venue_name, rn;
      - TrevPAR 파급: `simulatedTrevPAR`, `trevparUpliftAmount`, `trevparUpliftPct`, `monthlyPkgGrossRevenue`, `monthlyPkgNetRevenue`, `monthlyPkgNetRevenueEok`, `monthlyPkgNetRevenueMan`
 4. **`GET/POST /api/v6/report/leisure-top-products` ([`LeisurePricingSimulator.tsx`](file:///e:/앱/belleforet-dashboard/src/components/dashboard/LeisurePricingSimulator.tsx))**:
    - 품목별 조정 단가(`adjustedPrices`) 및 수요 변동률(`demandChangePct`) 파라미터를 수신하여, 백엔드에서 품목별/전체 연간 및 월평균 예상 매출(`lyTotalRev`, `lyMonthlyAvg`, `baselineTotalRev`, `baselineMonthlyAvg`, `baselineTotalDelta`, `baselineTotalDeltaPct`, `adjustedTotalRev`, `adjustedMonthlyAvg`, `adjustedTotalDelta`, `adjustedTotalDeltaPct`)과 1~12월 시뮬레이션 배열을 완제품으로 반환.
+
+---
+
+## 29. 🚨 [Ticket 64 / P0 긴급 장애 복구] `GET /api/v6/dashboard/revenue-by-org` HTTP 500 (`ER_WRONG_PARAMCOUNT_TO_NATIVE_FCT: JSON_ARRAYAGG`) SQL 문법 오류 수정 요청 (2026-10-24)
+
+### 29-1. 현상 및 실측 에러 응답 (Stdout)
+- **호출 URL**:
+  - `GET https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?startDate=2026-10-01&endDate=2026-10-23`
+  - `GET https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?date=2026-10-23`
+- **HTTP 상태 코드**: `500 Internal Server Error`
+- **실측 응답 본문**:
+  ```json
+  {
+    "success": false,
+    "status": "ERROR",
+    "isPowerSaving": false,
+    "error": "ER_WRONG_PARAMCOUNT_TO_NATIVE_FCT",
+    "message": "Incorrect parameter count in the call to native function 'JSON_ARRAYAGG'",
+    "details": "Incorrect parameter count in the call to native function 'JSON_ARRAYAGG'"
+  }
+  ```
+
+### 29-2. 발생 원인 (MariaDB `JSON_ARRAYAGG` 인자 개수 제약)
+- MariaDB의 네이티브 함수 `JSON_ARRAYAGG(expr)`는 **단 1개의 표현식 인자만 허용**합니다 (`ORDER BY` 절을 함수 내부에 쓰거나 다중 인자를 전달할 경우 `ER_WRONG_PARAMCOUNT_TO_NATIVE_FCT` 에러가 발생하거나, `JSON_OBJECT(...)` 없이 여러 컬럼을 나열하면 즉시 SQL 에러가 발생함).
+- `src/app/api/v6/dashboard/revenue-by-org/route.ts` 또는 호출 중인 뷰/프로시저 내부 쿼리에서 `JSON_ARRAYAGG(...)` 호출 시 인자가 2개 이상 전달되었거나 구문 오류가 발생한 상태입니다.
+
+### 29-3. 백엔드 요청 조치 사항
+1. `src/app/api/v6/dashboard/revenue-by-org/route.ts` (및 관련 마트 뷰/프로시저) 내 `JSON_ARRAYAGG` 구문을 단일 표현식(`JSON_ARRAYAGG(JSON_OBJECT(...))`)으로 수정하여 `HTTP 200` 정상 응답을 복구해 주십시오.
+2. 수정 후 단일 일자(`?date=2026-10-23`) 및 기간 조회(`?startDate=2026-10-01&endDate=2026-10-23`) 모두 `status: 200` 및 `physicalRoomMaster`, `departments` 완제품이 정상 반환되는지 검증해 주십시오.
+

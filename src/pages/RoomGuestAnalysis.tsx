@@ -16,6 +16,7 @@ export default function RoomGuestAnalysis() {
   const effectiveEnd = isEffectiveRange && endDate ? endDate : startDate;
 
   const [data, setData] = useState<DailyMemberVisitorsV2Response | null>(null);
+  const [resortVisitors, setResortVisitors] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -26,9 +27,17 @@ export default function RoomGuestAnalysis() {
       const queryParams = isEffectiveRange
         ? `startDate=${startDate}&endDate=${effectiveEnd}`
         : `startDate=${startDate}&endDate=${startDate}`;
+      const parkingQueryParams = isEffectiveRange
+        ? `startDate=${startDate}&endDate=${effectiveEnd}`
+        : `date=${startDate}`;
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors-v2?${queryParams}`);
+      const [res, parkRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors-v2?${queryParams}`),
+        secureFetcher(`${API_BASE}/api/v6/dashboard/parking-summary?${parkingQueryParams}`).catch(() => null),
+      ]);
       const payload = res?.data ?? res;
+      const rv = parkRes?.resortVisitors || parkRes?.summary?.resortVisitors || parkRes?.data?.resortVisitors || null;
+      setResortVisitors(rv);
 
       if (payload && payload.success) {
         setData(payload);
@@ -39,6 +48,7 @@ export default function RoomGuestAnalysis() {
       console.error('Room Guest Analysis Fetch Error:', err);
       setApiError(err.message || '데이터를 불러오는 중 문제가 발생했습니다.');
       setData(null);
+      setResortVisitors(null);
     } finally {
       setLoading(false);
     }
@@ -161,13 +171,100 @@ export default function RoomGuestAnalysis() {
           <Info className="w-5 h-5 text-[#284F42] shrink-0 mt-0.5" />
           <div className="text-xs text-[#1B382E] space-y-1">
             <div className="font-bold text-[#1B382E] flex items-center gap-2">
-              <span>숙박객(Room Guests) 산출 기준 및 집계 무결성 원칙</span>
+              <span>벨포레 통합 체류 인원 SSOT (`mat_v6_resort_visitors_daily`) 및 숙박객 산출 기준</span>
               <span className="text-[10px] bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 px-2 py-0.5 rounded-full font-semibold">공식 기준</span>
             </div>
             <p className="text-[#5A6B63] leading-relaxed break-keep">
-              단순 티켓 발권 수량이나 식음 결제 건수는 중복 이용 및 단순 동행 구분이 불가하여 방문객 집계에서 제외합니다.
-              공식 숙박객 수는 <strong>실 판매 객실 수(rooms_sold) × 객실 타입별 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)</strong>을 적용하여 실제 투숙 인원만을 정밀하게 산출합니다.
+              순수 체류 총인원은 <strong>숙박객(실 판매 객실×기준정원) + 골프 내장객(그린피 실라운딩) + 순수 나들이객(워크인 차량×3명) − 숙박·골프 중복 차감 인원</strong>으로 사전 연산된 SSOT 마트 데이터를 1:1 직결하며, 다수 시설 중복 이용이 누적된 <strong>시설 이용 연인원</strong>과 명확히 분리하여 제공합니다.
             </p>
+          </div>
+        </div>
+
+        {/* 🏛️ 벨포레 통합 순수 체류 총인원 SSOT 패널 */}
+        <div className="bg-white p-6 rounded-3xl border-2 border-[#284F42]/80 shadow-[0_4px_24px_rgba(40,79,66,0.08)] space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#D0C6BB]/50 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Users size={18} className="text-[#284F42]" />
+                <h2 className="text-base sm:text-lg font-extrabold text-[#1B382E]">
+                  리조트 순수 물리적 체류 총인원 (Physical Headcount SSOT)
+                </h2>
+                <span className="text-[10px] font-black bg-[#284F42] text-white px-2.5 py-0.5 rounded-full">
+                  Zero-Proxy 1:1
+                </span>
+              </div>
+              <p className="text-xs text-[#5A6B63] mt-1">
+                숙박객 + 골프 내장객 + 순수 당일 나들이객 − 숙박·골프 1:1 매칭 중복 차감 인원
+              </p>
+            </div>
+            <div className="flex items-baseline gap-2 font-financial">
+              <span className="text-xs font-bold text-[#6C7A73]">순수 체류 총인원:</span>
+              <span className="text-3xl font-black text-[#1B382E]">
+                {resortVisitors?.netPhysicalResortGuests != null
+                  ? Number(resortVisitors.netPhysicalResortGuests).toLocaleString()
+                  : '-'}
+              </span>
+              <span className="text-sm font-bold text-[#6C7A73]">명</span>
+              {resortVisitors?.mtdNetPhysicalResortGuests != null && !isEffectiveRange && (
+                <span className="ml-2 text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-1 rounded-full border border-[#B4C6C1]/70">
+                  당월 누적(MTD) {Number(resortVisitors.mtdNetPhysicalResortGuests).toLocaleString()}명
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs font-financial">
+            <div className="bg-[#F4F3EE] p-3.5 rounded-2xl border border-[#D0C6BB]/70">
+              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">① 콘도 숙박객</span>
+              <div className="text-xl font-extrabold text-[#1B382E]">
+                {resortVisitors?.roomTotalGuests != null ? `${Number(resortVisitors.roomTotalGuests).toLocaleString()}명` : '-'}
+              </div>
+              <span className="text-[10px] text-[#6C7A73]">
+                판매 객실: {resortVisitors?.roomSoldUnits != null ? `${Number(resortVisitors.roomSoldUnits).toLocaleString()}실` : '-'}
+              </span>
+            </div>
+
+            <div className="bg-[#F4F3EE] p-3.5 rounded-2xl border border-[#D0C6BB]/70">
+              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">② 골프 내장객</span>
+              <div className="text-xl font-extrabold text-[#1B382E]">
+                {resortVisitors?.golfTotalPlayers != null ? `${Number(resortVisitors.golfTotalPlayers).toLocaleString()}명` : '-'}
+              </div>
+              <span className="text-[10px] text-[#6C7A73]">그린피 실라운딩 인원</span>
+            </div>
+
+            <div className="bg-[#F4F3EE] p-3.5 rounded-2xl border border-[#D0C6BB]/70">
+              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">③ 순수 당일 나들이객</span>
+              <div className="text-xl font-extrabold text-[#1B382E]">
+                {resortVisitors?.parkingWalkinVisitors != null ? `${Number(resortVisitors.parkingWalkinVisitors).toLocaleString()}명` : '-'}
+              </div>
+              <span className="text-[10px] text-[#6C7A73]">순수 워크인 차량×3명</span>
+            </div>
+
+            <div className="bg-[#FAECEB]/70 p-3.5 rounded-2xl border border-[#DE6E6D]/50">
+              <span className="text-[11px] text-[#9E372E] font-bold block mb-1">④ 숙박·골프 중복 차감</span>
+              <div className="text-xl font-extrabold text-[#9E372E]">
+                {resortVisitors?.roomGolfSynergyGuests != null ? `-${Number(resortVisitors.roomGolfSynergyGuests).toLocaleString()}명` : '-'}
+              </div>
+              <span className="text-[10px] text-[#9E372E]">
+                중복 호실: {resortVisitors?.golfCondoCrossCars != null ? `${Number(resortVisitors.golfCondoCrossCars).toLocaleString()}실` : '-'}
+              </span>
+            </div>
+
+            <div className="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80">
+              <span className="text-[11px] text-amber-900 font-bold block mb-1">시설 이용 연인원 (단순합)</span>
+              <div className="text-xl font-extrabold text-amber-950">
+                {resortVisitors?.grossActivityVisitors != null ? `${Number(resortVisitors.grossActivityVisitors).toLocaleString()}명` : '-'}
+              </div>
+              <span className="text-[10px] text-amber-800">다수 시설 중복 이용 누적</span>
+            </div>
+
+            <div className="bg-[#E8F2EE]/70 p-3.5 rounded-2xl border border-[#B4C6C1]/80">
+              <span className="text-[11px] text-[#1E523F] font-bold block mb-1">레저·티켓 입장 건수</span>
+              <div className="text-xl font-extrabold text-[#1B382E]">
+                {resortVisitors?.leisureTicketVisitors != null ? `${Number(resortVisitors.leisureTicketVisitors).toLocaleString()}건` : '-'}
+              </div>
+              <span className="text-[10px] text-[#284F42]">TICKET + MOTO 합계</span>
+            </div>
           </div>
         </div>
 

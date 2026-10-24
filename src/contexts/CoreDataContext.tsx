@@ -75,6 +75,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         const payload = (res?.summary ? res : res?.data) || res || {};
         const parkingRes = await parkingPromise;
         const initialParkingSummary = parkingRes?.summary || parkingRes?.data?.summary || null;
+        const initialResortVisitors = payload.resortVisitors || payload.summary?.resortVisitors || parkingRes?.resortVisitors || parkingRes?.summary?.resortVisitors || parkingRes?.data?.resortVisitors || null;
 
         const buildCoreSummary = (payloadSummary: any, gs: any = {}, channels: any[] = [], isGolfLoaded: boolean = false, pm: any = null) => {
           // 100% SSOT Direct Binding: 프론트엔드 임의 키워드 필터링 및 reduce 클라이언트 합산 전면 철거
@@ -88,6 +89,8 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
 
           return {
             ...payloadSummary,
+            resortVisitors: initialResortVisitors,
+            netPhysicalResortGuests: payloadSummary?.netPhysicalResortGuests ?? initialResortVisitors?.netPhysicalResortGuests ?? null,
             totalOcc: physicalOccRate ?? payloadSummary?.totalOcc,
             physicalOccRate: physicalOccRate ?? payloadSummary?.physicalOccRate,
             physicalOccupiedUnits: pm?.metrics?.physicalOccupiedUnits ?? payloadSummary?.occupiedRooms,
@@ -126,6 +129,7 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         const initialSummary = buildCoreSummary(payload.summary, {}, [], hasFullGolfMetrics, null);
         const corePayload = {
           ...payload,
+          resortVisitors: initialResortVisitors,
           physicalRoomMaster: null,
           parkingSummary: initialParkingSummary,
           date: payload.targetDate || validStart || todayStr,

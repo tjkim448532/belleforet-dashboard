@@ -1212,10 +1212,38 @@ export default function FacilityTrend() {
                       </span>
                       {selectedFacility === '전체' && (
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
-                          {golfViewMode === 'TOTAL' ? '골프포함 (매출 · 체류인원)' : '골프제외 (순매출 · 객실투숙객)'}
+                          {golfViewMode === 'TOTAL' ? '골프포함 (매출 · 체류인원)' : '골프제외 (매출 · 체류인원)'}
                         </span>
                       )}
                     </h2>
+                    {selectedFacility === '전체' && (
+                      <div className="flex items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/75 text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setGolfViewMode('TOTAL')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                            golfViewMode === 'TOTAL'
+                              ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                              : 'text-[#5A6B63] hover:text-[#1B382E]'
+                          }`}
+                        >
+                          <span>🏌️</span>
+                          골프포함
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGolfViewMode('EX_GOLF')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                            golfViewMode === 'EX_GOLF'
+                              ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                              : 'text-[#5A6B63] hover:text-[#1B382E]'
+                          }`}
+                        >
+                          <TreePine className="w-3.5 h-3.5 text-[#B59269]" />
+                          골프제외
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="h-[400px] w-full">
@@ -1237,11 +1265,34 @@ export default function FacilityTrend() {
                       <span>월별 상세 실적 {selectedFacility === '전체' ? '(벨포레 전체 종합)' : ''}</span>
                     </h2>
                     {selectedFacility === '전체' && (
-                      <span className="text-xs font-bold text-[#5A6B63]">
-                        {golfViewMode === 'TOTAL'
-                          ? '표출 기준: [골프포함 매출 | 객실 투숙객 (골프포함)]'
-                          : '표출 기준: [골프제외 매출 | 객실 투숙객 (골프제외)]'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/75 text-xs font-bold">
+                          <button
+                            type="button"
+                            onClick={() => setGolfViewMode('TOTAL')}
+                            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                              golfViewMode === 'TOTAL'
+                                ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                                : 'text-[#5A6B63] hover:text-[#1B382E]'
+                            }`}
+                          >
+                            <span>🏌️</span>
+                            골프포함 (매출 · 객실투숙객)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setGolfViewMode('EX_GOLF')}
+                            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                              golfViewMode === 'EX_GOLF'
+                                ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                                : 'text-[#5A6B63] hover:text-[#1B382E]'
+                            }`}
+                          >
+                            <TreePine className="w-3.5 h-3.5 text-[#B59269]" />
+                            골프제외 (매출 · 객실투숙객)
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                   <div className="overflow-x-auto">

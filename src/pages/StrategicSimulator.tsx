@@ -282,7 +282,7 @@ export default function StrategicSimulator() {
     : input.targetGrowthRate;
 
   const selectedMonthLabel = input.selectedMonth === 'ANNUAL' ? '연간 종합 (1~12월)' : `${input.selectedMonth}월`;
-  const periodDays = apiData?.summary?.daysCount || (input.selectedMonth === 'ANNUAL' ? 365 : new Date(input.targetYear, Number(input.selectedMonth), 0).getDate());
+  const periodDays = apiData?.summary?.daysCount ?? null;
 
   // Fetch Business Plan from Backend API
   useEffect(() => {
@@ -294,10 +294,11 @@ export default function StrategicSimulator() {
         const effectiveGrowthRate = isYearly
           ? input.targetGrowthRate
           : (monthlyGrowthRates[input.selectedMonth as number] ?? input.targetGrowthRate);
+        const multipliersParam = encodeURIComponent(JSON.stringify(strategicMultipliers));
 
         const url = isYearly
-          ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}`
-          : `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${effectiveGrowthRate}&includeGolf=${input.includeGolf}`;
+          ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}`
+          : `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${effectiveGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}`;
 
         const res = await secureFetcher(url) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
 
@@ -317,7 +318,7 @@ export default function StrategicSimulator() {
           setOpenParts(initialOpenParts);
         }
       } catch (err: any) {
-        console.warn('Business Plan API fetch warning, fallback to engine:', err);
+        console.warn('Business Plan API fetch warning:', err);
         if (isMounted) {
           setFetchError(err?.details || err?.message || '현재 데이터베이스 서버가 중지(STOPPED) 상태이거나 네트워크 점검 중입니다.');
         }
@@ -326,7 +327,7 @@ export default function StrategicSimulator() {
 
     fetchBusinessPlan();
     return () => { isMounted = false; };
-  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf, retryTrigger, monthlyGrowthRates]);
+  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf, retryTrigger, monthlyGrowthRates, strategicMultipliers]);
 
   // Server Simulator Integration: POST /api/v6/simulator/strategic-forecast
   const [serverForecastData, setServerForecastData] = useState<StrategicForecastResponse | null>(null);
@@ -345,6 +346,7 @@ export default function StrategicSimulator() {
             selectedYear: input.targetYear,
             customCapacities: {},
             monthMultipliers: monthlyGrowthRates,
+            strategicMultipliers,
             selectedMonth: input.selectedMonth,
             dayFilter: 'ALL',
             simMode: 'BALANCED',
@@ -373,24 +375,21 @@ export default function StrategicSimulator() {
 
     runStrategicForecast();
     return () => { isMounted = false; };
-  }, [input.targetYear, input.selectedMonth, input.targetTotalRevenue, monthlyGrowthRates, retryTrigger]);
+  }, [input.targetYear, input.selectedMonth, input.targetTotalRevenue, monthlyGrowthRates, strategicMultipliers, retryTrigger]);
 
-  // Fetch All 12 Months Matrix Data for Business Plan (Fast parallel fetch of base actuals)
+  // Fetch All 12 Months Matrix Data via Single Backend Request (Zero Multi-Call Loop)
   useEffect(() => {
     let isMounted = true;
-    const fetch12Months = async () => {
+    const fetch12MonthsMatrix = async () => {
       setIsLoadingMatrix(true);
       setFetchError(null);
       try {
-        const promises = Array.from({ length: 12 }, (_, i) => {
-          const m = i + 1;
-          const url = `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${m}&growthRate=0&includeGolf=${input.includeGolf}`;
-          return secureFetcher(url) as Promise<{ success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } }>;
-        });
-
-        const results = await Promise.all(promises);
+        const multipliersParam = encodeURIComponent(JSON.stringify(strategicMultipliers));
+        const monthlyRatesParam = encodeURIComponent(JSON.stringify(monthlyGrowthRates));
+        const url = `${API_BASE}/api/v6/report/business-plan?mode=MONTHLY_MATRIX&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}&monthlyGrowthRates=${monthlyRatesParam}`;
+        const res = await secureFetcher(url) as any;
         if (!isMounted) return;
-        setRaw12MonthsResults(results);
+        setRaw12MonthsResults(res?.data ?? res ?? null);
       } catch (err: any) {
         console.warn('Failed to fetch 12-month matrix:', err);
         if (isMounted) {
@@ -401,154 +400,31 @@ export default function StrategicSimulator() {
       }
     };
 
-    fetch12Months();
+    fetch12MonthsMatrix();
     return () => { isMounted = false; };
-  }, [input.targetYear, input.includeGolf, retryTrigger]);
+  }, [input.targetYear, input.targetGrowthRate, input.includeGolf, strategicMultipliers, monthlyGrowthRates, retryTrigger]);
 
-  // Compute Rebalanced 12-Month Matrix Data from raw12MonthsResults + rebalancedMonthlyTargets + strategicMultipliers (Zero-Variance Largest Remainder)
+  // 1:1 Passthrough of Backend 12-Month Matrix Data (Zero Client-Side Rebalancing Arithmetic)
   const monthlyMatrixData: MonthlyMatrixFacility[] = useMemo(() => {
-    if (!raw12MonthsResults || raw12MonthsResults.length < 12) return [];
+    const matrixSource = (raw12MonthsResults as any)?.monthlyMatrix
+      ?? (raw12MonthsResults as any)?.facilities
+      ?? (apiData as any)?.monthlyMatrix
+      ?? (serverForecastData as any)?.monthlyMatrix;
 
-    const facilityMap = new Map<string, MonthlyMatrixFacility>();
+    if (!Array.isArray(matrixSource)) return [];
 
-    for (let m = 1; m <= 12; m++) {
-      const res = raw12MonthsResults[m - 1];
-      const cats: ApiCategory[] = (res?.data?.categories || []).filter((c: ApiCategory) =>
-        c.categoryCode !== 'PARKING' &&
-        c.categoryCode !== 'GOODS' &&
-        c.categoryCode !== 'OTHER' &&
-        (input.includeGolf || c.categoryCode !== 'GOLF')
-      );
-
-      const monthBaseTotal = cats.reduce((sum: number, c: ApiCategory) => sum + (c.totalActual2025 || 0), 0);
-      const effectiveRate = monthlyGrowthRates[m] ?? input.targetGrowthRate;
-      const monthTargetTotal = (monthlyGrowthRates[m] !== undefined)
-        ? (monthBaseTotal > 0 ? Math.round(monthBaseTotal * (1 + effectiveRate / 100)) : 0)
-        : ((rebalancedMonthlyTargets[m] !== undefined && rebalancedMonthlyTargets[m] > 0)
-            ? rebalancedMonthlyTargets[m]
-            : (monthBaseTotal > 0 ? Math.round(monthBaseTotal * (1 + effectiveRate / 100)) : 0));
-
-      if (monthBaseTotal === 0 || monthTargetTotal === 0) {
-        cats.forEach((cat: ApiCategory) => {
-          const divName = getCategoryDisplayName(cat);
-          (cat.facilities || []).forEach((fac: ApiFacility) => {
-            const key = `${cat.categoryCode}___${fac.facilityName}`;
-            if (!facilityMap.has(key)) {
-              facilityMap.set(key, {
-                no: 0,
-                divisionName: divName,
-                categoryCode: cat.categoryCode,
-                categoryName: cat.categoryName,
-                partName: (fac.partName || fac.teamName || '일반').trim(),
-                facilityName: fac.facilityName,
-                weight: 0,
-                months: {},
-                yearTotal: 0
-              });
-            }
-            const entry = facilityMap.get(key)!;
-            entry.months[m] = 0;
-          });
-        });
-        continue;
-      }
-
-      // 1. Calculate raw weighted scores with strategicMultipliers (β_f)
-      const scoredCats = cats.map((cat: ApiCategory) => {
-        const catCode = cat.categoryCode.toUpperCase();
-        const multiplier = strategicMultipliers[catCode] ?? 1.0;
-        const baseWeight = (cat.totalActual2025 || 0) / monthBaseTotal;
-        const strategicWeightRaw = baseWeight * multiplier;
-        return {
-          ...cat,
-          catCode,
-          multiplier,
-          baseWeight,
-          strategicWeightRaw
-        };
-      });
-
-      const sumStrategicRawWeights = scoredCats.reduce((sum: number, c) => sum + c.strategicWeightRaw, 0) || 1;
-
-      // 2. Normalized Zero-Sum Weights & Largest Remainder Target Allocation
-      const rebalancedCats = scoredCats.map(cat => {
-        const normalizedWeight = cat.strategicWeightRaw / sumStrategicRawWeights;
-        const targetRev = Math.round(monthTargetTotal * normalizedWeight);
-        const catActual = cat.totalActual2025 || 0;
-
-        const facilitiesWithTarget = (cat.facilities || []).map((fac: ApiFacility) => {
-          const facShare = catActual > 0 ? ((fac.actual2025 || 0) / catActual) : 0;
-          const facTarget = Math.round(targetRev * facShare);
-          return {
-            ...fac,
-            facTarget
-          };
-        });
-
-        // Facility Largest Remainder within category
-        const curFacSum = facilitiesWithTarget.reduce((s: number, f) => s + f.facTarget, 0);
-        const facDiff = targetRev - curFacSum;
-        if (facDiff !== 0 && facilitiesWithTarget.length > 0) {
-          const sorted = [...facilitiesWithTarget].sort((a, b) => b.facTarget - a.facTarget);
-          sorted[0].facTarget += facDiff;
-        }
-
-        return {
-          ...cat,
-          totalTarget2026: targetRev,
-          facilities: facilitiesWithTarget
-        };
-      });
-
-      // Division Largest Remainder for 100% Zero-Variance with monthTargetTotal
-      const curDivSum = rebalancedCats.reduce((s: number, c) => s + c.totalTarget2026, 0);
-      const divDiff = monthTargetTotal - curDivSum;
-      if (divDiff !== 0 && rebalancedCats.length > 0) {
-        const sortedDivs = [...rebalancedCats].sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
-        sortedDivs[0].totalTarget2026 += divDiff;
-        if (sortedDivs[0].facilities && sortedDivs[0].facilities.length > 0) {
-          sortedDivs[0].facilities[0].facTarget += divDiff;
-        }
-      }
-
-      // 3. Map into facilityMap
-      rebalancedCats.forEach(cat => {
-        const divName = getCategoryDisplayName(cat);
-        (cat.facilities || []).forEach(fac => {
-          const key = `${cat.categoryCode}___${fac.facilityName}`;
-          if (!facilityMap.has(key)) {
-            facilityMap.set(key, {
-              no: 0,
-              divisionName: divName,
-              categoryCode: cat.categoryCode,
-              categoryName: cat.categoryName,
-              partName: (fac.partName || fac.teamName || '일반').trim(),
-              facilityName: fac.facilityName,
-              weight: 0,
-              months: {},
-              yearTotal: 0
-            });
-          }
-          const entry = facilityMap.get(key)!;
-          const facTargetKRW = fac.facTarget || 0;
-          entry.months[m] = facTargetKRW;
-          entry.yearTotal += facTargetKRW;
-        });
-      });
-    }
-
-    const list = Array.from(facilityMap.values());
-    const grandYearSum = list.reduce((s, f) => s + f.yearTotal, 0);
-
-    // Sort by yearTotal descending
-    list.sort((a, b) => b.yearTotal - a.yearTotal);
-    list.forEach((item, idx) => {
-      item.no = idx + 1;
-      item.weight = grandYearSum > 0 ? Number(((item.yearTotal / grandYearSum) * 100).toFixed(2)) : 0;
-    });
-
-    return list;
-  }, [raw12MonthsResults, rebalancedMonthlyTargets, strategicMultipliers, input.targetGrowthRate, input.includeGolf, monthlyGrowthRates]);
+    return matrixSource.map((item: any, idx: number) => ({
+      no: Number(item.no ?? idx + 1),
+      divisionName: item.divisionName || item.teamName || item.categoryName || '-',
+      categoryCode: item.categoryCode || '-',
+      categoryName: item.categoryName || '-',
+      partName: (item.partName || item.teamName || '일반').trim(),
+      facilityName: item.facilityName || '-',
+      weight: Number(item.weight ?? 0),
+      months: item.months || {},
+      yearTotal: Number(item.yearTotal ?? 0)
+    }));
+  }, [raw12MonthsResults, apiData, serverForecastData, rebalancedMonthlyTargets]);
 
   // Feature 4: Baseline Engine directly from Backend API (0-Variance)
   const wmaBaselineData = useMemo(() => {
@@ -557,114 +433,33 @@ export default function StrategicSimulator() {
       activeBaselineRevenue: baselineRevenue,
       wmaTotalRevenue: baselineRevenue,
       singleYearRevenue: baselineRevenue,
-      smoothingDelta: 0,
-      smoothingRate: 0
+      smoothingDelta: Number((apiData?.summary as any)?.smoothingDelta ?? 0),
+      smoothingRate: Number((apiData?.summary as any)?.smoothingRate ?? 0)
     };
   }, [apiData]);
 
-  // Base raw categories from API
+  // Base raw categories from API (1:1 Passthrough)
   const rawCategories: ApiCategory[] = useMemo(() => {
-    const list: ApiCategory[] = (apiData?.categories && apiData.categories.length > 0)
-      ? apiData.categories
-      : [];
-
-    // 공식 제외 카테고리 필터링 (주차, 굿즈, 기타)
-    return list.filter(c => 
-      c.categoryCode !== 'PARKING' && 
-      c.categoryCode !== 'GOODS' && 
-      c.categoryCode !== 'OTHER'
-    );
+    return Array.isArray(apiData?.categories) ? apiData.categories : [];
   }, [apiData]);
 
-  // Grand totals
-  const rawGrandTotal2025 = apiData?.summary?.grandTotal2025 ?? 0;
-  const rawGrandTarget2026 = (apiData?.summary?.grandTarget2026 && apiData.summary.grandTarget2026 > 0)
-    ? apiData.summary.grandTarget2026
-    : Math.round(rawGrandTotal2025 * (1 + input.targetGrowthRate / 100));
+  // Grand totals from Backend Summary SSOT (Zero Client-Side Multiplication Fallback)
+  const rawGrandTarget2026 = apiData?.summary?.grandTarget2026 ?? 0;
 
-  // Feature 1: Strategic Multiplier Zero-Sum Rebalancing Algorithm (w'_f = (w_f * β_f) / Σ(w_j * β_j))
+  // 1:1 Passthrough of Categories from Backend API
   const effectiveCategories: ApiCategory[] = useMemo(() => {
-    let sourceCats = rawCategories;
     if (!input.includeGolf) {
-      sourceCats = rawCategories.filter(c => c.categoryCode !== 'GOLF');
+      return rawCategories.filter(c => c.categoryCode !== 'GOLF');
     }
-
-    const golfCategory = rawCategories.find(c => c.categoryCode === 'GOLF');
-    const golfActual2025 = golfCategory ? golfCategory.totalActual2025 : 0;
-    const totalBaseRev = input.includeGolf ? rawGrandTotal2025 : Math.max(0, rawGrandTotal2025 - golfActual2025);
-    const targetGrandTotal = input.includeGolf ? rawGrandTarget2026 : Math.round(rawGrandTarget2026 * (totalBaseRev / (rawGrandTotal2025 || 1)));
-
-    // 1. Calculate raw weighted scores with β_f
-    const scoredCats = sourceCats.map(cat => {
-      const catCode = cat.categoryCode.toUpperCase();
-      const multiplier = strategicMultipliers[catCode] ?? 1.0;
-
-      const baseWeight = (cat.totalActual2025 / totalBaseRev);
-      const strategicWeightRaw = baseWeight * multiplier;
-
-      return {
-        ...cat,
-        multiplier,
-        baseWeight,
-        strategicWeightRaw
-      };
-    });
-
-    const sumStrategicRawWeights = scoredCats.reduce((sum, c) => sum + c.strategicWeightRaw, 0) || 1;
-
-    // 2. Normalized Zero-Sum Weights & Largest Remainder Target Allocation
-    const rebalancedCats = scoredCats.map(cat => {
-      const normalizedWeight = cat.strategicWeightRaw / sumStrategicRawWeights;
-      const targetRev = Math.round(targetGrandTotal * normalizedWeight);
-
-      const facilitiesWithTarget: ApiFacility[] = (cat.facilities || []).map((fac) => {
-        const facShare = cat.totalActual2025 > 0 ? (fac.actual2025 / cat.totalActual2025) : 0;
-        const facTarget = Math.round(targetRev * facShare);
-
-        return {
-          ...fac,
-          weight: Number((normalizedWeight * facShare * 100).toFixed(2)),
-          target2026: facTarget
-        };
-      });
-
-      // Facility Largest Remainder within category
-      const curFacSum = facilitiesWithTarget.reduce((s, f) => s + f.target2026, 0);
-      const facDiff = targetRev - curFacSum;
-      if (facDiff !== 0 && facilitiesWithTarget.length > 0) {
-        const sorted = [...facilitiesWithTarget].sort((a, b) => b.target2026 - a.target2026);
-        sorted[0].target2026 += facDiff;
-      }
-
-      return {
-        ...cat,
-        totalWeight: Number((normalizedWeight * 100).toFixed(2)),
-        totalTarget2026: targetRev,
-        facilities: facilitiesWithTarget
-      };
-    });
-
-    // Division Largest Remainder for 100% Zero-Variance with Grand Total
-    const curDivSum = rebalancedCats.reduce((s, c) => s + c.totalTarget2026, 0);
-    const divDiff = targetGrandTotal - curDivSum;
-    if (divDiff !== 0 && rebalancedCats.length > 0) {
-      const sortedDivs = [...rebalancedCats].sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
-      sortedDivs[0].totalTarget2026 += divDiff;
-      if (sortedDivs[0].facilities && sortedDivs[0].facilities.length > 0) {
-        sortedDivs[0].facilities[0].target2026 += divDiff;
-      }
-    }
-
-    return rebalancedCats;
-  }, [rawCategories, input.includeGolf, rawGrandTarget2026, rawGrandTotal2025, strategicMultipliers]);
+    return rawCategories;
+  }, [rawCategories, input.includeGolf]);
 
   const grandTargetTotal = useMemo(() => {
     return rawGrandTarget2026;
   }, [rawGrandTarget2026]);
 
-  // 100% SSOT Real Actual Revenue & Achievement Rate Calculation (Zero Fake Numbers)
+  // 100% SSOT Real Actual Revenue & Achievement Rate (Zero Fake Numbers)
   const actualExecutionStats = useMemo(() => {
-    // If backend API provided actuals in summary
     if (apiData?.summary?.grandActual2026 !== undefined && apiData?.summary?.grandActual2026 > 0) {
       const act = apiData.summary.grandActual2026;
       const rate = Number(apiData.summary.overallAchievementRate ?? 0);
@@ -672,7 +467,7 @@ export default function StrategicSimulator() {
         revenue: act,
         rate,
         displayRate: `${rate}%`,
-        statusText: `${input.targetYear}년 ${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ${(act / 100000000).toFixed(2)}억원 (달성률 ${rate}%)`,
+        statusText: `${input.targetYear}년 ${input.selectedMonth === 'ANNUAL' ? '연간 누적' : `${input.selectedMonth}월`} 실측 실적: ${ act.toLocaleString() }원 (달성률 ${rate}%)`,
         isUpcoming: false
       };
     }
@@ -687,7 +482,7 @@ export default function StrategicSimulator() {
     };
   }, [input.selectedMonth, input.targetYear, apiData]);
 
-  // Group Category Facilities into 2-Depth Part Groups (백엔드 parts 사전 집계 우선 바인딩)
+  // Group Category Facilities into 2-Depth Part Groups (백엔드 parts 사전 집계 1:1 바인딩)
   const getCategoryParts = useMemo(() => {
     return (cat: ApiCategory): ApiPartGroup[] => {
       const backendParts = cat.parts;
@@ -695,9 +490,9 @@ export default function StrategicSimulator() {
         return backendParts.map((p: any) => {
           const rawPart = String(p.partName || p.teamName || '일반').trim();
           const partKey = `${cat.categoryCode}_${rawPart}`;
-          const matchedFacilities = (cat.facilities || [])
-            .filter(f => (f.partName || f.teamName || '일반').trim() === rawPart)
-            .map((fac, idx) => ({ ...fac, no: idx + 1 }));
+          const matchedFacilities = Array.isArray(p.facilities)
+            ? p.facilities
+            : (cat.facilities || []).filter(f => (f.partName || f.teamName || '일반').trim() === rawPart);
           return {
             partKey,
             partName: rawPart,
@@ -709,34 +504,9 @@ export default function StrategicSimulator() {
             achievementRate: Number(p.achievementRate ?? 0),
             facilities: matchedFacilities
           };
-        }).sort((a: ApiPartGroup, b: ApiPartGroup) => b.totalTarget2026 - a.totalTarget2026);
-      }
-
-      const map: Record<string, ApiPartGroup> = {};
-      (cat.facilities || []).forEach((fac) => {
-        const rawPart = (fac.partName || fac.teamName || '일반').trim();
-        const partKey = `${cat.categoryCode}_${rawPart}`;
-        if (!map[partKey]) {
-          map[partKey] = {
-            partKey,
-            partName: rawPart,
-            facilityCount: 0,
-            totalWeight: 0,
-            totalActual2025: 0,
-            totalTarget2026: 0,
-            totalActual2026: 0,
-            achievementRate: 0,
-            facilities: []
-          };
-        }
-        map[partKey].facilities.push({
-          ...fac,
-          no: map[partKey].facilities.length + 1
         });
-        map[partKey].facilityCount = map[partKey].facilities.length;
-      });
-
-      return Object.values(map).sort((a, b) => b.totalTarget2026 - a.totalTarget2026);
+      }
+      return [];
     };
   }, []);
 
@@ -774,23 +544,8 @@ export default function StrategicSimulator() {
         code: c.categoryCode,
         name: getCategoryDisplayName(c),
         icon: getCategoryIcon(c.categoryName, c.categoryCode),
-        count: c.facilities?.length || 0
+        count: Number(c.facilityCount ?? c.facilities?.length ?? 0)
       }));
-    }
-    if (monthlyMatrixData && monthlyMatrixData.length > 0) {
-      const catMap = new Map<string, { code: string; name: string; icon: string; count: number }>();
-      monthlyMatrixData.forEach(f => {
-        if (!catMap.has(f.categoryCode)) {
-          catMap.set(f.categoryCode, {
-            code: f.categoryCode,
-            name: f.divisionName || f.categoryName,
-            icon: getCategoryIcon(f.categoryName, f.categoryCode),
-            count: 0
-          });
-        }
-        catMap.get(f.categoryCode)!.count += 1;
-      });
-      return Array.from(catMap.values());
     }
     return [
       { code: 'GOLF', name: '골프사업본부', icon: '⛳', count: 0 },
@@ -800,9 +555,9 @@ export default function StrategicSimulator() {
       { code: 'MOTO', name: '모토아레나', icon: '🏎️', count: 0 },
       { code: 'BANQUET', name: '세일즈본부', icon: '🏛️', count: 0 }
     ];
-  }, [effectiveCategories, monthlyMatrixData]);
+  }, [effectiveCategories]);
 
-  // Flat business plan facility list with computed simulator target metrics
+  // Flat business plan facility list from Backend API (Zero Client-Side Subtraction/Division)
   const flatBusinessPlanFacilities = useMemo(() => {
     const list: Array<{
       no: number;
@@ -814,38 +569,28 @@ export default function StrategicSimulator() {
       weight: number;
       baseActual: number;
       targetRevenue: number;
-      diff: number;
-      growthRate: number;
+      diff: number | null;
+      growthRate: number | null;
       strategyBadge: string;
     }> = [];
 
-    let index = 1;
     filteredCategories.forEach(cat => {
       const divName = getCategoryDisplayName(cat);
-      (cat.facilities || []).forEach(fac => {
-        const diff = fac.target2026 - fac.actual2025;
-        const growth = fac.actual2025 > 0 ? Number(((diff / fac.actual2025) * 100).toFixed(1)) : 0;
-        let badge = '안정 운영';
-        if (fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM') {
-          badge = 'ADR 레버리지 권장';
-        } else if (fac.weight >= 10 && input.targetGrowthRate >= 15) {
-          badge = '핵심 볼륨 견인';
-        } else if (diff > 0) {
-          badge = '매출 확대';
-        } else if (diff < 0) {
-          badge = '비용/수익 방어';
-        }
+      (cat.facilities || []).forEach((fac: any) => {
+        const diff = fac.diff !== undefined ? Number(fac.diff) : (fac.targetDiff !== undefined ? Number(fac.targetDiff) : null);
+        const growth = fac.growthRate !== undefined ? Number(fac.growthRate) : (fac.targetGrowthRate !== undefined ? Number(fac.targetGrowthRate) : null);
+        const badge = fac.strategyBadge || (fac.categoryCode === 'ROOM' ? 'ADR 레버리지 권장' : '안정 운영');
 
         list.push({
-          no: index++,
+          no: Number(fac.no ?? 0),
           divisionName: divName,
           categoryCode: fac.categoryCode,
           categoryName: fac.categoryName || cat.categoryName,
           partName: (fac.partName || fac.teamName || '일반').trim(),
           facilityName: fac.facilityName,
-          weight: fac.weight,
-          baseActual: fac.actual2025,
-          targetRevenue: fac.target2026,
+          weight: Number(fac.weight ?? 0),
+          baseActual: Number(fac.actual2025 ?? 0),
+          targetRevenue: Number(fac.target2026 ?? 0),
           diff,
           growthRate: growth,
           strategyBadge: badge
@@ -854,26 +599,32 @@ export default function StrategicSimulator() {
     });
 
     return list;
-  }, [filteredCategories, input.targetGrowthRate]);
+  }, [filteredCategories]);
 
-  // Business plan totals for current filter
+  // Business plan totals bound 1:1 from Backend Summary / Category Totals (Zero Loop Summation)
   const businessPlanTotals = useMemo(() => {
-    let baseActualSum = 0;
-    let targetRevenueSum = 0;
-    flatBusinessPlanFacilities.forEach(f => {
-      baseActualSum += f.baseActual;
-      targetRevenueSum += f.targetRevenue;
-    });
-    const diffSum = targetRevenueSum - baseActualSum;
-    const growthRateSum = baseActualSum > 0 ? Number(((diffSum / baseActualSum) * 100).toFixed(1)) : 0;
+    if (selectedCategoryFilter !== 'ALL') {
+      const selectedCat = effectiveCategories.find(
+        c => c.categoryCode === selectedCategoryFilter || c.categoryName === selectedCategoryFilter
+      ) as any;
+      return {
+        facilityCount: Number(selectedCat?.facilityCount ?? flatBusinessPlanFacilities.length),
+        baseActualSum: Number(selectedCat?.totalActual2025 ?? 0),
+        targetRevenueSum: Number(selectedCat?.totalTarget2026 ?? 0),
+        diffSum: selectedCat?.totalDiff !== undefined ? Number(selectedCat.totalDiff) : null,
+        growthRateSum: selectedCat?.growthRate !== undefined ? Number(selectedCat.growthRate) : null
+      };
+    }
+
+    const sum = apiData?.summary as any;
     return {
-      facilityCount: flatBusinessPlanFacilities.length,
-      baseActualSum,
-      targetRevenueSum,
-      diffSum,
-      growthRateSum
+      facilityCount: Number(sum?.totalFacilityCount ?? flatBusinessPlanFacilities.length),
+      baseActualSum: Number(sum?.grandTotal2025 ?? 0),
+      targetRevenueSum: Number(sum?.grandTarget2026 ?? 0),
+      diffSum: sum?.grandDiff2026 !== undefined ? Number(sum.grandDiff2026) : null,
+      growthRateSum: sum?.growthRateTarget !== undefined ? Number(sum.growthRateTarget) : null
     };
-  }, [flatBusinessPlanFacilities]);
+  }, [selectedCategoryFilter, effectiveCategories, apiData, flatBusinessPlanFacilities.length]);
 
   // Filtered facilities for 12-month matrix view
   const filteredMatrixFacilities = useMemo(() => {
@@ -885,35 +636,21 @@ export default function StrategicSimulator() {
     );
   }, [monthlyMatrixData, selectedCategoryFilter]);
 
-  // Monthly totals across 12 months for matrix view
+  // Monthly totals across 12 months bound 1:1 from Backend Matrix Summary (Zero Loop Summation)
   const matrixMonthlyTotals = useMemo(() => {
-    const monthSums: Record<number, number> = {};
-    for (let m = 1; m <= 12; m++) monthSums[m] = 0;
-    let grandYearTotal = 0;
-
-    filteredMatrixFacilities.forEach(f => {
-      for (let m = 1; m <= 12; m++) {
-        monthSums[m] += (f.months[m] || 0);
-      }
-      grandYearTotal += f.yearTotal;
-    });
-
-    let peakMonth = 1;
-    let peakVal = 0;
-    for (let m = 1; m <= 12; m++) {
-      if (monthSums[m] > peakVal) {
-        peakVal = monthSums[m];
-        peakMonth = m;
-      }
-    }
+    const backendMatrixTotals = (raw12MonthsResults as any)?.matrixMonthlyTotals
+      ?? (apiData?.summary as any)?.matrixMonthlyTotals
+      ?? (serverForecastData as any)?.matrixMonthlyTotals;
 
     return {
-      monthSums,
-      grandYearTotal,
-      peakMonth,
-      peakVal
+      monthSums: (backendMatrixTotals?.monthSums || {}) as Record<number, number>,
+      grandYearTotal: Number(backendMatrixTotals?.grandYearTotal ?? apiData?.summary?.grandTarget2026 ?? 0),
+      monthlyAvg: backendMatrixTotals?.monthlyAvg !== undefined ? Number(backendMatrixTotals.monthlyAvg) : null,
+      dailyAvg: backendMatrixTotals?.dailyAvg !== undefined ? Number(backendMatrixTotals.dailyAvg) : (apiData?.summary?.dailyTargetRevenue ?? null),
+      peakMonth: backendMatrixTotals?.peakMonth ?? null,
+      peakVal: Number(backendMatrixTotals?.peakVal ?? 0)
     };
-  }, [filteredMatrixFacilities]);
+  }, [raw12MonthsResults, apiData, serverForecastData]);
 
   // Export Business Plan to authentic multi-sheet Excel (.xlsx) using SheetJS
   const handleExportExcel = () => {
@@ -1033,8 +770,8 @@ export default function StrategicSimulator() {
           f.weight,
           f.baseActual,
           f.targetRevenue,
-          f.diff,
-          `${f.growthRate > 0 ? '+' : ''}${f.growthRate}%`,
+          f.diff ?? '-',
+          f.growthRate !== null ? `${f.growthRate > 0 ? '+' : ''}${f.growthRate}%` : '-',
           f.strategyBadge
         ]);
       });
@@ -1047,8 +784,8 @@ export default function StrategicSimulator() {
         100.0,
         businessPlanTotals.baseActualSum,
         businessPlanTotals.targetRevenueSum,
-        businessPlanTotals.diffSum,
-        `${businessPlanTotals.growthRateSum > 0 ? '+' : ''}${businessPlanTotals.growthRateSum}%`,
+        businessPlanTotals.diffSum ?? '-',
+        businessPlanTotals.growthRateSum !== null ? `${businessPlanTotals.growthRateSum > 0 ? '+' : ''}${businessPlanTotals.growthRateSum}%` : '-',
         '정합성 검증 완료'
       ]);
 
@@ -1681,11 +1418,11 @@ export default function StrategicSimulator() {
                 <div>
                   <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">12개월 월평균 목표</div>
                   <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
-                    {isLoadingMatrix ? '동기화 중...' : filteredMatrixFacilities.length > 0 ? `${formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 12))}원` : '-'}
+                    {isLoadingMatrix ? '동기화 중...' : matrixMonthlyTotals.monthlyAvg !== null ? `${formatCurrency(matrixMonthlyTotals.monthlyAvg)}원` : '-'}
                   </div>
                 </div>
                 <div className="text-[11px] text-[#5A6B63] mt-1">
-                  일평균 약 {filteredMatrixFacilities.length > 0 ? formatCurrency(Math.round(matrixMonthlyTotals.grandYearTotal / 365)) : '0'}원
+                  일평균 {matrixMonthlyTotals.dailyAvg !== null ? `${formatCurrency(matrixMonthlyTotals.dailyAvg)}원` : '-'}
                 </div>
               </div>
 
@@ -1693,7 +1430,7 @@ export default function StrategicSimulator() {
                 <div>
                   <div className="text-[11px] font-bold text-[#B59269] uppercase tracking-tight mb-1">최대 매출 피크 월</div>
                   <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums flex items-baseline gap-1.5">
-                    {isLoadingMatrix ? '...' : filteredMatrixFacilities.length > 0 ? (
+                    {isLoadingMatrix ? '...' : matrixMonthlyTotals.peakMonth !== null ? (
                       <>
                         <span>{matrixMonthlyTotals.peakMonth}월</span>
                         <span className="text-sm font-bold text-[#B59269] font-mono">
@@ -1748,14 +1485,14 @@ export default function StrategicSimulator() {
               </div>
 
               <div className={`p-5 rounded-3xl border shadow-[0_4px_24px_rgba(40,79,66,0.06)] min-h-[116px] flex flex-col justify-between ${
-                businessPlanTotals.diffSum >= 0 ? 'bg-[#E8F2EE]/50 border-[#B4C6C1]/70' : 'bg-[#FDF0ED] border-[#EAC5BD]/70'
+                (businessPlanTotals.diffSum ?? 0) >= 0 ? 'bg-[#E8F2EE]/50 border-[#B4C6C1]/70' : 'bg-[#FDF0ED] border-[#EAC5BD]/70'
               }`}>
                 <div>
                   <div className="text-[11px] font-bold text-[#5A6B63] uppercase tracking-tight mb-1">목표 증감액 & 성장률</div>
                   <div className={`text-2xl font-black font-mono tabular-nums ${
-                    businessPlanTotals.diffSum >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
+                    (businessPlanTotals.diffSum ?? 0) >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                   }`}>
-                    {flatBusinessPlanFacilities.length > 0 ? (
+                    {flatBusinessPlanFacilities.length > 0 && businessPlanTotals.diffSum !== null ? (
                       <>
                         {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}
                         <span className="text-xs font-bold ml-1 font-sans">원</span>
@@ -1764,9 +1501,9 @@ export default function StrategicSimulator() {
                   </div>
                 </div>
                 <div className={`text-xs font-black font-mono mt-1 ${
-                  businessPlanTotals.growthRateSum >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
+                  (businessPlanTotals.growthRateSum ?? 0) >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                 }`}>
-                  {flatBusinessPlanFacilities.length > 0 ? (
+                  {flatBusinessPlanFacilities.length > 0 && businessPlanTotals.growthRateSum !== null ? (
                     <>
                       {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
                       <span className="text-[10px] text-[#5A6B63] font-normal ml-1 font-sans">vs {input.baseYear}년</span>
@@ -2009,14 +1746,14 @@ export default function StrategicSimulator() {
                             {formatCurrency(f.targetRevenue)}원
                           </td>
                           <td className={`py-2.5 px-3 text-right font-mono tabular-nums font-bold whitespace-nowrap ${
-                            f.diff >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
+                            (f.diff ?? 0) >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}>
-                            {f.diff >= 0 ? '+' : ''}{formatCurrency(f.diff)}원
+                            {f.diff !== null ? `${f.diff >= 0 ? '+' : ''}${formatCurrency(f.diff)}원` : '-'}
                           </td>
                           <td className={`py-2.5 px-3 text-right font-mono tabular-nums font-black whitespace-nowrap ${
-                            f.growthRate >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
+                            (f.growthRate ?? 0) >= 0 ? 'text-[#1E523F]' : 'text-[#8B2635]'
                           }`}>
-                            {f.growthRate >= 0 ? '▲ +' : '▼ '}{f.growthRate}%
+                            {f.growthRate !== null ? `${f.growthRate >= 0 ? '▲ +' : '▼ '}${f.growthRate}%` : '-'}
                           </td>
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
@@ -2024,9 +1761,9 @@ export default function StrategicSimulator() {
                                 ? 'bg-[#B59269]/15 text-[#B59269] border border-[#B59269]/30'
                                 : f.strategyBadge === '핵심 볼륨 견인'
                                 ? 'bg-[#284F42]/10 text-[#284F42] border border-[#284F42]/20'
-                                : f.diff > 0
+                                : (f.diff ?? 0) > 0
                                 ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70'
-                                : f.diff < 0
+                                : (f.diff ?? 0) < 0
                                 ? 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]/70'
                                 : 'bg-[#F4F3EE] text-[#5A6B63]'
                             }`}>
@@ -2058,14 +1795,14 @@ export default function StrategicSimulator() {
                           {formatCurrency(businessPlanTotals.targetRevenueSum)}원
                         </td>
                         <td className={`py-3 px-3 text-right font-mono tabular-nums font-black whitespace-nowrap ${
-                          businessPlanTotals.diffSum >= 0 ? 'text-[#5FB878]' : 'text-[#EAC5BD]'
+                          (businessPlanTotals.diffSum ?? 0) >= 0 ? 'text-[#5FB878]' : 'text-[#EAC5BD]'
                         }`}>
-                          {businessPlanTotals.diffSum >= 0 ? '+' : ''}{formatCurrency(businessPlanTotals.diffSum)}원
+                          {businessPlanTotals.diffSum !== null ? `${businessPlanTotals.diffSum >= 0 ? '+' : ''}${formatCurrency(businessPlanTotals.diffSum)}원` : '-'}
                         </td>
                         <td className={`py-3 px-3 text-right font-mono tabular-nums font-black whitespace-nowrap ${
-                          businessPlanTotals.growthRateSum >= 0 ? 'text-[#5FB878]' : 'text-[#EAC5BD]'
+                          (businessPlanTotals.growthRateSum ?? 0) >= 0 ? 'text-[#5FB878]' : 'text-[#EAC5BD]'
                         }`}>
-                          {businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}{businessPlanTotals.growthRateSum}%
+                          {businessPlanTotals.growthRateSum !== null ? `${businessPlanTotals.growthRateSum >= 0 ? '▲ +' : '▼ '}${businessPlanTotals.growthRateSum}%` : '-'}
                         </td>
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
@@ -2386,11 +2123,11 @@ export default function StrategicSimulator() {
               {input.targetYear}년 목표 {input.selectedMonth === 'ANNUAL' ? '연간' : `${input.selectedMonth}월`} 총매출
             </div>
             <div className="text-2xl font-black text-[#1B382E] font-mono tabular-nums">
-              {(grandTargetTotal / 100000000).toFixed(2)} <span className="text-sm font-normal text-[#5A6B63] font-sans">억원</span>
+              {formatCurrency(grandTargetTotal)} <span className="text-sm font-normal text-[#5A6B63] font-sans">원</span>
             </div>
           </div>
           <div className="text-xs text-[#1E523F] font-bold mt-1 font-mono">
-            기준선 대비 +{input.targetGrowthRate}% (+{((grandTargetTotal - wmaBaselineData.activeBaselineRevenue) / 100000000).toFixed(2)}억)
+            기준선 대비 +{input.targetGrowthRate}% ({(apiData?.summary as any)?.grandDiff2026 !== undefined ? `+${formatCurrency((apiData?.summary as any)?.grandDiff2026)}원` : '-'})
           </div>
         </div>
 
@@ -2439,7 +2176,7 @@ export default function StrategicSimulator() {
             <span>{actualExecutionStats.displayRate}</span>
           </div>
           <div className="text-xs text-[#5A6B63] mt-1 truncate" title={actualExecutionStats.statusText}>
-            {actualExecutionStats.revenue > 0 ? `실적: ${(actualExecutionStats.revenue / 100000000).toFixed(2)}억원` : actualExecutionStats.statusText}
+            {actualExecutionStats.revenue > 0 ? `실적: ${formatCurrency(actualExecutionStats.revenue)}원` : actualExecutionStats.statusText}
           </div>
         </div>
 
@@ -2571,7 +2308,7 @@ export default function StrategicSimulator() {
             <PieChart className="w-5 h-5 text-[#284F42]" />
             전략 승수(β_f) 적용 후 부문별 목표 매출 구성비
           </h3>
-          <span className="text-xs font-bold text-[#5A6B63]">전사 목표 총액: {(grandTargetTotal / 100000000).toFixed(2)}억원</span>
+          <span className="text-xs font-bold text-[#5A6B63]">전사 목표 총액: {formatCurrency(grandTargetTotal)}원</span>
         </div>
         <ReactECharts option={categoryPieOptions} style={{ height: '300px', width: '100%' }} />
       </div>
@@ -2628,7 +2365,7 @@ export default function StrategicSimulator() {
             const isCatOpen = openCategories[cat.categoryCode] !== undefined ? openCategories[cat.categoryCode] : true;
             const catIcon = getCategoryIcon(cat.categoryName, cat.categoryCode);
             const partGroups = getCategoryParts(cat);
-            const catDiff = cat.totalTarget2026 - cat.totalActual2025;
+            const catDiff = (cat as any).totalDiff !== undefined ? Number((cat as any).totalDiff) : ((cat as any).diff !== undefined ? Number((cat as any).diff) : null);
 
             return (
               <div 
@@ -2676,9 +2413,9 @@ export default function StrategicSimulator() {
                       {input.targetYear}년 목표: <span className="font-black text-[#1E523F] tabular-nums">{formatCurrency(cat.totalTarget2026)}원</span>
                     </div>
                     <div className={`px-3 py-1 rounded-lg border font-bold tabular-nums whitespace-nowrap ${
-                      catDiff >= 0 ? 'text-[#1E523F] bg-[#E8F2EE] border-[#B4C6C1]/70' : 'text-[#8B2635] bg-[#FDF0ED] border-[#EAC5BD]/70'
+                      (catDiff ?? 0) >= 0 ? 'text-[#1E523F] bg-[#E8F2EE] border-[#B4C6C1]/70' : 'text-[#8B2635] bg-[#FDF0ED] border-[#EAC5BD]/70'
                     }`}>
-                      증감: {catDiff >= 0 ? '+' : ''}{formatCurrency(catDiff)}원
+                      증감: {catDiff !== null ? `${catDiff >= 0 ? '+' : ''}${formatCurrency(catDiff)}원` : '-'}
                     </div>
                   </div>
                 </div>
@@ -2689,7 +2426,7 @@ export default function StrategicSimulator() {
                     {partGroups.map((part) => {
                       const isPartOpen = openParts[part.partKey] !== undefined ? openParts[part.partKey] : true;
                       const partIcon = getPartIcon(part.partName);
-                      const partDiff = part.totalTarget2026 - part.totalActual2025;
+                      const partDiff = (part as any).totalDiff !== undefined ? Number((part as any).totalDiff) : ((part as any).diff !== undefined ? Number((part as any).diff) : null);
 
                       return (
                         <div key={part.partKey} className="bg-[#F4F3EE]/30">
@@ -2722,9 +2459,9 @@ export default function StrategicSimulator() {
                                 목표: <span className="font-black text-[#1E523F] tabular-nums">{formatCurrency(part.totalTarget2026)}원</span>
                               </div>
                               <div className={`px-2.5 py-0.5 rounded-md border font-bold tabular-nums whitespace-nowrap ${
-                                partDiff >= 0 ? 'text-[#1E523F] bg-[#E8F2EE] border-[#B4C6C1]/70' : 'text-[#8B2635] bg-[#FDF0ED] border-[#EAC5BD]/70'
+                                (partDiff ?? 0) >= 0 ? 'text-[#1E523F] bg-[#E8F2EE] border-[#B4C6C1]/70' : 'text-[#8B2635] bg-[#FDF0ED] border-[#EAC5BD]/70'
                               }`}>
-                                증감: {partDiff >= 0 ? '+' : ''}{formatCurrency(partDiff)}원
+                                증감: {partDiff !== null ? `${partDiff >= 0 ? '+' : ''}${formatCurrency(partDiff)}원` : '-'}
                               </div>
                             </div>
                           </div>
@@ -2753,7 +2490,7 @@ export default function StrategicSimulator() {
                                 </thead>
                                 <tbody className="divide-y divide-[#D0C6BB]/30 text-[#1B382E]">
                                   {part.facilities.map((fac) => {
-                                    const facDiff = fac.target2026 - fac.actual2025;
+                                    const facDiff = (fac as any).diff !== undefined ? Number((fac as any).diff) : ((fac as any).targetDiff !== undefined ? Number((fac as any).targetDiff) : null);
                                     return (
                                       <tr key={`${fac.categoryCode}-${fac.facilityName}`} className="hover:bg-[#F4F3EE]/50 transition-colors">
                                         <td className="py-2.5 px-2 text-center font-mono font-bold text-[#5A6B63] whitespace-nowrap">
@@ -2762,7 +2499,7 @@ export default function StrategicSimulator() {
                                         <td className="py-2.5 px-4 font-bold text-[#1B382E] text-xs sm:text-sm whitespace-nowrap">
                                           <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
                                             <span className="whitespace-nowrap">{fac.facilityName}</span>
-                                            {fac.facilityName.includes('콘도') || fac.categoryCode === 'ROOM' ? (
+                                            {fac.categoryCode === 'ROOM' ? (
                                               <span className="inline-flex items-center text-[10px] font-bold text-[#B59269] bg-[#B59269]/15 border border-[#B59269]/30 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0" title="성수기 집중 매출 강도 및 ADR(객단가) 전략을 통해 매출 목표를 달성합니다.">
                                                 ADR 레버리지 권장
                                               </span>
@@ -2783,9 +2520,9 @@ export default function StrategicSimulator() {
                                           {formatCurrency(fac.target2026)}원
                                         </td>
                                         <td className={`py-2.5 px-4 text-right font-mono tabular-nums font-bold whitespace-nowrap ${
-                                          facDiff >= 0 ? 'text-[#1E523F] bg-[#E8F2EE]/20' : 'text-[#8B2635] bg-[#FDF0ED]/40'
+                                          (facDiff ?? 0) >= 0 ? 'text-[#1E523F] bg-[#E8F2EE]/20' : 'text-[#8B2635] bg-[#FDF0ED]/40'
                                         }`}>
-                                          {facDiff >= 0 ? '+' : ''}{formatCurrency(facDiff)}원
+                                          {facDiff !== null ? `${facDiff >= 0 ? '+' : ''}${formatCurrency(facDiff)}원` : '-'}
                                         </td>
                                       </tr>
                                     );

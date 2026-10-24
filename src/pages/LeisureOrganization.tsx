@@ -216,7 +216,7 @@ export default function LeisureOrganization() {
               <span className="text-sm font-bold text-[#5A6B63]">명</span>
             </div>
             <div className="text-xs text-[#5A6B63] mt-2 font-medium whitespace-nowrap">
-              주말/공휴일 피크 투입 인원 (+{(summary.totalWeekendHeadcount - summary.totalWeekdayHeadcount)}명 증원)
+              주말/공휴일 피크 투입 인원 ({(summary as any).weekendExtraHeadcount != null ? `+${(summary as any).weekendExtraHeadcount}` : '-'}명 증원)
             </div>
           </div>
 

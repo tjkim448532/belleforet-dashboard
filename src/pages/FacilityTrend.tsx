@@ -673,17 +673,17 @@ export default function FacilityTrend() {
 
     const rev2026 = annual.revenue2026 ?? annual.tyRevenue ?? 0;
     const rev2025 = annual.revenue2025 ?? annual.lyRevenue ?? 0;
-    const revDiff = annual.yoyRevenueDiff ?? annual.yoyRevDiff ?? annual.revenueDiff ?? (rev2026 - rev2025);
+    const revDiff = annual.yoyRevenueDiff ?? annual.yoyRevDiff ?? annual.revenueDiff ?? null;
     const revPct = annual.yoyRevenuePct ?? annual.yoyRevPct ?? annual.revenueYoyPct ?? annual.revenueGrowthRate ?? 0;
 
     const vis2026 = annual.visitors2026 ?? annual.tyVisitors ?? 0;
     const vis2025 = annual.visitors2025 ?? annual.lyVisitors ?? 0;
-    const visDiff = annual.yoyVisitorsDiff ?? annual.visitorsDiff ?? (vis2026 - vis2025);
+    const visDiff = annual.yoyVisitorsDiff ?? annual.visitorsDiff ?? null;
     const visPct = annual.yoyVisitorsPct ?? annual.visitorsYoyPct ?? annual.visitorsGrowthRate ?? 0;
 
     const trev2026 = annual.trevpar2026 ?? 0;
     const trev2025 = annual.trevpar2025 ?? 0;
-    const trevDiff = annual.yoyTrevparDiff ?? (trev2026 - trev2025);
+    const trevDiff = annual.yoyTrevparDiff ?? null;
     const trevPct = annual.yoyTrevparPct ?? 0;
 
     // ECharts Seasonality Option (선택 영업장 연동)
@@ -806,8 +806,8 @@ export default function FacilityTrend() {
             </div>
             <div className="pt-2 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63] font-financial">
               <span>2025년: {rev2025 > 0 ? `${formatCurrency(rev2025)}원` : '-'}</span>
-              <span className={revDiff >= 0 ? 'text-[#1E523F] font-bold' : 'text-rose-700 font-bold'}>
-                증감 {revDiff >= 0 ? '+' : ''}{formatCurrency(revDiff)}원
+              <span className={revDiff !== null && revDiff >= 0 ? 'text-[#1E523F] font-bold' : 'text-rose-700 font-bold'}>
+                증감 {revDiff !== null ? `${revDiff >= 0 ? '+' : ''}${formatCurrency(revDiff)}원` : '-'}
               </span>
             </div>
           </div>
@@ -833,8 +833,8 @@ export default function FacilityTrend() {
             </div>
             <div className="pt-2 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63] font-financial">
               <span>2025년: {vis2025 > 0 ? `${formatCurrency(vis2025)}명` : '-'}</span>
-              <span className={visDiff >= 0 ? 'text-[#1E523F] font-bold' : 'text-rose-700 font-bold'}>
-                증감 {visDiff >= 0 ? '+' : ''}{formatCurrency(visDiff)}명
+              <span className={visDiff !== null && visDiff >= 0 ? 'text-[#1E523F] font-bold' : 'text-rose-700 font-bold'}>
+                증감 {visDiff !== null ? `${visDiff >= 0 ? '+' : ''}${formatCurrency(visDiff)}명` : '-'}
               </span>
             </div>
           </div>
@@ -859,8 +859,8 @@ export default function FacilityTrend() {
               </div>
               <div className="pt-2 border-t border-[#D0C6BB]/40 flex items-center justify-between text-xs text-[#5A6B63] font-financial">
                 <span>2025년: {trev2025 > 0 ? `${formatCurrency(trev2025)}원` : '-'}</span>
-                <span className={trevDiff >= 0 ? 'text-[#1E523F] font-bold' : 'text-rose-700 font-bold'}>
-                  증감 {trevDiff >= 0 ? '+' : ''}{formatCurrency(trevDiff)}원
+                <span className={trevDiff !== null && trevDiff >= 0 ? 'text-[#1E523F] font-bold' : 'text-rose-700 font-bold'}>
+                  증감 {trevDiff !== null ? `${trevDiff >= 0 ? '+' : ''}${formatCurrency(trevDiff)}원` : '-'}
                 </span>
               </div>
             </div>
@@ -872,7 +872,9 @@ export default function FacilityTrend() {
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl lg:text-3xl font-extrabold font-financial text-[#1B382E]">
-                  {annual.shareRatio !== undefined ? `${((annual.shareRatio || 0) * 100).toFixed(1)}%` : '-'}
+                  {(annual as any).sharePct !== undefined && (annual as any).sharePct !== null
+                    ? `${Number((annual as any).sharePct).toFixed(1)}%`
+                    : '-'}
                 </span>
                 <span className="text-xs font-bold text-[#B59269] bg-[#B59269]/15 px-2 py-0.5 rounded-lg">
                   {annual.categoryName || '지정 영업장'}
@@ -959,12 +961,12 @@ export default function FacilityTrend() {
                   const fm = getFacilityMonth(m);
                   const mRev2026 = fm.revenue2026 ?? fm.tyRevenue ?? 0;
                   const mRev2025 = fm.revenue2025 ?? fm.lyRevenue ?? 0;
-                  const mRevDiff = fm.yoyRevenueDiff ?? fm.yoyRevDiff ?? fm.revenueDiff ?? (mRev2026 - mRev2025);
+                  const mRevDiff = fm.yoyRevenueDiff ?? fm.yoyRevDiff ?? fm.revenueDiff ?? null;
                   const mRevPct = fm.yoyRevenuePct ?? fm.yoyRevPct ?? fm.revenueYoyPct ?? fm.revenueGrowthRate ?? 0;
 
                   const mVis2026 = fm.visitors2026 ?? fm.tyVisitors ?? 0;
                   const mVis2025 = fm.visitors2025 ?? fm.lyVisitors ?? 0;
-                  const mVisDiff = fm.yoyVisitorsDiff ?? fm.visitorsDiff ?? (mVis2026 - mVis2025);
+                  const mVisDiff = fm.yoyVisitorsDiff ?? fm.visitorsDiff ?? null;
                   const mVisPct = fm.yoyVisitorsPct ?? fm.visitorsYoyPct ?? fm.visitorsGrowthRate ?? 0;
 
                   const mTrev2026 = m.trevpar2026 ?? 0;
@@ -982,8 +984,8 @@ export default function FacilityTrend() {
                       <td className="px-4 py-3 text-right text-[#5A6B63]">
                         {mRev2025 > 0 ? `${formatCurrency(mRev2025)}원` : '-'}
                       </td>
-                      <td className={`px-4 py-3 text-right font-bold ${mRevDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-600'}`}>
-                        {mRevDiff !== 0 ? `${mRevDiff > 0 ? '+' : ''}${formatCurrency(mRevDiff)}원` : '-'}
+                      <td className={`px-4 py-3 text-right font-bold ${mRevDiff !== null && mRevDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-600'}`}>
+                        {mRevDiff !== null && mRevDiff !== 0 ? `${mRevDiff > 0 ? '+' : ''}${formatCurrency(mRevDiff)}원` : '-'}
                       </td>
                       <td className={`px-4 py-3 text-right font-extrabold ${mRevPct >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
                         {mRevPct !== 0 ? `${mRevPct > 0 ? '+' : ''}${mRevPct}%` : '-'}
@@ -994,8 +996,8 @@ export default function FacilityTrend() {
                       <td className="px-4 py-3 text-right text-[#5A6B63]">
                         {mVis2025 > 0 ? `${formatCurrency(mVis2025)}명` : '-'}
                       </td>
-                      <td className={`px-4 py-3 text-right font-bold ${mVisDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-600'}`}>
-                        {mVisDiff !== 0 ? `${mVisDiff > 0 ? '+' : ''}${formatCurrency(mVisDiff)}명` : '-'}
+                      <td className={`px-4 py-3 text-right font-bold ${mVisDiff !== null && mVisDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-600'}`}>
+                        {mVisDiff !== null && mVisDiff !== 0 ? `${mVisDiff > 0 ? '+' : ''}${formatCurrency(mVisDiff)}명` : '-'}
                       </td>
                       <td className={`px-4 py-3 text-right font-extrabold ${mVisPct >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
                         {mVisPct !== 0 ? `${mVisPct > 0 ? '+' : ''}${mVisPct}%` : '-'}
@@ -1026,8 +1028,8 @@ export default function FacilityTrend() {
                   <td className="px-4 py-3 text-right text-[#5A6B63]">
                     {rev2025 > 0 ? `${formatCurrency(rev2025)}원` : '-'}
                   </td>
-                  <td className={`px-4 py-3 text-right font-black ${revDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
-                    {revDiff !== 0 ? `${revDiff > 0 ? '+' : ''}${formatCurrency(revDiff)}원` : '-'}
+                  <td className={`px-4 py-3 text-right font-black ${revDiff !== null && revDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
+                    {revDiff !== null && revDiff !== 0 ? `${revDiff > 0 ? '+' : ''}${formatCurrency(revDiff)}원` : '-'}
                   </td>
                   <td className={`px-4 py-3 text-right font-black ${revPct >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
                     {revPct !== 0 ? `${revPct > 0 ? '+' : ''}${revPct}%` : '-'}
@@ -1038,8 +1040,8 @@ export default function FacilityTrend() {
                   <td className="px-4 py-3 text-right text-[#5A6B63]">
                     {vis2025 > 0 ? `${formatCurrency(vis2025)}명` : '-'}
                   </td>
-                  <td className={`px-4 py-3 text-right font-black ${visDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
-                    {visDiff !== 0 ? `${visDiff > 0 ? '+' : ''}${formatCurrency(visDiff)}명` : '-'}
+                  <td className={`px-4 py-3 text-right font-black ${visDiff !== null && visDiff >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
+                    {visDiff !== null && visDiff !== 0 ? `${visDiff > 0 ? '+' : ''}${formatCurrency(visDiff)}명` : '-'}
                   </td>
                   <td className={`px-4 py-3 text-right font-black ${visPct >= 0 ? 'text-[#1E523F]' : 'text-rose-700'}`}>
                     {visPct !== 0 ? `${visPct > 0 ? '+' : ''}${visPct}%` : '-'}

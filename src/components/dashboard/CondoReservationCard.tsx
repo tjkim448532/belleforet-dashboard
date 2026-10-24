@@ -263,9 +263,9 @@ export default function CondoReservationCard({ currentDate }: CondoReservationCa
             </div>
             <div 
               className="text-[11px] text-[#6C7A73] font-medium mt-0.5 truncate"
-              title={isClosedHistory ? '상단 확정 점유율 참조' : `예약 ${resData?.totalRooms ?? 0}실 / 175실`}
+              title={isClosedHistory ? '상단 확정 점유율 참조' : `예약 ${resData?.totalRooms ?? 0}실 / ${resData?.totalCapacity ?? '-'}실`}
             >
-              {isClosedHistory ? '상단 확정 점유율 참조' : `예약 ${resData?.totalRooms ?? 0}실 / 175실`}
+              {isClosedHistory ? '상단 확정 점유율 참조' : `예약 ${resData?.totalRooms ?? 0}실 / ${resData?.totalCapacity ?? '-'}실`}
             </div>
           </div>
 

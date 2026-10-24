@@ -17,13 +17,6 @@ const formatNum = (val: any): string => {
   return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
 };
 
-const shiftYearStr = (dateStr: string, deltaYears: number): string => {
-  if (!dateStr || dateStr.length < 10) return dateStr;
-  const y = parseInt(dateStr.slice(0, 4), 10);
-  if (isNaN(y)) return dateStr;
-  return `${y + deltaYears}${dateStr.slice(4)}`;
-};
-
 export default function Members() {
   const { startDate, endDate, isRange } = useDate();
   const isEffectiveRange = Boolean(isRange && endDate && startDate !== endDate);
@@ -34,7 +27,6 @@ export default function Members() {
 
   // 1. 콘도/객실 회원권 및 요금타입별 실적 (room-rate-sales)
   const [rateRows, setRateRows] = useState<any[]>([]);
-  const [lyRateRows, setLyRateRows] = useState<any[]>([]);
   const [ratePeriodMode, setRatePeriodMode] = useState<'today' | 'mtd' | 'ytd'>('today');
 
   // 2. 골프 분양회원 및 회원 동반 시너지 (golf-channel-intelligence & teetime-analysis-v2)
@@ -63,13 +55,9 @@ export default function Members() {
     setApiError(null);
     try {
       const queryParams = `startDate=${startDate}&endDate=${effectiveEnd}`;
-      const lyStart = shiftYearStr(startDate, -1);
-      const lyEnd = shiftYearStr(effectiveEnd, -1);
-      const lyQueryParams = `startDate=${lyStart}&endDate=${lyEnd}`;
 
-      const [rateRes, lyRateRes, golfIntelRes, golfV2Res, corpRes, onlineRes, quotaLtvRes, dormancyRes] = await Promise.all([
+      const [rateRes, golfIntelRes, golfV2Res, corpRes, onlineRes, quotaLtvRes, dormancyRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`).catch(() => null),
-        secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-intelligence?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`).catch(() => null),
         secureFetcher(`${API_BASE}/api/v6/report/corporate-group-sales?${queryParams}`).catch(() => null),
@@ -80,9 +68,6 @@ export default function Members() {
 
       const parsedRates = rateRes?.data ?? rateRes;
       setRateRows(Array.isArray(parsedRates) ? parsedRates : []);
-
-      const parsedLyRates = lyRateRes?.data ?? lyRateRes;
-      setLyRateRows(Array.isArray(parsedLyRates) ? parsedLyRates : []);
 
       const parsedGolfIntel = golfIntelRes?.data ?? golfIntelRes;
       setGolfIntel(parsedGolfIntel || null);
@@ -131,24 +116,14 @@ export default function Members() {
   }, [startDate, endDate, isRange]);
 
   // --- 1. 콘도 회원권 데이터 추출 (백엔드 완제품 직접 매핑, NO SLICE SUMMATION) ---
-  const findRateRow = (rows: any[], keyword: string) =>
-    rows.find(r => String(r.rateName || r.segmentName || '').includes(keyword)) || null;
-
-  const memberRoomRow = findRateRow(rateRows, '기명/구좌회원');
-  const bearerRoomRow = findRateRow(rateRows, '무기명회원');
+  const memberRoomRow = rateRows.find(r => r.rateCode === 'REGISTERED_MEMBER' || r.rateName === '기명/구좌회원' || r.segmentName === '기명/구좌회원') || null;
+  const bearerRoomRow = rateRows.find(r => r.rateCode === 'BEARER_MEMBER' || r.rateName === '무기명회원' || r.segmentName === '무기명회원') || null;
   const grandTotalRoomRow = rateRows.find(r => r.isGrandTotal || r.rateName === '총합계') || null;
 
   const segmentRateRows = rateRows.filter(r => !r.isGrandTotal && r.rateName !== '총합계');
 
-  const isMemberRateCategory = (name: string): boolean => {
-    return (
-      name.includes('기명') ||
-      name.includes('무기명') ||
-      name.includes('회원') ||
-      name.includes('기업영업') ||
-      name.includes('휴양소') ||
-      name.includes('임직원')
-    );
+  const isMemberRateCategory = (row: any): boolean => {
+    return Boolean(row?.isMemberCategory ?? row?.isMember ?? false);
   };
 
   // --- 2. 골프 분양회원 및 앵커 데이터 추출 ---
@@ -245,7 +220,7 @@ export default function Members() {
           data: roomsData.map((val, idx) => ({
             value: val,
             itemStyle: {
-              color: isMemberRateCategory(labels[idx]) ? '#284F42' : '#D0C6BB',
+              color: isMemberRateCategory(validRows[idx]) ? '#284F42' : '#D0C6BB',
               borderRadius: [8, 8, 0, 0]
             }
           }))
@@ -591,10 +566,9 @@ export default function Members() {
             <tbody className="divide-y divide-[#D0C6BB]/30">
               {segmentRateRows.map((row, idx) => {
                 const rName = String(row.rateName || row.segmentName || '-');
-                const isMember = isMemberRateCategory(rName);
-                const lyMatch = lyRateRows.find(
-                  ly => String(ly.rateName || ly.segmentName || '') === rName
-                );
+                const isMember = isMemberRateCategory(row);
+                const lyRooms = row.todayLyRooms ?? row.lyRoomsSold ?? null;
+                const lyRev = row.todayLyRevenue ?? row.lyTotalRevenue ?? null;
 
                 return (
                   <tr
@@ -627,10 +601,10 @@ export default function Members() {
                       {Number(row.todayAdr || 0) > 0 ? `${formatNum(row.todayAdr)}원` : '-'}
                     </td>
                     <td className="py-3.5 px-4 text-right text-[#5A6B63] whitespace-nowrap">
-                      {lyMatch ? `${formatNum(lyMatch.todayRooms || 0)}실` : '-'}
+                      {lyRooms !== null ? `${formatNum(lyRooms)}실` : '-'}
                     </td>
                     <td className="py-3.5 px-4 text-right text-[#5A6B63] whitespace-nowrap">
-                      {lyMatch ? `${formatNum(lyMatch.todayRevenue || 0)}원` : '-'}
+                      {lyRev !== null ? `${formatNum(lyRev)}원` : '-'}
                     </td>
                     <td className="py-3.5 px-4 text-right font-semibold text-[#1B382E] bg-[#F4F3EE]/40 whitespace-nowrap">
                       {formatNum(row.mtdRooms || 0)}실
@@ -670,16 +644,14 @@ export default function Members() {
                     {formatNum(grandTotalRoomRow.todayAdr || 0)}원
                   </td>
                   <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
-                    {(() => {
-                      const lyGrand = lyRateRows.find(r => r.isGrandTotal || r.rateName === '총합계');
-                      return lyGrand ? `${formatNum(lyGrand.todayRooms || 0)}실` : '-';
-                    })()}
+                    {(grandTotalRoomRow.todayLyRooms ?? grandTotalRoomRow.lyRoomsSold) != null
+                      ? `${formatNum(grandTotalRoomRow.todayLyRooms ?? grandTotalRoomRow.lyRoomsSold)}실`
+                      : '-'}
                   </td>
                   <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
-                    {(() => {
-                      const lyGrand = lyRateRows.find(r => r.isGrandTotal || r.rateName === '총합계');
-                      return lyGrand ? `${formatNum(lyGrand.todayRevenue || 0)}원` : '-';
-                    })()}
+                    {(grandTotalRoomRow.todayLyRevenue ?? grandTotalRoomRow.lyTotalRevenue) != null
+                      ? `${formatNum(grandTotalRoomRow.todayLyRevenue ?? grandTotalRoomRow.lyTotalRevenue)}원`
+                      : '-'}
                   </td>
                   <td className="py-4 px-4 text-right text-white whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.mtdRooms || 0)}실

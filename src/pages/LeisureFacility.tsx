@@ -114,9 +114,7 @@ export default function LeisureFacility() {
         const summary = res?.summary || (res?.data && !Array.isArray(res.data) ? res.data.summary : null);
         const venues = res?.venues || res?.venueBreakdown || (res?.data && !Array.isArray(res.data) ? res.data.venues : null);
         if (summary && Array.isArray(venues)) {
-          // Guard: '벨포레 리조트'(콘도/객실) 오매핑 항목 제외
-          const validVenues = venues.filter((v: any) => v.venueName !== '벨포레 리조트');
-          setChannelData({ summary, venues: validVenues });
+          setChannelData({ summary, venues });
         } else {
           setChannelData(null);
           setChannelError('API 응답에 summary/venues 완제품 데이터가 없습니다.');
@@ -148,12 +146,15 @@ export default function LeisureFacility() {
         (item.categoryCode === 'TICKET' || item.categoryCode === 'MOTO') && !item.isSubtotal
       );
 
-      let ssotTotalSales = 0;
-      if (core.salesByCategory && Array.isArray(core.salesByCategory)) {
-        const ticketCat = core.salesByCategory.find((x: any) => x.categoryCode === 'TICKET');
-        const motoCat = core.salesByCategory.find((x: any) => x.categoryCode === 'MOTO');
-        ssotTotalSales = parseNumber(ticketCat?.todayActual || ticketCat?.totalSales || 0) +
-                         parseNumber(motoCat?.todayActual || motoCat?.totalSales || 0);
+      let ssotTotalSales = parseNumber(
+        (core as any).summary?.totalLeisureSales ??
+        (core as any).summary?.synergySales?.leisureTotal ??
+        channelData?.summary?.totalRevenue ??
+        0
+      );
+      if (ssotTotalSales === 0 && core.salesByCategory && Array.isArray(core.salesByCategory)) {
+        const leisureCat = core.salesByCategory.find((x: any) => x.categoryCode === 'LEISURE' || x.categoryCode === 'TICKET');
+        ssotTotalSales = parseNumber(leisureCat?.todayActual || leisureCat?.totalSales || 0);
       }
 
       const mappedTickets: Array<{ name: string; sales: number; qty: number; depth2: string; sharePct: number | null }> = ticketFacilities
@@ -178,7 +179,6 @@ export default function LeisureFacility() {
     if (channelData?.venues && channelData.venues.length > 0) {
       const grandTotal = parseNumber(channelData.summary?.totalRevenue || 0);
       const mapped = channelData.venues
-        .filter((v: any) => v.venueName !== '벨포레 리조트') // Guard against room/resort mistagging
         .map((v: any) => ({
           name: v.venueName || '기타',
           sales: parseNumber(v.totalRevenue || 0),

@@ -139,24 +139,6 @@ function getDayInfo(dateStr: string) {
   }
 }
 
-// 날짜 범위 배열 생성 함수 (최대 31일 제한)
-function generateDateList(start: string, end: string): string[] {
-  const list: string[] = [];
-  try {
-    const curr = new Date(start + 'T00:00:00');
-    const target = new Date(end + 'T00:00:00');
-    let safetyCounter = 0;
-    while (curr <= target && safetyCounter < 31) {
-      list.push(formatDate(curr));
-      curr.setDate(curr.getDate() + 1);
-      safetyCounter++;
-    }
-  } catch {
-    // fallback
-  }
-  return list;
-}
-
 export default function CondoReservationStatus() {
   // 오늘 날짜 (KST 기준)
   const todayStr = useMemo(() => formatDate(getKSTNow()), []);
@@ -177,8 +159,9 @@ export default function CondoReservationStatus() {
   const [loadingDaily, setLoadingDaily] = useState<boolean>(true);
   const [loadingGroups, setLoadingGroups] = useState<boolean>(true);
 
-  // 일자별 객실 예약 데이터
+  // 일자별 객실 예약 데이터 & 백엔드 구간 요약 완제품 (Zero-Proxy, No Loop Fetch)
   const [dailyData, setDailyData] = useState<DailyReservationSummary[]>([]);
+  const [periodSummary, setPeriodSummary] = useState<any | null>(null);
   
   // 단체 예약 데이터
   const [groupList, setGroupList] = useState<CorporateGroupItem[]>([]);
@@ -241,35 +224,41 @@ export default function CondoReservationStatus() {
   };
 
   // ============================================================================
-  // Data Fetching: 1. 일자별 객실 예약 현황
+  // Data Fetching: 1. 일자별 객실 예약 현황 (단 1회 구간 API 호출 - No Loop Fetch)
   // ============================================================================
   const fetchDailyReservations = async (start: string, end: string) => {
     setLoadingDaily(true);
     try {
-      const dates = generateDateList(start, end);
-      const responses = await Promise.all(
-        dates.map(date =>
-          secureFetcher(`${API_BASE}/api/v6/dashboard/condo-reservations?date=${date}`).catch(() => null)
-        )
-      );
+      const query = start === end ? `date=${start}` : `startDate=${start}&endDate=${end}`;
+      const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/condo-reservations?${query}`).catch(() => null);
 
-      const parsedList: DailyReservationSummary[] = dates.map((date, idx) => {
-        const res = responses[idx];
+      setPeriodSummary(res?.periodSummary || res?.summary || res?.condoSummary || null);
+
+      const rawDailyList: any[] = Array.isArray(res?.dailyReservations)
+        ? res.dailyReservations
+        : Array.isArray(res?.days)
+        ? res.days
+        : (res?.summary || res?.condoSummary)
+        ? [res]
+        : [];
+
+      const parsedList: DailyReservationSummary[] = rawDailyList.map((item: any) => {
+        const date = item.targetDate || item.date || start;
         const dayInfo = getDayInfo(date);
-        const s = res?.summary || res?.condoSummary;
+        const s = item.summary || item.condoSummary || item;
 
-        const byRoomType: RoomTypeStat[] = (res?.byRoomType || [])
+        const byRoomType: RoomTypeStat[] = (item.byRoomType || [])
           .filter((t: any) => t.roomType && t.roomType !== '미지정')
           .map((t: any) => ({
             roomType: t.roomType,
             reservedRooms: parseNum(t.reservedRooms || t.roomsSold || 0),
             capacity: parseNum(t.capacity || t.fixedCapacity || 0),
-            rate: Number(t.rate || 0),
+            rate: Number(t.occupancyRate ?? t.rate ?? 0),
             adr: t.adr ? parseNum(t.adr) : undefined,
             estimatedRevenue: t.estimatedRevenue ? parseNum(t.estimatedRevenue) : undefined,
           }));
 
-        const groups: DayGroupBooking[] = (res?.groups || []).map((g: any) => ({
+        const groups: DayGroupBooking[] = (item.groups || []).map((g: any) => ({
           groupName: g.groupName || '단체',
           channel: g.channel || '단체영업',
           totalRooms: parseNum(g.totalRooms || 0),
@@ -304,6 +293,7 @@ export default function CondoReservationStatus() {
     } catch (err) {
       console.error('Failed to load daily condo reservations:', err);
       setDailyData([]);
+      setPeriodSummary(null);
     } finally {
       setLoadingDaily(false);
     }
@@ -338,61 +328,36 @@ export default function CondoReservationStatus() {
     fetchGroupReservations(startDate, endDate);
   }, [startDate, endDate]);
 
-  // 상단 객실 예약 종합 KPI 산출
+  // 상단 객실 예약 종합 KPI (Zero-Proxy & Fail-Stop: 백엔드 periodSummary 완제품 1:1 바인딩)
   const condoPeriodKPIs = useMemo(() => {
-    if (dailyData.length === 0) {
+    if (!periodSummary) {
       return {
-        totalDays: 0,
-        totalRoomNights: 0,
-        totalCapNights: 0,
-        avgOccupancyRate: 0,
+        totalDays: null as number | null,
+        totalRoomNights: null as number | null,
+        totalCapNights: null as number | null,
+        avgOccupancyRate: null as number | null,
         peakDate: '-',
-        peakRooms: 0,
-        peakOccRate: 0,
-        totalGroupRooms: 0,
-        groupRoomShare: 0,
-        totalEstimatedRevenue: 0,
+        peakRooms: null as number | null,
+        peakOccRate: null as number | null,
+        totalGroupRooms: null as number | null,
+        groupRoomShare: null as number | null,
+        totalEstimatedRevenue: null as number | null,
       };
     }
 
-    let sumRooms = 0;
-    let sumCap = 0;
-    let sumGroupRooms = 0;
-    let sumRevenue = 0;
-    let peakRooms = -1;
-    let peakDate = '-';
-    let peakOccRate = 0;
-
-    dailyData.forEach(d => {
-      sumRooms += d.totalReservedRooms;
-      sumCap += d.totalCapacity;
-      sumGroupRooms += d.totalGroupRooms;
-      if (d.estimatedRoomRevenue) {
-        sumRevenue += d.estimatedRoomRevenue;
-      }
-      if (d.totalReservedRooms > peakRooms) {
-        peakRooms = d.totalReservedRooms;
-        peakDate = d.targetDate;
-        peakOccRate = d.occupancyRate ?? 0;
-      }
-    });
-
-    const avgOcc = sumCap > 0 ? (sumRooms / sumCap) * 100 : 0;
-    const groupShare = sumRooms > 0 ? (sumGroupRooms / sumRooms) * 100 : 0;
-
     return {
-      totalDays: dailyData.length,
-      totalRoomNights: sumRooms,
-      totalCapNights: sumCap,
-      avgOccupancyRate: avgOcc,
-      peakDate,
-      peakRooms: peakRooms >= 0 ? peakRooms : 0,
-      peakOccRate,
-      totalGroupRooms: sumGroupRooms,
-      groupRoomShare: groupShare,
-      totalEstimatedRevenue: sumRevenue,
+      totalDays: periodSummary.totalDays ?? dailyData.length,
+      totalRoomNights: periodSummary.totalRoomNights ?? periodSummary.totalReservedRooms ?? null,
+      totalCapNights: periodSummary.totalCapNights ?? periodSummary.totalCapacity ?? null,
+      avgOccupancyRate: periodSummary.avgOccupancyRate ?? periodSummary.occupancyRate ?? null,
+      peakDate: periodSummary.peakDate || '-',
+      peakRooms: periodSummary.peakRooms ?? periodSummary.totalReservedRooms ?? null,
+      peakOccRate: periodSummary.peakOccRate ?? periodSummary.occupancyRate ?? null,
+      totalGroupRooms: periodSummary.totalGroupRooms ?? null,
+      groupRoomShare: periodSummary.groupRoomShare ?? periodSummary.groupSharePct ?? null,
+      totalEstimatedRevenue: periodSummary.totalEstimatedRevenue ?? periodSummary.estimatedRoomRevenue ?? null,
     };
-  }, [dailyData]);
+  }, [periodSummary, dailyData.length]);
 
   // 단체 리스트 필터링 & 정렬
   const filteredAndSortedGroups = useMemo(() => {
@@ -410,16 +375,16 @@ export default function CondoReservationStatus() {
       );
     }
 
-    // 세그먼트/카테고리 필터
+    // 세그먼트/카테고리 필터 (정규화 코드 기반 1:1 매칭 - 스마트 문자열 추론 배제)
     if (groupSegmentFilter !== 'ALL') {
       if (groupSegmentFilter === 'SEMINAR') {
-        result = result.filter(g => g.category === 'SEMINAR' || g.b2bSegment === 'SEMINAR' || (g.categoryName && g.categoryName.includes('세미나')));
+        result = result.filter(g => g.category === 'SEMINAR' || g.b2bSegment === 'SEMINAR');
       } else if (groupSegmentFilter === 'COMP') {
         result = result.filter(g => (g.settlementStatus === 'COMPLIMENTARY' || g.b2bSegment === 'COMP') && g.category !== 'SEMINAR' && g.settlementStatus !== 'PENDING_POST_BILLING');
       } else if (groupSegmentFilter === 'MICE') {
-        result = result.filter(g => (g.categoryName && g.categoryName.includes('MICE')) || (g.b2bSegmentName && g.b2bSegmentName.includes('MICE')));
+        result = result.filter(g => g.b2bSegment === 'MICE' || g.category === 'MICE');
       } else if (groupSegmentFilter === 'CORP') {
-        result = result.filter(g => g.b2bSegment === 'CORP_FIT' || (g.categoryName && g.categoryName.includes('기업')));
+        result = result.filter(g => g.b2bSegment === 'CORP_FIT' || g.category === 'RESORT_CORP');
       }
     }
 
@@ -615,7 +580,7 @@ export default function CondoReservationStatus() {
           </div>
         </div>
 
-        {/* 기간 요약 KPI 5종 */}
+        {/* 기간 요약 KPI 5종 (Zero-Proxy & Fail-Stop: 백엔드 periodSummary 완제품 직결) */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
           {/* 1. 총 예약 객실수 */}
           <div className="bg-white rounded-xl border border-[#D0C6BB]/75 p-4 shadow-2xs">
@@ -626,11 +591,11 @@ export default function CondoReservationStatus() {
               </span>
             </div>
             <div className="mt-2 text-2xl font-black text-[#1B382E] font-mono">
-              {loadingDaily ? '-' : condoPeriodKPIs.totalRoomNights.toLocaleString()}
+              {loadingDaily || condoPeriodKPIs.totalRoomNights === null ? '-' : condoPeriodKPIs.totalRoomNights.toLocaleString()}
               <span className="text-xs font-bold text-[#5A6B63] ml-1">실</span>
             </div>
             <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
-              가용 {loadingDaily ? '-' : condoPeriodKPIs.totalCapNights.toLocaleString()}실 대비
+              가용 {loadingDaily || condoPeriodKPIs.totalCapNights === null ? '-' : condoPeriodKPIs.totalCapNights.toLocaleString()}실 대비
             </div>
           </div>
 
@@ -643,7 +608,7 @@ export default function CondoReservationStatus() {
               </span>
             </div>
             <div className="mt-2 text-2xl font-black text-[#284F42] font-mono">
-              {loadingDaily ? '-' : `${condoPeriodKPIs.avgOccupancyRate.toFixed(1)}%`}
+              {loadingDaily || condoPeriodKPIs.avgOccupancyRate === null ? '-' : `${Number(condoPeriodKPIs.avgOccupancyRate).toFixed(1)}%`}
             </div>
             <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
               일일 점유율 가중 평균
@@ -659,10 +624,12 @@ export default function CondoReservationStatus() {
               </span>
             </div>
             <div className="mt-2 text-xl font-black text-rose-700 font-mono">
-              {loadingDaily ? '-' : condoPeriodKPIs.peakDate.slice(5)}
+              {loadingDaily || condoPeriodKPIs.peakDate === '-' ? '-' : condoPeriodKPIs.peakDate.slice(5)}
             </div>
             <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
-              {loadingDaily ? '-' : `${condoPeriodKPIs.peakRooms}실 (${condoPeriodKPIs.peakOccRate.toFixed(1)}%)`}
+              {loadingDaily || condoPeriodKPIs.peakRooms === null
+                ? '-'
+                : `${condoPeriodKPIs.peakRooms}실 (${condoPeriodKPIs.peakOccRate !== null ? `${Number(condoPeriodKPIs.peakOccRate).toFixed(1)}%` : '-'})`}
             </div>
           </div>
 
@@ -675,10 +642,10 @@ export default function CondoReservationStatus() {
               </span>
             </div>
             <div className="mt-2 text-2xl font-black text-blue-900 font-mono">
-              {loadingDaily ? '-' : `${condoPeriodKPIs.groupRoomShare.toFixed(1)}%`}
+              {loadingDaily || condoPeriodKPIs.groupRoomShare === null ? '-' : `${Number(condoPeriodKPIs.groupRoomShare).toFixed(1)}%`}
             </div>
             <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
-              단체 {loadingDaily ? '-' : condoPeriodKPIs.totalGroupRooms.toLocaleString()}실 투숙
+              단체 {loadingDaily || condoPeriodKPIs.totalGroupRooms === null ? '-' : condoPeriodKPIs.totalGroupRooms.toLocaleString()}실 투숙
             </div>
           </div>
 
@@ -691,7 +658,7 @@ export default function CondoReservationStatus() {
               </span>
             </div>
             <div className="mt-2 text-xl font-black text-[#1B382E] font-mono">
-              {loadingDaily ? '-' : condoPeriodKPIs.totalEstimatedRevenue.toLocaleString()}
+              {loadingDaily || condoPeriodKPIs.totalEstimatedRevenue === null ? '-' : condoPeriodKPIs.totalEstimatedRevenue.toLocaleString()}
               <span className="text-xs font-bold text-[#5A6B63] ml-1">원</span>
             </div>
             <div className="text-[11px] text-[#5A6B63] mt-1 font-medium">
@@ -1294,7 +1261,7 @@ export default function CondoReservationStatus() {
                     const rooms = group.spendingBreakdown?.roomsCount ?? group.roomsCount ?? 0;
                     const roomTypes = group.spendingBreakdown?.roomTypesUsed || [];
 
-                    const isSeminar = group.category === 'SEMINAR' || group.b2bSegment === 'SEMINAR' || (group.categoryName && group.categoryName.includes('세미나'));
+                    const isSeminar = group.category === 'SEMINAR' || group.b2bSegment === 'SEMINAR';
                     const isComp = (group.settlementStatus === 'COMPLIMENTARY' || group.b2bSegment === 'COMP') && !isSeminar && group.settlementStatus !== 'PENDING_POST_BILLING';
                     const isPendingPostBilling = group.settlementStatus === 'PENDING_POST_BILLING' || (group.totalRevenue === 0 && isSeminar);
 

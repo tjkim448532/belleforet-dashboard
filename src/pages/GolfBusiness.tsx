@@ -14,17 +14,14 @@ import {
 } from 'lucide-react';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
-import { useCoreData } from '../contexts/CoreDataContext';
 import { getLatestClosedDateStr } from '../lib/dateUtils';
 import type { GolfChannelAnalysisV2Response } from '../types/reports-v2';
 import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
 
 export default function GolfBusiness() {
   const [data, setData] = useState<GolfChannelAnalysisV2Response | null>(null);
-  const [orgGolfDiv, setOrgGolfDiv] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const { startDate, endDate, isRange } = useDate();
-  const { core, summary: coreSummary, isLoading: isCoreLoading } = useCoreData();
   const isRangeMode = Boolean(isRange && endDate && startDate !== endDate);
 
   useEffect(() => {
@@ -37,24 +34,6 @@ export default function GolfBusiness() {
         ? `startDate=${startDate}&endDate=${endDate}`
         : `date=${startDate || getLatestClosedDateStr()}`;
 
-      // 1. Fast SSOT organization hierarchy fetch (~300ms) for immediate venue/part subtotals
-      secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`, {
-        signal: abortController.signal
-      })
-        .then((orgRes) => {
-          if (abortController.signal.aborted) return;
-          const divisions = orgRes?.data?.divisions || orgRes?.divisions || [];
-          const golfDiv = divisions.find((d: any) => d.orgDivision?.includes('골프'));
-          if (golfDiv) {
-            setOrgGolfDiv(golfDiv);
-            setLoading(false);
-          }
-        })
-        .catch(() => {
-          // Handled gracefully
-        });
-
-      // 2. Detailed tee-time & channel report fetch (isolated so 25s timeout on multi-month range never blocks the dashboard)
       try {
         const res = await secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`, {
           signal: abortController.signal
@@ -63,10 +42,13 @@ export default function GolfBusiness() {
         const payload: GolfChannelAnalysisV2Response = res?.data ?? res;
         if (payload?.success) {
           setData(payload);
+        } else {
+          setData(null);
         }
       } catch (err: any) {
         if (abortController.signal.aborted || err?.name === 'AbortError') return;
-        console.warn('[GolfBusiness] 상세 티타임 리포트 지연/타임아웃 - SSOT 마트 요약본으로 렌더링 유지:', err?.message);
+        console.warn('[GolfBusiness] 상세 티타임 리포트 조회 실패:', err?.message);
+        setData(null);
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
@@ -81,137 +63,42 @@ export default function GolfBusiness() {
     };
   }, [startDate, endDate, isRange]);
 
-  // Fallback synthesis from fast SSOT endpoints (revenue-summary + revenue-by-org) when detailed v2 report is still loading or timed out
   const effectiveData = useMemo<GolfChannelAnalysisV2Response | null>(() => {
     if (data?.success && data?.meta?.summary) {
       return data;
     }
-
-    const golfCat = (core?.salesByCategory || []).find((c: any) => c.categoryCode === 'GOLF');
-    const divSub = orgGolfDiv?.divisionSubtotal;
-    if (!golfCat && !divSub && !coreSummary) return null;
-
-    const totalGolfRevenue = Number(divSub?.todayActual ?? golfCat?.todayActual ?? golfCat?.totalSales ?? 0);
-    const totalPlayers = Number(coreSummary?.totalGolfVisitors ?? divSub?.todayVisitors ?? golfCat?.todayVisitors ?? 0);
-    const totalTransactions = Number(divSub?.todayQuantity ?? 0);
-
-    const partsList: any[] = orgGolfDiv?.parts || [];
-    const coursePart = partsList.find((p: any) => p.partName === '경기운영');
-    const clubPart = partsList.find((p: any) => p.partName === '클럽하우스');
-    const proshopPart = partsList.find((p: any) => p.partName === '프로샵');
-
-    const courseCoreRevenue = coursePart?.partSubtotal?.todayActual;
-    const amenityRevenue = (clubPart && proshopPart)
-      ? undefined
-      : undefined;
-
-    const rawVenues: any[] = orgGolfDiv?.venues || [];
-    const fallbackChannels = rawVenues.map((v: any) => {
-      const rev = Number(v.venueSubtotal?.todayActual ?? 0);
-      const qty = Number(v.venueSubtotal?.todayQuantity ?? 0);
-      const vis = Number(v.venueSubtotal?.todayVisitors ?? 0);
-      const firstTicket = v.tickets?.[0]?.ticketName || v.partName || '일반';
-      return {
-        venueName: v.venueName,
-        productGroup: v.venueName === '그린피' ? '그린피' : v.venueName === '카트대여' ? '카트대여' : firstTicket,
-        revenue: rev,
-        revenueFormatted: rev.toLocaleString(),
-        quantity: qty,
-        quantityFormatted: qty.toLocaleString(),
-        players: vis,
-        playersFormatted: vis.toLocaleString(),
-        revenueSharePct: v.venueSubtotal?.sharePct ?? null,
-        unitPrice: v.venueSubtotal?.unitPrice ?? 0
-      };
-    });
-
-    const s = coreSummary || {};
-    const hasPartData = Boolean(s.golfParts);
-    const hasMemberData = s.golfMemberPlayers !== undefined || s.golfNonMemberPlayers !== undefined;
-
-    return {
-      success: true,
-      meta: {
-        engine: '골프 정규 실적 집계',
-        period: {
-          startDate: startDate || getLatestClosedDateStr(),
-          endDate: endDate || startDate || getLatestClosedDateStr()
-        },
-        summary: {
-          totalGolfRevenue,
-          totalGolfRevenueFormatted: totalGolfRevenue.toLocaleString(),
-          totalPlayers,
-          totalPlayersFormatted: totalPlayers.toLocaleString(),
-          totalTransactions,
-          arpu: s.golfArpu ?? null,
-          arpuFormatted: s.golfArpu ? Number(s.golfArpu).toLocaleString() : '-',
-          courseCoreRevenue,
-          amenityRevenue,
-          partAnalysis: hasPartData ? {
-            totalReservedTeams: Number(s.totalGolfReservedTeams ?? 0),
-            totalVisitedTeams: Number(s.totalGolfVisitedTeams ?? s.totalGolfTeams ?? 0),
-            totalCanceledTeams: Number(s.totalGolfCanceledTeams ?? 0),
-            totalPendingTeams: Number(s.totalGolfPendingTeams ?? 0),
-            overallAvgGreenFee: Number(s.golfAvgGreenFee ?? 0),
-            overallAvgGreenFeeFormatted: Number(s.golfAvgGreenFee ?? 0).toLocaleString(),
-            parts: s.golfParts
-          } : undefined,
-          membershipAnalysis: hasMemberData ? {
-            member: {
-              players: Number(s.golfMemberPlayers ?? 0),
-              playersFormatted: Number(s.golfMemberPlayers ?? 0).toLocaleString(),
-              playerRatio: Number(s.golfMemberPlayerRatio ?? 0),
-              greenFeeRevenue: Number(s.golfMemberGreenFee ?? 0),
-              greenFeeRevenueFormatted: Number(s.golfMemberGreenFee ?? 0).toLocaleString(),
-              avgGreenFee: Number(s.golfMemberAvgGreenFee ?? 0),
-              avgGreenFeeFormatted: Number(s.golfMemberAvgGreenFee ?? 0).toLocaleString()
-            },
-            nonMember: {
-              players: Number(s.golfNonMemberPlayers ?? 0),
-              playersFormatted: Number(s.golfNonMemberPlayers ?? 0).toLocaleString(),
-              playerRatio: Number(s.golfNonMemberPlayerRatio ?? 0),
-              greenFeeRevenue: Number(s.golfNonMemberGreenFee ?? 0),
-              greenFeeRevenueFormatted: Number(s.golfNonMemberGreenFee ?? 0).toLocaleString(),
-              avgGreenFee: Number(s.golfNonMemberAvgGreenFee ?? 0),
-              avgGreenFeeFormatted: Number(s.golfNonMemberAvgGreenFee ?? 0).toLocaleString()
-            },
-            greenFeeGap: Number(s.golfGreenFeeGap ?? 0),
-            greenFeeGapFormatted: Number(s.golfGreenFeeGap ?? 0).toLocaleString()
-          } : undefined
-        } as any
-      },
-      channels: fallbackChannels as any,
-      dailyTrends: []
-    };
-  }, [data, core, coreSummary, orgGolfDiv, startDate, endDate]);
+    return null;
+  }, [data]);
 
   const normalizedChannels = useMemo(() => {
     if (!effectiveData?.channels) return [];
     return effectiveData.channels
       .map((c: any) => {
-        const venueName = c.venueName || c.venue_name || '기타';
-        const productGroup = c.productGroup || c.product_group || c.ticketGroup || c.ticket_group || '일반';
+        const venueName = c.venueName || '기타';
+        const productCode = c.productCode || c.productGroup || c.ticketGroup || 'GENERAL';
+        const productGroup = c.productGroup || c.ticketGroup || '일반';
         const revenue = Number(c.revenue || c.totalRevenue || 0);
-        const revenueFormatted = c.revenueFormatted || c.revenue_formatted || Math.round(revenue).toLocaleString();
+        const revenueFormatted = c.revenueFormatted || Math.round(revenue).toLocaleString();
         const quantity = Number(c.quantity || 0);
-        const quantityFormatted = c.quantityFormatted || c.quantity_formatted || quantity.toLocaleString();
+        const quantityFormatted = c.quantityFormatted || quantity.toLocaleString();
         const players = Number(c.players || c.playerCount || 0);
-        const playersFormatted = c.playersFormatted || c.players_formatted || c.playerCountFormatted || players.toLocaleString();
-        const rawShare = c.revenueSharePct ?? c.revenue_share_pct;
+        const playersFormatted = c.playersFormatted || c.playerCountFormatted || players.toLocaleString();
+        const rawShare = c.revenueSharePct;
         const revenueSharePct = rawShare !== undefined && rawShare !== null ? Number(rawShare) : null;
         
         const displayUnit = c.displayUnit || (players > 0 ? '명 내장' : '건 결제');
         const displayCountFormatted = players > 0 ? (playersFormatted !== '0' ? playersFormatted : quantityFormatted) : quantityFormatted;
 
-        const unitPrice = Number(c.unitPrice ?? c.unit_price ?? 0);
+        const unitPrice = Number(c.unitPrice ?? 0);
 
-        const displayName = c.displayName || (venueName === '기타매출' && productGroup === '대여품' ? '기타매출 (대여채)' : venueName);
+        const displayName = c.displayName || venueName;
         const description = c.description || '';
 
         return {
           venueName,
           displayName,
           description,
+          productCode,
           productGroup,
           revenue,
           revenueFormatted,
@@ -234,7 +121,7 @@ export default function GolfBusiness() {
       });
   }, [effectiveData]);
 
-  if ((loading && isCoreLoading && !effectiveData) || !effectiveData) {
+  if (loading) {
     return (
       <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
         <div className="text-xl font-medium text-brand-mint animate-pulse">골프사업본부 데이터를 불러오는 중입니다...</div>
@@ -242,22 +129,30 @@ export default function GolfBusiness() {
     );
   }
 
+  if (!effectiveData) {
+    return (
+      <div className="w-full h-[80vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="text-base font-medium text-slate-400">조회된 골프사업본부 실적 데이터가 없습니다.</div>
+      </div>
+    );
+  }
+
   const { summary } = effectiveData.meta;
 
   const greenFeeItem = normalizedChannels.find(c => 
-    c.venueName.includes('그린피') || c.productGroup.includes('그린피') || c.productGroup === 'GREEN_FEE'
+    c.productCode === 'GREEN_FEE' || c.productGroup === 'GREEN_FEE' || c.venueName === '그린피' || c.productGroup === '그린피'
   );
   const cartFeeItem = normalizedChannels.find(c => 
-    c.venueName.includes('카트') || c.productGroup.includes('카트') || c.productGroup === 'CART_FEE'
+    c.productCode === 'CART_FEE' || c.productGroup === 'CART_FEE' || c.venueName === '카트대여' || c.productGroup === '카트대여'
   );
   const startHouseItem = normalizedChannels.find(c => 
-    c.venueName.includes('스타트하우스') || c.productGroup === 'START_HOUSE'
+    c.productCode === 'START_HOUSE' || c.productGroup === 'START_HOUSE' || c.venueName === '클럽-스타트하우스'
   );
   const restaurantItem = normalizedChannels.find(c => 
-    c.venueName.includes('레스토랑') || c.productGroup === 'RESTAURANT'
+    c.productCode === 'RESTAURANT' || c.productGroup === 'RESTAURANT' || c.venueName === '클럽-레스토랑'
   );
   const proShopItem = normalizedChannels.find(c => 
-    c.venueName.includes('프로샵') || c.productGroup === 'PRO_SHOP'
+    c.productCode === 'PRO_SHOP' || c.productGroup === 'PRO_SHOP' || c.venueName === '프로샵'
   );
 
   const etcItem = normalizedChannels.find(c =>

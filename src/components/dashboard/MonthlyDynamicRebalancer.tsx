@@ -69,45 +69,47 @@ export default function MonthlyDynamicRebalancer({
     return () => { isMounted = false; };
   }, [baseYear]);
 
-  // 1. Build Base Monthly Revenue Profile from Real Backend Trends Data (100% Dynamic Occupancy & Headroom)
+  // Server Simulator Integration: POST /api/v6/simulator/monthly-rebalancer
+  const [serverRebalanceData, setServerRebalanceData] = useState<MonthlyRebalancerResponse | null>(null);
+  const [isRebalancing, setIsRebalancing] = useState<boolean>(false);
+  const [rebalanceNotice, setRebalanceNotice] = useState<string | null>(null);
+
+  // 1. Build Base Monthly Revenue Profile from Backend Trends / Server Rebalancer (Zero Client-Side Division/Subtraction)
   const monthlyMetaList: MonthMeta[] = useMemo(() => {
-    const monthRevs: Record<number, number> = {};
-    let maxMonthRev = 1;
+    const serverList = serverRebalanceData?.monthly || serverRebalanceData?.months || [];
+    const list: MonthMeta[] = [];
 
     for (let m = 1; m <= 12; m++) {
       const monthKey = `${baseYear}${String(m).padStart(2, '0')}`;
-      const item = trendsData.find((d: any) => String(d.month) === monthKey);
-      let adjRev = 0;
-      if (item) {
-        adjRev = Math.round(includeGolf ? (item.totalRevenue ?? item.revenue ?? 0) : (item.exGolfRevenue ?? 0));
-      }
-      monthRevs[m] = adjRev;
-      if (adjRev > maxMonthRev) maxMonthRev = adjRev;
-    }
+      const item = trendsData.find((d: any) => String(d.month) === monthKey || Number(d.month) === m);
+      const sItem = serverList.find((d: any) => Number(d.month) === m) as any;
 
-    const list: MonthMeta[] = [];
-    for (let m = 1; m <= 12; m++) {
-      const baseRev = monthRevs[m] || 0;
-      const intensity = maxMonthRev > 0 ? Number((baseRev / maxMonthRev).toFixed(2)) : 0.0;
-      const headroom = Number(Math.max(0.02, 1.0 - intensity).toFixed(2));
-      const isPeak = intensity >= 0.85;
+      const baseRev = Number(
+        sItem?.baseRevenue ??
+        (item ? (includeGolf ? (item.totalRevenue ?? item.revenue ?? 0) : (item.exGolfRevenue ?? 0)) : 0)
+      );
+      const estimatedOcc = Number(sItem?.estimatedOcc ?? item?.estimatedOcc ?? item?.intensity ?? 0);
+      const headroom = Number(sItem?.headroom ?? item?.headroom ?? 0);
+      const isPeak = Boolean(sItem?.isPeak ?? item?.isPeak);
 
       list.push({
         month: m,
         label: `${m}월`,
-        seasonTag: SEASON_TAGS[m] || '시즌',
+        seasonTag: sItem?.seasonTag || item?.seasonTag || SEASON_TAGS[m] || '시즌',
         isPeak,
-        estimatedOcc: intensity,
+        estimatedOcc,
         headroom,
-        baseRevenue: baseRev
+        baseRevenue: baseRev,
+        targetRevenue: sItem?.rebalancedTarget ?? sItem?.originalTarget
       });
     }
 
     return list;
-  }, [baseYear, annualBaseRevenue, includeGolf, trendsData]);
+  }, [baseYear, includeGolf, trendsData, serverRebalanceData]);
 
   // 2. Lock State per month
   const [lockedMonths, setLockedMonths] = useState<Record<number, boolean>>({});
+  const [presetMode, setPresetMode] = useState<'CUSTOM' | 'AI_SMART' | 'EVEN'>('CUSTOM');
 
   // 3. Custom Growth Rates per month (-10% ~ +40%)
   const [growthRates, setGrowthRates] = useState<Record<number, number>>(() => {
@@ -150,11 +152,6 @@ export default function MonthlyDynamicRebalancer({
     });
   }, [annualGrowthRate, lockedMonths, monthlyGrowthRates]);
 
-  // Server Simulator Integration: POST /api/v6/simulator/monthly-rebalancer
-  const [serverRebalanceData, setServerRebalanceData] = useState<MonthlyRebalancerResponse | null>(null);
-  const [isRebalancing, setIsRebalancing] = useState<boolean>(false);
-  const [rebalanceNotice, setRebalanceNotice] = useState<string | null>(null);
-
   useEffect(() => {
     let isMounted = true;
     const fetchServerRebalance = async () => {
@@ -165,6 +162,13 @@ export default function MonthlyDynamicRebalancer({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             annualTargetRevenue,
+            annualBaseRevenue,
+            annualGrowthRate,
+            baseYear,
+            targetYear,
+            includeGolf,
+            lockedMonths,
+            presetMode,
             closedMonthActuals: {},
             remainingMonthWeights: growthRates
           })
@@ -178,6 +182,24 @@ export default function MonthlyDynamicRebalancer({
         } else if (res?.success || res?.monthly || res?.remainingRequiredRevenue !== undefined) {
           setServerRebalanceData(res);
           setRebalanceNotice(null);
+          const serverList = res?.monthly || res?.months;
+          if (Array.isArray(serverList) && serverList.length > 0) {
+            const nextRates: Record<number, number> = {};
+            let hasServerRates = false;
+            serverList.forEach((item: any) => {
+              if (item.growthRate !== undefined || item.recommendedGrowthRate !== undefined) {
+                nextRates[item.month] = Number(item.growthRate ?? item.recommendedGrowthRate ?? 0);
+                hasServerRates = true;
+              }
+            });
+            if (hasServerRates && presetMode === 'AI_SMART') {
+              setGrowthRates(nextRates);
+              if (onMonthlyGrowthRatesChange) {
+                onMonthlyGrowthRatesChange(nextRates);
+              }
+              setPresetMode('CUSTOM');
+            }
+          }
         }
       } catch (err: any) {
         if (!isMounted) return;
@@ -191,69 +213,19 @@ export default function MonthlyDynamicRebalancer({
 
     fetchServerRebalance();
     return () => { isMounted = false; };
-  }, [annualTargetRevenue, growthRates]);
+  }, [annualTargetRevenue, annualBaseRevenue, annualGrowthRate, baseYear, targetYear, includeGolf, lockedMonths, presetMode, growthRates, onMonthlyGrowthRatesChange]);
 
-  // 4. Calculate Final 12-Month Targets (Prefer 100% Server Rebalancer Response)
+  // 4. Bind Final 12-Month Targets 100% from Server Rebalancer Response (Zero Client-Side Fallback Arithmetic)
   const calculatedMonthlyTargets = useMemo(() => {
-    // 1순위: 서버 시뮬레이터 완제품 타겟 바인딩 (Zero-Proxy)
     const serverList = serverRebalanceData?.monthly || serverRebalanceData?.months;
-    if (serverList && serverList.length > 0) {
-      const sTargets: Record<number, number> = {};
+    const sTargets: Record<number, number> = {};
+    if (Array.isArray(serverList) && serverList.length > 0) {
       serverList.forEach(item => {
-        sTargets[item.month] = item.rebalancedTarget ?? item.originalTarget ?? 0;
+        sTargets[item.month] = Number(item.rebalancedTarget ?? item.originalTarget ?? 0);
       });
-      return sTargets;
     }
-
-    const targets: Record<number, number> = {};
-    let sumFixed = 0;
-    const unlockedMonths: number[] = [];
-
-    // Separate locked vs unlocked
-    monthlyMetaList.forEach(m => {
-      if (lockedMonths[m.month]) {
-        const rate = growthRates[m.month] ?? annualGrowthRate;
-        const tgt = m.targetRevenue ?? Math.round(m.baseRevenue * (1 + rate / 100));
-        targets[m.month] = tgt;
-        sumFixed += tgt;
-      } else {
-        unlockedMonths.push(m.month);
-      }
-    });
-
-    const remainTarget = annualTargetRevenue - sumFixed;
-
-    if (unlockedMonths.length === 0) {
-      return targets;
-    }
-
-    let totalUnlockedWeight = 0;
-    for (const mNum of unlockedMonths) {
-      const meta = monthlyMetaList.find(m => m.month === mNum);
-      if (meta) totalUnlockedWeight += (meta.baseRevenue * meta.headroom);
-    }
-    if (totalUnlockedWeight === 0) totalUnlockedWeight = 1;
-
-    unlockedMonths.forEach(mNum => {
-      const meta = monthlyMetaList.find(m => m.month === mNum)!;
-      const weight = (meta.baseRevenue * meta.headroom) / totalUnlockedWeight;
-      const tgt = Math.round(remainTarget * weight);
-      targets[mNum] = tgt;
-    });
-
-    let currentTotal = 0;
-    for (const val of Object.values(targets)) {
-      currentTotal += (val || 0);
-    }
-    const diff = annualTargetRevenue - currentTotal;
-
-    if (diff !== 0 && unlockedMonths.length > 0) {
-      const sortedUnlocked = [...unlockedMonths].sort((a, b) => (targets[b] || 0) - (targets[a] || 0));
-      targets[sortedUnlocked[0]] += diff;
-    }
-
-    return targets;
-  }, [serverRebalanceData, monthlyMetaList, lockedMonths, growthRates, annualGrowthRate, annualTargetRevenue]);
+    return sTargets;
+  }, [serverRebalanceData]);
 
   // Notify parent on change
   useEffect(() => {
@@ -262,56 +234,17 @@ export default function MonthlyDynamicRebalancer({
     }
   }, [calculatedMonthlyTargets, onMonthlyTargetsChange]);
 
-  // Handle single month slider drag with real-time Zero-Sum rebalancing
+  // Handle single month slider drag (Pass state to Backend Rebalancer Engine)
   const handleMonthRateChange = useCallback((editMonth: number, newRate: number) => {
+    setPresetMode('CUSTOM');
     setGrowthRates(prev => {
       const updated = { ...prev, [editMonth]: newRate };
-      
-      const editMeta = monthlyMetaList.find(m => m.month === editMonth);
-      const targetForEdit = editMeta ? Math.round(editMeta.baseRevenue * (1 + newRate / 100)) : 0;
-      
-      let sumFixed = targetForEdit;
-      const otherUnlocked: number[] = [];
-
-      monthlyMetaList.forEach(m => {
-        if (m.month === editMonth) return;
-        if (lockedMonths[m.month]) {
-          const r = updated[m.month] ?? annualGrowthRate;
-          const fixedVal = Math.round(m.baseRevenue * (1 + r / 100));
-          sumFixed += fixedVal;
-        } else {
-          otherUnlocked.push(m.month);
-        }
-      });
-
-      const remainTarget = annualTargetRevenue - sumFixed;
-
-      if (otherUnlocked.length > 0) {
-        let totalWeight = 0;
-        for (const mNum of otherUnlocked) {
-          const meta = monthlyMetaList.find(m => m.month === mNum);
-          if (meta) totalWeight += (meta.baseRevenue * meta.headroom);
-        }
-        if (totalWeight === 0) totalWeight = 1;
-
-        otherUnlocked.forEach(mNum => {
-          const meta = monthlyMetaList.find(m => m.month === mNum)!;
-          const weight = (meta.baseRevenue * meta.headroom) / totalWeight;
-          const allocatedTarget = remainTarget * weight;
-          const computedRate = meta.baseRevenue > 0
-            ? Math.round(((allocatedTarget - meta.baseRevenue) / meta.baseRevenue) * 1000) / 10
-            : 0;
-          updated[mNum] = computedRate;
-        });
-      }
-
       if (onMonthlyGrowthRatesChange) {
         onMonthlyGrowthRatesChange(updated);
       }
-
       return updated;
     });
-  }, [monthlyMetaList, lockedMonths, annualGrowthRate, annualTargetRevenue, onMonthlyGrowthRatesChange]);
+  }, [onMonthlyGrowthRatesChange]);
 
   // Toggle Lock
   const toggleLock = (month: number) => {
@@ -321,45 +254,14 @@ export default function MonthlyDynamicRebalancer({
     }));
   };
 
-  // Preset 1: AI Season Smart Optimization (Dynamic Headroom-based)
+  // Preset 1: AI Season Smart Optimization (Triggered via Backend Rebalancer Preset)
   const applyAiSmartOptimization = () => {
-    const updatedRates: Record<number, number> = {};
-    const updatedLocks: Record<number, boolean> = { ...lockedMonths };
-
-    // 1. Dynamically identify capacity-constrained peak months (headroom <= 15%)
-    let sumPeakTarget = 0;
-    monthlyMetaList.forEach(m => {
-      if (m.headroom <= 0.15) {
-        const peakCapRate = Math.max(0, Number((m.headroom * 100).toFixed(1)));
-        updatedRates[m.month] = peakCapRate;
-        updatedLocks[m.month] = true;
-        sumPeakTarget += Math.round(m.baseRevenue * (1 + peakCapRate / 100));
-      }
-    });
-
-    // 2. Distribute spillover to non-peak months based on headroom capacity
-    const nonPeakMonths = monthlyMetaList.filter(m => m.headroom > 0.15);
-    const remainTarget = Math.max(0, annualTargetRevenue - sumPeakTarget);
-
-    const totalNonPeakWeight = nonPeakMonths.reduce((s, m) => s + (m.baseRevenue * m.headroom), 0) || 1;
-
-    nonPeakMonths.forEach(m => {
-      const weight = (m.baseRevenue * m.headroom) / totalNonPeakWeight;
-      const allocatedTarget = remainTarget * weight;
-      const computedRate = m.baseRevenue > 0 ? Number((((allocatedTarget - m.baseRevenue) / m.baseRevenue) * 100).toFixed(1)) : 0;
-      updatedRates[m.month] = computedRate;
-      updatedLocks[m.month] = false;
-    });
-
-    setLockedMonths(updatedLocks);
-    setGrowthRates(updatedRates);
-    if (onMonthlyGrowthRatesChange) {
-      onMonthlyGrowthRatesChange(updatedRates);
-    }
+    setPresetMode('AI_SMART');
   };
 
   // Preset 2: Even Distribution Reset
   const resetEvenDistribution = () => {
+    setPresetMode('EVEN');
     const resetRates: Record<number, number> = {};
     const resetLocks: Record<number, boolean> = {};
     for (let m = 1; m <= 12; m++) {
@@ -373,11 +275,11 @@ export default function MonthlyDynamicRebalancer({
     }
   };
 
-  // 12-Month Bar Chart Options (Base vs Dynamic Target)
+  // 12-Month Bar Chart Options (Base vs Dynamic Target - Integer Won)
   const chartOption = useMemo(() => {
     const months = monthlyMetaList.map(m => m.label);
-    const baseData = monthlyMetaList.map(m => Math.round(m.baseRevenue / 100000000 * 100) / 100);
-    const targetData = monthlyMetaList.map(m => Math.round((calculatedMonthlyTargets[m.month] || m.baseRevenue) / 100000000 * 100) / 100);
+    const baseData = monthlyMetaList.map(m => m.baseRevenue);
+    const targetData = monthlyMetaList.map(m => calculatedMonthlyTargets[m.month] ?? m.targetRevenue ?? 0);
 
     return {
       tooltip: {
@@ -387,14 +289,14 @@ export default function MonthlyDynamicRebalancer({
           if (!params || params.length < 2) return '';
           const mIdx = params[0].dataIndex;
           const meta = monthlyMetaList[mIdx];
-          const bVal = params[0].value;
-          const tVal = params[1].value;
+          const bVal = Number(params[0].value || 0).toLocaleString();
+          const tVal = Number(params[1].value || 0).toLocaleString();
           const gRate = growthRates[meta.month] ?? annualGrowthRate;
           return `
             <div style="font-size:12px; padding:4px;">
               <b>${meta.label} (${meta.seasonTag})</b><br/>
-              • ${baseYear}년 실적: <b>${bVal}억원</b><br/>
-              • ${targetYear}년 목표: <b style="color:#0d9488;">${tVal}억원 (+${gRate}%)</b><br/>
+              • ${baseYear}년 실적: <b>${bVal}원</b><br/>
+              • ${targetYear}년 목표: <b style="color:#0d9488;">${tVal}원 (+${gRate}%)</b><br/>
               • ${lockedMonths[meta.month] ? '🔒 목표 잠금' : '🔓 동적 연동'}
             </div>
           `;
@@ -413,7 +315,7 @@ export default function MonthlyDynamicRebalancer({
       },
       yAxis: {
         type: 'value',
-        name: '(억원)',
+        name: '(원)',
         axisLabel: { fontSize: 10, color: '#64748B' }
       },
       series: [
@@ -629,7 +531,7 @@ export default function MonthlyDynamicRebalancer({
             12개월 실적 기준선 대비 동적 목표선 실시간 대조 (정합성 검증)
           </span>
           <span className="text-xs font-black text-[#284F42] bg-[#284F42]/10 px-2.5 py-1 rounded-lg border border-[#284F42]/20">
-            연간 총목표: {(annualTargetRevenue / 100000000).toFixed(2)}억원 (연평균 +{annualGrowthRate}%) 고정
+            연간 총목표: {annualTargetRevenue.toLocaleString()}원 (연평균 +{annualGrowthRate}%) 고정
           </span>
         </div>
         <ReactECharts option={chartOption} style={{ height: '260px', width: '100%' }} />
@@ -640,7 +542,7 @@ export default function MonthlyDynamicRebalancer({
         {monthlyMetaList.map(meta => {
           const isLocked = lockedMonths[meta.month];
           const rate = growthRates[meta.month] ?? annualGrowthRate;
-          const targetAmount = calculatedMonthlyTargets[meta.month] || meta.baseRevenue;
+          const targetAmount = calculatedMonthlyTargets[meta.month] ?? meta.targetRevenue ?? 0;
           const isCapacityWarning = meta.isPeak && rate > 5.0;
 
           return (
@@ -681,9 +583,9 @@ export default function MonthlyDynamicRebalancer({
               <div className="py-2 flex items-baseline justify-between">
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">목표 매출액</div>
-                  <div className="text-lg font-black text-slate-900 font-mono tabular-nums">
-                    {(targetAmount / 100000000).toFixed(2)}
-                    <span className="text-xs font-normal text-slate-500 ml-0.5 font-sans">억원</span>
+                  <div className="text-base font-black text-slate-900 font-mono tabular-nums">
+                    {targetAmount > 0 ? targetAmount.toLocaleString() : '-'}
+                    <span className="text-xs font-normal text-slate-500 ml-0.5 font-sans">원</span>
                   </div>
                 </div>
 
@@ -730,18 +632,18 @@ export default function MonthlyDynamicRebalancer({
                     ADR 레버리지 필요
                   </span>
                 ) : meta.isPeak ? (
-                  <span className="text-[#284F42] font-semibold truncate" title={`성수기 (~${Math.round(meta.estimatedOcc * 100)}%)`}>
-                    성수기 (~{Math.round(meta.estimatedOcc * 100)}%)
+                  <span className="text-[#284F42] font-semibold truncate">
+                    성수기 피크 시즌
                   </span>
                 ) : (
-                  <span className="text-teal-700 font-semibold flex items-center gap-1 truncate" title={`여유 여력: ${Math.round(meta.headroom * 100)}%`}>
+                  <span className="text-teal-700 font-semibold flex items-center gap-1 truncate">
                     <CheckCircle2 size={11} />
-                    여유 여력: {Math.round(meta.headroom * 100)}%
+                    여유 여력 보유
                   </span>
                 )}
 
                 <span className="text-slate-400 font-mono tabular-nums shrink-0">
-                  기준: {(meta.baseRevenue / 100000000).toFixed(2)}억
+                  기준: {meta.baseRevenue > 0 ? `${meta.baseRevenue.toLocaleString()}원` : '-'}
                 </span>
               </div>
 

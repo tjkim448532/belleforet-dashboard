@@ -3951,3 +3951,176 @@ ORDER BY venue_name, rn;
 
 3. **프론트엔드 연동 방침**:
    - 백엔드 배포 완료 시 프론트엔드는 어떠한 클라이언트 연산 없이 `summary.trevParExGolf` 필드를 1:1 직결(Pure Consumer) 표출합니다.
+
+
+---
+
+## 22. 🚨 [Ticket 57 / P0 완제품 API] `condo-reservations` 구간 조회(`startDate`~`endDate`) 및 `periodSummary` 사전 집계 완제품 신설 요청 (2026-10-24)
+
+### 22-1. 대상 엔드포인트 및 배경
+- **대상 엔드포인트**: `GET /api/v6/dashboard/condo-reservations`
+- **요청 파라미터 확장**:
+  - 기존: `?date={YYYY-MM-DD}` (단일 일자만 지원)
+  - 확장: `?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}` (구간 조회 지원 추가, 최대 31일)
+- **배경 (헌법 위반 제거)**:
+  - 현재 프론트엔드([`CondoReservationStatus.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/CondoReservationStatus.tsx))에서 구간 조회를 위해 브라우저 단에서 최대 31회 루프 호출(`dates.map(date => fetch(...?date=${date}))`)을 수행하고, 일별 응답을 `forEach`로 누적 합산(`sumRooms += ...`)한 뒤 점유율(`sumRooms / sumCap * 100`)과 단체 비중(`sumGroupRooms / sumRooms * 100`)을 클라이언트 나눗셈으로 합성하고 있었음.
+  - 프론트엔드 무관용 원칙(원칙 1, 3, 6)에 따라 해당 루프 호출 및 클라이언트 합산/나눗셈을 전면 삭제하고 단일 API 호출로 전환함.
+
+### 22-2. 백엔드 응답 규격 명세 (100% camelCase, Integer/Float 완제품)
+`startDate`와 `endDate`가 전달될 경우 단 1회의 쿼리로 아래의 `periodSummary`와 `dailyReservations` 배열을 함께 반환해 주십시오:
+
+```json
+{
+  "success": true,
+  "startDate": "2026-10-01",
+  "endDate": "2026-10-14",
+  "periodSummary": {
+    "totalDays": 14,
+    "totalRoomNights": 1820,
+    "totalCapNights": 2450,
+    "avgOccupancyRate": 74.3,
+    "peakDate": "2026-10-03",
+    "peakRooms": 168,
+    "peakOccRate": 96.0,
+    "totalGroupRooms": 412,
+    "groupRoomShare": 22.6,
+    "totalEstimatedRevenue": 318500000
+  },
+  "dailyReservations": [
+    {
+      "targetDate": "2026-10-01",
+      "totalReservedRooms": 124,
+      "totalCapacity": 175,
+      "occupancyRate": 70.9,
+      "totalGroupRooms": 30,
+      "totalIndividualRooms": 94,
+      "estimatedRoomRevenue": 21450000,
+      "byRoomType": [
+        { "roomType": "16평", "reservedRooms": 45, "capacity": 71, "occupancyRate": 63.4, "adr": 135000, "estimatedRevenue": 6075000 },
+        { "roomType": "35평", "reservedRooms": 52, "capacity": 64, "occupancyRate": 81.3, "adr": 195000, "estimatedRevenue": 10140000 },
+        { "roomType": "51평", "reservedRooms": 27, "capacity": 40, "occupancyRate": 67.5, "adr": 265000, "estimatedRevenue": 7155000 }
+      ],
+      "groups": []
+    }
+  ]
+}
+```
+- 또한 `GET /api/v6/report/corporate-group-sales`의 `groups[]` 각 항목에 문자열 추론(`.includes('세미나')`) 없이 즉시 필터링할 수 있도록 정규화된 `b2bSegment` (`'SEMINAR' | 'MICE' | 'CORP_FIT' | 'COMP' | 'GENERAL'`) 및 `b2bSegmentName`을 누락 없이 포함해 주십시오.
+
+---
+
+## 23. 🚨 [Ticket 58 / P0 완제품 API] 리조트 사업본부 관련 API 내 당기(TY)·전년동기(LY)·증감액(Diff)·증감률(Growth) 단일 통합 반환 요청 (2026-10-24)
+
+### 23-1. 대상 엔드포인트
+1. `GET /api/v6/report/resort-business-summary?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+2. `GET /api/v6/dashboard/revenue-summary?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+3. `GET /api/v6/report/room-sales-by-channel?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+4. `GET /api/v6/report/room-rate-sales?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+5. `GET /api/v6/dashboard/revenue-by-org?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}`
+
+### 23-2. 배경 (이중 호출 및 21개소 인라인 뺄셈 제거)
+- 현재 [`ResortBusiness.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/ResortBusiness.tsx)와 [`Members.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/Members.tsx)에서 전년 동기 실적을 얻기 위해 클라이언트에서 날짜를 `-1년` 시프트(`lyQueryParams`)하여 동일 API를 이중 호출한 뒤, 클라이언트에서 `cur - ly` 뺄셈(총 21개소) 및 커넥팅룸 `/ 2` 나눗셈 폴백을 수행하고 있었음.
+
+### 23-3. 백엔드 요청 조치 사항
+1. **`revenue-by-org` 내 `physicalRoomMaster` 완제품 확장**:
+   - `physicalRoomMaster.metrics` 내에 당기뿐만 아니라 전년 동기 및 증감 완제품 필드를 모두 포함해 주십시오:
+     - 당기: `denominatorUnits`, `totalRoomsSold`, `physicalOccupiedUnits`, `connectingSets`, `connectingPhysicalRooms`, `standardPhysicalRooms`, `remainingRooms`, `physicalOccupancyRate`
+     - 전년(LY): `lyDenominatorUnits`, `lyTotalRoomsSold`, `lyPhysicalOccupiedUnits`, `lyConnectingSets`, `lyConnectingPhysicalRooms`, `lyStandardPhysicalRooms`, `lyRemainingRooms`, `lyPhysicalOccupancyRate`
+     - 증감(Diff & Growth): `roomsDiff` (`totalRoomsSold - lyTotalRoomsSold`), `roomsGrowth`, `physicalOccupiedDiff`, `physicalOccupancyRateDiff` (`%p` 차이, 소수점 1자리)
+2. **`resort-business-summary` 및 `revenue-summary` 내 `lodgingStats` / `roomSummaryByType` 완제품 확장**:
+   - `lodgingStats` 내에 아래 필드를 모두 사전 연산하여 포함해 주십시오:
+     - 총계: `revenue`, `lyRevenue`, `revenueDiff`, `revenueGrowth`, `roomsSold`, `lyRoomsSold`, `roomsDiff`, `roomsGrowth`, `adr`, `lyAdr`, `adrDiff`, `adrGrowth`, `physicalOccRate`, `lyPhysicalOccRate`, `physicalOccDiff`, `mtdRoomsDiff` (`mtdRooms - mtdRoomsLy`)
+     - 주중(Weekday): `weekdayRevenue`, `lyWeekdayRevenue`, `weekdayRevenueDiff`, `weekdayRevenueGrowth`, `weekdayRoomsSold`, `lyWeekdayRoomsSold`, `weekdayRoomsDiff`, `weekdayRoomsGrowth`, `weekdayAdr`, `lyWeekdayAdr`, `weekdayAdrDiff`, `weekdayAdrGrowth`
+     - 주말(Weekend): `weekendRevenue`, `lyWeekendRevenue`, `weekendRevenueDiff`, `weekendRevenueGrowth`, `weekendRoomsSold`, `lyWeekendRoomsSold`, `weekendRoomsDiff`, `weekendRoomsGrowth`, `weekendAdr`, `lyWeekendAdr`, `weekendAdrDiff`, `weekendAdrGrowth`
+   - `roomSummaryByType[]` (16평, 35평, 51평) 각 항목에 당기·전년·증감 완제품 포함:
+     - `roomType`, `roomsSold`, `lyRoomsSold`, `soldDiff`, `roomsGrowth`, `revenue`, `lyRevenue`, `revenueDiff`, `revGrowth`, `fixedCapacity`, `lyFixedCapacity`, `fixedOccupancyRate`, `lyFixedOccupancyRate`, `rateDiff`, `adr`, `lyAdr`, `adrDiff`, `adrGrowth`
+3. **`room-sales-by-channel` 및 `room-rate-sales` 내 LY·Diff 통합 반환**:
+   - 각 채널/요금타입 행(`isChannelSubtotal`, `isSegmentSubtotal`, `isGrandTotal`)에 당기 수치와 함께 전년 동기 및 증감 필드를 기본 포함해 주십시오:
+     - `lyRoomsSold` (또는 `todayLyRooms`), `soldDiff`, `roomsGrowth`
+     - `lyTotalRevenue` (또는 `todayLyRevenue`), `revDiff`, `revGrowth`
+     - `lyAdr`, `adrDiff`, `adrGrowth`
+     - `isMemberCategory` (`boolean`: 기명/무기명/회원/협약/휴양소/임직원 요금 여부 백엔드 마스터 기준 플래그)
+
+---
+
+## 24. 🚨 [Ticket 59 / P1 완제품 API] 시너지(`revenue-summary`, `matrix-report`) 및 레저(`leisure-channel-sales`) 합산 완제품 보강 요청 (2026-10-24)
+
+### 24-1. 대상 엔드포인트 및 조치 사항
+1. **`GET /api/v6/dashboard/revenue-summary` 및 `GET /api/v6/dashboard/matrix-report` ([`Synergy.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/Synergy.tsx) 연동)**:
+   - `summary.synergySales` 객체에 선택 기간(단일일 또는 `startDate`~`endDate` 구간) 기준 부대매출 완제품을 항상 반환해 주십시오:
+     ```json
+     "synergySales": {
+       "golf": 45455373,
+       "fnb": 18230000,
+       "ticket": 12450000,
+       "moto": 8900000,
+       "leisureTotal": 21350000,
+       "total": 85035373
+     }
+     ```
+   - 프론트엔드에서 `ticket + moto`를 더하거나 `totalRev - roomRev`를 빼는 인라인 수식을 전면 제거하고 `synergySales.leisureTotal` 및 `synergySales.total`만 바인딩합니다.
+2. **`GET /api/v6/report/leisure-channel-sales` ([`LeisureFacility.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/LeisureFacility.tsx) 연동)**:
+   - `venues` 배열에 객실 부문인 `'벨포레 리조트'`가 혼입되지 않도록 백엔드 쿼리(`WHERE category_code IN ('TICKET', 'MOTO')`)에서 원천 분리해 주십시오.
+   - `summary.totalRevenue` (또는 `summary.totalTicketMotoSales`)에 레저(`TICKET`) + 모토아레나(`MOTO`) 통합 매출 합계를 완제품 정수로 제공해 주십시오.
+
+---
+
+## 25. 🚨 [Ticket 60 / P1 완제품 API] 시계열·레저이용률·온라인회원·레저조직도 내 증감(Diff) 완제품 필드 보강 요청 (2026-10-24)
+
+### 25-1. 엔드포인트별 추가 필드 명세
+1. **`GET /api/v6/report/leisure-yoy-matrix` ([`LeisureUsageRate.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/LeisureUsageRate.tsx) 연동)**:
+   - `pivotData[facilityName][]`의 각 월별 객체 및 `facilityPeriodCumulative[facilityName]`, `periodCumulative` 내에 연도 간 증감 완제품 필드를 추가해 주십시오:
+     - 기본 최신 연도 대비 직전 연도 증감: `yoyUsageRateDiff` (`%p` 차이, 소수점 1자리), `yoyVisitorsDiff` (이용객수 증감, 정수)
+     - 다중 연도 비교 맵: `yearDiffs: { "2026_2025": { "usageRateDiff": 2.4, "visitorsDiff": 310 }, "2025_2024": { ... } }`
+2. **`GET /api/v6/report/monthly-seasonality-matrix` ([`FacilityTrend.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/FacilityTrend.tsx) 연동)**:
+   - `annual` 및 `facilities[].annual` 객체에 아래 완제품 필드가 `null`/`undefined` 없이 항상 반환되도록 보장해 주십시오:
+     - `yoyRevenueDiff`, `yoyRevenuePct`, `yoyVisitorsDiff`, `yoyVisitorsPct`, `yoyTrevparDiff`, `yoyTrevparPct`
+     - `sharePct` (`0~100` 백분율 완제품, 소수점 1자리 — 기존 `shareRatio * 100` 클라이언트 연산 대체)
+3. **`GET /api/v6/report/online-members` ([`OnlineMembers.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/OnlineMembers.tsx) 연동)**:
+   - `trends.monthly[]` 각 월별 항목에 `joinedDiff` (`joined - lyJoined`, Integer) 및 `growthRate` (`camelCase`) 완제품 추가.
+   - `summary.periodJoinedDiff` (`periodJoinedMembers - lyPeriodJoinedMembers`, Integer) 완제품 추가.
+4. **`GET /api/v6/report/leisure-organization` ([`LeisureOrganization.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/LeisureOrganization.tsx) 연동)**:
+   - `summary.weekendExtraHeadcount` (`totalWeekendHeadcount - totalWeekdayHeadcount`, Integer) 완제품 필드 추가.
+
+---
+
+## 26. 🚨 [Ticket 61 / P1 규격 정규화] 전 엔드포인트 100% `camelCase` 정규화 및 표시명 SSOT 제공 요청 (2026-10-24)
+
+### 26-1. 대상 엔드포인트 및 정규화 항목
+1. **`GET /api/v6/report/daily-member-visitors-v2` ([`RoomGuestAnalysis.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/RoomGuestAnalysis.tsx) 연동)**:
+   - `dailyVisitors[]`: `salesDate`, `dailyRoomGuests`, `dailyGolfPlayers`, `dailyRevenue` (기존 `sales_date`, `daily_room_guests` 등 `snake_case`를 100% `camelCase`로 제공)
+   - `venues[]`: `categoryCode`, `venueName`, `ticketGroup`, `visitorCount`, `visitorCountFormatted`, `visitorSharePct`, `revenue`, `revenueFormatted`
+2. **`GET /api/v6/report/golf-channel-teetime-analysis-v2` ([`GolfBusiness.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/GolfBusiness.tsx) 연동)**:
+   - `channels[]`: `venueName`, `displayName` (`기타매출 (대여채)` 등 화면 표시명 백엔드에서 완성 제공), `productGroup`, `productCode` (`'GREEN_FEE' | 'CART_FEE' | 'START_HOUSE' | 'RESTAURANT' | 'PRO_SHOP' | 'ETC'`), `revenue`, `revenueFormatted`, `quantity`, `quantityFormatted`, `players`, `playersFormatted`, `revenueSharePct`, `unitPrice`, `unitPriceFormatted`
+3. **`GET /api/v6/dashboard/revenue-by-org` ([`V6DashboardViewer.tsx`](file:///e:/앱/belleforet-dashboard/src/components/dashboard/V6DashboardViewer.tsx) 연동)**:
+   - 파트별 소계 키를 `partSubtotal` (`camelCase`)로 100% 통일 제공.
+4. **`GET /api/v6/admin/etl-logs`, `GET /api/v6/admin/system/etl-status`, `GET /api/v6/admin/daol-rules`**:
+   - 응답 JSON 프로퍼티에 `camelCase` (`sourceFileName`, `recordCount`, `uploadDate`, `minDate`, `maxDate`, `ticketGap`, `varianceGap`, `unmappedCount`, `ruleType`, `sourceName`, `targetName`)를 표준 제공해 주십시오.
+
+---
+
+## 27. 🚨 [Ticket 62 / P1 완제품 API] `GET /api/v6/leisure/pricing-catalog` 전 영업장 요금표 100% 완제품 서빙 요청 (2026-10-24)
+
+### 27-1. 배경 및 조치 사항
+- 현재 [`LeisurePricing.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/LeisurePricing.tsx)가 로컬 정적 파일([`src/data/leisurePricingData.ts`](file:///e:/앱/belleforet-dashboard/src/data/leisurePricingData.ts))을 초기 상태(`useState`)로 들고 있으면서 S3 스페셜 오퍼만 클라이언트에서 병합하고 있었습니다.
+- 프론트엔드 로컬 매핑/사전 탑재 금지(제2편-2) 및 더미 초기 상태 금지(제3편-7) 원칙에 따라 프론트엔드는 초기 상태를 빈 배열(`[]`)로 두고 백엔드 API 응답만 100% 렌더링하도록 전환합니다.
+- 이에 따라 `GET /api/v6/leisure/pricing-catalog`가 일부 스페셜 오퍼만 내려주는 경우가 없도록, **항상 골프·객실·레저·식음 전 영업장 요금표(`facilities: LeisureFacilityPricing[]`)와 최신 스페셜 오퍼/골프 스냅샷이 병합 완료된 최종 완제품 배열**을 반환해 주십시오.
+
+---
+
+## 28. 🚨 [Ticket 63 / P1 시뮬레이터 엔진] 시뮬레이터 4종 백엔드 연산 일원화 요청 (2026-10-24)
+
+### 28-1. 대상 시뮬레이터 엔드포인트 4종
+프론트엔드 내 `.reduce()`, 루프 합산(`+=`), 부가세 역산(`/ 1.1`), 원가율 곱셈(`* 0.35`), 월평균/일평균 나눗셈(`/ 12`, `/ 365`)을 전면 제거하기 위해 아래 4개 API가 모든 시뮬레이션 결과값을 완제품으로 반환해 주십시오:
+
+1. **`POST /api/v6/simulator/strategic-forecast` & `GET /api/v6/report/monthly-seasonality-matrix` ([`StrategicSimulator.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/StrategicSimulator.tsx))**:
+   - 최대 잔여법(Largest Remainder Method, 0-Variance)이 완료된 부문별(`categories`)·파트별(`parts`)·시설별(`facilities`) 목표 매출액(`target2026`), 증감액(`diff`), 증감률(`growthRate`), 비중(`weight`) 및 연간 매트릭스의 `grandYearTotal`, `monthlyAvg` (`grandYearTotal / 12` 반올림 정수), `dailyAvg` (`grandYearTotal / 365` 반올림 정수)를 백엔드에서 일괄 반환.
+2. **`POST /api/v6/simulator/monthly-rebalancer` ([`MonthlyDynamicRebalancer.tsx`](file:///e:/앱/belleforet-dashboard/src/components/dashboard/MonthlyDynamicRebalancer.tsx))**:
+   - 잠금 월(`lockedMonths`), 성수기 상한(`peakCapRate`), 개별 조정값을 전달받아 1~12월 배분 목표액(`monthlyTargets`), 증감률(`growthRates`), ECharts용 억 단위 시리즈(`baseSeriesEok`, `targetSeriesEok`), 성수기 예상 점유율(`estimatedOccPct`), 여유 여력(`headroomPct`)을 백엔드에서 완제품으로 계산하여 반환.
+3. **`POST /api/v6/simulator/package-generator` ([`PackageGeneratorSimulator.tsx`](file:///e:/앱/belleforet-dashboard/src/components/dashboard/PackageGeneratorSimulator.tsx))**:
+   - 목표 패키지 판매가, 객실 공제액, 구성 아이템 목록, 목표 점유율, 일일 판매 목표 객실수를 입력받아 백엔드에서 아래 지표를 모두 완제품으로 계산해 반환:
+     - 쿼터 배분: `totalPhysicalRooms` (175), `lockedRegularRooms`, `maxPackageAllotment`, `lockedRegularWidthPct`, `maxPackageWidthPct`
+     - 역산 손익: `roomDeduction`, `amenityBudget`, `fnbAllocatedTotal`, `leisureAllocatedTotal`, `fnbBudgetSharePct`, `leisureBudgetSharePct`, `totalVariableCostNet`, `totalVariableCostGross`, `packageNetPrice`, `contributionMarginNet`, `marginRatePct`, `totalCustomerRetailValue`, `customerPerceivedSavings`, `perceivedDiscountRatePct`
+     - TrevPAR 파급: `simulatedTrevPAR`, `trevparUpliftAmount`, `trevparUpliftPct`, `monthlyPkgGrossRevenue`, `monthlyPkgNetRevenue`, `monthlyPkgNetRevenueEok`, `monthlyPkgNetRevenueMan`
+4. **`GET/POST /api/v6/report/leisure-top-products` ([`LeisurePricingSimulator.tsx`](file:///e:/앱/belleforet-dashboard/src/components/dashboard/LeisurePricingSimulator.tsx))**:
+   - 품목별 조정 단가(`adjustedPrices`) 및 수요 변동률(`demandChangePct`) 파라미터를 수신하여, 백엔드에서 품목별/전체 연간 및 월평균 예상 매출(`lyTotalRev`, `lyMonthlyAvg`, `baselineTotalRev`, `baselineMonthlyAvg`, `baselineTotalDelta`, `baselineTotalDeltaPct`, `adjustedTotalRev`, `adjustedMonthlyAvg`, `adjustedTotalDelta`, `adjustedTotalDeltaPct`)과 1~12월 시뮬레이션 배열을 완제품으로 반환.

@@ -630,13 +630,16 @@ export default function LeisureUsageRate() {
     const cumMap = yoyData?.facilityPeriodCumulative?.[pivotKey];
     if (!cumMap) return null;
 
-    const result: Record<string, { visitors: number; roomGuests: number; usageRate: number }> = {};
+    const result: Record<string, { visitors: number; roomGuests: number; usageRate: number; yoyUsageRateDiff?: number | null; yoyVisitorsDiff?: number | null; yearDiffs?: any }> = {};
     availableYears.forEach((yr) => {
-      const item = cumMap[yr];
+      const item: any = cumMap[yr];
       result[yr] = {
         visitors: item?.visitors ?? 0,
         roomGuests: item?.roomGuests ?? 0,
         usageRate: item?.usageRate ?? 0,
+        yoyUsageRateDiff: item?.yoyUsageRateDiff ?? null,
+        yoyVisitorsDiff: item?.yoyVisitorsDiff ?? null,
+        yearDiffs: item?.yearDiffs ?? (cumMap as any)?.yearDiffs ?? null,
       };
     });
 
@@ -646,9 +649,12 @@ export default function LeisureUsageRate() {
   const periodYoYDiff = useMemo(() => {
     if (!periodCumulative) return null;
     const cB = periodCumulative[compareYearB];
-    const cA = periodCumulative[compareYearA];
-    if (cB && cA && cB.roomGuests > 0 && cA.roomGuests > 0) {
-      return Math.round((cB.usageRate - cA.usageRate) * 10) / 10;
+    const diffFromYearDiffs = cB?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff;
+    if (diffFromYearDiffs !== undefined && diffFromYearDiffs !== null) {
+      return Number(diffFromYearDiffs);
+    }
+    if (cB?.yoyUsageRateDiff !== undefined && cB?.yoyUsageRateDiff !== null) {
+      return Number(cB.yoyUsageRateDiff);
     }
     return null;
   }, [periodCumulative, compareYearB, compareYearA]);
@@ -656,18 +662,21 @@ export default function LeisureUsageRate() {
   // 7개 주요 영업장 선택 구간 누적 (백엔드 facilityPeriodCumulative 완제품 직접 바인딩)
   const sevenFacilitiesCumulative = useMemo(() => {
     if (!yoyData?.facilityPeriodCumulative) return {};
-    const result: Record<string, Record<string, { visitors: number; roomGuests: number; usageRate: number }>> = {};
+    const result: Record<string, Record<string, { visitors: number; roomGuests: number; usageRate: number; yoyUsageRateDiff?: number | null; yoyVisitorsDiff?: number | null; yearDiffs?: any }>> = {};
 
     SEVEN_KEY_FACILITIES.forEach(({ key }) => {
       const cumMap = yoyData.facilityPeriodCumulative?.[key] || {};
       result[key] = {};
 
       selectedMatrixYears.forEach((yr) => {
-        const item = cumMap[yr];
+        const item: any = cumMap[yr];
         result[key][yr] = {
           visitors: item?.visitors ?? 0,
           roomGuests: item?.roomGuests ?? 0,
           usageRate: item?.usageRate ?? 0,
+          yoyUsageRateDiff: item?.yoyUsageRateDiff ?? null,
+          yoyVisitorsDiff: item?.yoyVisitorsDiff ?? null,
+          yearDiffs: item?.yearDiffs ?? (cumMap as any)?.yearDiffs ?? null,
         };
       });
     });
@@ -708,12 +717,13 @@ export default function LeisureUsageRate() {
 
     yoyData.facilities.forEach((fac, idx) => {
       const rows = yoyData.pivotData?.[fac] || [];
-      const cum = yoyData.facilityPeriodCumulative?.[fac];
+      const cum: any = yoyData.facilityPeriodCumulative?.[fac];
       const cumA = cum?.[expYearA]?.usageRate;
       const cumB = cum?.[expYearB]?.usageRate;
+      const rawCumDiff = cum?.yearDiffs?.[`${expYearB}_${expYearA}`]?.usageRateDiff ?? cum?.[expYearB]?.yoyUsageRateDiff ?? null;
       let cumDiffStr = '-';
-      if (cumA !== undefined && cumB !== undefined) {
-        const d = Math.round((cumB - cumA) * 10) / 10;
+      if (rawCumDiff !== null && rawCumDiff !== undefined) {
+        const d = Number(rawCumDiff);
         cumDiffStr = d >= 0 ? `+${d.toFixed(1)}%p` : `${d.toFixed(1)}%p`;
       }
 
@@ -737,9 +747,9 @@ export default function LeisureUsageRate() {
       ];
 
       for (let m = 1; m <= 12; m++) {
-        const mRow = rows.find((r) => r.month === m);
-        const dA = mRow?.[expYearA] as LeisureYoyYearData | undefined;
-        const dB = mRow?.[expYearB] as LeisureYoyYearData | undefined;
+        const mRow: any = rows.find((r) => r.month === m);
+        const dA = mRow?.[expYearA] as any;
+        const dB = mRow?.[expYearB] as any;
 
         const hasA = dA && (dA.roomGuests > 0 || dA.visitors > 0);
         const hasB = dB && (dB.roomGuests > 0 || dB.visitors > 0);
@@ -750,8 +760,9 @@ export default function LeisureUsageRate() {
         rowA.push(valA !== null ? `${valA.toFixed(1)}%` : '-');
         rowB.push(valB !== null ? `${valB.toFixed(1)}%` : (m >= 11 ? '미도래' : '-'));
 
-        if (valA !== null && valB !== null) {
-          const diff = Math.round((valB - valA) * 10) / 10;
+        const rawDiff = mRow?.yearDiffs?.[`${expYearB}_${expYearA}`]?.usageRateDiff ?? dB?.yoyUsageRateDiff ?? null;
+        if (rawDiff !== null && rawDiff !== undefined) {
+          const diff = Number(rawDiff);
           rowDiff.push(diff >= 0 ? `+${diff.toFixed(1)}%p` : `${diff.toFixed(1)}%p`);
         } else {
           rowDiff.push('-');
@@ -801,9 +812,9 @@ export default function LeisureUsageRate() {
     ];
 
     yoyData.facilities.forEach((fac, idx) => {
-      const cum = yoyData.facilityPeriodCumulative?.[fac];
+      const cum: any = yoyData.facilityPeriodCumulative?.[fac];
       const cA = cum?.[expYearA];
-      const cB = cum?.[expYearB];
+      const cB: any = cum?.[expYearB];
 
       const vA = cA?.visitors ?? 0;
       const rA = cA?.roomGuests ?? 0;
@@ -813,9 +824,11 @@ export default function LeisureUsageRate() {
       const rB = cB?.roomGuests ?? 0;
       const uB = cB?.usageRate ?? 0;
 
-      const rateDiff = (cA && cB) ? Math.round((uB - uA) * 10) / 10 : 0;
-      const visDiff = vB - vA;
-      const trend = rateDiff > 0 ? '▲ 상승' : rateDiff < 0 ? '▼ 하락' : '- 유지';
+      const rawRateDiff = cum?.yearDiffs?.[`${expYearB}_${expYearA}`]?.usageRateDiff ?? cB?.yoyUsageRateDiff ?? null;
+      const rawVisDiff = cum?.yearDiffs?.[`${expYearB}_${expYearA}`]?.visitorsDiff ?? cB?.yoyVisitorsDiff ?? null;
+      const rateDiff = rawRateDiff !== null && rawRateDiff !== undefined ? Number(rawRateDiff) : null;
+      const visDiff = rawVisDiff !== null && rawVisDiff !== undefined ? Number(rawVisDiff) : null;
+      const trend = rateDiff === null ? '-' : rateDiff > 0 ? '▲ 상승' : rateDiff < 0 ? '▼ 하락' : '- 유지';
 
       sheet2Rows.push([
         idx + 1,
@@ -826,8 +839,8 @@ export default function LeisureUsageRate() {
         vB,
         rB,
         `${uB.toFixed(1)}%`,
-        rateDiff >= 0 ? `+${rateDiff.toFixed(1)}%p` : `${rateDiff.toFixed(1)}%p`,
-        visDiff >= 0 ? `+${visDiff.toLocaleString()}` : visDiff.toLocaleString(),
+        rateDiff === null ? '-' : rateDiff >= 0 ? `+${rateDiff.toFixed(1)}%p` : `${rateDiff.toFixed(1)}%p`,
+        visDiff === null ? '-' : visDiff >= 0 ? `+${visDiff.toLocaleString()}` : visDiff.toLocaleString(),
         trend
       ]);
     });
@@ -881,11 +894,11 @@ export default function LeisureUsageRate() {
           rowData.push(hasData && d ? `${d.usageRate.toFixed(1)}%` : (yr === latestYear && m >= 11 ? '미도래' : '-'));
         });
 
-        const dPrev = mRow?.[prevYear] as LeisureYoyYearData | undefined;
-        const dLatest = mRow?.[latestYear] as LeisureYoyYearData | undefined;
+        const dLatest = mRow?.[latestYear] as any;
+        const rawDiff = (mRow as any)?.yearDiffs?.[`${latestYear}_${prevYear}`]?.usageRateDiff ?? dLatest?.yoyUsageRateDiff ?? null;
         let diffStr = '-';
-        if (dPrev && dLatest && (dPrev.visitors > 0 || dPrev.roomGuests > 0) && (dLatest.visitors > 0 || dLatest.roomGuests > 0)) {
-          const diff = Math.round((dLatest.usageRate - dPrev.usageRate) * 10) / 10;
+        if (rawDiff !== null && rawDiff !== undefined) {
+          const diff = Number(rawDiff);
           diffStr = diff >= 0 ? `+${diff.toFixed(1)}%p` : `${diff.toFixed(1)}%p`;
         }
         rowData.push(diffStr);
@@ -1550,19 +1563,11 @@ export default function LeisureUsageRate() {
                         {/* 7 Facilities × Selected Years Cells */}
                         {SEVEN_KEY_FACILITIES.map((fac) => {
                           const rows = yoyData?.pivotData?.[fac.key] || [];
-                          const mRow = rows.find((r) => r.month === monthNum);
-                          const dataA = mRow ? (mRow[compareYearA] as LeisureYoyYearData | undefined) : undefined;
-                          const dataB = mRow ? (mRow[compareYearB] as LeisureYoyYearData | undefined) : undefined;
+                          const mRow: any = rows.find((r) => r.month === monthNum);
+                          const dataB = mRow ? (mRow[compareYearB] as any) : undefined;
 
-                          let yoyDiff: number | null = null;
-                          if (
-                            dataA &&
-                            dataB &&
-                            (dataA.visitors > 0 || dataA.roomGuests > 0) &&
-                            (dataB.visitors > 0 || dataB.roomGuests > 0)
-                          ) {
-                            yoyDiff = Math.round((dataB.usageRate - dataA.usageRate) * 10) / 10;
-                          }
+                          const rawYoyDiff = mRow?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff ?? dataB?.yoyUsageRateDiff ?? null;
+                          const yoyDiff: number | null = rawYoyDiff !== null && rawYoyDiff !== undefined ? Number(rawYoyDiff) : null;
 
                           return selectedMatrixYears.map((yr, idx) => {
                             const item = mRow ? (mRow[yr] as LeisureYoyYearData | undefined) : undefined;
@@ -1633,12 +1638,9 @@ export default function LeisureUsageRate() {
                       </td>
 
                       {SEVEN_KEY_FACILITIES.map((fac) => {
-                        const cumA = sevenFacilitiesCumulative[fac.key]?.[compareYearA];
                         const cumB = sevenFacilitiesCumulative[fac.key]?.[compareYearB];
-                        let diff: number | null = null;
-                        if (cumA && cumB && cumA.roomGuests > 0 && cumB.roomGuests > 0) {
-                          diff = Math.round((cumB.usageRate - cumA.usageRate) * 10) / 10;
-                        }
+                        const rawDiff = cumB?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff ?? cumB?.yoyUsageRateDiff ?? null;
+                        const diff: number | null = rawDiff !== null && rawDiff !== undefined ? Number(rawDiff) : null;
 
                         return selectedMatrixYears.map((yr, idx) => {
                           const cum = sevenFacilitiesCumulative[fac.key]?.[yr];
@@ -1716,16 +1718,9 @@ export default function LeisureUsageRate() {
                     const monthNum = row.month;
                     const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
 
-                    const dPrev = row[prevYear] as LeisureYoyYearData | undefined;
-                    const dLatest = row[latestYear] as LeisureYoyYearData | undefined;
-
-                    const hasLatestData = dLatest && (dLatest.roomGuests > 0 || dLatest.visitors > 0);
-                    const hasPrevData = dPrev && (dPrev.roomGuests > 0 || dPrev.visitors > 0);
-
-                    let yoyDiff: number | null = null;
-                    if (hasLatestData && hasPrevData && dLatest && dPrev) {
-                      yoyDiff = Math.round((dLatest.usageRate - dPrev.usageRate) * 10) / 10;
-                    }
+                    const dLatest = row[latestYear] as any;
+                    const rawYoyDiff = (row as any)?.yearDiffs?.[`${latestYear}_${prevYear}`]?.usageRateDiff ?? dLatest?.yoyUsageRateDiff ?? null;
+                    const yoyDiff: number | null = rawYoyDiff !== null && rawYoyDiff !== undefined ? Number(rawYoyDiff) : null;
 
                     return (
                       <tr 

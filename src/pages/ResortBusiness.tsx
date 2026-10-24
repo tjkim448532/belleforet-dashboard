@@ -66,6 +66,15 @@ interface RoomOccupancyItem {
   adr?: number | string | null;
   dynamicCapacity?: number | null;
   dynamicOccupancyRate?: number | null;
+  lySold?: number | null;
+  lyCap?: number | null;
+  lyRev?: number | null;
+  lyAdr?: number | null;
+  lyRate?: number | null;
+  rateDiff?: number | null;
+  soldDiff?: number | null;
+  revenueDiff?: number | null;
+  adrDiff?: number | null;
   revGrowth?: number | null;
 }
 
@@ -74,7 +83,22 @@ interface PhysicalRoomMetrics {
   physicalOccupiedUnits?: number;
   physicalOccupancyRate?: number;
   denominatorUnits?: number;
+  connectingSets?: number;
+  connectingPhysicalRooms?: number;
+  standardPhysicalRooms?: number;
+  remainingRooms?: number;
+  lyTotalRoomsSold?: number;
+  lyPhysicalOccupiedUnits?: number;
+  lyPhysicalOccupancyRate?: number;
+  lyDenominatorUnits?: number;
+  lyConnectingSets?: number;
+  lyConnectingPhysicalRooms?: number;
+  lyStandardPhysicalRooms?: number;
+  lyRemainingRooms?: number;
+  roomsDiff?: number | null;
   roomsGrowth?: number | null;
+  physicalOccupiedDiff?: number | null;
+  physicalOccupancyRateDiff?: number | null;
   breakdownOccupied?: any;
   [key: string]: any;
 }
@@ -86,9 +110,7 @@ interface PhysicalRoomMaster {
 
 export default function ResortBusiness() {
   const [data, setData] = useState<any>(null);
-  const [lyData, setLyData] = useState<any>(null);
   const [physicalRoomMaster, setPhysicalRoomMaster] = useState<PhysicalRoomMaster | null>(null);
-  const [lyPhysicalRoomMaster, setLyPhysicalRoomMaster] = useState<PhysicalRoomMaster | null>(null);
   const [loading, setLoading] = useState(true);
   const { startDate, endDate, isRange: isGlobalRange } = useDate();
   const [showLyCompareTable, setShowLyCompareTable] = useState<boolean>(true);
@@ -184,23 +206,13 @@ export default function ResortBusiness() {
         const queryParams = isRangeQuery
           ? `startDate=${curStart}&endDate=${curEnd}&_t=${Date.now()}`
           : `date=${curStart}&_t=${Date.now()}`;
-        
-        const lyStartStr = getLyDateStr(curStart);
-        const lyEndStr = getLyDateStr(curEnd);
-        const lyQueryParams = isRangeQuery
-          ? `startDate=${lyStartStr}&endDate=${lyEndStr}&_t=${Date.now()}`
-          : `date=${lyStartStr}&_t=${Date.now()}`;
           
-        const [resortSummaryRes, overviewRes, channelRes, rateRes, orgRes, lyOverviewRes, lyChannelRes, lyRateRes, lyOrgRes, leadtimeWearRes] = await Promise.all([
+        const [resortSummaryRes, overviewRes, channelRes, rateRes, orgRes, leadtimeWearRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/resort-business-summary?${queryParams}`, { signal: controller.signal }).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${queryParams}`, { signal: controller.signal }),
           secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${queryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
           secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${queryParams}`, { signal: controller.signal }).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?${lyQueryParams}`, { signal: controller.signal }).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/room-sales-by-channel?${lyQueryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/report/room-rate-sales?${lyQueryParams}`, { signal: controller.signal }).catch(() => ({ data: [] })),
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-by-org?${lyQueryParams}`, { signal: controller.signal }).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/room-leadtime-unit-wear?${queryParams}`, { signal: controller.signal }).catch(() => null)
         ]);
 
@@ -233,27 +245,6 @@ export default function ResortBusiness() {
         }, caps);
 
         setData(transformed);
-
-        if (lyOverviewRes || lyOrgRes) {
-          const rawLyOverview = (lyOverviewRes?.summary || lyOverviewRes?.gridData) ? lyOverviewRes : (lyOverviewRes?.data || lyOverviewRes || {});
-          const rawLyChannels = lyChannelRes?.data || lyChannelRes;
-          const rawLyRates = lyRateRes?.data || lyRateRes;
-
-          const lyPhysicalMaster = lyOrgRes?.data?.physicalRoomMaster || lyOrgRes?.physicalRoomMaster || null;
-          setLyPhysicalRoomMaster(lyPhysicalMaster);
-
-          const lyTransformed = transformResortData({
-            ...rawLyOverview,
-            matrix: Array.isArray(rawLyOverview?.gridData) ? rawLyOverview.gridData : [],
-            salesByChannel: Array.isArray(rawLyChannels) ? rawLyChannels : (rawLyChannels?.channels || rawLyChannels?.data || []),
-            salesBySegment: Array.isArray(rawLyRates) ? rawLyRates : (rawLyRates?.rates || rawLyRates?.data || [])
-          }, caps);
-
-          setLyData(lyTransformed);
-        } else {
-          setLyData(null);
-          setLyPhysicalRoomMaster(null);
-        }
       } catch (err: any) {
         if (controller.signal.aborted || err?.name === 'AbortError') return;
         console.error('Error fetching resort data:', err);
@@ -277,17 +268,15 @@ export default function ResortBusiness() {
     return isNaN(num) ? '0' : new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
-  // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 연산
+  // 175실 기준 실운영 점유실(물리) 및 도넛 차트 레이어링 바인딩
   const isRange = Boolean(startDate && endDate && startDate !== endDate);
   const curStart = startDate || getLatestClosedDateStr();
   const curEnd = isRange && endDate ? endDate : curStart;
   const lyStart = getLyDateStr(curStart);
   const lyEnd = getLyDateStr(curEnd);
 
-  const safeRangeDays = isRange && startDate && endDate 
-    ? Math.max(1, Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) 
-    : 1;
-  const rangeDays = safeRangeDays;
+  const summary = data?.summary || {};
+  const rangeDays = Number((resortSummary as any)?.days ?? summary.days ?? summary.daysCount ?? 1);
 
   // 공휴일 수 대조 정보
   const holidayComparison = useMemo(() => {
@@ -296,75 +285,41 @@ export default function ResortBusiness() {
   }, [startDate, endDate]);
 
   const lodgingStats = data?.lodgingStats || { revenue: 0, roomsSold: 0, adr: 0, totalCapacity: 0 };
-  const lyStats = lyData?.lodgingStats || null;
 
   // 🏛️ 건축학적 물리 가동 객실 인벤토리 모수 (SSOT - /api/v6/dashboard/revenue-by-org)
   const curPhysicalMetrics = physicalRoomMaster?.metrics;
-  const lyPhysicalMetrics = lyPhysicalRoomMaster?.metrics;
 
-  // 🌟 전년 동일기간 비교 핵심 지표 (Zero-Fake, 공식 마트 실측 바인딩)
+  // 🌟 전년 동일기간 비교 핵심 지표 (Zero-Fake, 공식 마트 실측 1:1 바인딩)
   // 1. 객실 총 매출
   const revCurrent = lodgingStats.revenue;
-  const revLy = (lodgingStats.lyRevenue !== undefined && lodgingStats.lyRevenue > 0)
-    ? lodgingStats.lyRevenue
-    : (lyStats?.revenue || 0);
-  const revDiff = revLy > 0 ? revCurrent - revLy : 0;
-  const revGrowth = lodgingStats.revenueGrowth !== undefined && lodgingStats.revenueGrowth !== null
-    ? lodgingStats.revenueGrowth
-    : null;
+  const revLy = lodgingStats.lyRevenue ?? 0;
+  const revDiff = lodgingStats.revenueDiff ?? null;
+  const revGrowth = lodgingStats.revenueGrowth ?? null;
 
   // 2. 판매 건수 (계약) - physicalRoomMaster.metrics.totalRoomsSold 우선 바인딩
   const roomsCurrent = curPhysicalMetrics?.totalRoomsSold ?? lodgingStats.roomsSold;
-  const roomsLy = curPhysicalMetrics?.totalRoomsSold !== undefined && lyPhysicalMetrics?.totalRoomsSold !== undefined
-    ? lyPhysicalMetrics.totalRoomsSold
-    : ((lodgingStats.lyRoomsSold !== undefined && lodgingStats.lyRoomsSold > 0)
-      ? lodgingStats.lyRoomsSold
-      : (lyStats?.roomsSold || 0));
-  const roomsDiff = roomsLy > 0 ? roomsCurrent - roomsLy : 0;
-  const roomsGrowth = lodgingStats.roomsGrowth !== undefined && lodgingStats.roomsGrowth !== null
-    ? lodgingStats.roomsGrowth
-    : (curPhysicalMetrics?.roomsGrowth ?? null);
+  const roomsLy = curPhysicalMetrics?.lyTotalRoomsSold ?? lodgingStats.lyRoomsSold ?? 0;
+  const roomsDiff = curPhysicalMetrics?.roomsDiff ?? lodgingStats.roomsDiff ?? null;
+  const roomsGrowth = lodgingStats.roomsGrowth ?? curPhysicalMetrics?.roomsGrowth ?? null;
 
-  // 3. 실운영 점유실 (물리) & 점유율 - physicalRoomMaster.metrics 우선 바인딩 (167실, 95.4%)
-  const summary = data?.summary || {};
+  // 3. 실운영 점유실 (물리) & 점유율 - physicalRoomMaster.metrics 완제품 바인딩
   const totalBaseRooms = curPhysicalMetrics?.denominatorUnits ?? Number(summary.totalPhysicalKeys || summary.totalRoomInventory || lodgingStats.totalCapacity || 0);
 
-  const connectingSets = curPhysicalMetrics?.totalRoomsSold !== undefined && curPhysicalMetrics?.physicalOccupiedUnits !== undefined
-    ? Math.max(0, curPhysicalMetrics.physicalOccupiedUnits - curPhysicalMetrics.totalRoomsSold)
-    : Math.max(0, Math.round(Number(summary.connectingPhysicalRooms || 0) / 2));
-  const connectingPhysicalRooms = curPhysicalMetrics ? connectingSets * 2 : Number(summary.connectingPhysicalRooms || 0);
-  const standardPhysicalRooms = curPhysicalMetrics
-    ? Math.max(0, (curPhysicalMetrics.physicalOccupiedUnits ?? 0) - connectingPhysicalRooms)
-    : Number(summary.standardPhysicalRooms || lodgingStats.roomsSold);
-  const totalPhysicalOccupied = curPhysicalMetrics?.physicalOccupiedUnits ?? Number(
-    summary.totalPhysicalKeysSold ||
-    (standardPhysicalRooms + connectingPhysicalRooms)
-  );
-  const remainingRooms = Math.max(0, totalBaseRooms - totalPhysicalOccupied);
+  const connectingSets = Number(curPhysicalMetrics?.connectingSets ?? summary.connectingSets ?? 0);
+  const connectingPhysicalRooms = Number(curPhysicalMetrics?.connectingPhysicalRooms ?? summary.connectingPhysicalRooms ?? 0);
+  const standardPhysicalRooms = Number(curPhysicalMetrics?.standardPhysicalRooms ?? summary.standardPhysicalRooms ?? lodgingStats.roomsSold ?? 0);
+  const totalPhysicalOccupied = Number(curPhysicalMetrics?.physicalOccupiedUnits ?? summary.totalPhysicalKeysSold ?? 0);
+  const remainingRooms = Number(curPhysicalMetrics?.remainingRooms ?? summary.remainingRooms ?? 0);
 
   const occCurrent = curPhysicalMetrics?.physicalOccupancyRate !== undefined && curPhysicalMetrics?.physicalOccupancyRate !== null
     ? Number(curPhysicalMetrics.physicalOccupancyRate.toFixed(1))
     : lodgingStats.physicalOccRate;
 
-  const lySummary = lyData?.summary || {};
-  const lyConnectingSets = lyPhysicalMetrics?.totalRoomsSold !== undefined && lyPhysicalMetrics?.physicalOccupiedUnits !== undefined
-    ? Math.max(0, lyPhysicalMetrics.physicalOccupiedUnits - lyPhysicalMetrics.totalRoomsSold)
-    : Math.max(0, Math.round(Number(lySummary.connectingPhysicalRooms || 0) / 2));
-  const lyConnectingPhysicalRooms = lyPhysicalMetrics ? lyConnectingSets * 2 : Number(lySummary.connectingPhysicalRooms || 0);
-  const lyStandardPhysicalRooms = lyPhysicalMetrics
-    ? Math.max(0, (lyPhysicalMetrics.physicalOccupiedUnits ?? 0) - lyConnectingPhysicalRooms)
-    : Number(lySummary.standardPhysicalRooms || lyStats?.roomsSold || 0);
-  const lyTotalPhysicalOccupied = lyPhysicalMetrics?.physicalOccupiedUnits ?? Number(
-    lySummary.totalPhysicalKeysSold ||
-    (lyStandardPhysicalRooms + lyConnectingPhysicalRooms)
-  );
-
-  const occLy = lyPhysicalMetrics?.physicalOccupancyRate !== undefined && lyPhysicalMetrics?.physicalOccupancyRate !== null
-    ? Number(lyPhysicalMetrics.physicalOccupancyRate.toFixed(1))
-    : (lyStats?.physicalOccRate !== undefined ? lyStats.physicalOccRate : null);
-  const occDiff = occCurrent !== undefined && occCurrent !== null && occLy !== null
-    ? Number((occCurrent - occLy).toFixed(1))
-    : null;
+  const lyTotalPhysicalOccupied = Number(curPhysicalMetrics?.lyPhysicalOccupiedUnits ?? summary.lyTotalPhysicalKeysSold ?? 0);
+  const occLy = curPhysicalMetrics?.lyPhysicalOccupancyRate !== undefined && curPhysicalMetrics?.lyPhysicalOccupancyRate !== null
+    ? Number(curPhysicalMetrics.lyPhysicalOccupancyRate.toFixed(1))
+    : (lodgingStats.lyPhysicalOccRate ?? null);
+  const occDiff = curPhysicalMetrics?.physicalOccupancyRateDiff ?? lodgingStats.physicalOccRateDiff ?? null;
 
   // Breakdown subtext for Card 3
   const breakdown = curPhysicalMetrics?.breakdownOccupied;
@@ -374,15 +329,14 @@ export default function ResortBusiness() {
 
   // 4. 객실 평균 단가 (ADR)
   const adrCurrent = lodgingStats.adr;
-  const adrLy = lyStats?.adr !== undefined && lyStats.adr > 0 ? lyStats.adr : null;
-  const adrDiff = adrCurrent !== undefined && adrLy !== null ? adrCurrent - adrLy : null;
+  const adrLy = lodgingStats.lyAdr !== undefined && lodgingStats.lyAdr !== null && lodgingStats.lyAdr > 0 ? lodgingStats.lyAdr : null;
+  const adrDiff = lodgingStats.adrDiff ?? null;
   const adrGrowth = lodgingStats.adrGrowth ?? summary.adrGrowth ?? null;
   
   const roomOccupancyData = (() => {
     if (!data?.roomOccupancyMap) return [];
     
     const groups: Record<string, RoomOccupancyItem> = data.roomOccupancyMap;
-    const lyGroups: Record<string, RoomOccupancyItem> = lyData?.roomOccupancyMap || {};
     const result = [];
     const keys = Object.keys(groups);
     for (const key of keys) {
@@ -394,15 +348,15 @@ export default function ResortBusiness() {
       const cappedRate = rate !== null ? Math.min(rate, 100) : 0;
       const displayRate = rate !== null ? `${rate}%` : '-';
 
-      const lyG = lyGroups[key] || null;
-      const lySold = lyG?.sold ?? null;
-      const lyCap = lyG?.cap ?? null;
-      const lyRev = lyG?.rev ?? null;
-      const lyAdr = lyG?.adr !== null && lyG?.adr !== undefined ? Number(lyG.adr) : null;
-      const lyRate = lyG?.occupancyRate ?? null;
-      const rateDiff = rate !== null && lyRate !== null ? Number((rate - lyRate).toFixed(1)) : null;
-      const soldDiff = lySold !== null ? g.sold - lySold : null;
-      const adrDiff = (g.adr !== null && g.adr !== undefined && lyAdr !== null) ? Number(g.adr) - lyAdr : null;
+      const lySold = g.lySold ?? null;
+      const lyCap = g.lyCap ?? null;
+      const lyRev = g.lyRev ?? null;
+      const lyAdr = g.lyAdr !== null && g.lyAdr !== undefined ? Number(g.lyAdr) : null;
+      const lyRate = g.lyRate ?? null;
+      const rateDiff = g.rateDiff ?? null;
+      const soldDiff = g.soldDiff ?? null;
+      const revenueDiff = g.revenueDiff ?? null;
+      const adrDiffVal = g.adrDiff ?? null;
 
       result.push({
         roomSize: key,
@@ -416,7 +370,7 @@ export default function ResortBusiness() {
         isConnectedType: key === '51평',
         dynamicCapacity: g.dynamicCapacity,
         dynamicOccupancyRate: g.dynamicOccupancyRate,
-        // 전년 동기
+        // 전년 동기 완제품
         lySold,
         lyCap,
         lyRev,
@@ -424,7 +378,8 @@ export default function ResortBusiness() {
         lyRate,
         rateDiff,
         soldDiff,
-        adrDiff,
+        revenueDiff,
+        adrDiff: adrDiffVal,
         revGrowth: g.revGrowth ?? null
       });
     }
@@ -441,84 +396,57 @@ export default function ResortBusiness() {
   const rawType35 = data?.roomSummaryByType?.find((r: any) => r.roomType === '35평');
   const rawType51 = data?.roomSummaryByType?.find((r: any) => r.roomType === '51평');
 
-  const lyRawType16 = lyData?.roomSummaryByType?.find((r: any) => r.roomType === '16평');
-  const lyRawType35 = lyData?.roomSummaryByType?.find((r: any) => r.roomType === '35평');
-  const lyRawType51 = lyData?.roomSummaryByType?.find((r: any) => r.roomType === '51평');
-
   const adr16 = room16?.adr ?? (rawType16?.adr ? Number(rawType16.adr) : undefined);
-  const lyAdr16 = room16?.lyAdr ?? (lyRawType16?.adr ? Number(lyRawType16.adr) : undefined);
-  const adrDiff16 = (adr16 !== undefined && lyAdr16 !== undefined) ? adr16 - lyAdr16 : (room16?.adrDiff ?? null);
+  const lyAdr16 = room16?.lyAdr ?? (rawType16?.lyAdr !== undefined && rawType16?.lyAdr !== null ? Number(rawType16.lyAdr) : undefined);
+  const adrDiff16 = room16?.adrDiff ?? rawType16?.adrDiff ?? null;
 
   const adr35 = room35?.adr ?? (rawType35?.adr ? Number(rawType35.adr) : undefined);
-  const lyAdr35 = room35?.lyAdr ?? (lyRawType35?.adr ? Number(lyRawType35.adr) : undefined);
-  const adrDiff35 = (adr35 !== undefined && lyAdr35 !== undefined) ? adr35 - lyAdr35 : (room35?.adrDiff ?? null);
+  const lyAdr35 = room35?.lyAdr ?? (rawType35?.lyAdr !== undefined && rawType35?.lyAdr !== null ? Number(rawType35.lyAdr) : undefined);
+  const adrDiff35 = room35?.adrDiff ?? rawType35?.adrDiff ?? null;
 
   const adr51 = room51?.adr ?? (rawType51?.adr ? Number(rawType51.adr) : undefined);
-  const lyAdr51 = room51?.lyAdr ?? (lyRawType51?.adr ? Number(lyRawType51.adr) : undefined);
-  const adrDiff51 = (adr51 !== undefined && lyAdr51 !== undefined) ? adr51 - lyAdr51 : (room51?.adrDiff ?? null);
+  const lyAdr51 = room51?.lyAdr ?? (rawType51?.lyAdr !== undefined && rawType51?.lyAdr !== null ? Number(rawType51.lyAdr) : undefined);
+  const adrDiff51 = room51?.adrDiff ?? rawType51?.adrDiff ?? null;
 
   const channelAdrData = data?.channelAdrData || [];
   const rateAdrData = data?.rateAdrData || [];
 
-  // 판매채널별 전년 동기 대조 데이터
+  // 판매채널별 전년 동기 대조 데이터 (완제품 1:1 패스스루)
   const channelComparisonData = useMemo(() => {
     const curList = data?.channelAdrData || [];
-    const lyList = lyData?.channelAdrData || [];
-    const lyMap = new Map<string, any>();
-    lyList.forEach((item: any) => lyMap.set(item.channel, item));
+    return curList.map((cur: any) => ({
+      ...cur,
+      lySold: cur.lyRoomsSold ?? 0,
+      lyRev: cur.lyTotalRevenue ?? 0,
+      lyAdr: cur.lyAdr ?? 0,
+      soldDiff: cur.roomsDiff ?? null,
+      revDiff: cur.revenueDiff ?? null,
+      revGrowth: cur.revenueGrowth ?? cur.revGrowth ?? null,
+      adrDiff: cur.adrDiff ?? null,
+    }));
+  }, [data?.channelAdrData]);
 
-    return curList.map((cur: any) => {
-      const ly = lyMap.get(cur.channel);
-      const lySold = ly?.roomsSold ?? 0;
-      const lyRev = ly?.totalRevenue ?? 0;
-      const lyAdr = ly?.adr ?? 0;
-      const soldDiff = cur.roomsSold - lySold;
-      const revDiff = cur.totalRevenue - lyRev;
-      const revGrowth = cur.revenueGrowth ?? cur.revGrowth ?? null;
-      const adrDiff = (cur.adr > 0 && lyAdr > 0) ? cur.adr - lyAdr : null;
-
-      return {
-        ...cur,
-        lySold,
-        lyRev,
-        lyAdr,
-        soldDiff,
-        revDiff,
-        revGrowth,
-        adrDiff,
-      };
-    });
-  }, [data?.channelAdrData, lyData?.channelAdrData]);
-
-  // 요금타입별 전년 동기 대조 데이터
+  // 요금타입별 전년 동기 대조 데이터 (완제품 1:1 패스스루)
   const rateComparisonData = useMemo(() => {
     const curList = data?.rateAdrData || [];
-    const lyList = lyData?.rateAdrData || [];
-    const lyMap = new Map<string, any>();
-    lyList.forEach((item: any) => lyMap.set(item.marketType, item));
+    return curList.map((cur: any) => ({
+      ...cur,
+      lySold: cur.lyRoomsSold ?? 0,
+      lyRev: cur.lyTotalRevenue ?? 0,
+      lyAdr: cur.lyAdr ?? 0,
+      soldDiff: cur.roomsDiff ?? null,
+      revDiff: cur.revenueDiff ?? null,
+      revGrowth: cur.revenueGrowth ?? cur.revGrowth ?? null,
+      adrDiff: cur.adrDiff ?? null,
+    }));
+  }, [data?.rateAdrData]);
 
-    return curList.map((cur: any) => {
-      const ly = lyMap.get(cur.marketType);
-      const lySold = ly?.roomsSold ?? 0;
-      const lyRev = ly?.totalRevenue ?? 0;
-      const lyAdr = ly?.adr ?? 0;
-      const soldDiff = cur.roomsSold - lySold;
-      const revDiff = cur.totalRevenue - lyRev;
-      const revGrowth = cur.revenueGrowth ?? cur.revGrowth ?? null;
-      const adrDiff = (cur.adr > 0 && lyAdr > 0) ? cur.adr - lyAdr : null;
-
-      return {
-        ...cur,
-        lySold,
-        lyRev,
-        lyAdr,
-        soldDiff,
-        revDiff,
-        revGrowth,
-        adrDiff,
-      };
-    });
-  }, [data?.rateAdrData, lyData?.rateAdrData]);
+  const hasLyComparisonData = Boolean(
+    revLy > 0 ||
+    roomsLy > 0 ||
+    channelComparisonData.some((r: any) => r.lyRev > 0 || r.lySold > 0) ||
+    rateComparisonData.some((r: any) => r.lyRev > 0 || r.lySold > 0)
+  );
 
   // 도넛 차트: 물리 객실 기준 레이어링
   const pieOptions = (() => {
@@ -719,7 +647,7 @@ export default function ResortBusiness() {
                       (revGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}>
                       {(revGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(revGrowth || 0).toFixed(1)}%
-                      {revDiff !== 0 && (
+                      {revDiff !== null && revDiff !== 0 && (
                         <span className="ml-1 opacity-80">({revDiff > 0 ? '+' : ''}{formatCurrency(revDiff)}원)</span>
                       )}
                     </span>
@@ -754,7 +682,7 @@ export default function ResortBusiness() {
                       (roomsGrowth || 0) >= 0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}>
                       {(roomsGrowth || 0) >= 0 ? '▲' : '▼'} {Math.abs(roomsGrowth || 0).toFixed(1)}%
-                      {roomsDiff !== 0 && (
+                      {roomsDiff !== null && roomsDiff !== 0 && (
                         <span className="ml-1 opacity-80">({roomsDiff > 0 ? '+' : ''}{formatCurrency(roomsDiff)}건)</span>
                       )}
                     </span>
@@ -792,7 +720,7 @@ export default function ResortBusiness() {
                       {(occDiff || 0) >= 0 ? '▲' : '▼'} {Math.abs(occDiff || 0).toFixed(1)}%p
                     </span>
                     <span className="text-[11px] text-[#6C7A73] font-medium font-financial">
-                      전년 {(lyTotalPhysicalOccupied > 0 ? lyTotalPhysicalOccupied : lyStats?.roomsSold)?.toLocaleString()}실 ({occLy}%)
+                      전년 {(lyTotalPhysicalOccupied > 0 ? lyTotalPhysicalOccupied : roomsLy)?.toLocaleString()}실 ({occLy}%)
                     </span>
                   </div>
                 )}
@@ -1170,7 +1098,7 @@ export default function ResortBusiness() {
           )}
 
           {/* 🌟 기간 선택 시: 전년 동일기간 객실 실적 정밀 대조 매트릭스 */}
-          {isRange && lyStats && (
+          {isRange && hasLyComparisonData && (
             <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 border border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-3">
                 <div>
@@ -1205,39 +1133,25 @@ export default function ResortBusiness() {
                 const dtWeekend = resortSummary?.dayTypeComparison?.weekend;
                 const pyeongComp = resortSummary?.pyeongComparison;
 
-                // 🚨 [Pure Consumer / Fail-Stop] 백엔드 완제품 모수 기간 일치 검증:
-                // dayType 및 pyeongComparison의 실측 모수가 현재 선택 기간과 15% 이상 괴리된 경우(YTD 누적 오염)
-                // 왜곡된 가짜 숫자를 표출하지 않고 안전하게 '-' (Fail-Stop)로 격리
-                const isDayTypeMatched = dtWeekday?.tyRevenue !== undefined && lodgingStats.weekdayRevenue !== undefined && lodgingStats.weekdayRevenue > 0
-                  ? Math.abs(dtWeekday.tyRevenue - lodgingStats.weekdayRevenue) / Math.max(dtWeekday.tyRevenue, lodgingStats.weekdayRevenue, 1) < 0.15
-                  : false;
+                const weekdayRevGrowth = dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekdayRevenueGrowth ?? lodgingStats.weekdayRevenueGrowth ?? null;
+                const weekendRevGrowth = dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekendRevenueGrowth ?? lodgingStats.weekendRevenueGrowth ?? null;
 
-                const weekdayRevGrowth = isDayTypeMatched ? (dtSummary?.weekdayRevenueGrowth ?? dtWeekday?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekdayRevenueGrowth ?? lodgingStats.weekdayRevenueGrowth) : null;
-                const weekendRevGrowth = isDayTypeMatched ? (dtSummary?.weekendRevenueGrowth ?? dtWeekend?.revenueGrowth ?? resortSummary?.dayTypeComparison?.weekendRevenueGrowth ?? lodgingStats.weekendRevenueGrowth) : null;
+                const weekdayRoomsGrowth = dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekdayRoomsGrowth ?? lodgingStats.weekdayRoomsGrowth ?? null;
+                const weekendRoomsGrowth = dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekendRoomsGrowth ?? lodgingStats.weekendRoomsGrowth ?? null;
 
-                const weekdayRoomsGrowth = isDayTypeMatched ? (dtSummary?.weekdayRoomsGrowth ?? dtWeekday?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekdayRoomsGrowth ?? lodgingStats.weekdayRoomsGrowth) : null;
-                const weekendRoomsGrowth = isDayTypeMatched ? (dtSummary?.weekendRoomsGrowth ?? dtWeekend?.roomsGrowth ?? resortSummary?.dayTypeComparison?.weekendRoomsGrowth ?? lodgingStats.weekendRoomsGrowth) : null;
-
-                const weekdayAdrGrowth = isDayTypeMatched ? (dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekdayAdrGrowth ?? lodgingStats.weekdayAdrGrowth) : null;
-                const weekendAdrGrowth = isDayTypeMatched ? (dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekendAdrGrowth ?? lodgingStats.weekendAdrGrowth) : null;
+                const weekdayAdrGrowth = dtSummary?.weekdayAdrGrowth ?? dtWeekday?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekdayAdrGrowth ?? lodgingStats.weekdayAdrGrowth ?? null;
+                const weekendAdrGrowth = dtSummary?.weekendAdrGrowth ?? dtWeekend?.adrGrowth ?? resortSummary?.dayTypeComparison?.weekendAdrGrowth ?? lodgingStats.weekendAdrGrowth ?? null;
 
                 const getRoomRevGrowth = (roomSize: string) => {
-                  const pItem = pyeongComp?.items?.find(it => it.roomType === roomSize);
-                  const curRow = roomOccupancyData.find(r => r.roomSize === roomSize);
-                  // 백엔드 실측 모수가 현재 테이블의 선택 기간 실적과 일치할 때만 완제품 증감률 바인딩
-                  const isPyeongMatched = pItem?.todayRevenue !== undefined && curRow?.revenue !== undefined && curRow.revenue > 0
-                    ? Math.abs(pItem.todayRevenue - curRow.revenue) / Math.max(pItem.todayRevenue, curRow.revenue, 1) < 0.15
-                    : false;
-                  if (!isPyeongMatched) return null;
-                  if (roomSize === "16평") return pyeongComp?.revGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.revGrowth;
-                  if (roomSize === "35평") return pyeongComp?.revGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.revGrowth;
-                  if (roomSize === "51평") return pyeongComp?.revGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.revGrowth;
-                  return resortSummary?.rooms?.find(r => r.roomType === roomSize)?.revGrowth;
+                  if (roomSize === "16평") return pyeongComp?.revGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.revGrowth ?? null;
+                  if (roomSize === "35평") return pyeongComp?.revGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.revGrowth ?? null;
+                  if (roomSize === "51평") return pyeongComp?.revGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.revGrowth ?? null;
+                  return resortSummary?.rooms?.find(r => r.roomType === roomSize)?.revGrowth ?? null;
                 };
 
-                const pyeongAdrGrowth16 = getRoomRevGrowth("16평") !== null ? (pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? lodgingStats.adrGrowth16) : null;
-                const pyeongAdrGrowth35 = getRoomRevGrowth("35평") !== null ? (pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? lodgingStats.adrGrowth35) : null;
-                const pyeongAdrGrowth51 = getRoomRevGrowth("51평") !== null ? (pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? lodgingStats.adrGrowth51) : null;
+                const pyeongAdrGrowth16 = pyeongComp?.adrGrowth16 ?? resortSummary?.rooms?.find(r => r.roomType === "16평")?.adrGrowth ?? lodgingStats.adrGrowth16 ?? null;
+                const pyeongAdrGrowth35 = pyeongComp?.adrGrowth35 ?? resortSummary?.rooms?.find(r => r.roomType === "35평")?.adrGrowth ?? lodgingStats.adrGrowth35 ?? null;
+                const pyeongAdrGrowth51 = pyeongComp?.adrGrowth51 ?? resortSummary?.rooms?.find(r => r.roomType === "51평")?.adrGrowth ?? lodgingStats.adrGrowth51 ?? null;
 
                 const renderYoYGrowth = (growth: number | null | undefined) => {
                   if (growth === null || growth === undefined || isNaN(growth)) {
@@ -1272,8 +1186,8 @@ export default function ResortBusiness() {
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(revCurrent)}원</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(revLy)}원</td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${revDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
-                          {revDiff > 0 ? "+" : ""}{formatCurrency(revDiff)}원
+                        <td className={`py-3.5 px-4 text-right font-bold ${revDiff === null ? "text-slate-400" : revDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          {revDiff !== null ? `${revDiff > 0 ? "+" : ""}${formatCurrency(revDiff)}원` : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-right text-xs">
                           {renderYoYGrowth(revGrowth)}
@@ -1283,10 +1197,10 @@ export default function ResortBusiness() {
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 주중 객실 매출</td>
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekdayRevenue)}원</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayRevenue)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.lyWeekdayRevenue !== undefined && lodgingStats.lyWeekdayRevenue !== null ? `${formatCurrency(lodgingStats.lyWeekdayRevenue)}원` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayRevenue !== undefined && lyStats.weekdayRevenue !== undefined
-                            ? `${lodgingStats.weekdayRevenue - lyStats.weekdayRevenue > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayRevenue - lyStats.weekdayRevenue)}원`
+                          {lodgingStats.weekdayRevenueDiff !== undefined && lodgingStats.weekdayRevenueDiff !== null
+                            ? `${lodgingStats.weekdayRevenueDiff > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayRevenueDiff)}원`
                             : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
@@ -1296,10 +1210,10 @@ export default function ResortBusiness() {
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 객실 매출</td>
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekendRevenue)}원</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendRevenue)}원</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.lyWeekendRevenue !== undefined && lodgingStats.lyWeekendRevenue !== null ? `${formatCurrency(lodgingStats.lyWeekendRevenue)}원` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendRevenue !== undefined && lyStats.weekendRevenue !== undefined
-                            ? `${lodgingStats.weekendRevenue - lyStats.weekendRevenue > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendRevenue - lyStats.weekendRevenue)}원`
+                          {lodgingStats.weekendRevenueDiff !== undefined && lodgingStats.weekendRevenueDiff !== null
+                            ? `${lodgingStats.weekendRevenueDiff > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendRevenueDiff)}원`
                             : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
@@ -1315,8 +1229,8 @@ export default function ResortBusiness() {
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-900 font-extrabold">{formatCurrency(roomsCurrent)}건</td>
                         <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(roomsLy)}건</td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${roomsDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
-                          {roomsDiff > 0 ? "+" : ""}{formatCurrency(roomsDiff)}건
+                        <td className={`py-3.5 px-4 text-right font-bold ${roomsDiff === null ? "text-slate-400" : roomsDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                          {roomsDiff !== null ? `${roomsDiff > 0 ? "+" : ""}${formatCurrency(roomsDiff)}건` : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-right text-xs">
                           {renderYoYGrowth(roomsGrowth)}
@@ -1326,10 +1240,10 @@ export default function ResortBusiness() {
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 주중 판매 건수</td>
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekdayRoomsSold)}건</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekdayRoomsSold)}건</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.lyWeekdayRoomsSold !== undefined && lodgingStats.lyWeekdayRoomsSold !== null ? `${formatCurrency(lodgingStats.lyWeekdayRoomsSold)}건` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayRoomsSold !== undefined && lyStats.weekdayRoomsSold !== undefined
-                            ? `${lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayRoomsSold - lyStats.weekdayRoomsSold)}건`
+                          {lodgingStats.weekdayRoomsDiff !== undefined && lodgingStats.weekdayRoomsDiff !== null
+                            ? `${lodgingStats.weekdayRoomsDiff > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayRoomsDiff)}건`
                             : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
@@ -1339,10 +1253,10 @@ export default function ResortBusiness() {
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 판매 건수</td>
                         <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lodgingStats.weekendRoomsSold)}건</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{formatCurrency(lyStats.weekendRoomsSold)}건</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.lyWeekendRoomsSold !== undefined && lodgingStats.lyWeekendRoomsSold !== null ? `${formatCurrency(lodgingStats.lyWeekendRoomsSold)}건` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendRoomsSold !== undefined && lyStats.weekendRoomsSold !== undefined
-                            ? `${lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendRoomsSold - lyStats.weekendRoomsSold)}건`
+                          {lodgingStats.weekendRoomsDiff !== undefined && lodgingStats.weekendRoomsDiff !== null
+                            ? `${lodgingStats.weekendRoomsDiff > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendRoomsDiff)}건`
                             : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
@@ -1369,10 +1283,10 @@ export default function ResortBusiness() {
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 주중 평균 ADR</td>
                         <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekdayAdr && lodgingStats.weekdayAdr > 0 ? `${formatCurrency(lodgingStats.weekdayAdr)}원` : "-"}</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekdayAdr && lyStats.weekdayAdr > 0 ? `${formatCurrency(lyStats.weekdayAdr)}원` : "-"}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.lyWeekdayAdr && lodgingStats.lyWeekdayAdr > 0 ? `${formatCurrency(lodgingStats.lyWeekdayAdr)}원` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekdayAdr !== undefined && lyStats?.weekdayAdr !== undefined
-                            ? `${lodgingStats.weekdayAdr - lyStats.weekdayAdr > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayAdr - lyStats.weekdayAdr)}원`
+                          {lodgingStats.weekdayAdrDiff !== undefined && lodgingStats.weekdayAdrDiff !== null
+                            ? `${lodgingStats.weekdayAdrDiff > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekdayAdrDiff)}원`
                             : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
@@ -1382,10 +1296,10 @@ export default function ResortBusiness() {
                       <tr className="text-slate-500 hover:bg-slate-50/40">
                         <td className="py-2.5 px-4 pl-8 text-xs">• 휴일전일 평균 ADR</td>
                         <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.weekendAdr && lodgingStats.weekendAdr > 0 ? `${formatCurrency(lodgingStats.weekendAdr)}원` : "-"}</td>
-                        <td className="py-2.5 px-4 text-right text-xs">{lyStats?.weekendAdr && lyStats.weekendAdr > 0 ? `${formatCurrency(lyStats.weekendAdr)}원` : "-"}</td>
+                        <td className="py-2.5 px-4 text-right text-xs">{lodgingStats.lyWeekendAdr && lodgingStats.lyWeekendAdr > 0 ? `${formatCurrency(lodgingStats.lyWeekendAdr)}원` : "-"}</td>
                         <td className="py-2.5 px-4 text-right text-xs">
-                          {lodgingStats.weekendAdr !== undefined && lyStats?.weekendAdr !== undefined
-                            ? `${lodgingStats.weekendAdr - lyStats.weekendAdr > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendAdr - lyStats.weekendAdr)}원`
+                          {lodgingStats.weekendAdrDiff !== undefined && lodgingStats.weekendAdrDiff !== null
+                            ? `${lodgingStats.weekendAdrDiff > 0 ? "+" : ""}${formatCurrency(lodgingStats.weekendAdrDiff)}원`
                             : "-"}
                         </td>
                         <td className="py-2.5 px-4 text-right text-xs">
@@ -1475,8 +1389,8 @@ export default function ResortBusiness() {
                           <td className="py-3 px-4 text-right text-slate-600">
                             {row.lyRev !== null ? `${formatCurrency(row.lyRev)}원` : "-"} <span className="text-xs text-slate-400">({row.lyRate !== null ? `${row.lyRate}%` : "-"})</span>
                           </td>
-                          <td className={`py-3 px-4 text-right font-bold ${row.lyRev !== null && row.revenue >= row.lyRev ? "text-emerald-700" : "text-rose-600"}`}>
-                            {row.lyRev !== null ? `${row.revenue - row.lyRev > 0 ? "+" : ""}${formatCurrency(row.revenue - row.lyRev)}원` : "-"}
+                          <td className={`py-3 px-4 text-right font-bold ${row.revenueDiff === null || row.revenueDiff === undefined ? "text-slate-400" : row.revenueDiff >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                            {row.revenueDiff !== null && row.revenueDiff !== undefined ? `${row.revenueDiff > 0 ? "+" : ""}${formatCurrency(row.revenueDiff)}원` : "-"}
                           </td>
                           <td className="py-3 px-4 text-right text-xs">
                             {renderYoYGrowth(getRoomRevGrowth(row.roomSize) ?? row.revGrowth)}
@@ -1791,7 +1705,11 @@ export default function ResortBusiness() {
 
                 const liveLeisure = Math.round(isMultiDay ? (losSummary?.avgLeisureRevPAS || 0) : (latestLos?.leisureRevPAS || 0));
 
-                const liveTotal = liveFnb + liveLeisure;
+                const liveTotal = Math.round(
+                  isMultiDay
+                    ? (losSummary?.avgTotalRevPAS ?? losSummary?.avgSynergyRevPAS ?? 0)
+                    : (latestLos?.totalRevPAS ?? latestLos?.synergyRevPAS ?? 0)
+                );
 
                 const totalSynergySales = isMultiDay ? (losSummary?.grandTotalSynergySales || 0) : (latestLos?.totalSynergySales || 0);
 
@@ -1969,7 +1887,7 @@ export default function ResortBusiness() {
                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   💰 판매채널별 객단가 분석
                 </h2>
-                {lyData && (
+                {hasLyComparisonData && (
                   <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold self-start sm:self-auto">
                     <button
                       type="button"
@@ -2003,7 +1921,7 @@ export default function ResortBusiness() {
                     <thead>
                       <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
                         <th className="py-3 px-4 whitespace-nowrap">판매 채널명</th>
-                        {channelCompareView === 'compare' && lyData ? (
+                        {channelCompareView === 'compare' && hasLyComparisonData ? (
                           <>
                             <th className="py-3 px-3 text-right whitespace-nowrap">판매 건수 (당해 vs 전년)</th>
                             <th className="py-3 px-3 text-right whitespace-nowrap">총 매출액 (YoY)</th>
@@ -2019,7 +1937,7 @@ export default function ResortBusiness() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-sm font-financial">
-                      {channelCompareView === 'compare' && lyData ? (
+                      {channelCompareView === 'compare' && hasLyComparisonData ? (
                         channelComparisonData.map((row: any, idx: number) => (
                           <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
                             <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.channel}</td>
@@ -2027,7 +1945,7 @@ export default function ResortBusiness() {
                               <span className="font-bold text-slate-900">{row.roomsSold.toLocaleString()}건</span>
                               <span className="text-slate-400 text-xs block">
                                 전년 {row.lySold.toLocaleString()}건 
-                                {row.soldDiff !== 0 && (
+                                {row.soldDiff !== null && row.soldDiff !== 0 && (
                                   <strong className={row.soldDiff > 0 ? ' text-emerald-600' : ' text-rose-500'}>
                                     ({row.soldDiff > 0 ? '+' : ''}{row.soldDiff})
                                   </strong>
@@ -2087,7 +2005,7 @@ export default function ResortBusiness() {
                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   🏷️ 요금타입(회원/상품)별 실적 및 객단가
                 </h2>
-                {lyData && (
+                {hasLyComparisonData && (
                   <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold self-start sm:self-auto">
                     <button
                       type="button"
@@ -2121,7 +2039,7 @@ export default function ResortBusiness() {
                     <thead>
                       <tr className="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
                         <th className="py-3 px-4 whitespace-nowrap">요금타입(상품)명</th>
-                        {channelCompareView === 'compare' && lyData ? (
+                        {channelCompareView === 'compare' && hasLyComparisonData ? (
                           <>
                             <th className="py-3 px-3 text-right whitespace-nowrap">판매 건수 (당해 vs 전년)</th>
                             <th className="py-3 px-3 text-right whitespace-nowrap">총 매출액 (YoY)</th>
@@ -2137,7 +2055,7 @@ export default function ResortBusiness() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-sm font-financial">
-                      {channelCompareView === 'compare' && lyData ? (
+                      {channelCompareView === 'compare' && hasLyComparisonData ? (
                         rateComparisonData.map((row: any, idx: number) => (
                           <tr key={idx} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
                             <td className="py-3.5 px-4 text-slate-700 font-semibold whitespace-nowrap">{row.marketType}</td>
@@ -2145,7 +2063,7 @@ export default function ResortBusiness() {
                               <span className="font-bold text-slate-900">{row.roomsSold.toLocaleString()}건</span>
                               <span className="text-slate-400 text-xs block">
                                 전년 {row.lySold.toLocaleString()}건 
-                                {row.soldDiff !== 0 && (
+                                {row.soldDiff !== null && row.soldDiff !== 0 && (
                                   <strong className={row.soldDiff > 0 ? ' text-emerald-600' : ' text-rose-500'}>
                                     ({row.soldDiff > 0 ? '+' : ''}{row.soldDiff})
                                   </strong>

@@ -105,15 +105,11 @@ export default function Synergy() {
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<string>('ALL');
 
-  // Days difference calculation
+  // Days count from backend summary SSOT
   const totalDays = useMemo(() => {
     if (!isRangeMode || !endDate) return 1;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays > 0 ? diffDays : 1;
-  }, [startDate, endDate, isRangeMode]);
+    return Number((summaryData?.summary as any)?.days ?? (summaryData?.summary as any)?.daysCount ?? 1);
+  }, [summaryData, endDate, isRangeMode]);
 
   // Determine if query is an actual multi-day date range (startDate !== endDate)
   const isActualRange = useMemo(() => {
@@ -249,7 +245,7 @@ export default function Synergy() {
 
     // 3. Fallback: Bind directly from matrix-weekly SSOT
     if (matrixData && matrixData.length > 0) {
-      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도' || r.categoryName === '콘도'));
+      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'ROOM');
       if (roomRow) {
         const roomsSold = parseNum(summaryTotalRooms || roomRow.todayVisitors || roomRow.rangeVisitors || 0);
         const roomRev = parseNum(roomRow.todayActual || roomRow.rangeActual || roomRow.mtdActual || 0);
@@ -264,7 +260,7 @@ export default function Synergy() {
     }
 
     // 4. Fallback: Bind directly from revenue-summary SSOT (salesByCategory)
-    const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도');
+    const roomCat = summaryData?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM');
     const roomRev = parseNum(roomCat?.totalSales || roomCat?.todayActual || 0);
     const roomsSold = parseNum(summaryTotalRooms || 0);
     
@@ -275,26 +271,32 @@ export default function Synergy() {
     };
   }, [summaryData, channelData, matrixData, isActualRange]);
 
-  // SSOT: 부대시설 연계 시너지 매출 (총매출 - 객실매출 또는 부대시설 카테고리 합)
+  // SSOT: 부대시설 연계 시너지 매출 (백엔드 완제품 synergySales 및 totalAncillary 1:1 직결)
   const ancillarySales = useMemo(() => {
-    // 1. Primary SSOT: From matrix-weekly (Accurate for both Single Date and Multi-Day Range)
-    if (matrixData && matrixData.length > 0) {
-      const totalRow = matrixData.find(r => r.isGrandTotal || r.categoryCode === 'TOTAL' || r.categoryName === '총계');
-      const roomRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'ROOM' || r.categoryCode === '콘도' || r.categoryName === '콘도'));
-      const golfRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'GOLF' || r.categoryCode === '골프' || r.categoryName === '골프'));
-      const fnbRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'FNB' || r.categoryCode === '식음' || r.categoryName === '식음'));
-      const ticketRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'TICKET' || r.categoryCode === '레져본부' || r.categoryCode === '레져본부(외주)' || r.categoryName === '레져본부'));
-      const motoRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'MOTO' || r.categoryCode === '모토아레나' || r.categoryName === '모토아레나'));
+    const synergy: any = summaryData?.summary?.synergySales || summaryData?.synergySales;
+    const totalAncillary = parseNum(summaryData?.summary?.totalAncillary ?? synergy?.total ?? 0);
 
-      const totalRev = parseNum(totalRow?.todayActual || totalRow?.rangeActual || totalRow?.mtdActual || 0);
-      const roomRev = parseNum(roomRow?.todayActual || roomRow?.rangeActual || roomRow?.mtdActual || grandTotal.revenue || 0);
+    // 1. Primary SSOT: synergySales in revenue-summary
+    if (synergy && (parseNum(synergy.total) > 0 || totalAncillary > 0)) {
+      return {
+        golf: parseNum(synergy.golf ?? 0),
+        fnb: parseNum(synergy.fnb ?? 0),
+        ticket: parseNum(synergy.leisureTotal ?? synergy.leisure ?? synergy.ticket ?? 0),
+        total: totalAncillary
+      };
+    }
+
+    // 2. Secondary SSOT: From matrix-report
+    if (matrixData && matrixData.length > 0) {
+      const golfRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'GOLF');
+      const fnbRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && r.categoryCode === 'FNB');
+      const ticketRow = matrixData.find(r => (r.isSubtotal || r.isChannelSubtotal) && (r.categoryCode === 'LEISURE' || r.categoryCode === 'TICKET'));
+
       const golfRev = parseNum(golfRow?.todayActual || golfRow?.rangeActual || golfRow?.mtdActual || 0);
       const fnbRev = parseNum(fnbRow?.todayActual || fnbRow?.rangeActual || fnbRow?.mtdActual || 0);
-      const leisureRev = parseNum(ticketRow?.todayActual || ticketRow?.rangeActual || ticketRow?.mtdActual || 0) + 
-                         parseNum(motoRow?.todayActual || motoRow?.rangeActual || motoRow?.mtdActual || 0);
+      const leisureRev = parseNum(ticketRow?.todayActual || ticketRow?.rangeActual || ticketRow?.mtdActual || 0);
 
-      const totalAncillary = parseNum(summaryData?.summary?.totalAncillary || 0) || Math.max(0, totalRev - roomRev);
-      if (totalAncillary > 0) {
+      if (totalAncillary > 0 || golfRev > 0 || fnbRev > 0 || leisureRev > 0) {
         return {
           golf: golfRev,
           fnb: fnbRev,
@@ -304,24 +306,11 @@ export default function Synergy() {
       }
     }
 
-    // 2. Fallback: synergySales in revenue-summary
-    const synergy = summaryData?.summary?.synergySales || summaryData?.synergySales;
-    if (synergy && parseNum(synergy.total) > 0) {
-      return { 
-        golf: parseNum(synergy.golf || 0), 
-        fnb: parseNum(synergy.fnb || 0), 
-        ticket: parseNum(synergy.ticket || 0), 
-        total: parseNum(synergy.total || 0) 
-      };
-    }
-
-    // 3. Fallback: Calculate directly from salesByCategory (GOLF, FNB, TICKET, MOTO, etc.)
+    // 3. Tertiary SSOT: Bind directly from salesByCategory
     const cats = summaryData?.salesByCategory || [];
-    const golfRev = parseNum(cats.find((c: any) => c.categoryCode === 'GOLF' || c.categoryCode === '골프' || c.categoryName === '골프')?.totalSales || cats.find((c: any) => c.categoryCode === 'GOLF' || c.categoryCode === '골프')?.todayActual || 0);
-    const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음' || c.categoryName === '식음')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB' || c.categoryCode === '식음')?.todayActual || 0);
-    const leisureRev = parseNum(cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === 'MOTO' || c.categoryCode === '레져본부' || c.categoryCode === '모토아레나')?.totalSales || cats.find((c: any) => c.categoryCode === 'TICKET' || c.categoryCode === '레져본부')?.todayActual || 0);
-    
-    const totalAncillary = parseNum(summaryData?.summary?.totalAncillary || 0);
+    const golfRev = parseNum(cats.find((c: any) => c.categoryCode === 'GOLF')?.totalSales || cats.find((c: any) => c.categoryCode === 'GOLF')?.todayActual || 0);
+    const fnbRev = parseNum(cats.find((c: any) => c.categoryCode === 'FNB')?.totalSales || cats.find((c: any) => c.categoryCode === 'FNB')?.todayActual || 0);
+    const leisureRev = parseNum(cats.find((c: any) => c.categoryCode === 'LEISURE' || c.categoryCode === 'TICKET')?.totalSales || cats.find((c: any) => c.categoryCode === 'LEISURE' || c.categoryCode === 'TICKET')?.todayActual || 0);
 
     return {
       golf: golfRev,
@@ -329,7 +318,7 @@ export default function Synergy() {
       ticket: leisureRev,
       total: totalAncillary
     };
-  }, [matrixData, summaryData, grandTotal.revenue]);
+  }, [matrixData, summaryData]);
 
   // Ground-Up Breakdown Grouping (Pure Zero-Proxy, No MTD fallback in single date mode)
   const segmentSummaries = useMemo(() => {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { 
   Package, Sparkles, DollarSign, Hotel, Utensils, 
-  CheckCircle2, ShieldCheck, Plus, Minus, 
+  CheckCircle2, ShieldCheck, Plus, 
   RotateCcw, Copy, Check, TrendingUp, Award, 
   Calendar, Trash2, Layers, CheckCircle, Lock,
   AlertTriangle, Sun, Moon, ArrowRight,
@@ -241,9 +241,16 @@ export default function PackageGeneratorSimulator() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            year: selectedYear,
             month: selectedMonth,
             targetType,
             roomTypeId: roomKey,
+            selectedRoomTypeId,
+            targetPackagePrice,
+            roomDeductionMode,
+            customRoomDeduction,
+            userItems,
+            dailyPackageSalesRooms,
             nights: 1,
             adults: 2,
             children: 0,
@@ -273,7 +280,7 @@ export default function PackageGeneratorSimulator() {
 
     runPackageSim();
     return () => { isMounted = false; };
-  }, [selectedMonth, targetType, selectedRoomTypeId, userItems]);
+  }, [selectedYear, selectedMonth, targetType, selectedRoomTypeId, targetPackagePrice, roomDeductionMode, customRoomDeduction, userItems, dailyPackageSalesRooms]);
 
   // ==========================================
   // 1. Fetch 12-Month Efficiency Table from DB (Deployed SSOT)
@@ -284,7 +291,7 @@ export default function PackageGeneratorSimulator() {
       setLoading(true);
       setError(null);
       try {
-        const res = await secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=${selectedYear}&compareYear=${selectedYear - 1}`);
+        const res = await secureFetcher(`${API_BASE}/api/v6/report/monthly-room-efficiency?baseYear=${selectedYear}`);
         const payload = (res as any)?.data ?? res;
         if (isMounted && payload?.monthlyComparison && Array.isArray(payload.monthlyComparison)) {
           const map: Record<number, MonthlyEfficiencyData> = {};
@@ -300,7 +307,6 @@ export default function PackageGeneratorSimulator() {
               const weekdayAdr = Number(activeData.weekdayAdr ?? 0);
               const weekendAdr = Number(activeData.weekendAdr ?? 0);
 
-              // 1. RevPAR & TRevPAR 분리 (주중 vs 주말): 100% 백엔드 완제품 바인딩 (클라이언트 사칙연산 금지)
               const weekdayRevpar = Number(activeData.weekdayRevpar ?? 0);
               const weekendRevpar = Number(activeData.weekendRevpar ?? 0);
               const weekdayTrevpar = Number(activeData.weekdayTrevpar ?? activeData.weekdayTrevparWithoutGolf ?? 0);
@@ -324,7 +330,7 @@ export default function PackageGeneratorSimulator() {
                 roomRevenue: Number(activeData.roomRevenue ?? 0),
                 fnbRevenue: Number(activeData.fnbRevenue ?? 0),
                 leisureRevenue: Number(activeData.leisureRevenue ?? 0),
-                year: Number(activeData.year ?? (hasTyData ? selectedYear : selectedYear - 1)),
+                year: Number(activeData.year ?? selectedYear),
                 adr: Number(activeData.adr ?? 0),
                 overallOcc: Number(activeData.overallOcc ?? 0),
                 weekdayOcc,
@@ -380,7 +386,7 @@ export default function PackageGeneratorSimulator() {
   }, [monthlyEfficiencyMap, selectedMonth]);
 
   // ==========================================
-  // 2. Fetch Selected Month Exact Metrics (ADR, RevPAR, TRevPAR, 점유율 3분할)
+  // 2. Fetch Selected Month Exact Metrics (Single Call — Zero LY Double Call)
   // ==========================================
   useEffect(() => {
     let isMounted = true;
@@ -391,67 +397,47 @@ export default function PackageGeneratorSimulator() {
         const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
         const end = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-        // Fetch revenue-summary and day-of-week-sales in parallel
-        let [res] = await Promise.all([
-          secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${start}&endDate=${end}`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/day-of-week-sales?startDate=${start}&endDate=${end}`).catch(() => null)
-        ]);
-
-        let isLy = false;
-        let bYear = selectedYear;
-
-        // If target month has no rooms sold (e.g., future or unclosed month), automatically load the most recent same-month benchmark
-        if (!res?.lodgingStats?.roomsSold || res?.lodgingStats?.roomsSold === 0) {
-          isLy = true;
-          bYear = selectedYear - 1;
-          const lyStart = `${bYear}-${String(selectedMonth).padStart(2, '0')}-01`;
-          const lyLastDay = new Date(bYear, selectedMonth, 0).getDate();
-          const lyEnd = `${bYear}-${String(selectedMonth).padStart(2, '0')}-${String(lyLastDay).padStart(2, '0')}`;
-          [res] = await Promise.all([
-            secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${lyStart}&endDate=${lyEnd}`).catch(() => null),
-            secureFetcher(`${API_BASE}/api/v6/report/day-of-week-sales?startDate=${lyStart}&endDate=${lyEnd}`).catch(() => null)
-          ]);
-        }
+        const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/revenue-summary?startDate=${start}&endDate=${end}`).catch(() => null);
 
         const ls = res?.lodgingStats || {};
         const sum = res?.summary || {};
         const effData = monthlyEfficiencyMap[selectedMonth];
+        const hasLiveRooms = Boolean(ls.roomsSold && ls.roomsSold > 0);
 
-        const weekdayAdr = ls.weekdayAdr || effData?.weekdayAdr || 0;
-        const weekendAdr = ls.weekendAdr || effData?.weekendAdr || 0;
-        const weekdayOcc = ls.weekdayOcc || effData?.weekdayOcc || 0;
-        const weekendOcc = ls.weekendOcc || effData?.weekendOcc || 0;
+        const weekdayAdr = (hasLiveRooms ? ls.weekdayAdr : undefined) || effData?.weekdayAdr || 0;
+        const weekendAdr = (hasLiveRooms ? ls.weekendAdr : undefined) || effData?.weekendAdr || 0;
+        const weekdayOcc = (hasLiveRooms ? ls.weekdayOcc : undefined) || effData?.weekdayOcc || 0;
+        const weekendOcc = (hasLiveRooms ? ls.weekendOcc : undefined) || effData?.weekendOcc || 0;
 
-        // RevPAR & TRevPAR (Weekday & Weekend): 100% 백엔드 완제품 바인딩
         const weekdayRevpar = effData?.weekdayRevpar ?? 0;
         const weekendRevpar = effData?.weekendRevpar ?? 0;
         const weekdayTrevparTotal = effData?.weekdayTrevparTotal ?? 0;
         const weekendTrevparTotal = effData?.weekendTrevparTotal ?? 0;
         const weekdayTrevpar = effData?.weekdayTrevpar ?? 0;
         const weekendTrevpar = effData?.weekendTrevpar ?? 0;
-        const trevparWithoutGolf = effData?.trevparWithoutGolf ?? sum.trevPar ?? 0;
+        const trevparWithoutGolf = effData?.trevparWithoutGolf ?? sum.trevParExGolf ?? sum.trevPar ?? 0;
 
         if (isMounted) {
           setLiveSummary({
-            adr: ls.adr || effData?.adr || sum.totalADR || 0,
-            revpar: sum.revPAR || effData?.revpar || 0,
+            adr: (hasLiveRooms ? ls.adr : undefined) || effData?.adr || sum.totalADR || 0,
+            revpar: (hasLiveRooms ? sum.revPAR : undefined) || effData?.revpar || 0,
             weekdayRevpar,
             weekendRevpar,
-            trevpar: sum.trevPar || effData?.trevparTotal || 0,
+            trevpar: (hasLiveRooms ? sum.trevPar : undefined) || effData?.trevparTotal || 0,
             trevparWithoutGolf,
             weekdayTrevpar,
             weekendTrevpar,
             weekdayTrevparTotal,
             weekendTrevparTotal,
-            overallOcc: ls.physicalOccRate || effData?.overallOcc || sum.totalOcc || 0,
+            overallOcc: (hasLiveRooms ? ls.physicalOccRate : undefined) || effData?.overallOcc || sum.totalOcc || 0,
             weekdayOcc,
             weekendOcc,
             weekdayAdr,
             weekendAdr,
-            roomsSold: ls.roomsSold || effData?.roomsSold || sum.totalRooms || 0,
+            roomsSold: (hasLiveRooms ? ls.roomsSold : undefined) || effData?.roomsSold || sum.totalRooms || 0,
             totalCapacity: ls.totalCapacity ?? effData?.availableRooms ?? 0,
-            benchmarkYear: bYear,
-            isBenchmarkLy: isLy
+            benchmarkYear: effData?.year ?? selectedYear,
+            isBenchmarkLy: !hasLiveRooms && Boolean(effData?.isBenchmarkLy)
           });
         }
       } catch (err) {
@@ -533,7 +519,7 @@ export default function PackageGeneratorSimulator() {
   useEffect(() => {
     const baseTrevpar = activeMetrics.targetTrevpar;
     if (baseTrevpar > 0) {
-      setTargetPackagePrice(Math.round(baseTrevpar / 1000) * 1000);
+      setTargetPackagePrice(baseTrevpar);
     }
   }, [selectedMonth, targetType, activeMetrics.targetTrevpar]);
 
@@ -545,34 +531,32 @@ export default function PackageGeneratorSimulator() {
     } else if (roomDeductionMode === 'REVPAR') {
       const baseRevpar = activeMetrics.targetRevpar;
       if (baseRevpar > 0) {
-        setCustomRoomDeduction(Math.round(baseRevpar / 1000) * 1000);
+        setCustomRoomDeduction(baseRevpar);
       }
     }
   }, [selectedMonth, targetType, selectedRoomTypeId, roomDeductionMode, activeMetrics.targetRevpar]);
 
   // ==========================================
-  // 3. RM Quota & Safe Allotment Math Engine
+  // 3. RM Quota & Safe Allotment (1:1 Bound from Backend Server Simulator)
   // ==========================================
   const allotmentCalculations = useMemo(() => {
-    const totalPhysicalRooms = 175; // SSOT: 리조트 물리 총 객실수 175실 고정
+    const srvAllotment = (serverPackageData as any)?.allotment ?? serverPackageData ?? {};
+    const totalPhysicalRooms = Number(srvAllotment.totalPhysicalRooms ?? 0);
+    const targetOccPct = Number(srvAllotment.targetOccPct ?? activeMetrics.targetOccPct ?? 0);
+    const lockedRegularRooms = Number(srvAllotment.lockedRegularRooms ?? 0);
+    const maxPackageAllotment = Number(srvAllotment.maxPackageAllotment ?? srvAllotment.safeAllotmentRooms ?? 0);
+    const maxPackagePct = Number(srvAllotment.maxPackagePct ?? 0);
 
-    const targetOccPct = activeMetrics.targetOccPct;
-    const occTarget = targetOccPct / 100;
-
-    // 수식 1: 일반 객실 방어 수량 = ROUND(175 × OCC_target)
-    const lockedRegularRooms = Math.round(totalPhysicalRooms * occTarget);
-
-    // 수식 2: 패키지 최대 할당 마지노선 = 175 - 일반 객실 방어 수량 = ROUND(175 × (1 - OCC_target))
-    const maxPackageAllotment = Math.max(0, totalPhysicalRooms - lockedRegularRooms);
-
-    const recommendationText = `해당 월 [${activeMetrics.targetLabel}]의 기본 점유율은 ${targetOccPct.toFixed(1)}%이므로, 정가 객실 ${lockedRegularRooms}실을 우선 락(Lock) 걸고, 역산형 패키지는 하루 최대 ${maxPackageAllotment}실까지만 배정하는 것이 안전합니다.`;
+    const recommendationText = srvAllotment.recommendationText
+      || `해당 월 [${activeMetrics.targetLabel}]의 기본 점유율은 ${targetOccPct.toFixed(1)}%이므로, 정가 객실 ${lockedRegularRooms}실을 우선 락(Lock) 걸고, 역산형 패키지는 하루 최대 ${maxPackageAllotment}실까지만 배정하는 것이 안전합니다.`;
 
     return {
       totalPhysicalRooms,
       targetOccPct,
-      occTarget,
+      occTarget: Number(srvAllotment.occTarget ?? 0),
       lockedRegularRooms,
       maxPackageAllotment,
+      maxPackagePct,
       targetLabel: activeMetrics.targetLabel,
       targetFullLabel: activeMetrics.targetFullLabel,
       recommendationText,
@@ -580,170 +564,75 @@ export default function PackageGeneratorSimulator() {
       targetRevpar: activeMetrics.targetRevpar,
       targetTrevpar: activeMetrics.targetTrevpar
     };
-  }, [activeMetrics]);
+  }, [serverPackageData, activeMetrics]);
 
   // ==========================================
-  // 4. Core Reverse Calculation Engine (Top-Down)
+  // 4. Core Reverse Calculation (1:1 Bound from Backend Server Simulator)
   // ==========================================
   const reverseCalculations = useMemo(() => {
-    // 1. 총 패키지 판매가
-    const totalPkgGross = targetPackagePrice;
-    
-    // 2. 🌟 [경영지원팀 SSOT 실측 콘도 객실 원가 연동]
-    // 16평: 28,194원 / 35평: 50,122원 / 51평: 78,316원 (VAT 별도)
+    const srv = (serverPackageData as any)?.reverseCalculations ?? serverPackageData ?? {};
     const currentRoomCost = ROOM_COST_MASTER[selectedRoomTypeId] || ROOM_COST_MASTER['ROOM_16'];
-    const roomVariableCostNet = currentRoomCost.totalCostNet;
-    const roomVariableCostGross = currentRoomCost.totalCostGross;
+    const roomVariableCostNet = Number(srv.roomVariableCostNet ?? currentRoomCost.totalCostNet);
+    const roomVariableCostGross = Number(srv.roomVariableCostGross ?? currentRoomCost.totalCostGross);
 
-    // 객실 우선 배분액 (실측 원가 보전형 vs RevPAR 방어형 vs 직접 설정)
     const targetRevpar = activeMetrics.targetRevpar > 0
       ? activeMetrics.targetRevpar
       : (liveSummary?.revpar || currentMonthData.revpar);
 
-    let roomDeduction = roomVariableCostGross;
-    if (roomDeductionMode === 'COST') {
-      roomDeduction = roomVariableCostGross;
-    } else if (roomDeductionMode === 'REVPAR') {
-      roomDeduction = Math.round(targetRevpar / 1000) * 1000;
-    } else {
-      roomDeduction = customRoomDeduction > 0 ? customRoomDeduction : roomVariableCostGross;
-    }
-
-    // 3. 부대시설 정해진 가용 예산 = 총 판매가 - 객실 배분액
-    const amenityBudget = Math.max(0, totalPkgGross - roomDeduction);
-
-    // 4. 유저가 직접 구성한 부대시설 항목 합산
-    let fnbAllocatedTotal = 0;
-    let leisureAllocatedTotal = 0;
-    let fnbRetailTotal = 0;
-    let leisureRetailTotal = 0;
-    let fnbVariableCostNet = 0;
-    let leisureVariableCostNet = 0;
-
-    userItems.forEach(item => {
-      const itemSubtotal = item.unitPrice * (item.quantity || 1);
-      const retailSubtotal = (item.retailPrice && item.retailPrice > 0 ? item.retailPrice : Math.round(item.unitPrice * 1.25)) * (item.quantity || 1);
-
-      if (item.category === 'FNB') {
-        fnbAllocatedTotal += itemSubtotal;
-        fnbRetailTotal += retailSubtotal;
-        // 식음(F&B) 변동원가: 순매출(VAT 제외) 기준 약 35% 원가율 적용
-        fnbVariableCostNet += Math.round((itemSubtotal / 1.1) * 0.35);
-      } else {
-        leisureAllocatedTotal += itemSubtotal;
-        leisureRetailTotal += retailSubtotal;
-        // 직영 레저(LEISURE) 변동원가: 순매출(VAT 제외) 기준 약 5% 변동비율 적용
-        leisureVariableCostNet += Math.round((itemSubtotal / 1.1) * 0.05);
-      }
-    });
-
-    const allocatedAmenitiesTotal = fnbAllocatedTotal + leisureAllocatedTotal;
-    const remainingBuffer = amenityBudget - allocatedAmenitiesTotal;
-    const isOverBudget = remainingBuffer < 0;
-
-    // 5. 총 실질 한계 변동비용 (Total Marginal Cost = Room MC + Amenity MC)
-    const amenityVariableCostNet = fnbVariableCostNet + leisureVariableCostNet;
-
-    // 총 실질 한계 변동비용 (Total Marginal Cost = Room MC + Amenity MC)
-    const totalVariableCostNet = roomVariableCostNet + amenityVariableCostNet;
-    const totalVariableCostGross = Math.round(totalVariableCostNet * 1.1);
-
-    // 6. 고객 체감 가치 분석
-    const roomRetailNormal = selectedRoomType.baseNormalPrice;
-    const totalCustomerRetailValue = roomRetailNormal + fnbRetailTotal + leisureRetailTotal;
-    const customerPerceivedSavings = Math.max(0, totalCustomerRetailValue - totalPkgGross);
-    const customerDiscountRate = totalCustomerRetailValue > 0
-      ? Number(((customerPerceivedSavings / totalCustomerRetailValue) * 100).toFixed(1))
-      : 0;
-
-    // 7. 🌟 [노벨 경영학적 한계 공헌이익(Contribution Margin) & GOPPAR 보존 분석]
-    // 순 패키지 판매가 (VAT 10% 제외 Net Revenue)
-    const packageNetPrice = Math.round(totalPkgGross / 1.1);
-    
-    // 1실당 순 공헌이익 (Contribution Margin) = 순판매가 - 총 한계 변동비용
-    // (손님이 1박 투숙할 때마다 리조트 고정비 회수에 기여하는 순수 현금 창출액)
-    const packageContributionMargin = packageNetPrice - totalVariableCostNet;
-    
-    // 공헌이익률 (Contribution Margin Ratio, %)
-    const contributionMarginRate = packageNetPrice > 0
-      ? Number(((packageContributionMargin / packageNetPrice) * 100).toFixed(1))
-      : 0;
-
-    // 역마진 손익분기 방어선 판정 (Marginal Cost Coverage Check)
-    const isNegativeMargin = packageContributionMargin < 0;
-    const breakEvenFloorGross = totalVariableCostGross; // 절대 손익분기 최저 판매가 (VAT 포함)
-
-    // 8. 거시적 성과 시뮬레이션
-    const physicalRoomCount = 175; // 벨포레 전체 가용 객실수
-    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-    const monthlyPkgSoldTotal = dailyPackageSalesRooms * daysInMonth;
-
-    const dailyPkgNetRevenue = packageNetPrice * dailyPackageSalesRooms;
-    const monthlyPkgNetRevenue = dailyPkgNetRevenue * daysInMonth;
-    const packageTrevPOR = totalPkgGross;
-
-    const baseNonGolfTrevpar = activeMetrics.targetTrevpar > 0
-      ? activeMetrics.targetTrevpar
-      : (liveSummary?.trevparWithoutGolf || currentMonthData.trevparWithoutGolf);
-    const dailyBaseNonGolfRev = Math.round((baseNonGolfTrevpar * physicalRoomCount));
-    const incrementalAmenityNetDaily = Math.round((allocatedAmenitiesTotal / 1.1) * dailyPackageSalesRooms);
-    const simulatedDailyNonGolfRev = dailyBaseNonGolfRev + incrementalAmenityNetDaily;
-    const simulatedTrevPAR = Math.round(simulatedDailyNonGolfRev / physicalRoomCount);
-
-    const trevparUpliftAmount = simulatedTrevPAR - baseNonGolfTrevpar;
-    const trevparGrowthRate = baseNonGolfTrevpar > 0
-      ? Number(((trevparUpliftAmount / baseNonGolfTrevpar) * 100).toFixed(1))
-      : 0;
+    const defaultDeduction = roomDeductionMode === 'COST'
+      ? roomVariableCostGross
+      : roomDeductionMode === 'REVPAR'
+      ? targetRevpar
+      : (customRoomDeduction > 0 ? customRoomDeduction : roomVariableCostGross);
 
     return {
-      totalPkgGross,
-      roomDeduction,
-      amenityBudget,
-      fnbAllocatedTotal,
-      leisureAllocatedTotal,
-      allocatedAmenitiesTotal,
-      remainingBuffer,
-      isOverBudget,
-      roomRetailNormal,
-      totalCustomerRetailValue,
-      customerPerceivedSavings,
-      customerDiscountRate,
-      packageNetPrice,
+      totalPkgGross: Number(srv.totalPkgGross ?? targetPackagePrice ?? 0),
+      roomDeduction: Number(srv.roomDeduction ?? defaultDeduction ?? 0),
+      amenityBudget: Number(srv.amenityBudget ?? 0),
+      fnbAllocatedTotal: Number(srv.fnbAllocatedTotal ?? 0),
+      leisureAllocatedTotal: Number(srv.leisureAllocatedTotal ?? 0),
+      allocatedAmenitiesTotal: Number(srv.allocatedAmenitiesTotal ?? 0),
+      fnbBudgetSharePct: Number(srv.fnbBudgetSharePct ?? 0),
+      leisureBudgetSharePct: Number(srv.leisureBudgetSharePct ?? 0),
+      remainingBuffer: Number(srv.remainingBuffer ?? 0),
+      isOverBudget: Boolean(srv.isOverBudget),
+      roomRetailNormal: Number(srv.roomRetailNormal ?? selectedRoomType.baseNormalPrice),
+      totalCustomerRetailValue: Number(srv.totalCustomerRetailValue ?? selectedRoomType.baseNormalPrice),
+      customerPerceivedSavings: Number(srv.customerPerceivedSavings ?? 0),
+      customerDiscountRate: Number(srv.customerDiscountRate ?? 0),
+      packageNetPrice: Number(srv.packageNetPrice ?? 0),
       currentRoomCost,
       roomVariableCostNet,
       roomVariableCostGross,
-      fnbVariableCostNet,
-      leisureVariableCostNet,
-      amenityVariableCostNet,
-      totalVariableCost: totalVariableCostNet, // VAT 별도 기준 실질 한계원가
-      totalVariableCostNet,
-      totalVariableCostGross,
-      packageContributionMargin,
-      contributionMarginRate,
-      isNegativeMargin,
-      breakEvenFloorGross,
-      packageTrevPOR,
-      physicalRoomCount,
-      daysInMonth,
-      monthlyPkgSoldTotal,
-      dailyPkgNetRevenue,
-      monthlyPkgNetRevenue,
-      simulatedTrevPAR,
-      trevparUpliftAmount,
-      trevparGrowthRate
+      fnbVariableCostNet: Number(srv.fnbVariableCostNet ?? 0),
+      leisureVariableCostNet: Number(srv.leisureVariableCostNet ?? 0),
+      amenityVariableCostNet: Number(srv.amenityVariableCostNet ?? 0),
+      totalVariableCost: Number(srv.totalVariableCostNet ?? roomVariableCostNet),
+      totalVariableCostNet: Number(srv.totalVariableCostNet ?? roomVariableCostNet),
+      totalVariableCostGross: Number(srv.totalVariableCostGross ?? roomVariableCostGross),
+      packageContributionMargin: Number(srv.packageContributionMargin ?? srv.estimatedMarginAmount ?? 0),
+      contributionMarginRate: Number(srv.contributionMarginRate ?? srv.estimatedMarginPct ?? 0),
+      isNegativeMargin: Boolean(srv.isNegativeMargin),
+      breakEvenFloorGross: Number(srv.breakEvenFloorGross ?? roomVariableCostGross),
+      packageTrevPOR: Number(srv.packageTrevPOR ?? targetPackagePrice ?? 0),
+      physicalRoomCount: Number(srv.physicalRoomCount ?? 0),
+      daysInMonth: Number(srv.daysInMonth ?? 0),
+      monthlyPkgSoldTotal: Number(srv.monthlyPkgSoldTotal ?? 0),
+      dailyPkgNetRevenue: Number(srv.dailyPkgNetRevenue ?? 0),
+      monthlyPkgNetRevenue: Number(srv.monthlyPkgNetRevenue ?? 0),
+      simulatedTrevPAR: Number(srv.simulatedTrevPAR ?? activeMetrics.targetTrevpar ?? 0),
+      trevparUpliftAmount: Number(srv.trevparUpliftAmount ?? 0),
+      trevparGrowthRate: Number(srv.trevparGrowthRate ?? 0)
     };
   }, [
+    serverPackageData,
     targetPackagePrice,
     roomDeductionMode,
     customRoomDeduction,
     currentMonthData,
     liveSummary,
-    userItems,
     selectedRoomType,
     selectedRoomTypeId,
-    selectedYear,
-    selectedMonth,
-    dailyPackageSalesRooms,
     activeMetrics
   ]);
 
@@ -763,16 +652,7 @@ export default function PackageGeneratorSimulator() {
   };
 
   const handleUpdateUserItem = (id: string, updates: Partial<UserCustomItem>) => {
-    setUserItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const updated = { ...item, ...updates };
-        if (updates.unitPrice !== undefined && (!item.retailPrice || item.retailPrice === 0 || item.retailPrice === Math.round(item.unitPrice * 1.25))) {
-          updated.retailPrice = Math.round(updates.unitPrice * 1.25);
-        }
-        return updated;
-      }
-      return item;
-    }));
+    setUserItems(prev => prev.map(item => (item.id === id ? { ...item, ...updates } : item)));
   };
 
   const handleDeleteUserItem = (id: string) => {
@@ -780,19 +660,10 @@ export default function PackageGeneratorSimulator() {
   };
 
   const handleFillRemainingBudget = (id: string) => {
-    const currentItem = userItems.find(it => it.id === id);
-    if (!currentItem) return;
-
-    const otherItemsTotal = userItems
-      .filter(it => it.id !== id)
-      .reduce((sum, it) => sum + (it.unitPrice * (it.quantity || 1)), 0);
-
-    const availableForItem = Math.max(0, reverseCalculations.amenityBudget - otherItemsTotal);
-    const calculatedUnitPrice = Math.max(0, Math.floor(availableForItem / (currentItem.quantity || 1)));
-
+    const availableForItem = Math.max(0, reverseCalculations.remainingBuffer);
     handleUpdateUserItem(id, { 
-      unitPrice: calculatedUnitPrice,
-      retailPrice: Math.round(calculatedUnitPrice * 1.25)
+      unitPrice: availableForItem,
+      retailPrice: availableForItem
     });
   };
 
@@ -803,7 +674,7 @@ export default function PackageGeneratorSimulator() {
   const handleResetToSlideDefault = () => {
     setSelectedMonth(1);
     setTargetType('WEEKDAY');
-    const baseTrevpar = Math.round((liveSummary?.weekdayTrevpar || monthlyEfficiencyMap[1]?.weekdayTrevpar || activeMetrics.targetTrevpar || 0) / 1000) * 1000;
+    const baseTrevpar = liveSummary?.weekdayTrevpar || monthlyEfficiencyMap[1]?.weekdayTrevpar || activeMetrics.targetTrevpar || 0;
     const effectiveTrev = baseTrevpar > 0 ? baseTrevpar : (liveSummary?.trevparWithoutGolf ?? 0);
     setTargetPackagePrice(effectiveTrev);
     setRoomDeductionMode('COST');
@@ -819,7 +690,7 @@ export default function PackageGeneratorSimulator() {
 
   const handleCopySummary = async () => {
     const itemListText = userItems.length > 0
-      ? userItems.map(it => `  - [${it.category === 'FNB' ? '식음' : '레저/체험'}] ${it.name} (${it.quantity}개): ${formatCurrency(it.unitPrice * it.quantity)}원 (정상가 ${formatCurrency((it.retailPrice || Math.round(it.unitPrice * 1.25)) * it.quantity)}원)`).join('\n')
+      ? userItems.map(it => `  - [${it.category === 'FNB' ? '식음' : '레저/체험'}] ${it.name} (${it.quantity}개): 단가 ${formatCurrency(it.unitPrice)}원`).join('\n')
       : '  - (등록된 부대시설 항목 없음)';
 
     const summaryText = `[벨포레 리조트 수익 관리(RM) 및 역산형 패키지 쿼터 기획안]
@@ -952,7 +823,7 @@ ${itemListText}
       yAxis: {
         type: 'value',
         axisLabel: {
-          formatter: (v: number) => `${Math.round(v / 10000)}만`
+          formatter: (v: number) => `${v.toLocaleString()}원`
         }
       },
       series: [
@@ -972,7 +843,7 @@ ${itemListText}
           label: {
             show: true,
             position: 'top',
-            formatter: (p: any) => `${Math.round(p.value / 1000).toLocaleString()}천`,
+            formatter: (p: any) => `${Number(p.value || 0).toLocaleString()}원`,
             fontSize: 10,
             fontWeight: 'bold'
           }
@@ -1375,7 +1246,7 @@ ${itemListText}
               </span>
               <span className="flex items-center gap-1.5 text-[#B59269]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#B59269] inline-block"></span>
-                패키지 마지노선 {allotmentCalculations.maxPackageAllotment}실 ({(100 - allotmentCalculations.targetOccPct).toFixed(1)}%)
+                패키지 마지노선 {allotmentCalculations.maxPackageAllotment}실 ({allotmentCalculations.maxPackagePct.toFixed(1)}%)
               </span>
             </div>
           </div>
@@ -1383,12 +1254,12 @@ ${itemListText}
           <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden flex shadow-inner">
             <div
               className="bg-[#284F42] h-full transition-all duration-300"
-              style={{ width: `${Math.min(100, (allotmentCalculations.lockedRegularRooms / 175) * 100)}%` }}
+              style={{ width: `${Math.min(100, allotmentCalculations.targetOccPct)}%` }}
               title={`일반 객실 방어: ${allotmentCalculations.lockedRegularRooms}실`}
             ></div>
             <div
               className="bg-[#B59269] h-full transition-all duration-300"
-              style={{ width: `${Math.min(100, (allotmentCalculations.maxPackageAllotment / 175) * 100)}%` }}
+              style={{ width: `${Math.min(100, allotmentCalculations.maxPackagePct)}%` }}
               title={`패키지 최대 할당 마지노선: ${allotmentCalculations.maxPackageAllotment}실`}
             ></div>
           </div>
@@ -1496,7 +1367,7 @@ ${itemListText}
                 {selectedMonth}월 [{activeMetrics.targetLabel}] TRevPAR: <strong>{formatCurrency(activeMetrics.targetTrevpar)}원</strong>
               </span>
               <button
-                onClick={() => setTargetPackagePrice(Math.round(activeMetrics.targetTrevpar / 1000) * 1000)}
+                onClick={() => setTargetPackagePrice(activeMetrics.targetTrevpar)}
                 className="text-[10px] font-bold text-teal-800 bg-white px-2 py-0.5 rounded-lg border border-teal-200 hover:bg-teal-100 transition-all cursor-pointer shadow-2xs"
                 title={`${activeMetrics.targetLabel} 실측 TRevPAR 금액으로 즉시 복귀`}
               >
@@ -1529,28 +1400,26 @@ ${itemListText}
             {/* Dynamic Buttons Starting from TRevPAR */}
             <div className="flex flex-wrap gap-1.5 mb-3">
               {[
-                { label: 'TRevPAR 기준', mult: 1.0 },
-                { label: '+20%', mult: 1.2 },
-                { label: '+40%', mult: 1.4 },
-                { label: '+60% 슬라이드', mult: 1.6 },
-                { label: '+80%', mult: 1.8 },
-                { label: '+100%', mult: 2.0 }
+                { label: 'TRevPAR 기준', price: activeMetrics.targetTrevpar },
+                { label: '15만원', price: 150000 },
+                { label: '20만원', price: 200000 },
+                { label: '25만원', price: 250000 },
+                { label: '30만원', price: 300000 },
+                { label: '35만원', price: 350000 }
               ].map(opt => {
-                const baseTrevpar = activeMetrics.targetTrevpar;
-                const calculatedPrice = Math.round((baseTrevpar * opt.mult) / 1000) * 1000;
-                const isSelected = Math.abs(targetPackagePrice - calculatedPrice) < 1000;
+                const isSelected = targetPackagePrice === opt.price;
 
                 return (
                   <button
                     key={opt.label}
-                    onClick={() => setTargetPackagePrice(calculatedPrice)}
+                    onClick={() => setTargetPackagePrice(opt.price)}
                     className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-teal-600 text-white border-teal-600 font-black shadow-2xs'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    {opt.label} ({(calculatedPrice / 10000).toFixed(1)}만)
+                    {opt.label} ({formatCurrency(opt.price)}원)
                   </button>
                 );
               })}
@@ -1559,7 +1428,7 @@ ${itemListText}
             {/* Slider */}
             <input
               type="range"
-              min={Math.max(30000, Math.round(activeMetrics.targetRevpar / 1000) * 1000)}
+              min={30000}
               max={500000}
               step={2000}
               value={targetPackagePrice}
@@ -1661,7 +1530,7 @@ ${itemListText}
                   <span>실측 RevPAR 방어형</span>
                 </div>
                 <span className={`text-[9px] ${roomDeductionMode === 'REVPAR' ? 'text-white/90' : 'text-slate-500'}`}>
-                  {formatCurrency(Math.round(activeMetrics.targetRevpar / 1000) * 1000)}원
+                  {formatCurrency(activeMetrics.targetRevpar)}원
                 </span>
               </button>
               <button
@@ -1773,14 +1642,14 @@ ${itemListText}
                 <div
                   className="bg-emerald-500 h-full transition-all duration-300"
                   style={{
-                    width: `${Math.min(100, (reverseCalculations.fnbAllocatedTotal / (reverseCalculations.amenityBudget || 1)) * 100)}%`
+                    width: `${Math.min(100, reverseCalculations.fnbBudgetSharePct)}%`
                   }}
                   title={`식음: ${formatCurrency(reverseCalculations.fnbAllocatedTotal)}원`}
                 ></div>
                 <div
                   className="bg-amber-400 h-full transition-all duration-300"
                   style={{
-                    width: `${Math.min(100, (reverseCalculations.leisureAllocatedTotal / (reverseCalculations.amenityBudget || 1)) * 100)}%`
+                    width: `${Math.min(100, reverseCalculations.leisureBudgetSharePct)}%`
                   }}
                   title={`레저: ${formatCurrency(reverseCalculations.leisureAllocatedTotal)}원`}
                 ></div>
@@ -1933,8 +1802,8 @@ ${itemListText}
           </div>
         ) : (
           <div className="space-y-2.5">
-            {userItems.map((item, index) => {
-              const itemSubtotal = item.unitPrice * (item.quantity || 1);
+            {userItems.map((item) => {
+              const itemSubtotal = (item as any).subtotal ?? item.unitPrice;
 
               return (
                 <div
@@ -1948,7 +1817,7 @@ ${itemListText}
                   {/* Left: Category & Item Name */}
                   <div className="flex items-center gap-2.5 flex-1 min-w-[240px]">
                     <span className="text-xs font-bold text-slate-400 w-5 text-center shrink-0">
-                      {index + 1}
+                      •
                     </span>
 
                     {/* Category Selector */}
@@ -1993,24 +1862,18 @@ ${itemListText}
                       </div>
                     </div>
 
-                    {/* Quantity Stepper */}
+                    {/* Quantity Selector */}
                     <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                      <button
-                        onClick={() => handleUpdateUserItem(item.id, { quantity: Math.max(1, (item.quantity || 1) - 1) })}
-                        disabled={item.quantity <= 1}
-                        className="w-6 h-6 rounded-lg bg-white text-slate-700 flex items-center justify-center font-bold text-xs hover:bg-slate-200 disabled:opacity-30 cursor-pointer shadow-2xs"
+                      <span className="text-[10px] text-slate-500 px-1 font-bold">수량:</span>
+                      <select
+                        value={item.quantity || 1}
+                        onChange={(e) => handleUpdateUserItem(item.id, { quantity: Number(e.target.value) })}
+                        className="bg-white text-xs font-black text-slate-900 px-2 py-1 rounded-lg border border-slate-200 cursor-pointer"
                       >
-                        <Minus size={11} />
-                      </button>
-                      <span className="w-5 text-center text-xs font-black text-slate-900">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => handleUpdateUserItem(item.id, { quantity: (item.quantity || 1) + 1 })}
-                        className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs hover:bg-teal-700 cursor-pointer shadow-2xs"
-                      >
-                        <Plus size={11} />
-                      </button>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((q) => (
+                          <option key={q} value={q}>{q}</option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Subtotal */}
@@ -2439,7 +2302,7 @@ ${itemListText}
                 월간 패키지 창출 순매출
               </span>
               <div className="text-2xl font-black text-emerald-700 tracking-tight">
-                약 {Math.round(reverseCalculations.monthlyPkgNetRevenue / 100000000).toLocaleString()}억 {(Math.round((reverseCalculations.monthlyPkgNetRevenue % 100000000) / 10000)).toLocaleString()}만
+                {formatCurrency(reverseCalculations.monthlyPkgNetRevenue)}원
               </div>
             </div>
             <div className="border-t border-slate-200/80 pt-2.5 mt-2 text-[10px] text-emerald-800 font-bold">

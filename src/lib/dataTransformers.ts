@@ -109,7 +109,7 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
 
   let totalRoomRev = 0;
   if (c.salesByCategory && Array.isArray(c.salesByCategory)) {
-    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryCode === '콘도' || x.categoryName === '콘도');
+    const roomCat = c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
     if (roomCat) totalRoomRev = parseNum(roomCat.totalSales || roomCat.todayActual || 0);
   }
   
@@ -159,15 +159,15 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
   const mtdLyRev = parseNum(c.summary?.mtdLy || 0);
 
   const roomSub = (c.gridData && Array.isArray(c.gridData))
-    ? c.gridData.find((r: any) => r.isSubtotal && (r.categoryCode === 'ROOM' || r.categoryName === '콘도' || r.categoryCode === '콘도'))
+    ? c.gridData.find((r: any) => r.isSubtotal && r.categoryCode === 'ROOM')
     : null;
   const roomCat = (c.salesByCategory && Array.isArray(c.salesByCategory))
-    ? c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM' || x.categoryName === '콘도' || x.categoryCode === '콘도')
+    ? c.salesByCategory.find((x: any) => x.categoryCode === 'ROOM')
     : null;
 
   const mtdRoomsSold = parseNum(c.summary?.mtdRooms || roomSub?.mtdVisitors || roomCat?.mtdVisitors || roomSub?.mtdRooms || 0);
   const lyMtdRoomsSold = parseNum(c.summary?.mtdRoomsLy || c.summary?.lyMtdRooms || roomSub?.mtdLyVisitors || roomCat?.mtdLyVisitors || roomSub?.lyMtdVisitors || 0);
-  const mtdRoomsDiff = mtdRoomsSold - lyMtdRoomsSold;
+  const mtdRoomsDiff = c.summary?.mtdRoomsDiff !== undefined ? parseNum(c.summary.mtdRoomsDiff) : (roomSub?.mtdRoomsDiff !== undefined ? parseNum(roomSub.mtdRoomsDiff) : undefined);
   const mtdRoomsGrowth = c.summary?.mtdRoomsGrowth ?? roomSub?.growthRate ?? null;
 
   return {
@@ -226,15 +226,15 @@ export const transformHomeData = (core: CoreDataState): TransformedHomeData | nu
       };
     })(),
     golfFacilityBreakdown: c.golfFacilityBreakdown || [],
-    qa_metrics: c.qa_metrics || null
+    qa_metrics: c.qaMetrics || null
   };
 };
 
 export interface TransformedResortData {
   success: boolean;
   date?: string;
-  ytd: { actual: number; ly_actual: number };
-  today: { actual: number; ly_actual: number };
+  ytd: { actual: number; lyActual: number };
+  today: { actual: number; lyActual: number };
   roomSummaryByType?: any[];
   roomOccupancyMap: Record<string, {
     sold: number;
@@ -246,33 +246,104 @@ export interface TransformedResortData {
     dynamicCapacity?: number;
     dynamicOccupancyRate?: number;
     isVirtual?: boolean;
+    lySold?: number | null;
+    lyCap?: number | null;
+    lyRev?: number | null;
+    lyAdr?: number | null;
+    lyRate?: number | null;
+    rateDiff?: number | null;
+    soldDiff?: number | null;
+    revenueDiff?: number | null;
+    adrDiff?: number | null;
+    revGrowth?: number | null;
   }>;
-  channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }>;
-  marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
-  rateAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }>;
+  channelAdrData: Array<{
+    channel: string;
+    roomsSold: number;
+    totalRevenue: number;
+    adr: number;
+    lySold?: number | null;
+    lyRev?: number | null;
+    lyAdr?: number | null;
+    soldDiff?: number | null;
+    revDiff?: number | null;
+    revGrowth?: number | null;
+    adrDiff?: number | null;
+  }>;
+  marketTypeAdrData: Array<{
+    marketType: string;
+    roomsSold: number;
+    totalRevenue: number;
+    adr: number;
+    lySold?: number | null;
+    lyRev?: number | null;
+    lyAdr?: number | null;
+    soldDiff?: number | null;
+    revDiff?: number | null;
+    revGrowth?: number | null;
+    adrDiff?: number | null;
+  }>;
+  rateAdrData: Array<{
+    marketType: string;
+    roomsSold: number;
+    totalRevenue: number;
+    adr: number;
+    lySold?: number | null;
+    lyRev?: number | null;
+    lyAdr?: number | null;
+    soldDiff?: number | null;
+    revDiff?: number | null;
+    revGrowth?: number | null;
+    adrDiff?: number | null;
+  }>;
   summary?: any;
   lodgingStats: {
     revenue: number;
     lyRevenue?: number;
+    revenueDiff?: number | null;
     revenueGrowth?: number;
     roomsSold: number;
     lyRoomsSold?: number;
+    roomsDiff?: number | null;
     roomsGrowth?: number;
     totalCapacity: number;
     totalRoomInventory?: number;
     totalGuestCapacity?: number;
     guestCapacity?: number;
     adr: number;
+    lyAdr?: number | null;
+    adrDiff?: number | null;
+    adrGrowth?: number | null;
     physicalOccRate?: number;
+    lyPhysicalOccRate?: number | null;
+    physicalOccDiff?: number | null;
     standardOccRate?: number;
     connectingOccRate?: number;
     remainingOccRate?: number;
     weekdayRevenue?: number;
+    lyWeekdayRevenue?: number;
+    weekdayRevenueDiff?: number | null;
+    weekdayRevenueGrowth?: number | null;
     weekendRevenue?: number;
+    lyWeekendRevenue?: number;
+    weekendRevenueDiff?: number | null;
+    weekendRevenueGrowth?: number | null;
     weekdayRoomsSold?: number;
+    lyWeekdayRoomsSold?: number;
+    weekdayRoomsDiff?: number | null;
+    weekdayRoomsGrowth?: number | null;
     weekendRoomsSold?: number;
+    lyWeekendRoomsSold?: number;
+    weekendRoomsDiff?: number | null;
+    weekendRoomsGrowth?: number | null;
     weekdayAdr?: number;
+    lyWeekdayAdr?: number;
+    weekdayAdrDiff?: number | null;
+    weekdayAdrGrowth?: number | null;
     weekendAdr?: number;
+    lyWeekendAdr?: number;
+    weekendAdrDiff?: number | null;
+    weekendAdrGrowth?: number | null;
     weekdayOcc?: number;
     weekendOcc?: number;
   };
@@ -281,41 +352,19 @@ export interface TransformedResortData {
 export const transformResortData = (payload: any, masterCapacities?: Record<string, number>): TransformedResortData | null => {
   if (!payload) return null;
 
-  const isRange = Boolean(payload.isRangeQuery || (payload.startDate && payload.endDate && payload.startDate !== payload.endDate));
-  let days = isRange ? Math.max(1, payload.resortSummary?.days || payload.days || (Array.isArray(payload.dailyTrends) ? payload.dailyTrends.length : 1)) : 1;
-
-  if (isRange && days === 1 && payload.startDate && payload.endDate) {
-    const s = new Date(payload.startDate);
-    const e = new Date(payload.endDate);
-    const diff = Math.ceil(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    if (diff > 0) days = diff;
-  }
-
-  const roomOccupancyMap: Record<string, {
-    sold: number;
-    cap: number;
-    rev: number;
-    adr?: number;
-    occupancyRate?: number;
-    fixedCapacity?: number;
-    dynamicCapacity?: number;
-    dynamicOccupancyRate?: number;
-    isVirtual?: boolean;
-  }> = {};
+  const roomOccupancyMap: TransformedResortData['roomOccupancyMap'] = {};
   if (masterCapacities && Object.keys(masterCapacities).length > 0) {
     Object.entries(masterCapacities).forEach(([k, v]) => {
-      roomOccupancyMap[k] = { sold: 0, cap: parseNum(v) * days, rev: 0 };
+      roomOccupancyMap[k] = { sold: 0, cap: parseNum(v), rev: 0 };
     });
   }
 
   // 🚨 [Pure Consumer / Fail-Stop] 백엔드가 정제해주는 roomSummaryByType 의 값만을 1:1 매핑
-  // 백엔드에서 모수(capacity)가 누락되면 0으로 유지하여 결함을 그대로 노출 (프론트 임의 모수 할당 금지)
   if (payload.roomSummaryByType && Array.isArray(payload.roomSummaryByType) && payload.roomSummaryByType.length > 0) {
     payload.roomSummaryByType.forEach((item: any) => {
       const typeName = item.roomType || '미분류';
       const sold = parseNum(item.roomsSold || 0);
       const rev = parseNum(item.totalSales || item.revenue || 0);
-      // 고정 물리 인벤토리 기준(fixedCapacity) 우선 바인딩하여 동적 모수 수렴 왜곡 방지
       const fixedCap = parseNum(item.fixedCapacity || item.capacity || item.totalRooms || 0);
       const cap = fixedCap > 0 ? fixedCap : (roomOccupancyMap[typeName]?.cap ?? 0);
       const occupancyRate = item.fixedOccupancyRate !== undefined && item.fixedOccupancyRate !== null ? parseNum(item.fixedOccupancyRate) : (item.rate !== undefined && item.rate !== null ? parseNum(item.rate) : undefined);
@@ -331,12 +380,22 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
         occupancyRate,
         fixedCapacity: cap,
         dynamicCapacity,
-        dynamicOccupancyRate
+        dynamicOccupancyRate,
+        lySold: item.lyRoomsSold !== undefined && item.lyRoomsSold !== null ? parseNum(item.lyRoomsSold) : null,
+        lyCap: item.lyFixedCapacity !== undefined && item.lyFixedCapacity !== null ? parseNum(item.lyFixedCapacity) : null,
+        lyRev: item.lyRevenue !== undefined && item.lyRevenue !== null ? parseNum(item.lyRevenue) : null,
+        lyAdr: item.lyAdr !== undefined && item.lyAdr !== null ? parseNum(item.lyAdr) : null,
+        lyRate: item.lyFixedOccupancyRate !== undefined && item.lyFixedOccupancyRate !== null ? parseNum(item.lyFixedOccupancyRate) : (item.lyRate !== undefined && item.lyRate !== null ? parseNum(item.lyRate) : null),
+        rateDiff: item.rateDiff !== undefined && item.rateDiff !== null ? Number(item.rateDiff) : null,
+        soldDiff: item.soldDiff !== undefined && item.soldDiff !== null ? parseNum(item.soldDiff) : null,
+        revenueDiff: item.revenueDiff !== undefined && item.revenueDiff !== null ? parseNum(item.revenueDiff) : null,
+        adrDiff: item.adrDiff !== undefined && item.adrDiff !== null ? parseNum(item.adrDiff) : null,
+        revGrowth: item.revGrowth !== undefined && item.revGrowth !== null ? Number(item.revGrowth) : null,
       };
     });
   }
 
-  const channelAdrData: Array<{ channel: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
+  const channelAdrData: TransformedResortData['channelAdrData'] = [];
   if (payload.salesByChannel && Array.isArray(payload.salesByChannel)) {
     const channelSubtotals = payload.salesByChannel.filter((item: any) => item.isChannelSubtotal);
     const sourceRows = channelSubtotals.length > 0 
@@ -354,14 +413,20 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
           channel: channelName,
           roomsSold: sold,
           totalRevenue: rev,
-          adr: adr
+          adr: adr,
+          lySold: item.lyRoomsSold !== undefined ? parseNum(item.lyRoomsSold) : (item.todayLyRooms !== undefined ? parseNum(item.todayLyRooms) : null),
+          lyRev: item.lyTotalRevenue !== undefined ? parseNum(item.lyTotalRevenue) : (item.todayLyRevenue !== undefined ? parseNum(item.todayLyRevenue) : null),
+          lyAdr: item.lyAdr !== undefined ? parseNum(item.lyAdr) : null,
+          soldDiff: item.soldDiff !== undefined && item.soldDiff !== null ? parseNum(item.soldDiff) : null,
+          revDiff: item.revDiff !== undefined && item.revDiff !== null ? parseNum(item.revDiff) : null,
+          revGrowth: item.revGrowth ?? item.revenueGrowth ?? null,
+          adrDiff: item.adrDiff !== undefined && item.adrDiff !== null ? parseNum(item.adrDiff) : null,
         });
       }
     });
   }
-  channelAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-  const marketTypeAdrData: Array<{ marketType: string; roomsSold: number; totalRevenue: number; adr: number }> = [];
+  const marketTypeAdrData: TransformedResortData['marketTypeAdrData'] = [];
   if (payload.salesBySegment && Array.isArray(payload.salesBySegment)) {
     const segmentSubtotals = payload.salesBySegment.filter((item: any) => item.isSegmentSubtotal);
     const sourceRows = segmentSubtotals.length > 0
@@ -379,12 +444,18 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
           marketType: marketName,
           roomsSold: sold,
           totalRevenue: rev,
-          adr: adr
+          adr: adr,
+          lySold: item.lyRoomsSold !== undefined ? parseNum(item.lyRoomsSold) : (item.todayLyRooms !== undefined ? parseNum(item.todayLyRooms) : null),
+          lyRev: item.lyTotalRevenue !== undefined ? parseNum(item.lyTotalRevenue) : (item.todayLyRevenue !== undefined ? parseNum(item.todayLyRevenue) : null),
+          lyAdr: item.lyAdr !== undefined ? parseNum(item.lyAdr) : null,
+          soldDiff: item.soldDiff !== undefined && item.soldDiff !== null ? parseNum(item.soldDiff) : null,
+          revDiff: item.revDiff !== undefined && item.revDiff !== null ? parseNum(item.revDiff) : null,
+          revGrowth: item.revGrowth ?? item.revenueGrowth ?? null,
+          adrDiff: item.adrDiff !== undefined && item.adrDiff !== null ? parseNum(item.adrDiff) : null,
         });
       }
     });
   }
-  marketTypeAdrData.sort((a, b) => b.totalRevenue - a.totalRevenue);
 
   let summaryRevenue = 0;
   // 1. matrix-weekly 객실 소계 우선 참조 (SSOT)
@@ -406,9 +477,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   const ls = payload.lodgingStats || {};
 
   const summaryRoomsSold = parseNum(ls.roomsSold || payload.summary?.totalRooms || 0);
-  // 객실 인벤토리 모수 SSOT
   const physicalRoomCap = parseNum(ls.totalCapacity || payload.summary?.availableRooms || payload.summary?.totalPhysicalKeys || 0);
-  // 투숙객 인원 모수 (Guests / Pax) SSOT
   const guestCap = parseNum(payload.summary?.totalRoomCap || 0);
 
   let lyRevenue = 0;
@@ -418,7 +487,7 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   if (payload.salesByCategory && Array.isArray(payload.salesByCategory)) {
     const roomCat = payload.salesByCategory.find((x: any) => x.categoryCode === 'ROOM');
     if (roomCat) {
-      lyRevenue = parseNum(roomCat.todayLy || roomCat.ly_actual || 0);
+      lyRevenue = parseNum(roomCat.todayLy || 0);
       lyRoomsSold = parseNum(roomCat.todayLyVisitors || roomCat.lyVisitors || 0);
       revenueGrowth = parseNum(roomCat.todayGrowth || roomCat.growthRate || 0);
     }
@@ -429,30 +498,53 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   const standardPhysicalRooms = parseNum(payload.summary?.standardPhysicalRooms || ls.standardPhysicalRooms || 0);
   const totalPhysicalKeysSold = parseNum(payload.summary?.totalPhysicalKeysSold || ls.totalPhysicalKeysSold || 0);
 
-  const lodgingStats = {
+  const lodgingStats: TransformedResortData['lodgingStats'] = {
     revenue: parseNum(ls.revenue || summaryRevenue || payload.summary?.totalRoomRev || 0),
     lyRevenue: ls.lyRevenue !== undefined ? parseNum(ls.lyRevenue) : lyRevenue,
+    revenueDiff: ls.revenueDiff !== undefined && ls.revenueDiff !== null ? parseNum(ls.revenueDiff) : null,
     revenueGrowth: ls.revenueGrowth !== undefined ? parseNum(ls.revenueGrowth) : revenueGrowth,
     roomsSold: summaryRoomsSold,
     lyRoomsSold: ls.lyRoomsSold !== undefined ? parseNum(ls.lyRoomsSold) : lyRoomsSold,
+    roomsDiff: ls.roomsDiff !== undefined && ls.roomsDiff !== null ? parseNum(ls.roomsDiff) : null,
     roomsGrowth: ls.roomsGrowth !== undefined ? parseNum(ls.roomsGrowth) : undefined,
-    // [안전 분리] 객실 동 모수
     totalRoomInventory: physicalRoomCap,
     totalCapacity: physicalRoomCap,
-    // [안전 분리] 투숙객 인원 모수 (Pax) - 기존 컴포넌트 하위 호환성 100% 보장
     totalGuestCapacity: guestCap,
     guestCapacity: guestCap,
     adr: parseNum(ls.adr ?? payload.summary?.totalADR ?? payload.summary?.adr ?? payload.summary?.ADR ?? 0),
+    lyAdr: ls.lyAdr !== undefined && ls.lyAdr !== null ? parseNum(ls.lyAdr) : null,
+    adrDiff: ls.adrDiff !== undefined && ls.adrDiff !== null ? parseNum(ls.adrDiff) : null,
+    adrGrowth: ls.adrGrowth !== undefined && ls.adrGrowth !== null ? Number(ls.adrGrowth) : null,
     physicalOccRate: ls.physicalOccRate !== undefined ? parseNum(ls.physicalOccRate) : undefined,
+    lyPhysicalOccRate: ls.lyPhysicalOccRate !== undefined && ls.lyPhysicalOccRate !== null ? parseNum(ls.lyPhysicalOccRate) : null,
+    physicalOccDiff: ls.physicalOccDiff !== undefined && ls.physicalOccDiff !== null ? Number(ls.physicalOccDiff) : null,
     standardOccRate: ls.standardOccRate !== undefined ? parseNum(ls.standardOccRate) : undefined,
     connectingOccRate: ls.connectingOccRate !== undefined ? parseNum(ls.connectingOccRate) : undefined,
     remainingOccRate: ls.remainingOccRate !== undefined ? parseNum(ls.remainingOccRate) : undefined,
     weekdayRevenue: ls.weekdayRevenue !== undefined ? parseNum(ls.weekdayRevenue) : (payload.summary?.weekdayRoomRev !== undefined ? parseNum(payload.summary.weekdayRoomRev) : undefined),
+    lyWeekdayRevenue: ls.lyWeekdayRevenue !== undefined ? parseNum(ls.lyWeekdayRevenue) : undefined,
+    weekdayRevenueDiff: ls.weekdayRevenueDiff !== undefined && ls.weekdayRevenueDiff !== null ? parseNum(ls.weekdayRevenueDiff) : null,
+    weekdayRevenueGrowth: ls.weekdayRevenueGrowth !== undefined && ls.weekdayRevenueGrowth !== null ? Number(ls.weekdayRevenueGrowth) : null,
     weekendRevenue: ls.weekendRevenue !== undefined ? parseNum(ls.weekendRevenue) : (payload.summary?.weekendRoomRev !== undefined ? parseNum(payload.summary.weekendRoomRev) : undefined),
+    lyWeekendRevenue: ls.lyWeekendRevenue !== undefined ? parseNum(ls.lyWeekendRevenue) : undefined,
+    weekendRevenueDiff: ls.weekendRevenueDiff !== undefined && ls.weekendRevenueDiff !== null ? parseNum(ls.weekendRevenueDiff) : null,
+    weekendRevenueGrowth: ls.weekendRevenueGrowth !== undefined && ls.weekendRevenueGrowth !== null ? Number(ls.weekendRevenueGrowth) : null,
     weekdayRoomsSold: ls.weekdayRoomsSold !== undefined ? parseNum(ls.weekdayRoomsSold) : (payload.summary?.weekdayRoomsCount !== undefined ? parseNum(payload.summary.weekdayRoomsCount) : undefined),
+    lyWeekdayRoomsSold: ls.lyWeekdayRoomsSold !== undefined ? parseNum(ls.lyWeekdayRoomsSold) : undefined,
+    weekdayRoomsDiff: ls.weekdayRoomsDiff !== undefined && ls.weekdayRoomsDiff !== null ? parseNum(ls.weekdayRoomsDiff) : null,
+    weekdayRoomsGrowth: ls.weekdayRoomsGrowth !== undefined && ls.weekdayRoomsGrowth !== null ? Number(ls.weekdayRoomsGrowth) : null,
     weekendRoomsSold: ls.weekendRoomsSold !== undefined ? parseNum(ls.weekendRoomsSold) : (payload.summary?.weekendRoomsCount !== undefined ? parseNum(payload.summary.weekendRoomsCount) : undefined),
+    lyWeekendRoomsSold: ls.lyWeekendRoomsSold !== undefined ? parseNum(ls.lyWeekendRoomsSold) : undefined,
+    weekendRoomsDiff: ls.weekendRoomsDiff !== undefined && ls.weekendRoomsDiff !== null ? parseNum(ls.weekendRoomsDiff) : null,
+    weekendRoomsGrowth: ls.weekendRoomsGrowth !== undefined && ls.weekendRoomsGrowth !== null ? Number(ls.weekendRoomsGrowth) : null,
     weekdayAdr: ls.weekdayAdr !== undefined ? parseNum(ls.weekdayAdr) : (payload.summary?.weekdayADR !== undefined ? parseNum(payload.summary.weekdayADR) : undefined),
+    lyWeekdayAdr: ls.lyWeekdayAdr !== undefined ? parseNum(ls.lyWeekdayAdr) : undefined,
+    weekdayAdrDiff: ls.weekdayAdrDiff !== undefined && ls.weekdayAdrDiff !== null ? parseNum(ls.weekdayAdrDiff) : null,
+    weekdayAdrGrowth: ls.weekdayAdrGrowth !== undefined && ls.weekdayAdrGrowth !== null ? Number(ls.weekdayAdrGrowth) : null,
     weekendAdr: ls.weekendAdr !== undefined ? parseNum(ls.weekendAdr) : (payload.summary?.weekendADR !== undefined ? parseNum(payload.summary.weekendADR) : undefined),
+    lyWeekendAdr: ls.lyWeekendAdr !== undefined ? parseNum(ls.lyWeekendAdr) : undefined,
+    weekendAdrDiff: ls.weekendAdrDiff !== undefined && ls.weekendAdrDiff !== null ? parseNum(ls.weekendAdrDiff) : null,
+    weekendAdrGrowth: ls.weekendAdrGrowth !== undefined && ls.weekendAdrGrowth !== null ? Number(ls.weekendAdrGrowth) : null,
     weekdayOcc: ls.weekdayOcc !== undefined ? parseNum(ls.weekdayOcc) : (payload.summary?.weekdayOcc !== undefined ? parseNum(payload.summary.weekdayOcc) : undefined),
     weekendOcc: ls.weekendOcc !== undefined ? parseNum(ls.weekendOcc) : (payload.summary?.weekendOcc !== undefined ? parseNum(payload.summary.weekendOcc) : undefined)
   };
@@ -460,8 +552,8 @@ export const transformResortData = (payload: any, masterCapacities?: Record<stri
   return {
     success: payload.success || true,
     date: payload.date,
-    ytd: { actual: payload.ytd?.actual || 0, ly_actual: payload.ytd?.ly_actual || 0 },
-    today: { actual: payload.today?.actual || 0, ly_actual: payload.today?.ly_actual || 0 },
+    ytd: { actual: payload.ytd?.actual || 0, lyActual: payload.ytd?.lyActual || 0 },
+    today: { actual: payload.today?.actual || 0, lyActual: payload.today?.lyActual || 0 },
     summary: {
       ...payload.summary,
       connectingPhysicalRooms,

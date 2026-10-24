@@ -53,10 +53,10 @@ export default function RoomGuestAnalysis() {
   const dailyVisitors = data?.dailyVisitors || data?.dailyTrends || [];
 
   const getTrendChartOptions = () => {
-    const dates = dailyVisitors.map((d: any) => d.sales_date || d.date || d.date_id);
-    const roomGuests = dailyVisitors.map((d: any) => Number(d.daily_room_guests ?? d.dailyRoomGuests ?? 0));
-    const golfPlayers = dailyVisitors.map((d: any) => Number(d.daily_golf_players ?? d.dailyGolfPlayers ?? 0));
-    const revenue = dailyVisitors.map((d: any) => Number(d.daily_revenue ?? d.dailyRevenue ?? 0));
+    const dates = dailyVisitors.map((d: any) => d.salesDate || d.date || d.dateId);
+    const roomGuests = dailyVisitors.map((d: any) => Number(d.dailyRoomGuests ?? 0));
+    const golfPlayers = dailyVisitors.map((d: any) => Number(d.dailyGolfPlayers ?? 0));
+    const revenue = dailyVisitors.map((d: any) => Number(d.dailyRevenue ?? 0));
 
     return {
       tooltip: {
@@ -324,24 +324,24 @@ export default function RoomGuestAnalysis() {
                   venueVisitors.map((venue: any, idx: number) => (
                     <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
                       <td className="py-4 px-6 font-medium text-[#5A6B63] whitespace-nowrap">
-                        {venue.category_code || venue.categoryCode}
+                        {venue.categoryCode || '-'}
                       </td>
                       <td className="py-4 px-4 font-extrabold text-[#1B382E] whitespace-nowrap">
-                        {venue.venue_name || venue.venueName}
+                        {venue.venueName || '-'}
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap">
                         <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/70 whitespace-nowrap">
-                          {venue.ticket_group || venue.ticketGroup || '-'}
+                          {venue.ticketGroup || '-'}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right font-black text-[#1E523F] whitespace-nowrap">
-                        {(venue.visitor_count_formatted || venue.visitorCountFormatted || Number(venue.visitor_count || 0).toLocaleString())} 명
+                        {(venue.visitorCountFormatted || Number(venue.visitorCount || 0).toLocaleString())} 명
                       </td>
                       <td className="py-4 px-4 text-right font-medium text-[#5A6B63] whitespace-nowrap">
-                        {Number(venue.visitor_share_pct ?? venue.visitorSharePct ?? 0).toFixed(2)}%
+                        {Number(venue.visitorSharePct ?? 0).toFixed(2)}%
                       </td>
                       <td className="py-4 px-6 text-right font-bold text-[#1B382E] whitespace-nowrap">
-                        {(venue.revenue_formatted || venue.revenueFormatted || Number(venue.revenue || 0).toLocaleString())}원
+                        {(venue.revenueFormatted || Number(venue.revenue || 0).toLocaleString())}원
                       </td>
                     </tr>
                   ))

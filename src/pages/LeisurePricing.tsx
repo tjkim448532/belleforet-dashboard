@@ -28,7 +28,6 @@ import {
   Flame
 } from 'lucide-react';
 import {
-  LEISURE_FACILITIES,
   MAIN_CATEGORY_TABS,
   type MainCategoryType,
   type LeisureFacilityPricing
@@ -43,11 +42,11 @@ export default function LeisurePricing() {
   const [onlySpecialOffers, setOnlySpecialOffers] = useState<boolean>(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>(LEISURE_FACILITIES);
-  const [lastUpdated, setLastUpdated] = useState<string>('2026-10-17 (공식 실측 기준)');
+  const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>('-');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  // Fetch nightly S3 snapshot via backend API when available
+  // Fetch nightly S3 snapshot via backend API (100% Pure Consumer & Fail-Stop)
   useEffect(() => {
     let isCancelled = false;
     const fetchLatestCatalog = async () => {
@@ -59,49 +58,10 @@ export default function LeisurePricing() {
         if (payload?.lastUpdated) {
           setLastUpdated(`${payload.lastUpdated.replace('T', ' ').substring(0, 16)} (S3 실시간 동기화)`);
         }
-        if (payload?.facilities && Array.isArray(payload.facilities) && payload.facilities.length > 0) {
+        if (payload?.facilities && Array.isArray(payload.facilities)) {
           setFacilities(payload.facilities);
-        } else if (payload?.specialOffers && Array.isArray(payload.specialOffers)) {
-          // Merge dynamic S3 special offers and golf snapshot with static SSOT
-          setFacilities((prev) => {
-            return prev.map((facility) => {
-              // Update special offers dynamically
-              if (facility.isSpecialOffer) {
-                const matchedOffer = payload.specialOffers.find((so: any) =>
-                  so.id === facility.id.replace('offer-', '') ||
-                  facility.name.includes(so.title) ||
-                  so.title.includes(facility.name.replace('[스페셜 오퍼]', '').trim())
-                );
-                if (matchedOffer) {
-                  return {
-                    ...facility,
-                    period: matchedOffer.period || facility.period,
-                    officialUrl: matchedOffer.link || facility.officialUrl,
-                    summary: matchedOffer.desc || facility.summary
-                  };
-                }
-              }
-              // Update golf snapshot dynamically
-              if (facility.id === 'golf-greenfee' && payload.golfSnapshot?.verified) {
-                return {
-                  ...facility,
-                  regularPrices: facility.regularPrices.map(rp => {
-                    if (rp.name.includes('주중') && payload.golfSnapshot.greenFeeWeekday) {
-                      return { ...rp, priceWeekday: payload.golfSnapshot.greenFeeWeekday };
-                    }
-                    if (rp.name.includes('주말') && payload.golfSnapshot.greenFeeWeekend) {
-                      return { ...rp, priceWeekend: payload.golfSnapshot.greenFeeWeekend };
-                    }
-                    if (rp.name.includes('카트') && payload.golfSnapshot.cartFee) {
-                      return { ...rp, priceWeekday: payload.golfSnapshot.cartFee, priceWeekend: payload.golfSnapshot.cartFee };
-                    }
-                    return rp;
-                  })
-                };
-              }
-              return facility;
-            });
-          });
+        } else {
+          setFacilities([]);
         }
       } finally {
         if (!isCancelled) setIsSyncing(false);

@@ -253,19 +253,19 @@ export default function V6DashboardViewer() {
                         </td>
                         
                         {/* Today */}
-                        <td className="px-3 py-2.5 text-right font-financial font-bold text-xs border-r border-b border-[#D0C6BB]/60 text-[#1B382E]">{formatNum(part.partSubtotal?.todayActual || part.part_subtotal?.todayActual)}</td>
-                        <td className="px-3 py-2.5 text-right font-financial text-xs border-r border-b border-[#D0C6BB]/60 text-[#6C7A73]">{formatNum(part.partSubtotal?.todayLy || part.part_subtotal?.todayLy)}</td>
-                        <td className="px-2.5 py-2.5 text-right font-financial text-xs border-r-2 border-[#D0C6BB] border-b border-[#D0C6BB]/60 bg-[#E8E5DD]/50">{formatGrowth(part.partSubtotal?.todayGrowth || part.part_subtotal?.todayGrowth)}</td>
+                        <td className="px-3 py-2.5 text-right font-financial font-bold text-xs border-r border-b border-[#D0C6BB]/60 text-[#1B382E]">{formatNum(part.partSubtotal?.todayActual)}</td>
+                        <td className="px-3 py-2.5 text-right font-financial text-xs border-r border-b border-[#D0C6BB]/60 text-[#6C7A73]">{formatNum(part.partSubtotal?.todayLy)}</td>
+                        <td className="px-2.5 py-2.5 text-right font-financial text-xs border-r-2 border-[#D0C6BB] border-b border-[#D0C6BB]/60 bg-[#E8E5DD]/50">{formatGrowth(part.partSubtotal?.todayGrowth)}</td>
                         
                         {/* MTD */}
-                        <td className="px-3 py-2.5 text-right font-financial font-bold text-xs border-r border-b border-[#D0C6BB]/60 text-[#1B382E]">{formatNum(part.partSubtotal?.mtdActual || part.part_subtotal?.mtdActual)}</td>
-                        <td className="px-3 py-2.5 text-right font-financial text-xs border-r border-b border-[#D0C6BB]/60 text-[#6C7A73]">{formatNum(part.partSubtotal?.mtdLy || part.part_subtotal?.mtdLy)}</td>
-                        <td className="px-2.5 py-2.5 text-right font-financial text-xs border-r-2 border-[#D0C6BB] border-b border-[#D0C6BB]/60 bg-[#E8E5DD]/50">{formatGrowth(part.partSubtotal?.mtdGrowth || part.part_subtotal?.mtdGrowth)}</td>
+                        <td className="px-3 py-2.5 text-right font-financial font-bold text-xs border-r border-b border-[#D0C6BB]/60 text-[#1B382E]">{formatNum(part.partSubtotal?.mtdActual)}</td>
+                        <td className="px-3 py-2.5 text-right font-financial text-xs border-r border-b border-[#D0C6BB]/60 text-[#6C7A73]">{formatNum(part.partSubtotal?.mtdLy)}</td>
+                        <td className="px-2.5 py-2.5 text-right font-financial text-xs border-r-2 border-[#D0C6BB] border-b border-[#D0C6BB]/60 bg-[#E8E5DD]/50">{formatGrowth(part.partSubtotal?.mtdGrowth)}</td>
                         
                         {/* YTD */}
-                        <td className="px-3 py-2.5 text-right font-financial font-black text-xs border-r border-b border-[#D0C6BB]/60 text-[#1B382E]">{formatNum(part.partSubtotal?.ytdActual || part.part_subtotal?.ytdActual)}</td>
-                        <td className="px-3 py-2.5 text-right font-financial text-xs border-r border-b border-[#D0C6BB]/60 text-[#6C7A73]">{formatNum(part.partSubtotal?.ytdLy || part.part_subtotal?.ytdLy)}</td>
-                        <td className="px-2.5 py-2.5 text-right font-financial text-xs border-b border-[#D0C6BB]/60 bg-[#FAF6ED]/70">{formatGrowth(part.partSubtotal?.ytdGrowth || part.part_subtotal?.ytdGrowth)}</td>
+                        <td className="px-3 py-2.5 text-right font-financial font-black text-xs border-r border-b border-[#D0C6BB]/60 text-[#1B382E]">{formatNum(part.partSubtotal?.ytdActual)}</td>
+                        <td className="px-3 py-2.5 text-right font-financial text-xs border-r border-b border-[#D0C6BB]/60 text-[#6C7A73]">{formatNum(part.partSubtotal?.ytdLy)}</td>
+                        <td className="px-2.5 py-2.5 text-right font-financial text-xs border-b border-[#D0C6BB]/60 bg-[#FAF6ED]/70">{formatGrowth(part.partSubtotal?.ytdGrowth)}</td>
                       </tr>
                     </React.Fragment>
                   );

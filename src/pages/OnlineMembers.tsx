@@ -694,9 +694,10 @@ export default function OnlineMembers() {
                           if (!isPastOrCurrent) {
                             return <td key={i} className="px-2 py-3 text-[#5A6B63]/40 font-mono">-</td>;
                           }
-                          const curVal = item?.joined ?? 0;
-                          const lyVal = item?.lyJoined ?? 0;
-                          const diff = curVal - lyVal;
+                          const diff = item?.joinedDiff ?? null;
+                          if (diff === null || diff === undefined) {
+                            return <td key={i} className="px-2 py-3 text-[#5A6B63]/40 font-mono">-</td>;
+                          }
                           return (
                             <td key={i} className={`px-2 py-3 font-semibold font-mono ${
                               diff > 0 ? 'text-[#1E523F]' : diff < 0 ? 'text-[#8B2635]' : 'text-[#5A6B63]'
@@ -707,10 +708,10 @@ export default function OnlineMembers() {
                         })}
                         {/* YTD Total Diff */}
                         {(() => {
-                          if (summary.periodJoinedMembers === undefined || summary.lyPeriodJoinedMembers === undefined) {
+                          const diffTotal = summary.periodJoinedDiff ?? null;
+                          if (diffTotal === null || diffTotal === undefined) {
                             return <td className="px-4 py-3 font-black sticky right-0 font-mono text-xs text-[#5A6B63]/40">-</td>;
                           }
-                          const diffTotal = Number(summary.periodJoinedMembers) - Number(summary.lyPeriodJoinedMembers);
                           return (
                             <td className={`px-4 py-3 font-black sticky right-0 font-mono text-xs ${
                               diffTotal >= 0 ? 'text-[#1E523F] bg-[#E8F2EE]/60' : 'text-[#8B2635] bg-[#FDF0ED]/60'
@@ -733,7 +734,7 @@ export default function OnlineMembers() {
                           if (!isPastOrCurrent) {
                             return <td key={i} className="px-2 py-3 text-[#5A6B63]/40 font-mono">-</td>;
                           }
-                          const rate = item?.growthRate ?? item?.growth_rate ?? null;
+                          const rate = item?.growthRate ?? null;
                           return (
                             <td key={i} className="px-2 py-3">
                               {rate !== null ? (

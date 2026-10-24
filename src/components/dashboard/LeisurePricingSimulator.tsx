@@ -53,20 +53,17 @@ export default function LeisurePricingSimulator() {
   // Demand change percentage (-50% ~ +100%). Default to 0%!
   const [demandChangePct, setDemandChangePct] = useState<number>(0);
 
-  // Fetch Top 5 products when selectedFacility or baseYear changes
+  // Fetch Top 5 products & Backend Simulation Results when selectedFacility, baseYear, priceAdjustments, demandChangePct, or activeMarkup changes
   const fetchTopProducts = async () => {
     setIsLoading(true);
     try {
-      const url = `${API_BASE}/api/v6/report/leisure-top-products?facility=${encodeURIComponent(selectedFacility)}&baseYear=${baseYear}`;
+      const priceAdjParam = encodeURIComponent(JSON.stringify(priceAdjustments));
+      const url = `${API_BASE}/api/v6/report/leisure-top-products?facility=${encodeURIComponent(selectedFacility)}&baseYear=${baseYear}&demandChangePct=${demandChangePct}&activeMarkup=${activeMarkup}&priceAdjustments=${priceAdjParam}`;
       const res = await secureFetcher(url);
       
       const payload: LeisureTopProductsResponse = res?.data ?? res;
       if (payload?.success && Array.isArray(payload.topProducts) && payload.topProducts.length > 0) {
-        // 가장 마지막 연도 누적 트랜잭션 판매금액(lyRevenue) 기준 상위 5개 상품 (Top 5 SSOT)
-        const sortedTop5 = [...payload.topProducts]
-          .sort((a, b) => (b.lyRevenue ?? 0) - (a.lyRevenue ?? 0))
-          .slice(0, 5)
-          .map((item, idx) => ({ ...item, rank: idx + 1 }));
+        const sortedTop5 = [...payload.topProducts].slice(0, 5);
 
         const normalizedPayload: LeisureTopProductsResponse = {
           ...payload,
@@ -75,22 +72,19 @@ export default function LeisurePricingSimulator() {
 
         setApiResponse(normalizedPayload);
         setIsApiPending(false);
-        // Initialize price adjustments with clean regular price (0% markup)
-        const initialPrices: Record<string, number> = {};
-        sortedTop5.forEach((item) => {
-          initialPrices[item.itemId] = item.currentPrice;
-        });
-        setPriceAdjustments(initialPrices);
-        setActiveMarkup(0);
-        setDemandChangePct(0);
+        if (Object.keys(priceAdjustments).length === 0) {
+          const initialPrices: Record<string, number> = {};
+          sortedTop5.forEach((item) => {
+            initialPrices[item.itemId] = item.currentPrice;
+          });
+          setPriceAdjustments(initialPrices);
+        }
       } else {
-        // API not deployed yet or returned 404/empty
         setIsApiPending(true);
         setApiResponse(null);
       }
     } catch (err: any) {
       console.warn('Leisure top products API pending or error:', err);
-      // Treat as API Pending to follow Zero-Mocking & Request-Only principles
       setIsApiPending(true);
       setApiResponse(null);
     } finally {
@@ -99,9 +93,14 @@ export default function LeisurePricingSimulator() {
   };
 
   useEffect(() => {
-    fetchTopProducts();
+    setPriceAdjustments({});
+    setActiveMarkup(0);
+    setDemandChangePct(0);
   }, [selectedFacility, baseYear]);
 
+  useEffect(() => {
+    fetchTopProducts();
+  }, [selectedFacility, baseYear, demandChangePct, activeMarkup, priceAdjustments]);
 
   // Handle single item price change
   const handlePriceChange = (itemId: string, newPrice: number) => {
@@ -113,32 +112,21 @@ export default function LeisurePricingSimulator() {
     }));
   };
 
-  // Quick price offset (+1,000, -1,000 etc.)
-  const handleQuickPriceOffset = (itemId: string, offset: number, currentPrice: number) => {
-    const currentAdj = priceAdjustments[itemId] !== undefined ? priceAdjustments[itemId] : currentPrice;
-    handlePriceChange(itemId, currentAdj + offset);
-  };
-
   // Reset single item price
   const handleResetSinglePrice = (itemId: string, defaultPrice: number) => {
     handlePriceChange(itemId, defaultPrice);
   };
 
-  // Batch markup on all items (+5%, +10%, reset)
+  // Batch markup on all items (+5%, +10%, reset) — delegated to Backend Simulation Engine
   const handleBatchMarkup = (ratePct: number) => {
     setActiveMarkup(ratePct);
-    if (!apiResponse?.topProducts) return;
-    const next: Record<string, number> = {};
-    apiResponse.topProducts.forEach((item) => {
-      if (ratePct === 0) {
+    if (ratePct === 0 && apiResponse?.topProducts) {
+      const next: Record<string, number> = {};
+      apiResponse.topProducts.forEach((item) => {
         next[item.itemId] = item.currentPrice;
-      } else {
-        const factor = 1 + ratePct / 100;
-        // Round to nearest 100 won
-        next[item.itemId] = Math.round((item.currentPrice * factor) / 100) * 100;
-      }
-    });
-    setPriceAdjustments(next);
+      });
+      setPriceAdjustments(next);
+    }
   };
 
   // Reset all to clean LY baseline (0% price markup, 0% demand change)
@@ -147,111 +135,53 @@ export default function LeisurePricingSimulator() {
     handleBatchMarkup(0);
   };
 
-  // Compute Simulation Calculations (SSOT Zero-Variance)
+  // 1:1 Passthrough of Simulation Results from Backend API (Zero Client-Side Simulation Arithmetic)
   const simulationResults = useMemo(() => {
     if (!apiResponse?.topProducts || apiResponse.topProducts.length === 0) {
       return null;
     }
 
-    const demandFactor = 1 + demandChangePct / 100;
-
-    let lyTotalRev = 0;
-    let baselineTotalRev = 0; // 전년 고객수 유지 기준
-    let adjustedTotalRev = 0; // 고객수 변동 반영 기준
-
-    const monthlyLyTotals = new Array(12).fill(0);
-    const monthlyBaselineTotals = new Array(12).fill(0);
-    const monthlyAdjustedTotals = new Array(12).fill(0);
-
-    const simulatedItems = apiResponse.topProducts.map((item) => {
-      const adjPrice = priceAdjustments[item.itemId] !== undefined ? priceAdjustments[item.itemId] : item.currentPrice;
-      const priceDelta = adjPrice - item.currentPrice;
-      const priceDeltaPct = item.currentPrice > 0 ? (priceDelta / item.currentPrice) * 100 : 0;
-
-      // Baseline Simulation: same customer volume as LY
-      let itemBaselineAnnualRev = 0;
-      let itemAdjustedAnnualRev = 0;
-      const itemMonthlyBaseline: number[] = [];
-      const itemMonthlyAdjusted: number[] = [];
-
-      for (let m = 0; m < 12; m++) {
-        const lyMonthlyQty = item.monthlyQty && item.monthlyQty[m] ? item.monthlyQty[m] : 0;
-        const lyMonthlyRev = item.monthlyRevenue && item.monthlyRevenue[m] !== undefined
-          ? item.monthlyRevenue[m] 
-          : lyMonthlyQty * item.currentPrice;
-
-        // Mathematical SSOT: If priceDelta is 0, baselineMonthlyRev is EXACTLY lyMonthlyRev!
-        const baselineMonthlyRev = priceDelta === 0 
-          ? lyMonthlyRev 
-          : lyMonthlyRev + (lyMonthlyQty * priceDelta);
-
-        // Mathematical SSOT: If priceDelta is 0 AND demandChangePct is 0, adjusted is EXACTLY lyMonthlyRev!
-        const adjustedMonthlyRev = (priceDelta === 0 && demandChangePct === 0)
-          ? lyMonthlyRev
-          : Math.round(baselineMonthlyRev * demandFactor);
-
-        itemBaselineAnnualRev += baselineMonthlyRev;
-        itemAdjustedAnnualRev += adjustedMonthlyRev;
-
-        itemMonthlyBaseline.push(baselineMonthlyRev);
-        itemMonthlyAdjusted.push(adjustedMonthlyRev);
-
-        monthlyLyTotals[m] += lyMonthlyRev;
-        monthlyBaselineTotals[m] += baselineMonthlyRev;
-        monthlyAdjustedTotals[m] += adjustedMonthlyRev;
-      }
-
-      lyTotalRev += item.lyRevenue;
-      baselineTotalRev += itemBaselineAnnualRev;
-      adjustedTotalRev += itemAdjustedAnnualRev;
-
-      const baselineDelta = itemBaselineAnnualRev - item.lyRevenue;
-      const baselineDeltaPct = item.lyRevenue > 0 ? (baselineDelta / item.lyRevenue) * 100 : 0;
-
-      const adjustedDelta = itemAdjustedAnnualRev - item.lyRevenue;
-      const adjustedDeltaPct = item.lyRevenue > 0 ? (adjustedDelta / item.lyRevenue) * 100 : 0;
+    const backendSim = (apiResponse as any)?.simulationResults ?? apiResponse;
+    const simulatedItems = apiResponse.topProducts.map((item: any) => {
+      const adjPrice = priceAdjustments[item.itemId] !== undefined
+        ? priceAdjustments[item.itemId]
+        : Number(item.adjPrice ?? item.currentPrice ?? 0);
 
       return {
         ...item,
         adjPrice,
-        priceDelta,
-        priceDeltaPct,
-        baselineAnnualRev: itemBaselineAnnualRev,
-        baselineMonthlyAvg: Math.round(itemBaselineAnnualRev / 12),
-        baselineDelta,
-        baselineDeltaPct,
-        adjustedAnnualRev: itemAdjustedAnnualRev,
-        adjustedMonthlyAvg: Math.round(itemAdjustedAnnualRev / 12),
-        adjustedDelta,
-        adjustedDeltaPct,
-        monthlyBaseline: itemMonthlyBaseline,
-        monthlyAdjusted: itemMonthlyAdjusted,
+        priceDelta: Number(item.priceDelta ?? 0),
+        priceDeltaPct: Number(item.priceDeltaPct ?? 0),
+        baselineAnnualRev: Number(item.baselineAnnualRev ?? item.lyRevenue ?? 0),
+        baselineMonthlyAvg: Number(item.baselineMonthlyAvg ?? 0),
+        baselineDelta: Number(item.baselineDelta ?? 0),
+        baselineDeltaPct: Number(item.baselineDeltaPct ?? 0),
+        adjustedAnnualRev: Number(item.adjustedAnnualRev ?? item.lyRevenue ?? 0),
+        adjustedMonthlyAvg: Number(item.adjustedMonthlyAvg ?? 0),
+        adjustedDelta: Number(item.adjustedDelta ?? 0),
+        adjustedDeltaPct: Number(item.adjustedDeltaPct ?? 0),
+        monthlyBaseline: Array.isArray(item.monthlyBaseline) ? item.monthlyBaseline : [],
+        monthlyAdjusted: Array.isArray(item.monthlyAdjusted) ? item.monthlyAdjusted : [],
       };
     });
 
-    const baselineTotalDelta = baselineTotalRev - lyTotalRev;
-    const baselineTotalDeltaPct = lyTotalRev > 0 ? (baselineTotalDelta / lyTotalRev) * 100 : 0;
-
-    const adjustedTotalDelta = adjustedTotalRev - lyTotalRev;
-    const adjustedTotalDeltaPct = lyTotalRev > 0 ? (adjustedTotalDelta / lyTotalRev) * 100 : 0;
-
     return {
       items: simulatedItems,
-      lyTotalRev,
-      lyMonthlyAvg: Math.round(lyTotalRev / 12),
-      baselineTotalRev,
-      baselineMonthlyAvg: Math.round(baselineTotalRev / 12),
-      baselineTotalDelta,
-      baselineTotalDeltaPct,
-      adjustedTotalRev,
-      adjustedMonthlyAvg: Math.round(adjustedTotalRev / 12),
-      adjustedTotalDelta,
-      adjustedTotalDeltaPct,
-      monthlyLyTotals,
-      monthlyBaselineTotals,
-      monthlyAdjustedTotals,
+      lyTotalRev: Number(backendSim?.lyTotalRev ?? backendSim?.totalLyRevenue ?? 0),
+      lyMonthlyAvg: Number(backendSim?.lyMonthlyAvg ?? 0),
+      baselineTotalRev: Number(backendSim?.baselineTotalRev ?? backendSim?.lyTotalRev ?? 0),
+      baselineMonthlyAvg: Number(backendSim?.baselineMonthlyAvg ?? 0),
+      baselineTotalDelta: Number(backendSim?.baselineTotalDelta ?? 0),
+      baselineTotalDeltaPct: Number(backendSim?.baselineTotalDeltaPct ?? 0),
+      adjustedTotalRev: Number(backendSim?.adjustedTotalRev ?? backendSim?.lyTotalRev ?? 0),
+      adjustedMonthlyAvg: Number(backendSim?.adjustedMonthlyAvg ?? 0),
+      adjustedTotalDelta: Number(backendSim?.adjustedTotalDelta ?? 0),
+      adjustedTotalDeltaPct: Number(backendSim?.adjustedTotalDeltaPct ?? 0),
+      monthlyLyTotals: Array.isArray(backendSim?.monthlyLyTotals) ? backendSim.monthlyLyTotals : new Array(12).fill(0),
+      monthlyBaselineTotals: Array.isArray(backendSim?.monthlyBaselineTotals) ? backendSim.monthlyBaselineTotals : new Array(12).fill(0),
+      monthlyAdjustedTotals: Array.isArray(backendSim?.monthlyAdjustedTotals) ? backendSim.monthlyAdjustedTotals : new Array(12).fill(0),
     };
-  }, [apiResponse, priceAdjustments, demandChangePct]);
+  }, [apiResponse, priceAdjustments]);
 
   // ECharts Option for Monthly Simulated Revenue
   const chartOption = useMemo(() => {
@@ -296,7 +226,7 @@ export default function LeisurePricingSimulator() {
       yAxis: {
         type: 'value',
         axisLabel: {
-          formatter: (v: number) => `${Math.round(v / 10000).toLocaleString()}만원`,
+          formatter: (v: number) => `${v.toLocaleString()}원`,
           color: '#5A6B63',
           fontSize: 10,
         },
@@ -638,7 +568,7 @@ export default function LeisurePricingSimulator() {
               </div>
               <div className="flex items-center justify-between text-[11px] mt-2">
                 <span className="text-[#5A6B63]">
-                  월평균: <b className="font-mono text-[#1B382E]">{Math.round(simulationResults.baselineTotalRev / 12).toLocaleString()}원</b>
+                  월평균: <b className="font-mono text-[#1B382E]">{simulationResults.baselineMonthlyAvg.toLocaleString()}원</b>
                 </span>
                 {simulationResults.baselineTotalDelta === 0 ? (
                   <span className="font-mono font-bold text-[#5A6B63] bg-white px-2 py-0.5 rounded text-[11px] border border-[#D0C6BB]/60">
@@ -680,7 +610,7 @@ export default function LeisurePricingSimulator() {
               </div>
               <div className="flex items-center justify-between text-[11px] mt-2">
                 <span className="text-[#1E523F]/80">
-                  월평균: <b className="font-mono">{Math.round(simulationResults.adjustedTotalRev / 12).toLocaleString()}원</b>
+                  월평균: <b className="font-mono">{simulationResults.adjustedMonthlyAvg.toLocaleString()}원</b>
                 </span>
                 {simulationResults.adjustedTotalDelta === 0 ? (
                   <span className="font-mono font-bold text-[#5A6B63] bg-white px-2 py-0.5 rounded text-[11px] border border-[#D0C6BB]/60">
@@ -766,18 +696,6 @@ export default function LeisurePricingSimulator() {
                               className="w-24 px-2 py-1 border border-[#D0C6BB] rounded-lg text-right font-mono font-bold text-[#1B382E] focus:outline-none focus:ring-2 focus:ring-[#284F42] text-xs"
                             />
                             <div className="flex items-center gap-0.5">
-                              <button
-                                onClick={() => handleQuickPriceOffset(item.itemId, -1000, item.currentPrice)}
-                                className="px-1.5 py-0.5 bg-[#F4F3EE] hover:bg-[#D0C6BB]/30 text-[#1B382E] border border-[#D0C6BB]/60 rounded text-[10px] font-bold cursor-pointer"
-                              >
-                                -1천
-                              </button>
-                              <button
-                                onClick={() => handleQuickPriceOffset(item.itemId, 1000, item.currentPrice)}
-                                className="px-1.5 py-0.5 bg-[#F4F3EE] hover:bg-[#D0C6BB]/30 text-[#1B382E] border border-[#D0C6BB]/60 rounded text-[10px] font-bold cursor-pointer"
-                              >
-                                +1천
-                              </button>
                               <button
                                 onClick={() => handleResetSinglePrice(item.itemId, item.currentPrice)}
                                 title="원복"

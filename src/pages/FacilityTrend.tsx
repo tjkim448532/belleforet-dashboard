@@ -83,28 +83,13 @@ export default function FacilityTrend() {
     try {
       if (selectedFacility === '전체') {
         // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 연도별 VM 및 인원수 골프포함/골프제외 완제품)
-        const [res2024, res2025, res2026, guestsRes, leisureRes, season2024Res, season2026Res] = await Promise.all([
+        const [res2024, res2025, res2026, season2024Res, season2026Res] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2024`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2025`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2026`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy`).catch(() => null),
-          secureFetcher(`${API_BASE}/api/v6/report/leisure-yoy-matrix?startYear=2024&endYear=2026`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix?year=2024`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-seasonality-matrix?year=2026`).catch(() => null),
         ]);
-
-        const guestsPayload = guestsRes?.data ?? guestsRes;
-        const guestsMap: Record<string, number> = {};
-        if (guestsPayload && Array.isArray(guestsPayload.matrix)) {
-          guestsPayload.matrix.forEach((row: any) => {
-            const m = String(row.month).padStart(2, '0');
-            ['2024', '2025', '2026'].forEach(y => {
-              if (row[y] !== undefined) {
-                guestsMap[`${y}-${m}`] = Math.round(Number(row[y]) || 0);
-              }
-            });
-          });
-        }
 
         const monthlyDataMap = new Map<string, {
           revenue: number;
@@ -131,9 +116,10 @@ export default function FacilityTrend() {
               const totVisitors = item.netPhysicalResortGuests !== undefined && item.netPhysicalResortGuests !== null
                 ? Math.round(Number(item.netPhysicalResortGuests))
                 : (item.totalVisitors !== undefined && item.totalVisitors !== null ? Math.round(Number(item.totalVisitors)) : 0);
-              // 골프제외 인원: 순수 객실 투숙객 (roomGuests)
-              const exGVisitors = guestsMap[mKey]
-                || (item.roomGuests !== undefined && item.roomGuests !== null ? Math.round(Number(item.roomGuests)) : 0);
+              // 골프제외 인원: 백엔드 완제품 (순수 체류 총인원 - 골프 내장객 = exGolfNetPhysicalResortGuests / exGolfVisitors, Zero-Proxy)
+              const exGVisitors = item.exGolfNetPhysicalResortGuests !== undefined && item.exGolfNetPhysicalResortGuests !== null
+                ? Math.round(Number(item.exGolfNetPhysicalResortGuests))
+                : (item.exGolfVisitors !== undefined && item.exGolfVisitors !== null ? Math.round(Number(item.exGolfVisitors)) : 0);
 
               monthlyDataMap.set(mKey, {
                 revenue: totRev,
@@ -170,7 +156,7 @@ export default function FacilityTrend() {
             exGolfRevenue: 0,
             visitors: 0,
             totalVisitors: 0,
-            exGolfVisitors: guestsMap[monthKey] || 0
+            exGolfVisitors: 0
           };
           monthlyData.push({
             month: monthKey,
@@ -190,7 +176,7 @@ export default function FacilityTrend() {
           }
         }
 
-        // 백엔드 ValidationMaster, seasonality annual 및 room-guests-yoy totals 연동 (NO SLICE SUMMATION SSOT)
+        // 백엔드 ValidationMaster 및 seasonality annual 완제품 연동 (NO SLICE SUMMATION SSOT)
         const parseVM = (res: any) => {
           const vm = res?.ValidationMaster;
           if (!vm) return null;
@@ -235,15 +221,26 @@ export default function FacilityTrend() {
           return undefined;
         };
 
-        const resolveExGolfVisitors = (yr: string) => {
-          // 1순위: room-guests-yoy totals 객체 (백엔드 공식 totals 필드 SSOT)
-          if (guestsPayload?.totals?.[yr] !== undefined && guestsPayload.totals[yr] !== null) {
-            return Math.round(Number(guestsPayload.totals[yr]));
+        const resolveExGolfVisitors = (yr: string, res: any) => {
+          // 백엔드 ValidationMaster.grandExGolfVisitors 또는 seasonality annual.exGolfVisitors 완제품만 직결 바인딩 (Zero-Proxy)
+          const vm = res?.ValidationMaster;
+          if (vm?.grandExGolfVisitors !== undefined && vm.grandExGolfVisitors !== null) {
+            return Math.round(Number(vm.grandExGolfVisitors));
           }
-          // 2순위: leisure-yoy-matrix periodCumulative 완제품 (DB 마트 집계 연간 누적 객실투숙객)
-          const periodData = leisureRes?.data?.periodCumulative ?? leisureRes?.periodCumulative;
-          if (periodData?.[yr]?.roomGuests !== undefined && periodData[yr].roomGuests !== null) {
-            return Math.round(Number(periodData[yr].roomGuests));
+          if (vm?.exGolfVisitors !== undefined && vm.exGolfVisitors !== null) {
+            return Math.round(Number(vm.exGolfVisitors));
+          }
+          if (yr === '2024') {
+            const v = s2024Annual?.exGolfVisitors ?? s2024Annual?.tyExGolfVisitors;
+            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
+          }
+          if (yr === '2025') {
+            const v = s2024Annual?.fullYearLyExGolfVisitors ?? s2026Annual?.fullYearLyExGolfVisitors;
+            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
+          }
+          if (yr === '2026') {
+            const v = s2026Annual?.exGolfVisitors ?? s2026Annual?.tyExGolfVisitors;
+            return v !== undefined && v !== null ? Math.round(Number(v)) : undefined;
           }
           return undefined;
         };
@@ -251,7 +248,7 @@ export default function FacilityTrend() {
         const vm2024 = parseVM(res2024);
         if (vm2024) {
           const totVis = resolveTotalVisitors('2024', res2024);
-          const exGVis = resolveExGolfVisitors('2024');
+          const exGVis = resolveExGolfVisitors('2024', res2024);
           totalsByYear['2024'] = {
             ...vm2024,
             visitors: totVis,
@@ -263,7 +260,7 @@ export default function FacilityTrend() {
         const vm2025 = parseVM(res2025);
         if (vm2025) {
           const totVis = resolveTotalVisitors('2025', res2025);
-          const exGVis = resolveExGolfVisitors('2025');
+          const exGVis = resolveExGolfVisitors('2025', res2025);
           totalsByYear['2025'] = {
             ...vm2025,
             visitors: totVis,
@@ -275,7 +272,7 @@ export default function FacilityTrend() {
         const vm2026 = parseVM(res2026);
         if (vm2026) {
           const totVis = resolveTotalVisitors('2026', res2026);
-          const exGVis = resolveExGolfVisitors('2026');
+          const exGVis = resolveExGolfVisitors('2026', res2026);
           totalsByYear['2026'] = {
             ...vm2026,
             visitors: totVis,

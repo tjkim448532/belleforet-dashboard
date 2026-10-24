@@ -4236,3 +4236,54 @@ ORDER BY venue_name, rn;
 | **5** | `GET /api/v6/report/leisure-usage-rate` | 2026-10 `totalRoomGuests: 8729.5` | `8,833명` (정수) | 레저 이용률 분모인 `totalRoomGuests`를 `mat_v6_resort_visitors_daily.room_total_guests` 정수 합산치로 동기화 요청 |
 | **6** | `GET /api/v6/report/leisure-yoy-matrix` | `periodCumulative['2026'].roomGuests: 100735.5` | `mat_v6_resort_visitors_daily` 연간 누적 `roomTotalGuests` | 소수점(`.5`) 제거 및 `mat_v6_resort_visitors_daily` 기준 연간 누적 숙박객 수로 일원화 요청 |
 | **7** | `GET /api/v6/dashboard/ancillary-revenue-forecast` | `golfContext.targetDateGolfTeams: 122` (`targetDateGolfPlayers` 필드 누락) | `targetDateGolfPlayers` 완제품 필드 제공 | 프론트엔드 `* 4` 인라인 연산 금지(Zero-Proxy) 준수를 위해 `golfContext.targetDateGolfPlayers` 완제품 필드를 백엔드에서 직접 산출하여 반환 요청 |
+
+---
+
+## 32. 🚨 [Ticket 67 / P0 완제품 필드 신설] `[골프제외]` 뷰 전환 시 표출할 '골프제외 체류 인원 (`exGolfNetPhysicalResortGuests` / `exGolfVisitors`)' 백엔드 사전 연산 완제품 필드 제공 요청 (2026-10-24)
+
+### 32-1. 배경 및 정의 (Zero-Proxy 엄수)
+- `[영업장별 실적 추이 - 전체 (벨포레 전체매출)]` 화면([`FacilityTrend.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/FacilityTrend.tsx))에서 상단 **`[🏌️ 골프포함]` / `[🌲 골프제외]`** 버튼을 누를 때, 매출(`totalRevenue` ↔ `exGolfRevenue`)뿐만 아니라 **인원(`객실 투숙객 (골프포함)` ↔ `객실 투숙객 (골프제외)`)도 동시에 전환**되어야 합니다.
+- **대표님/사용자 확정 공식**:
+  - **골프포함 인원 (`netPhysicalResortGuests` / `totalVisitors`)**:
+    $$\text{순수 체류 총인원 (골프포함)} = \text{roomTotalGuests} + \text{golfTotalPlayers} + \text{parkingWalkinVisitors} - \text{roomGolfSynergyGuests}$$
+  - **골프제외 인원 (`exGolfNetPhysicalResortGuests` / `exGolfVisitors`)**:
+    $$\text{순수 체류 인원 (골프제외)} = \text{순수 체류 총인원}(\text{netPhysicalResortGuests}) - \text{골프 이용객}(\text{golfTotalPlayers})$$
+- 프론트엔드 무관용 원칙(Zero-Proxy)에 따라 클라이언트 단에서 `netPhysicalResortGuests - golfPlayers` 인라인 뺄셈 연산을 수행하지 않고 백엔드 완제품 필드(`exGolfNetPhysicalResortGuests`, `exGolfVisitors`, `ValidationMaster.grandExGolfVisitors`)만 1:1 직결 바인딩합니다.
+
+### 32-2. 대상 엔드포인트 및 추가 요청 필드 규격
+
+1. **`GET /api/v6/report/monthly-trends?year=YYYY` (`2024`, `2025`, `2026`)**:
+   - **월별 배열 (`data[]`)**:
+     - `exGolfNetPhysicalResortGuests`: `net_physical_resort_guests - golf_total_players` (Integer)
+     - `exGolfVisitors`: 동일 값 (`exGolfNetPhysicalResortGuests` 별칭)
+   - **연간 검증 마스터 (`ValidationMaster`)**:
+     - `grandTotalVisitors`: 해당 연도 `net_physical_resort_guests` 연간 누적 합계 (Integer — `2024: 166424`, `2025: 288754`, `2026: 302262`)
+     - `grandExGolfVisitors`: 해당 연도 `net_physical_resort_guests - golf_total_players` 연간 누적 합계 (Integer — `2024: 83415`, `2025: 183643`, `2026: 215236`)
+
+2. **`GET /api/v6/report/monthly-seasonality-matrix?year=YYYY`**:
+   - **월별 (`monthly[]`) 및 연간 (`annual` / `totals`)**:
+     - `exGolfVisitors`, `tyExGolfVisitors`, `lyExGolfVisitors`, `fullYearLyExGolfVisitors` 완제품 정수 필드 추가.
+   - **(참고) 미마감 당일(`2026-10-24`) 커트오프 보정**:
+     - 현재 `monthly-trends` 및 `monthly-seasonality-matrix`의 2026년 10월 `netPhysicalResortGuests`가 `30,047명`으로, `revenue-summary`(마감일 `10/23` 기준 `30,044명`) 대비 `2026-10-24` 당일 실시간 워크인 `3명`이 더 포함되어 있습니다. 월별 마트 집계 시에도 최신 마감일(`latestClosedDate = 2026-10-23`) 커트오프를 동일하게 적용하여 $\Delta = 0\text{명}$으로 일치시켜 주십시오.
+
+3. **`GET /api/v6/dashboard/revenue-summary` & `GET /api/v6/dashboard/parking-summary`**:
+   - `resortVisitors` 객체 내부에 `exGolfNetPhysicalResortGuests` (`netPhysicalResortGuests - golfTotalPlayers`, 당일 `10/23` 기준 `1,122 - 475 = 647명`) 및 `mtdExGolfNetPhysicalResortGuests` (`30,044 - 9,894 = 20,150명`) 필드를 함께 포함해 주십시오.
+
+### 32-3. 연도별·월별 실측 검증 기준표 (`monthly-trends` 실측치 기반 1명 단위 검산)
+
+| 월 | 2024 골프포함 (`totalVisitors`) | **2024 골프제외 (`exGolfVisitors`)** | 2025 골프포함 (`totalVisitors`) | **2025 골프제외 (`exGolfVisitors`)** | 2026 골프포함 (`totalVisitors`) | **2026 골프제외 (`exGolfVisitors`)** |
+| :---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **1월** | - | **-** | 9,680명 | **7,469명** | 14,644명 | **13,531명** |
+| **2월** | - | **-** | 7,646명 | **6,396명** | 20,613명 | **17,687명** |
+| **3월** | - | **-** | 14,265명 | **6,714명** | 25,591명 | **17,996명** |
+| **4월** | 8,774명 | **4,139명** | 18,792명 | **8,182명** | 31,673명 | **21,115명** |
+| **5월** | 19,217명 | **8,844명** | 23,903명 | **11,308명** | 43,874명 | **31,364명** |
+| **6월** | 19,379명 | **9,191명** | 25,670명 | **13,513명** | 32,574명 | **20,414명** |
+| **7월** | 17,943명 | **9,334명** | 30,812명 | **19,665명** | 31,783명 | **22,714명** |
+| **8월** | 23,451명 | **11,373명** | 36,293명 | **24,430명** | 36,736명 | **26,870명** |
+| **9월** | 20,573명 | **8,968명** | 29,099명 | **18,344명** | 34,727명 | **23,392명** |
+| **10월** | 24,142명 | **11,519명** | 39,550명 | **27,096명** | 30,047명 *(마감 30,044)* | **20,153명** *(마감 20,150)* |
+| **11월** | 20,168명 | **10,775명** | 33,876명 | **24,154명** | - | **-** |
+| **12월** | 12,777명 | **9,272명** | 19,168명 | **16,372명** | - | **-** |
+| **연간 합계** | **166,424명** | **83,415명** | **288,754명** | **183,643명** | **302,262명** *(마감 302,259)* | **215,236명** *(마감 215,233)* |
+

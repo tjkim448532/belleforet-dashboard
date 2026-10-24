@@ -4287,3 +4287,49 @@ ORDER BY venue_name, rn;
 | **12월** | 12,777명 | **9,272명** | 19,168명 | **16,372명** | - | **-** |
 | **연간 합계** | **166,424명** | **83,415명** | **288,754명** | **183,643명** | **302,262명** *(마감 302,259)* | **215,236명** *(마감 215,233)* |
 
+---
+
+## 33. 🚨 [Ticket 68 / P0 레저 이용률 분모(모수) 전환] `leisure-usage-rate` 및 `leisure-yoy-matrix`의 레저 시설 이용률 분모(모수)를 '전체 객실정원 숙박객수(`room_total_guests`)'에서 '골프제외 체류 인원(숙박+워크인, `ex_golf_visitors`)'으로 전환 요청 (2026-10-24)
+
+### 33-1. 배경 및 현황 (Zero-Proxy 엄수)
+- 현재 `[레저본부 영업장별 이용률 비교]` 화면([`LeisureUsageRate.tsx`](file:///e:/앱/belleforet-dashboard/src/pages/LeisureUsageRate.tsx))이 호출하는 2개 API:
+  1. `GET /api/v6/report/leisure-usage-rate`
+  2. `GET /api/v6/report/leisure-yoy-matrix`
+- 위 2개 API에서 일반 레저 영업장(`놀이동산`, `벨포레 목장`, `마운틴카트`, `사계절썰매장`, `미디어아트센터`, `마리나 클럽` 등)의 `usageRate` 산출 분모(`totalRoomGuests` / `roomGuests`)가 **순수 콘도 숙박객수(`room_total_guests`, 예: 2026-10 `8,833명`)**로만 설정되어 있어, 워크인(비숙박 나들이객)이 제외된 결과 `벨포레 목장 121.1%` (`10,695명 / 8,833명`)처럼 이용률이 100%를 초과하는 왜곡이 발생하고 있습니다.
+- **대표님/사용자 확정 지시**:
+  > *"모수가 현재는 전체객실정원이잖아. 이거를 골프를 제외한 워크인 포함한 숫자로 바꿔"*
+  $$\text{레저 이용률 신규 분모(모수)} = \text{exGolfNetPhysicalResortGuests} = \text{net\_physical\_resort\_guests} - \text{golf\_total\_players} = \text{숙박객}(\text{room\_total\_guests}) + \text{워크인}(\text{parking\_walkin\_visitors}) - \text{숙박·골프 중복}(\text{room\_golf\_synergy\_guests})$$
+- 단, **`'벨포레 목장(체험)'`**은 기존과 동일하게 **`'벨포레 목장' 입장객수`**를 분모(체험 전환율 모수)로 유지합니다.
+
+### 33-2. 대상 엔드포인트 및 수정 명세
+
+1. **`GET /api/v6/report/leisure-usage-rate`**:
+   - 일반 레저 영업장(`facilityName !== '벨포레 목장(체험)'`)의 각 월별 데이터 포인트(`series[].data[]`)에서:
+     - 분모 필드 `totalRoomGuests` (및 별칭 `exGolfVisitors`, `exGolfNetPhysicalResortGuests`)를 `mat_v6_resort_visitors_daily`의 **`net_physical_resort_guests - golf_total_players` (최신 마감일 `2026-10-23` 커트오프 적용)** 합산치로 변경해 주십시오.
+     - `usageRate`를 신규 분모 기준으로 재산출해 주십시오:
+       $$\text{usageRate} = \text{ROUND}\left(\frac{\text{visitors}}{\text{ex\_golf\_visitors}} \times 100,\; 1\right)$$
+     - 예시 (`2026-10`, 분모 `20,150명` 기준):
+       - `놀이동산`: `5,368 / 20,150 × 100` = **`26.6%`** (기존 `8,833명` 분모 시 `60.8%`)
+       - `벨포레 목장`: `10,695 / 20,150 × 100` = **`53.1%`** (기존 `8,833명` 분모 시 `121.1%`)
+       - `마운틴카트(전체)`: `5,771 / 20,150 × 100` = **`28.6%`** (기존 `65.3%`)
+       - `사계절썰매장`: `2,690 / 20,150 × 100` = **`13.3%`** (기존 `30.5%`)
+       - `미디어아트센터`: `2,487 / 20,150 × 100` = **`12.3%`** (기존 `28.2%`)
+       - `마리나 클럽`: `439 / 20,150 × 100` = **`2.2%`** (기존 `5.0%`)
+
+2. **`GET /api/v6/report/leisure-yoy-matrix`**:
+   - 일반 레저 영업장(`facility !== '벨포레 목장(체험)'`)의:
+     - **월별 매트릭스 (`pivotData[facility][month][year]`)**:
+       - `roomGuests` (및 `exGolfVisitors`)에 해당 연·월의 **골프제외 체류 인원(`net_physical_resort_guests - golf_total_players`)**을 바인딩하고, 이를 분모로 `usageRate`, `yoyUsageRateDiff`, `yearDiffs`(`usageRateDiff`)를 재산출해 주십시오.
+       - 진행 중인 당월(`2026년 10월`)의 YoY 비교 시에도 마감일(`10/23`) 커트오프를 반영해 주십시오.
+     - **선택 구간 누적 (`periodCumulative[year]` 및 `facilityPeriodCumulative[facility][year]`)**:
+       - `roomGuests` (및 `exGolfVisitors`)에 선택 구간(`startMonth ~ endMonth`)의 **골프제외 체류 인원 누적 합계** (예: 1~10월 기준 `2024년: 63,368명`, `2025년: 143,117명 (또는 동기간 137,089명)`, `2026년: 215,233명`)를 바인딩하고, 누적 `usageRate`, `yoyUsageRateDiff`, `yearDiffs`를 재산출해 주십시오.
+
+### 33-3. 연도별·월별 신규 분모(`exGolfVisitors`) 정준값 참조표 (`Ticket 67` 확정 SSOT 동일)
+
+| 구분 | 1월 | 2월 | 3월 | 4월 | 5월 | 6월 | 7월 | 8월 | 9월 | 10월 | 11월 | 12월 | **1~10월 누적** | **연간 전체** |
+| :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **2024년** | - | - | - | 4,139 | 8,844 | 9,191 | 9,334 | 11,373 | 8,968 | 11,519 | 10,775 | 9,272 | **63,368명** | **83,415명** |
+| **2025년** | 7,469 | 6,396 | 6,714 | 8,182 | 11,308 | 13,513 | 19,665 | 24,430 | 18,344 | 27,096 *(동기간 21,068)* | 24,154 | 16,372 | **143,117명** *(동기간 137,089)* | **183,643명** |
+| **2026년** | 13,531 | 17,687 | 17,996 | 21,115 | 31,364 | 20,414 | 22,714 | 26,870 | 23,392 | 20,150 *(10/23 마감)* | - | - | **215,233명** | **215,233명** |
+
+

@@ -310,13 +310,15 @@ export interface CustomerJourneyBundlesV2Response {
 }
 
 // ============================================================================
-// ⑧ 레저본부 영업장별 숙박객 대비 이용률 리포트 (leisure-usage-rate)
+// ⑧ 레저본부 영업장별 리조트 체류객(골프제외·워크인포함) 대비 이용률 리포트 (leisure-usage-rate)
 // ============================================================================
 export interface LeisureUsageRateDataPoint {
   month: string;
-  usageRate: number; // e.g. 142.3 (%)
-  visitors: number; // e.g. 18230 (명)
-  totalRoomGuests: number; // e.g. 12810 (명)
+  usageRate: number; // e.g. 53.1 (%)
+  visitors: number; // e.g. 10695 (명)
+  totalRoomGuests: number; // 분모(모수): 골프제외 리조트 체류인원 (숙박+워크인-골프중복), 목장체험은 목장입장객
+  exGolfVisitors?: number;
+  exGolfNetPhysicalResortGuests?: number;
 }
 
 export interface LeisureUsageRateSeries {
@@ -337,7 +339,9 @@ export interface LeisureUsageRateResponse {
 export interface LeisureYoyYearData {
   usageRate: number;
   visitors: number;
-  roomGuests: number;
+  roomGuests: number; // 분모(모수): 골프제외 리조트 체류인원 (숙박+워크인-골프중복), 목장체험은 목장입장객
+  exGolfVisitors?: number;
+  exGolfNetPhysicalResortGuests?: number;
 }
 
 export interface LeisureYoyRow {

@@ -174,7 +174,7 @@ export default function LeisureUsageRate() {
                 row[yr] = {
                   usageRate: pt.usageRate,
                   visitors: pt.visitors,
-                  roomGuests: pt.totalRoomGuests,
+                  roomGuests: pt.exGolfVisitors ?? pt.exGolfNetPhysicalResortGuests ?? pt.totalRoomGuests,
                 };
               } else {
                 row[yr] = { usageRate: 0, visitors: 0, roomGuests: 0 };
@@ -316,7 +316,7 @@ export default function LeisureUsageRate() {
       const selCum = yoyData?.facilityPeriodCumulative?.[targetFacilityName]?.[yrKey]
         || yoyData?.facilityPeriodCumulative?.[selectedFacility]?.[yrKey];
       const selVisitors = selCum?.visitors ?? 0;
-      const selDenominator = selCum?.roomGuests ?? 0;
+      const selDenominator = (selCum as any)?.exGolfVisitors ?? (selCum as any)?.exGolfNetPhysicalResortGuests ?? selCum?.roomGuests ?? 0;
       const selRate = selCum?.usageRate ?? 0;
 
       let topVenue = { name: '-', visitors: 0, usageRate: 0 };
@@ -348,7 +348,7 @@ export default function LeisureUsageRate() {
       const selPoint = selSeries?.data.find((d) => d.month === m);
       const selRate = selPoint?.usageRate ?? 0;
       const selVisitors = selPoint?.visitors ?? 0;
-      const roomGuests = selPoint?.totalRoomGuests ?? 0;
+      const roomGuests = selPoint?.exGolfVisitors ?? selPoint?.exGolfNetPhysicalResortGuests ?? selPoint?.totalRoomGuests ?? 0;
 
       let topVenue = { name: '-', usageRate: 0, visitors: 0 };
       for (const s of usageData.series) {
@@ -407,14 +407,15 @@ export default function LeisureUsageRate() {
       const isCurrentYear = yr === latestYear;
       const dataPoints = rows.map((r) => {
         const item = r[yr] as LeisureYoyYearData | undefined;
+        const denom = item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? item?.roomGuests ?? 0;
         // Don't show line drop to 0 for unarrived future months in latestYear
-        if (yr === latestYear && item && item.roomGuests === 0 && item.visitors === 0) {
+        if (yr === latestYear && item && denom === 0 && item.visitors === 0) {
           return null;
         }
         return {
           value: item ? item.usageRate : 0,
           visitors: item?.visitors || 0,
-          roomGuests: item?.roomGuests || 0,
+          roomGuests: denom,
         };
       });
 
@@ -544,7 +545,7 @@ export default function LeisureUsageRate() {
         return {
           value: point ? point.usageRate : 0,
           visitors: point?.visitors || 0,
-          roomGuests: point?.totalRoomGuests || 0,
+          roomGuests: point?.exGolfVisitors ?? point?.exGolfNetPhysicalResortGuests ?? point?.totalRoomGuests ?? 0,
         };
       });
 
@@ -635,7 +636,7 @@ export default function LeisureUsageRate() {
       const item: any = cumMap[yr];
       result[yr] = {
         visitors: item?.visitors ?? 0,
-        roomGuests: item?.roomGuests ?? 0,
+        roomGuests: item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? item?.roomGuests ?? 0,
         usageRate: item?.usageRate ?? 0,
         yoyUsageRateDiff: item?.yoyUsageRateDiff ?? null,
         yoyVisitorsDiff: item?.yoyVisitorsDiff ?? null,
@@ -672,7 +673,7 @@ export default function LeisureUsageRate() {
         const item: any = cumMap[yr];
         result[key][yr] = {
           visitors: item?.visitors ?? 0,
-          roomGuests: item?.roomGuests ?? 0,
+          roomGuests: item?.exGolfVisitors ?? item?.exGolfNetPhysicalResortGuests ?? item?.roomGuests ?? 0,
           usageRate: item?.usageRate ?? 0,
           yoyUsageRateDiff: item?.yoyUsageRateDiff ?? null,
           yoyVisitorsDiff: item?.yoyVisitorsDiff ?? null,
@@ -702,7 +703,7 @@ export default function LeisureUsageRate() {
     // -------------------------------------------------------------------------
     const sheet1Rows: any[][] = [
       [`[벨포레 리조트] 레저본부 전 영업장 ${expYearA}년 vs ${expYearB}년 월별 이용률 YoY 정밀 비교표`],
-      [`추출일시: ${nowStr} | 모수 기준: 벨포레 물리 고정 1,080실 숙박객 (목장체험은 입장객 기준)`],
+      [`추출일시: ${nowStr} | 모수 기준: 리조트 순수 체류 인원(골프제외 · 숙박+워크인 포함) (목장체험은 입장객 기준)`],
       [`단위: 이용률(%), YoY 증감(%p) | 비교 구간: ${expYearB}년 vs ${expYearA}년 | 데이터 출처: V6 정밀 데이터 마트 (leisure-yoy-matrix)`],
       [],
       [
@@ -793,17 +794,17 @@ export default function LeisureUsageRate() {
     // -------------------------------------------------------------------------
     const sheet2Rows: any[][] = [
       [`[벨포레 리조트] 레저본부 전 영업장 ${expYearA}년 vs ${expYearB}년 누적 실적 및 이용률 종합 비교`],
-      [`추출일시: ${nowStr} | 모수 기준: 벨포레 물리 고정 1,080실 숙박객 (목장체험은 입장객 기준)`],
+      [`추출일시: ${nowStr} | 모수 기준: 리조트 순수 체류 인원(골프제외 · 숙박+워크인 포함) (목장체험은 입장객 기준)`],
       ['단위: 명, 이용률(%), 증감(%p) | 데이터 출처: V6 정밀 데이터 마트 (mat_v6_data_mart)'],
       [],
       [
         'No',
         '영업장명',
         `${expYearA}년 누적 이용객(명)`,
-        `${expYearA}년 객실투숙객(명)`,
+        `${expYearA}년 모수(골프제외 체류객, 명)`,
         `${expYearA}년 누적 이용률(%)`,
         `${expYearB}년 누적 이용객(명)`,
-        `${expYearB}년 객실투숙객(명)`,
+        `${expYearB}년 모수(골프제외 체류객, 명)`,
         `${expYearB}년 누적 이용률(%)`,
         '이용률 증감(%p)',
         '이용객수 증감(명)',
@@ -817,11 +818,11 @@ export default function LeisureUsageRate() {
       const cB: any = cum?.[expYearB];
 
       const vA = cA?.visitors ?? 0;
-      const rA = cA?.roomGuests ?? 0;
+      const rA = cA?.exGolfVisitors ?? cA?.exGolfNetPhysicalResortGuests ?? cA?.roomGuests ?? 0;
       const uA = cA?.usageRate ?? 0;
 
       const vB = cB?.visitors ?? 0;
-      const rB = cB?.roomGuests ?? 0;
+      const rB = cB?.exGolfVisitors ?? cB?.exGolfNetPhysicalResortGuests ?? cB?.roomGuests ?? 0;
       const uB = cB?.usageRate ?? 0;
 
       const rawRateDiff = cum?.yearDiffs?.[`${expYearB}_${expYearA}`]?.usageRateDiff ?? cB?.yoyUsageRateDiff ?? null;
@@ -873,7 +874,7 @@ export default function LeisureUsageRate() {
         '월',
         ...availableYears.flatMap((yr) => [
           `${yr}년 이용객(명)`,
-          `${yr}년 객실투숙객(명)`,
+          `${yr}년 모수(골프제외 체류객, 명)`,
           `${yr}년 이용률(%)`
         ]),
         `YoY 증감 (${latestYear.slice(2)}vs${prevYear.slice(2)} %p)`
@@ -888,9 +889,10 @@ export default function LeisureUsageRate() {
 
         availableYears.forEach((yr) => {
           const d = mRow?.[yr] as LeisureYoyYearData | undefined;
-          const hasData = d && (d.visitors > 0 || d.roomGuests > 0);
+          const denom = d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? d?.roomGuests ?? 0;
+          const hasData = d && (d.visitors > 0 || denom > 0);
           rowData.push(d?.visitors ?? 0);
-          rowData.push(d?.roomGuests ?? 0);
+          rowData.push(denom);
           rowData.push(hasData && d ? `${d.usageRate.toFixed(1)}%` : (yr === latestYear && m >= 11 ? '미도래' : '-'));
         });
 
@@ -987,13 +989,13 @@ export default function LeisureUsageRate() {
                 <span>BELLEFORET RESORT · LEISURE USAGE RATE</span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-3 flex-wrap break-keep">
-                <span className="whitespace-nowrap">레저본부 영업장별 숙박객 대비 이용률 비교</span>
+                <span className="whitespace-nowrap">레저본부 영업장별 리조트 체류객(골프제외·워크인포함) 대비 이용률 비교</span>
                 <span className="text-xs bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white font-medium whitespace-nowrap">
                   24 · 25 · 26 연도별 YoY 정밀 매트릭스
                 </span>
               </h1>
               <p className="text-sm text-[#E8F2EE]/80 mt-2 break-keep max-w-3xl leading-relaxed">
-                관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객 대비 각 놀이시설 이용객(진성 방문객)의 월별 이용률(%)을 연도별로 비교합니다. (※ 단, '벨포레 목장(체험)'은 전체 숙박객이 아닌 '목장 입장객'을 기준으로 실질 체험 전환율을 산출합니다.)
+                리조트 순수 체류 총인원에서 골프 이용객을 제외한 체류 인원(숙박객 + 워크인 나들이객 - 골프중복) 대비 각 놀이시설 이용객(진성 방문객)의 월별 이용률(%)을 연도별로 비교합니다. (※ 단, '벨포레 목장(체험)'은 '목장 입장객'을 기준으로 실질 체험 전환율을 산출합니다.)
               </p>
             </div>
 
@@ -1157,14 +1159,14 @@ export default function LeisureUsageRate() {
                 </div>
               </div>
 
-              {/* Card 3: Total Room Guests or Farm Visitors (Denominator) */}
+              {/* Card 3: Ex-Golf Resort Stay Guests or Farm Visitors (Denominator) */}
               <div className="bg-white rounded-3xl p-6 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between h-full">
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-xs lg:text-sm font-semibold text-[#5A6B63] tracking-wider uppercase whitespace-nowrap">
                       {currentSummary.selectedVenue.name === '벨포레 목장(체험)'
                         ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
-                        : (isPeriodTotalMode ? '기간 리조트 총 숙박객 (분모)' : '당월 리조트 총 숙박객 (분모)')}
+                        : (isPeriodTotalMode ? '기간 리조트 체류객 (골프제외·워크인포함 모수)' : '당월 리조트 체류객 (골프제외·워크인포함 모수)')}
                     </span>
                     <div className="w-10 h-10 rounded-2xl bg-[#F4F3EE] text-[#284F42] flex items-center justify-center">
                       <Building2 size={20} />
@@ -1180,7 +1182,7 @@ export default function LeisureUsageRate() {
                 <div className="text-xs text-[#5A6B63] mt-auto pt-2 font-medium whitespace-nowrap">
                   {currentSummary.selectedVenue.name === '벨포레 목장(체험)'
                     ? '목장 입장객 대비 실질 체험 전환율 산출 기준'
-                    : '관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등) 반영'}
+                    : '순수 체류 총인원(숙박+워크인-중복)에서 골프 이용객을 제외한 모수 기준'}
                 </div>
               </div>
 
@@ -1744,7 +1746,8 @@ export default function LeisureUsageRate() {
 
                         {availableYears.map((yr) => {
                           const d = row[yr] as LeisureYoyYearData | undefined;
-                          const hasData = d && (d.roomGuests > 0 || d.visitors > 0);
+                          const denom = d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? d?.roomGuests ?? 0;
+                          const hasData = d && (denom > 0 || d.visitors > 0);
                           const isLatest = yr === latestYear;
 
                           return (
@@ -1768,7 +1771,7 @@ export default function LeisureUsageRate() {
                                     {d.usageRate.toFixed(1)}%
                                   </span>
                                   <span className="text-[11px] text-[#5A6B63] tabular-nums">
-                                    {d.visitors.toLocaleString()}명 / {d.roomGuests.toLocaleString()}명
+                                    {d.visitors.toLocaleString()}명 / {denom.toLocaleString()}명
                                   </span>
                                 </div>
                               ) : (
@@ -1881,10 +1884,10 @@ export default function LeisureUsageRate() {
             <div className="flex items-center gap-1.5">
               <HelpCircle size={14} className="text-[#5A6B63]" />
               <span>
-                각 셀 표기: <b>[{selectedFacility === '벨포레 목장(체험)' ? '체험 전환율 %' : '이용률 %'}]</b> 상단, <b>({selectedFacility === '벨포레 목장(체험)' ? '체험 이용객수 / 목장 입장객수' : '시설 이용객수 / 전체 객실정원 숙박객수'})</b> 하단
+                각 셀 표기: <b>[{selectedFacility === '벨포레 목장(체험)' ? '체험 전환율 %' : '이용률 %'}]</b> 상단, <b>({selectedFacility === '벨포레 목장(체험)' ? '체험 이용객수 / 목장 입장객수' : '시설 이용객수 / 골프제외 체류인원(숙박+워크인)'})</b> 하단
                 {selectedFacility === '벨포레 목장(체험)' && (
                   <span className="text-[#284F42] ml-1.5 font-bold">
-                    (※ '목장체험'은 전체 숙박객이 아닌 '목장 입장객'을 분모로 한 실질 체험 전환율입니다)
+                    (※ '목장체험'은 골프제외 체류인원이 아닌 '목장 입장객'을 분모로 한 실질 체험 전환율입니다)
                   </span>
                 )}
               </span>

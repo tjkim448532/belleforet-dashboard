@@ -17,6 +17,7 @@ export default function RoomGuestAnalysis() {
 
   const [data, setData] = useState<DailyMemberVisitorsV2Response | null>(null);
   const [resortVisitors, setResortVisitors] = useState<Record<string, any> | null>(null);
+  const [resortVisitorsDailyList, setResortVisitorsDailyList] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -29,7 +30,7 @@ export default function RoomGuestAnalysis() {
         : `startDate=${startDate}&endDate=${startDate}`;
       const parkingQueryParams = isEffectiveRange
         ? `startDate=${startDate}&endDate=${effectiveEnd}`
-        : `date=${startDate}`;
+        : `targetDate=${startDate}`;
 
       const [res, parkRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/daily-member-visitors-v2?${queryParams}`),
@@ -37,7 +38,13 @@ export default function RoomGuestAnalysis() {
       ]);
       const payload = res?.data ?? res;
       const rv = parkRes?.resortVisitors || parkRes?.summary?.resortVisitors || parkRes?.data?.resortVisitors || null;
+      const rvDaily = Array.isArray(parkRes?.resortVisitorsDailyList)
+        ? parkRes.resortVisitorsDailyList
+        : Array.isArray(parkRes?.data?.resortVisitorsDailyList)
+          ? parkRes.data.resortVisitorsDailyList
+          : [];
       setResortVisitors(rv);
+      setResortVisitorsDailyList(rvDaily);
 
       if (payload && payload.success) {
         setData(payload);
@@ -49,6 +56,7 @@ export default function RoomGuestAnalysis() {
       setApiError(err.message || '데이터를 불러오는 중 문제가 발생했습니다.');
       setData(null);
       setResortVisitors(null);
+      setResortVisitorsDailyList([]);
     } finally {
       setLoading(false);
     }
@@ -63,9 +71,27 @@ export default function RoomGuestAnalysis() {
   const dailyVisitors = data?.dailyVisitors || data?.dailyTrends || [];
 
   const getTrendChartOptions = () => {
+    const rvByDate = new Map<string, any>();
+    resortVisitorsDailyList.forEach((item: any) => {
+      const dKey = item.date || item.salesDate || item.dateId;
+      if (dKey) rvByDate.set(String(dKey), item);
+    });
+
     const dates = dailyVisitors.map((d: any) => d.salesDate || d.date || d.dateId);
-    const roomGuests = dailyVisitors.map((d: any) => Number(d.dailyRoomGuests ?? 0));
-    const golfPlayers = dailyVisitors.map((d: any) => Number(d.dailyGolfPlayers ?? 0));
+    const netGuests = dates.map((dt: string) => {
+      const rvDay = rvByDate.get(String(dt));
+      return rvDay?.netPhysicalResortGuests != null ? Number(rvDay.netPhysicalResortGuests) : null;
+    });
+    const roomGuests = dailyVisitors.map((d: any) => {
+      const dt = d.salesDate || d.date || d.dateId;
+      const rvDay = rvByDate.get(String(dt));
+      return rvDay?.roomTotalGuests != null ? Number(rvDay.roomTotalGuests) : Number(d.dailyRoomGuests ?? 0);
+    });
+    const golfPlayers = dailyVisitors.map((d: any) => {
+      const dt = d.salesDate || d.date || d.dateId;
+      const rvDay = rvByDate.get(String(dt));
+      return rvDay?.golfTotalPlayers != null ? Number(rvDay.golfTotalPlayers) : Number(d.dailyGolfPlayers ?? 0);
+    });
     const revenue = dailyVisitors.map((d: any) => Number(d.dailyRevenue ?? 0));
 
     return {
@@ -74,7 +100,7 @@ export default function RoomGuestAnalysis() {
         axisPointer: { type: 'cross' }
       },
       legend: {
-        data: ['일일 숙박객', '일일 골프 내장객', '일일 매출'],
+        data: ['일일 순수 체류 총인원', '일일 숙박객', '일일 골프 내장객', '일일 매출'],
         bottom: 0
       },
       grid: { left: '3%', right: '3%', top: '10%', bottom: '15%', containLabel: true },
@@ -104,6 +130,16 @@ export default function RoomGuestAnalysis() {
           yAxisIndex: 1,
           data: revenue,
           itemStyle: { color: '#3b82f6', opacity: 0.8 }
+        },
+        {
+          name: '일일 순수 체류 총인원',
+          type: 'line',
+          yAxisIndex: 0,
+          data: netGuests,
+          smooth: true,
+          symbolSize: 8,
+          itemStyle: { color: '#1B382E' },
+          lineStyle: { width: 3 }
         },
         {
           name: '일일 숙박객',
@@ -288,7 +324,16 @@ export default function RoomGuestAnalysis() {
                 ) : apiError ? (
                   <span className="text-xl text-rose-500 font-bold">오류</span>
                 ) : (
-                  <>{summary?.roomGuestsFormatted || '0'} <span className="text-sm font-medium text-[#8F9E96]">명</span></>
+                  <>
+                    {resortVisitors?.roomTotalGuests != null
+                      ? Number(resortVisitors.roomTotalGuests).toLocaleString()
+                      : (summary?.roomGuestsFormatted || '-')} <span className="text-sm font-medium text-[#8F9E96]">명</span>
+                    {resortVisitors?.roomSoldUnits != null && (
+                      <span className="text-xs font-bold text-[#284F42] ml-2">
+                        ({Number(resortVisitors.roomSoldUnits).toLocaleString()}실)
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -296,11 +341,11 @@ export default function RoomGuestAnalysis() {
             <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 bg-[#F4F3EE]/70 -mx-6 -mb-6 p-4 rounded-b-3xl">
               <div className="flex items-center gap-1 text-[11px] font-bold text-[#1B382E] mb-1">
                 <HelpCircle size={13} className="text-[#284F42] shrink-0" />
-                <span>숙박객 계산 기준</span>
+                <span>숙박객 계산 기준 (mat_v6_resort_visitors_daily)</span>
               </div>
               <p className="text-[11px] text-[#5A6B63] leading-relaxed break-keep">
-                실 판매 객실 수 × 객실별 기준 정원<br />
-                <span className="text-[#8F9E96] font-mono text-[10px]">(16평 2.5명 · 35평 4명 · 51평 6명 등)</span>
+                실 판매 객실 수 × 평형별 기준정원<br />
+                <span className="text-[#8F9E96] font-mono text-[10px]">(16평 2.5명 · 35평 4.5명 · 51평 5.5명 · R51/단독/펫51 6.0명)</span>
               </p>
             </div>
           </div>
@@ -322,7 +367,11 @@ export default function RoomGuestAnalysis() {
                 ) : apiError ? (
                   <span className="text-xl text-rose-500 font-bold">-</span>
                 ) : (
-                  <>{summary?.golfPlayersFormatted || '0'} <span className="text-sm font-medium text-[#8F9E96]">명</span></>
+                  <>
+                    {resortVisitors?.golfTotalPlayers != null
+                      ? Number(resortVisitors.golfTotalPlayers).toLocaleString()
+                      : (summary?.golfPlayersFormatted || '-')} <span className="text-sm font-medium text-[#8F9E96]">명</span>
+                  </>
                 )}
               </div>
             </div>
@@ -432,7 +481,16 @@ export default function RoomGuestAnalysis() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right font-black text-[#1E523F] whitespace-nowrap">
-                        {(venue.visitorCountFormatted || Number(venue.visitorCount || 0).toLocaleString())} 명
+                        {venue.categoryCode === 'ROOM' && resortVisitors?.roomTotalGuests != null ? (
+                          <>
+                            {Number(resortVisitors.roomTotalGuests).toLocaleString()} 명
+                            <span className="text-xs font-semibold text-[#5A6B63] ml-1.5">
+                              ({Number(resortVisitors.roomSoldUnits ?? venue.visitorCount ?? 0).toLocaleString()}실)
+                            </span>
+                          </>
+                        ) : (
+                          <>{(venue.visitorCountFormatted || Number(venue.visitorCount || 0).toLocaleString())} 명</>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-right font-medium text-[#5A6B63] whitespace-nowrap">
                         {Number(venue.visitorSharePct ?? 0).toFixed(2)}%

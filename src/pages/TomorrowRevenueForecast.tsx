@@ -751,7 +751,11 @@ export default function TomorrowRevenueForecast() {
                       <div className="text-right">
                         <div className="text-[10px] text-[#5A6B63] font-semibold">예상 내장객수</div>
                         <div className="text-xl font-black text-[#284F42] tabular-nums">
-                          {golf?.targetDateGolfTeams !== undefined ? `${golf.targetDateGolfTeams * 4}` : '-'} <span className="text-xs font-normal text-[#5A6B63]">명</span>
+                          {(golf as any)?.targetDateGolfPlayers !== undefined && (golf as any)?.targetDateGolfPlayers !== null
+                            ? `${Number((golf as any).targetDateGolfPlayers).toLocaleString()}`
+                            : (golf as any)?.estimatedGolfPlayers !== undefined && (golf as any)?.estimatedGolfPlayers !== null
+                              ? `${Number((golf as any).estimatedGolfPlayers).toLocaleString()}`
+                              : '-'} <span className="text-xs font-normal text-[#5A6B63]">명</span>
                         </div>
                       </div>
                     </div>

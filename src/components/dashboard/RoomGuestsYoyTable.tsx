@@ -189,7 +189,7 @@ export default function RoomGuestsYoyTable() {
           <p className="text-xs text-[#5A6B63] leading-relaxed max-w-3xl">
             {metricMode === 'GUESTS' ? (
               <>
-                관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 <strong>전체 숙박객(진성 투숙객 인원수 모수)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
+                관리자 설정 기준 정원(16평 2.5명, 35평 4.5명, 51평 5.5명, R51/단독/펫51 6.0명)으로 산출한 <strong>전체 숙박객(진성 투숙객 인원수 모수)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
               </>
             ) : (
               <>

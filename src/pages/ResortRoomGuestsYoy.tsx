@@ -21,7 +21,7 @@ export default function ResortRoomGuestsYoy() {
             </div>
             <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">리조트사업본부 연도별 숙박객 및 객실 소계</h1>
             <p className="text-sm text-white/80 mt-1 break-keep">
-              관리자 설정 기준 정원(16평 2.5명, 35평 4명, 51평 6명 등)으로 산출한 전체 숙박객과 객실 소계 매출의 연도별 YoY 정밀 분석
+              관리자 설정 기준 정원(16평 2.5명, 35평 4.5명, 51평 5.5명, R51/단독/펫51 6.0명)으로 산출한 전체 숙박객과 객실 소계 매출의 연도별 YoY 정밀 분석
             </p>
           </div>
 

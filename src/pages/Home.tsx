@@ -338,15 +338,19 @@ export default function Home() {
   })();
 
 
-  const roomCapActual = parseNum(coreData.core?.summary?.totalRoomCap || (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.visitors || 0));
-  const roomCapLy = coreData.core?.summary?.totalRoomCapLy;
-  const roomCapGrowth = coreData.core?.summary?.roomCapGrowth;
-  const roomCapDiff = coreData.core?.summary?.roomCapDiff;
-
   // 🚗 주차관제 기반 워크인 및 데일리 차량 수 (Firebase ATS3000_Bell SSOT 완제품)
   const parkingSummary = coreData.core?.parkingSummary || (coreData as any).parkingSummary;
   // 🏛️ 벨포레 통합 체류 인원 SSOT 마트(mat_v6_resort_visitors_daily) 완제품 바인딩 (Zero-Proxy 1:1)
   const resortVisitors = coreData.core?.resortVisitors || coreData.core?.summary?.resortVisitors || null;
+  const roomCapActual = parseNum(
+    resortVisitors?.roomTotalGuests ??
+    coreData.core?.summary?.totalRoomCap ??
+    (coreData.core?.salesByCategory?.find((c: any) => c.categoryCode === 'ROOM' || c.categoryCode === '콘도' || c.categoryName === '콘도')?.visitors || 0)
+  );
+  const roomCapLy = coreData.core?.summary?.totalRoomCapLy;
+  const roomCapGrowth = coreData.core?.summary?.roomCapGrowth;
+  const roomCapDiff = coreData.core?.summary?.roomCapDiff;
+
   const netPhysicalResortGuests: number | null =
     resortVisitors?.netPhysicalResortGuests != null
       ? Number(resortVisitors.netPhysicalResortGuests)

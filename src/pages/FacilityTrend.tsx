@@ -119,9 +119,9 @@ export default function FacilityTrend() {
               const exRev = item.exGolfRevenue !== undefined && item.exGolfRevenue !== null
                 ? Math.round(Number(item.exGolfRevenue))
                 : 0;
-              const totVisitors = item.totalVisitors !== undefined && item.totalVisitors !== null
-                ? Math.round(Number(item.totalVisitors))
-                : (guestsMap[mKey] || 0);
+              const totVisitors = guestsMap[mKey]
+                || (item.roomGuests !== undefined && item.roomGuests !== null ? Math.round(Number(item.roomGuests)) : 0)
+                || (item.totalVisitors !== undefined && item.totalVisitors !== null ? Math.round(Number(item.totalVisitors)) : 0);
 
               monthlyDataMap.set(mKey, {
                 revenue: totRev,

@@ -4218,3 +4218,21 @@ ORDER BY venue_name, rn;
      2) **`벨포레 목장(체험)` 제외**: 개별 영업장 조회 시에는 체험 건수를 참고로 보여주더라도, **전사 및 레저본부(`TICKET`) 총 방문객 합산 시에는 `벨포레 목장(체험)`을 제외(`is_visitor_count = 0`)**하여 목장 입장객과의 이중 카운팅을 원천 차단해 주십시오.
 
 
+
+---
+
+## 31. 🚨 [Ticket 66 / P0 인원수 SSOT 전수 일원화] 하위 리포트 API 7종의 `mat_v6_resort_visitors_daily` 기준정원(`roomTotalGuests`) 및 `netPhysicalResortGuests` 동기화 요청 (2026-10-24)
+
+### 31-1. 배경 및 프론트엔드 전수 검사 실측 결과
+- 백엔드가 신설한 통합 체류 인원 SSOT 마트(`mat_v6_resort_visitors_daily`)는 `revenue-summary` 및 `parking-summary`의 `resortVisitors` 객체에서 정상 서빙되고 있으며, 프론트엔드 전 페이지에 1:1 직결 바인딩을 완료했습니다.
+- 그러나 대시보드 전체 28개 페이지를 전수 감사한 결과, 아래 **7개 하위 리포트 API**가 아직 `mat_v6_resort_visitors_daily` 마트가 아닌 구(Old) 수식(`35평: 4.0명, 51평: 6.0명`) 또는 판매객실수(`roomSoldUnits`)를 반환하고 있어 백엔드 마트 일원화가 필요합니다:
+
+| 순번 | 대상 백엔드 API 엔드포인트 | 현재 실측 반환값 (2026-10-23 / 10월 누적) | `mat_v6_resort_visitors_daily` SSOT 정준값 | 불일치 원인 및 백엔드 조치 요청 |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | `GET /api/v6/report/daily-member-visitors-v2` | `summary.roomGuests: 104` (`roomGuestsFormatted: "104"`), `dailyVisitors[].dailyRoomGuests: 104` | `roomTotalGuests: 421` (`roomSoldUnits: 104`) | 판매객실수(`104실`)를 숙박객 인원수(`roomGuests`)로 반환 중. `mat_v6_resort_visitors_daily.room_total_guests`(`421명`)로 즉시 교체 요청 |
+| **2** | `GET /api/v6/dashboard/revenue-summary?startDate=2026-10-01&endDate=2026-10-23` | `summary.totalRoomCap: 8730` vs `resortVisitors.roomTotalGuests: 8833` ($\Delta = -103\text{명}$) | `8,833명` | 단일일(`10/23`)은 둘 다 `421명`이나, 기간 조회 시 `summary.totalRoomCap`만 구 수식(`8,730명`)으로 집계됨. `resortVisitors.roomTotalGuests`(`8,833명`)와 100% 동일하게 동기화 요청 |
+| **3** | `GET /api/v6/report/room-guests-yoy` | 2026년 10월 `guests2026: 8730` (`rooms2026: 2217`) | 2026년 10월 `roomTotalGuests: 8833` (`roomSoldUnits: 2217`) | 구 정원 기준(`35평 4명, 51평 6명`) 사용 중. `mat_v6_resort_visitors_daily`의 신규 공식 정원(`16평 2.5명, 35평 4.5명, 51평 5.5명, R51/단독/펫51 6.0명`) 합산치로 일원화 요청 |
+| **4** | `GET /api/v6/report/monthly-trends?year=2026` | 10월 `roomGuests: 8730`, `totalVisitors: 50144` | `roomGuests: 8833`, `netPhysicalResortGuests: 27315` | `roomGuests`를 `8,833명`으로 동기화하고, `netPhysicalResortGuests` 및 `grossActivityVisitors` 필드를 월별 객체에 추가 요청 |
+| **5** | `GET /api/v6/report/leisure-usage-rate` | 2026-10 `totalRoomGuests: 8729.5` | `8,833명` (정수) | 레저 이용률 분모인 `totalRoomGuests`를 `mat_v6_resort_visitors_daily.room_total_guests` 정수 합산치로 동기화 요청 |
+| **6** | `GET /api/v6/report/leisure-yoy-matrix` | `periodCumulative['2026'].roomGuests: 100735.5` | `mat_v6_resort_visitors_daily` 연간 누적 `roomTotalGuests` | 소수점(`.5`) 제거 및 `mat_v6_resort_visitors_daily` 기준 연간 누적 숙박객 수로 일원화 요청 |
+| **7** | `GET /api/v6/dashboard/ancillary-revenue-forecast` | `golfContext.targetDateGolfTeams: 122` (`targetDateGolfPlayers` 필드 누락) | `targetDateGolfPlayers` 완제품 필드 제공 | 프론트엔드 `* 4` 인라인 연산 금지(Zero-Proxy) 준수를 위해 `golfContext.targetDateGolfPlayers` 완제품 필드를 백엔드에서 직접 산출하여 반환 요청 |

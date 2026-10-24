@@ -717,7 +717,7 @@ export default function TomorrowRevenueForecast() {
                 </div>
 
                 <div className="text-[11px] text-[#5A6B63] mt-3 pt-2.5 border-t border-[#D0C6BB]/40 flex items-center justify-between">
-                  <span>확정: <strong className="text-[#1B382E]">{condo?.totalReservedRooms !== undefined ? `${condo.totalReservedRooms}실` : '-'}</strong> ({condo?.totalEstimatedGuests !== undefined ? `${condo.totalEstimatedGuests}명` : '-'})</span>
+                  <span>확정: <strong className="text-[#1B382E]">{condo?.totalReservedRooms !== undefined ? `${condo.totalReservedRooms}실` : '-'}</strong> (투숙객[나들이 제외] {condo?.totalEstimatedGuests !== undefined ? `${condo.totalEstimatedGuests}명` : '-'})</span>
                   <span className="text-[#284F42] font-bold">{condo?.roomDeviation !== undefined ? (condo.roomDeviation >= 0 ? `+${condo.roomDeviation}실 초과` : `${condo.roomDeviation}실 미달`) : ''}</span>
                 </div>
               </div>

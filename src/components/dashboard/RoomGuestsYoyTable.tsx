@@ -180,7 +180,7 @@ export default function RoomGuestsYoyTable() {
               {metricMode === 'GUESTS' ? <Users size={18} /> : <BedDouble size={18} />}
             </div>
             <h3 className="text-lg lg:text-xl font-bold text-[#1B382E] tracking-tight flex items-center gap-2 flex-wrap">
-              <span>연도별 벨포레 {metricMode === 'GUESTS' ? '숙박객' : '실제 판매 방수'} 및 객실 소계 매출 매트릭스</span>
+              <span>연도별 벨포레 {metricMode === 'GUESTS' ? '투숙객 (나들이 제외 실제 투숙객)' : '실제 판매 방수'} 및 객실 소계 매출 매트릭스</span>
               <span className="text-xs bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 px-2.5 py-0.5 rounded-full font-bold">
                 {years.join(' · ')}년 (1월 ~ 12월)
               </span>
@@ -189,7 +189,7 @@ export default function RoomGuestsYoyTable() {
           <p className="text-xs text-[#5A6B63] leading-relaxed max-w-3xl">
             {metricMode === 'GUESTS' ? (
               <>
-                관리자 설정 기준 정원(16평 2.5명, 35평 4.5명, 51평 5.5명, R51/단독/펫51 6.0명)으로 산출한 <strong>전체 숙박객(진성 투숙객 인원수 모수)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
+                나들이 고객(워크인)을 제외하고 실제 콘도에 투숙한 <strong>투숙객(나들이 제외 실투숙객: 16평 2.5명, 35평 4.5명, 51평 5.5명, R51/단독/펫51 6.0명)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
               </>
             ) : (
               <>
@@ -205,7 +205,7 @@ export default function RoomGuestsYoyTable() {
         </div>
 
         <div className="flex items-center gap-2.5 self-start md:self-center shrink-0">
-          {/* Segmented Mode Switcher: 숙박객수(명) vs 실제 판매 방수(실) */}
+          {/* Segmented Mode Switcher: 투숙객수(나들이 제외, 명) vs 실제 판매 방수(실) */}
           <div className="flex items-center bg-[#F4F3EE] p-1 rounded-2xl border border-[#D0C6BB]/60 shadow-2xs">
             <button
               onClick={() => setMetricMode('GUESTS')}
@@ -214,10 +214,10 @@ export default function RoomGuestsYoyTable() {
                   ? 'bg-[#284F42] text-white shadow-2xs font-bold'
                   : 'text-[#5A6B63] hover:text-[#1B382E]'
               }`}
-              title="관리자 설정 정원 기준 환산 숙박객 수(인원·명) 표출"
+              title="나들이 고객을 제외한 실제 투숙객 수(인원·명) 표출"
             >
               <Users size={13} />
-              <span>숙박객수 (명)</span>
+              <span>투숙객 (나들이 제외, 명)</span>
             </button>
             <button
               onClick={() => setMetricMode('ROOMS')}
@@ -293,7 +293,7 @@ export default function RoomGuestsYoyTable() {
                           )}
                         </div>
                         <span className="text-[10px] font-normal text-[#5A6B63]">
-                          ({metricMode === 'GUESTS' ? '숙박객' : '판매방수'} / 객실소계)
+                          ({metricMode === 'GUESTS' ? '투숙객(나들이제외)' : '판매방수'} / 객실소계)
                         </span>
                       </div>
                     </th>
@@ -551,7 +551,7 @@ export default function RoomGuestsYoyTable() {
         <div className="flex items-center gap-1.5">
           <HelpCircle size={14} className="text-[#284F42] shrink-0" />
           <span>
-            <b>각 셀 표기:</b> [상단] {metricMode === 'GUESTS' ? '숙박객 수(인원·명)' : '실제 판매 방수(객실·실)'}, [하단] 객실 소계 매출(ROOM + ROOM OTHER, 원)
+            <b>각 셀 표기:</b> [상단] {metricMode === 'GUESTS' ? '투숙객 수 (나들이 고객 제외한 실제 투숙객, 명)' : '실제 판매 방수(객실·실)'}, [하단] 객실 소계 매출(ROOM + ROOM OTHER, 원)
           </span>
         </div>
         <span className="text-[#8C9E96]">

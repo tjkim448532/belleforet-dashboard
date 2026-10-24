@@ -82,6 +82,11 @@ export default function RoomGuestAnalysis() {
       const rvDay = rvByDate.get(String(dt));
       return rvDay?.netPhysicalResortGuests != null ? Number(rvDay.netPhysicalResortGuests) : null;
     });
+    const exGolfGuests = dates.map((dt: string) => {
+      const rvDay = rvByDate.get(String(dt));
+      const val = rvDay?.exGolfVisitors ?? rvDay?.exGolfNetPhysicalResortGuests;
+      return val != null ? Number(val) : null;
+    });
     const roomGuests = dailyVisitors.map((d: any) => {
       const dt = d.salesDate || d.date || d.dateId;
       const rvDay = rvByDate.get(String(dt));
@@ -100,7 +105,7 @@ export default function RoomGuestAnalysis() {
         axisPointer: { type: 'cross' }
       },
       legend: {
-        data: ['일일 순수 체류 총인원', '일일 숙박객', '일일 골프 내장객', '일일 매출'],
+        data: ['일일 골프포함 이용객', '일일 골프제외 이용객', '일일 투숙객(나들이 제외)', '일일 골프 내장객', '일일 매출'],
         bottom: 0
       },
       grid: { left: '3%', right: '3%', top: '10%', bottom: '15%', containLabel: true },
@@ -132,7 +137,7 @@ export default function RoomGuestAnalysis() {
           itemStyle: { color: '#3b82f6', opacity: 0.8 }
         },
         {
-          name: '일일 순수 체류 총인원',
+          name: '일일 골프포함 이용객',
           type: 'line',
           yAxisIndex: 0,
           data: netGuests,
@@ -142,7 +147,17 @@ export default function RoomGuestAnalysis() {
           lineStyle: { width: 3 }
         },
         {
-          name: '일일 숙박객',
+          name: '일일 골프제외 이용객',
+          type: 'line',
+          yAxisIndex: 0,
+          data: exGolfGuests,
+          smooth: true,
+          symbolSize: 7,
+          itemStyle: { color: '#0d9488' },
+          lineStyle: { width: 2.5 }
+        },
+        {
+          name: '일일 투숙객(나들이 제외)',
           type: 'line',
           yAxisIndex: 0,
           data: roomGuests,
@@ -181,11 +196,11 @@ export default function RoomGuestAnalysis() {
           <div className="text-white">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
               <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
-              <span>BELLEFORET RESORT · 일일 숙박객 및 방문객 분석</span>
+              <span>BELLEFORET RESORT · 일일 투숙객(나들이 제외) 및 이용객 분석</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">일일 숙박객 및 방문객 분석</h1>
+            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">일일 투숙객(나들이 제외) 및 이용객 분석</h1>
             <p className="text-sm text-white/80 mt-1 break-keep">
-              관리자 공식 기준 정원에 기반한 총 숙박객 수와 업장별 매출 실적을 분석하여 일원화된 공식 고객 데이터를 제공합니다.
+              나들이 고객을 제외한 실제 투숙객(콘도)과 골프제외·골프포함 이용객, 업장별 매출 실적을 명확히 구분하여 제공합니다.
             </p>
           </div>
 
@@ -202,48 +217,62 @@ export default function RoomGuestAnalysis() {
           </div>
         </div>
 
-        {/* 숙박객 계산 기준 안내 배너 (집계 무결성 공지) */}
+        {/* 투숙객 및 이용객 계산 기준 안내 배너 (집계 무결성 공지) */}
         <div className="bg-[#F4F3EE]/90 border border-[#D0C6BB]/75 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
           <Info className="w-5 h-5 text-[#284F42] shrink-0 mt-0.5" />
           <div className="text-xs text-[#1B382E] space-y-1">
             <div className="font-bold text-[#1B382E] flex items-center gap-2">
-              <span>벨포레 통합 체류 인원 SSOT (`mat_v6_resort_visitors_daily`) 및 숙박객 산출 기준</span>
+              <span>벨포레 인원 공식 용어 및 산출 기준 (`mat_v6_resort_visitors_daily` SSOT)</span>
               <span className="text-[10px] bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 px-2 py-0.5 rounded-full font-semibold">공식 기준</span>
             </div>
             <p className="text-[#5A6B63] leading-relaxed break-keep">
-              순수 체류 총인원은 <strong>숙박객(실 판매 객실×기준정원) + 골프 내장객(그린피 실라운딩) + 순수 나들이객(워크인 차량×3명) − 숙박·골프 중복 차감 인원</strong>으로 사전 연산된 SSOT 마트 데이터를 1:1 직결하며, 다수 시설 중복 이용이 누적된 <strong>시설 이용 연인원</strong>과 명확히 분리하여 제공합니다.
+              • <strong>투숙객(나들이 제외 실제 투숙객)</strong>: 나들이 고객을 포함하지 않은 순수 콘도 투숙객 (실 판매 객실 × 기준정원)<br />
+              • <strong>골프제외 이용객</strong>: 투숙객 + 나들이 고객(워크인 차량×3명) − 숙박·골프 중복 차감 인원<br />
+              • <strong>골프포함 이용객(체류 총인원)</strong>: 투숙객 + 나들이 고객 + 골프 내장객 − 숙박·골프 중복 차감 인원
             </p>
           </div>
         </div>
 
-        {/* 🏛️ 벨포레 통합 순수 체류 총인원 SSOT 패널 */}
+        {/* 🏛️ 벨포레 통합 이용객 (골프포함 / 골프제외) & 투숙객 SSOT 패널 */}
         <div className="bg-white p-6 rounded-3xl border-2 border-[#284F42]/80 shadow-[0_4px_24px_rgba(40,79,66,0.08)] space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#D0C6BB]/50 pb-4">
             <div>
               <div className="flex items-center gap-2">
                 <Users size={18} className="text-[#284F42]" />
                 <h2 className="text-base sm:text-lg font-extrabold text-[#1B382E]">
-                  리조트 순수 물리적 체류 총인원 (Physical Headcount SSOT)
+                  골프포함 이용객 & 골프제외 이용객 (Physical Headcount SSOT)
                 </h2>
                 <span className="text-[10px] font-black bg-[#284F42] text-white px-2.5 py-0.5 rounded-full">
                   Zero-Proxy 1:1
                 </span>
               </div>
               <p className="text-xs text-[#5A6B63] mt-1">
-                숙박객 + 골프 내장객 + 순수 당일 나들이객 − 숙박·골프 1:1 매칭 중복 차감 인원
+                투숙객(나들이 제외) + 나들이 고객(워크인) + 골프 내장객 − 숙박·골프 중복 차감 인원
               </p>
             </div>
-            <div className="flex items-baseline gap-2 font-financial">
-              <span className="text-xs font-bold text-[#6C7A73]">순수 체류 총인원:</span>
-              <span className="text-3xl font-black text-[#1B382E]">
-                {resortVisitors?.netPhysicalResortGuests != null
-                  ? Number(resortVisitors.netPhysicalResortGuests).toLocaleString()
-                  : '-'}
-              </span>
-              <span className="text-sm font-bold text-[#6C7A73]">명</span>
+            <div className="flex flex-wrap items-center gap-4 font-financial">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xs font-bold text-[#6C7A73]">🏌️ 골프포함 이용객:</span>
+                <span className="text-2xl sm:text-3xl font-black text-[#1B382E]">
+                  {resortVisitors?.netPhysicalResortGuests != null
+                    ? Number(resortVisitors.netPhysicalResortGuests).toLocaleString()
+                    : '-'}
+                </span>
+                <span className="text-sm font-bold text-[#6C7A73]">명</span>
+              </div>
+              {(resortVisitors?.exGolfVisitors != null || resortVisitors?.exGolfNetPhysicalResortGuests != null) && (
+                <div className="flex items-baseline gap-1.5 bg-[#E8F2EE] px-3 py-1.5 rounded-2xl border border-[#284F42]/30">
+                  <span className="text-xs font-extrabold text-[#1E523F]">🌲 골프제외 이용객:</span>
+                  <span className="text-2xl font-black text-[#1E523F]">
+                    {Number(resortVisitors.exGolfVisitors ?? resortVisitors.exGolfNetPhysicalResortGuests).toLocaleString()}
+                  </span>
+                  <span className="text-xs font-bold text-[#1E523F]">명</span>
+                </div>
+              )}
               {resortVisitors?.mtdNetPhysicalResortGuests != null && !isEffectiveRange && (
-                <span className="ml-2 text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-1 rounded-full border border-[#B4C6C1]/70">
-                  당월 누적(MTD) {Number(resortVisitors.mtdNetPhysicalResortGuests).toLocaleString()}명
+                <span className="text-xs font-bold text-[#1E523F] bg-[#F4F3EE] px-2.5 py-1 rounded-full border border-[#D0C6BB]/70">
+                  당월 누적: 골프포함 {Number(resortVisitors.mtdNetPhysicalResortGuests).toLocaleString()}명
+                  {resortVisitors?.mtdExGolfVisitors != null ? ` / 골프제외 ${Number(resortVisitors.mtdExGolfVisitors).toLocaleString()}명` : ''}
                 </span>
               )}
             </div>
@@ -251,12 +280,12 @@ export default function RoomGuestAnalysis() {
 
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs font-financial">
             <div className="bg-[#F4F3EE] p-3.5 rounded-2xl border border-[#D0C6BB]/70">
-              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">① 콘도 숙박객</span>
+              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">① 투숙객 (나들이 제외)</span>
               <div className="text-xl font-extrabold text-[#1B382E]">
                 {resortVisitors?.roomTotalGuests != null ? `${Number(resortVisitors.roomTotalGuests).toLocaleString()}명` : '-'}
               </div>
               <span className="text-[10px] text-[#6C7A73]">
-                판매 객실: {resortVisitors?.roomSoldUnits != null ? `${Number(resortVisitors.roomSoldUnits).toLocaleString()}실` : '-'}
+                실제 투숙 객실: {resortVisitors?.roomSoldUnits != null ? `${Number(resortVisitors.roomSoldUnits).toLocaleString()}실` : '-'}
               </span>
             </div>
 
@@ -269,7 +298,7 @@ export default function RoomGuestAnalysis() {
             </div>
 
             <div className="bg-[#F4F3EE] p-3.5 rounded-2xl border border-[#D0C6BB]/70">
-              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">③ 순수 당일 나들이객</span>
+              <span className="text-[11px] text-[#5A6B63] font-bold block mb-1">③ 나들이 고객 (워크인)</span>
               <div className="text-xl font-extrabold text-[#1B382E]">
                 {resortVisitors?.parkingWalkinVisitors != null ? `${Number(resortVisitors.parkingWalkinVisitors).toLocaleString()}명` : '-'}
               </div>
@@ -307,15 +336,15 @@ export default function RoomGuestAnalysis() {
         {/* KPI Overview Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Card 1: 총 숙박객 */}
+          {/* Card 1: 투숙객 (나들이 제외 실제 투숙객) */}
           <div className="bg-white p-6 rounded-3xl border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] relative overflow-hidden flex flex-col justify-between h-full">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-[#5A6B63] flex items-center gap-1.5 whitespace-nowrap">
-                  <Hotel size={16} className="text-[#284F42] shrink-0" /> 총 숙박객
+                  <Hotel size={16} className="text-[#284F42] shrink-0" /> 투숙객 (나들이 제외 실제 투숙객)
                 </span>
                 <span className="text-[11px] font-semibold bg-[#E8F2EE] text-[#1E523F] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                  정원 기준 산출
+                  순수 실투숙객
                 </span>
               </div>
               <div className="text-3xl font-extrabold text-[#1B382E] my-1 whitespace-nowrap font-financial">
@@ -341,10 +370,10 @@ export default function RoomGuestAnalysis() {
             <div className="mt-4 pt-3 border-t border-[#D0C6BB]/40 bg-[#F4F3EE]/70 -mx-6 -mb-6 p-4 rounded-b-3xl">
               <div className="flex items-center gap-1 text-[11px] font-bold text-[#1B382E] mb-1">
                 <HelpCircle size={13} className="text-[#284F42] shrink-0" />
-                <span>숙박객 계산 기준 (mat_v6_resort_visitors_daily)</span>
+                <span>투숙객 계산 기준 (나들이 고객 제외)</span>
               </div>
               <p className="text-[11px] text-[#5A6B63] leading-relaxed break-keep">
-                실 판매 객실 수 × 평형별 기준정원<br />
+                나들이 고객(워크인) 제외 · 실제 투숙 판매 객실 수 × 평형별 기준정원<br />
                 <span className="text-[#8F9E96] font-mono text-[10px]">(16평 2.5명 · 35평 4.5명 · 51평 5.5명 · R51/단독/펫51 6.0명)</span>
               </p>
             </div>
@@ -428,7 +457,7 @@ export default function RoomGuestAnalysis() {
         <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#284F42]" /> 일자별 숙박객 및 매출 추이
+              <Calendar className="w-5 h-5 text-[#284F42]" /> 일자별 이용객(골프포함/골프제외) · 투숙객(나들이 제외) 및 매출 추이
             </h2>
           </div>
           <div className="h-[350px] w-full">

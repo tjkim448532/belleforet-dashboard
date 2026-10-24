@@ -1095,12 +1095,12 @@ export default function CondoReservationStatus() {
 
           {/* 2. 총 투숙 인원 */}
           <div className="bg-white rounded-xl border border-[#D0C6BB]/75 p-4 shadow-2xs">
-            <div className="text-xs font-bold text-[#5A6B63]">총 단체 투숙 인원</div>
+            <div className="text-xs font-bold text-[#5A6B63]">총 단체 투숙객 (나들이 제외)</div>
             <div className="mt-2 text-2xl font-black text-[#1B382E] font-mono">
               {loadingGroups ? '-' : (groupSummary?.totalPaxFormatted ?? '-')}
               <span className="text-xs font-bold text-[#5A6B63] ml-1">명</span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">실 투숙 예정 방문객</div>
+            <div className="text-[11px] text-slate-500 mt-1">나들이 제외 실제 투숙 예정 인원</div>
           </div>
 
           {/* 3. 유치 기업 수 */}

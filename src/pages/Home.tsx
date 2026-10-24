@@ -731,22 +731,22 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 🌟 Card 3: 리조트 순수 체류 총인원 & 숙박·워크인·어트랙션 이용객 (mat_v6_resort_visitors_daily SSOT) */}
+            {/* 🌟 Card 3: 골프포함/골프제외 이용객 & 투숙객(나들이 제외)·나들이 고객·어트랙션 이용객 (mat_v6_resort_visitors_daily SSOT) */}
             <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between">
               <div>
-                {/* 🏛️ 0. 리조트 순수 체류 총인원 (Physical Headcount SSOT) */}
+                {/* 🏛️ 0. 골프포함 이용객 & 골프제외 이용객 (Physical Headcount SSOT) */}
                 <div className="mb-3 pb-3 border-b border-[#D0C6BB]/50">
                   <div className="mb-1.5 flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-1.5">
                       <Users className="w-5 h-5 text-[#284F42] shrink-0" />
-                      <span className="text-sm font-bold text-[#1B382E]">리조트 순수 체류 총인원</span>
+                      <span className="text-sm font-bold text-[#1B382E]">골프포함 이용객 (체류 총인원)</span>
                       <span className="text-[10px] font-extrabold text-white bg-[#284F42] px-2 py-0.5 rounded-full">
                         SSOT
                       </span>
                     </div>
                     {resortVisitors?.mtdNetPhysicalResortGuests != null && !isRangeMode && (
                       <span className="text-[11px] font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70 font-financial">
-                        당월 누적(MTD) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdNetPhysicalResortGuests))}명
+                        당월(MTD) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdNetPhysicalResortGuests))}명
                       </span>
                     )}
                   </div>
@@ -759,20 +759,38 @@ export default function Home() {
                     </span>
                     <span className="text-base font-semibold text-[#6C7A73]">명</span>
                     <span className="text-[11px] font-semibold text-[#6C7A73]">
-                      (숙박 + 골프 + 순수 나들이 − 숙박·골프 중복)
+                      (투숙객 + 나들이 고객 + 골프 내장객 − 숙박·골프 중복)
                     </span>
                   </div>
+
+                  {/* 골프제외 이용객 배지 (투숙객 + 나들이 고객 - 숙박·골프 중복) */}
+                  {(resortVisitors?.exGolfVisitors != null || resortVisitors?.exGolfNetPhysicalResortGuests != null) && (
+                    <div className="mb-2 px-3 py-1.5 rounded-xl bg-[#E8F2EE] border border-[#284F42]/30 flex items-center justify-between flex-wrap gap-2 text-xs font-financial">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-[#1E523F]">🌲 골프제외 이용객:</span>
+                        <strong className="text-sm font-black text-[#1B382E]">
+                          {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.exGolfVisitors ?? resortVisitors.exGolfNetPhysicalResortGuests))}명
+                        </strong>
+                        <span className="text-[10px] text-[#5A6B63]">(투숙객 + 나들이 고객 − 중복)</span>
+                      </div>
+                      {resortVisitors?.mtdExGolfVisitors != null && !isRangeMode && (
+                        <span className="text-[10px] font-bold text-[#1E523F]">
+                          당월 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdExGolfVisitors))}명
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* 순수 체류 인원 4대 구성 및 시설 이용 연인원 병기 브레이크다운 */}
                   <div className="p-2.5 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]/75 text-xs space-y-1.5 font-financial">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
                       <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
-                        <span className="text-[10px] text-[#6C7A73]">① 콘도 숙박객</span>
+                        <span className="text-[10px] text-[#6C7A73]">① 투숙객(나들이제외)</span>
                         <strong className="text-[#1B382E] font-extrabold">
                           {resortVisitors?.roomTotalGuests != null ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomTotalGuests))}명` : '-'}
                         </strong>
                         {resortVisitors?.roomSoldUnits != null && (
-                          <span className="text-[9px] text-[#6C7A73]">({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomSoldUnits))}실)</span>
+                          <span className="text-[9px] text-[#6C7A73]">({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomSoldUnits))}실 실투숙)</span>
                         )}
                       </div>
                       <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
@@ -783,7 +801,7 @@ export default function Home() {
                         <span className="text-[9px] text-[#6C7A73]">그린피 실라운딩</span>
                       </div>
                       <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
-                        <span className="text-[10px] text-[#6C7A73]">③ 순수 나들이객</span>
+                        <span className="text-[10px] text-[#6C7A73]">③ 나들이 고객(워크인)</span>
                         <strong className="text-[#1B382E] font-extrabold">
                           {resortVisitors?.parkingWalkinVisitors != null ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.parkingWalkinVisitors))}명` : '-'}
                         </strong>
@@ -824,12 +842,11 @@ export default function Home() {
                 <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-[#284F42] shrink-0" />
-                    <span className="text-xs font-bold text-[#1B382E]">통합 숙박객 수</span>
+                    <span className="text-xs font-bold text-[#1B382E]">투숙객 수 (나들이 제외 실제 투숙객)</span>
                     <MetricExplainerTooltip presetKey="visitorCount" />
-                    <span className="text-[11px] text-[#6C7A73] font-normal">(콘도 투숙객)</span>
                   </div>
                   <span className="text-[10px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                    {isRangeMode ? '선택 기간 누적' : '당일 투숙객 집계'}
+                    {isRangeMode ? '선택 기간 누적' : '당일 실투숙객 집계'}
                   </span>
                 </div>
 
@@ -884,17 +901,17 @@ export default function Home() {
                   </div>
                 )}
                 
-                {/* 🚗 2. 워크인(Walk-in) 방문객 수 (주차관제 Firebase SSOT 완제품) */}
+                {/* 🚗 2. 나들이 고객(Walk-in 방문객) 수 (주차관제 Firebase SSOT 완제품) */}
                 <div className="pt-3 pb-1 border-t border-[#D0C6BB]/40">
                   <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-1.5">
                       <Car className="w-5 h-5 text-[#284F42] shrink-0" />
-                      <span className="text-sm font-bold text-[#1B382E]">워크인(Walk-in) 방문객 수</span>
+                      <span className="text-sm font-bold text-[#1B382E]">나들이 고객 수 (워크인 방문객)</span>
                       <MetricExplainerTooltip presetKey="walkInVisitor" />
                       <span className="text-xs text-[#6C7A73] font-normal">(주차관제 기반)</span>
                     </div>
                     <span className="text-[11px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                      {isRangeMode ? '선택 기간 누적' : '당일 워크인 집계'}
+                      {isRangeMode ? '선택 기간 누적' : '당일 나들이 집계'}
                     </span>
                   </div>
 

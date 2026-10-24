@@ -703,7 +703,7 @@ export default function LeisureUsageRate() {
     // -------------------------------------------------------------------------
     const sheet1Rows: any[][] = [
       [`[벨포레 리조트] 레저본부 전 영업장 ${expYearA}년 vs ${expYearB}년 월별 이용률 YoY 정밀 비교표`],
-      [`추출일시: ${nowStr} | 모수 기준: 리조트 순수 체류 인원(골프제외 · 숙박+워크인 포함) (목장체험은 입장객 기준)`],
+      [`추출일시: ${nowStr} | 모수 기준: 골프제외 이용객(투숙객+나들이 고객) (목장체험은 입장객 기준)`],
       [`단위: 이용률(%), YoY 증감(%p) | 비교 구간: ${expYearB}년 vs ${expYearA}년 | 데이터 출처: V6 정밀 데이터 마트 (leisure-yoy-matrix)`],
       [],
       [
@@ -794,17 +794,17 @@ export default function LeisureUsageRate() {
     // -------------------------------------------------------------------------
     const sheet2Rows: any[][] = [
       [`[벨포레 리조트] 레저본부 전 영업장 ${expYearA}년 vs ${expYearB}년 누적 실적 및 이용률 종합 비교`],
-      [`추출일시: ${nowStr} | 모수 기준: 리조트 순수 체류 인원(골프제외 · 숙박+워크인 포함) (목장체험은 입장객 기준)`],
+      [`추출일시: ${nowStr} | 모수 기준: 골프제외 이용객(투숙객+나들이 고객) (목장체험은 입장객 기준)`],
       ['단위: 명, 이용률(%), 증감(%p) | 데이터 출처: V6 정밀 데이터 마트 (mat_v6_data_mart)'],
       [],
       [
         'No',
         '영업장명',
         `${expYearA}년 누적 이용객(명)`,
-        `${expYearA}년 모수(골프제외 체류객, 명)`,
+        `${expYearA}년 모수(골프제외 이용객, 명)`,
         `${expYearA}년 누적 이용률(%)`,
         `${expYearB}년 누적 이용객(명)`,
-        `${expYearB}년 모수(골프제외 체류객, 명)`,
+        `${expYearB}년 모수(골프제외 이용객, 명)`,
         `${expYearB}년 누적 이용률(%)`,
         '이용률 증감(%p)',
         '이용객수 증감(명)',
@@ -874,7 +874,7 @@ export default function LeisureUsageRate() {
         '월',
         ...availableYears.flatMap((yr) => [
           `${yr}년 이용객(명)`,
-          `${yr}년 모수(골프제외 체류객, 명)`,
+          `${yr}년 모수(골프제외 이용객, 명)`,
           `${yr}년 이용률(%)`
         ]),
         `YoY 증감 (${latestYear.slice(2)}vs${prevYear.slice(2)} %p)`
@@ -989,13 +989,13 @@ export default function LeisureUsageRate() {
                 <span>BELLEFORET RESORT · LEISURE USAGE RATE</span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-3 flex-wrap break-keep">
-                <span className="whitespace-nowrap">레저본부 영업장별 리조트 체류객(골프제외·워크인포함) 대비 이용률 비교</span>
+                <span className="whitespace-nowrap">레저본부 영업장별 골프제외 이용객 대비 이용률 비교</span>
                 <span className="text-xs bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white font-medium whitespace-nowrap">
                   24 · 25 · 26 연도별 YoY 정밀 매트릭스
                 </span>
               </h1>
               <p className="text-sm text-[#E8F2EE]/80 mt-2 break-keep max-w-3xl leading-relaxed">
-                리조트 순수 체류 총인원에서 골프 이용객을 제외한 체류 인원(숙박객 + 워크인 나들이객 - 골프중복) 대비 각 놀이시설 이용객(진성 방문객)의 월별 이용률(%)을 연도별로 비교합니다. (※ 단, '벨포레 목장(체험)'은 '목장 입장객'을 기준으로 실질 체험 전환율을 산출합니다.)
+                리조트 <b>골프제외 이용객(실제 투숙객 + 나들이 고객 − 골프중복)</b> 대비 각 놀이시설 이용객의 월별 이용률(%)을 연도별로 비교합니다. (※ 단, '벨포레 목장(체험)'은 '목장 입장객'을 기준으로 실질 체험 전환율을 산출합니다.)
               </p>
             </div>
 
@@ -1166,7 +1166,7 @@ export default function LeisureUsageRate() {
                     <span className="text-xs lg:text-sm font-semibold text-[#5A6B63] tracking-wider uppercase whitespace-nowrap">
                       {currentSummary.selectedVenue.name === '벨포레 목장(체험)'
                         ? (isPeriodTotalMode ? '기간 목장 입장객 (체험 모수)' : '당월 목장 입장객 (체험 모수)')
-                        : (isPeriodTotalMode ? '기간 리조트 체류객 (골프제외·워크인포함 모수)' : '당월 리조트 체류객 (골프제외·워크인포함 모수)')}
+                        : (isPeriodTotalMode ? '기간 골프제외 이용객 (모수)' : '당월 골프제외 이용객 (모수)')}
                     </span>
                     <div className="w-10 h-10 rounded-2xl bg-[#F4F3EE] text-[#284F42] flex items-center justify-center">
                       <Building2 size={20} />
@@ -1182,7 +1182,7 @@ export default function LeisureUsageRate() {
                 <div className="text-xs text-[#5A6B63] mt-auto pt-2 font-medium whitespace-nowrap">
                   {currentSummary.selectedVenue.name === '벨포레 목장(체험)'
                     ? '목장 입장객 대비 실질 체험 전환율 산출 기준'
-                    : '순수 체류 총인원(숙박+워크인-중복)에서 골프 이용객을 제외한 모수 기준'}
+                    : '골프제외 이용객 = 투숙객(나들이 제외) + 나들이 고객 − 골프중복'}
                 </div>
               </div>
 
@@ -1884,10 +1884,10 @@ export default function LeisureUsageRate() {
             <div className="flex items-center gap-1.5">
               <HelpCircle size={14} className="text-[#5A6B63]" />
               <span>
-                각 셀 표기: <b>[{selectedFacility === '벨포레 목장(체험)' ? '체험 전환율 %' : '이용률 %'}]</b> 상단, <b>({selectedFacility === '벨포레 목장(체험)' ? '체험 이용객수 / 목장 입장객수' : '시설 이용객수 / 골프제외 체류인원(숙박+워크인)'})</b> 하단
+                각 셀 표기: <b>[{selectedFacility === '벨포레 목장(체험)' ? '체험 전환율 %' : '이용률 %'}]</b> 상단, <b>({selectedFacility === '벨포레 목장(체험)' ? '체험 이용객수 / 목장 입장객수' : '시설 이용객수 / 골프제외 이용객(투숙객+나들이)'})</b> 하단
                 {selectedFacility === '벨포레 목장(체험)' && (
                   <span className="text-[#284F42] ml-1.5 font-bold">
-                    (※ '목장체험'은 골프제외 체류인원이 아닌 '목장 입장객'을 분모로 한 실질 체험 전환율입니다)
+                    (※ '목장체험'은 골프제외 이용객이 아닌 '목장 입장객'을 분모로 한 실질 체험 전환율입니다)
                   </span>
                 )}
               </span>

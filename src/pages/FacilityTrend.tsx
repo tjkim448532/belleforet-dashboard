@@ -32,6 +32,7 @@ interface MonthlyDataPoint {
   visitors: number;
   totalVisitors?: number;
   exGolfVisitors?: number;
+  roomGuests?: number;
 }
 
 export default function FacilityTrend() {
@@ -52,6 +53,7 @@ export default function FacilityTrend() {
     visitors?: number;
     totalVisitors?: number;
     exGolfVisitors?: number;
+    roomGuests?: number;
   }>>({});
 
   // 🌟 V6 2026 vs 2025 월별 시즌성 매트릭스 (monthly-seasonality-matrix 완제품 바인딩)
@@ -83,11 +85,12 @@ export default function FacilityTrend() {
     setLoading(true);
     try {
       if (selectedFacility === '전체') {
-        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 연도별 VM 및 인원수 골프포함/골프제외 완제품)
-        const [res2024, res2025, res2026] = await Promise.all([
+        // 벨포레 전체 매출 (SSOT: /api/v6/report/monthly-trends 연도별 VM 및 인원수 골프포함/골프제외/실투숙객 완제품)
+        const [res2024, res2025, res2026, resRoomYoy] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2024`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2025`).catch(() => null),
           secureFetcher(`${API_BASE}/api/v6/report/monthly-trends?year=2026`).catch(() => null),
+          secureFetcher(`${API_BASE}/api/v6/report/room-guests-yoy`).catch(() => null),
         ]);
 
         const monthlyDataMap = new Map<string, {
@@ -98,6 +101,7 @@ export default function FacilityTrend() {
           visitors: number;
           totalVisitors: number;
           exGolfVisitors: number;
+          roomGuests: number;
         }>();
 
         const appendYear = (res: any) => {
@@ -111,14 +115,18 @@ export default function FacilityTrend() {
               const exRev = item.exGolfRevenue !== undefined && item.exGolfRevenue !== null
                 ? Math.round(Number(item.exGolfRevenue))
                 : 0;
-              // 골프포함 인원: 리조트 순수 체류 총인원 (netPhysicalResortGuests / totalVisitors)
+              // 골프포함 이용객: 리조트 순수 체류 총인원 (netPhysicalResortGuests / totalVisitors)
               const totVisitors = item.netPhysicalResortGuests !== undefined && item.netPhysicalResortGuests !== null
                 ? Math.round(Number(item.netPhysicalResortGuests))
                 : (item.totalVisitors !== undefined && item.totalVisitors !== null ? Math.round(Number(item.totalVisitors)) : 0);
-              // 골프제외 인원: 백엔드 완제품 (순수 체류 총인원 - 골프 내장객 = exGolfNetPhysicalResortGuests / exGolfVisitors, Zero-Proxy)
+              // 골프제외 이용객: 백엔드 완제품 (순수 체류 총인원 - 골프 내장객 = exGolfNetPhysicalResortGuests / exGolfVisitors)
               const exGVisitors = item.exGolfNetPhysicalResortGuests !== undefined && item.exGolfNetPhysicalResortGuests !== null
                 ? Math.round(Number(item.exGolfNetPhysicalResortGuests))
                 : (item.exGolfVisitors !== undefined && item.exGolfVisitors !== null ? Math.round(Number(item.exGolfVisitors)) : 0);
+              // 투숙객: 나들이 고객을 제외한 실제 투숙한 투숙객 (roomGuests)
+              const pureRoomGuests = item.roomGuests !== undefined && item.roomGuests !== null
+                ? Math.round(Number(item.roomGuests))
+                : 0;
 
               monthlyDataMap.set(mKey, {
                 revenue: totRev,
@@ -127,7 +135,8 @@ export default function FacilityTrend() {
                 exGolfRevenue: exRev,
                 visitors: totVisitors,
                 totalVisitors: totVisitors,
-                exGolfVisitors: exGVisitors
+                exGolfVisitors: exGVisitors,
+                roomGuests: pureRoomGuests
               });
             });
           }
@@ -155,7 +164,8 @@ export default function FacilityTrend() {
             exGolfRevenue: 0,
             visitors: 0,
             totalVisitors: 0,
-            exGolfVisitors: 0
+            exGolfVisitors: 0,
+            roomGuests: 0
           };
           monthlyData.push({
             month: monthKey,
@@ -165,7 +175,8 @@ export default function FacilityTrend() {
             exGolfRevenue: found.exGolfRevenue,
             visitors: found.visitors,
             totalVisitors: found.totalVisitors,
-            exGolfVisitors: found.exGolfVisitors
+            exGolfVisitors: found.exGolfVisitors,
+            roomGuests: found.roomGuests
           });
 
           curMonth++;
@@ -193,7 +204,15 @@ export default function FacilityTrend() {
           visitors?: number;
           totalVisitors?: number;
           exGolfVisitors?: number;
+          roomGuests?: number;
         }> = {};
+
+        const roomYoyPayload = resRoomYoy?.data ?? resRoomYoy;
+        const roomYoyTotals = roomYoyPayload?.totals ?? roomYoyPayload?.annual ?? {};
+        const resolveRoomGuestsTotal = (yr: string) => {
+          const val = roomYoyTotals?.guestsByYear?.[yr] ?? roomYoyTotals?.[`guests${yr}`] ?? roomYoyTotals?.[yr];
+          return val !== undefined && val !== null ? Math.round(Number(val)) : undefined;
+        };
 
         const resolveTotalVisitors = (res: any) => {
           const vm = res?.ValidationMaster;
@@ -215,7 +234,8 @@ export default function FacilityTrend() {
             ...vm2024,
             visitors: totVis,
             totalVisitors: totVis,
-            exGolfVisitors: exGVis
+            exGolfVisitors: exGVis,
+            roomGuests: resolveRoomGuestsTotal('2024')
           };
         }
 
@@ -227,7 +247,8 @@ export default function FacilityTrend() {
             ...vm2025,
             visitors: totVis,
             totalVisitors: totVis,
-            exGolfVisitors: exGVis
+            exGolfVisitors: exGVis,
+            roomGuests: resolveRoomGuestsTotal('2025')
           };
         }
 
@@ -239,7 +260,8 @@ export default function FacilityTrend() {
             ...vm2026,
             visitors: totVis,
             totalVisitors: totVis,
-            exGolfVisitors: exGVis
+            exGolfVisitors: exGVis,
+            roomGuests: resolveRoomGuestsTotal('2026')
           };
         }
 
@@ -323,8 +345,8 @@ export default function FacilityTrend() {
     const legendData: string[] = [];
     const isExGolf = selectedFacility === '전체' && golfViewMode === 'EX_GOLF';
     const visitorLabel = selectedFacility === '전체'
-      ? (isExGolf ? '객실 투숙객(골프제외)' : '객실·체류객(골프포함)')
-      : '방문객';
+      ? (isExGolf ? '골프제외 이용객' : '골프포함 이용객')
+      : '이용객';
 
     // Year-specific color themes
     const YEAR_THEMES: Record<string, { total: string; exGolf: string; line: string }> = {
@@ -339,7 +361,7 @@ export default function FacilityTrend() {
 
       const yearTotalRevenue: (number | null)[] = Array(12).fill(null);
       const yearExGolfRevenue: (number | null)[] = Array(12).fill(null);
-      const yearVisitors: (number | null)[] = Array(12).fill(null);
+      const yearVisitors: any[] = Array(12).fill(null);
       
       data.monthlyData.forEach((d: MonthlyDataPoint) => {
         if (d.month.startsWith(year)) {
@@ -353,7 +375,7 @@ export default function FacilityTrend() {
 
           yearTotalRevenue[monthIdx] = tot;
           yearExGolfRevenue[monthIdx] = exG;
-          yearVisitors[monthIdx] = vis;
+          yearVisitors[monthIdx] = vis !== null ? { value: vis, roomGuests: d.roomGuests ?? 0 } : null;
         }
       });
 
@@ -381,7 +403,7 @@ export default function FacilityTrend() {
         });
       }
 
-      // 공통 투숙객/방문객 라인 차트 (버튼 모드에 따라 골프포함 체류객 vs 골프제외 객실투숙객 전환)
+      // 공통 이용객 라인 차트 (버튼 모드에 따라 골프포함 이용객 vs 골프제외 이용객 전환)
       const lineLegend = `${year}년 ${visitorLabel}`;
       legendData.push(lineLegend);
       seriesData.push({
@@ -407,13 +429,16 @@ export default function FacilityTrend() {
               const formattedVal = isRev 
                 ? `${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}원`
                 : `${new Intl.NumberFormat('ko-KR').format(Math.round(item.value))}명`;
+              const pureRoom = !isRev && selectedFacility === '전체' && item.data?.roomGuests > 0
+                ? ` <span style="font-weight:500;color:#475569;font-size:11px;">(투숙객 ${new Intl.NumberFormat('ko-KR').format(Math.round(item.data.roomGuests))}명)</span>`
+                : '';
               result += `
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;padding:3px 0;">
                   <span style="display:flex;align-items:center;gap:6px;">
                     <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${item.color};"></span>
                     <span style="color:#64748b;">${item.seriesName}</span>
                   </span>
-                  <span style="font-weight:700;color:#0f172a;">${formattedVal}</span>
+                  <span style="font-weight:700;color:#0f172a;">${formattedVal}${pureRoom}</span>
                 </div>
               `;
             }
@@ -429,8 +454,8 @@ export default function FacilityTrend() {
         { 
           type: 'value', 
           name: selectedFacility === '전체'
-            ? (isExGolf ? '객실 투숙객(골프제외, 명)' : '객실·체류객(골프포함, 명)')
-            : '방문객수(명)', 
+            ? (isExGolf ? '골프제외 이용객(명)' : '골프포함 이용객(명)')
+            : '이용객(명)', 
           axisLabel: { formatter: '{value}' } 
         }
       ],
@@ -438,7 +463,7 @@ export default function FacilityTrend() {
     };
   };
 
-  // 피벗 테이블 렌더링 (골프포함 / 골프제외 버튼에 따라 매출 및 객실투숙객 동시 전환)
+  // 피벗 테이블 렌더링 (골프포함 / 골프제외 버튼에 따라 매출 및 이용객 동시 전환 + 나들이 제외 실투숙객 병기)
   const renderPivotTable = () => {
     if (!data || !data.monthlyData || data.monthlyData.length === 0) return null;
     
@@ -460,7 +485,8 @@ export default function FacilityTrend() {
           revenue: match?.revenue || 0,
           visitors: match?.visitors || 0,
           totalVisitors: match?.totalVisitors ?? match?.visitors ?? 0,
-          exGolfVisitors: match?.exGolfVisitors ?? 0
+          exGolfVisitors: match?.exGolfVisitors ?? 0,
+          roomGuests: match?.roomGuests ?? 0
         };
       });
       rows.push({ month: `${i}월`, data: rowCols });
@@ -490,7 +516,7 @@ export default function FacilityTrend() {
                   <>
                     <th className="px-4 py-2 text-right border-b border-[#D0C6BB]/75 text-[#284F42] bg-[#E8F2EE]/30">골프제외 매출</th>
                     <th className={`px-4 py-2 text-right border-b border-[#D0C6BB]/75 text-[#1E523F] ${idx === years.length - 1 ? '' : 'border-r border-[#D0C6BB]/75'}`}>
-                      객실 투숙객 (골프제외)
+                      골프제외 이용객 <span className="text-[10px] text-[#5A6B63] font-normal">(투숙객 병기)</span>
                     </th>
                   </>
                 ) : (
@@ -499,7 +525,9 @@ export default function FacilityTrend() {
                       {selectedFacility === '전체' ? '골프포함 매출' : '매출액'}
                     </th>
                     <th className={`px-4 py-2 text-right border-b border-[#D0C6BB]/75 text-[#1E523F] ${idx === years.length - 1 ? '' : 'border-r border-[#D0C6BB]/75'}`}>
-                      {selectedFacility === '전체' ? '객실 투숙객 (골프포함)' : '방문객'}
+                      {selectedFacility === '전체' ? (
+                        <>골프포함 이용객 <span className="text-[10px] text-[#5A6B63] font-normal">(투숙객 병기)</span></>
+                      ) : '이용객'}
                     </th>
                   </>
                 )}
@@ -523,7 +551,16 @@ export default function FacilityTrend() {
                           {col.exGolfRevenue > 0 ? `${formatCurrency(col.exGolfRevenue)}원` : '-'}
                         </td>
                         <td className={`px-4 py-4 text-right font-medium tabular-nums ${displayVis > 0 ? 'text-[#1E523F]' : 'text-[#8F9E96]'} ${cIdx === years.length - 1 ? '' : 'border-r border-[#D0C6BB]/40'}`}>
-                          {displayVis > 0 ? `${formatCurrency(displayVis)}명` : '-'}
+                          {displayVis > 0 ? (
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold">{formatCurrency(displayVis)}명</span>
+                              {selectedFacility === '전체' && col.roomGuests > 0 && (
+                                <span className="text-[10px] text-[#5A6B63] font-normal">
+                                  (투숙객 {formatCurrency(col.roomGuests)}명)
+                                </span>
+                              )}
+                            </div>
+                          ) : '-'}
                         </td>
                       </>
                     ) : (
@@ -532,7 +569,16 @@ export default function FacilityTrend() {
                           {col.totalRevenue > 0 ? `${formatCurrency(col.totalRevenue)}원` : '-'}
                         </td>
                         <td className={`px-4 py-4 text-right font-medium tabular-nums ${displayVis > 0 ? 'text-[#1E523F]' : 'text-[#8F9E96]'} ${cIdx === years.length - 1 ? '' : 'border-r border-[#D0C6BB]/40'}`}>
-                          {displayVis > 0 ? `${formatCurrency(displayVis)}명` : '-'}
+                          {displayVis > 0 ? (
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold">{formatCurrency(displayVis)}명</span>
+                              {selectedFacility === '전체' && col.roomGuests > 0 && (
+                                <span className="text-[10px] text-[#5A6B63] font-normal">
+                                  (투숙객 {formatCurrency(col.roomGuests)}명)
+                                </span>
+                              )}
+                            </div>
+                          ) : '-'}
                         </td>
                       </>
                     )}
@@ -564,9 +610,16 @@ export default function FacilityTrend() {
                             : '-'}
                         </td>
                         <td className={`px-4 py-4 text-right font-black tabular-nums text-[#1E523F] ${isLastYear ? '' : 'border-r border-[#D0C6BB]/75'}`}>
-                          {totalVisVal !== undefined && totalVisVal > 0
-                            ? `${formatCurrency(totalVisVal)}명`
-                            : '-'}
+                          {totalVisVal !== undefined && totalVisVal > 0 ? (
+                            <div className="flex flex-col items-end">
+                              <span>{formatCurrency(totalVisVal)}명</span>
+                              {selectedFacility === '전체' && yearTotal?.roomGuests !== undefined && yearTotal.roomGuests > 0 && (
+                                <span className="text-[10px] text-[#5A6B63] font-semibold">
+                                  (투숙객 {formatCurrency(yearTotal.roomGuests)}명)
+                                </span>
+                              )}
+                            </div>
+                          ) : '-'}
                         </td>
                       </>
                     ) : (
@@ -577,9 +630,16 @@ export default function FacilityTrend() {
                             : '-'}
                         </td>
                         <td className={`px-4 py-4 text-right font-black tabular-nums text-[#1E523F] ${isLastYear ? '' : 'border-r border-[#D0C6BB]/75'}`}>
-                          {totalVisVal !== undefined && totalVisVal > 0
-                            ? `${formatCurrency(totalVisVal)}명`
-                            : '-'}
+                          {totalVisVal !== undefined && totalVisVal > 0 ? (
+                            <div className="flex flex-col items-end">
+                              <span>{formatCurrency(totalVisVal)}명</span>
+                              {selectedFacility === '전체' && yearTotal?.roomGuests !== undefined && yearTotal.roomGuests > 0 && (
+                                <span className="text-[10px] text-[#5A6B63] font-semibold">
+                                  (투숙객 {formatCurrency(yearTotal.roomGuests)}명)
+                                </span>
+                              )}
+                            </div>
+                          ) : '-'}
                         </td>
                       </>
                     )}
@@ -792,7 +852,7 @@ export default function FacilityTrend() {
           <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[#D0C6BB]/75 shadow-[0_4px_20px_rgba(40,79,66,0.06)] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#5A6B63] uppercase tracking-wider">
-                {isAll ? '연간 총이용객 (전사 전체)' : `연간 총이용객 (${facility})`}
+                {isAll ? (golfViewMode === 'EX_GOLF' ? '연간 골프제외 이용객 (전사)' : '연간 골프포함 이용객 (전사)') : `연간 총이용객 (${facility})`}
               </span>
               <span className="text-[10px] bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 px-2 py-0.5 rounded-full font-bold">2026 vs 2025</span>
             </div>
@@ -894,20 +954,55 @@ export default function FacilityTrend() {
 
         {/* 12-Month Seasonality Grid Table */}
         <div className="bg-white rounded-3xl p-3.5 sm:p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75 space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#284F42]" />
-              <span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-[#284F42]" />
+                <span>
+                  {isAll
+                    ? '2026 vs 2025 전사 월별 시즌성 종합 매트릭스'
+                    : `2026 vs 2025 [${facility}] 월별 시즌성 매트릭스`}
+                </span>
+                {isAll && (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
+                    {golfViewMode === 'TOTAL' ? '골프포함 이용객 기준' : '골프제외 이용객 기준'}
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-[#5A6B63] mt-0.5">
                 {isAll
-                  ? '2026 vs 2025 전사 월별 시즌성 종합 매트릭스'
-                  : `2026 vs 2025 [${facility}] 월별 시즌성 매트릭스`}
-              </span>
-            </h2>
-            <p className="text-xs text-[#5A6B63] mt-0.5">
-              {isAll
-                ? '전사 월별 매출, 이용객 수 및 TRevPAR 지표의 전년 대비 증감 실적을 종합 분석합니다.'
-                : `${facility}의 월별 매출 및 이용객 수 전년 대비 증감 실적을 종합 분석합니다.`}
-            </p>
+                  ? `전사 월별 매출, ${golfViewMode === 'EX_GOLF' ? '골프제외 이용객(투숙객+나들이)' : '골프포함 이용객(투숙객+나들이+골프)'} 수 및 TRevPAR 지표의 전년 대비 증감 실적을 종합 분석합니다.`
+                  : `${facility}의 월별 매출 및 이용객 수 전년 대비 증감 실적을 종합 분석합니다.`}
+              </p>
+            </div>
+            {isAll && (
+              <div className="flex items-center bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/75 text-xs font-bold shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setGolfViewMode('TOTAL')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    golfViewMode === 'TOTAL'
+                      ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                      : 'text-[#5A6B63] hover:text-[#1B382E]'
+                  }`}
+                >
+                  <span>🏌️</span>
+                  골프포함 이용객
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGolfViewMode('EX_GOLF')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    golfViewMode === 'EX_GOLF'
+                      ? 'bg-[#284F42] text-white shadow-xs font-bold'
+                      : 'text-[#5A6B63] hover:text-[#1B382E]'
+                  }`}
+                >
+                  <TreePine className="w-3.5 h-3.5 text-[#B59269]" />
+                  골프제외 이용객
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -919,8 +1014,8 @@ export default function FacilityTrend() {
                   <th className="px-4 py-3 text-right">2025년 매출</th>
                   <th className="px-4 py-3 text-right">매출 증감액</th>
                   <th className="px-4 py-3 text-right">매출 증감률</th>
-                  <th className="px-4 py-3 text-right">2026년 이용객</th>
-                  <th className="px-4 py-3 text-right">2025년 이용객</th>
+                  <th className="px-4 py-3 text-right">{isAll ? (golfViewMode === 'EX_GOLF' ? '2026년 골프제외 이용객' : '2026년 골프포함 이용객') : '2026년 이용객'}</th>
+                  <th className="px-4 py-3 text-right">{isAll ? (golfViewMode === 'EX_GOLF' ? '2025년 골프제외 이용객' : '2025년 골프포함 이용객') : '2025년 이용객'}</th>
                   <th className="px-4 py-3 text-right">인원 증감</th>
                   <th className="px-4 py-3 text-right">인원 증감률</th>
                   {isAll && (
@@ -1039,6 +1134,32 @@ export default function FacilityTrend() {
               </tfoot>
             </table>
           </div>
+
+          {isAll && (
+            <div className="pt-3 border-t border-[#D0C6BB]/50 bg-[#F4F3EE]/60 rounded-2xl px-4 py-3 text-xs text-[#5A6B63] space-y-1.5 leading-relaxed">
+              <div className="font-bold text-[#1B382E] flex items-center gap-1.5">
+                <span>📌</span>
+                <span>인원 지표 공식 용어 정의 (이용객 vs 투숙객 구분)</span>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 pt-0.5">
+                <div className={`p-2.5 rounded-xl border ${golfViewMode === 'EX_GOLF' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
+                  <span className="font-extrabold text-[#1E523F]">🌲 골프제외 이용객</span>
+                  <span className="mx-1 text-[#D0C6BB]">|</span>
+                  <span><b>투숙객 + 나들이 고객(워크인)</b> − 숙박·골프 중복 (골프 내장객 제외)</span>
+                </div>
+                <div className={`p-2.5 rounded-xl border ${golfViewMode === 'TOTAL' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
+                  <span className="font-extrabold text-[#1E523F]">🏌️ 골프포함 이용객</span>
+                  <span className="mx-1 text-[#D0C6BB]">|</span>
+                  <span><b>투숙객 + 나들이 고객(워크인) + 골프 내장객</b> − 숙박·골프 중복</span>
+                </div>
+                <div className="p-2.5 rounded-xl border bg-white/80 border-[#D0C6BB]/60">
+                  <span className="font-extrabold text-[#1B382E]">🛏️ 투숙객 (실제 투숙객)</span>
+                  <span className="mx-1 text-[#D0C6BB]">|</span>
+                  <span><b>나들이 고객을 제외한</b> 실제 콘도 객실에 투숙한 순수 투숙객</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1063,12 +1184,12 @@ export default function FacilityTrend() {
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight break-keep">영업장별 월별 실적 추이</h1>
             <p className="text-sm text-white/80 mt-1 break-keep">
-              선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 {selectedFacility === '전체' ? (golfViewMode === 'EX_GOLF' ? '객실 투숙객 (골프제외)' : '객실 투숙객 (골프포함)') : '방문객'} 추이 비교
+              선택한 영업장(또는 벨포레 전체)의 2024년부터 현재까지의 월별 매출 및 {selectedFacility === '전체' ? (golfViewMode === 'EX_GOLF' ? '골프제외 이용객 (투숙객 병기)' : '골프포함 이용객 (투숙객 병기)') : '이용객'} 추이 비교
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            {/* 전체 선택 시 2-Way [골프포함 / 골프제외] 버튼 표출 (매출 + 객실투숙객 동시 전환) */}
+            {/* 전체 선택 시 2-Way [골프포함 / 골프제외] 버튼 표출 (매출 + 이용객 동시 전환) */}
             {selectedFacility === '전체' && (
               <div className="flex items-center bg-white p-1 rounded-2xl border border-[#D0C6BB]/75 text-xs font-bold shadow-xs overflow-x-auto max-w-full">
                 <button
@@ -1078,7 +1199,7 @@ export default function FacilityTrend() {
                       ? 'bg-[#284F42] text-white shadow-xs font-bold'
                       : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
-                  title="매출(골프포함) 및 객실 투숙객(골프포함 순수 체류 총인원) 기준으로 표시합니다"
+                  title="매출(골프포함) 및 골프포함 이용객(투숙객+나들이+골프) 기준으로 표시합니다"
                 >
                   <span>🏌️</span>
                   골프포함
@@ -1090,7 +1211,7 @@ export default function FacilityTrend() {
                       ? 'bg-[#284F42] text-white shadow-xs font-bold'
                       : 'text-[#5A6B63] hover:text-[#1B382E]'
                   }`}
-                  title="매출(골프제외) 및 객실 투숙객(골프제외 순수 콘도 투숙객) 기준으로 표시합니다"
+                  title="매출(골프제외) 및 골프제외 이용객(투숙객+나들이) 기준으로 표시합니다"
                 >
                   <TreePine className="w-3.5 h-3.5 text-[#B59269]" />
                   골프제외
@@ -1174,7 +1295,7 @@ export default function FacilityTrend() {
                       </span>
                       {selectedFacility === '전체' && (
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
-                          {golfViewMode === 'TOTAL' ? '골프포함 (매출 · 체류인원)' : '골프제외 (매출 · 체류인원)'}
+                          {golfViewMode === 'TOTAL' ? '골프포함 (매출 · 골프포함 이용객)' : '골프제외 (매출 · 골프제외 이용객)'}
                         </span>
                       )}
                     </h2>
@@ -1190,7 +1311,7 @@ export default function FacilityTrend() {
                           }`}
                         >
                           <span>🏌️</span>
-                          골프포함
+                          골프포함 이용객
                         </button>
                         <button
                           type="button"
@@ -1202,7 +1323,7 @@ export default function FacilityTrend() {
                           }`}
                         >
                           <TreePine className="w-3.5 h-3.5 text-[#B59269]" />
-                          골프제외
+                          골프제외 이용객
                         </button>
                       </div>
                     )}
@@ -1222,21 +1343,28 @@ export default function FacilityTrend() {
                     <div className="mt-4 pt-3.5 border-t border-[#D0C6BB]/50 bg-[#F4F3EE]/60 rounded-2xl px-4 py-3 text-xs text-[#5A6B63] space-y-1.5 leading-relaxed">
                       <div className="font-bold text-[#1B382E] flex items-center gap-1.5">
                         <span>📌</span>
-                        <span>차트 내 인원 지표(객실 투숙객 / 체류인원) 산출 정의</span>
+                        <span>인원 지표 공식 용어 정의 (이용객 vs 투숙객 구분)</span>
                       </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 pt-0.5">
-                        <div className={`p-2.5 rounded-xl border ${golfViewMode === 'TOTAL' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
-                          <span className="font-extrabold text-[#1E523F]">🏌️ 객실 투숙객 (골프포함)</span>
-                          <span className="mx-1.5 text-[#D0C6BB]">|</span>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 pt-0.5">
+                        <div className={`p-2.5 rounded-xl border ${golfViewMode === 'EX_GOLF' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
+                          <span className="font-extrabold text-[#1E523F]">🌲 골프제외 이용객</span>
+                          <span className="mx-1 text-[#D0C6BB]">|</span>
                           <span>
-                            <b>리조트 순수 체류 총인원</b> = 콘도 숙박객 + <b>나들이 고객(워크인 방문객)</b> + 골프 내장객 − 숙박·골프 중복 인원
+                            <b>투숙객 + 나들이 고객(워크인)</b> − 숙박·골프 중복 (골프 내장객 제외)
                           </span>
                         </div>
-                        <div className={`p-2.5 rounded-xl border ${golfViewMode === 'EX_GOLF' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
-                          <span className="font-extrabold text-[#1E523F]">🌲 객실 투숙객 (골프제외)</span>
-                          <span className="mx-1.5 text-[#D0C6BB]">|</span>
+                        <div className={`p-2.5 rounded-xl border ${golfViewMode === 'TOTAL' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
+                          <span className="font-extrabold text-[#1E523F]">🏌️ 골프포함 이용객</span>
+                          <span className="mx-1 text-[#D0C6BB]">|</span>
                           <span>
-                            <b>골프제외 리조트 체류인원</b> = 리조트 순수 체류 총인원 − 골프 내장객 (= <b>콘도 숙박객 + 나들이 고객(워크인)</b> − 숙박·골프 중복)
+                            <b>투숙객 + 나들이 고객(워크인) + 골프 내장객</b> − 숙박·골프 중복
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl border bg-white/80 border-[#D0C6BB]/60">
+                          <span className="font-extrabold text-[#1B382E]">🛏️ 투숙객 (실제 투숙객)</span>
+                          <span className="mx-1 text-[#D0C6BB]">|</span>
+                          <span>
+                            <b>나들이 고객을 제외한</b> 실제 콘도 객실에 투숙한 순수 투숙객
                           </span>
                         </div>
                       </div>
@@ -1264,7 +1392,7 @@ export default function FacilityTrend() {
                             }`}
                           >
                             <span>🏌️</span>
-                            골프포함 (매출 · 객실투숙객)
+                            골프포함 (매출 · 골프포함 이용객)
                           </button>
                           <button
                             type="button"
@@ -1276,7 +1404,7 @@ export default function FacilityTrend() {
                             }`}
                           >
                             <TreePine className="w-3.5 h-3.5 text-[#B59269]" />
-                            골프제외 (매출 · 객실투숙객)
+                            골프제외 (매출 · 골프제외 이용객)
                           </button>
                         </div>
                       </div>

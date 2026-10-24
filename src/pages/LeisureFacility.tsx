@@ -363,7 +363,7 @@ export default function LeisureFacility() {
                         </span>
                       </div>
                       <p className="text-xs text-[#284F42]/70 font-medium tabular-nums whitespace-nowrap">
-                        {ticket.qty > 0 ? `이용객수 ${ticket.qty.toLocaleString()}명` : '이용객 미집계 (0명)'}
+                        {ticket.qty > 0 ? `시설 이용객(티켓 입장객) ${ticket.qty.toLocaleString()}명` : '시설 이용객 미집계 (0명)'}
                       </p>
                     </div>
                     

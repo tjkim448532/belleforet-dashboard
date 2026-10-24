@@ -1217,6 +1217,31 @@ export default function FacilityTrend() {
                       style={{ height: '100%', width: '100%' }}
                     />
                   </div>
+
+                  {selectedFacility === '전체' && (
+                    <div className="mt-4 pt-3.5 border-t border-[#D0C6BB]/50 bg-[#F4F3EE]/60 rounded-2xl px-4 py-3 text-xs text-[#5A6B63] space-y-1.5 leading-relaxed">
+                      <div className="font-bold text-[#1B382E] flex items-center gap-1.5">
+                        <span>📌</span>
+                        <span>차트 내 인원 지표(객실 투숙객 / 체류인원) 산출 정의</span>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 pt-0.5">
+                        <div className={`p-2.5 rounded-xl border ${golfViewMode === 'TOTAL' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
+                          <span className="font-extrabold text-[#1E523F]">🏌️ 객실 투숙객 (골프포함)</span>
+                          <span className="mx-1.5 text-[#D0C6BB]">|</span>
+                          <span>
+                            <b>리조트 순수 체류 총인원</b> = 콘도 숙박객 + <b>나들이 고객(워크인 방문객)</b> + 골프 내장객 − 숙박·골프 중복 인원
+                          </span>
+                        </div>
+                        <div className={`p-2.5 rounded-xl border ${golfViewMode === 'EX_GOLF' ? 'bg-[#E8F2EE] border-[#284F42]/40 text-[#1B382E]' : 'bg-white/80 border-[#D0C6BB]/60'}`}>
+                          <span className="font-extrabold text-[#1E523F]">🌲 객실 투숙객 (골프제외)</span>
+                          <span className="mx-1.5 text-[#D0C6BB]">|</span>
+                          <span>
+                            <b>골프제외 리조트 체류인원</b> = 리조트 순수 체류 총인원 − 골프 내장객 (= <b>콘도 숙박객 + 나들이 고객(워크인)</b> − 숙박·골프 중복)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Data Table Card */}

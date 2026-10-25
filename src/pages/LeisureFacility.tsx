@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useCoreData } from '../contexts/CoreDataContext';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
-import { Ticket, Trophy, AlertCircle, Wallet, Award, Globe } from 'lucide-react';
+import { Ticket, Trophy, AlertCircle, Wallet, Award, Globe, HelpCircle } from 'lucide-react';
 import GlobalDatePicker from '../components/GlobalDatePicker';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -711,13 +711,39 @@ export default function LeisureFacility() {
                   정상가 대비 실수취 비율
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-[#F4F3EE]/60 border border-[#D0C6BB]/70">
-                <div className="text-xs font-bold text-[#284F42]/70">티켓출력 · 미사용 잔여 금액</div>
-                <div className="text-xl font-black text-[#B59269] mt-1">
-                  {showWon(discountLeakageIntel.summary?.unusedTicketAmount ?? discountLeakageIntel.summary?.totalUnusedAmount)}
+              <div className="p-4 rounded-2xl bg-[#F4F3EE]/60 border border-[#D0C6BB]/70 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-bold text-[#284F42]/70">티켓출력 · 미사용 잔여 금액</span>
+                    <div className="group relative">
+                      <HelpCircle size={15} className="text-[#B59269] hover:text-[#9E7542] cursor-pointer shrink-0" />
+                      <div className="absolute right-0 bottom-full mb-2 w-72 p-3 bg-[#1B382E] text-white text-xs rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 leading-relaxed break-keep border border-white/20">
+                        <div className="font-bold text-[#CAAC86] mb-1 flex items-center gap-1.5">
+                          <span>🎟️ 티켓출력 · 미사용 잔여 금액이란?</span>
+                        </div>
+                        <p className="text-white/90 text-[11px] leading-relaxed">
+                          온·오프라인에서 결제되어 <strong>티켓 발권(출력)은 완료되었으나, 게이트에서 아직 검표(입장·탑승)를 하지 않은</strong> 미사용 상태의 티켓 결제액 합계입니다.
+                        </p>
+                        <div className="mt-1.5 pt-1.5 border-t border-white/15 text-[10px] text-white/70">
+                          ※ 당일 이용 대기 또는 미탑승 취소·환불 모니터링 대상 지표입니다.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xl font-black text-[#B59269] mt-1">
+                    {showWon(discountLeakageIntel.summary?.unusedTicketAmount ?? discountLeakageIntel.summary?.totalUnusedAmount)}
+                  </div>
                 </div>
-                <div className="text-[11px] text-[#284F42]/60 mt-1">
-                  미사용 건수: {(discountLeakageIntel.summary?.unusedTicketCount ?? discountLeakageIntel.summary?.totalUnusedCount) != null ? `${Number(discountLeakageIntel.summary?.unusedTicketCount ?? discountLeakageIntel.summary?.totalUnusedCount).toLocaleString()}건` : '-'}
+                <div className="mt-2 pt-2 border-t border-[#D0C6BB]/40 space-y-0.5">
+                  <div className="text-[11px] font-bold text-[#284F42]/80 flex items-center justify-between">
+                    <span>미사용 건수:</span>
+                    <span className="font-extrabold text-[#1B382E]">
+                      {(discountLeakageIntel.summary?.unusedTicketCount ?? discountLeakageIntel.summary?.totalUnusedCount) != null ? `${Number(discountLeakageIntel.summary?.unusedTicketCount ?? discountLeakageIntel.summary?.totalUnusedCount).toLocaleString()}건` : '-'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#5A6B63] leading-snug break-keep">
+                    발권 완료 후 게이트 미검표(미탑승) 상태 티켓 총액
+                  </p>
                 </div>
               </div>
             </div>

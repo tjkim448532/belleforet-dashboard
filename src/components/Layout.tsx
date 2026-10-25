@@ -108,7 +108,7 @@ export default function Layout() {
 
       {/* Sidebar - Forest & Stone Luxury Theme */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] bg-[#284F42] text-white transform transition-transform duration-300 ease-in-out flex flex-col border-r border-[#1B382E] shadow-2xl ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-hidden bg-[#284F42] text-white transform transition-transform duration-300 ease-in-out flex flex-col border-r border-[#1B382E] shadow-2xl ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${
           isPinned ? 'lg:translate-x-0' : (sidebarOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full')
@@ -151,14 +151,14 @@ export default function Layout() {
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-          <div className="text-[11px] font-semibold text-white/45 mb-4 px-2 tracking-widest uppercase">Dashboards</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-5 px-3 space-y-1.5">
+          <div className="text-[11px] font-semibold text-white/45 mb-3 px-2 tracking-widest uppercase">Dashboards</div>
           
           {commonMenuItems.map((item, idx) => (
             <NavLink
               key={idx}
               to={item.path}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-xl whitespace-nowrap ${
+              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 font-medium transition-all rounded-xl leading-snug break-keep text-sm ${
                 (isActive || (item.path === '/matrix-weekly' && window.location.pathname === '/day-of-week-sales')) && (item.path === '/' ? window.location.pathname === '/' : true)
                   ? 'bg-[#B59269] text-white font-bold shadow-xs'
                   : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -177,10 +177,10 @@ export default function Layout() {
 
           {/* 세일즈본부 Accordion */}
           {hasRole('sales') && (
-            <div className="mt-2">
+            <div className="mt-1.5">
               <button
                 onClick={() => setSalesOpen(!salesOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Briefcase size={20} />
@@ -190,10 +190,10 @@ export default function Layout() {
               </button>
 
               {salesOpen && (
-                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+                <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/group-sales"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive || window.location.pathname === '/sales/room-channels'
                         ? 'bg-[#B59269] text-white font-bold shadow-xs'
                         : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -204,7 +204,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/sales/venue-performance"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -213,7 +213,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/sales/group-master-crm"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -222,7 +222,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/sales/group-venue-preference"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -236,10 +236,10 @@ export default function Layout() {
 
           {/* 골프사업본부 Accordion */}
           {hasRole('golf') && (
-            <div className="mt-2">
+            <div className="mt-1.5">
               <button
                 onClick={() => setGolfOpen(!golfOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Flag size={20} />
@@ -249,10 +249,10 @@ export default function Layout() {
               </button>
               
               {golfOpen && (
-                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+                <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/golf-business"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -261,7 +261,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/golf/channel-intelligence"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -275,10 +275,10 @@ export default function Layout() {
 
           {/* 2. 리조트사업본부 Accordion */}
           {hasRole('resort') && (
-            <div className="mt-2">
+            <div className="mt-1.5">
             <button
               onClick={() => setResortOpen(!resortOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <Hotel size={20} />
@@ -288,10 +288,10 @@ export default function Layout() {
             </button>
             
             {resortOpen && (
-              <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+              <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                 <NavLink
                   to="/resort-business"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
@@ -300,7 +300,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/resort/reservation-status"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/reservation-status'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -311,7 +311,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/condo/dynamic-pricing"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/resort/dynamic-pricing'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -323,7 +323,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/resort/room-guest-analysis"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
@@ -332,7 +332,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/resort/room-guests-yoy"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
@@ -346,10 +346,10 @@ export default function Layout() {
 
           {/* 3. 레저본부 Accordion (리조트사업본부 바로 아래) */}
           {hasRole('leisure') && (
-          <div className="mt-2">
+          <div className="mt-1.5">
             <button
               onClick={() => setLeisureOpen(!leisureOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <Ticket size={20} />
@@ -359,11 +359,11 @@ export default function Layout() {
             </button>
             
             {leisureOpen && (
-              <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+              <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                 <NavLink
                   to="/leisure"
                   end
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
@@ -372,7 +372,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/leisure/usage-rate"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/leisure-usage-rate'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -383,7 +383,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/leisure/package-sales"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/leisure-package-sales'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -395,7 +395,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/leisure/simulator"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/leisure-simulator'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -406,7 +406,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/leisure/gift-shop"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/leisure-gift-shop'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -418,7 +418,7 @@ export default function Layout() {
                 </NavLink>
                 <NavLink
                   to="/leisure/organization"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/leisure-organization'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -434,10 +434,10 @@ export default function Layout() {
 
           {/* 4. 컨텐츠기획본부 Accordion (외주식음 정예화) */}
           {hasRole(['content', 'fnb']) && (
-            <div className="mt-2">
+            <div className="mt-1.5">
               <button
                 onClick={() => setContentOpen(!contentOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Palette size={20} />
@@ -447,10 +447,10 @@ export default function Layout() {
               </button>
               
               {contentOpen && (
-                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+                <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/content/outsourced-fnb"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive || window.location.pathname === '/outsourced-fnb'
                         ? 'bg-[#B59269] text-white font-bold shadow-xs'
                         : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -461,7 +461,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/content/fnb-directory"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -470,7 +470,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/content/group-rankings"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -484,10 +484,10 @@ export default function Layout() {
 
           {/* 5. 👥 회원 & 멤버십 분석 Accordion */}
           {(hasRole('management') || hasRole('resort') || hasRole('golf')) && (
-            <div className="mt-2">
+            <div className="mt-1.5">
               <button
                 onClick={() => setMembersOpen(!membersOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Users size={20} />
@@ -497,10 +497,10 @@ export default function Layout() {
               </button>
               
               {membersOpen && (
-                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+                <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/members"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -509,7 +509,7 @@ export default function Layout() {
                   </NavLink>
                   <NavLink
                     to="/online-members"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                       isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
@@ -523,10 +523,10 @@ export default function Layout() {
 
           {/* 6. ⚡ 시너지 & 매출 예측 분석 Accordion */}
           {hasRole('management') && (
-            <div className="mt-2">
+            <div className="mt-1.5">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl text-sm cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <MonitorPlay size={20} />
@@ -536,11 +536,11 @@ export default function Layout() {
             </button>
             
             {synergyOpen && (
-              <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+              <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                 <NavLink
                   to="/synergy"
                   end
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
@@ -551,7 +551,7 @@ export default function Layout() {
 
                 <NavLink
                   to="/synergy/correlation"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/synergy-correlation'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -563,7 +563,7 @@ export default function Layout() {
 
                 <NavLink
                   to="/synergy/weather-sales"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/synergy-weather'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -576,7 +576,7 @@ export default function Layout() {
 
                 <NavLink
                   to="/synergy/forecast"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/synergy-forecast'
                       ? 'bg-[#B59269] text-white font-bold shadow-xs'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -596,7 +596,7 @@ export default function Layout() {
             <div className="mt-3 pt-2 border-t border-white/10 space-y-1">
               <NavLink
                 to="/strategic-simulator"
-                className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
+                className={({ isActive }) => `flex items-center justify-between px-3.5 py-2.5 font-medium transition-all rounded-xl leading-snug break-keep text-sm ${
                   isActive || window.location.pathname.startsWith('/target-simulator')
                     ? 'bg-[#B59269] text-white font-bold shadow-xs'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
@@ -616,7 +616,7 @@ export default function Layout() {
             <div className="space-y-1">
               <NavLink
                 to="/leisure/pricing"
-                className={({ isActive }) => `flex items-center gap-2.5 px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
+                className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 font-medium transition-all rounded-xl leading-snug break-keep text-sm ${
                   isActive || window.location.pathname === '/pricing' || window.location.pathname === '/leisure-pricing'
                     ? 'bg-[#B59269] text-white font-bold shadow-xs'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
@@ -663,7 +663,7 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isPinned ? 'lg:ml-64' : 'lg:ml-0'}`}>
+      <main className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isPinned ? 'lg:ml-72' : 'lg:ml-0'}`}>
         {/* Desktop Expand Button when unpinned */}
         {!isPinned && (
           <button

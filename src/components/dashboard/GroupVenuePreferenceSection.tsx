@@ -203,7 +203,7 @@ export default function GroupVenuePreferenceSection({
   };
 
   const handleResetFilters = () => {
-    setVenueCategory('ALL');
+    setVenueCategory(initialVenueCategory);
     setGroupSegment('ALL');
     setSearchInput('');
     setAppliedSearch('');
@@ -299,16 +299,20 @@ export default function GroupVenuePreferenceSection({
   const showSegmentsAndTrails =
     mode === 'SEGMENTS_AND_TRAILS' || (mode === 'ALL' && internalTab === 'SEGMENTS');
 
+  const isFnbMode = initialVenueCategory === 'FNB' || venueCategory === 'FNB';
+
   const headerTitle =
     mode === 'RANKINGS_ONLY'
-      ? '영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 급증률'
+      ? (isFnbMode ? '식음 매장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 급증률' : '영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 급증률')
       : mode === 'SEGMENTS_AND_TRAILS'
       ? '단체 유형별 선호 매장 · 평균 매출 및 리조트 내 방문 동선'
       : '영업장별 단체 방문 순위 · 단체 유형별 선호도 · 단체 방문 시 평균 매출 & 급증률';
 
   const headerDesc =
     mode === 'RANKINGS_ONLY'
-      ? '각 식음·부대 영업장에 단체가 얼마나 많이 방문하는지(유치 순위), 단체가 왔을 때 1팀당 평균 매출과 매장 일평균 매출 급증률은 얼마인지 정리합니다.'
+      ? (isFnbMode
+          ? '각 외주·직영 식음 영업장에 단체가 얼마나 많이 방문하는지(유치 순위), 단체가 왔을 때 1팀당 평균 지출과 매장 일평균 매출 급증 효과를 분석합니다.'
+          : '각 식음·부대 영업장에 단체가 얼마나 많이 방문하는지(유치 순위), 단체가 왔을 때 1팀당 평균 매출과 매장 일평균 매출 급증률은 얼마인지 정리합니다.')
       : mode === 'SEGMENTS_AND_TRAILS'
       ? '어떤 단체 종류(대기업·공공기관·학교·여행사)가 방문했을 때 매출이 크게 늘어나는지, 단체별 선호 영업장 공식과 1:N 실제 매장 방문 동선을 분석합니다.'
       : '각 영업장에 단체가 얼마나 방문하는지(순위), 어떤 단체 종류가 방문했을 때 매출이 늘어나는지, 단체 방문 시 평균 매출을 종합 분석합니다.';
@@ -339,7 +343,11 @@ export default function GroupVenuePreferenceSection({
               </div>
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#284F42]/10 border border-[#284F42]/20 text-[#284F42] text-xs font-bold mb-1.5">
-                  <span>컨텐츠기획본부 · 숙박·연회 단체 × 식음/부대 영업장 분석</span>
+                  <span>
+                    {isFnbMode
+                      ? '콘텐츠운영본부 · 외주식음 × 단체 방문 순위 & 매출 효과 분석'
+                      : '컨텐츠기획본부 · 숙박·연회 단체 × 식음/부대 영업장 분석'}
+                  </span>
                   {period?.startDate && period?.endDate && (
                     <span className="text-[#B59269] font-mono ml-1">
                       ({period.startDate} ~ {period.endDate}
@@ -380,9 +388,19 @@ export default function GroupVenuePreferenceSection({
             onChange={(e) => setVenueCategory(e.target.value)}
             className="bg-[#F4F3EE] border border-[#D0C6BB]/80 text-[#1B382E] text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-[#284F42] cursor-pointer"
           >
-            <option value="ALL">전체 매장 (식음+레저)</option>
-            <option value="FNB">식음 매장 (F&B)</option>
-            <option value="LEISURE">레저/부대시설</option>
+            {initialVenueCategory === 'FNB' ? (
+              <>
+                <option value="FNB">식음 매장 (F&B - 기본)</option>
+                <option value="ALL">전체 매장 (식음+레저 포함)</option>
+                <option value="LEISURE">레저/부대시설만</option>
+              </>
+            ) : (
+              <>
+                <option value="ALL">전체 매장 (식음+레저)</option>
+                <option value="FNB">식음 매장 (F&B)</option>
+                <option value="LEISURE">레저/부대시설</option>
+              </>
+            )}
           </select>
 
           {/* 단체 유형 */}
@@ -639,9 +657,13 @@ export default function GroupVenuePreferenceSection({
                 <div>
                   <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
                     <Trophy size={19} className="text-[#B59269]" />
-                    <span>영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 매출 급증률 리더보드</span>
+                    <span>
+                      {venueCategory === 'FNB'
+                        ? '식음 매장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 매출 급증률 리더보드'
+                        : '영업장별 단체 방문 순위 · 단체 방문 시 평균 매출 및 매출 급증률 리더보드'}
+                    </span>
                     <span className="text-xs font-bold text-[#284F42] bg-[#284F42]/10 border border-[#284F42]/20 px-2.5 py-0.5 rounded-full">
-                      {venueRankings.length}개 영업장
+                      {venueRankings.length}개 {venueCategory === 'FNB' ? '식음 매장' : '영업장'}
                     </span>
                   </h3>
                   <p className="text-xs text-[#5A6B63] mt-1">

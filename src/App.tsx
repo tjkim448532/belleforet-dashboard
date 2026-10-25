@@ -121,7 +121,7 @@ export function App() {
                     <Route path="leisure-gift-shop" element={<LeisureGiftShop />} />
                     <Route path="content/outsourced-fnb" element={<OutsourcedFnbDashboard viewMode="CARDS" />} />
                     <Route path="outsourced-fnb" element={<OutsourcedFnbDashboard viewMode="CARDS" />} />
-                    <Route path="content/group-rankings" element={<GroupVenuePreferenceSection mode="RANKINGS_ONLY" isStandalonePage={true} />} />
+                    <Route path="content/group-rankings" element={<GroupVenuePreferenceSection initialVenueCategory="FNB" mode="RANKINGS_ONLY" isStandalonePage={true} />} />
                     <Route path="content/group-segments" element={<GroupVenuePreferenceSection mode="SEGMENTS_AND_TRAILS" isStandalonePage={true} />} />
                     <Route path="content/fnb-directory" element={<OutsourcedFnbDashboard viewMode="DIRECTORY" />} />
                     <Route path="target-simulator" element={<Navigate to="/strategic-simulator" replace />} />

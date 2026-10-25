@@ -6,7 +6,7 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Calendar, RefreshCw, Hotel, 
   Award, Flag, Smartphone, Briefcase, Layers, Sparkles, UserCheck,
-  Search, Building2, Coins, CheckCircle2
+  Search, Building2, Coins, CheckCircle2, Info
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -28,6 +28,7 @@ export default function Members() {
   // 1. 콘도/객실 회원권 및 요금타입별 실적 (room-rate-sales)
   const [rateRows, setRateRows] = useState<any[]>([]);
   const [ratePeriodMode, setRatePeriodMode] = useState<'today' | 'mtd' | 'ytd'>('today');
+  const [showLyColumns, setShowLyColumns] = useState<boolean>(false);
 
   // 2. 골프 분양회원 및 회원 동반 시너지 (golf-channel-intelligence & teetime-analysis-v2)
   const [golfIntel, setGolfIntel] = useState<any>(null);
@@ -139,6 +140,13 @@ export default function Members() {
   const grandTotalRoomRow = rateRows.find(r => r.isGrandTotal || r.rateName === '총합계') || null;
 
   const segmentRateRows = rateRows.filter(r => !r.isGrandTotal && r.rateName !== '총합계');
+
+  const hasLyData = segmentRateRows.some(
+    r => (r.todayLyRooms != null && r.todayLyRooms !== 0) || 
+         (r.todayLyRevenue != null && r.todayLyRevenue !== 0) ||
+         (r.lyRoomsSold != null && r.lyRoomsSold !== 0) ||
+         (r.lyTotalRevenue != null && r.lyTotalRevenue !== 0)
+  );
 
   const isMemberRateCategory = (row: any): boolean => {
     if (row?.isMemberCategory != null) return Boolean(row.isMemberCategory);
@@ -517,31 +525,49 @@ export default function Members() {
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#F4F3EE] p-1 rounded-xl self-start lg:self-center border border-[#D0C6BB]/60">
+          <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
+            {/* 전년동기(LY) 컬럼 토글 버튼 */}
             <button
-              onClick={() => setRatePeriodMode('today')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ratePeriodMode === 'today' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
+              onClick={() => setShowLyColumns(!showLyColumns)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                showLyColumns
+                  ? 'bg-[#B59269] text-white border-[#B59269] shadow-2xs'
+                  : 'bg-white text-[#5A6B63] border-[#D0C6BB]/80 hover:bg-[#F4F3EE]'
               }`}
+              title="2025년 원천 PMS에 요금타입 분류 코드가 없어 전년동기 실적은 미제공 상태입니다."
             >
-              조회기간 실적
+              전년동기(LY) 컬럼 {showLyColumns ? '숨김' : '표시'}
+              {!hasLyData && (
+                <span className="ml-1 text-[10px] opacity-80">(원천 미제공)</span>
+              )}
             </button>
-            <button
-              onClick={() => setRatePeriodMode('mtd')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ratePeriodMode === 'mtd' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
-              }`}
-            >
-              당월 누적 (MTD)
-            </button>
-            <button
-              onClick={() => setRatePeriodMode('ytd')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ratePeriodMode === 'ytd' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
-              }`}
-            >
-              연간 누적 (YTD)
-            </button>
+
+            <div className="flex items-center gap-1.5 bg-[#F4F3EE] p-1 rounded-xl border border-[#D0C6BB]/60">
+              <button
+                onClick={() => setRatePeriodMode('today')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ratePeriodMode === 'today' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                조회기간 실적
+              </button>
+              <button
+                onClick={() => setRatePeriodMode('mtd')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ratePeriodMode === 'mtd' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                당월 누적 (MTD)
+              </button>
+              <button
+                onClick={() => setRatePeriodMode('ytd')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ratePeriodMode === 'ytd' ? 'bg-[#284F42] text-white shadow-2xs' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                연간 누적 (YTD)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -577,8 +603,30 @@ export default function Members() {
                 <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/50">조회기간 객실</th>
                 <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/50">조회기간 순매출</th>
                 <th className="py-3.5 px-4 text-right bg-[#E8F2EE]/50">조회기간 ADR</th>
-                <th className="py-3.5 px-4 text-right">전년동기(LY) 객실</th>
-                <th className="py-3.5 px-4 text-right">전년동기(LY) 매출</th>
+                {(showLyColumns || hasLyData) && (
+                  <>
+                    <th className="py-3.5 px-4 text-right bg-[#FAF6F0]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>전년동기(LY) 객실</span>
+                        {!hasLyData && (
+                          <span className="text-[10px] text-[#8B6E4E] font-normal" title="2025년 원천 PMS에 요금타입 분류 코드가 없어 미제공 상태입니다.">
+                            *미제공
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3.5 px-4 text-right bg-[#FAF6F0]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>전년동기(LY) 매출</span>
+                        {!hasLyData && (
+                          <span className="text-[10px] text-[#8B6E4E] font-normal" title="2025년 원천 PMS에 요금타입 분류 코드가 없어 미제공 상태입니다.">
+                            *미제공
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  </>
+                )}
                 <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/60">당월(MTD) 객실</th>
                 <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/60">당월(MTD) 매출</th>
                 <th className="py-3.5 px-4 text-right bg-[#F4F3EE]/80">연간(YTD) 객실</th>
@@ -626,14 +674,22 @@ export default function Members() {
                       {formatNum(row.todayRevenue || 0)}원
                     </td>
                     <td className="py-3.5 px-4 text-right font-semibold text-[#5A6B63] bg-[#E8F2EE]/20 whitespace-nowrap">
-                      {Number(row.todayAdr || 0) > 0 ? `${formatNum(row.todayAdr)}원` : '-'}
+                      {Number(row.todayAdr || 0) > 0 
+                        ? `${formatNum(row.todayAdr)}원` 
+                        : Number(row.todayRooms || 0) === 0 && Number(row.todayRevenue || 0) > 0
+                        ? <span title="객실 판매 실적 없는 순수 부대매출 항목으로 ADR(객실단가) 산출 제외" className="text-[#8C9E96] text-xs cursor-help">해당없음</span>
+                        : '-'}
                     </td>
-                    <td className="py-3.5 px-4 text-right text-[#5A6B63] whitespace-nowrap">
-                      {lyRooms !== null ? `${formatNum(lyRooms)}실` : '-'}
-                    </td>
-                    <td className="py-3.5 px-4 text-right text-[#5A6B63] whitespace-nowrap">
-                      {lyRev !== null ? `${formatNum(lyRev)}원` : '-'}
-                    </td>
+                    {(showLyColumns || hasLyData) && (
+                      <>
+                        <td className="py-3.5 px-4 text-right text-[#5A6B63] bg-[#FAF6F0]/50 whitespace-nowrap">
+                          {lyRooms !== null ? `${formatNum(lyRooms)}실` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-[#5A6B63] bg-[#FAF6F0]/50 whitespace-nowrap">
+                          {lyRev !== null ? `${formatNum(lyRev)}원` : '-'}
+                        </td>
+                      </>
+                    )}
                     <td className="py-3.5 px-4 text-right font-semibold text-[#1B382E] bg-[#F4F3EE]/40 whitespace-nowrap">
                       {formatNum(row.mtdRooms || 0)}실
                     </td>
@@ -647,7 +703,11 @@ export default function Members() {
                       {formatNum(row.ytdRevenue || 0)}원
                     </td>
                     <td className="py-3.5 px-5 text-right font-semibold text-[#5A6B63] bg-[#F4F3EE]/60 whitespace-nowrap">
-                      {Number(row.ytdAdr || 0) > 0 ? `${formatNum(row.ytdAdr)}원` : '-'}
+                      {Number(row.ytdAdr || 0) > 0 
+                        ? `${formatNum(row.ytdAdr)}원` 
+                        : Number(row.ytdRooms || 0) === 0 && Number(row.ytdRevenue || 0) > 0
+                        ? <span title="객실 판매 실적 없는 순수 부대매출 항목으로 ADR(객실단가) 산출 제외" className="text-[#8C9E96] text-xs cursor-help">해당없음</span>
+                        : '-'}
                     </td>
                   </tr>
                 );
@@ -671,16 +731,20 @@ export default function Members() {
                   <td className="py-4 px-4 text-right text-white whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.todayAdr || 0)}원
                   </td>
-                  <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
-                    {(grandTotalRoomRow.todayLyRooms ?? grandTotalRoomRow.lyRoomsSold) != null
-                      ? `${formatNum(grandTotalRoomRow.todayLyRooms ?? grandTotalRoomRow.lyRoomsSold)}실`
-                      : '-'}
-                  </td>
-                  <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
-                    {(grandTotalRoomRow.todayLyRevenue ?? grandTotalRoomRow.lyTotalRevenue) != null
-                      ? `${formatNum(grandTotalRoomRow.todayLyRevenue ?? grandTotalRoomRow.lyTotalRevenue)}원`
-                      : '-'}
-                  </td>
+                  {(showLyColumns || hasLyData) && (
+                    <>
+                      <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
+                        {(grandTotalRoomRow.todayLyRooms ?? grandTotalRoomRow.lyRoomsSold) != null
+                          ? `${formatNum(grandTotalRoomRow.todayLyRooms ?? grandTotalRoomRow.lyRoomsSold)}실`
+                          : '-'}
+                      </td>
+                      <td className="py-4 px-4 text-right text-[#D0C6BB] whitespace-nowrap">
+                        {(grandTotalRoomRow.todayLyRevenue ?? grandTotalRoomRow.lyTotalRevenue) != null
+                          ? `${formatNum(grandTotalRoomRow.todayLyRevenue ?? grandTotalRoomRow.lyTotalRevenue)}원`
+                          : '-'}
+                      </td>
+                    </>
+                  )}
                   <td className="py-4 px-4 text-right text-white whitespace-nowrap">
                     {formatNum(grandTotalRoomRow.mtdRooms || 0)}실
                   </td>
@@ -700,6 +764,25 @@ export default function Members() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* 전년동기(LY) 및 객실부대 팩트 안내 배너 */}
+        <div className="p-4 bg-[#FAF6F0] rounded-2xl border border-[#D0C6BB] flex items-start gap-3 text-xs text-[#1B382E]">
+          <div className="p-1 bg-[#EFE9DF] rounded-lg text-[#8B6E4E] shrink-0 mt-0.5">
+            <Info size={15} />
+          </div>
+          <div className="space-y-1">
+            <div className="font-bold text-[#1B382E] flex items-center gap-1.5 flex-wrap">
+              <span>콘도 요금타입별 정산 지표 표기 안내</span>
+              <span className="text-[10px] font-semibold bg-[#E8F2EE] text-[#1E523F] px-1.5 py-0.2 rounded border border-[#B4C6C1]/60">
+                Zero-Hallucination 실측 원칙
+              </span>
+            </div>
+            <p className="text-[#5A6B63] leading-relaxed">
+              • <b>전년동기(LY) 실적</b>: 2025년 객실 원천 데이터는 회원권·패키지 등 요금타입별 분류 코드가 부재(일반 단일 항목 덤프)하여, 세그먼트별 전년동기 실적이 제공되지 않습니다. 상단 [전년동기(LY) 컬럼 표시] 버튼으로 컬럼 토글이 가능합니다.<br />
+              • <b>객실부대(기타) ADR</b>: 객실 판매 실적이 없는 순수 부대매출 항목으로, 객단가(ADR = 매출 / 판매실수)의 분모가 0이므로 '해당없음'으로 표기됩니다.
+            </p>
+          </div>
         </div>
       </div>
 

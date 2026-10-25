@@ -1199,6 +1199,69 @@ export default function TomorrowRevenueForecast() {
                   <strong className="text-[#1B382E]">isClosed: true</strong>: 비공휴일 월요일 정기 휴무 자동 0원 셧다운
                 </div>
               </div>
+
+              {/* 쉬운 해설 아코디언 (접었다 폈다 기능) */}
+              <details className="mt-4 bg-[#E8F2EE]/50 border border-[#B4C6C1]/70 rounded-2xl p-4 group transition-all">
+                <summary className="cursor-pointer font-bold text-xs sm:text-sm text-[#1E523F] flex items-center justify-between select-none list-none">
+                  <span className="flex items-center gap-2">
+                    <span>💡 초등학생도 1초 만에 이해하는 쉬운 원리 (클릭해서 펼치기)</span>
+                  </span>
+                  <span className="text-xs text-[#284F42] bg-white px-2 py-0.5 rounded-lg border border-[#B4C6C1]/60 font-semibold group-open:hidden">
+                    펼쳐보기 ▼
+                  </span>
+                  <span className="text-xs text-[#284F42] bg-white px-2 py-0.5 rounded-lg border border-[#B4C6C1]/60 font-semibold hidden group-open:inline">
+                    접기 ▲
+                  </span>
+                </summary>
+                
+                <div className="mt-3 pt-3 border-t border-[#B4C6C1]/40 text-xs text-[#1B382E] space-y-2.5 leading-relaxed">
+                  <p className="font-semibold text-[#1E523F]">
+                    어려운 수학 기호 같지만, 사실 <b>"내일 우리 가게에 손님이 얼마나 오고 얼마를 벌까?"</b>를 햄버거 세트 맞추듯 곱하고 더하는 아주 간단한 공식입니다!
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/60">
+                      <div className="font-bold text-[#284F42] flex items-center gap-1.5 mb-1">
+                        <span>1️⃣ Base (평소 실력)</span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6B63]">
+                        "평소에 보통 하루에 얼마 벌었지?" ➔ 지난 2년 동안 실제로 벌었던 하루 평균 매출에서 출발합니다.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/60">
+                      <div className="font-bold text-[#284F42] flex items-center gap-1.5 mb-1">
+                        <span>2️⃣ S × D (계절과 요일 곱하기)</span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6B63]">
+                        "지금 여름이야 겨울이야? 내일 토요일이야 화요일이야?" ➔ 여름 워터파크는 3배 곱하고, 손님 많은 토요일은 2.5배 뻥튀기합니다.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/60">
+                      <div className="font-bold text-[#284F42] flex items-center gap-1.5 mb-1">
+                        <span>3️⃣ H × W (빨간날과 날씨 곱하기)</span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6B63]">
+                        "내일 공휴일이야? 비가 쏟아져?" ➔ 빨간 날은 2배 올리고, 비가 오면 카트·놀이동산은 반토막(-50%), 실내 미디어아트는 손님이 늘어납니다.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/60">
+                      <div className="font-bold text-[#284F42] flex items-center gap-1.5 mb-1">
+                        <span>4️⃣ + 보너스 손님 (Spillover)</span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6B63]">
+                        "내일 콘도에 방이 다 찼대! 골프 치러 100팀이나 온대!" ➔ 방에서 자는 손님들이 저녁에 밥 먹으러 올 <b>확정된 보너스 매출</b>을 더해줍니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#FAF6F0] p-2.5 rounded-xl border border-[#D0C6BB] text-[11px] text-[#8B6E4E] font-medium flex items-center gap-2">
+                    <span>🚪 <b>정기 휴무일</b>: 내일이 문 닫는 월요일이면? 날씨가 아무리 좋아도 무조건 <b>0원</b>으로 자동 계산합니다!</span>
+                  </div>
+                </div>
+              </details>
             </div>
           </>
         )}

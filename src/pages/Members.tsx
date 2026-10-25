@@ -116,14 +116,35 @@ export default function Members() {
   }, [startDate, endDate, isRange]);
 
   // --- 1. 콘도 회원권 데이터 추출 (백엔드 완제품 직접 매핑, NO SLICE SUMMATION) ---
-  const memberRoomRow = rateRows.find(r => r.rateCode === 'REGISTERED_MEMBER' || r.rateName === '기명/구좌회원' || r.segmentName === '기명/구좌회원') || null;
-  const bearerRoomRow = rateRows.find(r => r.rateCode === 'BEARER_MEMBER' || r.rateName === '무기명회원' || r.segmentName === '무기명회원') || null;
+  const memberRoomRow = rateRows.find(r => 
+    (r.depth === 1 || !r.isSubRow) && (
+      r.rateCode === 'REGISTERED_MEMBER' || 
+      r.rateName === '기명/구좌회원' || 
+      r.segmentName === '기명/구좌회원' ||
+      String(r.rateName || '').includes('기명/구좌회원') ||
+      String(r.segmentName || '').includes('기명/구좌회원')
+    )
+  ) || null;
+
+  const bearerRoomRow = rateRows.find(r => 
+    (r.depth === 1 || !r.isSubRow) && (
+      r.rateCode === 'BEARER_MEMBER' || 
+      r.rateName === '무기명회원' || 
+      r.segmentName === '무기명회원' ||
+      String(r.rateName || '').includes('무기명회원') ||
+      String(r.segmentName || '').includes('무기명회원')
+    )
+  ) || null;
+
   const grandTotalRoomRow = rateRows.find(r => r.isGrandTotal || r.rateName === '총합계') || null;
 
   const segmentRateRows = rateRows.filter(r => !r.isGrandTotal && r.rateName !== '총합계');
 
   const isMemberRateCategory = (row: any): boolean => {
-    return Boolean(row?.isMemberCategory ?? row?.isMember ?? false);
+    if (row?.isMemberCategory != null) return Boolean(row.isMemberCategory);
+    if (row?.isMember != null) return Boolean(row.isMember);
+    const name = String(row?.rateName || row?.segmentName || '');
+    return name.includes('기명') || name.includes('무기명') || name.includes('회원') || name.includes('Member');
   };
 
   // --- 2. 골프 분양회원 및 앵커 데이터 추출 ---
@@ -151,6 +172,8 @@ export default function Members() {
   // 콘도 요금타입별 비교 차트 옵션
   const getCondoRateChartOption = () => {
     const validRows = segmentRateRows.filter(r => {
+      // 상위 세그먼트만 차트에 표시 (하위 평형별 서브로우 중복 차트 표출 방지)
+      if (r.depth > 1 || r.isSubRow) return false;
       const rooms =
         ratePeriodMode === 'today'
           ? Number(r.todayRooms || 0)
@@ -577,11 +600,16 @@ export default function Members() {
                       isMember ? 'bg-[#E8F2EE]/30 hover:bg-[#E8F2EE]/60' : 'hover:bg-[#F4F3EE]/50'
                     }`}
                   >
-                    <td className="py-3.5 px-5 font-black text-[#1B382E] whitespace-nowrap">
+                    <td className={`py-3.5 px-5 whitespace-nowrap ${row.isSubRow ? 'pl-9 text-xs font-semibold text-[#5A6B63]' : 'font-black text-[#1B382E]'}`}>
+                      {row.isSubRow && <span className="text-[#8C9E96] mr-1.5 font-normal">↳</span>}
                       {rName}
                     </td>
                     <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                      {isMember ? (
+                      {row.isSubRow ? (
+                        <span className="text-[10px] text-[#8C9E96]">
+                          {row.roomType || row.pyungType || '평형별'}
+                        </span>
+                      ) : isMember ? (
                         <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70">
                           회원·협약
                         </span>

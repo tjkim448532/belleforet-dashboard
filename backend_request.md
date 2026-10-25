@@ -46,6 +46,8 @@
 | **P1 (높음)** | 알고리즘 | **[Ticket 53] 다이나믹 프라이싱 2026년 전략 인상 단가(18만원대) 앵커링 및 과거 단순평균 배제** | [요청서 발행] 2025년 과거 단가에 앵커되어 3.6만원 디스카운트 추천되는 역효과 방지, 2026년 실측 Retail ADR 기준 상향 프라이싱 요청 (`room-dynamic-pricing`) |
 | **P1 (긴급)** | 데이터 동기화 | **[Ticket 54] 메인 대시보드 골프 1·2·3부 완주 팀수(`visitedTeams`) 0팀 고착 결함 해소** | [요청서 발행] `revenue-summary`가 마감된 골프 티타임 완제품(`golf-channel-teetime-analysis-v2` 113팀)을 동기화하지 않고 0팀으로 출력되는 결함 해소 요청 |
 | **P1 (긴급)** | 데이터 정합성 | **[Ticket 55] 리조트 정밀 대조표 내 주중/주말 및 평형별 증감률(YoY)의 기간(MTD) 동적 집계 수정** | [요청서 발행] `resort-business-summary`가 기간 조회 시에도 YTD 연간 누적 성장률(+24.3%)을 고정 반환하여 당월 실적(-88만원)과 부호가 엇갈리는 결함 해소 요청 |
+| **P1 (높음)** | 데이터 정합성 | **[Ticket 71] `벨포레 목장(체험)` 2026년 4월 이전 분자(체험객수) 0명 실적 조사 및 `facilityPeriodCumulative` 누적 YoY 증감 필드 제공** | 2026년 5월 이전 체험객수 0명 고착 현상 원천 확인 및 백필, 누적 객체 내 `yoyUsageRateDiff` 완제품 필드 제공 요청 (`leisure-yoy-matrix`) |
+| **P1 (높음)** | API 보강 | **[Ticket 72] `room-rate-sales` API 내 전년동기(LY) 객실수(`todayLyRooms`) 및 매출액(`todayLyRevenue`) 완제품 필드 추가** | 회원권/요금타입별 정산 대조표에 전년 동일 기간(LY) 실적 완제품 필드 및 총합계 LY 매핑 제공 요청 (`room-rate-sales`) |
 
 ---
 
@@ -4374,4 +4376,47 @@ ORDER BY venue_name, rn;
      - 직전 1개년(2025년) 실측 실적 단독 기준선(`grandTotal2025`)을 기준으로 반환해 주십시오.
 2. **`GET /api/v6/report/room-guests-yoy`**:
    - 응답 객체 `totals`에 투숙객 총합(`totals['2024']`, `totals['2025']`, `totals['2026']`)과 더불어, 각 연도의 **연간 총 판매 방수(`roomsSoldTotals: { '2024': number, '2025': number, '2026': number }`)** 및 방수 전년비 증감(`yoyRoomsDiff: number`, `yoyRoomsPct: number`)을 공식 완제품으로 포함해 주십시오.
+
+---
+
+## 71. 🎡 [P1 데이터 정합성] Ticket 71 — `leisure-yoy-matrix` 내 `벨포레 목장(체험)` 2026년 4월 이전 분자(체험객수) 0명 실적 조사 및 `facilityPeriodCumulative` 누적 YoY 증감 필드 제공 요청 (2026-10-25)
+
+### 71-1. 배경 및 현상
+1. **모수(분모)는 완벽 정상화**:
+   - `GET /api/v6/report/leisure-yoy-matrix` 및 `leisure-usage-rate`에서 `벨포레 목장(체험)`의 모수가 리조트 전체 골프제외 인원이 아닌 '벨포레 목장 입장객수'(2026년 5월 기준 14,174명 등)로 완벽하게 치환되어 작동 중입니다.
+2. **2026년 4월 이전 분자(체험객수) 0명 고착 결함**:
+   - 2026년 5월(1,178명 / 8.3%), 6월(466명 / 7.1%), 7월(355명 / 8.4%), 8월(452명 / 7.2%), 9월(882명 / 8.9%), 10월(995명 / 9.1%)은 분자(체험객수)가 정상 집계되고 있으나,
+   - **2026년 4월 이전 구간(2024년 전체, 2025년 전체, 2026년 1~4월)은 분모(목장 입장객)는 정상이나 분자(체험객수)가 전부 `0명 (0.0%)`으로 적재**되어 있습니다.
+   - 대표님 및 경영진이 화면 조회 시 2026년 5월 이전이 전부 0.0%로 나와 시스템 결함으로 인지할 우려가 큽니다.
+3. **선택 구간 누적(`facilityPeriodCumulative`) YoY 증감률 필드 누락**:
+   - 월별 행(`pivotData`)에는 `yoyUsageRateDiff`가 반환되고 있으나, 하단 선택 구간 누적 객체(`facilityPeriodCumulative['벨포레 목장(체험)']`)에는 연도 간 증감 필드(`yoyUsageRateDiff` 또는 `yearDiffs`)가 누락되어 있어 누적 행 증감이 `-`로 표출됩니다.
+
+### 71-2. 백엔드 조치 요청 사항 (V6 5대 철칙 준수)
+1. **과거 먹이체험/승마체험 품목 원장 확인 및 백필(Backfill)**:
+   - 사내 POS/발권기에서 "양·알파카 먹이주기 체험", "승마 체험" 등의 단품 품목이 실제로 2026년 5월에 신설된 것인지 확인 요청.
+   - 만약 2024~2025년 및 2026년 1~4월에도 판매가 이루어졌다면, 당시 POS 품목명이 달라 `admin/mapping`에서 누락되었거나 '목장 입장료'에 합산되었던 것인지 점검하고, '벨포레 목장(체험)'으로 재분류하여 과거 실적을 백필해 주십시오.
+2. **`facilityPeriodCumulative` 객체 내 누적 YoY 증감률 필드 제공**:
+   - `facilityPeriodCumulative[venueName][year]` 객체에 월별과 동일하게 **`yoyUsageRateDiff: number` (또는 `yearDiffs: { [compYear]: { usageRateDiff: number, visitorsDiff: number } }`)** 완제품 필드를 제공해 주십시오.
+
+---
+
+## 72. 🏨 [P1 완제품 API] Ticket 72 — `room-rate-sales` API 내 전년동기(LY) 객실수(`todayLyRooms`) 및 매출액(`todayLyRevenue`) 완제품 필드 추가 요청 (2026-10-25)
+
+### 72-1. 배경 및 현상
+1. **전년동기(LY) 컬럼 전체 빈칸(`-`) 표출 결함**:
+   - `GET /api/v6/report/room-rate-sales?startDate=...&endDate=...` 응답 객체에는 당해 연도 실적(`todayRooms, todayRevenue, todayAdr, mtdRooms, mtdRevenue, mtdAdr, ytdRooms, ytdRevenue, ytdAdr`)만 포함되어 있습니다.
+   - **전년 동기(LY: Previous Year Same Period)에 대한 객실수(`todayLyRooms` 또는 `lyRoomsSold`), 매출액(`todayLyRevenue` 또는 `lyTotalRevenue`), 객단가(`todayLyAdr`) 필드가 누락**되어 있어, 대시보드 테이블의 전년동기 컬럼이 전체 `-`로 비어 표출되는 결함이 발생합니다.
+2. **원천 PMS 환경 확인 결과**:
+   - 2025년 동기간(`2025-01-01 ~ 2025-10-24`)으로 API 호출 시, 전체 객실 실적이 `일반(비회원/OTA)`(24,258실 / 37.75억원) 단일 코드로 집계되어 있어 요금타입별 상세 분류가 부재한 상태입니다.
+
+### 72-2. 백엔드 조치 요청 사항 (V6 5대 철칙 준수)
+1. **`room-rate-sales` 응답 내 전년 동기(LY) 완제품 필드 탑재**:
+   - 각 요금타입별 행(Row) 및 하단 `isGrandTotal: true`(총합계) 행에 전년 동일 기간(LY)의 실적 필드를 공식 제공해 주십시오:
+     - **`todayLyRooms: number | null`**: 전년 동일 기간 판매 객실수
+     - **`todayLyRevenue: number | null`**: 전년 동일 기간 순매출액
+     - **`todayLyAdr: number | null`**: 전년 동일 기간 객단가
+2. **2025년 과거 PMS 원장 요금타입 세분화 백필 또는 총합계 매핑**:
+   - 2025년 원천 데이터 상 기명/무기명/패키지/기업영업 구분이 가능하다면 매핑 테이블을 통해 세그먼트별 전년동기 실적을 백필해 주십시오.
+   - 만약 2025년 원천 로그 상 세그먼트 세분화가 불가능하다면, **`총합계 (isGrandTotal: true)` 행에 대해서라도 2025년 동기간 총합계 실적(객실수 24,258실, 순매출 3,808,731,095원, ADR 157,009원)을 `todayLyRooms`, `todayLyRevenue`, `todayLyAdr`로 정확히 매핑**하여 반환해 주십시오.
+
 

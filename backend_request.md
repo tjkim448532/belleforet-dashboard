@@ -4333,3 +4333,24 @@ ORDER BY venue_name, rn;
 | **2026년** | 13,531 | 17,687 | 17,996 | 21,115 | 31,364 | 20,414 | 22,714 | 26,870 | 23,392 | 20,150 *(10/23 마감)* | - | - | **215,233명** | **215,233명** |
 
 
+
+
+---
+
+## 69. 📊 [P1 API 보강] Ticket 69 — `GET /api/v6/report/monthly-room-efficiency` 내 `periodSummaries.CLOSED_ONLY` (1~9월 순수 마감월) vs `ALL_MTD` (1~10월 진행월 포함) 분리 제공 요청 (2026-10-25)
+
+### 69-1. 배경 및 현상
+- 프론트엔드 `MonthlyTrevporChart.tsx`의 기간 선택 버튼은 다음 8개 모드를 제공합니다:
+  - `CLOSED_ONLY`: `✅ 공식 마감월 (1~9월)` (진행 중인 10월을 제외한 순수 월마감 완료 구간)
+  - `ALL_MTD`: `⚠️ 당월 포함 (1~10월 진행중)` (진행 중인 10월 누적 포함 구간)
+  - `H1` (`1~6월`), `H2` (`7~12월`), `Q1` (`1~3월`), `Q2` (`4~6월`), `Q3` (`7~9월`), `Q4` (`10~12월`)
+- 현재 백엔드 `GET /api/v6/report/monthly-room-efficiency?baseYear=2026&compareYear=2025` 응답의 `periodSummaries`에는 `H1`, `H2`, `Q1`, `Q2`, `Q3`, `Q4`, `CLOSED`, `FULL`이 제공되고 있으나, `lastClosedMonth`가 `"2026-10"`으로 설정되어 있어 `periodSummaries.CLOSED`가 `months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`(10월 진행분 포함)으로 집계되고 있습니다.
+- 이로 인해 사용자가 **`[✅ 공식 마감월 (1~9월)]`**과 **`[⚠️ 당월 포함 (1~10월 진행중)]`**을 전환할 때 백엔드 완제품 요약값이 동일하게(`419,301원` / `278,581원`) 반환됩니다.
+
+### 69-2. 백엔드 조치 요청 사항 (V6 5대 철칙 준수)
+- `GET /api/v6/report/monthly-room-efficiency`의 `periodSummaries` 객체에 아래 두 키를 명확히 분리하여 제공해 주십시오:
+  1. **`periodSummaries.CLOSED_ONLY`** (또는 `CLOSED_1_9`):
+     - 당해 연도 중 **월말까지 완전히 마감된 월(`1 ~ 9월`, `months: [1, 2, 3, 4, 5, 6, 7, 8, 9]`)** 기준의 `ty`, `ly`(전년 1~9월 동기간), `growthTotalRate`, `growthWithoutGolfRate`, `revparGrowthRate` 사전 연산 완제품
+  2. **`periodSummaries.ALL_MTD`** (및 기존 `CLOSED` 호환 유지):
+     - 당월 진행분(10월 마감일 기준)까지 포함한 **`1 ~ 10월` (`months: [1..10]`)** 기준의 `ty`, `ly`(전년 1~10월 동기간), `growthTotalRate`, `growthWithoutGolfRate`, `revparGrowthRate` 사전 연산 완제품
+- 프론트엔드(`MonthlyTrevporChart.tsx`)는 `ps.CLOSED_ONLY ?? ps.CLOSED_1_9 ?? ps.CLOSED` 및 `ps.ALL_MTD ?? ps.MTD ?? ps.CLOSED`를 자동 바인딩하도록 선반영 완료했습니다.

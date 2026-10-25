@@ -191,8 +191,6 @@ export default function MonthlyTrevporChart() {
     return new Date(year, month, 0).getDate();
   };
 
-  const monthLabels = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-
   // 1. [동적 월 감지 엔진] 시간 경과(8월➔9월➔10월➔12월)에 따라 마감월/진행월을 100% 자동 연산
   const monthMeta = useMemo(() => {
     const today = getClosedBusinessDate(1);
@@ -280,7 +278,7 @@ export default function MonthlyTrevporChart() {
     }
   };
 
-  // Filtered dataset according to dynamic month status
+  // Filtered dataset according to dynamic month status (TY KPI evaluation)
   const targetPeriodMonths = useMemo(() => {
     if (!data?.monthlyComparison) return [];
     
@@ -306,6 +304,32 @@ export default function MonthlyTrevporChart() {
     });
   }, [data, periodMode, monthMeta]);
 
+  // Display months for chart and table according to selected periodMode
+  const displayPeriodMonths = useMemo(() => {
+    if (!data?.monthlyComparison) return [];
+
+    return data.monthlyComparison.filter(d => {
+      if (periodMode === 'CLOSED_ONLY') {
+        return d.month <= monthMeta.lastClosedMonth;
+      } else if (periodMode === 'ALL_MTD') {
+        return d.month <= monthMeta.activeMonth;
+      } else if (periodMode === 'H1') {
+        return d.month >= 1 && d.month <= 6;
+      } else if (periodMode === 'H2') {
+        return d.month >= 7 && d.month <= 12;
+      } else if (periodMode === 'Q1') {
+        return d.month >= 1 && d.month <= 3;
+      } else if (periodMode === 'Q2') {
+        return d.month >= 4 && d.month <= 6;
+      } else if (periodMode === 'Q3') {
+        return d.month >= 7 && d.month <= 9;
+      } else if (periodMode === 'Q4') {
+        return d.month >= 10 && d.month <= 12;
+      }
+      return true;
+    });
+  }, [data, periodMode, monthMeta]);
+
   // Executive KPI Highlights Calculation (선택된 기간 기준 정확한 연산)
   const kpiHighlights = useMemo(() => {
     if (targetPeriodMonths.length === 0) return null;
@@ -322,19 +346,15 @@ export default function MonthlyTrevporChart() {
     });
 
     // 백엔드 공인 periodSummaries[periodKey] 완제품 1:1 바인딩 (클라이언트 나눗셈 금지, 미제공 시 null Fail-Stop)
-    const periodKeyMap: Record<typeof periodMode, string> = {
-      CLOSED_ONLY: 'CLOSED',
-      ALL_MTD: 'CLOSED',
-      H1: 'H1',
-      H2: 'H2',
-      Q1: 'Q1',
-      Q2: 'Q2',
-      Q3: 'Q3',
-      Q4: 'Q4'
-    };
-    const activePeriodKey = periodKeyMap[periodMode] || 'CLOSED';
-    const activePeriodSummary = (data as any)?.periodSummaries?.[activePeriodKey]
-      ?? (periodMode === 'CLOSED_ONLY' || periodMode === 'ALL_MTD' ? ((data as any)?.ytdSummary ?? data?.summary) : null);
+    const ps = (data as any)?.periodSummaries;
+    let activePeriodSummary: any = null;
+    if (periodMode === 'CLOSED_ONLY') {
+      activePeriodSummary = ps?.CLOSED_ONLY ?? ps?.CLOSED_1_9 ?? ps?.CLOSED ?? (data as any)?.ytdSummary ?? data?.summary;
+    } else if (periodMode === 'ALL_MTD') {
+      activePeriodSummary = ps?.ALL_MTD ?? ps?.MTD ?? ps?.CLOSED ?? (data as any)?.ytdSummary ?? data?.summary;
+    } else {
+      activePeriodSummary = ps?.[periodMode] ?? null;
+    }
 
     const avgTyTrevpar = metricMode === 'TOTAL'
       ? (activePeriodSummary?.ty?.trevparTotal ?? activePeriodSummary?.trevparTotal ?? null)
@@ -382,19 +402,20 @@ export default function MonthlyTrevporChart() {
       avgLyRevpar,
       revparGrowth,
       maxMonthName: maxMonth.monthLabel,
-      maxTrevpar
+      maxTrevpar,
+      activePeriodSummary
     };
   }, [targetPeriodMonths, metricMode, periodMode, monthMeta, data]);
 
-  // 1. [핵심 메인] 12개월 전년 vs 올해 TrevPAR 성장 트렌드 차트
+  // 1. [핵심 메인] 선택 기간 전년 vs 올해 TrevPAR 성장 트렌드 차트
   const yoyTrendChartOptions = useMemo(() => {
-    if (!data?.monthlyComparison) return null;
+    if (!displayPeriodMonths || displayPeriodMonths.length === 0) return null;
 
     const lyValues: number[] = [];
     const tyValues: (number | null)[] = [];
     const growthRates: (number | null)[] = [];
 
-    data.monthlyComparison.forEach(item => {
+    displayPeriodMonths.forEach(item => {
       const lyVal = getTrevparValue(item.ly, metricMode);
       const tyVal = item.ty ? getTrevparValue(item.ty, metricMode) : null;
       
@@ -425,7 +446,8 @@ export default function MonthlyTrevporChart() {
         formatter: (params: any[]) => {
           if (!params || params.length === 0) return '';
           const mIdx = params[0].dataIndex;
-          const isOngoingMonth = (mIdx + 1) === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+          const mItem = displayPeriodMonths[mIdx];
+          const isOngoingMonth = mItem?.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
 
           let result = `
             <div style="font-weight:800; font-size:14px; color:#0f172a; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
@@ -451,9 +473,9 @@ export default function MonthlyTrevporChart() {
               `;
             }
           });
-          if (isOngoingMonth) {
+          if (isOngoingMonth && mItem) {
             result += `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed #e2e8f0; font-size:11px; color:#e11d48; font-weight:600;">
-              ⚠️ ${mIdx + 1}월은 ${monthMeta.daysAccumulated}일 집계 데이터로, 월 마감 전 진행 수치입니다.
+              ⚠️ ${mItem.month}월은 ${monthMeta.daysAccumulated}일 집계 데이터로, 월 마감 전 진행 수치입니다.
             </div>`;
           }
           return result;
@@ -478,9 +500,9 @@ export default function MonthlyTrevporChart() {
       xAxis: [
         {
           type: 'category',
-          data: monthLabels.map((m, idx) => {
-            const isOngoing = (idx + 1) === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
-            return isOngoing ? `${m}(진행중)` : m;
+          data: displayPeriodMonths.map((item) => {
+            const isOngoing = item.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+            return isOngoing ? `${item.monthLabel}(진행중)` : item.monthLabel;
           }),
           axisLine: { lineStyle: { color: '#e2e8f0' } },
           axisTick: { show: false },
@@ -548,7 +570,8 @@ export default function MonthlyTrevporChart() {
           barWidth: 22,
           itemStyle: {
             color: (params: any) => {
-              const isOngoing = (params.dataIndex + 1) === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
+              const mItem = displayPeriodMonths[params.dataIndex];
+              const isOngoing = mItem?.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
               if (isOngoing) return '#14b8a6';
               return metricMode === 'TOTAL' ? '#0d9488' : '#0284c7';
             },
@@ -596,13 +619,13 @@ export default function MonthlyTrevporChart() {
         }
       ]
     };
-  }, [data, metricMode, monthMeta]);
+  }, [displayPeriodMonths, metricMode, monthMeta]);
 
   // 2. [부문별 비중 분석] 100% 누적 막대 차트
   const stackedChartOptions = useMemo(() => {
-    if (!data?.monthlyComparison) return null;
+    if (!displayPeriodMonths || displayPeriodMonths.length === 0) return null;
 
-    const validMonths = (data.monthlyComparison || []).filter(d => Boolean(d && (d.ty || d.ly)));
+    const validMonths = displayPeriodMonths.filter(d => Boolean(d && (d.ty || d.ly)));
     if (validMonths.length === 0) return null;
 
     const xLabels = validMonths.map(d => {
@@ -1006,7 +1029,7 @@ export default function MonthlyTrevporChart() {
       },
       series: seriesConfig
     };
-  }, [data, metricMode, stackedYearMode, monthMeta]);
+  }, [displayPeriodMonths, metricMode, stackedYearMode, monthMeta]);
 
   return (
     <div className="lg:col-span-12 bg-white rounded-[32px] p-8 shadow-xs border border-[#D0C6BB]/75">
@@ -1323,7 +1346,7 @@ export default function MonthlyTrevporChart() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-teal-600"></span>
                     <h3 className="text-sm font-black text-slate-900">
-                      12개월 TrevPAR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
+                      {kpiHighlights?.periodLabel || '12개월'} TrevPAR 성장 트렌드 (전년 2025 vs 올해 2026, {metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
                   <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">실측 객실 기준</span>
@@ -1338,7 +1361,7 @@ export default function MonthlyTrevporChart() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-[#284F42]"></span>
                     <h3 className="text-sm font-black text-slate-900">
-                      월별 TrevPAR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
+                      {kpiHighlights?.periodLabel || '월별'} TrevPAR 부문 기여도 100% 누적 막대 비교 ({metricMode === 'TOTAL' ? '⛳ 골프 포함 전사' : '🏨 골프 제외 순수 리조트'})
                     </h3>
                   </div>
                   
@@ -1623,7 +1646,7 @@ export default function MonthlyTrevporChart() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {data.monthlyComparison.map((item) => {
+                {displayPeriodMonths.map((item) => {
                   const isOngoing = item.month === monthMeta.activeMonth && monthMeta.isCurrentMonthOngoing;
                   const lyRev = metricMode === 'TOTAL' ? item.ly?.totalRevenue : item.ly?.netRevenueWithoutGolf;
                   const lyRevpar = getRevparValue(item.ly);
@@ -1777,6 +1800,85 @@ export default function MonthlyTrevporChart() {
                   );
                 })}
               </tbody>
+              {kpiHighlights?.activePeriodSummary && (() => {
+                const ps = kpiHighlights.activePeriodSummary;
+                const ly = ps.ly;
+                const ty = ps.ty ?? ps;
+                const lyRev = metricMode === 'TOTAL' ? ly?.totalRevenue : ly?.netRevenueWithoutGolf;
+                const tyRev = metricMode === 'TOTAL' ? ty?.totalRevenue : ty?.netRevenueWithoutGolf;
+                const lyRevpar = ly?.revpar ?? ly?.revPar ?? null;
+                const tyRevpar = ty?.revpar ?? ty?.revPar ?? null;
+                const lyTrevpar = metricMode === 'TOTAL' ? ly?.trevparTotal : ly?.trevparWithoutGolf;
+                const tyTrevpar = metricMode === 'TOTAL' ? ty?.trevparTotal : ty?.trevparWithoutGolf;
+                const periodGrowth = metricMode === 'TOTAL' ? ps.growthTotalRate : ps.growthWithoutGolfRate;
+                const periodRevparGrowth = ps.revparGrowthRate ?? ps.growthRevparRate ?? null;
+
+                return (
+                  <tfoot className="bg-slate-800 text-white font-bold border-t-2 border-slate-900">
+                    <tr>
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap bg-slate-900 text-emerald-300">
+                        선택기간 요약
+                        <span className="block text-[10px] text-slate-300 font-normal">({kpiHighlights.periodLabel})</span>
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-slate-200">
+                        {ly?.availableRooms ? `${formatCurrency(ly.availableRooms)}실` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-white">
+                        {ly?.roomsSold !== undefined && ly?.roomsSold !== null ? `${formatCurrency(ly.roomsSold)}실` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-center text-[11px] text-slate-300 whitespace-nowrap">
+                        2025년 동기간 합계·평균
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-slate-200">
+                        {lyRev ? `${formatCurrency(lyRev)}원` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-slate-200">
+                        {lyRevpar !== null && lyRevpar !== undefined ? `${formatCurrency(lyRevpar)}원` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-white font-black">
+                        {lyTrevpar ? `${formatCurrency(lyTrevpar)}원` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-emerald-100">
+                        {ty?.availableRooms ? `${formatCurrency(ty.availableRooms)}실` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-emerald-300 font-black">
+                        {ty?.roomsSold !== undefined && ty?.roomsSold !== null ? `${formatCurrency(ty.roomsSold)}실` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-center text-[11px] text-emerald-200 whitespace-nowrap">
+                        2026년 선택기간 합계·평균
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-emerald-100">
+                        {tyRev ? `${formatCurrency(tyRev)}원` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-emerald-300">
+                        <div>{tyRevpar !== null && tyRevpar !== undefined ? `${formatCurrency(tyRevpar)}원` : '-'}</div>
+                        {periodRevparGrowth !== null && periodRevparGrowth !== undefined && (
+                          <div className="text-[10px] text-emerald-200">
+                            {periodRevparGrowth >= 0 ? '▲' : '▼'}{Math.abs(periodRevparGrowth).toFixed(1)}%
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-amber-300 font-black">
+                        {tyTrevpar ? `${formatCurrency(tyTrevpar)}원` : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums whitespace-nowrap font-financial text-slate-300">
+                        평균 TrevPAR 비교
+                      </td>
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                        {periodGrowth !== null && periodGrowth !== undefined ? (
+                          <span className={`inline-block px-2 py-0.5 rounded font-bold text-[11px] whitespace-nowrap ${
+                            periodGrowth >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40' : 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                          }`}>
+                            {periodGrowth >= 0 ? '▲' : '▼'} {Math.abs(periodGrowth).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </td>
+                    </tr>
+                  </tfoot>
+                );
+              })()}
             </table>
           </div>
 

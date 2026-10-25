@@ -3533,48 +3533,6 @@ export default function RoomDynamicPricing() {
 
               {showCompetitorTimeseriesAccordion && (
                 <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-5">
-                  {/* 영구 DB 파이프라인 메타데이터 카드 */}
-                  {competitorMarket?.dbMetadata && (
-                    <div className="bg-white p-5 rounded-2xl border border-[#D0C6BB]/80 shadow-2xs space-y-3">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2 text-sm font-extrabold text-[#1B382E]">
-                          <Database size={16} className="text-[#284F42]" />
-                          <span>충청권 4대 경쟁사 다년도 시계열 데이터 현황 (Zero DB Load)</span>
-                        </div>
-                        <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-3 py-1 rounded-xl border border-[#B4C6C1]">
-                          DB 부하: 0-Load
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
-                          <span className="text-[#5A6B63] block font-medium">영구 DB 엔진</span>
-                          <strong className="text-[#1B382E] block mt-0.5 truncate">{competitorMarket.dbMetadata.dbEngine || '-'}</strong>
-                        </div>
-                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
-                          <span className="text-[#5A6B63] block font-medium">데이터 보존 정책</span>
-                          <strong className="text-[#1B382E] block mt-0.5 truncate">{competitorMarket.dbMetadata.retentionPolicy || '-'}</strong>
-                        </div>
-                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
-                          <span className="text-[#5A6B63] block font-medium">누적 마트 행 / 스냅샷</span>
-                          <strong className="text-[#1B382E] block mt-0.5">
-                            {formatNum(competitorMarket.dbMetadata.totalDailyMartRows)}행 ({formatNum(competitorMarket.dbMetadata.totalSnapshotsStored)}회)
-                          </strong>
-                        </div>
-                        <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
-                          <span className="text-[#5A6B63] block font-medium">총 원천 오퍼 저장 건수</span>
-                          <strong className="text-[#284F42] block mt-0.5">
-                            {formatNum(competitorMarket.dbMetadata.totalRawOffersStored)}건
-                          </strong>
-                        </div>
-                      </div>
-                      {competitorMarket.dbMetadata.s3Uri && (
-                        <div className="text-[11px] text-[#5A6B63] font-mono bg-[#FAF9F6] px-3 py-1.5 rounded-lg border border-[#D0C6BB]/50 truncate">
-                          S3 Storage: {competitorMarket.dbMetadata.s3Uri}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {/* 경쟁 리조트 4대 필터 탭 */}
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-extrabold text-[#1B382E] mr-1">리조트 선택 필터:</span>

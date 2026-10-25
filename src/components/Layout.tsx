@@ -28,12 +28,13 @@ export default function Layout() {
     return saved !== null ? saved === 'true' : true; // 사용자 승인 기본값: 펼침(고정)
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [salesOpen, setSalesOpen] = useState(false);
-  const [golfOpen, setGolfOpen] = useState(false);
+  const [salesOpen, setSalesOpen] = useState(() => location.pathname.startsWith('/sales') || location.pathname.startsWith('/group-sales'));
+  const [golfOpen, setGolfOpen] = useState(() => location.pathname.startsWith('/golf'));
   const [resortOpen, setResortOpen] = useState(() => location.pathname.startsWith('/resort') || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
-  const [leisureOpen, setLeisureOpen] = useState(false);
-  const [contentOpen, setContentOpen] = useState(false);
-  const [synergyOpen, setSynergyOpen] = useState(false);
+  const [leisureOpen, setLeisureOpen] = useState(() => location.pathname.startsWith('/leisure'));
+  const [contentOpen, setContentOpen] = useState(() => location.pathname.startsWith('/content') || location.pathname.includes('outsourced-fnb'));
+  const [membersOpen, setMembersOpen] = useState(() => location.pathname.startsWith('/members') || location.pathname.startsWith('/online-members'));
+  const [synergyOpen, setSynergyOpen] = useState(() => location.pathname.startsWith('/synergy'));
 
   const togglePin = () => {
     const next = !isPinned;
@@ -81,9 +82,9 @@ export default function Layout() {
 
   // 전사 공통 3대 대시보드 (모든 로그인 임직원 공통 노출)
   const commonMenuItems = [
-    { name: '전사 종합 매출', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '부문·요일별 정산/매출 분석', path: '/matrix-weekly', icon: <Database size={20} /> },
-    { name: '영업장별 실적 추이', path: '/facility-trend', icon: <TrendingUp size={20} /> },
+    { name: '전사 종합 매출 & TRevPAR', path: '/', icon: <LayoutDashboard size={20} /> },
+    { name: '부문별 주간정산 & 요일별 매출', path: '/matrix-weekly', icon: <Database size={20} /> },
+    { name: '영업장별 월별 추이 & 시즌성', path: '/facility-trend', icon: <TrendingUp size={20} /> },
   ];
 
   return (
@@ -199,7 +200,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    객실 판매방식 & 세미나 점유율
+                    객실 판매채널 & 세미나 점유율
                   </NavLink>
                   <NavLink
                     to="/sales/venue-performance"
@@ -208,7 +209,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    연회·세미나실 대관 현황
+                    연회·세미나실 대관 & 단가
                   </NavLink>
                   <NavLink
                     to="/sales/group-master-crm"
@@ -217,7 +218,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    단체 예약 명부 & 판촉 실적
+                    단체 이용 명부 & 영업담당자 실적
                   </NavLink>
                   <NavLink
                     to="/sales/group-venue-preference"
@@ -226,7 +227,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    단체 방문 매장 순위 & 동선
+                    단체 방문 매장 순위 & 선호 동선
                   </NavLink>
                 </div>
               )}
@@ -256,7 +257,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    경영 현황 대시보드
+                    골프 매출 & 내장객 현황
                   </NavLink>
                   <NavLink
                     to="/golf/channel-intelligence"
@@ -265,7 +266,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    채널&예약
+                    채널별 그린피 수익성 & 내장객 CRM
                   </NavLink>
                 </div>
               )}
@@ -295,7 +296,7 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  경영 현황 대시보드
+                  콘도 매출 & 가동률·ADR 현황
                 </NavLink>
                 <NavLink
                   to="/resort/reservation-status"
@@ -306,7 +307,7 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  예약현황
+                  향후 객실 예약 & 단체 입실 예정
                 </NavLink>
                 <NavLink
                   to="/condo/dynamic-pricing"
@@ -318,7 +319,7 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   <Sparkles size={14} className="shrink-0 text-[#CAAC86]" />
-                  객실 추천 요금
+                  객실 추천 요금 & 경쟁사 가격 비교
                 </NavLink>
                 <NavLink
                   to="/resort/room-guest-analysis"
@@ -327,7 +328,7 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  일일 숙박객/방문객 분석
+                  일일 투숙객 & 골프제외 이용객 분석
                 </NavLink>
                 <NavLink
                   to="/resort/room-guests-yoy"
@@ -336,16 +337,7 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  연도별 숙박객/객실소계
-                </NavLink>
-                <NavLink
-                  to="/members"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  회원관리
+                  연도별 투숙객·판매방수 & 객실소계
                 </NavLink>
               </div>
             )}
@@ -376,62 +368,71 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  레저 영업장 현황
-                </NavLink>
-                <NavLink
-                  to="/leisure/organization"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  조직도 및 인력 현황
+                  레저 매출 · 인기티켓 & 할인누수
                 </NavLink>
                 <NavLink
                   to="/leisure/usage-rate"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    isActive || window.location.pathname === '/leisure-usage-rate'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
-                  영업장별 이용률 추이
-                </NavLink>
-                <NavLink
-                  to="/leisure/simulator"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  티켓 가격 & 수요 시뮬레이터
+                  골프제외 이용객 대비 레저 이용률
                 </NavLink>
                 <NavLink
                   to="/leisure/package-sales"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    isActive || window.location.pathname === '/leisure-package-sales'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
                   <Package size={14} className="shrink-0 text-white" />
-                  영업장별 패키지 매출 비중
+                  복합 패키지 매출 & 유입 기여도
+                </NavLink>
+                <NavLink
+                  to="/leisure/simulator"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive || window.location.pathname === '/leisure-simulator'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  티켓 단가 & 수요 시뮬레이터
                 </NavLink>
                 <NavLink
                   to="/leisure/gift-shop"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    isActive || window.location.pathname === '/leisure-gift-shop'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
                   <Gift size={14} className="shrink-0 text-white" />
-                  기념품 샵
+                  기념품 샵 품목별 매출 랭킹
                 </NavLink>
-
+                <NavLink
+                  to="/leisure/organization"
+                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                    isActive || window.location.pathname === '/leisure-organization'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  레저 조직도 & 인력 배치 현황
+                </NavLink>
               </div>
             )}
           </div>
           )}
 
-          {/* 4. 컨텐츠기획본부 Accordion (4대 분류 페이지) */}
+          {/* 4. 컨텐츠기획본부 Accordion (외주식음 정예화) */}
           {hasRole(['content', 'fnb']) && (
             <div className="mt-2">
               <button
@@ -450,29 +451,13 @@ export default function Layout() {
                   <NavLink
                     to="/content/outsourced-fnb"
                     className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                      isActive || window.location.pathname === '/outsourced-fnb'
+                        ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
-                    외주식음 매출 & 인기메뉴
-                  </NavLink>
-                  <NavLink
-                    to="/content/group-rankings"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                    }`}
-                    onClick={handleNavClick}
-                  >
-                    영업장별 단체 순위 & 평균매출
-                  </NavLink>
-                  <NavLink
-                    to="/content/group-segments"
-                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                    }`}
-                    onClick={handleNavClick}
-                  >
-                    단체 유형별 선호도 & 방문동선
+                    외주식음 매장별 매출 & Top 3 메뉴
                   </NavLink>
                   <NavLink
                     to="/content/fnb-directory"
@@ -481,14 +466,62 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    종합 일람표 & 휴무일 안내
+                    외주식음 종합 일람표 & 운영·휴무 안내
+                  </NavLink>
+                  <NavLink
+                    to="/content/group-rankings"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    식음 매장별 단체 매출 & 방문 동선
                   </NavLink>
                 </div>
               )}
             </div>
           )}
 
-          {/* 5. 시너지 분석 Accordion (컨텐츠기획본부 아래) */}
+          {/* 5. 👥 회원 & 멤버십 분석 Accordion */}
+          {(hasRole('management') || hasRole('resort') || hasRole('golf')) && (
+            <div className="mt-2">
+              <button
+                onClick={() => setMembersOpen(!membersOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 font-medium text-white/75 hover:bg-white/10 hover:text-white transition-all rounded-xl whitespace-nowrap cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <Users size={20} />
+                  회원 & 멤버십 분석
+                </div>
+                {membersOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+              
+              {membersOpen && (
+                <div className="ml-4 mt-1 pl-3 border-l-2 border-white/15 space-y-1">
+                  <NavLink
+                    to="/members"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    분양회원(콘도·골프) & 휴양소 실적
+                  </NavLink>
+                  <NavLink
+                    to="/online-members"
+                    className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
+                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    온라인 회원 가입 추이 & 휴면 단골 관리
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 6. ⚡ 시너지 & 매출 예측 분석 Accordion */}
           {hasRole('management') && (
             <div className="mt-2">
             <button
@@ -497,7 +530,7 @@ export default function Layout() {
             >
               <div className="flex items-center gap-3">
                 <MonitorPlay size={20} />
-                시너지 분석
+                시너지 & 매출 예측 분석
               </div>
               {synergyOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
@@ -512,63 +545,59 @@ export default function Layout() {
                   }`}
                   onClick={handleNavClick}
                 >
-                  세그먼트/채널 시너지
+                  <Sparkles size={14} className="shrink-0 text-[#CAAC86]" />
+                  객실 채널·체류시간별 복합 소비 시너지
                 </NavLink>
 
                 <NavLink
                   to="/synergy/correlation"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    isActive || window.location.pathname === '/synergy-correlation'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
-                  ⚡ 인과 시너지 & CAPA 분석
+                  숙박객 유입 매장별 동반 소비 분석
                 </NavLink>
 
                 <NavLink
                   to="/synergy/weather-sales"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    isActive || window.location.pathname === '/synergy-weather'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
                   <CloudRain size={14} className="shrink-0" />
-                  🌦️ 날씨-매출 상관관계 분석
+                  날씨(강수·적설)-매출 상관관계 & 시뮬레이션
                 </NavLink>
 
                 <NavLink
                   to="/synergy/forecast"
                   className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                    isActive || window.location.pathname === '/synergy-forecast'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                   onClick={handleNavClick}
                 >
                   <TrendingUp size={14} className="shrink-0 text-white" />
-                  🔮 내일 매출 예상
-                </NavLink>
-
-                <NavLink
-                  to="/online-members"
-                  className={({ isActive }) => `block w-full text-left px-4 py-3 md:py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  <Users size={14} className="shrink-0" />
-                  온라인 회원 가입 현황
+                  당일·익일 예상 매출 (예약·날씨 연동)
                 </NavLink>
               </div>
             )}
           </div>
           )}
 
-          {/* 6. 🚀 전략 목표 시뮬레이터 v2 [PRO] */}
+          {/* 7. 전략 목표 시뮬레이터 & 전 부문 종합 요금표 */}
           {hasRole('management') && (
             <div className="mt-3 pt-2 border-t border-white/10 space-y-1">
               <NavLink
                 to="/strategic-simulator"
                 className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
-                  isActive
+                  isActive || window.location.pathname.startsWith('/target-simulator')
                     ? 'bg-[#B59269] text-white font-bold shadow-xs'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
@@ -576,9 +605,26 @@ export default function Layout() {
               >
                 <div className="flex items-center gap-2.5">
                   <Sparkles size={18} className="text-[#CAAC86]" />
-                  <span className="text-sm font-bold">전략 목표 시뮬레이터</span>
+                  <span className="text-sm font-bold">전략 목표 & 영업계획 시뮬레이터</span>
                 </div>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/20 text-white border border-white/30">v2 PRO</span>
+              </NavLink>
+            </div>
+          )}
+
+          {(hasRole('leisure') || hasRole('resort') || hasRole('management')) && (
+            <div className="space-y-1">
+              <NavLink
+                to="/leisure/pricing"
+                className={({ isActive }) => `flex items-center gap-2.5 px-4 py-2.5 font-medium transition-all rounded-xl whitespace-nowrap ${
+                  isActive || window.location.pathname === '/pricing' || window.location.pathname === '/leisure-pricing'
+                    ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+                onClick={handleNavClick}
+              >
+                <Tag size={18} className="text-[#CAAC86]" />
+                <span className="text-sm font-bold">전 부문 이용요금 & 할인 혜택 카탈로그</span>
               </NavLink>
             </div>
           )}
@@ -587,23 +633,6 @@ export default function Layout() {
           
         {/* 하단 유틸리티 및 관리자 메뉴 */}
         <div className="p-4 space-y-2 border-t border-white/10">
-            {hasRole('leisure') && (
-
-              <NavLink
-              to="/leisure/pricing"
-              className={({ isActive }) => `w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${
-                isActive 
-                  ? 'bg-[#B59269] text-white font-semibold' 
-                  : 'text-white/75 hover:bg-white/10 hover:text-white'
-              }`}
-              onClick={handleNavClick}
-            >
-              <Tag size={20} />
-              영업장 이용안내
-            </NavLink>
-
-            )}
-
             <button
               onClick={() => setPwdModalOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/75 hover:bg-white/10 hover:text-white transition-all font-medium text-sm cursor-pointer"

@@ -14,28 +14,28 @@ const NAV_ITEMS: SalesNavItem[] = [
   {
     path: '/group-sales',
     matchPaths: ['/group-sales', '/sales/room-channels'],
-    label: '객실 판매방식 & 세미나 점유율',
+    label: '객실 판매채널 & 세미나 점유율',
     sublabel: '주중·주말 세미나 점유율 및 채널×평형 실적',
     icon: <BedDouble size={16} />
   },
   {
     path: '/sales/venue-performance',
     matchPaths: ['/sales/venue-performance'],
-    label: '연회·세미나실 대관 현황',
+    label: '연회·세미나실 대관 & 단가',
     sublabel: '장소별 대관 건수·평균 단가·월별 추이',
     icon: <Building2 size={16} />
   },
   {
     path: '/sales/group-master-crm',
     matchPaths: ['/sales/group-master-crm'],
-    label: '단체 예약 명부 & 판촉 실적',
+    label: '단체 이용 명부 & 영업담당자 실적',
     sublabel: '재방문 단체 명부 및 영업담당자 수주 리더보드',
     icon: <Users size={16} />
   },
   {
     path: '/sales/group-venue-preference',
     matchPaths: ['/sales/group-venue-preference'],
-    label: '단체 방문 매장 순위 & 동선',
+    label: '단체 방문 매장 순위 & 선호 동선',
     sublabel: '식음·부대 매장별 단체 평균 매출 및 선호 동선',
     icon: <Trophy size={16} />
   }

@@ -4,22 +4,22 @@ import { Sparkles, Zap, CloudRain, TrendingUp } from 'lucide-react';
 const SYNERGY_PAGES = [
   {
     path: '/synergy',
-    label: '1. 객실 세그먼트/채널 시너지',
+    label: '1. 객실 채널·체류시간별 복합 소비 시너지',
     icon: Sparkles
   },
   {
     path: '/synergy/correlation',
-    label: '2. 매장 시너지 분석 V2',
+    label: '2. 숙박객 유입 매장별 동반 소비 분석',
     icon: Zap
   },
   {
     path: '/synergy/weather-sales',
-    label: '3. 🌦️ 날씨-매출 상관관계',
+    label: '3. 🌦️ 날씨-매출 상관관계 & 시뮬레이션',
     icon: CloudRain
   },
   {
     path: '/synergy/forecast',
-    label: '4. 🔮 당일·익일 매출 예상',
+    label: '4. 🔮 당일·익일 예상 매출 (예약·날씨 연동)',
     icon: TrendingUp
   }
 ];

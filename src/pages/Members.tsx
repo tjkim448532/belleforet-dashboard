@@ -6,7 +6,7 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { 
   Calendar, RefreshCw, Hotel, 
   Award, Flag, Smartphone, Briefcase, Layers, Sparkles, UserCheck,
-  Search, Building2, Coins, CheckCircle2, Info
+  Search, Building2, Coins, CheckCircle2, Info, Clock, ArrowUpDown, Filter
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -36,6 +36,8 @@ export default function Members() {
 
   // 3. 법인 휴양소 및 재방문 단체 회원사 (corporate-group-sales)
   const [corpData, setCorpData] = useState<any>(null);
+  const [corpFilter, setCorpFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING'>('ALL');
+  const [corpSort, setCorpSort] = useState<'rooms' | 'revenue' | 'date'>('rooms');
 
   // 4. 온라인/모바일 디지털 회원 (online-members)
   const [onlineData, setOnlineData] = useState<any>(null);
@@ -166,9 +168,32 @@ export default function Members() {
   const corpSummary = corpData?.summary || null;
   const corpFitSummary = corpSummary?.corpFit || null;
   const corpGroups: any[] = Array.isArray(corpData?.groups) ? corpData.groups : [];
-  const memberCorpGroups = corpGroups.filter(
+  const baseMemberCorpGroups = corpGroups.filter(
     g => g.b2bSegment === 'CORP_FIT' || g.category === 'RESORT_CORP'
   );
+
+  // 정산 상태별 카운트 (순수 필터링 길이 SSOT)
+  const completedCorpCount = baseMemberCorpGroups.filter(g => g.settlementStatus === 'COMPLETED').length;
+  const pendingCorpCount = baseMemberCorpGroups.filter(g => g.settlementStatus === 'PENDING_POST_BILLING').length;
+
+  // 필터 적용
+  const filteredMemberCorpGroups = baseMemberCorpGroups.filter(g => {
+    if (corpFilter === 'COMPLETED') return g.settlementStatus === 'COMPLETED';
+    if (corpFilter === 'PENDING') return g.settlementStatus === 'PENDING_POST_BILLING';
+    return true;
+  });
+
+  // 정렬 적용 (객실수 순, 매출 높은 순, 최신 순)
+  const memberCorpGroups = [...filteredMemberCorpGroups].sort((a, b) => {
+    if (corpSort === 'revenue') {
+      return (Number(b.totalRevenue) || 0) - (Number(a.totalRevenue) || 0);
+    }
+    if (corpSort === 'date') {
+      return String(b.checkInDate || '').localeCompare(String(a.checkInDate || ''));
+    }
+    // 기본: 객실수 많은 순
+    return (Number(b.roomsCount) || 0) - (Number(a.roomsCount) || 0);
+  });
 
   // --- 4. 온라인 회원 데이터 추출 ---
   const onlineSummary = onlineData?.summary || null;
@@ -1067,10 +1092,22 @@ export default function Members() {
                 </strong>
               </div>
               <div className="bg-[#E8F2EE] border border-[#B4C6C1]/70 px-4 py-2 rounded-2xl text-xs">
-                <span className="text-[#1E523F] font-semibold block">기업 휴양소 매출</span>
+                <span className="text-[#1E523F] font-semibold block">정산 완료 실매출</span>
                 <strong className="text-[#1B382E] text-sm">
                   {corpFitSummary.totalRevenueFormatted || formatNum(corpFitSummary.totalRevenue || 0)}원
                 </strong>
+                <span className="text-[10px] text-[#1E523F]/80 block font-normal mt-0.5">
+                  ({formatNum(completedCorpCount)}건 수납 완료)
+                </span>
+              </div>
+              <div className="bg-[#FFF8E6] border border-[#F5C26B]/50 px-4 py-2 rounded-2xl text-xs">
+                <span className="text-[#B57C1E] font-semibold block">후정산 청구 대기</span>
+                <strong className="text-[#8C5D0D] text-sm">
+                  {formatNum(pendingCorpCount)}건 (외상 후불)
+                </strong>
+                <span className="text-[10px] text-[#8C5D0D]/80 block font-normal mt-0.5">
+                  사후 월정산/계산서 청구 전
+                </span>
               </div>
               <div className="bg-[#B59269]/10 border border-[#B59269]/30 px-4 py-2 rounded-2xl text-xs">
                 <span className="text-[#B59269] font-semibold block">재방문 단골 단체</span>
@@ -1082,14 +1119,95 @@ export default function Members() {
           )}
         </div>
 
-        <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+        {/* 필터 탭 & 정렬 컨트롤 바 */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#F4F3EE]/60 p-3 rounded-2xl border border-[#D0C6BB]/50">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-bold text-[#1B382E] mr-1 flex items-center gap-1">
+              <Filter className="w-3.5 h-3.5 text-[#B59269]" />
+              정산 상태 필터:
+            </span>
+            <button
+              type="button"
+              onClick={() => setCorpFilter('ALL')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
+                corpFilter === 'ALL'
+                  ? 'bg-[#1B382E] text-white shadow-sm'
+                  : 'bg-white text-[#5A6B63] hover:bg-[#E8F2EE] border border-[#D0C6BB]/60'
+              }`}
+            >
+              전체 ({formatNum(baseMemberCorpGroups.length)}건)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCorpFilter('COMPLETED')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 ${
+                corpFilter === 'COMPLETED'
+                  ? 'bg-[#1E523F] text-white shadow-sm'
+                  : 'bg-white text-[#1E523F] hover:bg-[#E8F2EE] border border-[#1E523F]/30'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              정산 완료 (실매출 발생 {formatNum(completedCorpCount)}건)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCorpFilter('PENDING')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 ${
+                corpFilter === 'PENDING'
+                  ? 'bg-[#B57C1E] text-white shadow-sm'
+                  : 'bg-white text-[#B57C1E] hover:bg-[#FFF8E6] border border-[#B57C1E]/30'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              후정산 청구 대기 ({formatNum(pendingCorpCount)}건)
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#5A6B63] flex items-center gap-1">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#B59269]" />
+              정렬:
+            </span>
+            <div className="flex items-center rounded-xl bg-white border border-[#D0C6BB]/60 p-0.5 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setCorpSort('rooms')}
+                className={`px-2.5 py-0.5 rounded-lg transition-colors ${
+                  corpSort === 'rooms' ? 'bg-[#1B382E] text-white' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                객실수 순
+              </button>
+              <button
+                type="button"
+                onClick={() => setCorpSort('revenue')}
+                className={`px-2.5 py-0.5 rounded-lg transition-colors ${
+                  corpSort === 'revenue' ? 'bg-[#1B382E] text-white' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                매출 높은 순
+              </button>
+              <button
+                type="button"
+                onClick={() => setCorpSort('date')}
+                className={`px-2.5 py-0.5 rounded-lg transition-colors ${
+                  corpSort === 'date' ? 'bg-[#1B382E] text-white' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                최신 이용 순
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
           <table className="w-full border-collapse text-left text-sm font-financial min-w-[950px]">
             <thead className="sticky top-0 z-10 bg-[#F4F3EE]">
               <tr className="border-b border-[#D0C6BB]/75 text-xs font-bold text-[#1B382E]">
                 <th className="py-3 px-4 text-left">입실일 ~ 퇴실일</th>
                 <th className="py-3 px-4 text-left">법인 / 휴양소 협약 회원사명</th>
                 <th className="py-3 px-3 text-center">회원사 분류</th>
-                <th className="py-3 px-3 text-center">결제/정산 방식</th>
+                <th className="py-3 px-3 text-center">결제/정산 상태</th>
                 <th className="py-3 px-3 text-right">객실수 (평형)</th>
                 <th className="py-3 px-3 text-right">투숙 인원</th>
                 <th className="py-3 px-4 text-right">객실 매출</th>
@@ -1099,7 +1217,7 @@ export default function Members() {
             </thead>
             <tbody className="divide-y divide-[#D0C6BB]/30">
               {memberCorpGroups.length > 0 ? (
-                memberCorpGroups.slice(0, 30).map((g, idx) => (
+                memberCorpGroups.slice(0, 50).map((g, idx) => (
                   <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
                     <td className="py-3 px-4 text-[#5A6B63] whitespace-nowrap">
                       {g.checkInDate || '-'}
@@ -1108,7 +1226,14 @@ export default function Members() {
                       ) : null}
                     </td>
                     <td className="py-3 px-4 font-extrabold text-[#1B382E] whitespace-nowrap">
-                      {g.groupName || g.corporateName || '-'}
+                      <div>
+                        {g.groupName || g.corporateName || '-'}
+                        {g.organizationTotalRevenue > 0 && (
+                          <span className="block text-[11px] font-normal text-[#1E523F] mt-0.5">
+                            (기업 누적 실적: {formatNum(g.organizationTotalRevenue)}원 · {g.organizationTotalRooms || 0}실)
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
                       <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#1B382E]/5 text-[#1B382E] border border-[#D0C6BB]/60">
@@ -1116,9 +1241,17 @@ export default function Members() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/50">
-                        {g.paymentMethod || '-'}
-                      </span>
+                      {g.settlementStatus === 'COMPLETED' ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          정산완료 ({g.paymentMethod || '수납'})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300" title="B2B 외상 후불 계약으로 아직 세금계산서 청구(수납) 전 상태입니다.">
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          후정산 대기 ({g.paymentMethod || '후불'})
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-3 text-right font-semibold text-[#1B382E] whitespace-nowrap">
                       {formatNum(g.spendingBreakdown?.roomsCount || 0)}실
@@ -1132,25 +1265,66 @@ export default function Members() {
                       {g.paxCountFormatted || formatNum(g.paxCount || 0)}명
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-[#1B382E] whitespace-nowrap">
-                      {formatNum(g.spendingBreakdown?.roomRevenue || 0)}원
+                      <div>
+                        {formatNum(g.spendingBreakdown?.roomRevenue || 0)}원
+                        {g.spendingBreakdown?.roomRevenue === 0 && g.settlementStatus === 'PENDING_POST_BILLING' && (
+                          <span className="block text-[10px] text-amber-700 font-normal">
+                            (사후청구 대기)
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-right text-[#5A6B63] whitespace-nowrap">
                       {formatNum(g.avgSpendPerPax || 0)}원
                     </td>
                     <td className="py-3 px-4 text-right font-extrabold text-[#1E523F] whitespace-nowrap">
-                      {g.totalRevenueFormatted || formatNum(g.totalRevenue || 0)}원
+                      <div>
+                        {g.totalRevenueFormatted || formatNum(g.totalRevenue || 0)}원
+                        {g.totalRevenue === 0 && g.settlementStatus === 'PENDING_POST_BILLING' && (
+                          <span className="block text-[10px] text-amber-700 font-normal">
+                            (미정산)
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-[#5A6B63]">
-                    선택하신 조회기간에 해당하는 기업 휴양소 협약 회원사 데이터가 없습니다.
+                    선택하신 정산 상태 필터에 해당하는 기업 휴양소 협약 회원사 데이터가 없습니다.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* 상위 표시 건수 안내 & B2B 기업 휴양소 후정산 프로세스 안내 배너 */}
+        <div className="space-y-3 pt-1">
+          {memberCorpGroups.length > 50 && (
+            <p className="text-xs text-[#5A6B63] text-right font-medium">
+              * 현재 상위 50개 단체가 표시 중입니다. (전체 {formatNum(memberCorpGroups.length)}건 중)
+            </p>
+          )}
+
+          <div className="bg-[#F4F3EE]/90 border border-[#D0C6BB]/75 rounded-2xl p-4 flex items-start gap-3 text-xs text-[#5A6B63] leading-relaxed">
+            <Info className="w-5 h-5 text-[#B59269] flex-shrink-0 mt-0.5" />
+            <div className="space-y-1.5">
+              <strong className="text-[#1B382E] font-bold block text-sm">
+                💡 기업 휴양소(협약 회원사) 객실 매출 '0원(후정산 대기)' 집계 기준 안내
+              </strong>
+              <p>
+                기업 하계/연중 휴양소(서원대학교, 한양대학교, 현대제철, 베네피아 등)는 개별 임직원이 퇴실 시 현장에서 결제하지 않고, 기업 본사/총무팀 및 제휴 복지몰과 <strong>사후 월정산/시즌정산(B2B 외상 후불 청구)</strong>으로 일괄 정산됩니다.
+              </p>
+              <p>
+                백엔드 데이터 파이프라인의 실시간 매출 집계는 <strong>실제 수납(결제 완료)이 마감된 건(`정산 완료`, {formatNum(completedCorpCount)}건 / {corpFitSummary?.totalRevenueFormatted || formatNum(corpFitSummary?.totalRevenue || 0)}원)</strong>만 우선 집계하며, 세금계산서 청구 전인 건은 <strong>`후정산 청구 대기`({formatNum(pendingCorpCount)}건)</strong>로 관리됩니다.
+              </p>
+              <p className="text-[#1E523F] font-semibold">
+                👉 실매출이 발생한 내역을 우선 확인하시려면 상단 필터의 <strong>[정산 완료]</strong> 탭 또는 <strong>[매출 높은 순]</strong> 정렬을 클릭하십시오.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

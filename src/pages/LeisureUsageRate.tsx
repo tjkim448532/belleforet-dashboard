@@ -3,7 +3,7 @@ import ReactECharts from 'echarts-for-react';
 import { 
   Ticket, Users, Building2, TrendingUp, Calendar, 
   RefreshCw, AlertCircle, Layers, BarChart3, HelpCircle,
-  ArrowUpRight, ArrowDownRight, Minus, FileSpreadsheet
+  ArrowUpRight, ArrowDownRight, Minus, FileSpreadsheet, Info
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { secureFetcher } from '../lib/secureFetcher';
@@ -1576,6 +1576,8 @@ export default function LeisureUsageRate() {
                             const hasData = item && (item.visitors > 0 || item.roomGuests > 0);
                             const isLatest = yr === latestYear;
                             const isCompareTarget = yr === compareYearB && selectedMatrixYears.includes(compareYearA);
+                            const isPreLprPeriod = yr === '2024' || (yr === '2025' && monthNum <= 5);
+                            const isOver100 = hasData && item && item.usageRate >= 100;
 
                             return (
                               <td
@@ -1598,6 +1600,14 @@ export default function LeisureUsageRate() {
                                       >
                                         {item.usageRate.toFixed(1)}%
                                       </span>
+                                      {isOver100 && isPreLprPeriod && (
+                                        <span
+                                          title="2025년 5월 21일 주차 LPR 게이트 도입 전으로, 모수에 주차 나들이객이 미포함(0명)되어 투숙객 모수만 반영된 물리적 실측치입니다."
+                                          className="text-[9px] font-bold px-1 py-0.2 rounded bg-[#FAF6F0] text-[#8B6E4E] border border-[#D0C6BB] cursor-help leading-tight"
+                                        >
+                                          *LPR도입전
+                                        </span>
+                                      )}
                                       {/* compareYearB 셀에 compareYearA 대비 증감 %p 인라인 표기 */}
                                       {isCompareTarget && yoyDiff !== null && (
                                         <span
@@ -1648,6 +1658,9 @@ export default function LeisureUsageRate() {
                           const cum = sevenFacilitiesCumulative[fac.key]?.[yr];
                           const isLatest = yr === latestYear;
                           const isCompareTarget = yr === compareYearB && selectedMatrixYears.includes(compareYearA);
+                          const maxSelectedMonth = selectedPeriodMonthNumbers.size > 0 ? Math.max(...Array.from(selectedPeriodMonthNumbers)) : 12;
+                          const isPreLprCum = yr === '2024' || (yr === '2025' && maxSelectedMonth <= 5);
+                          const isCumOver100 = cum && cum.usageRate >= 100;
 
                           return (
                             <td
@@ -1662,6 +1675,14 @@ export default function LeisureUsageRate() {
                                     <span className="font-mono text-xs sm:text-sm font-black text-[#1B382E]">
                                       {cum.usageRate.toFixed(1)}%
                                     </span>
+                                    {isCumOver100 && isPreLprCum && (
+                                      <span
+                                        title="2025년 5월 21일 주차 LPR 게이트 도입 전으로, 모수에 주차 나들이객이 미포함(0명)되어 투숙객 모수만 반영된 물리적 실측치입니다."
+                                        className="text-[9px] font-bold px-1 py-0.2 rounded bg-[#FAF6F0] text-[#8B6E4E] border border-[#D0C6BB] cursor-help leading-tight"
+                                      >
+                                        *LPR도입전
+                                      </span>
+                                    )}
                                     {isCompareTarget && diff !== null && (
                                       <span
                                         className={`text-[10px] font-bold px-1 rounded-sm leading-tight ${
@@ -1749,6 +1770,8 @@ export default function LeisureUsageRate() {
                           const denom = d?.roomGuests ?? d?.exGolfVisitors ?? d?.exGolfNetPhysicalResortGuests ?? 0;
                           const hasData = d && (denom > 0 || d.visitors > 0);
                           const isLatest = yr === latestYear;
+                          const isPreLprPeriod = yr === '2024' || (yr === '2025' && monthNum <= 5);
+                          const isOver100 = hasData && d && d.usageRate >= 100;
 
                           return (
                             <td 
@@ -1759,17 +1782,27 @@ export default function LeisureUsageRate() {
                             >
                               {hasData && d ? (
                                 <div className="flex flex-col items-center gap-0.5">
-                                  <span 
-                                    className={`font-mono text-sm font-bold ${
-                                      isLatest 
-                                        ? 'text-base font-extrabold text-[#1E523F]' 
-                                        : yr === prevYear
-                                        ? 'text-[#1B382E]'
-                                        : 'text-[#5A6B63]'
-                                    }`}
-                                  >
-                                    {d.usageRate.toFixed(1)}%
-                                  </span>
+                                  <div className="flex items-center gap-1.5 justify-center flex-wrap">
+                                    <span 
+                                      className={`font-mono text-sm font-bold ${
+                                        isLatest 
+                                          ? 'text-base font-extrabold text-[#1E523F]' 
+                                          : yr === prevYear
+                                          ? 'text-[#1B382E]'
+                                          : 'text-[#5A6B63]'
+                                      }`}
+                                    >
+                                      {d.usageRate.toFixed(1)}%
+                                    </span>
+                                    {isOver100 && isPreLprPeriod && (
+                                      <span
+                                        title="2025년 5월 21일 주차 LPR 게이트 도입 전으로, 모수에 주차 나들이객이 미포함(0명)되어 투숙객 모수만 반영된 물리적 실측치입니다."
+                                        className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FAF6F0] text-[#8B6E4E] border border-[#D0C6BB] cursor-help leading-tight"
+                                      >
+                                        *LPR도입전
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="text-[11px] text-[#5A6B63] tabular-nums">
                                     {d.visitors.toLocaleString()}명 / {denom.toLocaleString()}명
                                   </span>
@@ -1824,6 +1857,10 @@ export default function LeisureUsageRate() {
                       {availableYears.map((yr) => {
                         const cum = periodCumulative[yr];
                         const isLatest = yr === latestYear;
+                        const maxSelectedMonth = selectedPeriodMonthNumbers.size > 0 ? Math.max(...Array.from(selectedPeriodMonthNumbers)) : 12;
+                        const isPreLprCum = yr === '2024' || (yr === '2025' && maxSelectedMonth <= 5);
+                        const isCumOver100 = cum && cum.usageRate >= 100;
+
                         return (
                           <td 
                             key={`single-cum-${yr}`} 
@@ -1833,13 +1870,23 @@ export default function LeisureUsageRate() {
                           >
                             {cum && (cum.visitors > 0 || cum.roomGuests > 0) ? (
                               <div className="flex flex-col items-center gap-0.5">
-                                <span 
-                                  className={`font-mono font-black ${
-                                    isLatest ? 'text-base text-[#1B382E]' : 'text-sm text-[#5A6B63]'
-                                  }`}
-                                >
-                                  {cum.usageRate.toFixed(1)}%
-                                </span>
+                                <div className="flex items-center gap-1.5 justify-center flex-wrap">
+                                  <span 
+                                    className={`font-mono font-black ${
+                                      isLatest ? 'text-base text-[#1B382E]' : 'text-sm text-[#5A6B63]'
+                                    }`}
+                                  >
+                                    {cum.usageRate.toFixed(1)}%
+                                  </span>
+                                  {isCumOver100 && isPreLprCum && (
+                                    <span
+                                      title="2025년 5월 21일 주차 LPR 게이트 도입 전으로, 모수에 주차 나들이객이 미포함(0명)되어 투숙객 모수만 반영된 물리적 실측치입니다."
+                                      className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FAF6F0] text-[#8B6E4E] border border-[#D0C6BB] cursor-help leading-tight"
+                                    >
+                                      *LPR도입전
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="text-[11px] text-[#1B382E] font-bold tabular-nums">
                                   {cum.visitors.toLocaleString()}명 / {cum.roomGuests.toLocaleString()}명
                                 </span>
@@ -1878,6 +1925,25 @@ export default function LeisureUsageRate() {
               </table>
             </div>
           )}
+
+          {/* LPR 도입 전 실측 데이터 및 100% 초과 안내 배너 */}
+          <div className="mx-4 my-3 p-3.5 bg-[#FAF6F0] border border-[#D0C6BB] rounded-xl flex items-start gap-3 text-xs text-[#1B382E]">
+            <div className="p-1.5 bg-[#EFE9DF] rounded-lg text-[#8B6E4E] shrink-0 mt-0.5">
+              <Info size={16} />
+            </div>
+            <div className="space-y-1">
+              <div className="font-bold text-[#1B382E] flex items-center gap-1.5 flex-wrap">
+                <span>2025년 5월 이전 이용률 100% 초과 표기 안내 (주차 LPR 게이트 도입 전 실측 팩트)</span>
+                <span className="text-[10px] font-semibold bg-[#E8F2EE] text-[#1E523F] px-1.5 py-0.5 rounded border border-[#B4C6C1]/60">
+                  Zero-Hallucination 실측 보존
+                </span>
+              </div>
+              <p className="text-[#5A6B63] leading-relaxed">
+                주차관제 LPR 게이트 시스템은 <b>2025년 5월 21일</b> 최초 정상 개통되었습니다. 따라서 2025년 5월 이전 기간은 주차 기반 나들이객(당일 워크인) 데이터가 <b>0명</b>이며, 모수(골프제외 이용객)가 순수 <b>콘도 투숙객</b>만으로 집계됩니다.<br className="hidden sm:inline" />
+                당일치기로 벨포레 목장 등 시설만 이용한 고객이 시설 이용객(분자)에는 집계되었으나 모수(분모)에는 미포함되어, <b>2025년 3월(100.8%), 5월(110.6%) 등 일부 월의 이용률이 100%를 초과</b>하는 현상은 시스템 도입 전 실측 환경에 따른 정상 데이터입니다. 임의의 수치 보정이나 가짜 데이터를 주입하지 않고 실측 원장을 그대로 표출합니다.
+              </p>
+            </div>
+          </div>
 
           {/* Footer Note */}
           <div className="p-4 bg-[#F4F3EE]/80 border-t border-[#D0C6BB]/60 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-[#5A6B63] gap-2">

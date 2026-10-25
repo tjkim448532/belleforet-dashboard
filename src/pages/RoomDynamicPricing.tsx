@@ -739,6 +739,7 @@ export default function RoomDynamicPricing() {
   const [matrixCategoryTab, setMatrixCategoryTab] = useState<'ALL' | 'STANDARD_3' | 'PET_3'>('ALL');
   const [activeMainTab, setActiveMainTab] = useState<'DAILY' | 'MATRIX' | 'ANALYTICS'>('DAILY');
   const [showKpiSpilloverAccordion, setShowKpiSpilloverAccordion] = useState<boolean>(true);
+  const [showIndicatorGuide, setShowIndicatorGuide] = useState<boolean>(true);
 
   const fetchDynamicPricing = async () => {
     setLoading(true);
@@ -2869,6 +2870,74 @@ export default function RoomDynamicPricing() {
 
               {showKpiSpilloverAccordion && (
                 <div className="p-6 lg:p-7 pt-3 border-t border-[#D0C6BB]/60 bg-[#FAF9F6] space-y-5">
+                  {/* 💡 지표 성격 해설 (벨포레 자체 지표 vs 경쟁사 반사이익 접이식 가이드) */}
+                  <div className="bg-white rounded-2xl border border-[#B59269]/40 shadow-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowIndicatorGuide(!showIndicatorGuide)}
+                      className="w-full px-4 py-3 bg-[#F4F3EE]/80 hover:bg-[#F4F3EE] transition-colors flex items-center justify-between text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-[#284F42] text-white flex items-center justify-center shrink-0">
+                          <HelpCircle size={14} />
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs sm:text-sm font-extrabold text-[#1B382E]">
+                            💡 이 화면의 지표들은 '경쟁사 지표'인가요, '벨포레 지표'인가요?
+                          </span>
+                          <span className="text-[11px] font-bold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
+                            지표 성격 & 해석 가이드
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#284F42] shrink-0">
+                        <span>{showIndicatorGuide ? '접기' : '상세 설명 보기'}</span>
+                        {showIndicatorGuide ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </div>
+                    </button>
+
+                    {showIndicatorGuide && (
+                      <div className="p-4 sm:p-5 border-t border-[#D0C6BB]/50 bg-white text-xs text-[#1B382E] space-y-3 leading-relaxed">
+                        <div className="p-3 bg-[#E8F2EE] rounded-xl border border-[#284F42]/20 text-[#1E523F] font-bold text-xs sm:text-[13px] flex items-center gap-2">
+                          <span className="text-base shrink-0">🎯</span>
+                          <span>
+                            <strong>핵심 요약</strong>: 화면에 표시된 모든 수치는 <strong>벨포레의 지표</strong>입니다. 충청권 4대 경쟁 리조트(리솜, 소노 등)의 실시간 품절 현황을 모니터링하여, <strong>벨포레가 얻을 수 있는 반사이익과 추천 판매가(다이내믹 프라이싱)</strong>를 산출한 벨포레 경영 전략 지표입니다.
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                          {/* 1. 윗줄 */}
+                          <div className="p-3.5 rounded-xl bg-[#FAF9F6] border border-[#D0C6BB]/60 space-y-2">
+                            <div className="flex items-center gap-2 font-black text-[#1B382E] text-xs sm:text-[13px] border-b border-[#D0C6BB]/40 pb-2">
+                              <span className="w-5 h-5 rounded-full bg-[#284F42] text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
+                              <span>윗줄 (1~4번) ➔ 100% 벨포레 자체 객실 지표</span>
+                            </div>
+                            <ul className="space-y-1.5 text-[#5A6B63] text-xs">
+                              <li>• <strong>① 30일간 현재 예약 완료 (예약률)</strong>: <strong>벨포레</strong> 향후 30일 총 가용 5,250실(175실×30일) 중 이미 확정된 2,841실의 실예약률입니다.</li>
+                              <li>• <strong>② 2025 vs 2026 실제 판매 요금 비교</strong>: <strong>벨포레</strong>의 작년 실제 객실단가(ADR) 대비 올해 판매단가 인상 실적(+24.5%)입니다.</li>
+                              <li>• <strong>③ 향후 30일 추천 평균 요금 (1박)</strong>: 시장 수요와 예약 속도를 고려해 알고리즘이 제안하는 <strong>벨포레 1박 평균 추천 판매가</strong>입니다.</li>
+                              <li>• <strong>④ 30일 추천 요금 적용 시 추가 수익</strong>: 추천 가격을 적용했을 때 <strong>벨포레가 얻게 되는 추가 예상 매출</strong>입니다.</li>
+                            </ul>
+                          </div>
+
+                          {/* 2. 아랫줄 */}
+                          <div className="p-3.5 rounded-xl bg-[#FAF9F6] border border-[#D0C6BB]/60 space-y-2">
+                            <div className="flex items-center gap-2 font-black text-[#1B382E] text-xs sm:text-[13px] border-b border-[#D0C6BB]/40 pb-2">
+                              <span className="w-5 h-5 rounded-full bg-[#B59269] text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
+                              <span>아랫줄 ➔ 경쟁사 품절 시 벨포레로 들어오는 낙수효과</span>
+                            </div>
+                            <ul className="space-y-1.5 text-[#5A6B63] text-xs">
+                              <li>• <strong>주변 만실 집중일</strong>: 충청권 4대 경쟁사(포레스트·스플라스 리솜, 소노문 단양, 천안 소노벨)의 객실이 <strong>완전 품절(만실)</strong>된 날짜 수입니다.</li>
+                              <li>• <strong>26.6실/일 (신규 유입 319실)</strong>: 경쟁사 품절 시 숙소를 찾지 못한 고객이 <strong>벨포레로 유입되는 예약 속도</strong>입니다.</li>
+                              <li>• <strong>현재 확정 예약 매출</strong>: 이미 벨포레에 입금·확정되어 변동 없는 <strong>벨포레의 확정 객실 매출</strong>입니다.</li>
+                              <li>• <strong>앞으로 팔 방의 예상 추가 이익</strong>: 주변 경쟁사 품절일에 가격을 방어하며 판매할 때 <strong>벨포레가 추가 확보 가능한 순이익</strong>입니다.</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {/* KPI 1 */}
                     <div className="bg-white rounded-2xl p-5 border border-[#D0C6BB]/75 space-y-2 flex flex-col justify-between">

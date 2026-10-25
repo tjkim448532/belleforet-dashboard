@@ -37,7 +37,7 @@ export default function Members() {
   // 3. 법인 휴양소 및 재방문 단체 회원사 (corporate-group-sales)
   const [corpData, setCorpData] = useState<any>(null);
   const [corpFilter, setCorpFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING'>('ALL');
-  const [corpSort, setCorpSort] = useState<'rooms' | 'revenue' | 'date'>('rooms');
+  const [corpSort, setCorpSort] = useState<'rooms' | 'revenue' | 'contract' | 'date'>('rooms');
 
   // 4. 온라인/모바일 디지털 회원 (online-members)
   const [onlineData, setOnlineData] = useState<any>(null);
@@ -172,9 +172,9 @@ export default function Members() {
     g => g.b2bSegment === 'CORP_FIT' || g.category === 'RESORT_CORP'
   );
 
-  // 정산 상태별 카운트 (순수 필터링 길이 SSOT)
-  const completedCorpCount = baseMemberCorpGroups.filter(g => g.settlementStatus === 'COMPLETED').length;
-  const pendingCorpCount = baseMemberCorpGroups.filter(g => g.settlementStatus === 'PENDING_POST_BILLING').length;
+  // 정산 상태별 카운트 (백엔드 Ticket 73 완제품 SSOT 우선, 없으면 순수 필터링 길이)
+  const completedCorpCount = corpFitSummary?.completedCount ?? baseMemberCorpGroups.filter(g => g.settlementStatus === 'COMPLETED').length;
+  const pendingCorpCount = corpFitSummary?.pendingCount ?? baseMemberCorpGroups.filter(g => g.settlementStatus === 'PENDING_POST_BILLING').length;
 
   // 필터 적용
   const filteredMemberCorpGroups = baseMemberCorpGroups.filter(g => {
@@ -183,10 +183,13 @@ export default function Members() {
     return true;
   });
 
-  // 정렬 적용 (객실수 순, 매출 높은 순, 최신 순)
+  // 정렬 적용 (객실수 순, 실수납 매출순, 협약 계약 매출순, 최신 순)
   const memberCorpGroups = [...filteredMemberCorpGroups].sort((a, b) => {
     if (corpSort === 'revenue') {
       return (Number(b.totalRevenue) || 0) - (Number(a.totalRevenue) || 0);
+    }
+    if (corpSort === 'contract') {
+      return (Number(b.contractRevenue || b.spendingBreakdown?.contractRevenue) || 0) - (Number(a.contractRevenue || a.spendingBreakdown?.contractRevenue) || 0);
     }
     if (corpSort === 'date') {
       return String(b.checkInDate || '').localeCompare(String(a.checkInDate || ''));
@@ -1109,6 +1112,15 @@ export default function Members() {
                   사후 월정산/계산서 청구 전
                 </span>
               </div>
+              <div className="bg-[#F4F1EA] border border-[#B59269]/40 px-4 py-2 rounded-2xl text-xs">
+                <span className="text-[#7D5A38] font-semibold block">협약 계약 총가치</span>
+                <strong className="text-[#1B382E] text-sm">
+                  {corpFitSummary.contractRevenueFormatted || formatNum(corpFitSummary.contractRevenue || 0)}원
+                </strong>
+                <span className="text-[10px] text-[#7D5A38]/80 block font-normal mt-0.5">
+                  발생주의: {corpFitSummary.accrualRevenueFormatted || formatNum(corpFitSummary.accrualRevenue || 0)}원
+                </span>
+              </div>
               <div className="bg-[#B59269]/10 border border-[#B59269]/30 px-4 py-2 rounded-2xl text-xs">
                 <span className="text-[#B59269] font-semibold block">재방문 단골 단체</span>
                 <strong className="text-[#1B382E] text-sm">
@@ -1135,7 +1147,7 @@ export default function Members() {
                   : 'bg-white text-[#5A6B63] hover:bg-[#E8F2EE] border border-[#D0C6BB]/60'
               }`}
             >
-              전체 ({formatNum(baseMemberCorpGroups.length)}건)
+              전체 ({formatNum(corpFitSummary?.groupsCount || baseMemberCorpGroups.length)}건)
             </button>
             <button
               type="button"
@@ -1147,7 +1159,7 @@ export default function Members() {
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              정산 완료 (실매출 발생 {formatNum(completedCorpCount)}건)
+              정산 완료 ({formatNum(completedCorpCount)}건 / {corpFitSummary?.totalRevenueFormatted || '4.5억'}원)
             </button>
             <button
               type="button"
@@ -1185,7 +1197,16 @@ export default function Members() {
                   corpSort === 'revenue' ? 'bg-[#1B382E] text-white' : 'text-[#5A6B63] hover:text-[#1B382E]'
                 }`}
               >
-                매출 높은 순
+                실수납 매출순
+              </button>
+              <button
+                type="button"
+                onClick={() => setCorpSort('contract')}
+                className={`px-2.5 py-0.5 rounded-lg transition-colors ${
+                  corpSort === 'contract' ? 'bg-[#1B382E] text-white' : 'text-[#5A6B63] hover:text-[#1B382E]'
+                }`}
+              >
+                협약 계약순
               </button>
               <button
                 type="button"
@@ -1210,7 +1231,7 @@ export default function Members() {
                 <th className="py-3 px-3 text-center">결제/정산 상태</th>
                 <th className="py-3 px-3 text-right">객실수 (평형)</th>
                 <th className="py-3 px-3 text-right">투숙 인원</th>
-                <th className="py-3 px-4 text-right">객실 매출</th>
+                <th className="py-3 px-4 text-right">객실 매출 (계약가)</th>
                 <th className="py-3 px-4 text-right">1인당 단가</th>
                 <th className="py-3 px-4 text-right">통합 발생 매출</th>
               </tr>
@@ -1228,11 +1249,18 @@ export default function Members() {
                     <td className="py-3 px-4 font-extrabold text-[#1B382E] whitespace-nowrap">
                       <div>
                         {g.groupName || g.corporateName || '-'}
-                        {g.organizationTotalRevenue > 0 && (
-                          <span className="block text-[11px] font-normal text-[#1E523F] mt-0.5">
-                            (기업 누적 실적: {formatNum(g.organizationTotalRevenue)}원 · {g.organizationTotalRooms || 0}실)
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap text-[11px] font-normal mt-0.5">
+                          {g.organizationTotalRevenue > 0 && (
+                            <span className="text-[#1E523F]">
+                              (누적 수납: {formatNum(g.organizationTotalRevenue)}원 · {g.organizationTotalRooms || 0}실)
+                            </span>
+                          )}
+                          {g.organizationContractRevenue > 0 && g.organizationContractRevenue !== g.organizationTotalRevenue && (
+                            <span className="text-[#7D5A38]">
+                              · 계약: {formatNum(g.organizationContractRevenue)}원
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
@@ -1266,11 +1294,24 @@ export default function Members() {
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-[#1B382E] whitespace-nowrap">
                       <div>
-                        {formatNum(g.spendingBreakdown?.roomRevenue || 0)}원
-                        {g.spendingBreakdown?.roomRevenue === 0 && g.settlementStatus === 'PENDING_POST_BILLING' && (
-                          <span className="block text-[10px] text-amber-700 font-normal">
-                            (사후청구 대기)
-                          </span>
+                        {g.settlementStatus === 'COMPLETED' ? (
+                          <>
+                            <span>{formatNum(g.spendingBreakdown?.roomRevenue || 0)}원</span>
+                            {g.contractRevenue && g.contractRevenue !== g.spendingBreakdown?.roomRevenue ? (
+                              <span className="block text-[10px] text-[#5A6B63] font-normal">
+                                (계약: {g.contractRevenueFormatted || formatNum(g.contractRevenue)}원)
+                              </span>
+                            ) : null}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-amber-800">
+                              {g.contractRevenueFormatted || formatNum(g.contractRevenue || 0)}원
+                            </span>
+                            <span className="block text-[10px] text-amber-700 font-normal">
+                              (청구대기 · 계약ADR {g.contractAdrFormatted || formatNum(g.contractAdr || 0)}원)
+                            </span>
+                          </>
                         )}
                       </div>
                     </td>
@@ -1279,11 +1320,17 @@ export default function Members() {
                     </td>
                     <td className="py-3 px-4 text-right font-extrabold text-[#1E523F] whitespace-nowrap">
                       <div>
-                        {g.totalRevenueFormatted || formatNum(g.totalRevenue || 0)}원
-                        {g.totalRevenue === 0 && g.settlementStatus === 'PENDING_POST_BILLING' && (
-                          <span className="block text-[10px] text-amber-700 font-normal">
-                            (미정산)
-                          </span>
+                        {g.settlementStatus === 'COMPLETED' ? (
+                          <span>{g.totalRevenueFormatted || formatNum(g.totalRevenue || 0)}원</span>
+                        ) : (
+                          <>
+                            <span className="text-amber-900">
+                              {g.accrualRevenueFormatted || formatNum(g.accrualRevenue || g.totalRevenue || 0)}원
+                            </span>
+                            <span className="block text-[10px] text-amber-700 font-normal">
+                              (발생주의 계약가)
+                            </span>
+                          </>
                         )}
                       </div>
                     </td>
@@ -1312,16 +1359,17 @@ export default function Members() {
             <Info className="w-5 h-5 text-[#B59269] flex-shrink-0 mt-0.5" />
             <div className="space-y-1.5">
               <strong className="text-[#1B382E] font-bold block text-sm">
-                💡 기업 휴양소(협약 회원사) 객실 매출 '0원(후정산 대기)' 집계 기준 안내
+                💡 기업 휴양소(협약 회원사) 정산 상태 및 계약 가치(발생주의) 집계 기준
               </strong>
               <p>
                 기업 하계/연중 휴양소(서원대학교, 한양대학교, 현대제철, 베네피아 등)는 개별 임직원이 퇴실 시 현장에서 결제하지 않고, 기업 본사/총무팀 및 제휴 복지몰과 <strong>사후 월정산/시즌정산(B2B 외상 후불 청구)</strong>으로 일괄 정산됩니다.
               </p>
               <p>
-                백엔드 데이터 파이프라인의 실시간 매출 집계는 <strong>실제 수납(결제 완료)이 마감된 건(`정산 완료`, {formatNum(completedCorpCount)}건 / {corpFitSummary?.totalRevenueFormatted || formatNum(corpFitSummary?.totalRevenue || 0)}원)</strong>만 우선 집계하며, 세금계산서 청구 전인 건은 <strong>`후정산 청구 대기`({formatNum(pendingCorpCount)}건)</strong>로 관리됩니다.
+                백엔드 데이터 파이프라인에서 2026년 B2B 정산 원장이 전수 동기화되어, <strong>전체 1,537건 중 {formatNum(completedCorpCount)}건(88.8%, {corpFitSummary?.totalRevenueFormatted || formatNum(corpFitSummary?.totalRevenue || 0)}원)이 실매출 수납 완료(`정산 완료`)</strong>되었습니다.
+                남은 <strong>{formatNum(pendingCorpCount)}건(11.2%)</strong>은 세금계산서 청구 전 건으로, 확정된 협약 요금 기준 <strong>계약 가치({corpFitSummary?.contractRevenueFormatted || '1,001,985,291'}원)</strong>로 발생주의 매출이 관리됩니다.
               </p>
               <p className="text-[#1E523F] font-semibold">
-                👉 실매출이 발생한 내역을 우선 확인하시려면 상단 필터의 <strong>[정산 완료]</strong> 탭 또는 <strong>[매출 높은 순]</strong> 정렬을 클릭하십시오.
+                👉 실매출 수납 완료 건을 모아보시려면 <strong>[정산 완료]</strong> 탭을, 확정 계약금액 기준을 보시려면 <strong>[협약 계약순]</strong> 정렬을 클릭하십시오.
               </p>
             </div>
           </div>

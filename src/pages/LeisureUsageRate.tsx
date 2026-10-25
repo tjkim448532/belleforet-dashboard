@@ -1035,7 +1035,7 @@ export default function LeisureUsageRate() {
                   >
                     {facilityList.map((fac) => (
                       <option key={fac} value={fac}>
-                        {fac === '벨포레 목장(체험)' ? '목장체험 (벨포레 목장 체험)' : fac}
+                        {fac === '벨포레 목장(체험)' ? '목장체험 (먹이·승마 체험 / 목장입장객 대비)' : fac}
                       </option>
                     ))}
                   </select>
@@ -1466,7 +1466,7 @@ export default function LeisureUsageRate() {
                   >
                     {facilityList.map((fac) => (
                       <option key={fac} value={fac}>
-                        {fac === '벨포레 목장(체험)' ? '목장체험 (벨포레 목장 체험)' : fac}
+                        {fac === '벨포레 목장(체험)' ? '목장체험 (먹이·승마 체험 / 목장입장객 대비)' : fac}
                       </option>
                     ))}
                   </select>
@@ -1568,7 +1568,11 @@ export default function LeisureUsageRate() {
                           const mRow: any = rows.find((r) => r.month === monthNum);
                           const dataB = mRow ? (mRow[compareYearB] as any) : undefined;
 
-                          const rawYoyDiff = mRow?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff ?? dataB?.yoyUsageRateDiff ?? null;
+                          const rawYoyDiff = mRow?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff 
+                            ?? mRow?.yearDiffs?.[compareYearB]?.usageRateDiff 
+                            ?? mRow?.yoyUsageRateDiff 
+                            ?? dataB?.yoyUsageRateDiff 
+                            ?? null;
                           const yoyDiff: number | null = rawYoyDiff !== null && rawYoyDiff !== undefined ? Number(rawYoyDiff) : null;
 
                           return selectedMatrixYears.map((yr, idx) => {
@@ -1742,7 +1746,11 @@ export default function LeisureUsageRate() {
                     const isMonthInSelectedRange = selectedPeriodMonthNumbers.has(monthNum);
 
                     const dLatest = row[latestYear] as any;
-                    const rawYoyDiff = (row as any)?.yearDiffs?.[`${latestYear}_${prevYear}`]?.usageRateDiff ?? dLatest?.yoyUsageRateDiff ?? null;
+                    const rawYoyDiff = (row as any)?.yearDiffs?.[`${latestYear}_${prevYear}`]?.usageRateDiff 
+                      ?? (row as any)?.yearDiffs?.[latestYear]?.usageRateDiff 
+                      ?? (row as any)?.yoyUsageRateDiff 
+                      ?? dLatest?.yoyUsageRateDiff 
+                      ?? null;
                     const yoyDiff: number | null = rawYoyDiff !== null && rawYoyDiff !== undefined ? Number(rawYoyDiff) : null;
 
                     return (

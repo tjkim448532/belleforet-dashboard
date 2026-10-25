@@ -8,25 +8,15 @@ import GlobalDatePicker from '../components/GlobalDatePicker';
 import { secureFetcher } from '../lib/secureFetcher';
 import { useDate } from '../contexts/DateContext';
 import { getLatestClosedDateStr, formatDate } from '../lib/dateUtils';
-import { getPeriodHolidayComparison } from '../lib/holidayUtils';
+import { getPeriodHolidayComparison, KOREAN_PUBLIC_HOLIDAYS } from '../lib/holidayUtils';
 import ReactECharts from 'echarts-for-react';
 import { Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { transformResortData } from '../lib/dataTransformers';
 import MetricExplainerTooltip from '../components/common/MetricExplainerTooltip';
 import type { ResortBusinessSummaryResponse } from '../types/reports-v2';
 
-// 🌟 대한민국 법정 공휴일 마스터 (2025~2026)
-const KOREAN_HOLIDAYS_SET = new Set([
-  // 2025
-  '2025-01-01', '2025-01-28', '2025-01-29', '2025-01-30', '2025-03-01', '2025-03-03',
-  '2025-05-05', '2025-05-06', '2025-06-06', '2025-08-15', '2025-10-03', '2025-10-05',
-  '2025-10-06', '2025-10-07', '2025-10-08', '2025-10-09', '2025-12-25',
-  // 2026
-  '2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02',
-  '2026-05-05', '2026-05-24', '2026-05-25', '2026-06-06', '2026-08-15', '2026-08-17',
-  '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-28', '2026-10-03', '2026-10-05',
-  '2026-10-09', '2026-12-25'
-]);
+// 🌟 대한민국 법정 공휴일 마스터 SSOT (src/lib/holidayUtils.ts KOREAN_PUBLIC_HOLIDAYS 연동)
+const KOREAN_HOLIDAYS_SET = new Set(Object.keys(KOREAN_PUBLIC_HOLIDAYS));
 
 // 익일 휴일(금, 토, 공휴일 전야) 판별 함수
 function checkNextDayHoliday(dateStr: string): boolean {

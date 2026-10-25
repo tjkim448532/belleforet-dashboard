@@ -765,8 +765,8 @@ export default function CondoReservationStatus() {
                           <div className="text-xs font-extrabold text-[#1B382E] font-mono">
                             {rt.reservedRooms}실
                           </div>
-                          <div className="text-[10px] text-slate-500 font-mono">
-                            {rt.rate.toFixed(0)}%
+                          <div className={`text-[10px] font-mono ${rt.rate > 100 ? 'text-amber-800 font-bold' : 'text-slate-500'}`} title={rt.rate > 100 ? '조립형 커넥팅룸 점유율' : undefined}>
+                            {rt.rate.toFixed(0)}%{rt.rate > 100 ? '*' : ''}
                           </div>
                         </div>
                       ))}
@@ -895,7 +895,11 @@ export default function CondoReservationStatus() {
                             {r35 ? `${r35.reservedRooms}실 (${r35.rate.toFixed(0)}%)` : '-'}
                           </td>
                           <td className="py-3 px-3 text-right font-mono text-slate-700">
-                            {r51 ? `${r51.reservedRooms}실 (${r51.rate.toFixed(0)}%)` : '-'}
+                            {r51 ? (
+                              <span className={r51.rate > 100 ? 'text-amber-800 font-bold' : ''} title={r51.rate > 100 ? '조립형 커넥팅룸 점유율' : undefined}>
+                                {r51.reservedRooms}실 ({r51.rate.toFixed(0)}%{r51.rate > 100 ? '*' : ''})
+                              </span>
+                            ) : '-'}
                           </td>
                           <td className="py-3 px-3 text-right font-mono text-slate-700">
                             {rPet ? `${rPet.reservedRooms}실` : '-'}
@@ -924,6 +928,10 @@ export default function CondoReservationStatus() {
                 </tbody>
               </table>
             </div>
+            <p className="text-[11px] text-[#5A6B63] px-6 py-2.5 bg-[#F4F3EE]/50 border-t border-slate-100 flex items-center gap-1.5">
+              <span className="font-bold text-amber-800">* 51평 점유율 안내:</span> 
+              51평은 16평과 35평을 결합한 조립형 커넥팅 객실로, 단독 예약 소진 상황에 따라 점유율 분모(캐파) 초과 표출이 발생할 수 있습니다.
+            </p>
           </div>
         )}
 
@@ -972,25 +980,48 @@ export default function CondoReservationStatus() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {selectedDayDetail.byRoomType.map(rt => (
-                        <tr key={rt.roomType}>
-                          <td className="py-2.5 px-3 font-bold text-[#1B382E]">{rt.roomType}</td>
-                          <td className="py-2.5 px-3 text-right font-mono">
-                            {rt.reservedRooms} / {rt.capacity}실
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-bold text-[#284F42]">
-                            {rt.rate.toFixed(1)}%
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-slate-600">
-                            {rt.adr ? `${rt.adr.toLocaleString()}원` : '-'}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-bold text-[#1B382E]">
-                            {rt.estimatedRevenue ? `${rt.estimatedRevenue.toLocaleString()}원` : '-'}
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedDayDetail.byRoomType.map(rt => {
+                        const isConnectingRoom = rt.roomType.includes('51평');
+                        return (
+                          <tr key={rt.roomType}>
+                            <td className="py-2.5 px-3 font-bold text-[#1B382E]">
+                              <div className="flex items-center gap-1.5">
+                                <span>{rt.roomType}</span>
+                                {isConnectingRoom && (
+                                  <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300" title="16평+35평 조합형 커넥팅 객실로 단독 분모 초과 가능">
+                                    조립형
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono">
+                              {rt.reservedRooms} / {rt.capacity}실
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-[#284F42]">
+                              {rt.rate > 100 ? (
+                                <span className="text-amber-800 font-extrabold" title="조립형 커넥팅룸 잔여 재고 특수성으로 인한 분모 초과 표출">
+                                  {rt.rate.toFixed(1)}%*
+                                </span>
+                              ) : (
+                                `${rt.rate.toFixed(1)}%`
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono text-slate-600">
+                              {rt.adr ? `${rt.adr.toLocaleString()}원` : '-'}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-[#1B382E]">
+                              {rt.estimatedRevenue ? `${rt.estimatedRevenue.toLocaleString()}원` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
+                  {selectedDayDetail.byRoomType.some(rt => rt.roomType.includes('51평') && rt.rate > 100) && (
+                    <p className="text-[10px] text-amber-800 mt-2 px-1 leading-relaxed">
+                      * 51평형은 16평과 35평을 결합한 조립형 커넥팅룸으로, 단독 판매 소진 상황에 따라 점유율 분모(캐파) 초과 표출이 발생할 수 있습니다.
+                    </p>
+                  )}
                 </div>
               </div>
 

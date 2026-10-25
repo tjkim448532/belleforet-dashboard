@@ -650,12 +650,18 @@ export default function LeisureUsageRate() {
   const periodYoYDiff = useMemo(() => {
     if (!periodCumulative) return null;
     const cB = periodCumulative[compareYearB];
-    const diffFromYearDiffs = cB?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff;
+    const diffFromYearDiffs = 
+      cB?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff ??
+      cB?.yearDiffs?.[compareYearB]?.usageRateDiff ??
+      (periodCumulative as any)?.yearDiffs?.[compareYearB]?.usageRateDiff;
     if (diffFromYearDiffs !== undefined && diffFromYearDiffs !== null) {
       return Number(diffFromYearDiffs);
     }
     if (cB?.yoyUsageRateDiff !== undefined && cB?.yoyUsageRateDiff !== null) {
       return Number(cB.yoyUsageRateDiff);
+    }
+    if ((periodCumulative as any)?.yoyUsageRateDiff !== undefined && (periodCumulative as any)?.yoyUsageRateDiff !== null) {
+      return Number((periodCumulative as any).yoyUsageRateDiff);
     }
     return null;
   }, [periodCumulative, compareYearB, compareYearA]);
@@ -1655,7 +1661,10 @@ export default function LeisureUsageRate() {
 
                       {SEVEN_KEY_FACILITIES.map((fac) => {
                         const cumB = sevenFacilitiesCumulative[fac.key]?.[compareYearB];
-                        const rawDiff = cumB?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff ?? cumB?.yoyUsageRateDiff ?? null;
+                        const rawDiff = cumB?.yearDiffs?.[`${compareYearB}_${compareYearA}`]?.usageRateDiff 
+                          ?? cumB?.yearDiffs?.[compareYearB]?.usageRateDiff 
+                          ?? cumB?.yoyUsageRateDiff 
+                          ?? null;
                         const diff: number | null = rawDiff !== null && rawDiff !== undefined ? Number(rawDiff) : null;
 
                         return selectedMatrixYears.map((yr, idx) => {

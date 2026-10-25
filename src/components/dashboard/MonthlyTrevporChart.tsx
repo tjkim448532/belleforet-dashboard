@@ -321,18 +321,32 @@ export default function MonthlyTrevporChart() {
       }
     });
 
-    // 백엔드 공인 ytdSummary 완제품 바인딩 (클라이언트 나눗셈 금지, 미제공 시 null Fail-Stop)
+    // 백엔드 공인 periodSummaries[periodKey] 완제품 1:1 바인딩 (클라이언트 나눗셈 금지, 미제공 시 null Fail-Stop)
+    const periodKeyMap: Record<typeof periodMode, string> = {
+      CLOSED_ONLY: 'CLOSED',
+      ALL_MTD: 'CLOSED',
+      H1: 'H1',
+      H2: 'H2',
+      Q1: 'Q1',
+      Q2: 'Q2',
+      Q3: 'Q3',
+      Q4: 'Q4'
+    };
+    const activePeriodKey = periodKeyMap[periodMode] || 'CLOSED';
+    const activePeriodSummary = (data as any)?.periodSummaries?.[activePeriodKey]
+      ?? (periodMode === 'CLOSED_ONLY' || periodMode === 'ALL_MTD' ? ((data as any)?.ytdSummary ?? data?.summary) : null);
+
     const avgTyTrevpar = metricMode === 'TOTAL'
-      ? ((data as any)?.ytdSummary?.ty?.trevparTotal ?? null)
-      : ((data as any)?.ytdSummary?.ty?.trevparWithoutGolf ?? null);
+      ? (activePeriodSummary?.ty?.trevparTotal ?? activePeriodSummary?.trevparTotal ?? null)
+      : (activePeriodSummary?.ty?.trevparWithoutGolf ?? activePeriodSummary?.trevparWithoutGolf ?? null);
 
     const avgLyTrevpar = metricMode === 'TOTAL'
-      ? ((data as any)?.ytdSummary?.ly?.trevparTotal ?? null)
-      : ((data as any)?.ytdSummary?.ly?.trevparWithoutGolf ?? null);
+      ? (activePeriodSummary?.ly?.trevparTotal ?? null)
+      : (activePeriodSummary?.ly?.trevparWithoutGolf ?? null);
 
     const yoyGrowth = metricMode === 'TOTAL'
-      ? ((data as any)?.ytdSummary?.growthTotalRate ?? null)
-      : ((data as any)?.ytdSummary?.growthWithoutGolfRate ?? null);
+      ? (activePeriodSummary?.growthTotalRate ?? null)
+      : (activePeriodSummary?.growthWithoutGolfRate ?? null);
 
     let periodLabel = `공식 마감월 (1~${monthMeta.lastClosedMonth}월)`;
     if (periodMode === 'CLOSED_ONLY') {
@@ -353,10 +367,10 @@ export default function MonthlyTrevporChart() {
       periodLabel = '4분기 (10~12월)';
     }
 
-    // [Zero-Proxy SSOT] 백엔드 공인 완제품 RevPAR YTD 요약 바인딩
-    const avgTyRevpar = (data?.summary?.avgTyRevpar ?? data?.summary?.ty?.revpar ?? (data?.summary?.ty as any)?.revPar) ?? null;
-    const avgLyRevpar = (data?.summary?.avgLyRevpar ?? data?.summary?.ly?.revpar ?? (data?.summary?.ly as any)?.revPar) ?? null;
-    const revparGrowth = (data?.summary?.revparGrowthRate ?? data?.summary?.growthRevparRate) ?? null;
+    // [Zero-Proxy SSOT] 백엔드 공인 완제품 RevPAR 기간별 요약 바인딩
+    const avgTyRevpar = (activePeriodSummary?.ty?.revpar ?? activePeriodSummary?.ty?.revPar ?? activePeriodSummary?.revpar ?? activePeriodSummary?.avgTyRevpar) ?? null;
+    const avgLyRevpar = (activePeriodSummary?.ly?.revpar ?? activePeriodSummary?.ly?.revPar ?? activePeriodSummary?.avgLyRevpar) ?? null;
+    const revparGrowth = (activePeriodSummary?.revparGrowthRate ?? activePeriodSummary?.growthRevparRate) ?? null;
 
     return {
       periodLabel,

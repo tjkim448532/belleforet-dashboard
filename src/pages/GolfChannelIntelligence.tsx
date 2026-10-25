@@ -708,6 +708,15 @@ export default function GolfChannelIntelligence() {
     const gf2025 = data.monthlyYoy.map(m => m.y2025.avgGreenFee > 0 ? m.y2025.avgGreenFee : null);
     const gf2026 = data.monthlyYoy.map(m => m.y2026.avgGreenFee > 0 ? m.y2026.avgGreenFee : null);
 
+    // selectedYoyYear ('ALL' | '2024' | '2025' | '2026')에 따른 인터랙티브 스타일 동적 제어
+    const isFocus24 = selectedYoyYear === '2024';
+    const isFocus25 = selectedYoyYear === '2025';
+    const isFocus26 = selectedYoyYear === '2026';
+    const isAll = selectedYoyYear === 'ALL';
+
+    const getOpacity = (isTarget: boolean) => (isAll || isTarget ? 1.0 : 0.28);
+    const getLineWidth = (isTarget: boolean) => (isTarget ? 3.5 : isAll ? 2.5 : 1.5);
+
     return {
       tooltip: {
         trigger: 'axis',
@@ -718,17 +727,17 @@ export default function GolfChannelIntelligence() {
           const row = data.monthlyYoy[idx];
           return `
             <div style="font-weight:700;margin-bottom:6px;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:4px;">
-              ${row.monthName} 실적 비교 (YoY)
+              ${row.monthName} 실적 비교 (YoY) ${selectedYoyYear !== 'ALL' ? `<span style="font-size:11px;color:#00ae95;font-weight:800;">[${selectedYoyYear}년 포커스]</span>` : ''}
             </div>
-            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#64748b;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#64748b;${isFocus24 ? 'font-weight:800;color:#0f172a;background:#f1f5f9;padding:2px 4px;border-radius:4px;' : ''}">
               <span>2024년:</span>
               <strong style="color:#0f172a;">${row.y2024.teams > 0 ? `${row.y2024.teams.toLocaleString()}팀 (${formatCurrency(row.y2024.avgGreenFee)}원)` : '-'}</strong>
             </div>
-            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#0284c7;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#0284c7;${isFocus25 ? 'font-weight:800;background:#eff6ff;padding:2px 4px;border-radius:4px;' : ''}">
               <span>2025년:</span>
               <strong>${row.y2025.teams > 0 ? `${row.y2025.teams.toLocaleString()}팀 (${formatCurrency(row.y2025.avgGreenFee)}원)` : '-'}</strong>
             </div>
-            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#00ae95;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;gap:12px;color:#00ae95;${isFocus26 ? 'font-weight:800;background:#ecfdf5;padding:2px 4px;border-radius:4px;' : ''}">
               <span>2026년:</span>
               <strong>${row.y2026.teams > 0 ? `${row.y2026.teams.toLocaleString()}팀 (${formatCurrency(row.y2026.avgGreenFee)}원)` : '집계 대기'}</strong>
             </div>
@@ -754,12 +763,77 @@ export default function GolfChannelIntelligence() {
         }
       ],
       series: [
-        { name: '24년 팀수', type: 'bar', data: teams2024, itemStyle: { color: '#94a3b8' } },
-        { name: '25년 팀수', type: 'bar', data: teams2025, itemStyle: { color: '#0284c7' } },
-        { name: '26년 팀수', type: 'bar', data: teams2026, itemStyle: { color: '#00ae95' } },
-        { name: '24년 평균 그린피', type: 'line', yAxisIndex: 1, data: gf2024, lineStyle: { type: 'dashed', color: '#64748b' } },
-        { name: '25년 평균 그린피', type: 'line', yAxisIndex: 1, data: gf2025, lineStyle: { type: 'dashed', color: '#0369a1' } },
-        { name: '26년 평균 그린피', type: 'line', yAxisIndex: 1, data: gf2026, lineStyle: { width: 3, color: '#10b981' } }
+        { 
+          name: '24년 팀수', 
+          type: 'bar', 
+          data: teams2024, 
+          itemStyle: { 
+            color: '#94a3b8',
+            opacity: getOpacity(isFocus24)
+          },
+          z: isFocus24 ? 5 : 2
+        },
+        { 
+          name: '25년 팀수', 
+          type: 'bar', 
+          data: teams2025, 
+          itemStyle: { 
+            color: '#0284c7',
+            opacity: getOpacity(isFocus25)
+          },
+          z: isFocus25 ? 5 : 3
+        },
+        { 
+          name: '26년 팀수', 
+          type: 'bar', 
+          data: teams2026, 
+          itemStyle: { 
+            color: '#00ae95',
+            opacity: getOpacity(isFocus26)
+          },
+          z: isFocus26 ? 6 : 4
+        },
+        { 
+          name: '24년 평균 그린피', 
+          type: 'line', 
+          yAxisIndex: 1, 
+          data: gf2024, 
+          lineStyle: { 
+            type: isFocus24 ? 'solid' : 'dashed', 
+            color: '#64748b',
+            width: getLineWidth(isFocus24),
+            opacity: getOpacity(isFocus24)
+          },
+          itemStyle: { opacity: getOpacity(isFocus24) },
+          z: isFocus24 ? 10 : 7
+        },
+        { 
+          name: '25년 평균 그린피', 
+          type: 'line', 
+          yAxisIndex: 1, 
+          data: gf2025, 
+          lineStyle: { 
+            type: isFocus25 ? 'solid' : 'dashed', 
+            color: '#0369a1',
+            width: getLineWidth(isFocus25),
+            opacity: getOpacity(isFocus25)
+          },
+          itemStyle: { opacity: getOpacity(isFocus25) },
+          z: isFocus25 ? 10 : 8
+        },
+        { 
+          name: '26년 평균 그린피', 
+          type: 'line', 
+          yAxisIndex: 1, 
+          data: gf2026, 
+          lineStyle: { 
+            width: getLineWidth(isFocus26), 
+            color: '#10b981',
+            opacity: getOpacity(isFocus26)
+          },
+          itemStyle: { opacity: getOpacity(isFocus26) },
+          z: isFocus26 ? 12 : 9
+        }
       ]
     };
   };
@@ -1336,7 +1410,7 @@ export default function GolfChannelIntelligence() {
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <span className="text-xs font-bold text-slate-500">기준연도 선택:</span>
-            {['2024', '2025', '2026'].map(y => (
+            {['ALL', '2024', '2025', '2026'].map(y => (
               <button
                 key={y}
                 type="button"
@@ -1347,7 +1421,7 @@ export default function GolfChannelIntelligence() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {y}년
+                {y === 'ALL' ? '전체 (YoY 비교)' : `${y}년`}
               </button>
             ))}
           </div>
@@ -1360,25 +1434,49 @@ export default function GolfChannelIntelligence() {
 
         {/* 월별 상세 피벗 테이블 */}
         <div className="overflow-x-auto">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-xs font-bold text-[#1B382E]">
+              {selectedYoyYear === 'ALL'
+                ? '📊 3개년 (2024~2026) 전수 대조 피벗 테이블'
+                : `🎯 ${selectedYoyYear}년 집중 하이라이트 대조표`}
+            </span>
+            {selectedYoyYear !== 'ALL' && (
+              <span className="text-[11px] text-[#284F42] font-semibold bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/60">
+                {selectedYoyYear}년 열이 강조되어 표시됩니다
+              </span>
+            )}
+          </div>
           <table className="w-full text-left text-xs whitespace-nowrap border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-600 font-bold uppercase border-y border-slate-200">
                 <th className="py-3 px-4 text-center">월 (Month)</th>
-                <th colSpan={3} className="py-3 px-4 text-center border-l border-slate-200 bg-slate-100/50">2024년</th>
-                <th colSpan={3} className="py-3 px-4 text-center border-l border-slate-200 bg-blue-50/50">2025년</th>
-                <th colSpan={3} className="py-3 px-4 text-center border-l border-slate-200 bg-emerald-50/50">2026년</th>
+                <th colSpan={3} className={`py-3 px-4 text-center border-l border-slate-200 transition-colors ${
+                  selectedYoyYear === '2024' ? 'bg-slate-200 text-slate-900 font-black ring-1 ring-slate-400' : 'bg-slate-100/50'
+                }`}>
+                  2024년 {selectedYoyYear === '2024' ? '(선택됨)' : ''}
+                </th>
+                <th colSpan={3} className={`py-3 px-4 text-center border-l border-slate-200 transition-colors ${
+                  selectedYoyYear === '2025' ? 'bg-blue-100 text-blue-900 font-black ring-1 ring-blue-400' : 'bg-blue-50/50'
+                }`}>
+                  2025년 {selectedYoyYear === '2025' ? '(선택됨)' : ''}
+                </th>
+                <th colSpan={3} className={`py-3 px-4 text-center border-l border-slate-200 transition-colors ${
+                  selectedYoyYear === '2026' ? 'bg-emerald-100 text-emerald-950 font-black ring-1 ring-emerald-500' : 'bg-emerald-50/50'
+                }`}>
+                  2026년 {selectedYoyYear === '2026' ? '(선택됨)' : ''}
+                </th>
               </tr>
               <tr className="bg-slate-50/80 text-[11px] font-semibold text-slate-500 border-b border-slate-200">
                 <th className="py-2 px-4 text-center"></th>
-                <th className="py-2 px-3 text-right border-l border-slate-200">팀수</th>
-                <th className="py-2 px-3 text-right">평균그린피</th>
-                <th className="py-2 px-3 text-right">매출액</th>
-                <th className="py-2 px-3 text-right border-l border-slate-200">팀수</th>
-                <th className="py-2 px-3 text-right">평균그린피</th>
-                <th className="py-2 px-3 text-right">매출액</th>
-                <th className="py-2 px-3 text-right border-l border-slate-200">팀수</th>
-                <th className="py-2 px-3 text-right">평균그린피</th>
-                <th className="py-2 px-3 text-right">매출액</th>
+                <th className={`py-2 px-3 text-right border-l border-slate-200 ${selectedYoyYear === '2024' ? 'bg-slate-100 font-bold text-slate-900' : ''}`}>팀수</th>
+                <th className={`py-2 px-3 text-right ${selectedYoyYear === '2024' ? 'bg-slate-100 font-bold text-slate-900' : ''}`}>평균그린피</th>
+                <th className={`py-2 px-3 text-right ${selectedYoyYear === '2024' ? 'bg-slate-100 font-bold text-slate-900' : ''}`}>매출액</th>
+                <th className={`py-2 px-3 text-right border-l border-slate-200 ${selectedYoyYear === '2025' ? 'bg-blue-50 font-bold text-blue-900' : ''}`}>팀수</th>
+                <th className={`py-2 px-3 text-right ${selectedYoyYear === '2025' ? 'bg-blue-50 font-bold text-blue-900' : ''}`}>평균그린피</th>
+                <th className={`py-2 px-3 text-right ${selectedYoyYear === '2025' ? 'bg-blue-50 font-bold text-blue-900' : ''}`}>매출액</th>
+                <th className={`py-2 px-3 text-right border-l border-slate-200 ${selectedYoyYear === '2026' ? 'bg-emerald-50 font-bold text-emerald-950' : ''}`}>팀수</th>
+                <th className={`py-2 px-3 text-right ${selectedYoyYear === '2026' ? 'bg-emerald-50 font-bold text-emerald-950' : ''}`}>평균그린피</th>
+                <th className={`py-2 px-3 text-right ${selectedYoyYear === '2026' ? 'bg-emerald-50 font-bold text-emerald-950' : ''}`}>매출액</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -1398,29 +1496,43 @@ export default function GolfChannelIntelligence() {
                   </td>
                   
                   {/* 2024년 */}
-                  <td className="py-3 px-3 text-right border-l border-slate-100 text-slate-600">
+                  <td className={`py-3 px-3 text-right border-l border-slate-100 ${
+                    selectedYoyYear === '2024' ? 'bg-slate-100 font-extrabold text-slate-900' : 'text-slate-600'
+                  }`}>
                     {row.y2024.teams > 0 ? `${row.y2024.teams.toLocaleString()}팀` : '-'}
                   </td>
-                  <td className="py-3 px-3 text-right text-slate-600">
+                  <td className={`py-3 px-3 text-right ${
+                    selectedYoyYear === '2024' ? 'bg-slate-100 font-bold text-slate-900' : 'text-slate-600'
+                  }`}>
                     {row.y2024.avgGreenFee > 0 ? `${formatCurrency(row.y2024.avgGreenFee)}원` : '-'}
                   </td>
-                  <td className="py-3 px-3 text-right text-slate-600">
+                  <td className={`py-3 px-3 text-right ${
+                    selectedYoyYear === '2024' ? 'bg-slate-100 font-bold text-slate-900' : 'text-slate-600'
+                  }`}>
                     {row.y2024.revenue > 0 ? `${formatCurrency(row.y2024.revenue)}원` : '-'}
                   </td>
 
                   {/* 2025년 */}
-                  <td className="py-3 px-3 text-right border-l border-slate-100 font-bold text-blue-700 bg-blue-50/10">
+                  <td className={`py-3 px-3 text-right border-l border-slate-100 ${
+                    selectedYoyYear === '2025' ? 'bg-blue-100/70 font-black text-blue-900' : 'font-bold text-blue-700 bg-blue-50/10'
+                  }`}>
                     {row.y2025.teams > 0 ? `${row.y2025.teams.toLocaleString()}팀` : '-'}
                   </td>
-                  <td className="py-3 px-3 text-right text-blue-800 bg-blue-50/10">
+                  <td className={`py-3 px-3 text-right ${
+                    selectedYoyYear === '2025' ? 'bg-blue-100/70 font-black text-blue-900' : 'text-blue-800 bg-blue-50/10'
+                  }`}>
                     {row.y2025.avgGreenFee > 0 ? `${formatCurrency(row.y2025.avgGreenFee)}원` : '-'}
                   </td>
-                  <td className="py-3 px-3 text-right text-blue-900 bg-blue-50/10">
+                  <td className={`py-3 px-3 text-right ${
+                    selectedYoyYear === '2025' ? 'bg-blue-100/70 font-black text-blue-950' : 'text-blue-900 bg-blue-50/10'
+                  }`}>
                     {row.y2025.revenue > 0 ? `${formatCurrency(row.y2025.revenue)}원` : '-'}
                   </td>
 
                   {/* 2026년 */}
-                  <td className="py-3 px-3 text-right border-l border-slate-100 font-extrabold text-emerald-700 bg-emerald-50/10">
+                  <td className={`py-3 px-3 text-right border-l border-slate-100 ${
+                    selectedYoyYear === '2026' ? 'bg-emerald-100/80 font-black text-emerald-950' : 'font-extrabold text-emerald-700 bg-emerald-50/10'
+                  }`}>
                     {row.y2026.teams > 0 ? (
                       <span className="inline-flex items-center justify-end gap-1">
                         {`${row.y2026.teams.toLocaleString()}팀`}
@@ -1432,10 +1544,14 @@ export default function GolfChannelIntelligence() {
                       </span>
                     ) : '-'}
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-emerald-800 bg-emerald-50/10">
+                  <td className={`py-3 px-3 text-right ${
+                    selectedYoyYear === '2026' ? 'bg-emerald-100/80 font-black text-emerald-900' : 'font-bold text-emerald-800 bg-emerald-50/10'
+                  }`}>
                     {row.y2026.avgGreenFee > 0 ? `${formatCurrency(row.y2026.avgGreenFee)}원` : '-'}
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-emerald-900 bg-emerald-50/10">
+                  <td className={`py-3 px-3 text-right ${
+                    selectedYoyYear === '2026' ? 'bg-emerald-100/80 font-black text-emerald-950' : 'font-bold text-emerald-900 bg-emerald-50/10'
+                  }`}>
                     {row.y2026.revenue > 0 ? `${formatCurrency(row.y2026.revenue)}원` : '-'}
                   </td>
                 </tr>

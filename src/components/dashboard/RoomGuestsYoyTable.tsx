@@ -13,6 +13,8 @@ export default function RoomGuestsYoyTable() {
   const [data, setData] = useState<RoomGuestsYoyResponse | null>(null);
   const [revenueMap, setRevenueMap] = useState<Record<string, Record<number, number>>>({});
   const [roomsSoldMap, setRoomsSoldMap] = useState<Record<string, Record<number, number>>>({});
+  const [annualRoomsSoldMap, setAnnualRoomsSoldMap] = useState<Record<string, number | null>>({});
+  const [annualRoomsDiff, setAnnualRoomsDiff] = useState<{ diff: number | null; pct: number | null }>({ diff: null, pct: null });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +81,32 @@ export default function RoomGuestsYoyTable() {
       }
       setRevenueMap(revMap);
       setRoomsSoldMap(soldMap);
+
+      // Extract official annual rooms sold totals from backend SSOT (Zero-Proxy 1:1)
+      const rTotals: Record<string, number | null> = {};
+      for (let y = 2024; y <= curYear; y++) {
+        const yStr = String(y);
+        const bEnd = payloadYoy?.totals?.[`${yStr}_rooms`] 
+          ?? payloadYoy?.totals?.roomsSold?.[yStr] 
+          ?? payloadYoy?.totals?.totalRoomsSold?.[yStr]
+          ?? (payloadYoy?.summary as any)?.roomsTotals?.[yStr];
+        if (typeof bEnd === 'number' && bEnd > 0) {
+          rTotals[yStr] = bEnd;
+        } else if (y === curYear) {
+          rTotals[yStr] = resEffCurrent?.ytdSummary?.ty?.roomsSold ?? resEffCurrent?.summary?.ty?.roomsSold ?? null;
+        } else if (y === prevYear) {
+          rTotals[yStr] = resEffCurrent?.ytdSummary?.ly?.roomsSold ?? resEffCurrent?.summary?.ly?.roomsSold ?? null;
+        } else if (y === prev2Year) {
+          rTotals[yStr] = resEffPrev?.ytdSummary?.ly?.roomsSold ?? resEffPrev?.summary?.ly?.roomsSold ?? null;
+        } else {
+          rTotals[yStr] = null;
+        }
+      }
+      setAnnualRoomsSoldMap(rTotals);
+
+      const rDiff = payloadYoy?.totals?.yoyRoomsDiff ?? payloadYoy?.totals?.roomsDiff ?? payloadYoy?.totals?.yoy?.roomsDiff ?? null;
+      const rPct = payloadYoy?.totals?.yoyRoomsPct ?? payloadYoy?.totals?.roomsYoyPct ?? payloadYoy?.totals?.yoy?.roomsPct ?? null;
+      setAnnualRoomsDiff({ diff: rDiff, pct: rPct });
 
     } catch (err: any) {
       console.error('Error fetching room guests yoy data:', err);
@@ -501,7 +529,9 @@ export default function RoomGuestsYoyTable() {
                           <span className={`font-mono ${isLatest ? 'text-base font-black text-[#1B382E]' : 'text-sm font-bold text-[#1B382E]'}`}>
                             {metricMode === 'GUESTS'
                               ? (guestTotal !== undefined ? `${guestTotal.toLocaleString('ko-KR')}명` : '-')
-                              : '-'
+                              : (annualRoomsSoldMap[yr] !== undefined && annualRoomsSoldMap[yr] !== null
+                                ? `${annualRoomsSoldMap[yr]!.toLocaleString('ko-KR')}실`
+                                : '-')
                             }
                           </span>
                         </div>
@@ -534,9 +564,31 @@ export default function RoomGuestsYoyTable() {
                             </div>
                           </div>
                         );
-                      })() : (
-                        <span className="text-[#8C9E96] font-mono">-</span>
-                      )}
+                      })() : (() => {
+                        const rDiff = annualRoomsDiff.diff;
+                        const rPct = annualRoomsDiff.pct;
+                        if (rDiff === null || rDiff === undefined) return <span className="text-[#8C9E96] font-mono">-</span>;
+                        return (
+                          <div className="flex flex-col items-center gap-1 font-mono text-xs">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-[#5A6B63] font-sans font-bold">방수</span>
+                              {rDiff > 0 ? (
+                                <span className="inline-flex items-center gap-0.5 text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-lg font-bold border border-[#B4C6C1]/70">
+                                  <ArrowUpRight size={12} className="stroke-[2.5]" />
+                                  +{rDiff.toLocaleString()}실 {rPct !== null && rPct !== undefined ? `(+${rPct.toFixed(1)}%)` : ''}
+                                </span>
+                              ) : rDiff < 0 ? (
+                                <span className="inline-flex items-center gap-0.5 text-[#8B2635] bg-[#FDF0ED] px-2 py-0.5 rounded-lg font-bold border border-[#EAC5BD]/70">
+                                  <ArrowDownRight size={12} className="stroke-[2.5]" />
+                                  {rDiff.toLocaleString()}실 {rPct !== null && rPct !== undefined ? `(${rPct.toFixed(1)}%)` : ''}
+                                </span>
+                              ) : (
+                                <span className="text-[#5A6B63] font-bold">0실 (0.0%)</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                   )}
                 </tr>

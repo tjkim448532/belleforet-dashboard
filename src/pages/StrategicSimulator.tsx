@@ -297,8 +297,8 @@ export default function StrategicSimulator() {
         const multipliersParam = encodeURIComponent(JSON.stringify(strategicMultipliers));
 
         const url = isYearly
-          ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}`
-          : `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${effectiveGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}`;
+          ? `${API_BASE}/api/v6/report/business-plan?mode=YEARLY&year=${input.targetYear}&growthRate=${input.targetGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}&baselineMode=${baselineMode}`
+          : `${API_BASE}/api/v6/report/business-plan?year=${input.targetYear}&month=${input.selectedMonth}&growthRate=${effectiveGrowthRate}&includeGolf=${input.includeGolf}&multipliers=${multipliersParam}&baselineMode=${baselineMode}`;
 
         const res = await secureFetcher(url) as { success: boolean; data: { summary: ApiSummary; categories: ApiCategory[] } };
 
@@ -327,7 +327,7 @@ export default function StrategicSimulator() {
 
     fetchBusinessPlan();
     return () => { isMounted = false; };
-  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf, retryTrigger, monthlyGrowthRates, strategicMultipliers]);
+  }, [input.selectedMonth, input.targetGrowthRate, input.targetYear, input.baseYear, input.includeGolf, retryTrigger, monthlyGrowthRates, strategicMultipliers, baselineMode]);
 
   // Server Simulator Integration: POST /api/v6/simulator/strategic-forecast
   const [serverForecastData, setServerForecastData] = useState<StrategicForecastResponse | null>(null);
@@ -350,6 +350,7 @@ export default function StrategicSimulator() {
             selectedMonth: input.selectedMonth,
             dayFilter: 'ALL',
             simMode: 'BALANCED',
+            baselineMode,
             targetGoal: input.targetGoal ?? input.targetTotalRevenue
           })
         });
@@ -375,7 +376,7 @@ export default function StrategicSimulator() {
 
     runStrategicForecast();
     return () => { isMounted = false; };
-  }, [input.targetYear, input.selectedMonth, input.targetTotalRevenue, monthlyGrowthRates, strategicMultipliers, retryTrigger]);
+  }, [input.targetYear, input.selectedMonth, input.targetTotalRevenue, monthlyGrowthRates, strategicMultipliers, retryTrigger, baselineMode]);
 
   // Fetch All 12 Months Matrix Data via Single Backend Request (Zero Multi-Call Loop)
   useEffect(() => {
@@ -428,15 +429,17 @@ export default function StrategicSimulator() {
 
   // Feature 4: Baseline Engine directly from Backend API (0-Variance)
   const wmaBaselineData = useMemo(() => {
-    const baselineRevenue = apiData?.summary?.grandTotal2025 || 0;
+    const singleYearRevenue = apiData?.summary?.grandTotal2025 || 0;
+    const wmaRev = (apiData?.summary as any)?.grandTotalWma ?? singleYearRevenue;
+    const activeBaselineRevenue = baselineMode === 'WMA_2YEAR' ? wmaRev : singleYearRevenue;
     return {
-      activeBaselineRevenue: baselineRevenue,
-      wmaTotalRevenue: baselineRevenue,
-      singleYearRevenue: baselineRevenue,
+      activeBaselineRevenue,
+      wmaTotalRevenue: wmaRev,
+      singleYearRevenue,
       smoothingDelta: Number((apiData?.summary as any)?.smoothingDelta ?? 0),
       smoothingRate: Number((apiData?.summary as any)?.smoothingRate ?? 0)
     };
-  }, [apiData]);
+  }, [apiData, baselineMode]);
 
   // Base raw categories from API (1:1 Passthrough)
   const rawCategories: ApiCategory[] = useMemo(() => {

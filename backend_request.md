@@ -4354,3 +4354,24 @@ ORDER BY venue_name, rn;
   2. **`periodSummaries.ALL_MTD`** (및 기존 `CLOSED` 호환 유지):
      - 당월 진행분(10월 마감일 기준)까지 포함한 **`1 ~ 10월` (`months: [1..10]`)** 기준의 `ty`, `ly`(전년 1~10월 동기간), `growthTotalRate`, `growthWithoutGolfRate`, `revparGrowthRate` 사전 연산 완제품
 - 프론트엔드(`MonthlyTrevporChart.tsx`)는 `ps.CLOSED_ONLY ?? ps.CLOSED_1_9 ?? ps.CLOSED` 및 `ps.ALL_MTD ?? ps.MTD ?? ps.CLOSED`를 자동 바인딩하도록 선반영 완료했습니다.
+
+---
+
+## 70. 🎯 [P1 API 보강] Ticket 70 — `business-plan` / `strategic-forecast` 내 `baselineMode` ('SINGLE_YEAR' vs 'WMA_2YEAR') 및 `room-guests-yoy` 내 연간 총 판매방수(`roomsSoldTotals`) 완제품 제공 요청 (2026-10-25)
+
+### 70-1. 배경 및 현상
+1. **경영계획 시뮬레이터 (`StrategicSimulator.tsx`)**:
+   - 상단에 `🌧️ 2개년 WMA 기상보정 가동중` vs `📊 직전 1개년 실적 기준선` 토글 버튼이 제공되고 있으나, API 호출 시 `baselineMode` 파라미터가 백엔드에 전달되지 않아 기상정규화 기준선과 단일 실적 기준선의 분기 연산이 미적용되는 결함이 확인되었습니다.
+   - 프론트엔드에서 `GET /api/v6/report/business-plan?baselineMode=${baselineMode}` 및 `POST /api/v6/simulator/strategic-forecast` body에 `{ baselineMode }`를 전송하도록 연결을 완료했습니다.
+2. **숙박객 YoY 매트릭스 (`RoomGuestsYoyTable.tsx`)**:
+   - 상단에서 `[실제 판매 방수(객실·실)]` 뷰 모드를 선택했을 때, 월별 행은 실측 방수가 표출되나 하단 `tfoot` 연간 총합 행에서는 백엔드 `totals` 내 방수 총합 필드가 명시적으로 분리되지 않아 `-`로 표출되는 문제가 있었습니다.
+
+### 70-2. 백엔드 조치 요청 사항 (V6 5대 철칙 준수)
+1. **`GET /api/v6/report/business-plan` & `POST /api/v6/simulator/strategic-forecast`**:
+   - `baselineMode === 'WMA_2YEAR'` 수신 시:
+     - 2024년(비중 40%) 및 2025년(비중 60%)의 실적을 가중이동평균하여 이상기후(폭우·폭설·혹한) 영향을 정규화한 기상보정 기준 매출(`grandTotalWma`, `wmaCategories`)을 산출하여 반환해 주십시오.
+   - `baselineMode === 'SINGLE_YEAR'` 수신 시:
+     - 직전 1개년(2025년) 실측 실적 단독 기준선(`grandTotal2025`)을 기준으로 반환해 주십시오.
+2. **`GET /api/v6/report/room-guests-yoy`**:
+   - 응답 객체 `totals`에 투숙객 총합(`totals['2024']`, `totals['2025']`, `totals['2026']`)과 더불어, 각 연도의 **연간 총 판매 방수(`roomsSoldTotals: { '2024': number, '2025': number, '2026': number }`)** 및 방수 전년비 증감(`yoyRoomsDiff: number`, `yoyRoomsPct: number`)을 공식 완제품으로 포함해 주십시오.
+

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check:integrity": "node scripts/integrity-check.cjs",
-    "build": "node scripts/integrity-check.cjs && tsc -b && vite build",
+    "check:integrity": "node scripts/integrity-check.cjs && node scripts/check-dead-interactions.cjs",
+    "build": "node scripts/integrity-check.cjs && node scripts/check-dead-interactions.cjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

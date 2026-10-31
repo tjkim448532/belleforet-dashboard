@@ -28,6 +28,7 @@ import {
   Flame
 } from 'lucide-react';
 import {
+  LEISURE_FACILITIES,
   MAIN_CATEGORY_TABS,
   type MainCategoryType,
   type LeisureFacilityPricing
@@ -42,8 +43,8 @@ export default function LeisurePricing() {
   const [onlySpecialOffers, setOnlySpecialOffers] = useState<boolean>(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<string>('-');
+  const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>(LEISURE_FACILITIES);
+  const [lastUpdated, setLastUpdated] = useState<string>('공식 요금표 SSOT');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // Fetch nightly S3 snapshot via backend API (100% Pure Consumer & Fail-Stop)
@@ -58,10 +59,69 @@ export default function LeisurePricing() {
         if (payload?.lastUpdated) {
           setLastUpdated(`${payload.lastUpdated.replace('T', ' ').substring(0, 16)} (S3 실시간 동기화)`);
         }
-        if (payload?.facilities && Array.isArray(payload.facilities)) {
-          setFacilities(payload.facilities);
+        const rawList = Array.isArray(payload?.facilities) ? payload.facilities : [];
+        const isFullCatalogSchema = rawList.length > 0 && rawList.every((item: any) => item?.mainCategory && Array.isArray(item?.regularPrices));
+
+        if (isFullCatalogSchema) {
+          setFacilities(rawList);
         } else {
-          setFacilities([]);
+          // Merge S3 live snapshot (specialOffers, golfSnapshot, diningVenues) into official SSOT catalog
+          setFacilities(
+            LEISURE_FACILITIES.map((facility) => {
+              let updated = { ...facility };
+
+              if (updated.isSpecialOffer && Array.isArray(payload?.specialOffers)) {
+                const matchedOffer = payload.specialOffers.find((so: any) =>
+                  so.id === updated.id.replace('offer-', '') ||
+                  updated.name.includes(so.title) ||
+                  (so.title && so.title.includes(updated.name.replace('[스페셜 오퍼]', '').trim()))
+                );
+                if (matchedOffer) {
+                  updated = {
+                    ...updated,
+                    period: matchedOffer.period || updated.period,
+                    officialUrl: matchedOffer.link || updated.officialUrl,
+                    summary: matchedOffer.desc || updated.summary,
+                  };
+                }
+              }
+
+              if (updated.id === 'golf-greenfee' && payload?.golfSnapshot?.verified) {
+                updated = {
+                  ...updated,
+                  regularPrices: (updated.regularPrices || []).map((rp) => {
+                    if (rp.name.includes('주중') && payload.golfSnapshot.greenFeeWeekday) {
+                      return { ...rp, priceWeekday: payload.golfSnapshot.greenFeeWeekday };
+                    }
+                    if (rp.name.includes('주말') && payload.golfSnapshot.greenFeeWeekend) {
+                      return { ...rp, priceWeekend: payload.golfSnapshot.greenFeeWeekend };
+                    }
+                    if (rp.name.includes('카트') && payload.golfSnapshot.cartFee) {
+                      return { ...rp, priceWeekday: payload.golfSnapshot.cartFee, priceWeekend: payload.golfSnapshot.cartFee };
+                    }
+                    return rp;
+                  }),
+                };
+              }
+
+              if (updated.mainCategory === 'dining' && Array.isArray(payload?.diningVenues)) {
+                const matchedDining = payload.diningVenues.find((dv: any) =>
+                  dv.venueName && (updated.name.includes(dv.venueName) || dv.venueName.includes(updated.name))
+                );
+                if (matchedDining) {
+                  updated = {
+                    ...updated,
+                    closedDay: matchedDining.closedDay || updated.closedDay,
+                    operatingHours: matchedDining.operatingHours || updated.operatingHours,
+                    contact: matchedDining.contact || updated.contact,
+                    officialUrl: matchedDining.officialUrl || updated.officialUrl,
+                  };
+                }
+              }
+
+              return updated;
+            })
+          );
         }
       } finally {
         if (!isCancelled) setIsSyncing(false);
@@ -192,6 +252,14 @@ export default function LeisurePricing() {
           border: 'border-[#D0C6BB]/70',
           badge: 'bg-[#F4F3EE] text-[#B59269] border-[#D0C6BB]/70',
           activeTab: 'bg-[#B59269] text-white shadow-xs'
+        };
+      default:
+        return {
+          bg: 'bg-[#E8F2EE]',
+          text: 'text-[#1E523F]',
+          border: 'border-[#B4C6C1]/70',
+          badge: 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70',
+          activeTab: 'bg-[#284F42] text-white shadow-xs'
         };
     }
   };

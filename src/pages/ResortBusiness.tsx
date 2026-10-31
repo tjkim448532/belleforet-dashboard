@@ -1794,7 +1794,7 @@ export default function ResortBusiness() {
 
               {/* Chart Component */}
               <div className="h-[320px] w-full min-w-0">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+                <ResponsiveContainer width="100%" height={320} minWidth={1} minHeight={320} initialDimension={{ width: 600, height: 320 }}>
                   <ComposedChart data={analytics?.activeRows || losTrendData} margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis 

@@ -284,9 +284,14 @@ export default function RoomGuestAnalysis() {
               <div className="text-xl font-extrabold text-[#1B382E]">
                 {resortVisitors?.roomTotalGuests != null ? `${Number(resortVisitors.roomTotalGuests).toLocaleString()}명` : '-'}
               </div>
-              <span className="text-[10px] text-[#6C7A73]">
+              <span className="text-[10px] text-[#6C7A73] block">
                 실제 투숙 객실: {resortVisitors?.roomSoldUnits != null ? `${Number(resortVisitors.roomSoldUnits).toLocaleString()}실` : '-'}
               </span>
+              {resortVisitors?.stayingSeminarVisitors != null && Number(resortVisitors.stayingSeminarVisitors) > 0 && (
+                <span className="text-[10px] text-[#1E523F] font-semibold block mt-0.5">
+                  숙박 세미나 {Number(resortVisitors.stayingSeminarVisitors).toLocaleString()}명 ({Number(resortVisitors.stayingSeminarEventCount ?? 0).toLocaleString()}건) 포함
+                </span>
+              )}
             </div>
 
             <div className="bg-[#F4F3EE] p-3.5 rounded-2xl border border-[#D0C6BB]/70">
@@ -302,7 +307,20 @@ export default function RoomGuestAnalysis() {
               <div className="text-xl font-extrabold text-[#1B382E]">
                 {resortVisitors?.parkingWalkinVisitors != null ? `${Number(resortVisitors.parkingWalkinVisitors).toLocaleString()}명` : '-'}
               </div>
-              <span className="text-[10px] text-[#6C7A73]">순수 워크인 차량×3명</span>
+              <span className="text-[10px] text-[#6C7A73] block">순수 워크인 차량×3명</span>
+              {resortVisitors?.walkinGeneralVisitors != null && resortVisitors?.walkinSeminarVisitors != null && (
+                <span className="text-[10px] text-[#1E523F] font-semibold block mt-0.5 leading-snug">
+                  일반 나들이 {Number(resortVisitors.walkinGeneralVisitors).toLocaleString()}명 · 당일 세미나(단체) {Number(resortVisitors.walkinSeminarVisitors).toLocaleString()}명 ({Number(resortVisitors.dayTripSeminarEventCount ?? 0).toLocaleString()}건)
+                </span>
+              )}
+              {!isEffectiveRange && resortVisitors?.mtdParkingWalkinVisitors != null && (
+                <span className="text-[9px] text-[#6C7A73] block mt-0.5">
+                  당월 누적: {Number(resortVisitors.mtdParkingWalkinVisitors).toLocaleString()}명
+                  {resortVisitors?.mtdWalkinGeneralVisitors != null && resortVisitors?.mtdWalkinSeminarVisitors != null
+                    ? ` (일반 ${Number(resortVisitors.mtdWalkinGeneralVisitors).toLocaleString()}명 · 세미나 ${Number(resortVisitors.mtdWalkinSeminarVisitors).toLocaleString()}명)`
+                    : ''}
+                </span>
+              )}
             </div>
 
             <div className="bg-[#FAECEB]/70 p-3.5 rounded-2xl border border-[#DE6E6D]/50">
@@ -331,6 +349,38 @@ export default function RoomGuestAnalysis() {
               <span className="text-[10px] text-[#284F42]">TICKET + MOTO 합계</span>
             </div>
           </div>
+
+          {((Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0) ||
+            (Array.isArray(resortVisitors?.stayingSeminarGroups) && resortVisitors.stayingSeminarGroups.length > 0)) && (
+            <div className="pt-3 border-t border-[#D0C6BB]/50 flex flex-col sm:flex-row flex-wrap gap-3 text-xs font-financial">
+              {Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 bg-[#E8F2EE]/80 px-3 py-2 rounded-xl border border-[#B4C6C1]/70">
+                  <span className="bg-[#284F42] text-white text-[10px] font-bold px-2 py-0.5 rounded">③ 당일 세미나(단체) 명단</span>
+                  {resortVisitors.dayTripSeminarGroups.map((g: any, idx: number) => (
+                    <span
+                      key={g.eventId || idx}
+                      className="bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/80 text-[11px] font-bold text-[#1B382E]"
+                    >
+                      {g.corporateName} {Number(g.paxCount ?? 0).toLocaleString()}명{g.venueName ? ` (${g.venueName})` : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {Array.isArray(resortVisitors?.stayingSeminarGroups) && resortVisitors.stayingSeminarGroups.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 bg-[#F4F3EE] px-3 py-2 rounded-xl border border-[#D0C6BB]/70">
+                  <span className="bg-[#1E523F] text-white text-[10px] font-bold px-2 py-0.5 rounded">① 숙박 세미나(참고) 명단</span>
+                  {resortVisitors.stayingSeminarGroups.map((g: any, idx: number) => (
+                    <span
+                      key={g.eventId || idx}
+                      className="bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/80 text-[11px] font-semibold text-[#1B382E]"
+                    >
+                      {g.corporateName} {Number(g.paxCount ?? 0).toLocaleString()}명{g.venueName ? ` (${g.venueName})` : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* KPI Overview Summary */}

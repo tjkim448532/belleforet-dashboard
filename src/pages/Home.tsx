@@ -792,6 +792,11 @@ export default function Home() {
                         {resortVisitors?.roomSoldUnits != null && (
                           <span className="text-[9px] text-[#6C7A73]">({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomSoldUnits))}실 실투숙)</span>
                         )}
+                        {resortVisitors?.stayingSeminarVisitors != null && Number(resortVisitors.stayingSeminarVisitors) > 0 && (
+                          <span className="text-[9px] text-[#1E523F] font-semibold mt-0.5 leading-tight">
+                            숙박 세미나 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarVisitors))}명({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarEventCount ?? 0))}건) 포함
+                          </span>
+                        )}
                       </div>
                       <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
                         <span className="text-[10px] text-[#6C7A73]">② 골프 내장객</span>
@@ -806,6 +811,11 @@ export default function Home() {
                           {resortVisitors?.parkingWalkinVisitors != null ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.parkingWalkinVisitors))}명` : '-'}
                         </strong>
                         <span className="text-[9px] text-[#6C7A73]">워크인 차량×3인</span>
+                        {resortVisitors?.walkinGeneralVisitors != null && resortVisitors?.walkinSeminarVisitors != null && (
+                          <span className="text-[9px] text-[#1E523F] font-semibold mt-0.5 leading-tight">
+                            일반 나들이 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinGeneralVisitors))}명 · 당일 세미나(단체) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinSeminarVisitors))}명 ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.dayTripSeminarEventCount ?? 0))}건)
+                          </span>
+                        )}
                       </div>
                       <div className="bg-[#FAECEB]/70 px-2 py-1.5 rounded-xl border border-[#DE6E6D]/40 flex flex-col">
                         <span className="text-[10px] text-[#9E372E] font-semibold">④ 숙박·골프 중복</span>
@@ -901,6 +911,35 @@ export default function Home() {
                   </div>
                 )}
                 
+                {resortVisitors?.stayingSeminarVisitors != null && Number(resortVisitors.stayingSeminarVisitors) > 0 && (
+                  <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 text-xs font-financial space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 text-[#1B382E]">
+                        <span className="bg-[#1E523F] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">숙박 세미나</span>
+                        <span className="font-bold text-[#1B382E]">
+                          {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarVisitors))}명 ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarEventCount ?? 0))}건)
+                        </span>
+                        <span className="text-[11px] text-[#6C7A73]">— ① 투숙객에 포함</span>
+                      </div>
+                      {!isRangeMode && resortVisitors?.mtdStayingSeminarVisitors != null && (
+                        <span className="text-[10px] font-semibold text-[#6C7A73]">
+                          당월 숙박 세미나 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdStayingSeminarVisitors))}명
+                        </span>
+                      )}
+                    </div>
+                    {Array.isArray(resortVisitors?.stayingSeminarGroups) && resortVisitors.stayingSeminarGroups.length > 0 && (
+                      <div className="text-[11px] text-[#5A6B63] pt-1 border-t border-[#D0C6BB]/40 flex flex-wrap gap-1.5 items-center">
+                        <span className="font-semibold text-[#1B382E]">숙박 단체:</span>
+                        {resortVisitors.stayingSeminarGroups.map((g: any, idx: number) => (
+                          <span key={g.eventId || idx} className="bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/70 text-[10px] font-medium text-[#1B382E]">
+                            {g.corporateName} {new Intl.NumberFormat('ko-KR').format(Number(g.paxCount ?? 0))}명{g.venueName ? ` (${g.venueName})` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* 🚗 2. 나들이 고객(Walk-in 방문객) 수 (주차관제 Firebase SSOT 완제품) */}
                 <div className="pt-3 pb-1 border-t border-[#D0C6BB]/40">
                   <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
@@ -910,9 +949,16 @@ export default function Home() {
                       <MetricExplainerTooltip presetKey="walkInVisitor" />
                       <span className="text-xs text-[#6C7A73] font-normal">(주차관제 기반)</span>
                     </div>
-                    <span className="text-[11px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                      {isRangeMode ? '선택 기간 누적' : '당일 나들이 집계'}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {!isRangeMode && resortVisitors?.mtdParkingWalkinVisitors != null && (
+                        <span className="text-[11px] font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70 font-financial">
+                          당월(MTD) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdParkingWalkinVisitors))}명
+                        </span>
+                      )}
+                      <span className="text-[11px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
+                        {isRangeMode ? '선택 기간 누적' : '당일 나들이 집계'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mb-2">
@@ -929,15 +975,45 @@ export default function Home() {
                         </span>
                       )}
                     </div>
+
+                    {resortVisitors?.walkinGeneralVisitors != null && resortVisitors?.walkinSeminarVisitors != null && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-financial">
+                        <span className="px-2.5 py-1 rounded-lg bg-[#E8F2EE] border border-[#284F42]/30 text-[#1B382E] font-bold">
+                          일반 나들이 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinGeneralVisitors))}명 · 당일 세미나(단체) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinSeminarVisitors))}명 ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.dayTripSeminarEventCount ?? 0))}건)
+                        </span>
+                        {!isRangeMode && resortVisitors?.mtdWalkinGeneralVisitors != null && resortVisitors?.mtdWalkinSeminarVisitors != null && (
+                          <span className="text-[11px] text-[#5A6B63] font-medium">
+                            (당월 일반 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdWalkinGeneralVisitors))}명 · 당일 세미나 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdWalkinSeminarVisitors))}명 / {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdDayTripSeminarEventCount ?? 0))}건)
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {parkingSummary && (
+                  {(parkingSummary || (Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0)) && (
                     <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 flex flex-wrap items-center gap-1.5 text-xs shadow-2xs font-financial">
-                      <span className="bg-[#B59269] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">미등록 워크인</span>
-                      <span className="font-bold text-[#1B382E]">
-                        {actualWalkInCars !== null ? `${new Intl.NumberFormat('ko-KR').format(actualWalkInCars)}대` : '-'}
-                      </span>
-                      <span className="text-[#6C7A73] text-[11px]">(주차관제 미등록 순수 당일 차량)</span>
+                      {parkingSummary && (
+                        <>
+                          <span className="bg-[#B59269] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">미등록 워크인</span>
+                          <span className="font-bold text-[#1B382E]">
+                            {actualWalkInCars !== null ? `${new Intl.NumberFormat('ko-KR').format(actualWalkInCars)}대` : '-'}
+                          </span>
+                          <span className="text-[#6C7A73] text-[11px]">(주차관제 미등록 순수 당일 차량)</span>
+                        </>
+                      )}
+                      {Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0 && (
+                        <div className={`w-full flex flex-wrap items-center gap-1.5 ${parkingSummary ? 'mt-1 pt-1.5 border-t border-[#D0C6BB]/40' : ''}`}>
+                          <span className="bg-[#284F42] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">당일 세미나(단체)</span>
+                          {resortVisitors.dayTripSeminarGroups.map((g: any, idx: number) => (
+                            <span
+                              key={g.eventId || idx}
+                              className="bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/80 text-[11px] font-bold text-[#1B382E]"
+                            >
+                              {g.corporateName} {new Intl.NumberFormat('ko-KR').format(Number(g.paxCount ?? 0))}명{g.venueName ? ` (${g.venueName})` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <p className="w-full text-[11px] text-[#6C7A73] leading-relaxed font-normal mt-1 border-t border-[#D0C6BB]/40 pt-1.5">
                         주차 정산·할인 및 사전등록 내역을 기반으로 직원·숙박·업무·단순 회차 차량을 제외하고 산출한 순수 당일 방문 차량/추정 인원(대당 3인) 지표입니다.
                       </p>

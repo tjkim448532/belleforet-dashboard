@@ -137,9 +137,9 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
   walkInVisitor: {
     title: '나들이 고객 (워크인 방문객 / Walk-in Visitors)',
     badge: '주차관제 SSOT',
-    definition: '숙박(투숙객)과 골프 내장객을 제외하고 당일 나들이·식음·레저 목적으로 방문한 순수 비숙박 당일 방문객(대당 3인 기준)입니다.',
-    formula: '미등록 순수 워크인 차량(actualWalkInCars) × 3명 (탑승객 배수, 백엔드 완제품)',
-    insight: '투숙객(나들이 제외 실제 투숙객)과는 별개로 집계되며, 투숙객과 나들이 고객을 합산(숙박·골프 중복 차감)하여 리조트 [골프제외 이용객] 모수를 구성합니다.'
+    definition: '숙박(투숙객)과 골프 내장객을 제외하고 당일 나들이·식음·레저·당일 세미나 목적으로 방문한 순수 비숙박 당일 방문객(대당 3인 기준)입니다.',
+    formula: '• 나들이 고객 총인원 = 미등록 순수 워크인 차량(actualWalkInCars) × 3명\n• 내역 분리: 일반 나들이객(walkinGeneralVisitors) + 당일 무숙박 세미나·단체(walkinSeminarVisitors)',
+    insight: '투숙객(나들이 제외 실제 투숙객)과는 별개로 집계되며, 나들이 고객 총인원 내에서 순수 일반 나들이객과 당일(무숙박) 세미나·단체 인원을 사전 분리하여 제공합니다.'
   }
 };
 

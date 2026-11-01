@@ -94,6 +94,7 @@ export function App() {
                     <Route path="resort/reservation-status" element={<CondoReservationStatus />} />
                     <Route path="reservation-status" element={<CondoReservationStatus />} />
                     <Route path="resort/room-guest-analysis" element={<RoomGuestAnalysis />} />
+                    <Route path="leisure/room-guest-analysis" element={<RoomGuestAnalysis />} />
                     <Route path="resort/room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="resort-room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="condo/dynamic-pricing" element={<RoomDynamicPricing />} />

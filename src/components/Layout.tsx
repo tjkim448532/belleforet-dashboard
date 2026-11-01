@@ -30,8 +30,8 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(() => location.pathname.startsWith('/sales') || location.pathname.startsWith('/group-sales'));
   const [golfOpen, setGolfOpen] = useState(() => location.pathname.startsWith('/golf'));
-  const [resortOpen, setResortOpen] = useState(() => location.pathname.startsWith('/resort') || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
-  const [leisureOpen, setLeisureOpen] = useState(() => location.pathname.startsWith('/leisure'));
+  const [resortOpen, setResortOpen] = useState(() => (location.pathname.startsWith('/resort') && !location.pathname.includes('room-guest-analysis')) || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
+  const [leisureOpen, setLeisureOpen] = useState(() => location.pathname.startsWith('/leisure') || location.pathname.includes('room-guest-analysis'));
   const [contentOpen, setContentOpen] = useState(() => location.pathname.startsWith('/content') || location.pathname.includes('outsourced-fnb'));
   const [membersOpen, setMembersOpen] = useState(() => location.pathname.startsWith('/members') || location.pathname.startsWith('/online-members'));
   const [synergyOpen, setSynergyOpen] = useState(() => location.pathname.startsWith('/synergy'));
@@ -334,15 +334,6 @@ export default function Layout() {
                   타사 일별 판매상품 & 패키지·요금 현황
                 </NavLink>
                 <NavLink
-                  to="/resort/room-guest-analysis"
-                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  일일 투숙객 & 골프제외 이용객 분석
-                </NavLink>
-                <NavLink
                   to="/resort/room-guests-yoy"
                   className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -381,6 +372,17 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   레저 매출 · 인기티켓 & 할인누수
+                </NavLink>
+                <NavLink
+                  to="/leisure/room-guest-analysis"
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                    isActive || window.location.pathname === '/resort/room-guest-analysis'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  일일 투숙객 & 골프제외 이용객 분석
                 </NavLink>
                 <NavLink
                   to="/leisure/usage-rate"

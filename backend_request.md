@@ -4576,6 +4576,36 @@ ORDER BY venue_name, rn;
      3) **`segmentPreferenceMatrix[]`**: 세그먼트별 단체 수(`groupCount`), 단체 매출(`totalSpend`), 팀당 평균 지출(`avgSpendPerGroup`)
      4) **`groupTrails[]`**: 개인 객실후불 건(`[261031]김민영` 등) 완전 제거 및 순수 단체 동선만 반환
 
+---
+
+## 77. 🏨 [P2 API 확장] Ticket 77 — 리조트사업본부 [타사 일별 판매상품 & 패키지·요금 현황] 페이지용 S3 원천 판매상품 목록(`offers[]`) 노출 요청 (2026-11-01)
+
+### 77-1. 배경 및 현황
+- `리조트사업본부` 산하에 충청권 4대 경쟁 리조트(**소노벨 단양 · 롯데리조트 부여 · 레스트리 리솜 · 포레스트 리솜**)의 일별 판매상품을 전담 분석하는 신규 페이지(`/resort/competitor-products`, `src/pages/CompetitorDailyProducts.tsx`)를 신설했습니다.
+- 현재 백엔드 S3 영구 시계열 DB(`s3://belleforet-public-assets/competitor-db/competitor_prices_history.sqlite`)에는 이미 **총 57,733건의 개별 판매상품(`totalRawOffersStored: 57733`)**이 수집·보관되어 있습니다.
+- 그러나 현재 `GET /api/v6/report/room-dynamic-pricing`의 `dailyCalendar[].competitorBenchmark.resorts[]`는 일자·리조트별로 **최저가 대표 상품 1건(`lowestRoomName`, `lowestChannel`, `minPrice`, `medianPrice`, `tier16_35MinPrice`, `tier51MinPrice`)**과 **총 상품 개수(`offerCount`: 예 소노벨 단양 270건, 롯데 부여 82건)**만 요약 반환하고 있어, 그날 판매 중인 나머지 개별 객실/패키지 상품 전체 리스트를 펼쳐볼 수 없습니다.
+
+### 77-2. 백엔드 조치 요청 사항 (V6 5대 철칙 준수)
+1. **`GET /api/v6/report/room-dynamic-pricing` 내 `dailyCalendar[].competitorBenchmark.resorts[]` 각 객체에 `offers[]` 배열 추가** (또는 별도 `GET /api/v6/report/competitor-daily-offers?date=YYYY-MM-DD` 제공):
+   - S3 SQLite DB(`competitor_prices_history.sqlite`)에서 해당 투숙일(`stay_date`) 및 리조트(`resort_name`)의 판매 상품 목록을 `offers` 배열로 내려주십시오:
+     ```json
+     "offers": [
+       {
+         "channelName": "트립비토즈",
+         "roomName": "💎스파패키지💎[레스트리] S30 타워 클린 - [2인제공] 스파패키지",
+         "roomTier": "51평급(S30)",
+         "offerType": "PACKAGE",
+         "price": 335024,
+         "originalPrice": 420000,
+         "discountRatePct": 20.2,
+         "isSoldOut": false
+       }
+     ]
+     ```
+2. **프론트엔드 선제 연동 완료**:
+   - `src/pages/CompetitorDailyProducts.tsx`에는 이미 `r.offers` 배열이 존재할 경우 즉시 전체 개별 상품을 리스트업하도록 패스스루 바인딩이 완료되어 있습니다.
+
+
 
 
 

@@ -322,6 +322,18 @@ export default function Layout() {
                   객실 추천 요금 & 경쟁사 가격 비교
                 </NavLink>
                 <NavLink
+                  to="/resort/competitor-products"
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                    isActive || window.location.pathname === '/condo/competitor-products'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Tag size={14} className="shrink-0 text-[#CAAC86]" />
+                  타사 일별 판매상품 & 패키지·요금 현황
+                </NavLink>
+                <NavLink
                   to="/resort/room-guest-analysis"
                   className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'

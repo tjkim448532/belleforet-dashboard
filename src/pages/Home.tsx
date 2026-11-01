@@ -731,298 +731,213 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 🌟 Card 3: 골프포함/골프제외 이용객 & 투숙객(나들이 제외)·나들이 고객·어트랙션 이용객 (mat_v6_resort_visitors_daily SSOT) */}
+            {/* 🌟 Card 3: 리조트 이용객 현황 (골프포함 / 골프제외 / 투숙·나들이·레저 통합 SSOT) */}
             <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 flex flex-col justify-between">
-              <div>
-                {/* 🏛️ 0. 골프포함 이용객 & 골프제외 이용객 (Physical Headcount SSOT) */}
-                <div className="mb-3 pb-3 border-b border-[#D0C6BB]/50">
-                  <div className="mb-1.5 flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-5 h-5 text-[#284F42] shrink-0" />
-                      <span className="text-sm font-bold text-[#1B382E]">골프포함 이용객 (체류 총인원)</span>
-                      <span className="text-[10px] font-extrabold text-white bg-[#284F42] px-2 py-0.5 rounded-full">
-                        SSOT
-                      </span>
+              <div className="space-y-3">
+                {/* 🏛️ 1. 헤더 */}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-5 h-5 text-[#284F42] shrink-0" />
+                    <span className="text-sm font-bold text-[#1B382E]">리조트 이용객 현황</span>
+                    <span className="text-[10px] font-extrabold text-white bg-[#284F42] px-2 py-0.5 rounded-full">
+                      SSOT
+                    </span>
+                    <MetricExplainerTooltip presetKey="visitorCount" />
+                  </div>
+                  {resortVisitors?.mtdNetPhysicalResortGuests != null && !isRangeMode && (
+                    <span className="text-[11px] font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70 font-financial">
+                      당월(MTD) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdNetPhysicalResortGuests))}명
+                    </span>
+                  )}
+                </div>
+
+                {/* 🏛️ 2. 골프포함 vs 골프제외 2열 메인 요약 박스 */}
+                <div className="grid grid-cols-2 gap-2.5 font-financial">
+                  <div className="p-3 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]/75 flex flex-col justify-between">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-[#5A6B63]">골프포함 총인원</span>
+                      <span className="text-[9px] text-[#6C7A73]">체류 전체</span>
                     </div>
-                    {resortVisitors?.mtdNetPhysicalResortGuests != null && !isRangeMode && (
-                      <span className="text-[11px] font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70 font-financial">
-                        당월(MTD) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdNetPhysicalResortGuests))}명
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-2xl lg:text-[26px] font-black text-[#1B382E] tracking-tight">
+                        {netPhysicalResortGuests !== null
+                          ? new Intl.NumberFormat('ko-KR').format(netPhysicalResortGuests)
+                          : '-'}
                       </span>
-                    )}
+                      <span className="text-xs font-bold text-[#6C7A73]">명</span>
+                    </div>
                   </div>
 
-                  <div className="flex items-baseline gap-2 flex-wrap mb-2">
-                    <span className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
-                      {netPhysicalResortGuests !== null
-                        ? new Intl.NumberFormat('ko-KR').format(netPhysicalResortGuests)
-                        : '-'}
-                    </span>
-                    <span className="text-base font-semibold text-[#6C7A73]">명</span>
-                    <span className="text-[11px] font-semibold text-[#6C7A73]">
-                      (투숙객 + 나들이 고객 + 골프 내장객 − 숙박·골프 중복)
-                    </span>
-                  </div>
-
-                  {/* 골프제외 이용객 배지 (투숙객 + 나들이 고객 - 숙박·골프 중복) */}
-                  {(resortVisitors?.exGolfVisitors != null || resortVisitors?.exGolfNetPhysicalResortGuests != null) && (
-                    <div className="mb-2 px-3 py-1.5 rounded-xl bg-[#E8F2EE] border border-[#284F42]/30 flex items-center justify-between flex-wrap gap-2 text-xs font-financial">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-extrabold text-[#1E523F]">🌲 골프제외 이용객:</span>
-                        <strong className="text-sm font-black text-[#1B382E]">
-                          {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.exGolfVisitors ?? resortVisitors.exGolfNetPhysicalResortGuests))}명
-                        </strong>
-                        <span className="text-[10px] text-[#5A6B63]">(투숙객 + 나들이 고객 − 중복)</span>
-                      </div>
+                  <div className="p-3 rounded-2xl bg-[#E8F2EE] border border-[#284F42]/30 flex flex-col justify-between">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-extrabold text-[#1E523F]">🌲 골프제외 이용객</span>
                       {resortVisitors?.mtdExGolfVisitors != null && !isRangeMode && (
-                        <span className="text-[10px] font-bold text-[#1E523F]">
+                        <span className="text-[9px] font-bold text-[#1E523F]">
                           당월 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdExGolfVisitors))}명
                         </span>
                       )}
                     </div>
-                  )}
-
-                  {/* 순수 체류 인원 4대 구성 및 시설 이용 연인원 병기 브레이크다운 */}
-                  <div className="p-2.5 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]/75 text-xs space-y-1.5 font-financial">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
-                      <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
-                        <span className="text-[10px] text-[#6C7A73]">① 투숙객(나들이제외)</span>
-                        <strong className="text-[#1B382E] font-extrabold">
-                          {resortVisitors?.roomTotalGuests != null ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomTotalGuests))}명` : '-'}
-                        </strong>
-                        {resortVisitors?.roomSoldUnits != null && (
-                          <span className="text-[9px] text-[#6C7A73]">({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomSoldUnits))}실 실투숙)</span>
-                        )}
-                        {resortVisitors?.stayingSeminarVisitors != null && Number(resortVisitors.stayingSeminarVisitors) > 0 && (
-                          <span className="text-[9px] text-[#1E523F] font-semibold mt-0.5 leading-tight">
-                            숙박 세미나 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarVisitors))}명({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarEventCount ?? 0))}건) 포함
-                          </span>
-                        )}
-                      </div>
-                      <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
-                        <span className="text-[10px] text-[#6C7A73]">② 골프 내장객</span>
-                        <strong className="text-[#1B382E] font-extrabold">
-                          {resortVisitors?.golfTotalPlayers != null ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.golfTotalPlayers))}명` : '-'}
-                        </strong>
-                        <span className="text-[9px] text-[#6C7A73]">그린피 실라운딩</span>
-                      </div>
-                      <div className="bg-white px-2 py-1.5 rounded-xl border border-[#D0C6BB]/60 flex flex-col">
-                        <span className="text-[10px] text-[#6C7A73]">③ 나들이 고객(워크인)</span>
-                        <strong className="text-[#1B382E] font-extrabold">
-                          {resortVisitors?.parkingWalkinVisitors != null ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.parkingWalkinVisitors))}명` : '-'}
-                        </strong>
-                        <span className="text-[9px] text-[#6C7A73]">워크인 차량×3인</span>
-                        {resortVisitors?.walkinGeneralVisitors != null && resortVisitors?.walkinSeminarVisitors != null && (
-                          <span className="text-[9px] text-[#1E523F] font-semibold mt-0.5 leading-tight">
-                            일반 나들이 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinGeneralVisitors))}명 · 당일 세미나(단체) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinSeminarVisitors))}명 ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.dayTripSeminarEventCount ?? 0))}건)
-                          </span>
-                        )}
-                      </div>
-                      <div className="bg-[#FAECEB]/70 px-2 py-1.5 rounded-xl border border-[#DE6E6D]/40 flex flex-col">
-                        <span className="text-[10px] text-[#9E372E] font-semibold">④ 숙박·골프 중복</span>
-                        <strong className="text-[#9E372E] font-extrabold">
-                          {resortVisitors?.roomGolfSynergyGuests != null ? `-${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomGolfSynergyGuests))}명` : '-'}
-                        </strong>
-                        {resortVisitors?.golfCondoCrossCars != null && (
-                          <span className="text-[9px] text-[#9E372E]">({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.golfCondoCrossCars))}실 중복차감)</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-1.5 border-t border-[#D0C6BB]/50 flex items-center justify-between flex-wrap gap-2 text-[11px]">
-                      <div className="flex items-center gap-1.5 text-[#1B382E]">
-                        <span className="px-1.5 py-0.5 rounded bg-[#B59269]/20 text-[#9E7542] font-bold text-[10px]">
-                          시설 이용 연인원
-                        </span>
-                        <strong className="font-extrabold text-[#1B382E]">
-                          {resortVisitors?.grossActivityVisitors != null
-                            ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.grossActivityVisitors))}명`
-                            : '-'}
-                        </strong>
-                        <span className="text-[10px] text-[#6C7A73]">(다중 시설 중복 이용 포함 누적)</span>
-                      </div>
-                      {resortVisitors?.leisureTicketVisitors != null && (
-                        <span className="text-[10px] font-bold text-[#284F42] bg-[#E8F2EE] px-2 py-0.5 rounded-md border border-[#B4C6C1]/60">
-                          레저·티켓 입장 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.leisureTicketVisitors))}건
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-[#284F42] shrink-0" />
-                    <span className="text-xs font-bold text-[#1B382E]">투숙객 수 (나들이 제외 실제 투숙객)</span>
-                    <MetricExplainerTooltip presetKey="visitorCount" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                    {isRangeMode ? '선택 기간 누적' : '당일 실투숙객 집계'}
-                  </span>
-                </div>
-
-                <div className="mb-2">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
-                      {new Intl.NumberFormat('ko-KR').format(roomCapActual)}
-                    </span>
-                    <span className="text-base font-semibold text-[#6C7A73]">명</span>
-                  </div>
-                </div>
-
-                {/* 과거 비교 숙박객 수 및 증감률 배지 */}
-                <div className="mb-3">
-                  {roomCapLy !== undefined && roomCapLy > 0 ? (
-                    <div className={roomCapGrowth !== undefined && roomCapGrowth >= 0 ? 'badge-delta-up' : 'badge-delta-down'}>
-                      <span className="font-medium opacity-90">{isRangeMode ? '전년 동기간 대비' : '전년 동요일 대비'}</span>
-                      {roomCapGrowth !== undefined && (
-                        <span className="font-bold">{roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%</span>
-                      )}
-                      <span className="font-medium opacity-85">
-                        (전년 {new Intl.NumberFormat('ko-KR').format(roomCapLy)}명{roomCapDiff !== undefined ? `, ${roomCapDiff > 0 ? '+' : ''}${new Intl.NumberFormat('ko-KR').format(roomCapDiff)}명` : ''})
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="badge-delta-neutral">
-                      <span>전년 비교 데이터 산출 대기</span>
-                    </div>
-                  )}
-                </div>
-                
-                {multiNight && (parseNum(multiNight.multiNightGuests) > 0 || parseNum(multiNight.multiNightRooms) > 0) && (
-                  <div className="mb-4 p-2.5 rounded-xl bg-[#E8F2EE] border border-[#B4C6C1]/70 flex flex-wrap items-center justify-between gap-1.5 text-xs shadow-2xs font-financial">
-                    <div className="flex items-center gap-1.5 text-[#1B382E] font-medium">
-                      <span className="bg-[#284F42] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">연박(2박+)</span>
-                      <span className="font-bold text-[#1B382E]">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</span>
-                      <span className="text-[#6C7A73] text-[11px]">
-                        ({multiNight.multiNightRooms !== undefined && multiNight.multiNightRooms !== null && parseNum(multiNight.multiNightRooms) > 0 && (
-                          <>
-                            <strong className="text-[#1B382E] font-semibold">{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightRooms)}실</strong>
-                            {' · '}
-                          </>
-                        )}투숙객 대비 <strong className="text-[#1B382E] font-semibold">{parseNum(multiNight.multiNightRatio ?? 0).toFixed(1)}%</strong>)
-                      </span>
-                    </div>
-                    {multiNight.guestsGrowth !== undefined && (
-                      <div className={`font-bold text-[11px] flex items-center gap-1 ${multiNight.guestsGrowth >= 0 ? 'text-[#1E523F]' : 'text-[#9E372E]'}`}>
-                        <span className="text-[#6C7A73] font-normal">{isRangeMode ? '전년 동기' : '전년 동요일'}</span>
-                        <span>{multiNight.guestsGrowth >= 0 ? '▲' : '▼'}{Math.abs(multiNight.guestsGrowth).toFixed(1)}%</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {resortVisitors?.stayingSeminarVisitors != null && Number(resortVisitors.stayingSeminarVisitors) > 0 && (
-                  <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 text-xs font-financial space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <div className="flex items-center gap-1.5 text-[#1B382E]">
-                        <span className="bg-[#1E523F] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">숙박 세미나</span>
-                        <span className="font-bold text-[#1B382E]">
-                          {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarVisitors))}명 ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarEventCount ?? 0))}건)
-                        </span>
-                        <span className="text-[11px] text-[#6C7A73]">— ① 투숙객에 포함</span>
-                      </div>
-                      {!isRangeMode && resortVisitors?.mtdStayingSeminarVisitors != null && (
-                        <span className="text-[10px] font-semibold text-[#6C7A73]">
-                          당월 숙박 세미나 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdStayingSeminarVisitors))}명
-                        </span>
-                      )}
-                    </div>
-                    {Array.isArray(resortVisitors?.stayingSeminarGroups) && resortVisitors.stayingSeminarGroups.length > 0 && (
-                      <div className="text-[11px] text-[#5A6B63] pt-1 border-t border-[#D0C6BB]/40 flex flex-wrap gap-1.5 items-center">
-                        <span className="font-semibold text-[#1B382E]">숙박 단체:</span>
-                        {resortVisitors.stayingSeminarGroups.map((g: any, idx: number) => (
-                          <span key={g.eventId || idx} className="bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/70 text-[10px] font-medium text-[#1B382E]">
-                            {g.corporateName} {new Intl.NumberFormat('ko-KR').format(Number(g.paxCount ?? 0))}명{g.venueName ? ` (${g.venueName})` : ''}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 🚗 2. 나들이 고객(Walk-in 방문객) 수 (주차관제 Firebase SSOT 완제품) */}
-                <div className="pt-3 pb-1 border-t border-[#D0C6BB]/40">
-                  <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Car className="w-5 h-5 text-[#284F42] shrink-0" />
-                      <span className="text-sm font-bold text-[#1B382E]">나들이 고객 수 (워크인 방문객)</span>
-                      <MetricExplainerTooltip presetKey="walkInVisitor" />
-                      <span className="text-xs text-[#6C7A73] font-normal">(주차관제 기반)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {!isRangeMode && resortVisitors?.mtdParkingWalkinVisitors != null && (
-                        <span className="text-[11px] font-bold text-[#1E523F] bg-[#E8F2EE] px-2.5 py-0.5 rounded-full border border-[#B4C6C1]/70 font-financial">
-                          당월(MTD) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdParkingWalkinVisitors))}명
-                        </span>
-                      )}
-                      <span className="text-[11px] font-semibold text-[#1E523F] bg-[#E8F2EE] px-2 py-0.5 rounded-full border border-[#B4C6C1]/70">
-                        {isRangeMode ? '선택 기간 누적' : '당일 나들이 집계'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mb-2">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-2xl lg:text-3xl font-extrabold text-[#1B382E] tracking-tight font-financial">
-                        {walkInVisitors !== null
-                          ? new Intl.NumberFormat('ko-KR').format(walkInVisitors)
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-2xl lg:text-[26px] font-black text-[#1E523F] tracking-tight">
+                        {resortVisitors?.exGolfVisitors != null || resortVisitors?.exGolfNetPhysicalResortGuests != null
+                          ? new Intl.NumberFormat('ko-KR').format(
+                              Number(resortVisitors.exGolfVisitors ?? resortVisitors.exGolfNetPhysicalResortGuests)
+                            )
                           : '-'}
                       </span>
-                      <span className="text-base font-semibold text-[#6C7A73]">명</span>
-                      {walkInVisitors !== null && (
-                        <span className="text-[11px] font-bold text-[#284F42] bg-[#E8F2EE] px-2 py-0.5 rounded-md border border-[#B4C6C1]/70 font-financial">
-                          차량 1대당 3명 환산 완제품
+                      <span className="text-xs font-bold text-[#1E523F]">명</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 🏛️ 3. 구성 항목별 통합 요약 (중복 없이 1회씩만 깔끔하게 표출) */}
+                <div className="rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]/75 divide-y divide-[#D0C6BB]/50 text-xs font-financial">
+                  {/* ① 투숙객 (실투숙) */}
+                  <div className="p-3 space-y-1.5">
+                    <div className="flex items-center justify-between flex-wrap gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-[#1B382E]">① 투숙객 (나들이 제외)</span>
+                        {resortVisitors?.roomSoldUnits != null && (
+                          <span className="text-[11px] font-semibold text-[#5A6B63]">
+                            ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomSoldUnits))}실)
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {roomCapLy !== undefined && roomCapLy > 0 && roomCapGrowth !== undefined && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              roomCapGrowth >= 0
+                                ? 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70'
+                                : 'bg-[#FAECEB] text-[#9E372E] border border-[#DE6E6D]/50'
+                            }`}
+                            title={`전년 ${new Intl.NumberFormat('ko-KR').format(roomCapLy)}명 (${roomCapDiff !== undefined ? `${roomCapDiff > 0 ? '+' : ''}${new Intl.NumberFormat('ko-KR').format(roomCapDiff)}명` : ''})`}
+                          >
+                            전년비 {roomCapGrowth >= 0 ? '▲' : '▼'} {Math.abs(roomCapGrowth).toFixed(1)}%
+                          </span>
+                        )}
+                        <strong className="text-base font-black text-[#1B382E]">
+                          {new Intl.NumberFormat('ko-KR').format(roomCapActual)}명
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* 연박 & 숙박 세미나 한 줄 태그 */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      {multiNight && (parseNum(multiNight.multiNightGuests) > 0 || parseNum(multiNight.multiNightRooms) > 0) && (
+                        <span className="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-[#D0C6BB]/70 text-[#1B382E]">
+                          <span className="text-[10px] font-bold text-[#284F42]">연박(2박+)</span>
+                          <strong>{new Intl.NumberFormat('ko-KR').format(multiNight.multiNightGuests || 0)}명</strong>
+                          <span className="text-[#6C7A73]">
+                            ({parseNum(multiNight.multiNightRooms) > 0 ? `${new Intl.NumberFormat('ko-KR').format(multiNight.multiNightRooms)}실 · ` : ''}
+                            {parseNum(multiNight.multiNightRatio ?? 0).toFixed(1)}%)
+                          </span>
                         </span>
                       )}
+                      {resortVisitors?.stayingSeminarVisitors != null && Number(resortVisitors.stayingSeminarVisitors) > 0 && (
+                        <span className="inline-flex items-center gap-1 bg-[#E8F2EE] px-2 py-0.5 rounded-md border border-[#B4C6C1]/70 text-[#1E523F]">
+                          <span className="text-[10px] font-bold">숙박 세미나</span>
+                          <strong>
+                            {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.stayingSeminarVisitors))}명
+                          </strong>
+                          {Array.isArray(resortVisitors?.stayingSeminarGroups) && resortVisitors.stayingSeminarGroups.length > 0 && (
+                            <span className="text-[10px] text-[#284F42] font-semibold">
+                              ({resortVisitors.stayingSeminarGroups.map((g: any) => g.corporateName).join(', ')})
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ② 나들이 고객 (워크인) */}
+                  <div className="p-3 space-y-1.5">
+                    <div className="flex items-center justify-between flex-wrap gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Car className="w-3.5 h-3.5 text-[#284F42] shrink-0" />
+                        <span className="font-bold text-[#1B382E]">② 나들이 고객 (워크인)</span>
+                        <MetricExplainerTooltip presetKey="walkInVisitor" />
+                        {actualWalkInCars !== null && (
+                          <span className="text-[11px] font-semibold text-[#5A6B63]">
+                            (차량 {new Intl.NumberFormat('ko-KR').format(actualWalkInCars)}대×3인)
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!isRangeMode && resortVisitors?.mtdParkingWalkinVisitors != null && (
+                          <span className="text-[10px] font-semibold text-[#6C7A73]">
+                            당월 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdParkingWalkinVisitors))}명
+                          </span>
+                        )}
+                        <strong className="text-base font-black text-[#1B382E]">
+                          {walkInVisitors !== null ? `${new Intl.NumberFormat('ko-KR').format(walkInVisitors)}명` : '-'}
+                        </strong>
+                      </div>
                     </div>
 
                     {resortVisitors?.walkinGeneralVisitors != null && resortVisitors?.walkinSeminarVisitors != null && (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-financial">
-                        <span className="px-2.5 py-1 rounded-lg bg-[#E8F2EE] border border-[#284F42]/30 text-[#1B382E] font-bold">
-                          일반 나들이 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinGeneralVisitors))}명 · 당일 세미나(단체) {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinSeminarVisitors))}명 ({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.dayTripSeminarEventCount ?? 0))}건)
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <span className="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-[#D0C6BB]/70 text-[#1B382E]">
+                          일반 나들이 <strong>{new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinGeneralVisitors))}명</strong>
+                          {' · '}당일 세미나(단체) <strong>{new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.walkinSeminarVisitors))}명</strong>
+                          <span className="text-[#6C7A73]">({new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.dayTripSeminarEventCount ?? 0))}건)</span>
                         </span>
-                        {!isRangeMode && resortVisitors?.mtdWalkinGeneralVisitors != null && resortVisitors?.mtdWalkinSeminarVisitors != null && (
-                          <span className="text-[11px] text-[#5A6B63] font-medium">
-                            (당월 일반 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdWalkinGeneralVisitors))}명 · 당일 세미나 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdWalkinSeminarVisitors))}명 / {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.mtdDayTripSeminarEventCount ?? 0))}건)
+                        {Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0 && (
+                          <span className="inline-flex items-center gap-1 bg-[#E8F2EE] px-2 py-0.5 rounded-md border border-[#B4C6C1]/70 text-[#1E523F] font-semibold">
+                            {resortVisitors.dayTripSeminarGroups.map((g: any) => `${g.corporateName} ${Number(g.paxCount ?? 0)}명`).join(', ')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {(parkingSummary || (Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0)) && (
-                    <div className="mb-3 p-2.5 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70 flex flex-wrap items-center gap-1.5 text-xs shadow-2xs font-financial">
-                      {parkingSummary && (
-                        <>
-                          <span className="bg-[#B59269] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">미등록 워크인</span>
-                          <span className="font-bold text-[#1B382E]">
-                            {actualWalkInCars !== null ? `${new Intl.NumberFormat('ko-KR').format(actualWalkInCars)}대` : '-'}
-                          </span>
-                          <span className="text-[#6C7A73] text-[11px]">(주차관제 미등록 순수 당일 차량)</span>
-                        </>
-                      )}
-                      {Array.isArray(resortVisitors?.dayTripSeminarGroups) && resortVisitors.dayTripSeminarGroups.length > 0 && (
-                        <div className={`w-full flex flex-wrap items-center gap-1.5 ${parkingSummary ? 'mt-1 pt-1.5 border-t border-[#D0C6BB]/40' : ''}`}>
-                          <span className="bg-[#284F42] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">당일 세미나(단체)</span>
-                          {resortVisitors.dayTripSeminarGroups.map((g: any, idx: number) => (
-                            <span
-                              key={g.eventId || idx}
-                              className="bg-white px-2 py-0.5 rounded border border-[#D0C6BB]/80 text-[11px] font-bold text-[#1B382E]"
-                            >
-                              {g.corporateName} {new Intl.NumberFormat('ko-KR').format(Number(g.paxCount ?? 0))}명{g.venueName ? ` (${g.venueName})` : ''}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="w-full text-[11px] text-[#6C7A73] leading-relaxed font-normal mt-1 border-t border-[#D0C6BB]/40 pt-1.5">
-                        주차 정산·할인 및 사전등록 내역을 기반으로 직원·숙박·업무·단순 회차 차량을 제외하고 산출한 순수 당일 방문 차량/추정 인원(대당 3인) 지표입니다.
-                      </p>
+                  {/* ③ 골프 내장객 & ④ 숙박·골프 중복 차감 (2열 컴팩트 행) */}
+                  <div className="grid grid-cols-2 divide-x divide-[#D0C6BB]/50">
+                    <div className="p-2.5 flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-[#5A6B63]">③ 골프 내장객</span>
+                      <strong className="text-sm font-extrabold text-[#1B382E]">
+                        {resortVisitors?.golfTotalPlayers != null
+                          ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.golfTotalPlayers))}명`
+                          : '-'}
+                      </strong>
                     </div>
-                  )}
+                    <div className="p-2.5 flex items-center justify-between gap-1 bg-[#FAECEB]/40">
+                      <span className="text-[11px] font-bold text-[#9E372E]">
+                        ④ 숙박·골프 중복
+                        {resortVisitors?.golfCondoCrossCars != null && (
+                          <span className="text-[10px] font-normal ml-0.5">({resortVisitors.golfCondoCrossCars}실)</span>
+                        )}
+                      </span>
+                      <strong className="text-sm font-extrabold text-[#9E372E]">
+                        {resortVisitors?.roomGolfSynergyGuests != null
+                          ? `-${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.roomGolfSynergyGuests))}명`
+                          : '-'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* 시설 이용 연인원 & 레저·티켓 입장 건수 (하단 1줄 요약) */}
+                  <div className="px-3 py-2 bg-white/70 rounded-b-2xl flex items-center justify-between flex-wrap gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-[#B59269]/20 text-[#9E7542] font-bold text-[10px]">
+                        시설 이용 연인원
+                      </span>
+                      <strong className="font-extrabold text-[#1B382E]">
+                        {resortVisitors?.grossActivityVisitors != null
+                          ? `${new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.grossActivityVisitors))}명`
+                          : '-'}
+                      </strong>
+                    </div>
+                    {resortVisitors?.leisureTicketVisitors != null && (
+                      <span className="text-[10px] font-bold text-[#284F42] bg-[#E8F2EE] px-2 py-0.5 rounded-md border border-[#B4C6C1]/60">
+                        레저·티켓 입장 {new Intl.NumberFormat('ko-KR').format(Number(resortVisitors.leisureTicketVisitors))}건
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Major Leisure Facilities Visitors Breakdown (Accordion) */}
-                <div className="mt-3 pt-3 border-t border-[#D0C6BB]/40 relative z-10">
+                <div className="pt-1 relative z-10">
                   <button
                     type="button"
                     onClick={() => setIsCard3AttractionsOpen(!isCard3AttractionsOpen)}

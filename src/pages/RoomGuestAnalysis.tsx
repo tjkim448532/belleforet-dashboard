@@ -66,8 +66,16 @@ export default function RoomGuestAnalysis() {
     fetchMemberVisitors();
   }, [startDate, endDate, isRange]);
 
-  const summary = data?.meta?.summary;
-  const venueVisitors = data?.venueVisitors || data?.venues || [];
+  const summary = data?.meta?.summary as Record<string, any> | undefined;
+  const rawVenueVisitors = data?.venueVisitors || data?.venues || [];
+  const venueVisitors = rawVenueVisitors.filter(
+    (v: any) => v?.categoryCode !== 'ROOM' && v?.categoryCode !== 'GOLF'
+  );
+  const exGolfDenominator =
+    summary?.exGolfVisitorsDenominator ??
+    resortVisitors?.exGolfVisitors ??
+    resortVisitors?.exGolfNetPhysicalResortGuests ??
+    null;
   const dailyVisitors = data?.dailyVisitors || data?.dailyTrends || [];
 
   const getTrendChartOptions = () => {
@@ -523,13 +531,25 @@ export default function RoomGuestAnalysis() {
 
         {/* Venue Visitors Table */}
         <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-[0_4px_24px_rgba(40,79,66,0.06)] border border-[#D0C6BB]/75">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
-              <Building className="w-5 h-5 text-[#284F42]" /> 업장별 실적 집계
-            </h2>
-            <span className="text-xs font-bold bg-[#F4F3EE] text-[#5A6B63] px-3 py-1 rounded-full border border-[#D0C6BB]/70">
-              총 {venueVisitors.length}개 업장
-            </span>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-[#1B382E] flex items-center gap-2">
+                <Building className="w-5 h-5 text-[#284F42]" /> 주요 레저/어트랙션 업장별 실적 집계
+              </h2>
+              <p className="text-xs text-[#5A6B63] mt-1">
+                객실(ROOM)·골프(GOLF)를 제외한 순수 레저/어트랙션 업장 이용 수량 및 골프제외 리조트 이용객(숙박객 + 나들이·세미나·단체 방문객) 대비 이용 비중입니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {exGolfDenominator != null && (
+                <span className="text-xs font-extrabold bg-[#E8F2EE] text-[#1E523F] px-3 py-1 rounded-full border border-[#284F42]/30 font-financial">
+                  모수(골프제외 이용객): {Number(exGolfDenominator).toLocaleString()}명
+                </span>
+              )}
+              <span className="text-xs font-bold bg-[#F4F3EE] text-[#5A6B63] px-3 py-1 rounded-full border border-[#D0C6BB]/70">
+                총 {venueVisitors.length}개 레저 업장
+              </span>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
@@ -540,45 +560,44 @@ export default function RoomGuestAnalysis() {
                   <th className="py-3.5 px-4 text-left whitespace-nowrap">업장 명칭</th>
                   <th className="py-3.5 px-4 text-left whitespace-nowrap">티켓 그룹</th>
                   <th className="py-3.5 px-6 text-right whitespace-nowrap">순 이용/방문 수량</th>
-                  <th className="py-3.5 px-4 text-right whitespace-nowrap">수량 점유율 (%)</th>
+                  <th className="py-3.5 px-4 text-right whitespace-nowrap">
+                    골프제외 이용객 대비 점유율 (%)
+                  </th>
                   <th className="py-3.5 px-6 text-right rounded-r-xl whitespace-nowrap">발생 매출액 (원)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D0C6BB]/30 font-financial">
                 {venueVisitors.length > 0 ? (
-                  venueVisitors.map((venue: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
-                      <td className="py-4 px-6 font-medium text-[#5A6B63] whitespace-nowrap">
-                        {venue.categoryCode || '-'}
-                      </td>
-                      <td className="py-4 px-4 font-extrabold text-[#1B382E] whitespace-nowrap">
-                        {venue.venueName || '-'}
-                      </td>
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/70 whitespace-nowrap">
-                          {venue.ticketGroup || '-'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right font-black text-[#1E523F] whitespace-nowrap">
-                        {venue.categoryCode === 'ROOM' && resortVisitors?.roomTotalGuests != null ? (
-                          <>
-                            {Number(resortVisitors.roomTotalGuests).toLocaleString()} 명
-                            <span className="text-xs font-semibold text-[#5A6B63] ml-1.5">
-                              ({Number(resortVisitors.roomSoldUnits ?? venue.visitorCount ?? 0).toLocaleString()}실)
-                            </span>
-                          </>
-                        ) : (
-                          <>{(venue.visitorCountFormatted || Number(venue.visitorCount || 0).toLocaleString())} 명</>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-right font-medium text-[#5A6B63] whitespace-nowrap">
-                        {Number(venue.visitorSharePct ?? 0).toFixed(2)}%
-                      </td>
-                      <td className="py-4 px-6 text-right font-bold text-[#1B382E] whitespace-nowrap">
-                        {(venue.revenueFormatted || Number(venue.revenue || 0).toLocaleString())}원
-                      </td>
-                    </tr>
-                  ))
+                  venueVisitors.map((venue: any, idx: number) => {
+                    const sharePctVal =
+                      venue.exGolfUsageRatePct ??
+                      venue.usageRatePct ??
+                      venue.visitorSharePct;
+                    return (
+                      <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                        <td className="py-4 px-6 font-medium text-[#5A6B63] whitespace-nowrap">
+                          {venue.categoryCode || '-'}
+                        </td>
+                        <td className="py-4 px-4 font-extrabold text-[#1B382E] whitespace-nowrap">
+                          {venue.venueName || '-'}
+                        </td>
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-[#F4F3EE] text-[#5A6B63] border border-[#D0C6BB]/70 whitespace-nowrap">
+                            {venue.ticketGroup || '-'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right font-black text-[#1E523F] whitespace-nowrap">
+                          {(venue.visitorCountFormatted || Number(venue.visitorCount || 0).toLocaleString())} 명
+                        </td>
+                        <td className="py-4 px-4 text-right font-bold text-[#1E523F] whitespace-nowrap">
+                          {sharePctVal != null ? `${Number(sharePctVal).toFixed(2)}%` : '-'}
+                        </td>
+                        <td className="py-4 px-6 text-right font-bold text-[#1B382E] whitespace-nowrap">
+                          {(venue.revenueFormatted || Number(venue.revenue || 0).toLocaleString())}원
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : loading ? (
                   <tr>
                     <td colSpan={6} className="py-16 text-center">

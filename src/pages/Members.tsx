@@ -1512,9 +1512,12 @@ export default function Members() {
       <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] hover:shadow-[0_12px_32px_rgba(40,79,66,0.1)] transition-all duration-300 relative group space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#D0C6BB]/40">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-[#1E523F] bg-[#E8F2EE] border border-[#B4C6C1]/70 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <CheckCircle2 size={12} /> 회원 분석 집계 완료
+              </span>
+              <span className="text-[11px] font-bold text-[#1B382E] bg-[#F4F3EE] border border-[#D0C6BB]/70 px-2.5 py-0.5 rounded-full">
+                16)분양회원 1:N 지정회원 카드 · 만기연장 이전구좌 통합 귀속 SSOT
               </span>
             </div>
             <h2 className="text-xl font-bold text-[#1B382E] mt-1.5 flex items-center gap-2">
@@ -1522,7 +1525,7 @@ export default function Members() {
               콘도 분양회원 구좌별 연간 잔여박수 소진율 및 당일 방문 회원별 리조트 통합 LTV 원장
             </h2>
             <p className="text-xs text-[#5A6B63] mt-1">
-              기명·무기명·창립·법인 825개 분양구좌의 연간 부여 박수(Quota 41,190박) 실시간 소진율과, 조회기간 투숙/방문 회원의 객실·골프·식음·레저 통합 LTV 원장입니다.
+              기명·무기명·창립·법인 825개 분양구좌의 연간 부여 박수(Quota 41,190박) 소진율과, 구좌 산하 1:N 지정회원 카드(`member_no`)·만기연장 이전구좌(`prev_cert_no`)까지 통합 귀속된 LTV 원장입니다.
             </p>
           </div>
           <div className="shrink-0 flex items-center gap-2 text-xs font-bold text-[#1E523F] bg-[#E8F2EE] px-4 py-2.5 rounded-xl border border-[#B4C6C1]/70">
@@ -1782,10 +1785,35 @@ export default function Members() {
                         return (
                           <tr key={idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
                             <td className="py-3 px-4 font-mono text-xs font-bold text-[#5A6B63]">
-                              {m.membershipNo || m.certNo || '-'}
+                              <div>{m.membershipNo || m.certNo || '-'}</div>
+                              {(m.joinType || m.prevCertNo || m.registeredCardCount != null) && (
+                                <div className="flex flex-wrap gap-1 mt-0.5 font-sans">
+                                  {m.registeredCardCount != null && (
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#E8F2EE] text-[#1E523F] font-semibold">
+                                      카드 {formatNum(m.registeredCardCount)}매
+                                    </span>
+                                  )}
+                                  {m.joinType && (
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#F4F3EE] text-[#1B382E] border border-[#D0C6BB]/60 font-semibold">
+                                      {m.joinType}
+                                    </span>
+                                  )}
+                                  {m.prevCertNo && (
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#FFF8E6] text-[#8C5D0D] border border-[#F5C26B]/50 font-semibold">
+                                      구:{m.prevCertNo}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-4 font-black text-[#1B382E]">
-                              {m.memberName || '-'}
+                              <div>{m.memberName || '-'}</div>
+                              {(m.contractDate || m.expiryDate || m.depositAmt != null) && (
+                                <div className="text-[10px] text-[#5A6B63] font-normal mt-0.5">
+                                  {m.expiryDate ? `만기: ${m.expiryDate}` : ''}
+                                  {m.depositAmt != null ? `${m.expiryDate ? ' · ' : ''}보증금 ${formatNum(m.depositAmt)}원` : ''}
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-3 text-center">
                               <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
@@ -1955,6 +1983,100 @@ export default function Members() {
                 </div>
               </div>
             </div>
+
+            {Array.isArray(onlineDormancyIntel.winbackTargets) && onlineDormancyIntel.winbackTargets.length > 0 && (
+              <div className="rounded-2xl border border-[#D0C6BB]/75 overflow-hidden">
+                <div className="px-4 py-3 bg-[#E8F2EE] border-b border-[#B4C6C1]/70 flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-extrabold text-[#1B382E]">
+                    핀셋 Win-back 타겟 단골/충성 회원 원장 (상위 {onlineDormancyIntel.winbackTargets.length}명)
+                  </span>
+                  <span className="text-[11px] text-[#1E523F] font-semibold">
+                    dim_online_members_v6 · 15)고객(dim_customer_master_v6) 연동 기준
+                  </span>
+                </div>
+                <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
+                  <table className="w-full text-xs whitespace-nowrap">
+                    <thead className="sticky top-0 z-10 bg-[#F4F3EE] text-[#1B382E] font-bold border-b border-[#D0C6BB]/75">
+                      <tr>
+                        <th className="py-2.5 px-4 text-left">고객명 (ID)</th>
+                        <th className="py-2.5 px-3 text-left">연락처</th>
+                        <th className="py-2.5 px-3 text-center">등급</th>
+                        <th className="py-2.5 px-3 text-center">주요 채널</th>
+                        <th className="py-2.5 px-3 text-right">누적 이용</th>
+                        <th className="py-2.5 px-3 text-center">최종 활동일</th>
+                        <th className="py-2.5 px-3 text-right">휴면 경과일</th>
+                        <th className="py-2.5 px-4 text-left">마스터 속성 (동의/권역/연령)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#D0C6BB]/30 font-financial">
+                      {onlineDormancyIntel.winbackTargets.slice(0, 20).map((t: any, idx: number) => (
+                        <tr key={t.memberKey || idx} className="hover:bg-[#F4F3EE]/50 text-[#1B382E]">
+                          <td className="py-2.5 px-4 font-bold text-[#1B382E]">
+                            {t.custName || '-'}
+                            {t.onlineId && t.onlineId !== '-' && (
+                              <span className="ml-1.5 text-[10px] font-mono text-[#5A6B63]">({t.onlineId})</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-[#5A6B63]">{t.maskedPhone || t.phone || '-'}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              t.tierCode === 'LOYAL'
+                                ? 'bg-[#B59269]/15 text-[#8C6839] border-[#B59269]/40'
+                                : 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70'
+                            }`}>
+                              {t.tierName || t.tierCode || '-'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-semibold text-[#1B382E]">
+                            {t.channelSource || t.firstChannel || '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-[#1B382E]">
+                            {t.totalBookings != null ? `${formatNum(t.totalBookings)}회` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-[#5A6B63]">
+                            <div>{t.lastActivityDate || '-'}</div>
+                            {t.lastLoginAt && (
+                              <div className="text-[10px] text-[#1E523F]">로그인: {String(t.lastLoginAt).substring(0, 10)}</div>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-[#8B2635]">
+                            {t.dormantDays != null ? `${formatNum(t.dormantDays)}일` : '-'}
+                          </td>
+                          <td className="py-2.5 px-4 text-left">
+                            {t.smsConsent || t.emailConsent || t.regionSido || t.ageGroup ? (
+                              <div className="flex flex-wrap gap-1">
+                                {t.smsConsent && (
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${t.smsConsent === 'Y' ? 'bg-[#E8F2EE] text-[#1E523F]' : 'bg-[#F4F3EE] text-[#5A6B63]'}`}>
+                                    SMS:{t.smsConsent}
+                                  </span>
+                                )}
+                                {t.emailConsent && (
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${t.emailConsent === 'Y' ? 'bg-[#E8F2EE] text-[#1E523F]' : 'bg-[#F4F3EE] text-[#5A6B63]'}`}>
+                                    Email:{t.emailConsent}
+                                  </span>
+                                )}
+                                {t.regionSido && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#F4F3EE] text-[#1B382E] border border-[#D0C6BB]/60">
+                                    {t.regionSido}
+                                  </span>
+                                )}
+                                {t.ageGroup && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#F4F3EE] text-[#5A6B63]">
+                                    {t.ageGroup}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-[#5A6B63]/60">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

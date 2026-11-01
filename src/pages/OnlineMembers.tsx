@@ -936,9 +936,9 @@ export default function OnlineMembers() {
                   </div>
 
                   <div className="rounded-2xl border border-[#D0C6BB]/75 overflow-hidden">
-                    <div className="px-4 py-3 bg-[#F4F3EE] border-b border-[#D0C6BB]/75 flex items-center justify-between">
+                    <div className="px-4 py-3 bg-[#F4F3EE] border-b border-[#D0C6BB]/75 flex items-center justify-between flex-wrap gap-2">
                       <span className="text-xs font-extrabold text-[#1B382E]">이용 횟수 등급별 회원 분포 및 6개월 미방문 휴면 전환율</span>
-                      <span className="text-[11px] text-[#5A6B63]">dim_online_members_v6 기준</span>
+                      <span className="text-[11px] text-[#5A6B63]">dim_online_members_v6 · 15)고객(dim_customer_master_v6) 연동 기준</span>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
@@ -977,6 +977,100 @@ export default function OnlineMembers() {
                       </table>
                     </div>
                   </div>
+
+                  {Array.isArray(dormancyIntel.winbackTargets) && dormancyIntel.winbackTargets.length > 0 && (
+                    <div className="rounded-2xl border border-[#D0C6BB]/75 overflow-hidden">
+                      <div className="px-4 py-3 bg-[#E8F2EE] border-b border-[#B4C6C1]/70 flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-extrabold text-[#1B382E]">
+                          핀셋 Win-back 타겟 단골/충성 회원 원장 (상위 {dormancyIntel.winbackTargets.length}명)
+                        </span>
+                        <span className="text-[11px] text-[#1E523F] font-semibold">
+                          4회+ 이용 후 6개월 이상 미방문 VIP
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto max-h-[380px] overflow-y-auto">
+                        <table className="w-full text-xs whitespace-nowrap">
+                          <thead className="sticky top-0 z-10 bg-[#F4F3EE] text-[#1B382E] font-bold border-b border-[#D0C6BB]/75">
+                            <tr>
+                              <th className="py-2.5 px-4 text-left">고객명 (ID)</th>
+                              <th className="py-2.5 px-3 text-left">연락처</th>
+                              <th className="py-2.5 px-3 text-center">등급</th>
+                              <th className="py-2.5 px-3 text-center">주요 채널</th>
+                              <th className="py-2.5 px-3 text-right">누적 이용</th>
+                              <th className="py-2.5 px-3 text-center">최종 활동일</th>
+                              <th className="py-2.5 px-3 text-right">휴면 경과일</th>
+                              <th className="py-2.5 px-4 text-left">마스터 속성 (동의/권역/연령)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#D0C6BB]/30 font-financial">
+                            {dormancyIntel.winbackTargets.slice(0, 30).map((t: any, idx: number) => (
+                              <tr key={t.memberKey || idx} className="hover:bg-[#F4F3EE]/50 text-[#1B382E]">
+                                <td className="py-2.5 px-4 font-bold text-[#1B382E]">
+                                  {t.custName || '-'}
+                                  {t.onlineId && t.onlineId !== '-' && (
+                                    <span className="ml-1.5 text-[10px] font-mono text-[#5A6B63]">({t.onlineId})</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 font-mono text-[#5A6B63]">{t.maskedPhone || t.phone || '-'}</td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                    t.tierCode === 'LOYAL'
+                                      ? 'bg-[#B59269]/15 text-[#8C6839] border-[#B59269]/40'
+                                      : 'bg-[#E8F2EE] text-[#1E523F] border-[#B4C6C1]/70'
+                                  }`}>
+                                    {t.tierName || t.tierCode || '-'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-center font-semibold text-[#1B382E]">
+                                  {t.channelSource || t.firstChannel || '-'}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-bold text-[#1B382E]">
+                                  {t.totalBookings != null ? `${Number(t.totalBookings).toLocaleString()}회` : '-'}
+                                </td>
+                                <td className="py-2.5 px-3 text-center text-[#5A6B63]">
+                                  <div>{t.lastActivityDate || '-'}</div>
+                                  {t.lastLoginAt && (
+                                    <div className="text-[10px] text-[#1E523F]">로그인: {String(t.lastLoginAt).substring(0, 10)}</div>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-black text-[#8B2635]">
+                                  {t.dormantDays != null ? `${Number(t.dormantDays).toLocaleString()}일` : '-'}
+                                </td>
+                                <td className="py-2.5 px-4 text-left">
+                                  {t.smsConsent || t.emailConsent || t.regionSido || t.ageGroup ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {t.smsConsent && (
+                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${t.smsConsent === 'Y' ? 'bg-[#E8F2EE] text-[#1E523F]' : 'bg-[#F4F3EE] text-[#5A6B63]'}`}>
+                                          SMS:{t.smsConsent}
+                                        </span>
+                                      )}
+                                      {t.emailConsent && (
+                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${t.emailConsent === 'Y' ? 'bg-[#E8F2EE] text-[#1E523F]' : 'bg-[#F4F3EE] text-[#5A6B63]'}`}>
+                                          Email:{t.emailConsent}
+                                        </span>
+                                      )}
+                                      {t.regionSido && (
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#F4F3EE] text-[#1B382E] border border-[#D0C6BB]/60">
+                                          {t.regionSido}
+                                        </span>
+                                      )}
+                                      {t.ageGroup && (
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#F4F3EE] text-[#5A6B63]">
+                                          {t.ageGroup}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-[11px] text-[#5A6B63]/60">-</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -49,6 +49,7 @@
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 71] `벨포레 목장(체험)` 2026년 4월 이전 분자(체험객수) 0명 실적 조사 및 `facilityPeriodCumulative` 누적 YoY 증감 필드 제공** | [배포/검증완료] 2024년 1.6만명, 2025년 2.7만명, 2026년 1~4월 2,115명 전수 복원 및 누적 `yoyUsageRateDiff`(+2.2%p) 완제품 바인딩 완료 (`leisure-yoy-matrix`) |
 | **P1 (높음)** | API 보강 | **[Ticket 72] `room-rate-sales` API 내 전년동기(LY) 객실수(`todayLyRooms`) 및 매출액(`todayLyRevenue`) 완제품 필드 추가** | 회원권/요금타입별 정산 대조표에 전년 동일 기간(LY) 실적 완제품 필드 및 총합계 LY 매핑 제공 요청 (`room-rate-sales`) |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 73] `corporate-group-sales` API 내 기업 휴양소 후불 건의 계약 단가 기반 발생주의 매출(`contractRevenue`) 필드 제공 및 회계 외상매출금 동기화** | [배포/검증완료] 2026년 B2B 정산 원장 7만건 동기화 완료: 정산 완료 1,365건(4.5억원), 후정산 대기 172건 축소, 협약 계약매출(10.0억원) 및 완제품 필드 연동 완료 (`corporate-group-sales`) |
+| **P2 (신규)** | API 보강 | **[Ticket 74] 다올 신규 시트 2종(`15)고객`·`16)분양회원`) 기반 CRM/회원권 API 완제품 마스터 속성 노출 요청** | `online-member-dormancy`, `online-members`, `member-quota-ltv` API에 마케팅 수신동의(`smsConsent`, `emailConsent`), 권역/연령대(`regionSido`, `ageGroup`), 구좌 발급카드수(`registeredCardCount`), 계약/만기/보증금(`contractDate`, `expiryDate`, `depositAmt`), 승계구좌(`joinType`, `prevCertNo`) 필드 노출 요청 |
 
 ---
 
@@ -4476,6 +4477,36 @@ ORDER BY venue_name, rn;
      - `하드BL현대제철(15개협력사)휴양소_26`: 4실 `roomRevenue: 281,818원` (`COMPLETED`)
 2. **프론트엔드 완제품 바인딩 완료**:
    - `src/pages/Members.tsx`: `contractRevenue`, `contractAdr`, `accrualRevenue`, `organizationContractRevenue` 전수 바인딩 완료.
+
+---
+
+## 74. 💎 [P2 API 보강] Ticket 74 — 다올 신규 시트 2종(`15)고객` · `16)분양회원`) 기반 CRM/회원권 API 완제품 마스터 속성 노출 요청 (2026-11-01)
+
+### 74-1. 배경 및 프론트엔드 선제 준비 현황
+- 다올 S3 신규 시트 2종(`15)고객` ➔ `dim_customer_master_v6`, `16)분양회원` ➔ `dim_condo_membership_cards_v6`) 구축 및 Gold 마트(`sp_etl_v6_fact_condo_member_ltv`, `sp_etl_v6_mat_online_member_dormancy`) 연동 완료 공지를 확인했습니다.
+- 프론트엔드(`src/pages/Members.tsx`, `src/pages/OnlineMembers.tsx`)에서는 Zero-Proxy 원칙에 따라 아래 신규 마스터 속성들이 API 응답에 포함될 경우 즉시 렌더링되도록 조건부 패스스루 바인딩을 선제 완료했습니다.
+
+### 74-2. 백엔드 API 응답 필드 추가 노출 요청 사항 (V6 5대 철칙 준수)
+1. **온라인 회원 휴면/Win-back API (`GET /api/v6/report/online-member-dormancy` 및 `GET /api/v6/report/online-members`)**:
+   - `winbackTargets[]` 및 `recentMembers[]` 각 행에 `dim_customer_master_v6` / `dim_online_members_v6`의 아래 완제품 필드를 포함해 주십시오:
+     - `smsConsent: 'Y' | 'N' | null` — SMS 마케팅 수신동의 여부
+     - `emailConsent: 'Y' | 'N' | null` — 이메일 뉴스레터 수신동의 여부
+     - `lastLoginAt: string | null` — 실제 웹/앱 최종 로그인 일시 (`YYYY-MM-DD HH:mm:ss`)
+     - `regionSido: string | null` — 고객 거주 지역 (시/도)
+     - `ageGroup: string | null` — 고객 연령대 분포 (예: `"30대"`, `"40대"`, `"50대"`)
+   - `summary` 블록에 마케팅 발송 가능 타겟 집계 완제품 필드를 함께 제공해 주시면 상단 KPI 카드에 직결 바인딩하겠습니다:
+     - `smsConsentTargetCount: number` (Win-back 타겟 중 SMS 수신동의 `'Y'` 인원수)
+     - `emailConsentTargetCount: number` (Win-back 타겟 중 이메일 수신동의 `'Y'` 인원수)
+
+2. **콘도 분양회원 구좌별 소진율 및 통합 LTV API (`GET /api/v6/report/member-quota-ltv`)**:
+   - `visitedMembersLedger[]` (및 구좌 원장 배열) 각 행에 `dim_condo_membership_cards_v6` 기반의 아래 완제품 필드를 포함해 주십시오:
+     - `registeredCardCount: number | null` — 해당 분양 구좌(`cert_no`) 산하 발급된 유효 회원카드 매수 (정회원·지정회원·무기명 카드 합계)
+     - `contractDate: string | null` — 회원권 최초 계약일 (`YYYY-MM-DD`)
+     - `expiryDate: string | null` — 회원권 만기 도래일 (`YYYY-MM-DD`)
+     - `depositAmt: number | null` — 분양 보증금 원장 금액 (원)
+     - `joinType: string | null` — 가입 구분 (`'신규' | '상품변경'` 등)
+     - `prevCertNo: string | null` — 만기 연장 또는 상품 변경 전 구 회원권번호
+
 
 
 

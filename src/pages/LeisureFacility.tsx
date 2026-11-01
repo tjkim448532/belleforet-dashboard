@@ -449,15 +449,21 @@ export default function LeisureFacility() {
                   <span>순수 외부 OTA (대행사)</span>
                   <span className="text-[11px] font-semibold bg-white text-[#284F42] px-2 py-0.5 rounded-full border border-[#D0C6BB]/70">야놀자/네이버 등</span>
                 </div>
-                <div className={`text-3xl font-black tracking-tight mt-2 ${Number(channelData.summary?.otaSharePct ?? 0) < 0 ? 'text-rose-600' : 'text-[#1B382E]'}`}>
+                <div className="text-3xl font-black text-[#1B382E] tracking-tight mt-2">
                   {showPct(channelData.summary?.otaSharePct)}
                 </div>
-                <div className={`text-xs mt-1 flex items-center gap-1.5 flex-wrap ${Number(channelData.summary?.otaRevenue ?? 0) < 0 ? 'text-rose-600 font-semibold' : 'text-[#284F42]/70'}`}>
-                  <span>매출 {showWon(channelData.summary?.otaRevenue)}</span>
-                  {Number(channelData.summary?.otaRevenue ?? 0) < 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                      취소·환불 차감
-                    </span>
+                <div className="text-xs mt-1 flex items-center gap-1.5 flex-wrap text-[#284F42]/70">
+                  {Number(channelData.summary?.otaNetRefundAmount ?? 0) > 0 || Number(channelData.summary?.otaRevenue ?? 0) < 0 ? (
+                    <>
+                      <span className="text-rose-600 font-semibold">
+                        취소순감 -{formatCurrency(channelData.summary?.otaNetRefundAmount || Math.abs(Number(channelData.summary?.otaRevenue ?? 0)))}원
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                        사전예매 환불차감
+                      </span>
+                    </>
+                  ) : (
+                    <span>매출 {showWon(channelData.summary?.otaRevenue)}</span>
                   )}
                 </div>
               </div>
@@ -472,12 +478,18 @@ export default function LeisureFacility() {
               </div>
             </div>
 
-            {channelData.venues?.some((v: any) => Number(v.otaRevenue ?? 0) < 0 || Number(v.homepageRevenue ?? 0) < 0) && (
-              <div className="px-4 py-2.5 rounded-xl bg-rose-50/80 border border-rose-200/80 flex items-center justify-between flex-wrap gap-2 text-xs text-rose-900">
+            {(channelData.summary?.hasNetChannelRefund ||
+              channelData.venues?.some((v: any) => v.hasNetChannelRefund || Number(v.otaNetRefundAmount ?? 0) > 0 || Number(v.homepageNetRefundAmount ?? 0) > 0)) && (
+              <div className="px-4 py-2.5 rounded-xl bg-[#E8F2EE]/80 border border-[#B4C6C1] flex items-center justify-between flex-wrap gap-2 text-xs text-[#1B382E]">
                 <div className="flex items-center gap-2">
-                  <AlertCircle size={15} className="text-rose-600 shrink-0" />
+                  <AlertCircle size={15} className="text-[#284F42] shrink-0" />
                   <span>
-                    <strong>[사전예매 취소·환불 차감 감지]</strong> 이전 일자 온라인/OTA 사전예매 티켓의 당일 취소·환불 차감액이 신규 결제액보다 큰 업장은 백엔드 원천 수치(<code className="font-mono text-[11px]">-원 / -%</code>) 그대로 표시됩니다. (비중 0~100% 정규화 백엔드 Ticket 79 요청 완료)
+                    <strong>[0~100% 구성비 최대잔여법 정규화 · 사전예매 취소 순감 분리]</strong> 이전 일자 온라인/OTA 사전예매 미사용 티켓의 당일 취소·환불 초과 채널은 비중 0%로 하한 고정하고, 양수 채널 합계(<strong>{showWon(channelData.summary?.positiveChannelRevenueSum ?? channelData.summary?.totalRevenue)}</strong>) 기준 100%로 정규화되었습니다.
+                    {Number(channelData.summary?.otaNetRefundAmount ?? 0) > 0 && (
+                      <span className="ml-1.5 text-rose-700 font-bold">
+                        (당일 OTA 취소 순감액: -{showWon(channelData.summary?.otaNetRefundAmount)})
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>
@@ -529,8 +541,8 @@ export default function LeisureFacility() {
                       : dominantTag.includes('자사')
                       ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                       : 'bg-[#F4F3EE] text-[#1B382E] border-[#D0C6BB]/70';
-                    const isNegHome = Number(v.homepageRevenue ?? 0) < 0 || Number(v.homepageSharePct ?? 0) < 0;
-                    const isNegOta = Number(v.otaRevenue ?? 0) < 0 || Number(v.otaSharePct ?? 0) < 0;
+                    const homeRefund = Number(v.homepageNetRefundAmount ?? 0) || (Number(v.homepageRevenue ?? 0) < 0 ? Math.abs(Number(v.homepageRevenue)) : 0);
+                    const otaRefund = Number(v.otaNetRefundAmount ?? 0) || (Number(v.otaRevenue ?? 0) < 0 ? Math.abs(Number(v.otaRevenue)) : 0);
 
                     return (
                       <tr key={v.venueName || idx} className="hover:bg-[#F4F3EE]/60 transition-colors">
@@ -549,22 +561,32 @@ export default function LeisureFacility() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3 text-right whitespace-nowrap bg-emerald-50/20">
-                          <span className={`text-base lg:text-lg font-black block leading-tight ${isNegHome ? 'text-rose-600' : 'text-emerald-700'}`}>
+                          <span className="text-base lg:text-lg font-black text-emerald-700 block leading-tight">
                             {showPct(v.homepageSharePct)}
                           </span>
-                          <span className={`text-[11px] font-medium block mt-0.5 ${isNegHome ? 'text-rose-600 font-semibold' : 'text-emerald-600/80'}`}>
-                            {showWon(v.homepageRevenue)}
-                            {isNegHome && <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">취소차감</span>}
-                          </span>
+                          {homeRefund > 0 ? (
+                            <span className="text-[11px] text-rose-600 font-semibold block mt-0.5">
+                              -{formatCurrency(homeRefund)}원 <span className="text-[10px] px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">취소순감</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-emerald-600/80 font-medium block mt-0.5">
+                              {showWon(v.homepageRevenue)}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3.5 px-3 text-right whitespace-nowrap bg-[#284F42]/5">
-                          <span className={`text-base lg:text-lg font-black block leading-tight ${isNegOta ? 'text-rose-600' : 'text-[#284F42]'}`}>
+                          <span className="text-base lg:text-lg font-black text-[#284F42] block leading-tight">
                             {showPct(v.otaSharePct)}
                           </span>
-                          <span className={`text-[11px] font-medium block mt-0.5 ${isNegOta ? 'text-rose-600 font-semibold' : 'text-[#284F42]/70'}`}>
-                            {showWon(v.otaRevenue)}
-                            {isNegOta && <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">취소차감</span>}
-                          </span>
+                          {otaRefund > 0 ? (
+                            <span className="text-[11px] text-rose-600 font-semibold block mt-0.5">
+                              -{formatCurrency(otaRefund)}원 <span className="text-[10px] px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">취소순감</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-[#284F42]/70 font-medium block mt-0.5">
+                              {showWon(v.otaRevenue)}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3.5 px-3 text-right whitespace-nowrap">
                           <span className="text-base lg:text-lg font-black text-[#B59269] block leading-tight">
@@ -606,13 +628,19 @@ export default function LeisureFacility() {
                       </span>
                     </td>
                     <td className="py-4 px-3 text-right whitespace-nowrap bg-[#1B382E]/70">
-                      <span className={`text-base lg:text-lg font-black block leading-tight ${Number(channelData.summary?.otaSharePct ?? 0) < 0 ? 'text-rose-300' : 'text-[#B59269]'}`}>
+                      <span className="text-base lg:text-lg font-black text-[#B59269] block leading-tight">
                         {showPct(channelData.summary?.otaSharePct)}
                       </span>
-                      <span className={`text-[11px] font-normal block mt-0.5 ${Number(channelData.summary?.otaRevenue ?? 0) < 0 ? 'text-rose-200 font-semibold' : 'text-white/70'}`}>
-                        {showWon(channelData.summary?.otaRevenue)}
-                        {Number(channelData.summary?.otaRevenue ?? 0) < 0 && <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-rose-900/60 text-rose-200 border border-rose-400/40">취소차감</span>}
-                      </span>
+                      {Number(channelData.summary?.otaNetRefundAmount ?? 0) > 0 || Number(channelData.summary?.otaRevenue ?? 0) < 0 ? (
+                        <span className="text-[11px] text-rose-200 font-semibold block mt-0.5">
+                          -{formatCurrency(channelData.summary?.otaNetRefundAmount || Math.abs(Number(channelData.summary?.otaRevenue ?? 0)))}원
+                          <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-rose-900/60 text-rose-200 border border-rose-400/40">취소순감</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-white/70 font-normal block mt-0.5">
+                          {showWon(channelData.summary?.otaRevenue)}
+                        </span>
+                      )}
                     </td>
                     <td className="py-4 px-3 text-right whitespace-nowrap">
                       <span className="text-base lg:text-lg font-black text-white block leading-tight">

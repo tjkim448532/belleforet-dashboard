@@ -500,12 +500,26 @@ export default function Layout() {
                 <div className="ml-2.5 mt-1 pl-2.5 border-l-2 border-white/15 space-y-1">
                   <NavLink
                     to="/members"
+                    end
                     className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
-                      isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                      isActive && searchParams.get('tab') !== 'corporate'
+                        ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                     onClick={handleNavClick}
                   >
-                    분양회원(콘도·골프) & 휴양소 실적
+                    분양회원 실사용 & 영업장 이용 분석
+                  </NavLink>
+                  <NavLink
+                    to="/members?tab=corporate"
+                    className={() => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                      location.pathname === '/members' && searchParams.get('tab') === 'corporate'
+                        ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    기업 휴양소(B2B 회원사) 정산 & 재방문
                   </NavLink>
                   <NavLink
                     to="/online-members"
@@ -514,7 +528,7 @@ export default function Layout() {
                     }`}
                     onClick={handleNavClick}
                   >
-                    온라인 회원 가입 추이 & 휴면 단골 관리
+                    온라인 회원 일·월·연 가입추세 & CRM
                   </NavLink>
                 </div>
               )}

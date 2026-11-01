@@ -50,6 +50,7 @@
 | **P1 (높음)** | API 보강 | **[Ticket 72] `room-rate-sales` API 내 전년동기(LY) 객실수(`todayLyRooms`) 및 매출액(`todayLyRevenue`) 완제품 필드 추가** | 회원권/요금타입별 정산 대조표에 전년 동일 기간(LY) 실적 완제품 필드 및 총합계 LY 매핑 제공 요청 (`room-rate-sales`) |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 73] `corporate-group-sales` API 내 기업 휴양소 후불 건의 계약 단가 기반 발생주의 매출(`contractRevenue`) 필드 제공 및 회계 외상매출금 동기화** | [배포/검증완료] 2026년 B2B 정산 원장 7만건 동기화 완료: 정산 완료 1,365건(4.5억원), 후정산 대기 172건 축소, 협약 계약매출(10.0억원) 및 완제품 필드 연동 완료 (`corporate-group-sales`) |
 | **P2 (신규)** | API 보강 | **[Ticket 74] 다올 신규 시트 2종(`15)고객`·`16)분양회원`) 기반 CRM/회원권 API 완제품 마스터 속성 노출 요청** | `online-member-dormancy`, `online-members`, `member-quota-ltv` API에 마케팅 수신동의(`smsConsent`, `emailConsent`), 권역/연령대(`regionSido`, `ageGroup`), 구좌 발급카드수(`registeredCardCount`), 계약/만기/보증금(`contractDate`, `expiryDate`, `depositAmt`), 승계구좌(`joinType`, `prevCertNo`) 필드 노출 요청 |
+| **P1 (신규)** | API 보강 | **[Ticket 75] 온라인 회원 다개년 연도별 가입 추세(`yearlyTrends`) 및 분양회원별 세부 영업장(`venueBreakdown`)·1:N 카드별 이용 내역 완제품 제공** | 회원관리 전면 개편 지원: ① `online-members`에 다개년(`2023~2026`) 연도별 가입 추세 및 권역/연령 프로파일 집계 추가, ② `member-quota-ltv`에 구좌별 세부 이용 영업장(`브리스킷346`, `마운틴카트` 등 방문횟수·소비액) 및 산하 1:N 발급카드별 이용 내역 추가 요청 |
 
 ---
 
@@ -4506,6 +4507,38 @@ ORDER BY venue_name, rn;
      - `depositAmt: number | null` — 분양 보증금 원장 금액 (원)
      - `joinType: string | null` — 가입 구분 (`'신규' | '상품변경'` 등)
      - `prevCertNo: string | null` — 만기 연장 또는 상품 변경 전 구 회원권번호
+
+---
+
+## 75. 🚀 [P1 API 보강] Ticket 75 — 온라인 회원 다개년 연도별 가입 추세(`yearlyTrends`) 및 분양회원별 세부 영업장(`venueBreakdown`) · 1:N 카드별 이용 내역 완제품 제공 요청 (2026-11-01)
+
+### 75-1. 배경 및 목적
+- 경영진 및 회원관리/CRM 실무에서 **"온라인 가입회원의 일별·월별·연도별 변화 추세"**와 **"분양회원이 실제로 어떻게 사용 중이며 회원별로 구체적으로 어떤 영업장을 이용하는지"**를 직관적으로 분석할 수 있도록 `[회원 & 멤버십 분석]` 화면을 전면 개편했습니다.
+- 현재 일별(`dailyTrends[]`)·월별(`monthlyTrends[]`) 가입 추이와 분양회원별 4대 대분류(객실/골프/식음/레저) 소비액은 이미 제공되고 있으나, **다개년 연도별 추세**와 **분양회원 개인별 세부 영업장 이용 내역**은 백엔드 마트 집계가 필요합니다.
+
+### 75-2. 백엔드 조치 요청 사항 (V6 5대 철칙 준수)
+1. **`GET /api/v6/report/online-members` — 연도별 가입 추세(`yearlyTrends[]`) 및 고객 프로파일 집계(`demographics`) 추가**:
+   - **`yearlyTrends` (또는 `trends.yearly`) 배열**:
+     - `year: number` (예: `2023`, `2024`, `2025`, `2026`)
+     - `joined: number` (해당 연도 신규 가입자 수)
+     - `cumulative: number` (해당 연도 말 기준 누적 가입자 수)
+     - `activeMembers: number` (해당 연도 실활동 회원 수)
+     - `ticketJoined: number`, `roomJoined: number`, `golfJoined: number` (유입 채널별 신규 가입자 수)
+     - `growthRate: number | null` (전년 대비 신규 가입 증감률 `%`)
+   - **`demographics` 객체 (`dim_customer_master_v6` 기반)**:
+     - `byRegion: Array<{ regionSido: string, memberCount: number, sharePct: number }>` (거주 시/도별 회원 분포)
+     - `byAgeGroup: Array<{ ageGroup: string, memberCount: number, sharePct: number }>` (연령대별 회원 분포)
+     - `consentSummary: { smsConsentCount: number, smsConsentRatePct: number, emailConsentCount: number, emailConsentRatePct: number }`
+
+2. **`GET /api/v6/report/member-quota-ltv` — 분양회원(구좌)별 세부 이용 영업장(`venueBreakdown[]`) 및 1:N 카드별 이용 내역(`cardBreakdown[]`) 추가**:
+   - `visitedMembersLedger[]` 각 구좌 행에 아래 완제품 배열을 포함해 주십시오:
+     - **`venueBreakdown: Array<{ categoryCode: string, venueName: string, visitCount: number, spendAmount: number, sharePct: number }>`**
+       - 해당 분양회원이 조회 기간(또는 연간 누적) 동안 실제로 이용한 **세부 영업장별 방문 횟수 및 소비 금액** (예: `블랙스톤 벨포레 CC`, `브리스킷346`, `남도예담`, `쿠치나`, `마운틴카트`, `사계절썰매장`, `벨포레 목장`, `미디어아트센터`, `모토아레나` 등)
+     - **`cardBreakdown: Array<{ memberNo: string, holderName: string, relationType: string, visitCount: number, usedNights: number, spendAmount: number }>`**
+       - `dim_condo_membership_cards_v6` 기준 구좌 산하 1:N 발급 카드(정회원 본인 / 배우자·가족 / 지정회원 / 무기명 카드) 중 실제로 누가 몇 박·얼마를 이용했는지 상세 내역
+   - **`dormantAccountsSummary` 및 미사용(0박) 구좌 조회 지원**:
+     - 전체 825구좌 중 미사용 휴면 구좌(201구좌, `usedNights === 0`) 명단(`dormantAccountsLedger[]` 또는 `visitedMembersLedger`에 미사용 구좌 포함)을 함께 내려주시면 미사용 회원 독려 캠페인 필터에 즉시 연동됩니다.
+
 
 
 

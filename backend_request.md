@@ -4539,6 +4539,44 @@ ORDER BY venue_name, rn;
    - **`dormantAccountsSummary` 및 미사용(0박) 구좌 조회 지원**:
      - 전체 825구좌 중 미사용 휴면 구좌(201구좌, `usedNights === 0`) 명단(`dormantAccountsLedger[]` 또는 `visitedMembersLedger`에 미사용 구좌 포함)을 함께 내려주시면 미사용 회원 독려 캠페인 필터에 즉시 연동됩니다.
 
+---
+
+## 76. 🚨 [P1 데이터 정합성 교정] Ticket 76 — `GET /api/v6/report/group-venue-preference` 내 일반 개인 투숙객 '객실후불(Room Charge)' 혼입 제거 및 순수 단체 모수 일원화 요청 (2026-11-01)
+
+### 76-1. 배경 및 실측 감사 결과 (Stdout Fact)
+- `/content/group-rankings` 및 `/sales/group-venue-preference` 화면이 바라보는 `GET /api/v6/report/group-venue-preference` API를 실측 감사(`2026-09-01 ~ 2026-10-31`)한 결과, **단순 결제수단이 '객실후불(Room Charge / 객실 Folio 이관)'인 일반 개인 숙박객(FIT, 1실 2~3인) 전표가 '단체(`totalGroupCount`, `totalGroupRevenue`, `groupTrails`)'로 잘못 분류·합산**되어 있는 결함이 확인되었습니다.
+
+#### 1) `groupTrails[]` 내 일반 개인 투숙객이 '대기업/중견기업 워크숍(단체)'으로 둔갑한 실측 사례
+| `groupRawInfo` | `groupSegmentName` | `roomsCount` / `paxCount` | 방문 매장 | `totalGroupSpend` | 실제 정체 |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `[261031]김민영(0000854327)` | 대기업/중견기업 워크숍 | **1실 / 2명** | 남도예담 | **78,000원** | 일반 2인 개인 투숙객 (패키지/룸차지) |
+| `[261031]구현경(0000854813)` | 대기업/중견기업 워크숍 | **1실 / 2명** | 남도예담 | **78,000원** | 일반 2인 개인 투숙객 (패키지/룸차지) |
+| `[261031]정은솔(0000854814)` | 대기업/중견기업 워크숍 | **1실 / 2명** | 남도예담 | **78,000원** | 일반 2인 개인 투숙객 (패키지/룸차지) |
+| `[260913]박소희(0000853177)` | 대기업/중견기업 워크숍 | **1실 / 3명** | 남도예담 | **78,000원** | 일반 3인 개인 투숙객 (패키지/룸차지) |
+| `임진영(0000734751)` | 대기업/중견기업 워크숍 | `null` / `null` | 브리스킷346 | **72,800원** | 개인 후불 결제 건 |
+| `권영해(0000733538)` | 대기업/중견기업 워크숍 | `null` / `null` | 브리스킷346 | **162,900원** | 개인 후불 결제 건 |
+
+#### 2) `venueRankings[]` 매장별 단체 수 및 평균 매출 왜곡 실측 (`2026-09-01 ~ 2026-10-31`)
+| 매장명 | 현재 `totalGroupCount` (`totalGroupRevenue`) | **순수 B2B 단체 (`b2bGroupCount` / `b2bRevenue`)** | **혼입된 객실후불 (`roomChargeGroupCount` / `roomChargeRevenue`)** | 팀당 평균 매출 왜곡 (`b2bAvg` ➔ `avgSpendPerGroup`) |
+| :--- | :--- | :--- | :--- | :--- |
+| **쿠치나** | 75개 팀 (`64,018,000원`) | **54개 팀 (`59,700,000원`)** | 21건 (`4,318,000원`) | `1,105,556원` ➔ `853,573원` (-25.2만 왜곡) |
+| **남도예담** | 70개 팀 (`56,224,160원`) | **67개 팀 (`55,231,160원`)** | 3건 (`993,000원`) | `824,346원` ➔ `803,202원` |
+| **브리스킷346** | 44개 팀 (`49,558,300원`) | **17개 팀 (`46,717,300원`)** | 27건 (`2,841,000원`) | `2,748,076원` ➔ `1,126,325원` (-162.1만 왜곡) |
+| **밤밤테이블** | 40개 팀 (`48,970,500원`) | **23개 팀 (`45,259,628원`)** | 17건 (`3,710,872원`) | `1,967,810원` ➔ `1,224,263원` (-74.3만 왜곡) |
+
+---
+
+### 76-2. 백엔드 조치 요청 사항 (V6 5대 철칙 & 0-Variance 준수)
+1. **일반 개인 투숙객 객실후불(`roomCharge`) 건을 단체 모수에서 전면 제외**:
+   - PMS 단체 마스터(`group_master` / 연회·세미나·B2B 기업단체 예약)와 매칭되지 않는 단순 개인 투숙객(1실 FIT 투숙객, `[YYMMDD]개인성명` 룸차지 및 식음 패키지 객실 이관 전표)은 단체가 아니므로 단체 분석 모수에서 영구 제외해 주십시오.
+2. **상·하단 전 응답 블록 0-Variance($\Delta = 0$) 동기화**:
+   - 아래 4개 응답 블록 모두가 **순수 단체(B2B/세미나/워크숍/학교·기관 단체)**만을 모수로 삼아 1원·1팀 오차 없이($\Delta = 0$) 일치하도록 재집계해 주십시오:
+     1) **`meta.summary`**: `totalUniqueGroups`, `totalGroupSpend`, `totalGroupTxCount`, `avgSpendPerGroup`, `avgSpendPerTx`, `topRevenueVenue`, `topGroupCountVenue`, `topSurgeVenue`
+     2) **`venueRankings[]`**: `totalGroupCount`, `totalGroupRevenue`, `shareOfGroupSalesPct`, `avgSpendPerGroup`, `groupVisitDays`, `nonGroupVisitDays`, `avgDailyRevWithGroup`, `avgDailyRevWithoutGroup`, `revenueSurgeDelta`, `revenueSurgePct`, `topVisitingGroups`
+     3) **`segmentPreferenceMatrix[]`**: 세그먼트별 단체 수(`groupCount`), 단체 매출(`totalSpend`), 팀당 평균 지출(`avgSpendPerGroup`)
+     4) **`groupTrails[]`**: 개인 객실후불 건(`[261031]김민영` 등) 완전 제거 및 순수 단체 동선만 반환
+
+
 
 
 

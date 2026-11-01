@@ -373,8 +373,16 @@ export default function Members() {
   const overview = quotaLtvData?.accountQuotaOverview || null;
 
   return (
-    <div className="space-y-6 pb-16 text-[#1B382E]">
-      {/* HEADER BAR */}
+    <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
+      {/* Ambient Forest Glow Banner */}
+      <div className="w-full bg-[#284F42] h-[190px] absolute top-0 left-0 z-0 overflow-hidden rounded-b-[36px] border-b border-[#1B382E] shadow-xl">
+        <div className="absolute -top-16 -right-16 w-96 h-96 rounded-full bg-[#2F5548] opacity-70 pointer-events-none" />
+        <div className="absolute top-8 left-1/3 w-80 h-80 rounded-full bg-[#2F5548] opacity-40 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 max-w-[1620px] mx-auto px-5 sm:px-7 lg:px-10 pt-6 lg:pt-8 space-y-6">
+        {/* HEADER BAR */}
       <div className="bg-white rounded-3xl p-6 lg:p-8 border border-[#D0C6BB] shadow-[0_4px_24px_rgba(40,79,66,0.06)] flex flex-col xl:flex-row xl:items-center justify-between gap-5">
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1850,6 +1858,7 @@ export default function Members() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

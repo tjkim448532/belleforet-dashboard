@@ -416,7 +416,7 @@ export default function OnlineMembers() {
         <div className="absolute -bottom-10 right-1/4 w-60 h-60 rounded-full bg-[#1B382E] opacity-60 pointer-events-none" />
       </div>
 
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6 relative z-10">
+      <div className="max-w-[1620px] mx-auto px-5 sm:px-7 lg:px-10 pt-6 lg:pt-8 space-y-6 relative z-10">
         {/* 1. Top Header Banner */}
         <div className="bg-[#284F42] rounded-3xl p-6 lg:p-8 text-white shadow-xl border border-[#1B382E] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>

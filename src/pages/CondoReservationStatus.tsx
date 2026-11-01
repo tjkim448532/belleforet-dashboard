@@ -229,7 +229,7 @@ export default function CondoReservationStatus() {
   const fetchDailyReservations = async (start: string, end: string) => {
     setLoadingDaily(true);
     try {
-      const query = start === end ? `date=${start}` : `startDate=${start}&endDate=${end}`;
+      const query = start === end ? `startDate=${start}&endDate=${start}&date=${start}` : `startDate=${start}&endDate=${end}`;
       const res = await secureFetcher(`${API_BASE}/api/v6/dashboard/condo-reservations?${query}`).catch(() => null);
 
       setPeriodSummary(res?.periodSummary || res?.summary || res?.condoSummary || null);

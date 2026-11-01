@@ -36,7 +36,7 @@ export default function DayOfWeekSales({ embedded = false }: DayOfWeekSalesProps
 
     let queryParams = isRangeMode
       ? `startDate=${s}&endDate=${e}`
-      : `date=${s}`;
+      : `startDate=${s}&endDate=${s}&date=${s}`;
 
     if (activeFilter.type === 'PART') {
       queryParams += `&partName=${encodeURIComponent(activeFilter.value)}`;

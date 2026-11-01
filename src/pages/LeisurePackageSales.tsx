@@ -108,7 +108,7 @@ export default function LeisurePackageSales() {
     try {
       const queryParams = isRangeMode
         ? `startDate=${startDate}&endDate=${endDate}`
-        : `date=${startDate}`;
+        : `startDate=${startDate}&endDate=${startDate}&date=${startDate}`;
 
       const res = await secureFetcher(`${API_BASE}/api/v6/report/leisure-package-sales?${queryParams}`);
       if (res && res.summary && Array.isArray(res.venues)) {

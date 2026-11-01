@@ -30,9 +30,10 @@ export default function GolfBusiness() {
     const fetchSummary = async () => {
       setLoading(true);
       const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
+      const singleGolfDate = startDate || getLatestClosedDateStr();
       const queryParams = endDate && startDate !== endDate
         ? `startDate=${startDate}&endDate=${endDate}`
-        : `date=${startDate || getLatestClosedDateStr()}`;
+        : `startDate=${singleGolfDate}&endDate=${singleGolfDate}&date=${singleGolfDate}`;
 
       try {
         const res = await secureFetcher(`${API_BASE}/api/v6/report/golf-channel-teetime-analysis-v2?${queryParams}`, {

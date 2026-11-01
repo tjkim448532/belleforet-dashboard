@@ -61,8 +61,8 @@ export default function OnlineMembers() {
     setLoading(true);
     try {
       const queryParams = isRangeMode
-        ? `startDate=${startDate}&endDate=${endDate}`
-        : `date=${startDate}`;
+        ? `startDate=${startDate}&endDate=${endDate}&date=${endDate}`
+        : `startDate=${startDate}&endDate=${startDate}&date=${startDate}`;
 
       const [res, dormancyRes] = await Promise.all([
         secureFetcher(`${API_BASE}/api/v6/report/online-members?${queryParams}`).catch(() => null),

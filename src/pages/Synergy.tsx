@@ -136,11 +136,11 @@ export default function Synergy() {
     try {
       const queryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
-        : `date=${sDate}`;
+        : `startDate=${sDate}&endDate=${sDate}&date=${sDate}`;
       
       const summaryQueryParams = rangeActive && eDate
         ? `startDate=${sDate}&endDate=${eDate}`
-        : `date=${sDate}`;
+        : `startDate=${sDate}&endDate=${sDate}&date=${sDate}`;
 
       // Parallel Fetch: 1. API 7 Channel Sales, 2. Revenue Summary, 3. Matrix Report (Category SSOT), 4. Ticket 36 Stay Duration Synergy
       const [channelRes, summaryRes, matrixRes, stayRes] = await Promise.all([

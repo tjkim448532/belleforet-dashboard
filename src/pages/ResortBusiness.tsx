@@ -195,7 +195,7 @@ export default function ResortBusiness() {
         }
         const queryParams = isRangeQuery
           ? `startDate=${curStart}&endDate=${curEnd}&_t=${Date.now()}`
-          : `date=${curStart}&_t=${Date.now()}`;
+          : `startDate=${curStart}&endDate=${curStart}&date=${curStart}&_t=${Date.now()}`;
           
         const [resortSummaryRes, overviewRes, channelRes, rateRes, orgRes, leadtimeWearRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/resort-business-summary?${queryParams}`, { signal: controller.signal }).catch(() => null),

@@ -56,9 +56,10 @@ export const CoreDataProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       const todayStr = getLatestClosedDateStr();
+      const singleCoreDate = validStart || todayStr;
       const queryParams = validEnd && validStart !== validEnd
         ? `startDate=${validStart}&endDate=${validEnd}&_t=${Date.now()}`
-        : `date=${validStart || todayStr}&_t=${Date.now()}`;
+        : `startDate=${singleCoreDate}&endDate=${singleCoreDate}&date=${singleCoreDate}&_t=${Date.now()}`;
 
       try {
         // [Parallel SSOT Call] Fetch Firebase parking-summary in parallel with revenue-summary

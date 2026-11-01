@@ -47,7 +47,7 @@ export default function LeisureFacility() {
         const isRangeQuery = Boolean(endDate && startDate !== endDate);
         const queryParams = isRangeQuery
           ? `startDate=${startDate}&endDate=${endDate}&limit=30`
-          : `date=${startDate}&limit=30`;
+          : `startDate=${startDate}&endDate=${startDate}&date=${startDate}&limit=30`;
         const res = await secureFetcher(`${API_BASE}/api/v6/report/top-ticket-items?${queryParams}`).catch(() => null);
         if (isCancelled) return;
         const payload = res?.data ?? res;
@@ -100,7 +100,7 @@ export default function LeisureFacility() {
         const isRangeQuery = Boolean(endDate && startDate !== endDate);
         const queryParams = isRangeQuery
           ? `startDate=${startDate}&endDate=${endDate}`
-          : `date=${startDate}`;
+          : `startDate=${startDate}&endDate=${startDate}&date=${startDate}`;
         const [res, discountRes] = await Promise.all([
           secureFetcher(`${API_BASE}/api/v6/report/leisure-channel-sales?${queryParams}`),
           secureFetcher(`${API_BASE}/api/v6/report/leisure-discount-leakage?${queryParams}`).catch(() => null)

@@ -111,7 +111,7 @@ export default function OutsourcedFnbDashboard({ viewMode = 'CARDS' }: Outsource
       const latestClosed = getLatestClosedDateStr();
       const query = isRangeMode
         ? `startDate=${startDate || latestClosed}&endDate=${endDate || latestClosed}`
-        : `date=${startDate || latestClosed}`;
+        : `startDate=${startDate || latestClosed}&endDate=${startDate || latestClosed}&date=${startDate || latestClosed}`;
 
       try {
         const dedicatedRes = await secureFetcher(`${API_BASE}/api/v6/report/outsourced-fnb-sales?${query}`);

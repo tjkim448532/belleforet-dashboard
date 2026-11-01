@@ -96,9 +96,10 @@ export default function V6DashboardViewer() {
       setError(null);
       try {
         const latestClosed = getLatestClosedDateStr();
+        const singleV6Date = startDate || latestClosed;
         const query = isRangeMode
           ? `startDate=${startDate || latestClosed}&endDate=${endDate || latestClosed}&_t=${Date.now()}`
-          : `date=${startDate || latestClosed}&_t=${Date.now()}`;
+          : `startDate=${singleV6Date}&endDate=${singleV6Date}&date=${singleV6Date}&_t=${Date.now()}`;
         const res = await secureFetcher(`https://belleforet-data.vercel.app/api/v6/dashboard/revenue-by-org?${query}`);
         setData(res?.data || res);
       } catch (err: any) {

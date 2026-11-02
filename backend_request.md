@@ -55,6 +55,7 @@
 | **P2 (신규)** | API 확장 | **[Ticket 77] 리조트사업본부 [타사 일별 판매상품 & 패키지·요금 현황] 페이지용 S3 원천 판매상품 목록(`offers[]`) 노출** | S3 SQLite(`57,733건`)에 저장된 일자·리조트별 개별 판매상품 리스트(`offers[]`) 반환 요청 (`room-dynamic-pricing`) |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 78] `daily-member-visitors-v2` 업장별 실적 집계 레저 업장 일원화(ROOM·GOLF 제외) 및 점유율 모수를 '골프제외 이용객'으로 교정** | [배포/검증완료] `venues[]` 8대 레저 업장 일원화 및 `exGolfVisitorsDenominator(1,514명)` 기반 `exGolfUsageRatePct` 완제품(`벨포레 목장 48.22%`, `놀이동산 28.80%` 등) 연동 완료 |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 79] `leisure-channel-sales` 및 `moto-channel-sales` 채널별 음수 매출·음수 비중(`-3.81%`, `-9.94%`) 왜곡 시정 및 0~100% 정규화** | [배포/검증완료] 커밋 `989289b5` 배포 완료: 음수 채널 비중 `0%` 하한 고정, 양수 채널 합계(`positiveChannelRevenueSum`) 기준 최대잔여법 `100.00%` 정규화 및 `otaNetRefundAmount` 분리 바인딩 완료 |
+| **P0 (긴급)** | 데이터 적재 | **[Ticket 80] `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01 최신 구간 입출차 시간대·외출재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동화 요청** | `parking-summary` 일별 요약(`dailyList`, `resortVisitorsDailyList`)은 `2026-11-01`까지 적재되어 있으나, `time-analytics`는 `2025-08-22`에서 적재가 중단되어 2026년 조회 시 `dayCount: 0`, `periodSummary: null` 반환 중 |
 
 ---
 
@@ -4674,12 +4675,29 @@ ORDER BY venue_name, rn;
    - 특정 채널의 당일 순매출이 취소·환불 초과로 음수(`revenue <= 0`)인 경우, 해당 채널의 비중(`SharePct`)은 **`0%`**로 하한 고정하고, **양수(`> 0`) 매출을 기록한 채널들의 합계를 분모로 삼아 최대잔여법(Largest Remainder Method)으로 4대 채널 비중의 합이 정확히 `100.00%`($0\% \le \text{SharePct} \le 100\%$)**가 되도록 백엔드에서 완제품으로 반환해 주십시오.
    - 당일 취소·환불 초과로 발생한 순감액이 있을 경우 별도 메타 필드(`otaNetRefundAmount` 등)로 분리 제공해 주시면 감사 배지에 연동됩니다.
 
+---
 
+## 80. 🚗 [P0 데이터 적재 긴급] Ticket 80 — `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01(최신 마감일) 입출차 시간대 및 외출·재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동 적재 요청 (2026-11-02)
 
+### 80-1. 배경 및 실측 감사 결과 (`Stdout` Fact)
+- 신규 페이지 **`숙박(골프제외) 입출차·외출재입차 & 나들이(단체제외) 입출차 시간대/요일별 분석`** (`/leisure/parking-time-analytics`, `src/pages/ParkingTimeAnalytics.tsx`)을 구축하여 `GET /api/v6/parking/time-analytics`에 1:1 직결 바인딩 완료했습니다.
+- 그러나 운영 환경에서 **현재 시점(`2026-10-01 ~ 2026-11-01` 및 2026년 전 기간)**을 조회하면 백엔드 API가 `hasTimeAnalyticsData: false`, `dayCount: 0`, `periodSummary: null`, `dailyList: []`를 반환하여, 프론트엔드 Fail-Loudly 원칙에 따라 전 지표가 `'-'`(데이터 미수신)로 표출됩니다.
 
+#### 프로덕션 API 전수 스캔 실측 `Stdout` 비교 (`2025-01-01 ~ 2026-12-31`)
+| 비교 대상 엔드포인트 | 조회 구간 | 실측 응답 상태 (`Stdout`) | 적재 일수 (`dayCount`) | 실제 적재된 날짜 범위 (`minDate ~ maxDate`) |
+| :--- | :---: | :--- | :---: | :---: |
+| **`GET /api/v6/dashboard/parking-summary`** (`dailyList` / `resortVisitorsDailyList`) | `2026-10-01 ~ 2026-11-01` | ✅ 정상 반환 | **32일** | **`2026-10-01 ~ 2026-11-01`** (최신 마감일까지 매일 정상 적재 중) |
+| **`GET /api/v6/parking/time-analytics`** (전체 기간 스캔) | `2025-01-01 ~ 2026-12-31` | ⚠️ 2025년 8월 이후 끊김 | **97일** | **`2025-04-25 ~ 2025-08-22`** (`2025-08-23` 이후 전무) |
+| **`GET /api/v6/parking/time-analytics`** (당월/최근 마감일 조회) | `2026-10-01 ~ 2026-11-01` | ❌ **미적재 (`hasTimeAnalyticsData: false`)** | **0일** | **`periodSummary: null`, `dailyList: []`** |
 
+- **원인 요약**:
+  - 주차관제 일별 요약(`parking-summary`의 `dailyList`, `resortVisitorsDailyList`)은 `2026-11-01`까지 정상 적재되고 있으나,
+  - 개별 차량 단위의 입출차 시각(`entry_time`, `exit_time`) 및 외출·재입차(`reEntrySummary`)를 집계하는 원천/마트 파이프라인은 **`2025-08-22`를 마지막으로 적재가 중단**되어 `2025-08-23 ~ 2026-11-01` (약 14개월분) 데이터가 비어 있습니다.
 
-
-
+### 80-2. 백엔드 조치 요청 사항 (V6 5대 철칙 & 0-Variance 준수)
+1. **`2025-08-23 ~ 2026-11-01`(최신 마감일 `D-1`) 구간 주차 입출차 시간대 및 외출·재입차 마트 전수 백필(Backfill)**:
+   - 주차관제 원천 입출차 로그(또는 Firebase/S3/DB 주차 원천 테이블)에서 `2025-08-23` 이후 누락된 차량별 입차시각·출차시각·외출/재입차 데이터를 적재 및 마트 재집계(`sp_etl_v6_...`)하여, **2026년 당월(`2026-10-01 ~ 2026-10-31`, `2026-11-01`) 및 전 기간 조회 시 `hasTimeAnalyticsData: true`와 `periodSummary`, `byDayOfWeek`, `byDayType`, `dailyList` 완제품이 정상 반환**되도록 조치해 주십시오.
+2. **일별 마감 ETL 파이프라인 자동 연동**:
+   - `parking-summary`가 매일 `D-1` 마감 시 갱신될 때, `time-analytics` 집계 테이블(숙박[골프제외] `stayNonGolf` 및 순수 나들이[단체제외] `walkInNonGroup`)도 함께 자동 갱신되도록 일별 ETL 파이프라인에 포함해 주십시오.
 
 

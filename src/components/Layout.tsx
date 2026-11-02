@@ -5,7 +5,7 @@ import {
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
   Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Tag,
-  Palette, Package, Gift
+  Palette, Package, Gift, Car
 } from 'lucide-react';
 
 export default function Layout() {
@@ -30,8 +30,8 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(() => location.pathname.startsWith('/sales') || location.pathname.startsWith('/group-sales'));
   const [golfOpen, setGolfOpen] = useState(() => location.pathname.startsWith('/golf'));
-  const [resortOpen, setResortOpen] = useState(() => (location.pathname.startsWith('/resort') && !location.pathname.includes('room-guest-analysis')) || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
-  const [leisureOpen, setLeisureOpen] = useState(() => location.pathname.startsWith('/leisure') || location.pathname.includes('room-guest-analysis') || location.pathname.includes('parking-time-analytics'));
+  const [resortOpen, setResortOpen] = useState(() => (location.pathname.startsWith('/resort') && !location.pathname.includes('room-guest-analysis') && !location.pathname.includes('parking-time-analytics')) || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
+  const [leisureOpen, setLeisureOpen] = useState(() => (location.pathname.startsWith('/leisure') && !location.pathname.includes('parking-time-analytics')) || location.pathname.includes('room-guest-analysis'));
   const [contentOpen, setContentOpen] = useState(() => location.pathname.startsWith('/content') || location.pathname.includes('outsourced-fnb'));
   const [membersOpen, setMembersOpen] = useState(() => location.pathname.startsWith('/members') || location.pathname.startsWith('/online-members'));
   const [synergyOpen, setSynergyOpen] = useState(() => location.pathname.startsWith('/synergy'));
@@ -80,11 +80,12 @@ export default function Layout() {
     }
   };
 
-  // 전사 공통 3대 대시보드 (모든 로그인 임직원 공통 노출)
+  // 전사 공통 대시보드 (모든 로그인 임직원 공통 노출)
   const commonMenuItems = [
     { name: '전사 종합 매출 & TRevPAR', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: '부문별 주간정산 & 요일별 매출', path: '/matrix-weekly', icon: <Database size={20} /> },
     { name: '영업장별 월별 추이 & 시즌성', path: '/facility-trend', icon: <TrendingUp size={20} /> },
+    { name: '숙박(골프제외)·나들이 입출차 & 외출 분석', path: '/parking-time-analytics', icon: <Car size={20} /> },
   ];
 
   return (
@@ -159,7 +160,10 @@ export default function Layout() {
               key={idx}
               to={item.path}
               className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 font-medium transition-all rounded-xl leading-snug break-keep text-sm ${
-                (isActive || (item.path === '/matrix-weekly' && window.location.pathname === '/day-of-week-sales')) && (item.path === '/' ? window.location.pathname === '/' : true)
+                (isActive ||
+                  (item.path === '/matrix-weekly' && window.location.pathname === '/day-of-week-sales') ||
+                  (item.path === '/parking-time-analytics' && window.location.pathname.includes('parking-time-analytics'))) &&
+                (item.path === '/' ? window.location.pathname === '/' : true)
                   ? 'bg-[#B59269] text-white font-bold shadow-xs'
                   : 'text-white/75 hover:bg-white/10 hover:text-white'
               }`}
@@ -342,15 +346,6 @@ export default function Layout() {
                 >
                   연도별 투숙객·판매방수 & 객실소계
                 </NavLink>
-                <NavLink
-                  to="/resort/parking-time-analytics"
-                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
-                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  숙박(골프제외)·나들이 입출차 & 외출 분석
-                </NavLink>
               </div>
             )}
           </div>
@@ -392,17 +387,6 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   일일 투숙객 & 골프제외 이용객 분석
-                </NavLink>
-                <NavLink
-                  to="/leisure/parking-time-analytics"
-                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
-                    isActive || window.location.pathname === '/parking-time-analytics'
-                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  숙박(골프제외)·나들이 입출차 & 외출 분석
                 </NavLink>
                 <NavLink
                   to="/leisure/usage-rate"

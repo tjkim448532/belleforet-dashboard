@@ -20,6 +20,7 @@ import ResortBusiness from './pages/ResortBusiness';
 import CondoReservationStatus from './pages/CondoReservationStatus';
 import ResortRoomGuestsYoy from './pages/ResortRoomGuestsYoy';
 import RoomGuestAnalysis from './pages/RoomGuestAnalysis';
+import ParkingTimeAnalytics from './pages/ParkingTimeAnalytics';
 import RoomDynamicPricing from './pages/RoomDynamicPricing';
 import CompetitorDailyProducts from './pages/CompetitorDailyProducts';
 import GolfBusiness from './pages/GolfBusiness';
@@ -95,6 +96,9 @@ export function App() {
                     <Route path="reservation-status" element={<CondoReservationStatus />} />
                     <Route path="resort/room-guest-analysis" element={<RoomGuestAnalysis />} />
                     <Route path="leisure/room-guest-analysis" element={<RoomGuestAnalysis />} />
+                    <Route path="parking-time-analytics" element={<ParkingTimeAnalytics />} />
+                    <Route path="leisure/parking-time-analytics" element={<ParkingTimeAnalytics />} />
+                    <Route path="resort/parking-time-analytics" element={<ParkingTimeAnalytics />} />
                     <Route path="resort/room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="resort-room-guests-yoy" element={<ResortRoomGuestsYoy />} />
                     <Route path="condo/dynamic-pricing" element={<RoomDynamicPricing />} />

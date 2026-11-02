@@ -1296,3 +1296,172 @@ export interface StaySurgeCorrelationItem {
   }>;
 }
 
+// ============================================================================
+// ⑯ 숙박(골프제외) 입출차·외출재입차 & 나들이(단체제외) 입출차 시간대/요일별 분석
+// Endpoint: GET /api/v6/parking/time-analytics
+// ============================================================================
+export interface StayReEntrySummary {
+  totalStayCars: number;
+  reEntryCars: number;
+  directStayCars: number;
+  dailyAvgReEntryCars: number;
+  reEntryRatio: number;
+  directStayRatio: number;
+  reEntryOnceCars: number;
+  reEntryOnceRatio: number;
+  reEntryMultiCars: number;
+  reEntryMultiRatio: number;
+  totalOutingCount: number;
+  avgOutingCountPerReEntryCar: number;
+  avgOutingMinutes: number | null;
+  avgOutingFormatted: string | null;
+  peakOutingExitHour: number | null;
+  peakOutingExitHourLabel: string | null;
+  peakOutingExitCount: number;
+  peakOutingReturnHour: number | null;
+  peakOutingReturnHourLabel: string | null;
+  peakOutingReturnCount: number;
+}
+
+export interface StayHourlyDistributionItem {
+  hour: number;
+  hourLabel: string;
+  entryCars: number;
+  entryRatio: number;
+  exitCars: number;
+  exitRatio: number;
+  actualDayExitCars?: number;
+  actualDayExitRatio?: number;
+  outingExitCount: number;
+  outingExitRatio: number;
+  outingReturnCount: number;
+  outingReturnRatio: number;
+}
+
+export interface StayNonGolfCohort {
+  cohortLabel: string;
+  dayCount: number;
+  totalCars: number;
+  dailyAvgCars: number;
+  withExitCars: number;
+  avgEntryMinute: number | null;
+  avgEntryTime: string | null;
+  avgExitMinute: number | null;
+  avgExitTime: string | null;
+  avgDwellMinutes: number | null;
+  avgDwellFormatted: string | null;
+  peakEntryHour: number | null;
+  peakEntryHourLabel: string | null;
+  peakEntryCars: number;
+  peakExitHour: number | null;
+  peakExitHourLabel: string | null;
+  peakExitCars: number;
+  peakActualDayExitHour?: number | null;
+  peakActualDayExitHourLabel?: string | null;
+  peakActualDayExitCars?: number;
+  reEntrySummary: StayReEntrySummary;
+  hourlyDistribution: StayHourlyDistributionItem[];
+}
+
+export interface WalkInDwellBucketItem {
+  bucketCode: string;
+  bucketLabel: string;
+  cars: number;
+  visitors: number;
+  ratio: number;
+}
+
+export interface WalkInHourlyDistributionItem {
+  hour: number;
+  hourLabel: string;
+  entryCars: number;
+  entryVisitors: number;
+  entryRatio: number;
+  exitCars: number;
+  exitVisitors: number;
+  exitRatio: number;
+}
+
+export interface WalkInNonGroupCohort {
+  cohortLabel: string;
+  dayCount: number;
+  visitorMultiplier: number;
+  totalCars: number;
+  totalVisitors: number;
+  dailyAvgCars: number;
+  dailyAvgVisitors: number;
+  withExitCars: number;
+  avgEntryMinute: number | null;
+  avgEntryTime: string | null;
+  avgExitMinute: number | null;
+  avgExitTime: string | null;
+  avgDwellMinutes: number | null;
+  avgDwellFormatted: string | null;
+  peakEntryHour: number | null;
+  peakEntryHourLabel: string | null;
+  peakEntryCars: number;
+  peakEntryVisitors: number;
+  peakExitHour: number | null;
+  peakExitHourLabel: string | null;
+  peakExitCars: number;
+  peakExitVisitors: number;
+  dwellDistribution: WalkInDwellBucketItem[];
+  hourlyDistribution: WalkInHourlyDistributionItem[];
+}
+
+export interface ParkingDayOfWeekItem {
+  dayOfWeek: number;
+  dayCode: string;
+  dayLabel: string;
+  dayShortLabel: string;
+  isWeekend: boolean;
+  dayCount: number;
+  hasData: boolean;
+  stayNonGolf: StayNonGolfCohort | null;
+  walkInNonGroup: WalkInNonGroupCohort | null;
+}
+
+export interface ParkingDayTypeSummary {
+  typeCode: 'WEEKDAY' | 'WEEKEND';
+  typeLabel: string;
+  dayCount: number;
+  hasData: boolean;
+  stayNonGolf: StayNonGolfCohort | null;
+  walkInNonGroup: WalkInNonGroupCohort | null;
+}
+
+export interface ParkingDailyAnalyticsItem {
+  date: string;
+  dateId: string;
+  dayOfWeek: number;
+  dayCode: string;
+  dayLabel: string;
+  dayShortLabel: string;
+  isWeekend: boolean;
+  stayNonGolf: StayNonGolfCohort | null;
+  walkInNonGroup: WalkInNonGroupCohort | null;
+}
+
+export interface ParkingTimeAnalyticsResponse {
+  success: boolean;
+  startDate: string;
+  endDate: string;
+  dayOfWeekFilter: string;
+  visitorMultiplier: number;
+  hasTimeAnalyticsData: boolean;
+  dayCount: number;
+  periodSummary: {
+    dayCount: number;
+    stayNonGolf: StayNonGolfCohort | null;
+    walkInNonGroup: WalkInNonGroupCohort | null;
+  } | null;
+  byDayOfWeek: ParkingDayOfWeekItem[];
+  byDayType: {
+    weekday: ParkingDayTypeSummary;
+    weekend: ParkingDayTypeSummary;
+  };
+  dailyList: ParkingDailyAnalyticsItem[];
+  error?: string;
+}
+
+

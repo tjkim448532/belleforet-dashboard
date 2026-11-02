@@ -31,7 +31,7 @@ export default function Layout() {
   const [salesOpen, setSalesOpen] = useState(() => location.pathname.startsWith('/sales') || location.pathname.startsWith('/group-sales'));
   const [golfOpen, setGolfOpen] = useState(() => location.pathname.startsWith('/golf'));
   const [resortOpen, setResortOpen] = useState(() => (location.pathname.startsWith('/resort') && !location.pathname.includes('room-guest-analysis')) || location.pathname.startsWith('/condo') || location.pathname.includes('reservation-status'));
-  const [leisureOpen, setLeisureOpen] = useState(() => location.pathname.startsWith('/leisure') || location.pathname.includes('room-guest-analysis'));
+  const [leisureOpen, setLeisureOpen] = useState(() => location.pathname.startsWith('/leisure') || location.pathname.includes('room-guest-analysis') || location.pathname.includes('parking-time-analytics'));
   const [contentOpen, setContentOpen] = useState(() => location.pathname.startsWith('/content') || location.pathname.includes('outsourced-fnb'));
   const [membersOpen, setMembersOpen] = useState(() => location.pathname.startsWith('/members') || location.pathname.startsWith('/online-members'));
   const [synergyOpen, setSynergyOpen] = useState(() => location.pathname.startsWith('/synergy'));
@@ -342,6 +342,15 @@ export default function Layout() {
                 >
                   연도별 투숙객·판매방수 & 객실소계
                 </NavLink>
+                <NavLink
+                  to="/resort/parking-time-analytics"
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                    isActive ? 'bg-[#B59269] text-white font-bold shadow-xs' : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  숙박(골프제외)·나들이 입출차 & 외출 분석
+                </NavLink>
               </div>
             )}
           </div>
@@ -383,6 +392,17 @@ export default function Layout() {
                   onClick={handleNavClick}
                 >
                   일일 투숙객 & 골프제외 이용객 분석
+                </NavLink>
+                <NavLink
+                  to="/leisure/parking-time-analytics"
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                    isActive || window.location.pathname === '/parking-time-analytics'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  숙박(골프제외)·나들이 입출차 & 외출 분석
                 </NavLink>
                 <NavLink
                   to="/leisure/usage-rate"

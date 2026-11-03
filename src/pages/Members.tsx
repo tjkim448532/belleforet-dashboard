@@ -908,7 +908,7 @@ export default function Members() {
                             <span className="font-bold text-[#1B382E]">{v.venueName}</span>
                           </div>
                           <div className="text-right text-[11px] text-[#5A6B63]">
-                            <strong className="text-[#1E523F]">{formatNum(v.visitedAccountCount)}구좌</strong> ({v.accountPenetrationPct ?? '-'}%) · {formatNum(v.totalVisitCount)}회
+                            <strong className="text-[#1E523F]">{formatNum(v.visitedAccountsCount ?? v.visitedAccountCount)}구좌</strong> ({v.accountPenetrationPct ?? '-'}%) · {formatNum(v.totalVisitCount)}회
                           </div>
                         </div>
                       ))}
@@ -1101,7 +1101,7 @@ export default function Members() {
                   관리 타겟 필터:
                 </span>
                 {[
-                  { id: 'ALL', label: `전체 방문 구좌 (${rawVisitedLedger.length})` },
+                  { id: 'ALL', label: `전체 분양구좌 (${rawVisitedLedger.length})` },
                   { id: 'HIGH_RISK', label: '🚨 반환 고위험 (<5% 극저소진)' },
                   { id: 'LOW_BURN', label: '⚠️ 박수 소진 저조 (<10% 독려대상)' },
                   { id: 'VIP_VISIT', label: '다회 방문 고만족 (연 10회+)' },

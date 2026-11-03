@@ -20,7 +20,9 @@ import {
   MapPin,
   MailCheck,
   Sparkles,
-  Clock
+  Clock,
+  ShoppingBag,
+  Award
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -54,6 +56,9 @@ export default function OnlineMembers() {
   // 3. 최근 가입/활동 회원 검색 & 채널 필터
   const [recentChannelFilter, setRecentChannelFilter] = useState<string>('ALL');
   const [recentSearch, setRecentSearch] = useState<string>('');
+
+  // 4. 온라인 회원 인기 구매 상품 카테고리 필터
+  const [popularCategoryFilter, setPopularCategoryFilter] = useState<'ALL' | 'TICKET' | 'ROOM' | 'GOLF' | 'PACKAGE'>('ALL');
 
   const isRangeMode = Boolean(endDate && startDate !== endDate);
 
@@ -109,6 +114,17 @@ export default function OnlineMembers() {
   const demographics = data?.demographics || dormancyIntel?.demographics || null;
   const channelBreakdown = data?.channelBreakdown || {};
   const recentMembers: any[] = Array.isArray(data?.recentMembers) ? data.recentMembers : [];
+  const purchaseConversion = data?.purchaseConversionFunnel || null;
+  const popularProducts: any[] = Array.isArray(data?.popularProducts) ? data.popularProducts : [];
+  const popularVenues: any[] = Array.isArray(data?.popularVenues) ? data.popularVenues : [];
+  const peakJoinSeasonality = data?.peakJoinSeasonality || null;
+
+  const filteredPopularProducts = useMemo(() => {
+    if (popularCategoryFilter === 'ALL') return popularProducts;
+    return popularProducts.filter(
+      (p) => String(p.category || '').toUpperCase() === popularCategoryFilter
+    );
+  }, [popularProducts, popularCategoryFilter]);
 
   const effectiveRefDate = (isRangeMode && endDate ? endDate : startDate) || getLatestClosedDateStr();
   const currentYearStr = effectiveRefDate.slice(0, 4);
@@ -426,14 +442,14 @@ export default function OnlineMembers() {
                 BELLEFORET DIGITAL CRM · 15)고객 마스터 통합 SSOT
               </span>
               <span className="px-2.5 py-1 rounded-full bg-[#B59269]/25 border border-[#B59269]/50 text-[#F4F3EE] text-xs font-semibold">
-                일별 · 월별 · 연도별 가입 추세 & 휴면 Win-back
+                피크 가입 기간/시즌 · 가입➔실구매 전환 퍼널 · 인기 상품 Top 랭킹
               </span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-white">
-              온라인 회원 일·월·연 가입 추세 및 CRM 핀셋 마케팅
+              온라인 회원 증가 · 실구매 전환율 · 인기 상품 & 피크 가입 기간 분석
             </h1>
             <p className="text-sm text-white/80 mt-1">
-              매일 몇 명의 온라인 회원이 신규 유입되는지(일별·월별·연도별 변화 추세)를 추적하고, 다올 <code className="text-emerald-200 font-mono">15)고객(dim_customer_master_v6)</code> 기반 휴면 단골 Win-back 타겟을 관리합니다.
+              <strong>① 어떤 기간(월별·시즌별·요일별)에 회원이 많이 증가하는지</strong>, <strong>② 회원 증가가 실제 구매(예약·발권) 및 재구매로 이어지는지</strong>, <strong>③ 온라인 회원에게 어떤 상품·권종·영업장이 가장 인기가 있는지</strong>를 통합 분석합니다.
             </p>
           </div>
 
@@ -578,6 +594,477 @@ export default function OnlineMembers() {
                   충성(10회+) {formatCurrency(dormancyIntel?.summary?.loyalDormantCount)}명 · 단골(4~9회) {formatCurrency(dormancyIntel?.summary?.regularDormantCount)}명
                 </div>
               </div>
+            </div>
+
+            {/* 2.5 SECTION 0: 온라인 회원 3대 핵심 경영 인텔리전스 (가입➔실구매 전환 · 피크 가입 기간/시즌 · 인기 상품 Top 랭킹) */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+              {/* 좌측 6칸: ① 회원 증가가 실제 구매(예약·발권) 및 재구매로 이어지는지 (가입➔첫구매➔재구매 전환 퍼널) */}
+              <div className="xl:col-span-6 bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="border-b border-[#D0C6BB]/60 pb-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#284F42] text-white">
+                        SIGNUP ➔ ACTUAL PURCHASE CONVERSION
+                      </span>
+                      <span className="text-xs text-[#5A6B63] font-mono">
+                        회원 증가 ➔ 실구매 및 재구매 전환 검증
+                      </span>
+                    </div>
+                    <h2 className="text-lg lg:text-xl font-extrabold text-[#1B382E] mt-1.5 flex items-center gap-2">
+                      <CheckCircle2 size={20} className="text-[#284F42]" />
+                      ① 온라인 회원 증가가 실제 구매 및 재방문으로 이어지는가?
+                    </h2>
+                    <p className="text-xs text-[#5A6B63] mt-0.5">
+                      신규 가입자 중 실제 예약·발권(구매)으로 전환된 비율, 가입 후 첫 구매까지 걸리는 기간, 그리고 1회 단발 구매에서 2회+ 다회 재구매 단골로 이어지는 전환율을 진단합니다.
+                    </p>
+                  </div>
+
+                  {/* 가입 ➔ 첫구매 ➔ 재구매 핵심 전환 지표 카드 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-financial">
+                    <div className="p-4 rounded-2xl bg-[#E8F2EE] border border-[#B4C6C1]">
+                      <div className="text-xs font-bold text-[#1E523F]">전체 가입 ➔ 실구매 전환율</div>
+                      <div className="text-2xl font-black text-[#1E523F] mt-1">
+                        {purchaseConversion?.signupToPurchaseConversionRatePct != null
+                          ? `${purchaseConversion.signupToPurchaseConversionRatePct}%`
+                          : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#1B382E] mt-1">
+                        실구매 완료: <strong>{formatCurrency(purchaseConversion?.purchasedMembersCount ?? summary.totalActiveMembers)}명</strong>
+                      </div>
+                      <div className="text-[10px] text-[#5A6B63] mt-0.5">
+                        미구매(0건) 가입자: {purchaseConversion?.neverPurchasedMembersCount != null ? `${formatCurrency(purchaseConversion.neverPurchasedMembersCount)}명` : '-'}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D0C6BB]">
+                      <div className="text-xs font-bold text-[#8B6E4E]">신규 가입 당일(D+0) 즉시 구매율</div>
+                      <div className="text-2xl font-black text-[#1B382E] mt-1">
+                        {purchaseConversion?.sameDayPurchaseRatePct != null
+                          ? `${purchaseConversion.sameDayPurchaseRatePct}%`
+                          : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-1">
+                        기간 가입 {formatCurrency(summary.periodJoinedMembers)}명 중 실구매:{' '}
+                        <strong className="text-[#1B382E]">
+                          {purchaseConversion?.periodJoinedAndPurchasedCount != null
+                            ? `${formatCurrency(purchaseConversion.periodJoinedAndPurchasedCount)}명`
+                            : '-'}
+                        </strong>
+                      </div>
+                      <div className="text-[10px] text-[#8B6E4E] font-bold mt-0.5">
+                        첫 구매 평균 소요일: {purchaseConversion?.avgDaysToFirstPurchase != null ? `${purchaseConversion.avgDaysToFirstPurchase}일` : '-'}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]">
+                      <div className="text-xs font-bold text-[#1B382E]">실구매 회원 누적 거래·재구매</div>
+                      <div className="text-2xl font-black text-[#284F42] mt-1">
+                        {formatCurrency(summary.totalTransactions)}건
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-1">
+                        2회+ 재구매 회원: <strong className="text-[#1E523F]">{formatCurrency(summary.repeatBuyers)}명</strong>
+                      </div>
+                      <div className="text-[10px] text-[#1B382E] font-bold mt-0.5">
+                        5일+ 간격 찐 단골: {formatCurrency(summary.trueRepeatBuyers)}명 ({summary.trueRepeatRate ?? '-'}%)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 실측 구매 회원 여정 단계별 브레이크다운 (백엔드 summary & channelBreakdown 100% 직결) */}
+                  <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB] space-y-2.5 font-financial">
+                    <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                      <span>실구매 온라인 회원({formatCurrency(summary.totalActiveMembers)}명) 구매 깊이 & 재방문 전환 구조</span>
+                      <span className="text-[11px] text-[#5A6B63]">총 {formatCurrency(summary.totalTransactions)}건 예약·발권 완료</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/70">
+                        <div className="text-[11px] text-[#5A6B63]">① 1회 단발 구매</div>
+                        <div className="text-base font-black text-[#1B382E] mt-0.5">
+                          {formatCurrency(summary.oneTimeBuyers)}명
+                        </div>
+                        <div className="text-[10px] text-[#8B6E4E]">재구매 유도 타겟</div>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/70">
+                        <div className="text-[11px] text-[#1E523F] font-bold">② 2회+ 다회 구매</div>
+                        <div className="text-base font-black text-[#1E523F] mt-0.5">
+                          {formatCurrency(summary.repeatBuyers)}명
+                        </div>
+                        <div className="text-[10px] text-[#1E523F]">반복 구매 안착</div>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-[#D0C6BB]/70">
+                        <div className="text-[11px] text-[#284F42] font-bold">③ 5일+ 진성 재방문</div>
+                        <div className="text-base font-black text-[#284F42] mt-0.5">
+                          {formatCurrency(summary.trueRepeatBuyers)}명
+                        </div>
+                        <div className="text-[10px] text-[#5A6B63]">비중 {summary.trueRepeatRate ?? '-'}%</div>
+                      </div>
+                      <div className="bg-[#284F42] text-white p-3 rounded-xl">
+                        <div className="text-[11px] text-emerald-200 font-bold">④ 2개+ 부문 복합 VIP</div>
+                        <div className="text-base font-black text-[#B59269] mt-0.5">
+                          {formatCurrency(channelBreakdown.multiChannel)}명
+                        </div>
+                        <div className="text-[10px] text-white/80">객실·골프·티켓 교차구매</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {!purchaseConversion && (
+                  <div className="p-3 rounded-2xl bg-[#F4F3EE] border border-dashed border-[#D0C6BB] text-xs text-[#5A6B63] flex items-center justify-between gap-2">
+                    <span>
+                      <strong className="text-[#1B382E]">백엔드 Ticket 82 연동 대기 (`purchaseConversionFunnel`):</strong>{' '}
+                      미구매(0건) 순수가입자 모수 포함 가입➔첫구매 전환율(`%`), 당일(D+0) 즉시구매율, 첫구매 평균 소요일이 배포 즉시 자동 표출됩니다.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 우측 6칸: ② 어떤 기간(시즌·월·요일)에 온라인 회원이 많이 증가하는지 (피크 가입 기간 & 시즌성 분석) */}
+              <div className="xl:col-span-6 bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="border-b border-[#D0C6BB]/60 pb-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                        PEAK SIGNUP PERIOD & SEASONALITY
+                      </span>
+                      <span className="text-xs text-[#5A6B63] font-mono">
+                        언제(시즌·월·요일) 어떤 목적으로 회원이 급증하는가
+                      </span>
+                    </div>
+                    <h2 className="text-lg lg:text-xl font-extrabold text-[#1B382E] mt-1.5 flex items-center gap-2">
+                      <CalendarDays size={20} className="text-[#B59269]" />
+                      ② 어떤 기간(시즌·월별·요일별)에 온라인 회원이 많이 느는가?
+                    </h2>
+                    <p className="text-xs text-[#5A6B63] mt-0.5">
+                      연중 회원이 가장 폭발적으로 증가하는 성수기 피크 월/시즌, 주말 vs 평일 가입 집중도, 그리고 조회 기간 내 최다 가입 일자 Top 3를 확인합니다.
+                    </p>
+                  </div>
+
+                  {/* 피크 가입 월 · 피크 요일 · 주말 vs 평일 가입 비중 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-financial">
+                    <div className="p-4 rounded-2xl bg-[#284F42] text-white">
+                      <div className="text-xs font-bold text-emerald-200">연중 최다 가입 피크 월</div>
+                      <div className="text-xl font-black text-[#B59269] mt-1">
+                        {peakJoinSeasonality?.peakMonth?.monthLabel || peakJoinSeasonality?.peakMonth?.month || '-'}
+                      </div>
+                      <div className="text-[11px] text-white/90 mt-1">
+                        가입자: <strong>{peakJoinSeasonality?.peakMonth?.joinedCount != null ? `+${formatCurrency(peakJoinSeasonality.peakMonth.joinedCount)}명` : '-'}</strong>
+                        {peakJoinSeasonality?.peakMonth?.shareOfYearPct != null ? ` (연간 ${peakJoinSeasonality.peakMonth.shareOfYearPct}%)` : ''}
+                      </div>
+                      <div className="text-[10px] text-emerald-200 mt-0.5 truncate">
+                        주력 유입: {peakJoinSeasonality?.peakMonth?.topTriggerProduct || '-'}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]">
+                      <div className="text-xs font-bold text-[#5A6B63]">최다 가입 요일 & 주말 비중</div>
+                      <div className="text-xl font-black text-[#1B382E] mt-1">
+                        {peakJoinSeasonality?.peakDayOfWeek?.dayLabel || '-'}
+                        {peakJoinSeasonality?.peakDayOfWeek?.sharePct != null ? ` (${peakJoinSeasonality.peakDayOfWeek.sharePct}%)` : ''}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-1">
+                        주말 가입 비중: <strong className="text-[#1E523F]">{peakJoinSeasonality?.weekendVsWeekday?.weekendSharePct != null ? `${peakJoinSeasonality.weekendVsWeekday.weekendSharePct}%` : '-'}</strong>
+                      </div>
+                      <div className="text-[10px] text-[#5A6B63] mt-0.5">
+                        평일 가입 비중: {peakJoinSeasonality?.weekendVsWeekday?.weekdaySharePct != null ? `${peakJoinSeasonality.weekendVsWeekday.weekdaySharePct}%` : '-'}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#E8F2EE] border border-[#B4C6C1]">
+                      <div className="text-xs font-bold text-[#1E523F]">조회기간 유입 채널 구성</div>
+                      <div className="text-xl font-black text-[#1E523F] mt-1">
+                        +{formatCurrency(summary.periodJoinedMembers)}명 신규
+                      </div>
+                      <div className="text-[11px] text-[#1B382E] mt-1">
+                        티켓 <strong>{formatCurrency(summary.periodTicketJoined)}명</strong> · 객실 <strong>{formatCurrency(summary.periodRoomJoined)}명</strong>
+                      </div>
+                      <div className="text-[10px] text-[#5A6B63] mt-0.5">
+                        골프 온라인 가입: {formatCurrency(summary.periodGolfJoined)}명
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 시즌별 가입 분포 또는 조회기간 내 최다 가입 피크 일자 Top 4 (실측 dailyTrends 100% 직결) */}
+                  {Array.isArray(peakJoinSeasonality?.seasonalBreakdown) && peakJoinSeasonality.seasonalBreakdown.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-financial text-xs">
+                      {peakJoinSeasonality.seasonalBreakdown.map((s: any, idx: number) => (
+                        <div key={idx} className="p-3 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB]">
+                          <div className="font-bold text-[#1B382E]">{s.seasonLabel}</div>
+                          <div className="text-base font-black text-[#1E523F] mt-1">
+                            +{formatCurrency(s.joinedCount)}명 ({s.sharePct}%)
+                          </div>
+                          <div className="text-[10px] text-[#5A6B63] mt-0.5 truncate">
+                            구매전환 {s.conversionRatePct ?? '-'}% · {s.topPopularProduct || '-'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB] space-y-2 font-financial">
+                      <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                        <span>조회 기간 내 신규 회원이 가장 많이 증가한 피크 일자 Top 4 (실측 일별 원장)</span>
+                        <span className="text-[11px] text-[#5A6B63]">티켓·객실·골프 유입 내역</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {[...dailyTrends]
+                          .sort((a, b) => Number(b.joined || 0) - Number(a.joined || 0))
+                          .slice(0, 4)
+                          .map((d: any, idx: number) => (
+                            <div key={d.date || idx} className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/70 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#284F42] text-white text-[10px] font-bold mr-1.5">
+                                  {idx + 1}
+                                </span>
+                                <span className="font-mono font-bold text-[#1B382E]">{d.date}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="font-black text-[#1E523F]">+{formatCurrency(d.joined)}명</span>
+                                <span className="text-[10px] text-[#5A6B63] ml-1.5">
+                                  (티켓 {formatCurrency(d.ticketJoined)} · 객실 {formatCurrency(d.roomJoined)} · 골프 {formatCurrency(d.golfJoined)})
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* 요일별(월~일) 신규 가입 비중 및 실구매 전환율 (`byDayOfWeekJoin[]` 1:1 바인딩) */}
+                  {Array.isArray(peakJoinSeasonality?.byDayOfWeekJoin) && peakJoinSeasonality.byDayOfWeekJoin.length > 0 && (
+                    <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#D0C6BB] space-y-2 font-financial">
+                      <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                        <span>요일별(`월~일`) 온라인 신규 가입 비중 & 실구매 전환율</span>
+                        <span className="text-[10px] text-[#5A6B63]">주말·평일 요일별 집중도</span>
+                      </div>
+                      <div className="grid grid-cols-7 gap-1.5 text-center text-xs">
+                        {peakJoinSeasonality.byDayOfWeekJoin.map((dow: any, dIdx: number) => (
+                          <div key={dow.dayCode || dIdx} className="bg-white p-2 rounded-xl border border-[#D0C6BB]/70">
+                            <div className="text-[11px] font-bold text-[#1B382E]">{dow.dayLabel || dow.dayCode}</div>
+                            <div className="text-xs font-black text-[#1E523F] mt-0.5">+{formatCurrency(dow.joinedCount)}명</div>
+                            <div className="text-[10px] text-[#5A6B63]">{dow.sharePct ?? '-'}%</div>
+                            {dow.conversionRatePct != null && (
+                              <div className="text-[9px] text-[#8B6E4E] font-bold">구매 {dow.conversionRatePct}%</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {!peakJoinSeasonality && (
+                  <div className="p-3 rounded-2xl bg-[#F4F3EE] border border-dashed border-[#D0C6BB] text-xs text-[#5A6B63]">
+                    <strong className="text-[#1B382E]">백엔드 Ticket 82 연동 대기 (`peakJoinSeasonality`):</strong>{' '}
+                    봄·여름·가을·겨울 4계절 가입 집중도 및 요일별(`월~일`) 가입 비중·실구매 전환율 완제품이 배포되면 즉시 표출됩니다.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 2.6 SECTION 0.5: ③ 온라인 회원에게 어떤 상품·권종·영업장이 가장 인기가 있는지 (인기 상품 Top 랭킹 & 부문별 구매 수요) */}
+            <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#D0C6BB]/60 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#B59269] text-white">
+                      ONLINE MEMBER POPULAR PRODUCTS & VENUES
+                    </span>
+                    <span className="text-xs text-[#5A6B63] font-mono">
+                      온라인 회원 실제 구매 인기 상품 · 권종 · 영업장 리더보드
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-extrabold text-[#1B382E] mt-1.5 flex items-center gap-2">
+                    <ShoppingBag size={20} className="text-[#284F42]" />
+                    ③ 온라인 회원에게 어떤 상품(티켓 권종 · 객실 평형/패키지 · 골프)이 인기가 있는가?
+                  </h2>
+                  <p className="text-xs text-[#5A6B63] mt-0.5">
+                    온라인 회원이 가입 후 실제로 가장 많이 예약·발권하는 인기 상품/권종 순위와 신규 회원 가입을 견인하는 대표 효자 상품(Acquisition Magnet)을 분석합니다.
+                  </p>
+                </div>
+
+                {/* 카테고리 필터 버튼 */}
+                <div className="flex flex-wrap items-center gap-1.5 bg-[#F4F3EE] p-1.5 rounded-2xl border border-[#D0C6BB]/70 self-start lg:self-center">
+                  {(
+                    [
+                      { id: 'ALL', label: '전체 인기상품' },
+                      { id: 'TICKET', label: '🛷 레저·티켓 권종' },
+                      { id: 'ROOM', label: '🏨 콘도 객실·패키지' },
+                      { id: 'GOLF', label: '⛳ 골프 티타임' },
+                      { id: 'PACKAGE', label: '🎁 복합 패키지' }
+                    ] as const
+                  ).map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setPopularCategoryFilter(cat.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                        popularCategoryFilter === cat.id
+                          ? 'bg-[#284F42] text-white shadow-2xs'
+                          : 'text-[#5A6B63] hover:text-[#1B382E]'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 현재 실측 부문별 온라인 구매 회원 수요 요약 (channelBreakdown 100% 직결) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-financial">
+                <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D0C6BB] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#8B6E4E]">🛷 레저·티켓 온라인 구매 회원</div>
+                    <div className="text-xl font-black text-[#1B382E] mt-1">
+                      {formatCurrency(channelBreakdown.ticketOnly)}명
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63] mt-0.5">
+                      기간 신규 티켓 가입: +{formatCurrency(summary.periodTicketJoined)}명
+                    </div>
+                  </div>
+                  <Award size={28} className="text-[#B59269]/60" />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#E8F2EE]/70 border border-[#B4C6C1] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#1E523F]">🏨 콘도 객실 온라인 예약 회원</div>
+                    <div className="text-xl font-black text-[#1B382E] mt-1">
+                      {formatCurrency(channelBreakdown.roomOnly)}명
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63] mt-0.5">
+                      기간 신규 객실 가입: +{formatCurrency(summary.periodRoomJoined)}명
+                    </div>
+                  </div>
+                  <Users size={28} className="text-[#284F42]/50" />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#5A6B63]">⛳ 골프 티타임 온라인 예약 회원</div>
+                    <div className="text-xl font-black text-[#1B382E] mt-1">
+                      {formatCurrency(channelBreakdown.golfOnly)}명
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63] mt-0.5">
+                      기간 신규 골프 가입: +{formatCurrency(summary.periodGolfJoined)}명
+                    </div>
+                  </div>
+                  <TrendingUp size={28} className="text-[#5A6B63]/50" />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#284F42] text-white flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-emerald-200">👑 다부문(객실+티켓+골프) 복합 구매</div>
+                    <div className="text-xl font-black text-[#B59269] mt-1">
+                      {formatCurrency(channelBreakdown.multiChannel)}명
+                    </div>
+                    <div className="text-[11px] text-white/80 mt-0.5">
+                      2개 이상 부문 교차 구매 핵심 고객층
+                    </div>
+                  </div>
+                  <Sparkles size={28} className="text-[#B59269]" />
+                </div>
+              </div>
+
+              {/* 온라인 회원 인기 구매 상품 Top 랭킹 테이블 (`popularProducts[]` 1:1 바인딩) */}
+              {filteredPopularProducts.length > 0 ? (
+                <div className="overflow-x-auto rounded-2xl border border-[#D0C6BB]/75">
+                  <table className="w-full text-xs whitespace-nowrap font-financial">
+                    <thead className="bg-[#F4F3EE] text-[#1B382E] font-bold border-b-2 border-[#1B382E]">
+                      <tr>
+                        <th className="py-3 px-4 text-center w-14">순위</th>
+                        <th className="py-3 px-4 text-left">인기 상품 / 권종명</th>
+                        <th className="py-3 px-3 text-center">부문</th>
+                        <th className="py-3 px-4 text-left">영업장</th>
+                        <th className="py-3 px-4 text-right">구매 회원수 (명)</th>
+                        <th className="py-3 px-3 text-right">구매회원 비중</th>
+                        <th className="py-3 px-4 text-right">총 구매 건수 (건)</th>
+                        <th className="py-3 px-4 text-right">재구매 회원 비율</th>
+                        <th className="py-3 px-4 text-right">신규가입 첫구매 유입</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#D0C6BB]/40">
+                      {filteredPopularProducts.map((p: any, idx: number) => (
+                        <tr key={p.productCode || idx} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                          <td className="py-3 px-4 text-center font-black text-[#1B382E]">
+                            {p.rank ?? idx + 1}위
+                          </td>
+                          <td className="py-3 px-4 font-bold text-[#1B382E]">
+                            <span>{p.productName || '-'}</span>
+                            {p.isTopAcquisitionProduct && (
+                              <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-black bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                                🔥 신규가입 유입 효자상품
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="px-2 py-0.5 rounded-lg bg-[#F4F3EE] text-[#1B382E] font-bold text-[11px]">
+                              {p.categoryLabel || p.category || '-'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-[#5A6B63] font-semibold">
+                            {p.venueName || '-'}
+                          </td>
+                          <td className="py-3 px-4 text-right font-black text-[#1E523F]">
+                            {p.uniqueBuyerCount != null ? `${formatCurrency(p.uniqueBuyerCount)}명` : '-'}
+                          </td>
+                          <td className="py-3 px-3 text-right font-bold text-[#1B382E]">
+                            {p.buyerSharePct != null ? `${p.buyerSharePct}%` : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-right font-semibold text-[#1B382E]">
+                            {p.purchaseCount != null ? `${formatCurrency(p.purchaseCount)}건` : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-right font-bold text-[#284F42]">
+                            {p.repeatBuyerRatePct != null ? `${p.repeatBuyerRatePct}%` : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-right font-semibold text-[#8B6E4E]">
+                            {p.newMemberFirstBuyCount != null ? `${formatCurrency(p.newMemberFirstBuyCount)}명` : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-5 rounded-2xl bg-[#F4F3EE]/80 border border-dashed border-[#D0C6BB] text-xs text-[#5A6B63] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="font-bold text-[#1B382E] flex items-center gap-1.5">
+                      <ShoppingBag size={15} className="text-[#284F42]" />
+                      온라인 회원 인기 구매 상품/권종 Top 15 (`popularProducts[]`) & 인기 영업장 Top 10 (`popularVenues[]`) — 백엔드 Ticket 82 연동 대기 (`'-'`)
+                    </div>
+                    <p className="leading-relaxed">
+                      Zero-Proxy 및 Fail-Loudly 원칙에 따라 가짜 상품 순위를 생성하지 않으며, 백엔드 <code className="font-mono text-[#1B382E]">GET /api/v6/report/online-members</code>에 온라인 회원 실제 구매 원장 기반 <code className="font-mono text-[#1B382E]">popularProducts[]</code> (상품명, 구매 회원수, 구매 건수, 재구매율, 신규가입 첫구매 유입수)가 배포되는 즉시 본 리더보드에 1:1 자동 표출됩니다.
+                    </p>
+                  </div>
+                  {popularVenues.length > 0 && (
+                    <span className="px-3 py-1.5 rounded-xl bg-white border border-[#D0C6BB] font-bold text-[#1B382E] shrink-0">
+                      인기 영업장 {popularVenues.length}개 수신됨
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* 온라인 회원 인기 영업장 Top 10 (`popularVenues[]` 1:1 바인딩) */}
+              {popularVenues.length > 0 && (
+                <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB] space-y-2.5 font-financial">
+                  <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                    <span>온라인 회원이 가장 많이 이용하는 인기 영업장 Top 10 (`popularVenues[]`)</span>
+                    <span className="text-[11px] text-[#5A6B63]">구매회원수 · 비중(%) · 재구매율(%)</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
+                    {popularVenues.slice(0, 10).map((v: any, vIdx: number) => (
+                      <div key={v.venueName || vIdx} className="bg-white p-3 rounded-xl border border-[#D0C6BB]/80 flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-[#284F42]">{v.rank ?? vIdx + 1}위</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F4F3EE] text-[#5A6B63]">{v.category || '영업장'}</span>
+                        </div>
+                        <div className="font-bold text-[#1B382E] mt-1 truncate">{v.venueName || '-'}</div>
+                        <div className="mt-1.5 pt-1.5 border-t border-[#D0C6BB]/40 flex items-center justify-between text-[11px]">
+                          <strong className="text-[#1E523F]">{formatCurrency(v.uniqueBuyerCount)}명 ({v.buyerSharePct ?? '-'}%)</strong>
+                          <span className="text-[#8B6E4E]">재구매 {v.repeatBuyerRatePct ?? '-'}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 3. SECTION 1: 온라인 가입자 변화 추세 3단 타임라인 (일별 · 월별 · 연도별) */}

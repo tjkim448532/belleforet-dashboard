@@ -8,7 +8,8 @@ import {
   Calendar, RefreshCw, Hotel,
   Award, Flag, Smartphone, Briefcase, Sparkles, UserCheck,
   Search, Building2, Coins, CheckCircle2, Info, Clock, ArrowUpDown, Filter,
-  ChevronDown, ChevronUp, CreditCard, Utensils, Compass, ExternalLink
+  ChevronDown, ChevronUp, CreditCard, Utensils, Compass, ExternalLink,
+  ShieldAlert, HeartHandshake
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -68,18 +69,20 @@ export default function Members() {
   const [corpSort, setCorpSort] = useState<'rooms' | 'revenue' | 'contract' | 'date'>('rooms');
   const [corpSearch, setCorpSearch] = useState<string>('');
 
-  // 4. 분양회원 구좌별 소진율 및 방문 회원별 통합 LTV · 영업장 이용 원장 (member-quota-ltv)
+  // 4. 분양회원 구좌별 소진율 및 방문 회원별 통합 LTV · 보증금 반환 리스크 · 이용 만족도 원장 (member-quota-ltv)
   const [quotaLtvData, setQuotaLtvData] = useState<{
     accountQuotaSummary: any[];
     accountQuotaOverview: any;
     visitedMembersLedger: any[];
+    depositRedemptionSummary: any;
+    usageSatisfactionSummary: any;
   } | null>(null);
 
   // 분양회원 개인/구좌별 원장 필터·정렬·드릴다운 상태
   const [memberLedgerSearch, setMemberLedgerSearch] = useState<string>('');
   const [memberLedgerFilter, setMemberLedgerFilter] = useState<string>('ALL');
-  const [ledgerSegment, setLedgerSegment] = useState<'ALL' | 'VIP_VISIT' | 'LOW_BURN' | 'GOLF_ACTIVE' | 'MULTI_DEPT'>('ALL');
-  const [ledgerSort, setLedgerSort] = useState<'ltvDesc' | 'periodDesc' | 'burnDesc' | 'visitDesc'>('ltvDesc');
+  const [ledgerSegment, setLedgerSegment] = useState<'ALL' | 'HIGH_RISK' | 'LOW_BURN' | 'VIP_VISIT' | 'GOLF_ACTIVE' | 'MULTI_DEPT'>('ALL');
+  const [ledgerSort, setLedgerSort] = useState<'burnDesc' | 'visitDesc' | 'expiryAsc' | 'ltvDesc' | 'periodDesc'>('burnDesc');
   const [expandedMemberKey, setExpandedMemberKey] = useState<string | null>(null);
 
   const fetchAllMemberIntelligence = async () => {
@@ -120,7 +123,9 @@ export default function Members() {
         setQuotaLtvData({
           accountQuotaSummary: Array.isArray(parsedQuotaLtv.accountQuotaSummary) ? parsedQuotaLtv.accountQuotaSummary : [],
           accountQuotaOverview: parsedQuotaLtv.accountQuotaOverview || null,
-          visitedMembersLedger: ledgerList
+          visitedMembersLedger: ledgerList,
+          depositRedemptionSummary: parsedQuotaLtv.depositRedemptionSummary || null,
+          usageSatisfactionSummary: parsedQuotaLtv.usageSatisfactionSummary || null
         });
         if (ledgerList.length > 0 && !expandedMemberKey) {
           const firstKey = String(ledgerList[0].membershipNo || ledgerList[0].certNo || '0');
@@ -253,7 +258,10 @@ export default function Members() {
         String(m.accountType || '').includes(memberLedgerFilter);
 
       let matchesSegment = true;
-      if (ledgerSegment === 'VIP_VISIT') {
+      if (ledgerSegment === 'HIGH_RISK') {
+        matchesSegment =
+          m.redemptionRiskGrade === 'HIGH_RISK' || Number(m.burnRatePct ?? 0) < 5;
+      } else if (ledgerSegment === 'VIP_VISIT') {
         matchesSegment = Number(m.ytdVisitCount || 0) >= 10;
       } else if (ledgerSegment === 'LOW_BURN') {
         matchesSegment = Number(m.burnRatePct ?? 0) < 10;
@@ -266,6 +274,12 @@ export default function Members() {
       return matchesSearch && matchesAccountType && matchesSegment;
     })
     .sort((a: any, b: any) => {
+      if (ledgerSort === 'expiryAsc') {
+        const aDays = a.daysUntilExpiry != null ? Number(a.daysUntilExpiry) : 999999;
+        const bDays = b.daysUntilExpiry != null ? Number(b.daysUntilExpiry) : 999999;
+        if (aDays !== bDays) return aDays - bDays;
+        return Number(a.burnRatePct || 0) - Number(b.burnRatePct || 0);
+      }
       if (ledgerSort === 'periodDesc') {
         return Number(b.periodTotalSpend || 0) - Number(a.periodTotalSpend || 0);
       }
@@ -371,6 +385,10 @@ export default function Members() {
   };
 
   const overview = quotaLtvData?.accountQuotaOverview || null;
+  const depositRedemption = quotaLtvData?.depositRedemptionSummary || null;
+  const usageSatisfaction = quotaLtvData?.usageSatisfactionSummary || null;
+  const grandTotalQuotaRow =
+    quotaLtvData?.accountQuotaSummary?.find((r: any) => r.isGrandTotal) || null;
 
   return (
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
@@ -388,17 +406,17 @@ export default function Members() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/75">
               <Award size={13} />
-              V6 MEMBERSHIP & B2B CORPORATE INTELLIGENCE (SSOT)
+              V6 MEMBERSHIP RETENTION & DEPOSIT CARE INTELLIGENCE (SSOT)
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FAF6F0] text-[#8B6E4E] border border-[#D0C6BB]">
-              16)분양회원 825구좌 · 1:N 지정카드 · 만기연장 이전구좌 통합 귀속
+              16)분양회원 825구좌 · 보증금 반환 방어 · 실사용 만족도 & 1:N 카드 통합 관리
             </span>
           </div>
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-[#1B382E]">
-            분양회원 실사용 · 영업장별 이용 동선 & 기업 휴양소 정산 분석
+            분양회원 구좌 관리 · 보증금 반환 리스크 방어 & 실사용 만족도 분석
           </h1>
           <p className="text-xs lg:text-sm text-[#5A6B63]">
-            기명·무기명·창립·법인 <strong>825개 분양구좌의 연간 부여박수(41,190박) 소진 현황</strong>, 구좌별 <strong>실제 이용 영업장(객실·골프·식음·레저) 소비 동선</strong> 및 <strong>기업 휴양소(B2B 회원사) 정산 원장</strong>을 관리합니다.
+            단순 매출액보다 중요한 <strong>분양구좌(825구좌) 보증금 만기 반환(Redemption) 리스크 관리</strong>와 회원이 <strong>얼마나 자주 방문하고 다양한 시설(객실·골프·식음·레저)에 만족하고 있는지</strong>를 중심으로 구좌별 실사용 건강도를 진단합니다.
           </p>
         </div>
 
@@ -429,12 +447,12 @@ export default function Members() {
             }`}
           >
             <Building2 size={16} />
-            <span>① 분양회원 구좌·카드 실사용 & 영업장 이용 분석</span>
+            <span>① 분양회원 보증금 반환 방어 & 실사용·만족도 관리</span>
             {overview?.totalAccounts != null && (
               <span className={`px-2 py-0.5 rounded-full text-[11px] ${
                 activeMainTab === 'membership' ? 'bg-white/20 text-[#E8F2EE]' : 'bg-white text-[#1B382E]'
               }`}>
-                {formatNum(overview.totalAccounts)}구좌 · 방문 {formatNum(rawVisitedLedger.length)}건
+                {formatNum(overview.totalAccounts)}구좌 · 활성 {formatNum(overview.activeAccounts)}구좌
               </span>
             )}
           </button>
@@ -466,7 +484,7 @@ export default function Members() {
           className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#FAF6F0] text-[#8B6E4E] hover:bg-[#EFE9DF] border border-[#D0C6BB] transition-colors cursor-pointer shrink-0"
         >
           <Smartphone size={14} />
-          <span>온라인 회원 일·월·연 가입추세 & 휴면 CRM 바로가기</span>
+          <span>온라인 회원 증가·실구매 전환 & 인기 상품 분석 바로가기</span>
           <ExternalLink size={12} />
         </button>
       </div>
@@ -479,19 +497,19 @@ export default function Members() {
       )}
 
       {/* ===================================================================================== */}
-      {/* TAB 1: 분양회원 구좌·카드 실사용 & 영업장 이용 분석 */}
+      {/* TAB 1: 분양회원 보증금 반환 방어 & 실사용·만족도 관리 */}
       {/* ===================================================================================== */}
       {activeMainTab === 'membership' && (
         <div className="space-y-6">
-          {/* SECTION 1: 825구좌 전체 건강도 & 박수 소진 진단 보드 (Executive Health Cards) */}
+          {/* SECTION 1: 825구좌 실사용 만족도 & 보증금 반환 방어 핵심 4대 지표 (Executive Retention & Satisfaction Cards) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 font-financial">
-            {/* 카드 1: 전체 분양구좌 & 실이용 활성율 */}
+            {/* 카드 1: 전체 분양구좌 실사용 활성율 & 미방문 휴면 관리 */}
             <div className="bg-[#284F42] text-white rounded-3xl p-5 border border-[#1B382E] shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-emerald-200">
-                  <span>전체 분양구좌 & 실사용 활성율</span>
+                  <span>전체 분양구좌 실사용 활성율</span>
                   <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-[#B59269] font-black">
-                    활성율 {overview?.activeRatePct != null ? `${overview.activeRatePct}%` : '-'}
+                    활성 {overview?.activeRatePct != null ? `${overview.activeRatePct}%` : '-'}
                   </span>
                 </div>
                 <div className="text-3xl font-black text-white mt-2 tabular-nums">
@@ -499,24 +517,26 @@ export default function Members() {
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-white/85">
-                <span>연간 1회 이상 실사용 활성 구좌</span>
-                <span className="font-bold text-emerald-200">
-                  16)분양회원 마스터 기준
+                <span>연간 미방문(0회) 휴면 구좌</span>
+                <span className="font-bold text-amber-300">
+                  {usageSatisfaction?.dormantZeroVisitAccounts != null
+                    ? `${formatNum(usageSatisfaction.dormantZeroVisitAccounts)}구좌 (${usageSatisfaction.dormantAccountRatePct ?? '-'}%)`
+                    : 'Ticket 82 연동 (미방문 구좌 케어)'}
                 </span>
               </div>
             </div>
 
-            {/* 카드 2: 연간 부여박수(Quota) 소진율 & 잔여박수 */}
+            {/* 카드 2: 연간 부여박수(Quota) 실사용률 & 체감 이용 만족도 */}
             <div className="bg-white rounded-3xl p-5 border border-[#D0C6BB] shadow-2xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-[#5A6B63]">
-                  <span>연간 부여박수(Quota) 소진 현황</span>
+                  <span>연간 부여박수(Quota) 실사용률</span>
                   <span className="px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 font-black">
                     소진율 {overview?.burnRatePct != null ? `${overview.burnRatePct}%` : '-'}
                   </span>
                 </div>
                 <div className="text-3xl font-black text-[#1B382E] mt-2 tabular-nums">
-                  {overview ? `${formatNum(overview.usedNights)}박 소진` : '-'}
+                  {overview ? `${formatNum(overview.usedNights)}박 실사용` : '-'}
                 </div>
                 <div className="w-full h-2 bg-[#F4F3EE] rounded-full overflow-hidden mt-2.5 border border-[#D0C6BB]/50">
                   <div
@@ -526,61 +546,386 @@ export default function Members() {
                 </div>
               </div>
               <div className="mt-3 pt-2.5 border-t border-[#D0C6BB]/50 flex items-center justify-between text-xs text-[#5A6B63]">
-                <span>총 부여: <strong className="text-[#1B382E]">{overview ? `${formatNum(overview.quotaNights)}박` : '-'}</strong></span>
-                <span>미소진 잔여: <strong className="text-[#B59269]">{overview ? `${formatNum(overview.remainingNights)}박` : '-'}</strong></span>
+                <span>부여: <strong className="text-[#1B382E]">{overview ? `${formatNum(overview.quotaNights)}박` : '-'}</strong></span>
+                <span>미소진 잔여: <strong className="text-[#8B2635]">{overview ? `${formatNum(overview.remainingNights)}박` : '-'}</strong></span>
               </div>
             </div>
 
-            {/* 카드 3: 분양회원 연간 누적 리조트 통합 소비 (LTV) & 부문별 내역 */}
+            {/* 카드 3: 연간 총 방문 빈도 & 리조트 다부문 경험 만족도 */}
             <div className="bg-white rounded-3xl p-5 border border-[#D0C6BB] shadow-2xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-[#5A6B63]">
-                  <span>분양회원 연간 누적 통합 소비(LTV)</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF6F0] text-[#8B6E4E] border border-[#D0C6BB] font-bold">
-                    4대 부문 합산
+                  <span>연간 방문 빈도 & 재방문 만족도</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]/70 font-bold">
+                    조회기간 {formatNum(rawVisitedLedger.length)}구좌 방문
                   </span>
                 </div>
                 <div className="text-3xl font-black text-[#284F42] mt-2 tabular-nums">
-                  {overview ? `${formatNum(overview.ytdTotalSpend)}원` : '-'}
-                </div>
-              </div>
-              <div className="mt-3 pt-2.5 border-t border-[#D0C6BB]/50 grid grid-cols-2 gap-1.5 text-[11px] text-[#5A6B63]">
-                <div className="flex items-center justify-between bg-[#F4F3EE]/70 px-2 py-1 rounded-lg">
-                  <span>⛳ 골프</span>
-                  <strong className="text-[#1B382E]">{overview ? `${formatNum(overview.ytdGolfSpend)}원` : '-'}</strong>
-                </div>
-                <div className="flex items-center justify-between bg-[#F4F3EE]/70 px-2 py-1 rounded-lg">
-                  <span>🏨 객실</span>
-                  <strong className="text-[#1B382E]">{overview ? `${formatNum(overview.ytdRoomSpend)}원` : '-'}</strong>
-                </div>
-                <div className="flex items-center justify-between bg-[#F4F3EE]/70 px-2 py-1 rounded-lg">
-                  <span>🛷 레저</span>
-                  <strong className="text-[#1B382E]">{overview ? `${formatNum(overview.ytdLeisureSpend)}원` : '-'}</strong>
-                </div>
-                <div className="flex items-center justify-between bg-[#F4F3EE]/70 px-2 py-1 rounded-lg">
-                  <span>🍽️ 식음</span>
-                  <strong className="text-[#1B382E]">{overview ? `${formatNum(overview.ytdFnbSpend)}원` : '-'}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* 카드 4: 분양회원 골프 동반 비회원 유치(Anchor) 시너지 & 조회기간 방문구좌 */}
-            <div className="bg-white rounded-3xl p-5 border border-[#D0C6BB] shadow-2xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between text-xs font-bold text-[#5A6B63]">
-                  <span>골프 회원 동반 비회원 유치(Anchor)</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#B59269]/15 text-[#B59269] font-bold">
-                    조회기간 시너지
-                  </span>
-                </div>
-                <div className="text-3xl font-black text-[#B59269] mt-2 tabular-nums">
-                  +{formatNum(golfMemberSynergy?.totalAnchorRevenue || 0)}원
+                  {grandTotalQuotaRow?.ytdVisitCount != null
+                    ? `연 ${formatNum(grandTotalQuotaRow.ytdVisitCount)}회 방문`
+                    : '-'}
                 </div>
               </div>
               <div className="mt-3 pt-2.5 border-t border-[#D0C6BB]/50 flex items-center justify-between text-xs text-[#5A6B63]">
-                <span>조회기간 실방문 분양구좌</span>
-                <strong className="text-[#1B382E]">{formatNum(rawVisitedLedger.length)}개 구좌 방문</strong>
+                <span>활성구좌 평균 방문: <strong className="text-[#1B382E]">{usageSatisfaction?.avgAnnualVisitsPerActiveAccount != null ? `${usageSatisfaction.avgAnnualVisitsPerActiveAccount}회` : '-'}</strong></span>
+                <span>2회+ 재방문율: <strong className="text-[#1E523F]">{usageSatisfaction?.repeatVisitRetentionRatePct != null ? `${usageSatisfaction.repeatVisitRetentionRatePct}%` : '-'}</strong></span>
               </div>
+            </div>
+
+            {/* 카드 4: 보증금 만기 도래 & 반환(Redemption) 고위험군 방어 */}
+            <div className="bg-[#FDF0ED] rounded-3xl p-5 border border-[#EAC5BD] shadow-2xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-[#8B2635]">
+                  <span>보증금 반환(Redemption) 리스크 관리</span>
+                  <ShieldAlert size={16} className="text-[#8B2635]" />
+                </div>
+                <div className="text-2xl xl:text-3xl font-black text-[#8B2635] mt-2 tabular-nums">
+                  {depositRedemption?.redemptionRiskMatrix?.highRiskRedemption?.accountsCount != null
+                    ? `고위험 ${formatNum(depositRedemption.redemptionRiskMatrix.highRiskRedemption.accountsCount)}구좌`
+                    : depositRedemption?.expiringWithin1Year?.accountsCount != null
+                    ? `1년내 만기 ${formatNum(depositRedemption.expiringWithin1Year.accountsCount)}구좌`
+                    : '-'}
+                </div>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-[#EAC5BD]/70 flex items-center justify-between text-xs text-[#8B2635]">
+                <span>1년 내 만기 도래: <strong>{depositRedemption?.expiringWithin1Year?.accountsCount != null ? `${formatNum(depositRedemption.expiringWithin1Year.accountsCount)}구좌` : '-'}</strong></span>
+                <span>재연장 유지율: <strong>{depositRedemption?.rolloverHistory?.rolloverRetentionRatePct != null ? `${depositRedemption.rolloverHistory.rolloverRetentionRatePct}%` : '-'}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 1.5: 분양구좌 보증금 반환(Redemption) 리스크 방어 & 회원 실사용·체감 만족도 경영 진단 보드 */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            {/* 좌측 6컬럼: 보증금 만기 도래 구간 & 실사용률 기반 반환(Redemption) 위험군 3단계 분류 */}
+            <div className="xl:col-span-6 bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB] shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3 border-b border-[#D0C6BB]/60 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]">
+                        DEPOSIT REDEMPTION RISK & EXPIRY DEFENSE
+                      </span>
+                      <span className="text-xs text-[#5A6B63] font-mono">
+                        16)분양회원 만기일 · 보증금 · 박수 소진율 교차 진단
+                      </span>
+                    </div>
+                    <h2 className="text-lg lg:text-xl font-black text-[#1B382E] mt-1.5 flex items-center gap-2">
+                      <ShieldAlert className="w-5 h-5 text-[#8B2635]" />
+                      보증금 만기 도래 현황 & 실사용률 기반 반환(Redemption) 위험군 분류
+                    </h2>
+                    <p className="text-xs text-[#5A6B63] mt-1">
+                      회원권 이용 빈도와 박수 소진율이 낮을수록 만기 도래 시 보증금 반환(해지) 청구 가능성이 급증합니다. 만기 도래 구간별 저소진 구좌를 선제 파악하여 컨시어지 해피콜 및 바우처 케어를 집행합니다.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 만기 도래 구간별 구좌 & 보증금 요약 (6개월 / 1년 / 2년 내) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-financial">
+                  <div className="p-4 rounded-2xl bg-[#FDF0ED]/70 border border-[#EAC5BD]">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#8B2635]">
+                      <span>6개월 내 만기 도래</span>
+                      <span className="px-2 py-0.5 rounded-full bg-white text-[#8B2635] text-[10px] font-black">긴급 방어</span>
+                    </div>
+                    <div className="text-xl font-black text-[#8B2635] mt-1.5">
+                      {depositRedemption?.expiringWithin6Months?.accountsCount != null
+                        ? `${formatNum(depositRedemption.expiringWithin6Months.accountsCount)}구좌`
+                        : '-'}
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63] mt-1">
+                      보증금: <strong className="text-[#1B382E]">{depositRedemption?.expiringWithin6Months?.depositAmount != null ? `${formatNum(depositRedemption.expiringWithin6Months.depositAmount)}원` : '-'}</strong>
+                    </div>
+                    <div className="text-[10px] text-[#8B2635] font-bold mt-0.5">
+                      저이용 반환위험: {depositRedemption?.expiringWithin6Months?.highRiskCount != null ? `${formatNum(depositRedemption.expiringWithin6Months.highRiskCount)}구좌` : '-'}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D0C6BB]">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#8B6E4E]">
+                      <span>1년 내 만기 도래</span>
+                      <span className="px-2 py-0.5 rounded-full bg-white text-[#8B6E4E] text-[10px] font-black">사전 케어</span>
+                    </div>
+                    <div className="text-xl font-black text-[#1B382E] mt-1.5">
+                      {depositRedemption?.expiringWithin1Year?.accountsCount != null
+                        ? `${formatNum(depositRedemption.expiringWithin1Year.accountsCount)}구좌`
+                        : '-'}
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63] mt-1">
+                      보증금: <strong className="text-[#1B382E]">{depositRedemption?.expiringWithin1Year?.depositAmount != null ? `${formatNum(depositRedemption.expiringWithin1Year.depositAmount)}원` : '-'}</strong>
+                    </div>
+                    <div className="text-[10px] text-[#8B6E4E] font-bold mt-0.5">
+                      저이용 반환위험: {depositRedemption?.expiringWithin1Year?.highRiskCount != null ? `${formatNum(depositRedemption.expiringWithin1Year.highRiskCount)}구좌` : '-'}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#F4F3EE] border border-[#D0C6BB]">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#5A6B63]">
+                      <span>2년 내 만기 도래</span>
+                      <span className="px-2 py-0.5 rounded-full bg-white text-[#1B382E] text-[10px] font-bold">중기 관리</span>
+                    </div>
+                    <div className="text-xl font-black text-[#1B382E] mt-1.5">
+                      {depositRedemption?.expiringWithin2Years?.accountsCount != null
+                        ? `${formatNum(depositRedemption.expiringWithin2Years.accountsCount)}구좌`
+                        : '-'}
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63] mt-1">
+                      보증금: <strong className="text-[#1B382E]">{depositRedemption?.expiringWithin2Years?.depositAmount != null ? `${formatNum(depositRedemption.expiringWithin2Years.depositAmount)}원` : '-'}</strong>
+                    </div>
+                    <div className="text-[10px] text-[#5A6B63] font-bold mt-0.5">
+                      저이용 반환위험: {depositRedemption?.expiringWithin2Years?.highRiskCount != null ? `${formatNum(depositRedemption.expiringWithin2Years.highRiskCount)}구좌` : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 실사용률 기반 보증금 반환 위험군 3단계 분류 매트릭스 */}
+                <div className="space-y-2.5 font-financial">
+                  <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                    <span>실사용률(박수 소진·방문빈도) 기반 보증금 반환 위험도 3단계 진단</span>
+                    <span className="text-[11px] text-[#5A6B63]">전체 분양보증금 총액: {depositRedemption?.totalDepositAmount != null ? `${formatNum(depositRedemption.totalDepositAmount)}원` : '-'}</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-[#FDF0ED]/60 border border-[#EAC5BD] flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-black text-[#8B2635]">
+                        🚨 보증금 반환 고위험군 (연간 미방문 휴면 또는 박수 소진율 5% 미만)
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-0.5">
+                        회원권 체감 효용 부재로 만기 시 즉각 반환 청구 우려 — 전담 매니저 1:1 초청 바우처 발송 대상
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-base font-black text-[#8B2635]">
+                        {depositRedemption?.redemptionRiskMatrix?.highRiskRedemption?.accountsCount != null
+                          ? `${formatNum(depositRedemption.redemptionRiskMatrix.highRiskRedemption.accountsCount)}구좌 (${depositRedemption.redemptionRiskMatrix.highRiskRedemption.sharePct ?? '-'}%)`
+                          : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63]">
+                        보증금 {depositRedemption?.redemptionRiskMatrix?.highRiskRedemption?.depositAmount != null ? `${formatNum(depositRedemption.redemptionRiskMatrix.highRiskRedemption.depositAmount)}원` : '-'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#D0C6BB] flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-black text-[#8B6E4E]">
+                        ⚠️ 이용 독려·집중 케어군 (연간 소진율 5~15% · 단일 시설만 단편 이용)
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-0.5">
+                        콘도 숙박 외 골프·레저·식음 교차 이용 유도 시 재연장 전환 가능군
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-base font-black text-[#1B382E]">
+                        {depositRedemption?.redemptionRiskMatrix?.careNeededGroup?.accountsCount != null
+                          ? `${formatNum(depositRedemption.redemptionRiskMatrix.careNeededGroup.accountsCount)}구좌 (${depositRedemption.redemptionRiskMatrix.careNeededGroup.sharePct ?? '-'}%)`
+                          : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63]">
+                        보증금 {depositRedemption?.redemptionRiskMatrix?.careNeededGroup?.depositAmount != null ? `${formatNum(depositRedemption.redemptionRiskMatrix.careNeededGroup.depositAmount)}원` : '-'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-[#E8F2EE]/60 border border-[#B4C6C1] flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-black text-[#1E523F]">
+                        ✅ 만기 재연장 유력·고만족군 (연간 소진율 15%+ · 다부문 시설 지속 애용)
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63] mt-0.5">
+                        높은 시설 만족도로 만기 도래 시 자동 재연장(Rollover) 및 추가 구좌 추천 유력군
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-base font-black text-[#1E523F]">
+                        {depositRedemption?.redemptionRiskMatrix?.safeRolloverGroup?.accountsCount != null
+                          ? `${formatNum(depositRedemption.redemptionRiskMatrix.safeRolloverGroup.accountsCount)}구좌 (${depositRedemption.redemptionRiskMatrix.safeRolloverGroup.sharePct ?? '-'}%)`
+                          : '-'}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B63]">
+                        보증금 {depositRedemption?.redemptionRiskMatrix?.safeRolloverGroup?.depositAmount != null ? `${formatNum(depositRedemption.redemptionRiskMatrix.safeRolloverGroup.depositAmount)}원` : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {!depositRedemption && (
+                <div className="p-3.5 rounded-2xl bg-[#F4F3EE] border border-dashed border-[#D0C6BB] text-xs text-[#5A6B63] flex items-start gap-2.5">
+                  <Info size={15} className="text-[#8B2635] shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-[#1B382E]">백엔드 Ticket 82 연동 대기 (`depositRedemptionSummary`):</strong>{' '}
+                    현재 실측 확인된 구좌별 이용률(전체 825구좌 중 창립회원 활성율 <strong className="text-[#8B2635]">86/168구좌, 소진율 6.4%</strong> 등)과 <code className="font-mono text-[#1B382E]">16)분양회원</code>의 계약만기일·보증금을 결합한 만기 구간별 반환 위험군 완제품이 배포되면 즉시 표출됩니다.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 우측 6컬럼: 분양회원이 얼마나 자주 이용하고 만족하는지 (이용 빈도 · 박수 소진 분포 · 다부문 경험 폭 · 1:N 카드 가동률) */}
+            <div className="xl:col-span-6 bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB] shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3 border-b border-[#D0C6BB]/60 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
+                        MEMBER USAGE FREQUENCY & SATISFACTION SCOREBOARD
+                      </span>
+                      <span className="text-xs text-[#5A6B63] font-mono">
+                        박수 소진 분포 · 4대 부문 경험 폭 · 1:N 카드 활성율
+                      </span>
+                    </div>
+                    <h2 className="text-lg lg:text-xl font-black text-[#1B382E] mt-1.5 flex items-center gap-2">
+                      <HeartHandshake className="w-5 h-5 text-[#284F42]" />
+                      분양회원 실사용 빈도 & 리조트 시설 체감 만족도 진단
+                    </h2>
+                    <p className="text-xs text-[#5A6B63] mt-1">
+                      분양회원의 만족도는 <strong>① 부여박수를 얼마나 꾸준히 소진하는지</strong>, <strong>② 1:N 발급카드를 가족·임직원이 함께 활용하는지</strong>, <strong>③ 객실 외 골프·식음·레저까지 다양하게 즐기는지</strong>로 나타납니다.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 현재 실측 구좌 유형별 활성율 & 소진율 만족도 바로미터 (백엔드 accountQuotaSummary 100% 직결) */}
+                {quotaLtvData && quotaLtvData.accountQuotaSummary.length > 0 && (
+                  <div className="space-y-2 font-financial">
+                    <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                      <span>회원권 구분별 실사용 활성 구좌 및 연간 박수 소진율 (실측 SSOT)</span>
+                      <span className="text-[11px] text-[#5A6B63]">낮은 활성율·소진율 = 중점 만족도 개선 타겟</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {quotaLtvData.accountQuotaSummary
+                        .filter((r: any) => !r.isGrandTotal)
+                        .map((r: any, idx: number) => {
+                          const burnPct = Number(r.burnRatePct ?? r.exhaustionRate ?? 0);
+                          const isLowSatisfactionRisk = burnPct < 10;
+                          return (
+                            <div
+                              key={idx}
+                              className={`p-3.5 rounded-2xl border ${
+                                isLowSatisfactionRisk
+                                  ? 'bg-[#FDF0ED]/50 border-[#EAC5BD]'
+                                  : 'bg-[#F4F3EE]/80 border-[#D0C6BB]/80'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-[#1B382E]">
+                                  {r.accountTypeKo || r.accountType}
+                                </span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  isLowSatisfactionRisk
+                                    ? 'bg-[#8B2635] text-white'
+                                    : 'bg-[#284F42] text-white'
+                                }`}>
+                                  소진율 {burnPct}%
+                                </span>
+                              </div>
+                              <div className="mt-1.5 flex items-baseline justify-between text-xs">
+                                <span className="text-[#5A6B63]">
+                                  실사용 활성: <strong className="text-[#1B382E]">{formatNum(r.activeAccounts)} / {formatNum(r.totalAccounts)}구좌</strong>
+                                </span>
+                                <span className="font-bold text-[#1E523F]">
+                                  연 {formatNum(r.ytdVisitCount)}회 방문
+                                </span>
+                              </div>
+                              <div className="mt-1 text-[11px] text-[#5A6B63] flex items-center justify-between">
+                                <span>실사용 {formatNum(r.ytdUsedNights ?? r.usedNights)}박 / 부여 {formatNum(r.annualQuotaNights ?? r.quotaNights)}박</span>
+                                <span className="text-[#8B2635] font-semibold">미소진 {formatNum(r.remainingNights)}박</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 다부문 시설 경험 폭(multiFacilityBreadth) & 1:N 발급카드 가동률(cardUtilization) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-financial">
+                  <div className="p-4 rounded-2xl bg-[#F4F3EE]/70 border border-[#D0C6BB] space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#1B382E]">
+                      <span>1:N 발급카드 실사용 가동률</span>
+                      <CreditCard size={14} className="text-[#B59269]" />
+                    </div>
+                    <div className="text-xl font-black text-[#284F42]">
+                      {usageSatisfaction?.cardUtilization?.cardActiveRatePct != null
+                        ? `${usageSatisfaction.cardUtilization.cardActiveRatePct}% 가동`
+                        : '-'}
+                    </div>
+                    <div className="text-[11px] text-[#5A6B63]">
+                      실사용 카드: <strong className="text-[#1B382E]">{usageSatisfaction?.cardUtilization?.activeUsedCards != null ? `${formatNum(usageSatisfaction.cardUtilization.activeUsedCards)}매` : '-'}</strong> / 총 발급 {usageSatisfaction?.cardUtilization?.totalIssuedCards != null ? `${formatNum(usageSatisfaction.cardUtilization.totalIssuedCards)}매` : '-'}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#E8F2EE]/60 border border-[#B4C6C1] space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#1E523F]">
+                      <span>다부문(객실+골프+식음+레저) 경험 폭</span>
+                      <Sparkles size={14} className="text-[#1E523F]" />
+                    </div>
+                    {Array.isArray(usageSatisfaction?.multiFacilityBreadth) && usageSatisfaction.multiFacilityBreadth.length > 0 ? (
+                      <div className="space-y-1 text-[11px]">
+                        {usageSatisfaction.multiFacilityBreadth.map((b: any, bIdx: number) => (
+                          <div key={bIdx} className="flex items-center justify-between">
+                            <span className="text-[#1B382E] font-medium">{b.label}</span>
+                            <strong className="text-[#1E523F]">{formatNum(b.accountsCount)}구좌 ({b.sharePct}%)</strong>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-[#5A6B63] pt-1">
+                        <div>다부문 복합 경험 분포: <strong className="text-[#1B382E]">-</strong></div>
+                        <div className="text-[11px] mt-0.5">하단 원장 [2개 부문+ 복합 이용] 필터로 즉시 조회 가능</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 박수 소진율 구간 분포(burnRateDistribution) & 분양회원 최다 이용 선호 영업장(topPreferredVenues) 1:1 바인딩 */}
+                {(Array.isArray(usageSatisfaction?.burnRateDistribution) && usageSatisfaction.burnRateDistribution.length > 0) && (
+                  <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D0C6BB] space-y-2 font-financial">
+                    <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                      <span>연간 박수 소진율 구간별 구좌 분포 (`burnRateDistribution`)</span>
+                      <span className="text-[11px] text-[#5A6B63]">실사용구좌 평균 {usageSatisfaction?.avgUsedNightsPerActiveAccount ?? '-'}박 소진</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                      {usageSatisfaction.burnRateDistribution.map((b: any, bIdx: number) => (
+                        <div key={b.bucketCode || bIdx} className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/70">
+                          <div className="text-[10px] text-[#5A6B63] font-bold truncate">{b.bucketLabel}</div>
+                          <div className="text-sm font-black text-[#1B382E] mt-0.5">{formatNum(b.accountsCount)}구좌</div>
+                          <div className="text-[10px] text-[#1E523F] font-semibold">비중 {b.sharePct ?? '-'}%</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(Array.isArray(usageSatisfaction?.topPreferredVenues) && usageSatisfaction.topPreferredVenues.length > 0) && (
+                  <div className="p-4 rounded-2xl bg-[#F4F3EE]/80 border border-[#D0C6BB] space-y-2 font-financial">
+                    <div className="text-xs font-extrabold text-[#1B382E] flex items-center justify-between">
+                      <span>분양회원 최다 방문 선호 영업장 Top 랭킹 (`topPreferredVenues`)</span>
+                      <span className="text-[11px] text-[#5A6B63]">구좌 침투율 · 재방문율</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      {usageSatisfaction.topPreferredVenues.slice(0, 6).map((v: any, vIdx: number) => (
+                        <div key={vIdx} className="bg-white p-2.5 rounded-xl border border-[#D0C6BB]/70 flex items-center justify-between">
+                          <div>
+                            <span className="font-black text-[#284F42] mr-1.5">{v.rank ?? vIdx + 1}위</span>
+                            <span className="font-bold text-[#1B382E]">{v.venueName}</span>
+                          </div>
+                          <div className="text-right text-[11px] text-[#5A6B63]">
+                            <strong className="text-[#1E523F]">{formatNum(v.visitedAccountCount)}구좌</strong> ({v.accountPenetrationPct ?? '-'}%) · {formatNum(v.totalVisitCount)}회
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!usageSatisfaction && (
+                <div className="p-3.5 rounded-2xl bg-[#F4F3EE] border border-dashed border-[#D0C6BB] text-xs text-[#5A6B63] flex items-start gap-2.5">
+                  <Info size={15} className="text-[#284F42] shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-[#1B382E]">백엔드 Ticket 82 연동 대기 (`usageSatisfactionSummary`):</strong>{' '}
+                    구좌별 박수 소진율 구간 분포(`burnRateDistribution`), 1:N 발급카드 활성화율(`cardUtilization`), 분양회원 선호 영업장 Top 10(`topPreferredVenues`) 완제품이 배포되면 즉시 표출됩니다.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -757,10 +1102,11 @@ export default function Members() {
                 </span>
                 {[
                   { id: 'ALL', label: `전체 방문 구좌 (${rawVisitedLedger.length})` },
-                  { id: 'VIP_VISIT', label: '다회 방문 VIP (연 10회+)' },
-                  { id: 'LOW_BURN', label: '박수 소진 저조 (<10% 독려대상)' },
-                  { id: 'GOLF_ACTIVE', label: '골프장 이용 회원' },
-                  { id: 'MULTI_DEPT', label: '2개 부문+ 복합 이용' }
+                  { id: 'HIGH_RISK', label: '🚨 반환 고위험 (<5% 극저소진)' },
+                  { id: 'LOW_BURN', label: '⚠️ 박수 소진 저조 (<10% 독려대상)' },
+                  { id: 'VIP_VISIT', label: '다회 방문 고만족 (연 10회+)' },
+                  { id: 'MULTI_DEPT', label: '2개 부문+ 복합 만족' },
+                  { id: 'GOLF_ACTIVE', label: '골프장 이용 회원' }
                 ].map((seg) => (
                   <button
                     key={seg.id}
@@ -799,10 +1145,11 @@ export default function Members() {
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl text-xs font-semibold border border-[#D0C6BB]/60">
                   <ArrowUpDown className="w-3.5 h-3.5 text-[#B59269] ml-1.5" />
                   {[
-                    { id: 'ltvDesc', label: '누적 LTV순' },
-                    { id: 'periodDesc', label: '기간 소비순' },
-                    { id: 'burnDesc', label: '소진율순' },
-                    { id: 'visitDesc', label: '방문횟수순' }
+                    { id: 'burnDesc', label: '박수 소진율순' },
+                    { id: 'visitDesc', label: '방문횟수순' },
+                    { id: 'expiryAsc', label: '보증금 만기임박순' },
+                    { id: 'ltvDesc', label: '누적 이용액순' },
+                    { id: 'periodDesc', label: '기간 이용액순' }
                   ].map((s) => (
                     <button
                       key={s.id}
@@ -895,12 +1242,28 @@ export default function Members() {
                                     구:{m.prevCertNo}
                                   </span>
                                 )}
+                                {m.redemptionRiskGrade && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                    m.redemptionRiskGrade === 'HIGH_RISK'
+                                      ? 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]'
+                                      : m.redemptionRiskGrade === 'CARE_NEEDED'
+                                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                      : 'bg-[#E8F2EE] text-[#1E523F]'
+                                  }`}>
+                                    {m.redemptionRiskGrade === 'HIGH_RISK' ? '반환고위험' : m.redemptionRiskGrade === 'CARE_NEEDED' ? '케어대상' : '재연장유력'}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="font-black text-[#1B382E]">{m.memberName || '-'}</div>
                               <div className="text-[11px] text-[#5A6B63] mt-0.5">
                                 최근방문: {m.lastVisitDate || m.visitDate || '-'}
+                                {m.expiryDate && (
+                                  <span className="ml-1.5 text-[#8B2635] font-semibold">
+                                    · 만기: {m.expiryDate}{m.daysUntilExpiry != null ? ` (D-${m.daysUntilExpiry})` : ''}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="py-3.5 px-3 text-center whitespace-nowrap">
@@ -982,14 +1345,28 @@ export default function Members() {
                                         구좌 상세 리포트: {m.membershipNo || m.certNo}
                                       </span>
                                       <h4 className="text-base font-black text-[#1B382E]">
-                                        {m.memberName} ({m.accountType} · {m.roomType ? `${m.roomType}평` : '평형미상'}) 영업장별 실사용 내역
+                                        {m.memberName} ({m.accountType} · {m.roomType ? `${m.roomType}평` : '평형미상'}) 실사용 만족도 & 보증금 만기 관리
                                       </h4>
-                                    </div>
-                                    <div className="text-xs text-[#5A6B63] flex items-center gap-3">
-                                      <span>지정 회원번호: <strong className="text-[#1B382E] font-mono">{m.memberNo || '-'}</strong></span>
-                                      {m.depositAmt != null && (
-                                        <span>분양보증금: <strong className="text-[#1B382E]">{formatNum(m.depositAmt)}원</strong></span>
+                                      {m.redemptionRiskGrade && (
+                                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                                          m.redemptionRiskGrade === 'HIGH_RISK'
+                                            ? 'bg-[#FDF0ED] text-[#8B2635] border border-[#EAC5BD]'
+                                            : m.redemptionRiskGrade === 'CARE_NEEDED'
+                                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                            : 'bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]'
+                                        }`}>
+                                          {m.redemptionRiskGrade === 'HIGH_RISK'
+                                            ? '🚨 보증금 반환 고위험'
+                                            : m.redemptionRiskGrade === 'CARE_NEEDED'
+                                            ? '⚠️ 이용 독려 케어군'
+                                            : '✅ 만기 재연장 유력'}
+                                        </span>
                                       )}
+                                    </div>
+                                    <div className="text-xs text-[#5A6B63] flex flex-wrap items-center gap-3">
+                                      <span>지정 회원번호: <strong className="text-[#1B382E] font-mono">{m.memberNo || '-'}</strong></span>
+                                      <span>계약/만기일: <strong className="text-[#1B382E] font-mono">{m.contractDate || '-'} ~ {m.expiryDate || '-'}</strong>{m.daysUntilExpiry != null ? ` (D-${m.daysUntilExpiry})` : ''}</span>
+                                      <span>분양보증금: <strong className="text-[#1B382E]">{m.depositAmt != null ? `${formatNum(m.depositAmt)}원` : '-'}</strong></span>
                                     </div>
                                   </div>
 

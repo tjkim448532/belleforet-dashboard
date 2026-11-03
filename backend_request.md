@@ -57,6 +57,7 @@
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 79] `leisure-channel-sales` 및 `moto-channel-sales` 채널별 음수 매출·음수 비중(`-3.81%`, `-9.94%`) 왜곡 시정 및 0~100% 정규화** | [배포/검증완료] 커밋 `989289b5` 배포 완료: 음수 채널 비중 `0%` 하한 고정, 양수 채널 합계(`positiveChannelRevenueSum`) 기준 최대잔여법 `100.00%` 정규화 및 `otaNetRefundAmount` 분리 바인딩 완료 |
 | **P0 (완료)** | 데이터 적재 | **[Ticket 80] `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01 최신 구간 입출차 시간대·외출재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동화 요청** | [배포/검증완료] 2026년 10월(`dayCount: 31`, `totalCars: 4,507대`) 등 최신 구간 백필 확인 및 연동 완료 |
 | **P1 (완료)** | API 보강 | **[Ticket 81] `GET /api/v6/parking/time-analytics` 내 객실 숙박객·판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량(물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가** | [배포/검증완료] `stayNonGolf.roomVehicleComparison` 완제품(`2026-10`: `175실당 0.83대/실`, `판매객실당 1.46대/실`, `차량당 2.27명/대`) 배포 및 프론트엔드 직결 바인딩 완료 |
+| **P1 (신규)** | 정규 API 보강 | **[Ticket 82] 분양회원 보증금 반환(Redemption) 리스크·이용 만족도(`depositRedemptionSummary`, `usageSatisfactionSummary`) 및 온라인회원 가입➔실구매 전환 퍼널·인기 상품 Top 랭킹·피크 가입 시즌(`purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality`) 완제품 추가** | ① 분양회원(`member-quota-ltv`): 만기 도래 구간별 보증금·저이용 반환 위험군 분류 및 박수 소진 분포·다부문 경험 만족도·선호 영업장 Top 10 제공, ② 온라인회원(`online-members`): 신규가입➔실구매 전환율·미구매수·첫구매 소요일, 인기 구매 상품/권종 Top 15, 시즌/요일별 가입 집중도 완제품 제공 요청 |
 
 ---
 
@@ -4752,4 +4753,265 @@ ORDER BY venue_name, rn;
 
 2. **프론트엔드 선제 바인딩 완료**:
    - `src/pages/ParkingTimeAnalytics.tsx` 상단 KPI 패널(`객실 175실 모수 & 투숙객 비교`) 및 요일별 분리 요약표에 `roomVehicleComparison`의 모든 필드가 1:1 직결 바인딩되어 있어, 백엔드 배포 즉시 화면에 자동 반영됩니다.
+
+---
+
+## 82. 🏛️×📱 [P1 정규 API 보강 요청] Ticket 82 — 분양회원 보증금 반환(Redemption) 리스크·이용 만족도(`depositRedemptionSummary`, `usageSatisfactionSummary`) 및 온라인회원 가입➔실구매 전환 퍼널·인기 상품 Top 랭킹·피크 가입 시즌(`purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality`) 완제품 추가 요청 (2026-11-03)
+
+### 82-1. 배경 및 경영진 핵심 요구사항 (`Stdout` 감사 기반)
+- **대표님/경영진 핵심 지시사항**:
+  1. **분양회원 (`/members`, `GET /api/v6/report/member-quota-ltv`)**:
+     - 단순 매출(원) 기여도보다 **① 분양구좌 관리 및 보증금 만기 반환(Redemption) 리스크 방어**와 **② 분양회원이 얼마나 자주 이용하고 리조트 전반에 만족하고 있는지(박수 소진율, 방문 빈도, 4대 부문 복합 경험 폭, 1:N 카드 가동률, 선호 영업장)**를 직관적으로 파악할 수 있는 경영 지표가 최우선입니다.
+  2. **온라인 회원 (`/online-members`, `GET /api/v6/report/online-members`)**:
+     - **① 어떤 기간(월별·시즌별·요일별)에 회원이 많이 증가하는지**, **② 회원 가입이 실제 구매(예약·발권) 및 재구매로 이어지는지(가입➔첫구매 전환율·미구매 이탈수·첫구매 소요일)**, **③ 온라인 회원에게 어떤 상품/권종 및 영업장이 인기가 있는지**가 핵심 경영 지표입니다.
+
+#### 프로덕션 현재 API 응답 실측 현황 (`Stdout` Fact, `2026-10-01 ~ 2026-10-31`)
+| 구분 | 대상 엔드포인트 | 현재 반환 중인 실측 필드 (`Stdout`) | 추가 필요한 경영 지표 완제품 블록 (Ticket 82 요청) |
+| :--- | :--- | :--- | :--- |
+| **분양회원** | `GET /api/v6/report/member-quota-ltv` | • `accountQuotaOverview`: 전체 `825구좌` 중 활성 `643구좌(77.9%)`, 미방문 휴면 `182구좌(22.1%)`, 연간 부여 `41,190박` 중 사용 `4,672박(11.3%)`<br>• `accountQuotaSummary`: 기명(`83.2%` 활성, 소진 `7.6%`), 무기명(`100%` 활성, 소진 `19.1%`), **창립(`51.2%` 활성, 미방문 휴면 `82구좌/48.8%`, 소진 `6.4%`)**, 법인(`87.0%` 활성, 소진 `26.4%`) | 1. **`depositRedemptionSummary`**: `16)분양회원` 원장 기반 보증금 총액, 만기 도래 구간별(6개월/1년/2년 내) 구좌·보증금 및 **실사용률 교차 반환 위험군(고위험/집중케어/재연장유력)**<br>2. **`usageSatisfactionSummary`**: 박수 소진율 구간 분포, 다부문(1~4개 부문) 시설 경험 만족도, 1:N 발급카드 활성화율, 분양회원 최다 방문 선호 영업장 Top 10<br>3. 구좌 원장(`visitedMembersLedger[]` 및 미방문 구좌) 내 `contractDate`, `expiryDate`, `daysUntilExpiry`, `depositAmt`, `redemptionRiskGrade` |
+| **온라인 회원** | `GET /api/v6/report/online-members` | • `summary`: 누적 활성 구매회원 `28,052명` (최근 1년 활동 `9,723명/34.7%`, 휴면 `18,329명/65.3%`), 1회 구매 `13,319명`, 2회+ 재구매 `14,733명`, 5일+ 진성단골 `6,113명(21.8%)`, 당월 신규가입 `785명(티켓 503·객실 252·골프 30)`<br>• `channelBreakdown`: 티켓전용 `12,494명`, 객실전용 `10,903명`, 골프전용 `1,222명`, 복합VIP `3,433명` | 1. **`purchaseConversionFunnel`**: 전체 및 기간 내 신규 가입자 중 **실제 구매 전환 인원·전환율(`%`) vs 가입 후 미구매(0건) 인원**, 가입 당일(D+0)·7일 내 구매율, 첫 구매까지 평균 소요일<br>2. **`popularProducts[]` & `popularVenues[]`**: 온라인 회원이 가장 많이 구매한 **인기 상품/권종 Top 15** 및 **인기 영업장 Top 10** (구매 회원수·건수·재구매율·신규유입 1위 여부)<br>3. **`peakJoinSeasonality`**: 월별·시즌별(봄/여름/가을/겨울)·요일별(평일 vs 주말) 가입 집중도 및 피크 시기 주력 유입 상품 |
+
+---
+
+### 82-2. [Part A] 분양회원 API (`GET /api/v6/report/member-quota-ltv`) 보강 명세
+
+`GET /api/v6/report/member-quota-ltv` 응답 최상위(및 `data` 내부)에 아래 2개 완제품 요약 블록(`depositRedemptionSummary`, `usageSatisfactionSummary`)을 추가하고, 구좌 원장 배열에 만기·보증금·만족도 속성을 포함해 주십시오.
+
+```json
+{
+  "depositRedemptionSummary": {
+    "totalContractAccounts": 825,
+    "totalDepositAmount": 148500000000,
+    "expiringWithin6Months": {
+      "accountsCount": 42,
+      "depositAmount": 7560000000,
+      "highRiskCount": 15,
+      "highRiskDepositAmount": 2700000000
+    },
+    "expiringWithin1Year": {
+      "accountsCount": 96,
+      "depositAmount": 17280000000,
+      "highRiskCount": 34,
+      "highRiskDepositAmount": 6120000000
+    },
+    "expiringWithin2Years": {
+      "accountsCount": 185,
+      "depositAmount": 33300000000,
+      "highRiskCount": 62,
+      "highRiskDepositAmount": 11160000000
+    },
+    "redemptionRiskMatrix": {
+      "highRiskRedemption": {
+        "gradeCode": "HIGH_RISK",
+        "gradeLabel": "보증금 반환 고위험군 (미방문 휴면 또는 연 소진율 5% 미만)",
+        "accountsCount": 245,
+        "sharePct": 29.7,
+        "depositAmount": 44100000000
+      },
+      "careNeededGroup": {
+        "gradeCode": "CARE_NEEDED",
+        "gradeLabel": "이용 독려·집중 케어군 (연 소진율 5~15% · 단일 시설만 이용)",
+        "accountsCount": 310,
+        "sharePct": 37.6,
+        "depositAmount": 55800000000
+      },
+      "safeRolloverGroup": {
+        "gradeCode": "SAFE_ROLLOVER",
+        "gradeLabel": "만기 재연장 유력·고만족군 (연 소진율 15%+ · 다부문 애용)",
+        "accountsCount": 270,
+        "sharePct": 32.7,
+        "depositAmount": 48600000000
+      }
+    },
+    "rolloverHistory": {
+      "succeededRolloverAccounts": 118,
+      "rolloverRetentionRatePct": 84.3
+    }
+  },
+
+  "usageSatisfactionSummary": {
+    "activeAccounts": 643,
+    "dormantZeroVisitAccounts": 182,
+    "activeAccountRatePct": 77.9,
+    "dormantAccountRatePct": 22.1,
+    "avgAnnualVisitsPerActiveAccount": 13.0,
+    "avgUsedNightsPerActiveAccount": 7.3,
+    "repeatVisit2PlusAccounts": 518,
+    "repeatVisitRetentionRatePct": 80.6,
+    "cardUtilization": {
+      "totalIssuedCards": 2840,
+      "activeUsedCards": 1620,
+      "cardActiveRatePct": 57.0
+    },
+    "burnRateDistribution": [
+      { "bucketCode": "ZERO_DORMANT", "bucketLabel": "0% 미사용 (연간 0박 휴면)", "accountsCount": 182, "sharePct": 22.1 },
+      { "bucketCode": "UNDER_10", "bucketLabel": "1~10% 미만 (저소진 위험)", "accountsCount": 265, "sharePct": 32.1 },
+      { "bucketCode": "10_TO_30", "bucketLabel": "10~30% (보통 이용)", "accountsCount": 248, "sharePct": 30.1 },
+      { "bucketCode": "30_TO_50", "bucketLabel": "30~50% (우수 애용)", "accountsCount": 86, "sharePct": 10.4 },
+      { "bucketCode": "OVER_50", "bucketLabel": "50% 이상 (최우수 VIP)", "accountsCount": 44, "sharePct": 5.3 }
+    ],
+    "multiFacilityBreadth": [
+      { "deptCount": 1, "label": "1개 부문만 단편 이용", "accountsCount": 214, "sharePct": 33.3 },
+      { "deptCount": 2, "label": "2개 부문 복합 이용 (객실+식음 등)", "accountsCount": 238, "sharePct": 37.0 },
+      { "deptCount": 3, "label": "3개 부문 다각 이용", "accountsCount": 129, "sharePct": 20.1 },
+      { "deptCount": 4, "label": "4대 전 부문(객실·골프·식음·레저) 완전 애용", "accountsCount": 62, "sharePct": 9.6 }
+    ],
+    "topPreferredVenues": [
+      {
+        "rank": 1,
+        "venueName": "벨포레 콘도(객실)",
+        "divisionName": "콘도본부",
+        "visitedAccountCount": 598,
+        "accountPenetrationPct": 72.5,
+        "totalVisitCount": 4672,
+        "repeatAccountRatePct": 78.4
+      }
+    ]
+  }
+}
+```
+
+- **구좌별 원장(`visitedMembersLedger[]`) 개별 행 추가 필드**:
+  - `contractDate`: 분양 계약일 (`YYYY-MM-DD`)
+  - `expiryDate`: 보증금 만기일 (`YYYY-MM-DD`)
+  - `daysUntilExpiry`: 기준일 대비 만기 잔여일수 (`number`, 만기 경과 시 음수)
+  - `depositAmt`: 분양 보증금 원금 (`number`)
+  - `redemptionRiskGrade`: `'HIGH_RISK'` | `'CARE_NEEDED'` | `'SAFE_ROLLOVER'`
+  - `registeredCardCount`: 구좌 산하 총 발급 카드 수 (`number`)
+  - `activeCardCount`: 실제 이용 이력이 있는 활성 카드 수 (`number`)
+  - `usedDeptCount`: 이용 부문 수 (`1 ~ 4`)
+  - `venueBreakdown[]`: 방문한 세부 영업장명(`venueName`), 부문(`divisionName`), 방문횟수(`visitCount`), 소비액(`spendAmount`)
+
+---
+
+### 82-3. [Part B] 온라인 회원 API (`GET /api/v6/report/online-members`) 보강 명세
+
+`GET /api/v6/report/online-members` 응답 최상위(및 `data` 내부)에 아래 3개 완제품 블록(`purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality`)을 추가해 주십시오.
+
+```json
+{
+  "purchaseConversionFunnel": {
+    "totalSignedUpMembers": 34200,
+    "purchasedMembersCount": 28052,
+    "neverPurchasedMembersCount": 6148,
+    "signupToPurchaseConversionRatePct": 82.0,
+    "periodJoinedMembers": 785,
+    "periodJoinedAndPurchasedCount": 642,
+    "periodJoinedNeverPurchasedCount": 143,
+    "periodSignupConversionRatePct": 81.8,
+    "sameDayPurchaseCount": 518,
+    "sameDayPurchaseRatePct": 66.0,
+    "within7DaysPurchaseCount": 610,
+    "within7DaysPurchaseRatePct": 77.7,
+    "avgDaysToFirstPurchase": 2.4,
+    "oneTimeBuyersCount": 13319,
+    "oneTimeBuyersSharePct": 47.5,
+    "repeatBuyersCount": 14733,
+    "firstToSecondRepeatRatePct": 52.5,
+    "trueRepeatBuyersCount": 6113,
+    "trueRepeatRatePct": 21.8
+  },
+
+  "popularProducts": [
+    {
+      "rank": 1,
+      "productCode": "TKT_CART_GRAND",
+      "productName": "마운틴카트(그랜드포렛) 온라인 예매권",
+      "category": "TICKET",
+      "categoryLabel": "레저 티켓",
+      "venueName": "마운틴카트(그랜드포렛)",
+      "uniqueBuyerCount": 6840,
+      "buyerSharePct": 24.4,
+      "purchaseCount": 14250,
+      "quantitySold": 28900,
+      "repeatBuyerCount": 1920,
+      "repeatBuyerRatePct": 28.1,
+      "newMemberFirstBuyCount": 3120,
+      "isTopAcquisitionProduct": true
+    }
+  ],
+
+  "popularVenues": [
+    {
+      "rank": 1,
+      "venueName": "벨포레 콘도(객실)",
+      "category": "ROOM",
+      "uniqueBuyerCount": 14336,
+      "buyerSharePct": 51.1,
+      "purchaseCount": 42180,
+      "repeatBuyerRatePct": 48.6
+    }
+  ],
+
+  "peakJoinSeasonality": {
+    "peakMonth": {
+      "month": "2026-08",
+      "monthLabel": "8월 (여름 성수기)",
+      "joinedCount": 3420,
+      "shareOfYearPct": 18.4,
+      "topTriggerChannel": "TICKET",
+      "topTriggerProduct": "썸머랜드(워터파크) & 마운틴카트 패키지"
+    },
+    "peakDayOfWeek": {
+      "dayCode": "SAT",
+      "dayLabel": "토요일",
+      "avgJoinedPerDay": 42.5,
+      "sharePct": 24.8
+    },
+    "weekendVsWeekday": {
+      "weekendJoinedCount": 340,
+      "weekendSharePct": 43.3,
+      "weekdayJoinedCount": 445,
+      "weekdaySharePct": 56.7
+    },
+    "seasonalBreakdown": [
+      {
+        "seasonCode": "SPRING",
+        "seasonLabel": "봄 나들이 시즌 (3~5월)",
+        "joinedCount": 4820,
+        "sharePct": 26.0,
+        "conversionRatePct": 83.2,
+        "topPopularProduct": "벨포레 목장 & 마운틴카트"
+      },
+      {
+        "seasonCode": "SUMMER",
+        "seasonLabel": "여름 바캉스 성수기 (6~8월)",
+        "joinedCount": 7150,
+        "sharePct": 38.5,
+        "conversionRatePct": 86.4,
+        "topPopularProduct": "썸머랜드(워터파크) & 콘도 패키지"
+      },
+      {
+        "seasonCode": "AUTUMN",
+        "seasonLabel": "가을 단풍·골프 시즌 (9~11월)",
+        "joinedCount": 4120,
+        "sharePct": 22.2,
+        "conversionRatePct": 79.5,
+        "topPopularProduct": "콘도 숙박 & 루지/카트"
+      },
+      {
+        "seasonCode": "WINTER",
+        "seasonLabel": "겨울 눈썰매·연말 시즌 (12~2월)",
+        "joinedCount": 2460,
+        "sharePct": 13.3,
+        "conversionRatePct": 76.8,
+        "topPopularProduct": "사계절썰매장(눈썰매) & 스파"
+      }
+    ],
+    "byDayOfWeekJoin": [
+      { "dayOfWeek": 1, "dayCode": "MON", "dayLabel": "월요일", "joinedCount": 88, "sharePct": 11.2, "conversionRatePct": 78.4 },
+      { "dayOfWeek": 2, "dayCode": "TUE", "dayLabel": "화요일", "joinedCount": 82, "sharePct": 10.4, "conversionRatePct": 77.9 },
+      { "dayOfWeek": 3, "dayCode": "WED", "dayLabel": "수요일", "joinedCount": 89, "sharePct": 11.3, "conversionRatePct": 79.1 },
+      { "dayOfWeek": 4, "dayCode": "THU", "dayLabel": "목요일", "joinedCount": 92, "sharePct": 11.7, "conversionRatePct": 80.2 },
+      { "dayOfWeek": 5, "dayCode": "FRI", "dayLabel": "금요일", "joinedCount": 142, "sharePct": 18.1, "conversionRatePct": 84.5 },
+      { "dayOfWeek": 6, "dayCode": "SAT", "dayLabel": "토요일", "joinedCount": 186, "sharePct": 23.7, "conversionRatePct": 88.2 },
+      { "dayOfWeek": 7, "dayCode": "SUN", "dayLabel": "일요일", "joinedCount": 106, "sharePct": 13.5, "conversionRatePct": 83.0 }
+    ]
+  }
+}
+```
+
+- **프론트엔드 선제 바인딩 완료**:
+  - `src/pages/Members.tsx` 및 `src/pages/OnlineMembers.tsx`에 위 `depositRedemptionSummary`, `usageSatisfactionSummary`, `purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality` 필드가 모두 1:1 직결 바인딩되어 있으며, 백엔드 미배포 필드는 Fail-Loudly 원칙에 따라 `'-'`로 표출됩니다.
+
 

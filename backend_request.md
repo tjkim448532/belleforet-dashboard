@@ -55,7 +55,8 @@
 | **P2 (신규)** | API 확장 | **[Ticket 77] 리조트사업본부 [타사 일별 판매상품 & 패키지·요금 현황] 페이지용 S3 원천 판매상품 목록(`offers[]`) 노출** | S3 SQLite(`57,733건`)에 저장된 일자·리조트별 개별 판매상품 리스트(`offers[]`) 반환 요청 (`room-dynamic-pricing`) |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 78] `daily-member-visitors-v2` 업장별 실적 집계 레저 업장 일원화(ROOM·GOLF 제외) 및 점유율 모수를 '골프제외 이용객'으로 교정** | [배포/검증완료] `venues[]` 8대 레저 업장 일원화 및 `exGolfVisitorsDenominator(1,514명)` 기반 `exGolfUsageRatePct` 완제품(`벨포레 목장 48.22%`, `놀이동산 28.80%` 등) 연동 완료 |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 79] `leisure-channel-sales` 및 `moto-channel-sales` 채널별 음수 매출·음수 비중(`-3.81%`, `-9.94%`) 왜곡 시정 및 0~100% 정규화** | [배포/검증완료] 커밋 `989289b5` 배포 완료: 음수 채널 비중 `0%` 하한 고정, 양수 채널 합계(`positiveChannelRevenueSum`) 기준 최대잔여법 `100.00%` 정규화 및 `otaNetRefundAmount` 분리 바인딩 완료 |
-| **P0 (긴급)** | 데이터 적재 | **[Ticket 80] `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01 최신 구간 입출차 시간대·외출재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동화 요청** | `parking-summary` 일별 요약(`dailyList`, `resortVisitorsDailyList`)은 `2026-11-01`까지 적재되어 있으나, `time-analytics`는 `2025-08-22`에서 적재가 중단되어 2026년 조회 시 `dayCount: 0`, `periodSummary: null` 반환 중 |
+| **P0 (완료)** | 데이터 적재 | **[Ticket 80] `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01 최신 구간 입출차 시간대·외출재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동화 요청** | [배포/검증완료] 2026년 10월(`dayCount: 31`, `totalCars: 4,507대`) 등 최신 구간 백필 확인 및 연동 완료 |
+| **P1 (신규)** | API 보강 | **[Ticket 81] `GET /api/v6/parking/time-analytics` 내 객실 숙박객·판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량(물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가** | `stayNonGolf` 객체 내 물리 객실(`175실 × dayCount`) 기준 객실 1개당 평균 숙박 차량(`avgCarsPerPhysicalRoom`), 실투숙 판매객실(`roomSoldUnits`) 기준 객실 1개당 평균 숙박 차량(`avgCarsPerSoldRoom`), 객실 투숙객(`totalRoomGuests`) 대비 차량당 평균 탑승 인원(`avgGuestsPerStayCar`) 완제품 반환 요청 |
 
 ---
 
@@ -4700,4 +4701,55 @@ ORDER BY venue_name, rn;
 2. **일별 마감 ETL 파이프라인 자동 연동**:
    - `parking-summary`가 매일 `D-1` 마감 시 갱신될 때, `time-analytics` 집계 테이블(숙박[골프제외] `stayNonGolf` 및 순수 나들이[단체제외] `walkInNonGroup`)도 함께 자동 갱신되도록 일별 ETL 파이프라인에 포함해 주십시오.
 
+---
+
+## 81. 🏨×🚗 [P1 API 보강 요청] Ticket 81 — `GET /api/v6/parking/time-analytics` 내 객실 숙박객 vs 숙박 차량 비교 및 객실 1개당 평균 차량 (물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가 요청 (2026-11-03)
+
+### 81-1. 배경 및 실측 감사 결과 (`Stdout` Fact)
+- **`숙박(골프제외)·나들이 입출차 & 외출 분석`** (`/parking-time-analytics`, `src/pages/ParkingTimeAnalytics.tsx`) 페이지에서 **① 객실 숙박객(`roomTotalGuests`)과 숙박 차량(`totalCars`)을 비교**하고, **② 전체 물리 객실 `175실` 기준(및 실투숙 판매객실 `roomSoldUnits` 기준) 객실 1개당 평균 숙박 차량 대수**를 기간·요일·일자별로 표시해야 합니다.
+- 프론트엔드는 **Zero-Proxy & Fail-Loudly 원칙**에 따라 클라이언트 단에서 `totalCars / (175 * dayCount)` 또는 `totalCars / roomSoldUnits` 나눗셈 연산을 일절 수행하지 않으며, 백엔드가 사전 연산한 완제품 필드(`stayNonGolf.roomVehicleComparison`)만 1:1 직결 바인딩합니다.
+
+#### 프로덕션 실측 수치 대조 (`Stdout` 팩트)
+| 조회 구간 | 집계일수 (`dayCount`) | 물리 가용객실 (`175실 × 일수`) | 실투숙 판매객실 (`roomSoldUnits`) | 객실 투숙객 (`roomTotalGuests`) | 숙박(골프제외) 차량 (`stayNonGolf.totalCars`) | 숙박·골프 중복 차량 (`golfCondoCrossCars`) | **175실 기준 객실 1개당 평균 차량 (`avgCarsPerPhysicalRoom`)** | **판매객실 1개당 평균 차량 (`avgCarsPerSoldRoom`)** | **숙박차량 1대당 평균 투숙객 (`avgGuestsPerStayCar`)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **`2026-10-31` (1일)** | `1일` | **`175실`** | `120실` | `523명` (골프제외 `452명`) | **`199대`** | `17대` (합계 `216대`) | **`1.14대/실`** (`199 ÷ 175`, 골프포함 `1.23대/실`) | **`1.66대/실`** (`199 ÷ 120`, 골프포함 `1.80대/실`) | **`2.27명/대`** (`452 ÷ 199`, 골프포함 `2.42명/대`) |
+| **`2026-10-01 ~ 2026-10-31` (31일)** | `31일` | **`5,425실`** (`175 × 31`) | `3,095실` | `12,495명` (골프제외 `10,253명`) | **`4,507대`** (일평균 `145.4대`) | `578대` (합계 `5,085대`) | **`0.83대/실`** (`4,507 ÷ 5,425`, 골프포함 `0.94대/실`) | **`1.46대/실`** (`4,507 ÷ 3,095`, 골프포함 `1.64대/실`) | **`2.27명/대`** (`10,253 ÷ 4,507`, 골프포함 `2.46명/대`) |
+
+### 81-2. 백엔드 조치 요청 사항 (V6 5대 철칙 & Zero-Proxy 준수)
+1. **`GET /api/v6/parking/time-analytics` (및 `parking-summary.timeAnalytics`)의 모든 `stayNonGolf` 노드(`periodSummary.stayNonGolf`, `byDayOfWeek[].stayNonGolf`, `byDayType.weekday.stayNonGolf`, `byDayType.weekend.stayNonGolf`, `dailyList[].stayNonGolf`)에 `roomVehicleComparison` 완제품 객체 추가**:
+   - `mat_v6_resort_visitors_daily`의 일자별 `room_sold_units`(판매객실), `room_total_guests`(투숙객), `ex_golf_room_guests`(또는 `room_total_guests - room_golf_synergy_guests`), `golf_condo_cross_cars`(숙박·골프 중복 차량)를 해당 기간/요일/일자에 맞게 합산하여 아래 규격으로 반환해 주십시오:
+
+```json
+"roomVehicleComparison": {
+  "physicalRoomCapacityPerDay": 175,
+  "totalPhysicalRoomCapacity": 5425,
+  "soldRoomCount": 3095,
+  "physicalRoomOccRate": 57.1,
+  "totalRoomGuests": 12495,
+  "exGolfRoomGuests": 10253,
+  "stayNonGolfCars": 4507,
+  "golfCondoCrossCars": 578,
+  "totalStayCarsIncGolf": 5085,
+  "avgCarsPerPhysicalRoom": 0.83,
+  "avgTotalStayCarsPerPhysicalRoom": 0.94,
+  "avgCarsPerSoldRoom": 1.46,
+  "avgTotalStayCarsPerSoldRoom": 1.64,
+  "avgGuestsPerStayCar": 2.27,
+  "avgGuestsPerSoldRoom": 4.04
+}
+```
+
+- **산출 공식 정의 (DB/백엔드 사전 연산)**:
+  - `physicalRoomCapacityPerDay`: 고정 물리 객실 모수 **`175`** (벨포레 콘도 전체 175실 기준)
+  - `totalPhysicalRoomCapacity`: `175 * dayCount`
+  - `avgCarsPerPhysicalRoom`: `ROUND(stayNonGolfCars / (175 * dayCount), 2)` — **175실 기준 객실 1개당 평균 숙박(골프제외) 차량 대수**
+  - `avgTotalStayCarsPerPhysicalRoom`: `ROUND((stayNonGolfCars + golfCondoCrossCars) / (175 * dayCount), 2)` — **175실 기준 객실 1개당 평균 전체 숙박 차량(골프포함) 대수**
+  - `avgCarsPerSoldRoom`: `ROUND(stayNonGolfCars / NULLIF(soldRoomCount, 0), 2)` — **실투숙 판매객실 1개당 평균 숙박(골프제외) 차량 대수**
+  - `avgTotalStayCarsPerSoldRoom`: `ROUND((stayNonGolfCars + golfCondoCrossCars) / NULLIF(soldRoomCount, 0), 2)` — **실투숙 판매객실 1개당 평균 전체 숙박 차량(골프포함) 대수**
+  - `avgGuestsPerStayCar`: `ROUND(exGolfRoomGuests / NULLIF(stayNonGolfCars, 0), 2)` — **숙박(골프제외) 차량 1대당 평균 투숙객 수**
+  - `avgGuestsPerSoldRoom`: `ROUND(totalRoomGuests / NULLIF(soldRoomCount, 0), 2)` — **판매객실 1실당 평균 투숙객 수**
+  - `physicalRoomOccRate`: `ROUND((soldRoomCount / (175 * dayCount)) * 100, 1)` — **175실 기준 객실 가동률(%)**
+
+2. **프론트엔드 선제 바인딩 완료**:
+   - `src/pages/ParkingTimeAnalytics.tsx` 상단 KPI 패널(`객실 175실 모수 & 투숙객 비교`) 및 요일별 분리 요약표에 `roomVehicleComparison`의 모든 필드가 1:1 직결 바인딩되어 있어, 백엔드 배포 즉시 화면에 자동 반영됩니다.
 

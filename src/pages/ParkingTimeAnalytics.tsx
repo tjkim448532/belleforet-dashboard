@@ -103,6 +103,7 @@ export default function ParkingTimeAnalytics() {
   const [dailyTableDayFilter, setDailyTableDayFilter] = useState<string>('ALL');
 
   const [data, setData] = useState<ParkingTimeAnalyticsResponse | null>(null);
+  const [resortVisitors, setResortVisitors] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -123,8 +124,19 @@ export default function ParkingTimeAnalytics() {
       params.set('endDate', validEnd);
       params.set('dayOfWeek', dowParam || 'ALL');
 
-      const res = await secureFetcher(`${API_BASE}/api/v6/parking/time-analytics?${params.toString()}`);
+      const [res, parkSummaryRes] = await Promise.all([
+        secureFetcher(`${API_BASE}/api/v6/parking/time-analytics?${params.toString()}`),
+        secureFetcher(
+          `${API_BASE}/api/v6/dashboard/parking-summary?startDate=${validStart}&endDate=${validEnd}&date=${validStart}`
+        ).catch(() => null),
+      ]);
       const payload: ParkingTimeAnalyticsResponse = res?.data ?? res;
+      const rv =
+        parkSummaryRes?.resortVisitors ||
+        parkSummaryRes?.summary?.resortVisitors ||
+        parkSummaryRes?.data?.resortVisitors ||
+        null;
+      setResortVisitors(rv);
 
       if (payload && payload.success) {
         setData(payload);
@@ -135,6 +147,7 @@ export default function ParkingTimeAnalytics() {
     } catch (err: any) {
       console.error('[ParkingTimeAnalytics] Fetch Error:', err);
       setData(null);
+      setResortVisitors(null);
       setApiError(err?.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -514,6 +527,28 @@ export default function ParkingTimeAnalytics() {
             <div className="flex flex-wrap items-center gap-1.5 ml-1">
               <button
                 type="button"
+                onClick={() => applyPresetRange('2026-10-01', '2026-10-31')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
+                  queryStart === '2026-10-01' && queryEnd === '2026-10-31'
+                    ? 'bg-[#284F42] text-white border-[#284F42]'
+                    : 'bg-[#F4F3EE] text-[#1B382E] border-[#D5CFC2] hover:bg-[#E5E0D5]'
+                }`}
+              >
+                26년 10월 전체 (10.01~10.31)
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPresetRange('2026-10-31', '2026-10-31')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
+                  queryStart === '2026-10-31' && queryEnd === '2026-10-31'
+                    ? 'bg-[#284F42] text-white border-[#284F42]'
+                    : 'bg-[#F4F3EE] text-[#1B382E] border-[#D5CFC2] hover:bg-[#E5E0D5]'
+                }`}
+              >
+                26년 10월 31일 (단일일)
+              </button>
+              <button
+                type="button"
                 onClick={() => applyPresetRange('2025-04-25', '2025-08-22')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                   queryStart === '2025-04-25' && queryEnd === '2025-08-22'
@@ -521,7 +556,7 @@ export default function ParkingTimeAnalytics() {
                     : 'bg-[#F4F3EE] text-[#1B382E] border-[#D5CFC2] hover:bg-[#E5E0D5]'
                 }`}
               >
-                실측 전체 구간 (25.04.25~08.22)
+                25년 실측 구간 (25.04.25~08.22)
               </button>
               <button
                 type="button"
@@ -533,39 +568,6 @@ export default function ParkingTimeAnalytics() {
                 }`}
               >
                 25년 8월 성수기 (08.01~08.22)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPresetRange('2025-07-01', '2025-07-31')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
-                  queryStart === '2025-07-01' && queryEnd === '2025-07-31'
-                    ? 'bg-[#284F42] text-white border-[#284F42]'
-                    : 'bg-[#F4F3EE] text-[#1B382E] border-[#D5CFC2] hover:bg-[#E5E0D5]'
-                }`}
-              >
-                25년 7월 (07.01~07.31)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPresetRange('2025-06-01', '2025-06-30')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
-                  queryStart === '2025-06-01' && queryEnd === '2025-06-30'
-                    ? 'bg-[#284F42] text-white border-[#284F42]'
-                    : 'bg-[#F4F3EE] text-[#1B382E] border-[#D5CFC2] hover:bg-[#E5E0D5]'
-                }`}
-              >
-                25년 6월 (06.01~06.30)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPresetRange('2025-05-18', '2025-05-31')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
-                  queryStart === '2025-05-18' && queryEnd === '2025-05-31'
-                    ? 'bg-[#284F42] text-white border-[#284F42]'
-                    : 'bg-[#F4F3EE] text-[#1B382E] border-[#D5CFC2] hover:bg-[#E5E0D5]'
-                }`}
-              >
-                25년 5월 (05.18~05.31)
               </button>
             </div>
           </div>
@@ -856,6 +858,121 @@ export default function ParkingTimeAnalytics() {
             </div>
           </div>
 
+          {/* 1-A-2. 🏨×🚗 객실 숙박객 vs 숙박 차량 비교 & 객실 1개당 평균 차량 (물리 175실 기준 · 판매객실 기준) */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-[#F4F3EE]/80 border border-[#D5CFC2] space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-[#1B382E] text-white text-[11px] font-black">
+                  객실 175실 모수 & 투숙객 비교 (SSOT)
+                </span>
+                <h3 className="text-sm font-black text-[#1B382E]">
+                  객실 숙박객 · 판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량 대수 (`roomVehicleComparison`)
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold text-[#5A6B63]">
+                물리 객실 기준: 일일 {fmtNum(activeStayCohort?.roomVehicleComparison?.physicalRoomCapacityPerDay, '실')} (누적 가용 {fmtNum(activeStayCohort?.roomVehicleComparison?.totalPhysicalRoomCapacity, '실')})
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* 비교 카드 1: 객실 숙박객 vs 숙박 차량 */}
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>객실 숙박객 vs 숙박 차량</span>
+                  <Users size={14} className="text-[#284F42]" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-xl font-black text-[#1B382E]">
+                    {fmtNum(
+                      activeStayCohort?.roomVehicleComparison?.totalRoomGuests ??
+                        (selectedStayDayScope === 'PERIOD_ALL' ? resortVisitors?.roomTotalGuests : null),
+                      '명'
+                    )}
+                  </span>
+                  <span className="text-xs font-bold text-[#5A6B63]">vs</span>
+                  <span className="text-lg font-black text-[#284F42]">
+                    {fmtNum(activeStayCohort?.totalCars, '대')}
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                  <div>
+                    골프제외 순수 숙박객: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.exGolfRoomGuests, '명')}</strong>
+                  </div>
+                  <div>
+                    숙박·골프 중복 차량: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.golfCondoCrossCars ?? (selectedStayDayScope === 'PERIOD_ALL' ? resortVisitors?.golfCondoCrossCars : null), '대')}</strong> (전체 숙박차량 {fmtNum(activeStayCohort?.roomVehicleComparison?.totalStayCarsIncGolf, '대')})
+                  </div>
+                </div>
+              </div>
+
+              {/* 비교 카드 2: 전체 물리 객실(175실) 기준 객실 1개당 평균 차량 */}
+              <div className="bg-white rounded-xl p-3.5 border-2 border-[#284F42]/30">
+                <div className="text-xs font-bold text-[#284F42] flex items-center justify-between">
+                  <span>객실 1개당 평균 차량 (175실 기준)</span>
+                  <Hotel size={14} className="text-[#284F42]" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-2xl font-black text-[#284F42]">
+                    {fmtNum(activeStayCohort?.roomVehicleComparison?.avgCarsPerPhysicalRoom, '대/실')}
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#284F42]/10 text-[#1B382E]">
+                    골프제외 차량
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                  <div>
+                    골프포함 전체 숙박차량 기준: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.avgTotalStayCarsPerPhysicalRoom, '대/실')}</strong>
+                  </div>
+                  <div>
+                    분모 모수 (175실 × 일수): <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.totalPhysicalRoomCapacity, '실')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* 비교 카드 3: 실투숙 판매객실(roomSoldUnits) 기준 객실 1개당 평균 차량 */}
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>판매객실 1개당 평균 차량 (실투숙 기준)</span>
+                  <Car size={14} className="text-[#9E7542]" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-2xl font-black text-[#9E7542]">
+                    {fmtNum(activeStayCohort?.roomVehicleComparison?.avgCarsPerSoldRoom, '대/실')}
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#B59269]/15 text-[#8C6D46]">
+                    골프제외 차량
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                  <div>
+                    골프포함 전체 숙박차량 기준: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.avgTotalStayCarsPerSoldRoom, '대/실')}</strong>
+                  </div>
+                  <div>
+                    실투숙 판매객실 수: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.soldRoomCount ?? (selectedStayDayScope === 'PERIOD_ALL' ? resortVisitors?.roomSoldUnits : null), '실')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* 비교 카드 4: 숙박 차량 1대당 평균 탑승 투숙객 수 & 판매객실당 평균 인원 */}
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>숙박 차량 1대당 평균 투숙객</span>
+                  <TrendingUp size={14} className="text-[#284F42]" />
+                </div>
+                <div className="text-2xl font-black text-[#1B382E] mt-1.5">
+                  {fmtNum(activeStayCohort?.roomVehicleComparison?.avgGuestsPerStayCar, '명/대')}
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                  <div>
+                    판매객실 1실당 평균 투숙객: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.avgGuestsPerSoldRoom, '명/실')}</strong>
+                  </div>
+                  <div>
+                    175실 기준 객실 가동률: <strong className="text-[#1B382E]">{fmtPct(activeStayCohort?.roomVehicleComparison?.physicalRoomOccRate)}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 1-B. 숙박(골프제외) 시간대별(0~23시) 입출차 및 외출/복귀 차트 + 요일별 비교 차트 */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
             <div className="xl:col-span-7 bg-[#FAF9F6] rounded-xl p-4 border border-[#E5E0D5]">
@@ -909,8 +1026,11 @@ export default function ParkingTimeAnalytics() {
                   <tr className="bg-[#284F42] text-white font-bold">
                     <th className="py-2.5 px-3">구분 (요일)</th>
                     <th className="py-2.5 px-3 text-right">집계일수</th>
+                    <th className="py-2.5 px-3 text-right">객실 투숙객</th>
                     <th className="py-2.5 px-3 text-right">총 숙박차량</th>
                     <th className="py-2.5 px-3 text-right">일평균 차량</th>
+                    <th className="py-2.5 px-3 text-right bg-[#1B382E]">175실당 차량</th>
+                    <th className="py-2.5 px-3 text-right bg-[#1B382E]">판매객실당 차량</th>
                     <th className="py-2.5 px-3 text-center">평균 도착시각</th>
                     <th className="py-2.5 px-3 text-center">피크 도착시간대</th>
                     <th className="py-2.5 px-3 text-center">평균 출차시각</th>
@@ -931,6 +1051,7 @@ export default function ParkingTimeAnalytics() {
                   ].map((row) => {
                     const s = row.item?.stayNonGolf;
                     const re = s?.reEntrySummary;
+                    const rvc = s?.roomVehicleComparison;
                     return (
                       <tr
                         key={row.key}
@@ -939,8 +1060,11 @@ export default function ParkingTimeAnalytics() {
                       >
                         <td className="py-2.5 px-3 font-black text-[#1B382E]">{row.label}</td>
                         <td className="py-2.5 px-3 text-right">{fmtNum(row.item?.dayCount, '일')}</td>
+                        <td className="py-2.5 px-3 text-right font-bold">{fmtNum(rvc?.totalRoomGuests, '명')}</td>
                         <td className="py-2.5 px-3 text-right font-black">{fmtNum(s?.totalCars, '대')}</td>
                         <td className="py-2.5 px-3 text-right">{fmtNum(s?.dailyAvgCars, '대')}</td>
+                        <td className="py-2.5 px-3 text-right font-black text-[#284F42]">{fmtNum(rvc?.avgCarsPerPhysicalRoom, '대/실')}</td>
+                        <td className="py-2.5 px-3 text-right font-black text-[#9E7542]">{fmtNum(rvc?.avgCarsPerSoldRoom, '대/실')}</td>
                         <td className="py-2.5 px-3 text-center font-bold text-[#284F42]">{fmtText(s?.avgEntryTime)}</td>
                         <td className="py-2.5 px-3 text-center">
                           {fmtText(s?.peakEntryHourLabel)} ({fmtNum(s?.peakEntryCars, '대')})
@@ -967,6 +1091,7 @@ export default function ParkingTimeAnalytics() {
                   {byDayOfWeekList.map((day) => {
                     const s = day.stayNonGolf;
                     const re = s?.reEntrySummary;
+                    const rvc = s?.roomVehicleComparison;
                     const isSelected = selectedStayDayScope === day.dayCode;
                     return (
                       <tr
@@ -980,8 +1105,11 @@ export default function ParkingTimeAnalytics() {
                           {day.dayLabel}
                         </td>
                         <td className="py-2 px-3 text-right">{fmtNum(day.dayCount, '일')}</td>
+                        <td className="py-2 px-3 text-right font-semibold">{fmtNum(rvc?.totalRoomGuests, '명')}</td>
                         <td className="py-2 px-3 text-right font-bold">{fmtNum(s?.totalCars, '대')}</td>
                         <td className="py-2 px-3 text-right">{fmtNum(s?.dailyAvgCars, '대')}</td>
+                        <td className="py-2 px-3 text-right font-bold text-[#284F42]">{fmtNum(rvc?.avgCarsPerPhysicalRoom, '대/실')}</td>
+                        <td className="py-2 px-3 text-right font-bold text-[#9E7542]">{fmtNum(rvc?.avgCarsPerSoldRoom, '대/실')}</td>
                         <td className="py-2 px-3 text-center font-bold text-[#284F42]">{fmtText(s?.avgEntryTime)}</td>
                         <td className="py-2 px-3 text-center">
                           {fmtText(s?.peakEntryHourLabel)} ({fmtNum(s?.peakEntryCars, '대')})

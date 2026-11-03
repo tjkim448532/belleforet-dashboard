@@ -1338,6 +1338,24 @@ export interface StayHourlyDistributionItem {
   outingReturnRatio: number;
 }
 
+export interface StayRoomVehicleComparison {
+  physicalRoomCapacityPerDay: number;      // 물리 객실 모수 (175실 고정)
+  totalPhysicalRoomCapacity: number;       // 기간 누적 물리 가용객실 (175 × dayCount)
+  soldRoomCount: number | null;            // 실제 판매(투숙) 객실 수 (roomSoldUnits)
+  physicalRoomOccRate: number | null;      // 175실 기준 객실 가동률 (%)
+  totalRoomGuests: number | null;          // 객실 투숙객 수 (roomTotalGuests, 나들이 제외)
+  exGolfRoomGuests: number | null;         // 골프 중복 차감 순수 숙박객 수
+  stayNonGolfCars: number;                 // 숙박(골프제외) 차량 대수
+  golfCondoCrossCars: number | null;       // 숙박·골프 중복 차량 대수
+  totalStayCarsIncGolf: number | null;     // 전체 숙박 차량 대수 (골프포함)
+  avgCarsPerPhysicalRoom: number | null;   // 175실 기준 객실 1개당 평균 숙박(골프제외) 차량 대수
+  avgTotalStayCarsPerPhysicalRoom: number | null; // 175실 기준 객실 1개당 평균 전체 숙박 차량 대수
+  avgCarsPerSoldRoom: number | null;       // 판매객실 1개당 평균 숙박(골프제외) 차량 대수
+  avgTotalStayCarsPerSoldRoom: number | null;     // 판매객실 1개당 평균 전체 숙박 차량 대수
+  avgGuestsPerStayCar: number | null;      // 숙박 차량 1대당 평균 투숙객 수 (명/대)
+  avgGuestsPerSoldRoom: number | null;     // 판매객실 1실당 평균 투숙객 수 (명/실)
+}
+
 export interface StayNonGolfCohort {
   cohortLabel: string;
   dayCount: number;
@@ -1360,6 +1378,7 @@ export interface StayNonGolfCohort {
   peakActualDayExitHourLabel?: string | null;
   peakActualDayExitCars?: number;
   reEntrySummary: StayReEntrySummary;
+  roomVehicleComparison?: StayRoomVehicleComparison | null;
   hourlyDistribution: StayHourlyDistributionItem[];
 }
 

@@ -1345,6 +1345,7 @@ export interface StayRoomVehicleComparison {
   physicalRoomOccRate: number | null;      // 175실 기준 객실 가동률 (%)
   totalRoomGuests: number | null;          // 객실 투숙객 수 (roomTotalGuests, 나들이 제외)
   exGolfRoomGuests: number | null;         // 골프 중복 차감 순수 숙박객 수
+  roomGolfSynergyGuests?: number | null;   // 숙박·골프 중복 투숙객 수
   stayNonGolfCars: number;                 // 숙박(골프제외) 차량 대수
   golfCondoCrossCars: number | null;       // 숙박·골프 중복 차량 대수
   totalStayCarsIncGolf: number | null;     // 전체 숙박 차량 대수 (골프포함)
@@ -1352,8 +1353,10 @@ export interface StayRoomVehicleComparison {
   avgTotalStayCarsPerPhysicalRoom: number | null; // 175실 기준 객실 1개당 평균 전체 숙박 차량 대수
   avgCarsPerSoldRoom: number | null;       // 판매객실 1개당 평균 숙박(골프제외) 차량 대수
   avgTotalStayCarsPerSoldRoom: number | null;     // 판매객실 1개당 평균 전체 숙박 차량 대수
-  avgGuestsPerStayCar: number | null;      // 숙박 차량 1대당 평균 투숙객 수 (명/대)
+  avgGuestsPerStayCar: number | null;      // 숙박(골프제외) 차량 1대당 평균 투숙객 수 (명/대)
+  avgTotalGuestsPerTotalStayCar?: number | null;  // 전체 숙박 차량 1대당 평균 전체 투숙객 수 (명/대)
   avgGuestsPerSoldRoom: number | null;     // 판매객실 1실당 평균 투숙객 수 (명/실)
+  exGolfAvgGuestsPerSoldRoom?: number | null;     // 판매객실 1실당 평균 골프제외 투숙객 수 (명/실)
 }
 
 export interface StayNonGolfCohort {

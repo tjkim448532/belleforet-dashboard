@@ -958,12 +958,17 @@ export default function ParkingTimeAnalytics() {
                   <span>숙박 차량 1대당 평균 투숙객</span>
                   <TrendingUp size={14} className="text-[#284F42]" />
                 </div>
-                <div className="text-2xl font-black text-[#1B382E] mt-1.5">
-                  {fmtNum(activeStayCohort?.roomVehicleComparison?.avgGuestsPerStayCar, '명/대')}
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-2xl font-black text-[#1B382E]">
+                    {fmtNum(activeStayCohort?.roomVehicleComparison?.avgGuestsPerStayCar, '명/대')}
+                  </span>
+                  <span className="text-[11px] font-bold text-[#5A6B63]">
+                    (전체 {fmtNum(activeStayCohort?.roomVehicleComparison?.avgTotalGuestsPerTotalStayCar, '명/대')})
+                  </span>
                 </div>
                 <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
                   <div>
-                    판매객실 1실당 평균 투숙객: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.avgGuestsPerSoldRoom, '명/실')}</strong>
+                    판매객실 1실당 투숙객: <strong className="text-[#1B382E]">{fmtNum(activeStayCohort?.roomVehicleComparison?.avgGuestsPerSoldRoom, '명/실')}</strong> (골프제외 {fmtNum(activeStayCohort?.roomVehicleComparison?.exGolfAvgGuestsPerSoldRoom, '명/실')})
                   </div>
                   <div>
                     175실 기준 객실 가동률: <strong className="text-[#1B382E]">{fmtPct(activeStayCohort?.roomVehicleComparison?.physicalRoomOccRate)}</strong>

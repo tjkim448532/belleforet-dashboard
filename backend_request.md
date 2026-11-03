@@ -56,7 +56,7 @@
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 78] `daily-member-visitors-v2` 업장별 실적 집계 레저 업장 일원화(ROOM·GOLF 제외) 및 점유율 모수를 '골프제외 이용객'으로 교정** | [배포/검증완료] `venues[]` 8대 레저 업장 일원화 및 `exGolfVisitorsDenominator(1,514명)` 기반 `exGolfUsageRatePct` 완제품(`벨포레 목장 48.22%`, `놀이동산 28.80%` 등) 연동 완료 |
 | **P1 (완료)** | 데이터 정합성 | **[Ticket 79] `leisure-channel-sales` 및 `moto-channel-sales` 채널별 음수 매출·음수 비중(`-3.81%`, `-9.94%`) 왜곡 시정 및 0~100% 정규화** | [배포/검증완료] 커밋 `989289b5` 배포 완료: 음수 채널 비중 `0%` 하한 고정, 양수 채널 합계(`positiveChannelRevenueSum`) 기준 최대잔여법 `100.00%` 정규화 및 `otaNetRefundAmount` 분리 바인딩 완료 |
 | **P0 (완료)** | 데이터 적재 | **[Ticket 80] `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01 최신 구간 입출차 시간대·외출재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동화 요청** | [배포/검증완료] 2026년 10월(`dayCount: 31`, `totalCars: 4,507대`) 등 최신 구간 백필 확인 및 연동 완료 |
-| **P1 (신규)** | API 보강 | **[Ticket 81] `GET /api/v6/parking/time-analytics` 내 객실 숙박객·판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량(물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가** | `stayNonGolf` 객체 내 물리 객실(`175실 × dayCount`) 기준 객실 1개당 평균 숙박 차량(`avgCarsPerPhysicalRoom`), 실투숙 판매객실(`roomSoldUnits`) 기준 객실 1개당 평균 숙박 차량(`avgCarsPerSoldRoom`), 객실 투숙객(`totalRoomGuests`) 대비 차량당 평균 탑승 인원(`avgGuestsPerStayCar`) 완제품 반환 요청 |
+| **P1 (완료)** | API 보강 | **[Ticket 81] `GET /api/v6/parking/time-analytics` 내 객실 숙박객·판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량(물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가** | [배포/검증완료] `stayNonGolf.roomVehicleComparison` 완제품(`2026-10`: `175실당 0.83대/실`, `판매객실당 1.46대/실`, `차량당 2.27명/대`) 배포 및 프론트엔드 직결 바인딩 완료 |
 
 ---
 

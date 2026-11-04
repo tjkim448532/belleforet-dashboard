@@ -312,13 +312,23 @@ export default function RevenueVarianceRca() {
                   </strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">· 식음 부착·대관 기저</span>
+                  <span className="text-[#6C7A73]">· 순수 식음 부착 단가</span>
                   <strong
                     className={
-                      Number(formula?.fnbAttachAndBanquetEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                      Number(formula?.pureFnbAttachEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
                     }
                   >
-                    {fmtSignedInt(formula?.fnbAttachAndBanquetEffectAmount, '원')}
+                    {fmtSignedInt(formula?.pureFnbAttachEffectAmount, '원')}
+                  </strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6C7A73]">· 연회·대관 기저 효과</span>
+                  <strong
+                    className={
+                      Number(formula?.banquetBaseEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                    }
+                  >
+                    {fmtSignedInt(formula?.banquetBaseEffectAmount, '원')}
                   </strong>
                 </div>
                 <div className="flex justify-between">
@@ -392,7 +402,8 @@ export default function RevenueVarianceRca() {
             <span className="text-[#6C7A73] font-semibold">경쟁사 만실 여부</span>
             <strong className="text-[#1B382E]">
               충청 4사 만실 {fmtInt(compMarket?.soldOutResortCount)}/{fmtInt(compMarket?.monitoredResortCount)}곳 (최저가{' '}
-              {fmtInt(compMarket?.competitorAvgMinPrice)}원, 30일비 {fmtPctOne(compMarket?.competitorPriceSurgeRatioPct, true)})
+              {fmtInt(compMarket?.competitorAvgMinPrice)}원, 동요일비{' '}
+              {fmtPctOne(compMarket?.competitorSameClassSurgeRatioPct ?? compMarket?.competitorPriceSurgeRatioPct, true)})
             </strong>
           </div>
 
@@ -458,6 +469,17 @@ export default function RevenueVarianceRca() {
                     <p className="text-[#6C7A73] leading-relaxed">{fmtText(h?.evidenceDetail)}</p>
                   </div>
                 ))}
+                {(parkingBehavior?.inRoomSelfDiningShiftNote || parkingBehavior?.concessionSubstitutionNote) && (
+                  <div className="rounded-lg bg-[#F4F3EE]/50 p-3 space-y-1">
+                    <div className="font-bold text-[#1B382E]">식음 유출 및 객실 내 포장취식 진단</div>
+                    {parkingBehavior?.inRoomSelfDiningShiftNote && (
+                      <p className="text-[#6C7A73] leading-relaxed">• {fmtText(parkingBehavior.inRoomSelfDiningShiftNote)}</p>
+                    )}
+                    {parkingBehavior?.concessionSubstitutionNote && (
+                      <p className="text-[#6C7A73] leading-relaxed">• {fmtText(parkingBehavior.concessionSubstitutionNote)}</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

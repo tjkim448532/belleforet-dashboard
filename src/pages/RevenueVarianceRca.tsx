@@ -190,8 +190,6 @@ export default function RevenueVarianceRca() {
   const catGolf = findCat('골프');
   const catFnb = findCat('식음');
   const catBanquet = findCat('대관');
-  const catLeisure = findCat('레저본부');
-  const catMoto = findCat('모토아레나');
 
   const segCondoRow = findSegRow('CONDO');
   const segLeisureRow = findSegRow('LEISURE');

@@ -660,21 +660,39 @@ export default function RevenueVarianceRca() {
                   </strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">볼륨 효과 기여액 (비중)</span>
+                  <span className="text-[#6C7A73]">볼륨 효과 기여액 (Shapley 대칭)</span>
                   <strong className="text-[#1B382E]">
-                    {fmtSignedInt(formula?.volumeEffectAmount, '원')} ({fmtPctOne(formula?.volumeEffectSharePct, true)})
+                    {fmtSignedInt(formula?.volumeEffectAmount, '원')} (Shapley{' '}
+                    {fmtSignedInt(formula?.shapleyVolumeEffectAmount, '원')})
                   </strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">단가 효과 기여액 (비중)</span>
+                  <span className="text-[#6C7A73]">단가·믹스 효과 (Shapley 대칭)</span>
                   <strong className="text-[#1B382E]">
-                    {fmtSignedInt(formula?.priceEffectAmount, '원')} ({fmtPctOne(formula?.priceEffectSharePct, true)})
+                    {fmtSignedInt(formula?.priceEffectAmount, '원')} (Shapley{' '}
+                    {fmtSignedInt(formula?.shapleyPriceEffectAmount, '원')})
                   </strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">└ 순수 단가 효과 (Pure Price)</span>
+                  <span className="text-[#6C7A73]">└ 순수 단가 효과 (Pure Price 합계)</span>
                   <strong className="text-emerald-700">
                     {fmtSignedInt(formula?.purePriceEffectAmount, '원')}
+                  </strong>
+                </div>
+                <div className="flex justify-between pl-2 text-[11px]">
+                  <span className="text-[#6C7A73]">· 3대 코어(콘도·골프·레저) 순수단가</span>
+                  <strong className="text-emerald-700">
+                    {fmtSignedInt(formula?.coreSegmentPurePriceEffectAmount, '원')}
+                  </strong>
+                </div>
+                <div className="flex justify-between pl-2 text-[11px]">
+                  <span className="text-[#6C7A73]">· 식음 부착률·대관 기저 효과</span>
+                  <strong
+                    className={
+                      Number(formula?.fnbAttachAndBanquetEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                    }
+                  >
+                    {fmtSignedInt(formula?.fnbAttachAndBanquetEffectAmount, '원')}
                   </strong>
                 </div>
                 <div className="flex justify-between">
@@ -878,22 +896,55 @@ export default function RevenueVarianceRca() {
                   </div>
                 </div>
 
-                {/* 객실당 평균 투숙 인원 (Party Size per Room) */}
-                <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div>
-                    <span className="text-[#6C7A73] mr-2">• 객실당 평균 투숙 인원(Party Size):</span>
-                    <strong className="text-[#1B382E]">
-                      금년 {fmtText(condoDetail?.tyAvgPartySizePerRoom)}명/실 vs 비교{' '}
-                      {fmtText(condoDetail?.lyAvgPartySizePerRoom)}명/실 (증감{' '}
-                      {condoDetail?.partySizeDiff !== undefined && condoDetail?.partySizeDiff !== null
-                        ? `${Number(condoDetail.partySizeDiff) > 0 ? '+' : ''}${condoDetail.partySizeDiff}명/실`
-                        : '-'}
-                      )
-                    </strong>
+                {/* 객실당 평균 투숙 인원 & 51평 2키 소진 열쇠 잠식 감시 (Key Yield) */}
+                <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10 space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[#6C7A73] mr-2">• 객실당 평균 투숙 인원(Party Size):</span>
+                      <strong className="text-[#1B382E]">
+                        금년 {fmtText(condoDetail?.tyAvgPartySizePerRoom)}명/실 vs 비교{' '}
+                        {fmtText(condoDetail?.lyAvgPartySizePerRoom)}명/실 (증감{' '}
+                        {condoDetail?.partySizeDiff !== undefined && condoDetail?.partySizeDiff !== null
+                          ? `${Number(condoDetail.partySizeDiff) > 0 ? '+' : ''}${condoDetail.partySizeDiff}명/실`
+                          : '-'}
+                        )
+                      </strong>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-[#F4F3EE] text-[#284F42] font-bold text-[11px]">
+                      인원밀도 상태: {fmtText(condoDetail?.partySizeStatus)}
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-[#F4F3EE] text-[#284F42] font-bold text-[11px]">
-                    인원밀도 상태: {fmtText(condoDetail?.partySizeStatus)}
-                  </span>
+
+                  <div className="pt-2 border-t border-[#1B382E]/10 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[#6C7A73] mr-2">• 물리 소진열쇠 1개당 객실순매출(Key Yield):</span>
+                      <strong className="text-[#1B382E]">
+                        금년 {fmtInt(condoDetail?.tyKeyYield)}원/키 vs 비교 {fmtInt(condoDetail?.lyKeyYield)}원/키 (
+                        <span className={Number(condoDetail?.keyYieldDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                          {fmtSignedInt(condoDetail?.keyYieldDiff, '원/키')} / {fmtPct(condoDetail?.keyYieldGrowthPct)}
+                        </span>
+                        )
+                      </strong>
+                    </div>
+                    {condoDetail?.keyCannibalizationStatus && (
+                      <span
+                        className={`px-2 py-0.5 rounded font-bold text-[11px] ${
+                          condoDetail.keyCannibalizationStatus === 'KEY_YIELD_DILUTION_BY_51P'
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}
+                      >
+                        열쇠 잠식 감시: {fmtText(condoDetail.keyCannibalizationStatus)}
+                      </span>
+                    )}
+                  </div>
+
+                  {condoDetail?.keyCannibalizationNote && (
+                    <div className="text-[11px] text-[#6C7A73] bg-[#F4F3EE]/70 p-2 rounded">
+                      <strong className="text-[#1B382E] mr-1">[51평 2키 소진 열쇠 잠식 해설]</strong>
+                      {fmtText(condoDetail.keyCannibalizationNote)}
+                    </div>
+                  )}
                 </div>
 
                 {/* 평형별(16평/35평/51평 로얄스위트 커넥팅) 믹스 테이블 */}
@@ -1392,25 +1443,28 @@ export default function RevenueVarianceRca() {
               </div>
 
               <div className="rounded-xl border border-[#1B382E]/15 bg-[#F4F3EE]/50 p-3.5">
-                <span className="text-[#6C7A73] font-semibold block">경쟁사 최저가 평균 vs 당사 ADR</span>
+                <span className="text-[#6C7A73] font-semibold block">경쟁사 최저가 (30일 평균 할증률)</span>
                 <strong className="text-lg font-black text-[#1B382E] block mt-1">
-                  {fmtInt(compMarket?.competitorAvgMinPrice)}원 vs {fmtInt(compMarket?.belleforetAdr)}원
+                  {fmtInt(compMarket?.competitorAvgMinPrice)}원 (30일 평균 {fmtInt(compMarket?.competitorAvg30dMinPrice)}원)
                 </strong>
-                <span className="text-[11px] text-emerald-700 font-bold">
-                  당사 가격경쟁력 격차: {fmtSignedInt(compMarket?.belleforetPriceGapVsCompMinWon, '원')} (16평{' '}
-                  {fmtInt(compMarket?.belleforetAdrByPyung?.adr16Pyung)}원)
+                <span className="text-[11px] text-[#284F42] font-bold block">
+                  30일 대비 할증률: {fmtPctOne(compMarket?.competitorPriceSurgeRatioPct, true)} (Yield-Up 감지:{' '}
+                  {compMarket?.competitorYieldUpDetected ? 'YES' : 'NO'}) | 당사 열쇠수익{' '}
+                  {fmtInt(compMarket?.belleforetKeyYield)}원/키
                 </span>
               </div>
 
               <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3.5">
-                <span className="text-rose-900 font-bold block">당일 골퍼 비숙박 이탈 (1·3부 유효타겟)</span>
+                <span className="text-rose-900 font-bold block">당일 골퍼 비숙박 이탈 (진성 전환 타겟)</span>
                 <strong className="text-lg font-black text-rose-700 block mt-1">
-                  전체 {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfNonStayExternalOrDayTripTeams)}팀 이탈 (
-                  {fmtPctOne(compMarket?.unconvertedInternalStayDemand?.golfNonStayRatePct)})
+                  진성 타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
+                  {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박
                 </strong>
                 <span className="text-[11px] text-rose-800 block">
-                  1·3부 유효타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.highPropensityStayTargetTeams ?? golfDetail?.highPropensityStayTargetTeams)}팀 중 비숙박 이탈{' '}
-                  <strong>{fmtInt(compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayTeams ?? golfDetail?.highPropensityNonStayTeams)}팀 ({fmtPctOne(compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayRatePct ?? golfDetail?.highPropensityNonStayRatePct)})</strong>
+                  전체 이탈 {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfNonStayExternalOrDayTripTeams)}팀 (
+                  {fmtPctOne(compMarket?.unconvertedInternalStayDemand?.golfNonStayRatePct)}) · 1·3부 타겟{' '}
+                  {fmtInt(compMarket?.unconvertedInternalStayDemand?.highPropensityStayTargetTeams)}팀 중{' '}
+                  {fmtInt(compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayTeams)}팀 이탈
                 </span>
               </div>
             </div>
@@ -1730,13 +1784,19 @@ export default function RevenueVarianceRca() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* 요인 1: 시계열 / 캘린더 (공휴일·적색일·주말 일수 추가) */}
+            {/* 요인 1: 시계열 / 캘린더 (6대 영업 국면 및 동적 임계치 추가) */}
             <div className="rounded-xl border border-[#1B382E]/15 p-4 bg-[#F4F3EE]/40 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-black text-sm text-[#1B382E]">
                   <Calendar size={16} className="text-[#284F42]" />
-                  ① 시계열 / 캘린더 요인 검증 (YoY · MoM · 공휴일 · 적색일 · 주말일수)
+                  ① 시계열 / 캘린더 & 6대 영업 국면 동적 임계치 검증
                 </span>
+                {fourFactors?.calendarFactor?.operatingRegimeCode && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#284F42] text-white text-[11px] font-bold">
+                    {fmtText(fourFactors.calendarFactor.operatingRegimeLabel)} (
+                    {fmtText(fourFactors.calendarFactor.operatingRegimeCode)})
+                  </span>
+                )}
               </div>
               <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10 space-y-2 text-xs">
                 <div className="flex justify-between">
@@ -1764,13 +1824,44 @@ export default function RevenueVarianceRca() {
                     {fmtInt(fourFactors?.calendarFactor?.lyWeekendDays)}일)
                   </strong>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">당기 공휴일명 / 비교기 공휴일명</span>
-                  <strong className="text-[#1B382E]">
-                    {fmtText(fourFactors?.calendarFactor?.tyHolidayNames)} /{' '}
-                    {fmtText(fourFactors?.calendarFactor?.lyHolidayNames)}
-                  </strong>
-                </div>
+                {fourFactors?.calendarFactor?.regimeDynamicThresholds && (
+                  <div className="pt-2 border-t border-[#1B382E]/10 space-y-1 bg-[#F4F3EE]/60 p-2.5 rounded">
+                    <div className="font-bold text-[#284F42] text-[11px]">
+                      [영업 국면({fmtText(fourFactors.calendarFactor.operatingRegimeLabel)}) 동적 기대 임계치 vs 당일 실측]
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-[#6C7A73]">물리열쇠 가동률 (기대 vs 실측 / 괴리)</span>
+                      <strong className="text-[#1B382E]">
+                        기대 {fmtPctOne(fourFactors.calendarFactor.regimeDynamicThresholds?.expectedKeyOccPct)} vs 실측{' '}
+                        {fmtPctOne(fourFactors.calendarFactor.regimeDynamicThresholds?.actualKeyOccPct)} (
+                        <span
+                          className={
+                            Number(fourFactors.calendarFactor.regimeDynamicThresholds?.keyOccVsRegimeGapPctp) < 0
+                              ? 'text-rose-600'
+                              : 'text-emerald-700'
+                          }
+                        >
+                          {fmtPctOne(fourFactors.calendarFactor.regimeDynamicThresholds?.keyOccVsRegimeGapPctp, true)}p
+                        </span>
+                        )
+                      </strong>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-[#6C7A73]">F&B 테이블 회전율 (기대 vs 실측)</span>
+                      <strong className="text-[#1B382E]">
+                        기대 {fmtText(fourFactors.calendarFactor.regimeDynamicThresholds?.expectedFnbTurnover)}회 vs 실측{' '}
+                        {fmtText(fourFactors.calendarFactor.regimeDynamicThresholds?.actualFnbTurnover)}회
+                      </strong>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-[#6C7A73]">숙박차량 외출 경보 임계치 vs 실측 외출률</span>
+                      <strong className="text-rose-700">
+                        임계치 {fmtPctOne(fourFactors.calendarFactor.regimeDynamicThresholds?.outingAlertThresholdPct)} vs 실측{' '}
+                        {fmtPctOne(fourFactors.calendarFactor.regimeDynamicThresholds?.actualStayOutingRatePct)}
+                      </strong>
+                    </div>
+                  </div>
+                )}
                 <div className="pt-1 border-t border-[#1B382E]/10 text-[#6C7A73]">
                   학사일정/시즌성 진단:{' '}
                   <strong className="text-[#1B382E]">

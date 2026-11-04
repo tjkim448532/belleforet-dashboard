@@ -671,15 +671,48 @@ export default function RevenueVarianceRca() {
                     {fmtSignedInt(formula?.priceEffectAmount, '원')} ({fmtPctOne(formula?.priceEffectSharePct, true)})
                   </strong>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6C7A73]">└ 순수 단가 효과 (Pure Price)</span>
+                  <strong className="text-emerald-700">
+                    {fmtSignedInt(formula?.purePriceEffectAmount, '원')}
+                  </strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6C7A73]">└ 부문 믹스 효과 (Visitor Mix)</span>
+                  <strong className={Number(formula?.visitorMixEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                    {fmtSignedInt(formula?.visitorMixEffectAmount, '원')}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#F4F3EE] p-3.5 text-xs flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <span className="font-bold text-[#284F42] mr-2">[1차 공식 분해 판정]</span>
-              <span className="font-semibold text-[#1B382E]">{fmtText(formula?.primaryDriverLabel)}</span>
+          <div className="rounded-xl bg-[#F4F3EE] p-3.5 text-xs space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span className="font-bold text-[#284F42] mr-2">[1차 공식 분해 판정]</span>
+                <span className="font-semibold text-[#1B382E]">{fmtText(formula?.primaryDriverLabel)}</span>
+              </div>
+              {formula?.simpsonParadoxStatus && (
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    formula.simpsonParadoxStatus === 'SEGMENT_MIX_DILUTION'
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : formula.simpsonParadoxStatus === 'SEGMENT_MIX_BOOST'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-white text-[#6C7A73] border border-[#1B382E]/15'
+                  }`}
+                >
+                  심슨의 역설 진단: {fmtText(formula.simpsonParadoxStatus)}
+                </span>
+              )}
             </div>
+            {formula?.simpsonParadoxNote && (
+              <div className="pt-2 border-t border-[#1B382E]/10 text-[#1B382E] leading-relaxed">
+                <strong className="text-[#8C6D46] mr-1.5">[심슨의 역설 2단 분해 (순수 단가 + 부문 믹스)]</strong>
+                {fmtText(formula.simpsonParadoxNote)}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -843,6 +876,24 @@ export default function RevenueVarianceRca() {
                       비교: {fmtText(condoDetail?.lyAvgBookingLeadDays)}일 / 취소 {fmtInt(condoDetail?.lyRoomCancelledCount)}건
                     </span>
                   </div>
+                </div>
+
+                {/* 객실당 평균 투숙 인원 (Party Size per Room) */}
+                <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div>
+                    <span className="text-[#6C7A73] mr-2">• 객실당 평균 투숙 인원(Party Size):</span>
+                    <strong className="text-[#1B382E]">
+                      금년 {fmtText(condoDetail?.tyAvgPartySizePerRoom)}명/실 vs 비교{' '}
+                      {fmtText(condoDetail?.lyAvgPartySizePerRoom)}명/실 (증감{' '}
+                      {condoDetail?.partySizeDiff !== undefined && condoDetail?.partySizeDiff !== null
+                        ? `${Number(condoDetail.partySizeDiff) > 0 ? '+' : ''}${condoDetail.partySizeDiff}명/실`
+                        : '-'}
+                      )
+                    </strong>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-[#F4F3EE] text-[#284F42] font-bold text-[11px]">
+                    인원밀도 상태: {fmtText(condoDetail?.partySizeStatus)}
+                  </span>
                 </div>
 
                 {/* 평형별(16평/35평/51평 로얄스위트 커넥팅) 믹스 테이블 */}
@@ -1198,6 +1249,26 @@ export default function RevenueVarianceRca() {
                   </div>
                 </div>
 
+                {/* 팀당 평균 내장 인원 & 1·3부 전박·후박 유효 타겟 이탈 */}
+                <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div>
+                    <span className="text-[#6C7A73] mr-1.5">• 팀당 평균 내장 인원(4인 기준):</span>
+                    <strong className="text-[#1B382E]">
+                      금년 {fmtText(golfDetail?.tyAvgPlayersPerTeam)}명/팀 vs 비교{' '}
+                      {fmtText(golfDetail?.lyAvgPlayersPerTeam)}명/팀 (증감{' '}
+                      {golfDetail?.playersPerTeamDiff !== undefined && golfDetail?.playersPerTeamDiff !== null
+                        ? `${Number(golfDetail.playersPerTeamDiff) > 0 ? '+' : ''}${golfDetail.playersPerTeamDiff}명/팀`
+                        : '-'}
+                      , {fmtText(golfDetail?.teamSizeStatus)})
+                    </strong>
+                  </div>
+                  <div className="text-rose-700 font-bold">
+                    • 1·3부 전박/후박 유효타겟({fmtInt(golfDetail?.highPropensityStayTargetTeams ?? compMarket?.unconvertedInternalStayDemand?.highPropensityStayTargetTeams)}팀) 중 비숙박 이탈:{' '}
+                    {fmtInt(golfDetail?.highPropensityNonStayTeams ?? compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayTeams)}팀 (
+                    {fmtPctOne(golfDetail?.highPropensityNonStayRatePct ?? compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayRatePct)})
+                  </div>
+                </div>
+
                 {/* 골프 수익원 3분할 (그린피 · 카트비 · 프로샵/클럽하우스 부대매출) */}
                 {golfDetail?.revenueComponents && (
                   <div className="bg-white rounded-lg border border-[#1B382E]/10 p-3 space-y-2 text-xs">
@@ -1332,15 +1403,14 @@ export default function RevenueVarianceRca() {
               </div>
 
               <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3.5">
-                <span className="text-rose-900 font-bold block">당일 골퍼 비숙박 이탈 (전환 타겟)</span>
+                <span className="text-rose-900 font-bold block">당일 골퍼 비숙박 이탈 (1·3부 유효타겟)</span>
                 <strong className="text-lg font-black text-rose-700 block mt-1">
-                  {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfNonStayExternalOrDayTripTeams)}팀 이탈 (
+                  전체 {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfNonStayExternalOrDayTripTeams)}팀 이탈 (
                   {fmtPctOne(compMarket?.unconvertedInternalStayDemand?.golfNonStayRatePct)})
                 </strong>
-                <span className="text-[11px] text-rose-800">
-                  완주 {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfVisitedTeams)}팀 중 콘도 숙박{' '}
-                  {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfAndRoomCrossStayTeams)}팀 · 4h+ 워크인차량{' '}
-                  {fmtInt(compMarket?.unconvertedInternalStayDemand?.longDwell4hPlusWalkinCars)}대
+                <span className="text-[11px] text-rose-800 block">
+                  1·3부 유효타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.highPropensityStayTargetTeams ?? golfDetail?.highPropensityStayTargetTeams)}팀 중 비숙박 이탈{' '}
+                  <strong>{fmtInt(compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayTeams ?? golfDetail?.highPropensityNonStayTeams)}팀 ({fmtPctOne(compMarket?.unconvertedInternalStayDemand?.highPropensityNonStayRatePct ?? golfDetail?.highPropensityNonStayRatePct)})</strong>
                 </span>
               </div>
             </div>
@@ -1513,9 +1583,32 @@ export default function RevenueVarianceRca() {
                 </div>
               )}
 
-              <div className="rounded-lg bg-[#F4F3EE] p-3 text-xs text-[#1B382E] leading-relaxed">
-                <strong className="text-[#284F42] mr-1">[주차·동선 진단]</strong>
-                {fmtText(parkingBehavior?.behaviorDiagnosisNote)}
+              <div className="rounded-lg bg-[#F4F3EE] p-3 text-xs text-[#1B382E] leading-relaxed space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <strong className="text-[#284F42] mr-1">[주차·동선 진단]</strong>
+                    {fmtText(parkingBehavior?.behaviorDiagnosisNote)}
+                  </div>
+                  {parkingBehavior?.outingCauseCode && (
+                    <span
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold shrink-0 ${
+                        parkingBehavior.outingCauseCode === 'VOLUNTARY_OUTING_LOSS'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : parkingBehavior.outingCauseCode === 'FNB_CAPACITY_SHORTAGE'
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-white text-[#6C7A73] border border-[#1B382E]/15'
+                      }`}
+                    >
+                      외출 원인 코드: {fmtText(parkingBehavior.outingCauseCode)}
+                    </span>
+                  )}
+                </div>
+                {parkingBehavior?.concessionSubstitutionNote && (
+                  <div className="pt-1.5 border-t border-[#1B382E]/10 text-[#1B382E]">
+                    <strong className="text-rose-700 mr-1">[직영 식음 vs 입점 수수료매장(CU·투썸·BHC) 대체소비 검증]</strong>
+                    {fmtText(parkingBehavior.concessionSubstitutionNote)}
+                  </div>
+                )}
               </div>
             </div>
 

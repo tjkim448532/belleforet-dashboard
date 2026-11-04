@@ -151,7 +151,6 @@ export function App() {
                   <Route path="synergy/forecast" element={<TomorrowRevenueForecast />} />
                   <Route path="synergy-forecast" element={<TomorrowRevenueForecast />} />
                   <Route path="revenue-variance-rca" element={<RevenueVarianceRca />} />
-                  <Route path="synergy/revenue-variance-rca" element={<RevenueVarianceRca />} />
                   <Route path="online-members" element={<OnlineMembers />} />
                 </Route>
 

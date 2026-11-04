@@ -45,6 +45,7 @@ import StrategicSimulator from './pages/StrategicSimulator';
 import WeatherSalesCorrelation from './pages/WeatherSalesCorrelation';
 import TomorrowRevenueForecast from './pages/TomorrowRevenueForecast';
 import OutsourcedFnbDashboard from './pages/OutsourcedFnbDashboard';
+import RevenueVarianceRca from './pages/RevenueVarianceRca';
 import GroupVenuePreferenceSection from './components/dashboard/GroupVenuePreferenceSection';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -149,6 +150,8 @@ export function App() {
                   <Route path="synergy-weather" element={<WeatherSalesCorrelation />} />
                   <Route path="synergy/forecast" element={<TomorrowRevenueForecast />} />
                   <Route path="synergy-forecast" element={<TomorrowRevenueForecast />} />
+                  <Route path="revenue-variance-rca" element={<RevenueVarianceRca />} />
+                  <Route path="synergy/revenue-variance-rca" element={<RevenueVarianceRca />} />
                   <Route path="online-members" element={<OnlineMembers />} />
                 </Route>
 

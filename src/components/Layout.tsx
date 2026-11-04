@@ -5,7 +5,7 @@ import {
   LogOut, Menu, X, LayoutDashboard, ShieldCheck, TrendingUp,
   ChevronDown, ChevronRight, Hotel, Ticket, Key, Flag, Database, MonitorPlay,
   Briefcase, Sparkles, Users, CloudRain, Pin, PanelLeftClose, PanelLeftOpen, Tag,
-  Palette, Package, Gift, Car
+  Palette, Package, Gift, Car, Activity
 } from 'lucide-react';
 
 export default function Layout() {
@@ -83,6 +83,7 @@ export default function Layout() {
   // 전사 공통 대시보드 (모든 로그인 임직원 공통 노출)
   const commonMenuItems = [
     { name: '전사 종합 매출 & TRevPAR', path: '/', icon: <LayoutDashboard size={20} /> },
+    { name: '매출 증감 원인 분석 (MECE RCA)', path: '/revenue-variance-rca', icon: <Activity size={20} /> },
     { name: '부문별 주간정산 & 요일별 매출', path: '/matrix-weekly', icon: <Database size={20} /> },
     { name: '영업장별 월별 추이 & 시즌성', path: '/facility-trend', icon: <TrendingUp size={20} /> },
     { name: '숙박(골프제외)·나들이 입출차 & 외출 분석', path: '/parking-time-analytics', icon: <Car size={20} /> },
@@ -617,6 +618,19 @@ export default function Layout() {
                 >
                   <TrendingUp size={14} className="shrink-0 text-white" />
                   당일·익일 예상 매출 (예약·날씨 연동)
+                </NavLink>
+
+                <NavLink
+                  to="/synergy/revenue-variance-rca"
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                    isActive || window.location.pathname === '/revenue-variance-rca'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Activity size={14} className="shrink-0 text-[#CAAC86]" />
+                  매출 증감 원인 분석 (MECE RCA)
                 </NavLink>
               </div>
             )}

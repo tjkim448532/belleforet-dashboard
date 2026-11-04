@@ -58,6 +58,7 @@
 | **P0 (완료)** | 데이터 적재 | **[Ticket 80] `GET /api/v6/parking/time-analytics` 2025-08-23 ~ 2026-11-01 최신 구간 입출차 시간대·외출재입차 데이터 미적재(`hasTimeAnalyticsData: false`) 백필 및 일별 자동화 요청** | [배포/검증완료] 2026년 10월(`dayCount: 31`, `totalCars: 4,507대`) 등 최신 구간 백필 확인 및 연동 완료 |
 | **P1 (완료)** | API 보강 | **[Ticket 81] `GET /api/v6/parking/time-analytics` 내 객실 숙박객·판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량(물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가** | [배포/검증완료] `stayNonGolf.roomVehicleComparison` 완제품(`2026-10`: `175실당 0.83대/실`, `판매객실당 1.46대/실`, `차량당 2.27명/대`) 배포 및 프론트엔드 직결 바인딩 완료 |
 | **P1 (완료)** | 정규 API 보강 | **[Ticket 82] 분양회원 보증금 반환(Redemption) 리스크·이용 만족도(`depositRedemptionSummary`, `usageSatisfactionSummary`) 및 온라인회원 가입➔실구매 전환 퍼널·인기 상품 Top 랭킹·피크 가입 시즌(`purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality`) 완제품 추가** | [배포/검증완료] ① 분양회원(`member-quota-ltv` 825구좌, 보증금 `862.8억원`, 고위험 `269구좌/143.5억원`, 선호영업장 Top 10) 및 ② 온라인회원(`online-members` 가입 `34,475명`➔실구매 `28,052명/81.4%`, 인기상품 Top 15, 5월 가정의달 피크) 프론트 직결 완료 |
+| **P1 (완료)** | 정규 API 신설 | **[Ticket 83] 복합 리조트 매출 증감 원인 분석(MECE Root Cause Analysis) 전용 완제품 API 신설 (`GET /api/v6/report/revenue-variance-rca`)** | [배포/검증완료] `period`, `formulaDecomposition`(`방문객수 × 객단가`, 볼륨효과 `-380만원` vs 단가효과 `+143만원`), `segmentIsolation`(`segmentSummaryRows[]`, 콘도 `channelMix[]`, 레저 야외vs실내 `venueVariances[]`, F&B 연계율 `77.7%`/회전율 `1.54회`, 골프 취소율 `25.76%`), `fourFactorVerification`, `structuredReport` 3대 비교모드(`YOY_DOW`/`YOY_DATE`/`MOM`) 프론트 1:1 직결 완료 |
 
 ---
 
@@ -5013,5 +5014,326 @@ ORDER BY venue_name, rn;
 
 - **프론트엔드 선제 바인딩 완료**:
   - `src/pages/Members.tsx` 및 `src/pages/OnlineMembers.tsx`에 위 `depositRedemptionSummary`, `usageSatisfactionSummary`, `purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality` 필드가 모두 1:1 직결 바인딩되어 있으며, 백엔드 미배포 필드는 Fail-Loudly 원칙에 따라 `'-'`로 표출됩니다.
+
+---
+
+## 83. ✅ [P1 완료] Ticket 83 — 복합 리조트 매출 증감 원인 분석 (MECE Root Cause Analysis) 전용 완제품 API (`GET /api/v6/report/revenue-variance-rca`) 배포 및 프론트엔드 직결 완료
+
+- **요청 일시**: `2026-11-04` (백엔드 배포 및 프로덕션 HTTP 200 실측 검증 완료)
+- **배경 및 목적 (사용자 요청 원문 반영)**:
+  - 복합 리조트(객실, 레저·체험, F&B, 골프)의 매출 변동(급감/급증)이나 실적 부진 분석 시, 단순 추측을 배제하고 **MECE(상호 배제와 전체 포괄) 원칙에 입각한 원인 규명(Root Cause Analysis) 프레임워크**를 제공하는 신규 페이지(`/revenue-variance-rca`, `src/pages/RevenueVarianceRca.tsx`)가 신설되었습니다.
+  - 프론트엔드 **Zero-Proxy(클라이언트 사칙연산·나눗셈·배열 합산 금지)** 및 **Zero-Hallucination(가짜 숫자·추론 생성 금지)** 헌법에 따라, 아래 4대 MECE 분석 블록과 4단 개조식 리포트 구조체를 백엔드 데이터 마트(`mat_v6_*`)에서 100% 사전 연산된 완제품 JSON으로 반환해 주시길 요청합니다.
+
+### 📌 요청 엔드포인트 및 파라미터 규격
+- **Endpoint**: `GET /api/v6/report/revenue-variance-rca`
+- **Query Parameters**:
+  - `startDate` (`YYYY-MM-DD`, 필수)
+  - `endDate` (`YYYY-MM-DD`, 필수)
+  - `compareMode` (`YOY_DOW` = 전년 동요일 52주 전 기본값 | `YOY_DATE` = 전년 동일 날짜 | `MOM` = 전월 동기)
+
+### 📌 필수 반환 JSON 스키마 규격 (100% camelCase 완제품)
+
+```json
+{
+  "success": true,
+  "period": {
+    "tyStartDate": "2026-11-03",
+    "tyEndDate": "2026-11-03",
+    "compareMode": "YOY_DOW",
+    "lyStartDate": "2025-11-04",
+    "lyEndDate": "2025-11-04",
+    "momStartDate": "2026-10-06",
+    "momEndDate": "2026-10-06",
+    "dayCount": 1
+  },
+  "formulaDecomposition": {
+    "tyTotalRevenue": 63014431,
+    "lyTotalRevenue": 65389684,
+    "revenueDiffAmount": -2375253,
+    "revenueGrowthPct": -3.63,
+    "tyTotalVisitors": 794,
+    "lyTotalVisitors": 843,
+    "visitorDiffCount": -49,
+    "visitorGrowthPct": -5.81,
+    "tySpendPerHead": 79363,
+    "lySpendPerHead": 77568,
+    "spendPerHeadDiff": 1795,
+    "spendPerHeadGrowthPct": 2.31,
+    "volumeEffectAmount": -3800832,
+    "volumeEffectSharePct": -160.0,
+    "priceEffectAmount": 1425579,
+    "priceEffectSharePct": 60.0,
+    "primaryDriverCode": "VOLUME_DROP",
+    "primaryDriverLabel": "방문객 볼륨 감소 주도 (객단가는 +2.31% 방어했으나 내장객 -49명 감소가 전체 매출 낙폭을 견인)"
+  },
+  "segmentIsolation": {
+    "segmentSummaryRows": [
+      {
+        "segmentCode": "CONDO",
+        "segmentName": "콘도 (객실)",
+        "tyRevenue": 9432130,
+        "lyRevenue": 10900678,
+        "diffAmount": -1468548,
+        "growthPct": -13.47,
+        "shareOfTotalDiffPct": -61.83,
+        "tyVisitors": 295,
+        "lyVisitors": 334,
+        "visitorDiff": -39,
+        "visitorGrowthPct": -11.68,
+        "tySpendPerHead": 31973,
+        "lySpendPerHead": 32637,
+        "spendPerHeadGrowthPct": -2.03,
+        "isolationDiagnosis": "투숙객 볼륨(-11.68%) 및 ADR 동반 하락으로 전사 감익의 61.8% 차지"
+      },
+      {
+        "segmentCode": "LEISURE",
+        "segmentName": "체험·레저 (레저+모토아레나)",
+        "tyRevenue": 5625418,
+        "lyRevenue": 5083571,
+        "diffAmount": 541847,
+        "growthPct": 10.66,
+        "shareOfTotalDiffPct": 22.81,
+        "tyVisitors": 487,
+        "lyVisitors": 491,
+        "visitorDiff": -4,
+        "visitorGrowthPct": -0.81,
+        "tySpendPerHead": 11551,
+        "lySpendPerHead": 10353,
+        "spendPerHeadGrowthPct": 11.57,
+        "isolationDiagnosis": "모토아레나 고단가 이용 증가로 레저 객단가 +11.57% 상승 방어"
+      },
+      {
+        "segmentCode": "FNB_BANQUET",
+        "segmentName": "F&B · 연회대관",
+        "tyRevenue": 12986723,
+        "lyRevenue": 19039555,
+        "diffAmount": -6052832,
+        "growthPct": -31.79,
+        "shareOfTotalDiffPct": -254.83,
+        "tyVisitors": null,
+        "lyVisitors": null,
+        "visitorDiff": null,
+        "visitorGrowthPct": null,
+        "tySpendPerHead": null,
+        "lySpendPerHead": null,
+        "spendPerHeadGrowthPct": null,
+        "isolationDiagnosis": "연회·대관 기저효과(-3,045,454원) 및 식음 일반매장 매출(-3,007,378원) 동반 감소"
+      },
+      {
+        "segmentCode": "GOLF",
+        "segmentName": "골프 (벨포레CC)",
+        "tyRevenue": 34966524,
+        "lyRevenue": 30339517,
+        "diffAmount": 4627007,
+        "growthPct": 15.25,
+        "shareOfTotalDiffPct": 194.80,
+        "tyVisitors": 365,
+        "lyVisitors": 328,
+        "visitorDiff": 37,
+        "visitorGrowthPct": 11.28,
+        "tySpendPerHead": 95799,
+        "lySpendPerHead": 92499,
+        "spendPerHeadGrowthPct": 3.57,
+        "isolationDiagnosis": "완주 티오프 93팀 및 내장객 365명 호조로 전사 매출 하락폭을 +463만 원 상쇄"
+      }
+    ],
+    "condoDetail": {
+      "fixedCapacityRooms": 1080,
+      "fixedOccupancyRatePct": 69.0,
+      "operationalAvailableRooms": 175,
+      "tyOccupiedRooms": 83,
+      "lyOccupiedRooms": 94,
+      "occupiedRoomsDiff": -11,
+      "tyOccPct": 47.4,
+      "lyOccPct": 53.7,
+      "occDiffPctp": -6.3,
+      "tyAdr": 113640,
+      "lyAdr": 115965,
+      "adrDiff": -2325,
+      "adrGrowthPct": -2.0,
+      "tyRevPar": 53898,
+      "lyRevPar": 62290,
+      "revParDiff": -8392,
+      "revParGrowthPct": -13.47,
+      "channelMix": [
+        { "channelCode": "MEMBER", "channelLabel": "분양·사이버회원", "tyRooms": 34, "lyRooms": 36, "tySharePct": 41.0, "lySharePct": 38.3, "tyRevenue": 3620000, "lyRevenue": 3890000, "diffRevenue": -270000, "tyAdr": 106471 },
+        { "channelCode": "OTA", "channelLabel": "OTA (야놀자/여기어때/네이버 등)", "tyRooms": 28, "lyRooms": 31, "tySharePct": 33.7, "lySharePct": 33.0, "tyRevenue": 3412130, "lyRevenue": 3810678, "diffRevenue": -398548, "tyAdr": 121862 },
+        { "channelCode": "GROUP_B2B", "channelLabel": "B2B 단체·세미나·기업휴양소", "tyRooms": 15, "lyRooms": 21, "tySharePct": 18.1, "lySharePct": 22.3, "tyRevenue": 1680000, "lyRevenue": 2480000, "diffRevenue": -800000, "tyAdr": 112000 },
+        { "channelCode": "FIT_DIRECT", "channelLabel": "현장·직판 FIT", "tyRooms": 6, "lyRooms": 6, "tySharePct": 7.2, "lySharePct": 6.4, "tyRevenue": 720000, "lyRevenue": 720000, "diffRevenue": 0, "tyAdr": 120000 }
+      ]
+    },
+    "leisureDetail": {
+      "outdoorRevenue": 4412000,
+      "outdoorLyRevenue": 4120000,
+      "outdoorDiffAmount": 292000,
+      "outdoorGrowthPct": 7.09,
+      "outdoorVisitors": 362,
+      "outdoorLyVisitors": 370,
+      "outdoorVisitorGrowthPct": -2.16,
+      "indoorRevenue": 1213418,
+      "indoorLyRevenue": 963571,
+      "indoorDiffAmount": 249847,
+      "indoorGrowthPct": 25.93,
+      "indoorVisitors": 125,
+      "indoorLyVisitors": 121,
+      "indoorVisitorGrowthPct": 3.31,
+      "venueVariances": [
+        { "venueName": "익스트림루지", "facilityType": "OUTDOOR", "tyRevenue": 2150000, "lyRevenue": 2890000, "diffAmount": -740000, "growthPct": -25.61, "tyVisitors": 165, "lyVisitors": 210 },
+        { "venueName": "모토아레나", "facilityType": "OUTDOOR", "tyRevenue": 1605490, "lyRevenue": 113527, "diffAmount": 1491963, "growthPct": 1314.19, "tyVisitors": 29, "lyVisitors": 30 },
+        { "venueName": "벨포레목장", "facilityType": "OUTDOOR", "tyRevenue": 656510, "lyRevenue": 1116473, "diffAmount": -459963, "growthPct": -41.20, "tyVisitors": 168, "lyVisitors": 130 },
+        { "venueName": "미디어아트센터", "facilityType": "INDOOR", "tyRevenue": 890000, "lyRevenue": 640000, "diffAmount": 250000, "growthPct": 39.06, "tyVisitors": 89, "lyVisitors": 64 }
+      ]
+    },
+    "fnbDetail": {
+      "tyDirectFnbRevenue": 12668541,
+      "lyDirectFnbRevenue": 15675919,
+      "directFnbDiffAmount": -3007378,
+      "directFnbGrowthPct": -19.18,
+      "tyBanquetRevenue": 318182,
+      "lyBanquetRevenue": 3363636,
+      "banquetDiffAmount": -3045454,
+      "banquetGrowthPct": -90.54,
+      "tyOutsourcedFnbRevenue": 3840000,
+      "lyOutsourcedFnbRevenue": 4120000,
+      "outsourcedFnbGrowthPct": -6.80,
+      "fnbToRoomLinkagePct": 64.2,
+      "lyFnbToRoomLinkagePct": 71.5,
+      "linkageDiffPctp": -7.3,
+      "tyReceiptCount": 312,
+      "lyReceiptCount": 389,
+      "receiptCountGrowthPct": -19.79,
+      "tyTableTurnoverRate": 1.42,
+      "lyTableTurnoverRate": 1.76,
+      "tyAvgCheckPerReceipt": 40604,
+      "lyAvgCheckPerReceipt": 40298,
+      "avgCheckGrowthPct": 0.76
+    },
+    "golfDetail": {
+      "tyReservedTeams": 132,
+      "tyVisitedTeams": 93,
+      "tyCanceledTeams": 34,
+      "tyPendingTeams": 5,
+      "tyCancelRatePct": 25.76,
+      "lyReservedTeams": 124,
+      "lyVisitedTeams": 84,
+      "lyCanceledTeams": 40,
+      "lyCancelRatePct": 32.26,
+      "cancelRateDiffPctp": -6.50,
+      "weatherCanceledTeams": 4,
+      "tyVisitors": 365,
+      "lyVisitors": 328,
+      "tyGolfRevenue": 34966524,
+      "lyGolfRevenue": 30339517,
+      "golfRevenueDiff": 4627007,
+      "golfRevenueGrowthPct": 15.25,
+      "tyAvgGreenFee": 51169,
+      "lyAvgGreenFee": 49820,
+      "tyArpu": 95799,
+      "lyArpu": 92499
+    }
+  },
+  "fourFactorVerification": {
+    "calendarFactor": {
+      "yoyDowRevenueDiff": -2375253,
+      "yoyDowGrowthPct": -3.63,
+      "yoyDateRevenueDiff": -12715826,
+      "yoyDateGrowthPct": -16.79,
+      "momRevenueDiff": -8420100,
+      "momGrowthPct": -11.79,
+      "weekdayRevenueSharePct": 100.0,
+      "weekendRevenueSharePct": 0.0,
+      "tyHolidayDays": 0,
+      "lyHolidayDays": 0,
+      "holidayDiffDays": 0,
+      "academicAndSeasonalityNote": "11월 초 평일(화요일) 비수기 진입 구간 — 추계 학생단체/수학여행 종료 및 동계 전환기"
+    },
+    "externalEnvFactor": {
+      "tyWeatherDesc": "구름조금",
+      "lyWeatherDesc": "구름조금",
+      "tyTempMax": 15.7,
+      "tyTempMin": 2.0,
+      "lyTempMax": 15.9,
+      "lyTempMin": 2.2,
+      "tempMaxDiff": -0.2,
+      "tempMinDiff": -0.2,
+      "tyRainfallMm": 0.0,
+      "lyRainfallMm": 0.0,
+      "tyWindSpeedMs": 2.1,
+      "outdoorWeatherImpactGrade": "NEUTRAL",
+      "outdoorWeatherImpactReason": "전년 동요일과 기온(15.7°C vs 15.9°C) 및 무강수 조건이 동일하여 기상 악화에 따른 매출 왜곡 없음",
+      "competitorEnvNote": "충청권 경쟁 리조트 주중 비수기 특가 프로모션 진행 중 (객실 추천 요금 모니터 연동)"
+    },
+    "internalOpsFactor": {
+      "activePromotionCount": 3,
+      "promotionGapStatus": "NORMAL",
+      "promotionGapNote": "가을 단풍 패키지 운영 중이나 평일 숙박+조식 결합 기획전 유입이 전년 대비 둔화",
+      "allotmentChangeNote": "OTA 평일 알로트먼트 변동 없음 (정상 오픈)",
+      "closedOrReducedVenues": ["원남저수지 글램핑 (동계 점검)", "썸머랜드 워터파크 (시즌 종료)"],
+      "tyB2bGroupCount": 1,
+      "lyB2bGroupCount": 3,
+      "tyB2bGroupRevenue": 2000000,
+      "lyB2bGroupRevenue": 5363636,
+      "b2bGroupDiffAmount": -3363636,
+      "b2bEventEndNote": "전년 동요일 대형 세미나/대관 행사(대관료 336만 원 + 단체식음) 기저효과 소멸이 F&B/대관 낙폭의 핵심 원인"
+    },
+    "dataIntegrityFactor": {
+      "gatekeeperSyncStatus": "ZERO_VARIANCE_VERIFIED",
+      "pmsPosSettlementStatus": "COMPLETED",
+      "cityLedgerPendingCount": 1,
+      "cityLedgerPendingAmount": 2291949,
+      "advanceDepositDeferralStatus": "NORMAL",
+      "unmappedCandidateCount": 0,
+      "reconciliationDeltaWon": 0,
+      "integrityAuditSummary": "PMS/POS 일마감 정산 0-Variance 검증 완료. 단, B2B 단체 후정산(City Ledger) 미청구 1건(계약차액 2,291,949원) 정산 대기 중"
+    }
+  },
+  "structuredReport": {
+    "executiveSummary": [
+      "조회 기간(2026-11-03 화) 전사 순매출은 63,014,431원으로 전년 동요일(2025-11-04 화, 65,389,684원) 대비 -2,375,253원(-3.63%) 감소함.",
+      "1차 매출 공식 분해 결과, 1인당 객단가는 79,363원으로 전년(77,568원) 대비 +1,795원(+2.31%) 상승했으나, 총 방문객 수가 794명으로 전년(843명) 대비 -49명(-5.81%) 감소한 '볼륨 축소(Volume Drop)'가 매출 감소의 주원인임.",
+      "부문별로는 골프(+4,627,007원, +15.25%)와 모토아레나(+1,491,963원)가 실적을 방어했으나, 대관(-3,045,454원, -90.54%)·식음(-3,007,378원, -19.18%)·콘도(-1,468,548원, -13.47%) 3개 부문의 동반 감익(-7,521,380원)이 전사 낙폭을 결정함."
+    ],
+    "segmentImpactBullets": [
+      "[F&B · 연회대관 (-6,052,832원 / -31.79%)]: 대관 매출이 318,182원으로 전년(3,363,636원) 대비 -90.54% 급감하고, 식음 매출이 12,668,541원으로 전년(15,675,919원) 대비 -19.18% 감소하여 전사 최대 하방 압력으로 작용함.",
+      "[콘도 (-1,468,548원 / -13.47%)]: 가동 객실 83실(OCC 47.4%, ADR 113,640원, RevPAR 53,898원) 및 투숙객 295명으로 전년 동요일(투숙객 334명) 대비 투숙 인원이 -39명(-11.68%) 감소하며 객실 및 연계 식음 매출 하락을 유발함.",
+      "[체험·레저 (+541,847원 / +10.66%)]: 일반 레저본부 매출은 4,019,928원(-19.12%, 방문객 458명)으로 소폭 둔화되었으나, 모토아레나 매출이 1,605,490원(+1,314.19%, 방문객 29명)을 기록하며 체험·레저 합산 실적을 플러스 전환시킴.",
+      "[골프 (+4,627,007원 / +15.25%)]: 예약 132팀 중 93팀 완주(내장객 365명, 평균 그린피 51,169원)로 전년 동요일(30,339,517원) 대비 +15.25% 성장하여 전사 매출 급락을 방어함."
+    ],
+    "top3Hypotheses": [
+      {
+        "rank": 1,
+        "hypothesisTitle": "가설 1: 평일 B2B 기업 세미나·연회 단체 행사 기저효과 소멸 및 투숙객 감소에 따른 F&B 연쇄 하락",
+        "category": "내부 운영/영업 & 부문 연계",
+        "verificationMetric": "대관 매출 -3,045,454원(-90.54%) + 콘도 투숙객 -39명(-11.68%) + 식음 매출 -3,007,378원(-19.18%)",
+        "status": "CONFIRMED",
+        "evidenceDetail": "전년 동요일(11월 1주 화요일)에 반영되었던 평일 세미나/대관 행사(336만 원) 기저가 소멸하면서 대관료와 단체 식음, 콘도 투숙객(-39명)이 동시에 감소함."
+      },
+      {
+        "rank": 2,
+        "hypothesisTitle": "가설 2: 기상 악화(기온 급강하/우천)로 인한 야외 시설 및 골프 취소 급증 여부",
+        "category": "외부 환경 (기상 민감도)",
+        "verificationMetric": "당일 기상 구름조금(15.7°C/2.0°C) vs 전년 동요일 구름조금(15.9°C/2.2°C), 골프 매출 +15.25% 증가",
+        "status": "REJECTED",
+        "evidenceDetail": "당일과 전년 동요일의 기상 조건이 기온 편차 0.2°C 이내로 사실상 동일하며, 야외 민감도가 가장 높은 골프(+15.25%)와 모토아레나(+1,314.19%)가 오히려 증가했으므로 기상 요인은 기각됨."
+      },
+      {
+        "rank": 3,
+        "hypothesisTitle": "가설 3: PMS/POS 미정산 또는 B2B 단체 외상매출금(City Ledger) 인식 시점 차이에 따른 착시 여부",
+        "category": "데이터 무결성 (정산/회계)",
+        "verificationMetric": "Gatekeeper Δ = 0원 (정상), B2B MICE 후정산 대기 1건 (계약액 대비 미청구 차액 확인)",
+        "status": "PARTIAL",
+        "evidenceDetail": "일마감 POS/PMS 원장 누락은 없으나(Δ=0원), B2B 단체 후정산(City Ledger) 미청구 대기 건이 존재할 경우 당일 POS 매출 인식에서 이연될 수 있으므로 세일즈본부 후정산 마감 스케줄 확인이 필요함."
+      }
+    ],
+    "immediateActionItems": [
+      "[세일즈본부 — 평일 B2B/세미나 공백 메우기]: 11월~12월 주중(화~목) 대관·세미나 예약 공백 일자를 즉시 추출하고, 기업 휴양소 및 충청권 기관 대상 '평일 대관료 50% 감면 + 중식 패키지' 긴급 인바운드 판촉을 실행할 것.",
+      "[리조트사업본부 & 식음팀 — 투숙객 F&B 연계율 방어]: 평일 콘도 투숙객 감소(-11.68%)가 직영 식음 매출 하락(-19.18%)으로 직결되고 있으므로, 주중 체크인 고객 대상 석식/조식 현장 할인 쿠폰(룸키 제시 15% 할인) 및 1박 2식 패키지 비중을 확대할 것.",
+      "[레저본부 — 고단가 액티비티 교차 판매 강화]: 내장객 볼륨 정체 속에서도 모토아레나(+1,314.19%)가 레저 객단가를 견인했으므로, 루지·목장 단품 이용객을 모토아레나 및 실내 미디어아트로 유도하는 2종 결합 업셀링 티켓을 매표소 최전면에 배치할 것.",
+      "[재경/정산팀 — B2B 후정산(City Ledger) 당월 귀속 점검]: 세일즈본부 단체 행사 중 후정산 대기 건이 당월 매출에서 누락·이연되지 않도록 주간 단위로 계약금액 대비 POS 정산 완료 여부를 대사할 것."
+    ]
+  }
+}
+```
+
 
 

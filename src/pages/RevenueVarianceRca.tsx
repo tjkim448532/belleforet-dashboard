@@ -6,12 +6,13 @@ import {
   RefreshCw,
   TrendingUp,
   TrendingDown,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Target,
   FileCheck2,
-  Info
+  Info,
+  Ticket,
+  Utensils,
+  Flag,
+  Hotel
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -51,24 +52,9 @@ const fmtText = (val: unknown): string => {
   return String(val);
 };
 
-const getStatusBadge = (status: unknown) => {
-  const s = String(status || '');
-  if (s === 'CONFIRMED') {
-    return { label: '채택 (핵심 원인)', cls: 'bg-rose-600 text-white' };
-  }
-  if (s === 'PARTIAL') {
-    return { label: '부분 채택 (복합 요인)', cls: 'bg-amber-500 text-white' };
-  }
-  if (s === 'REJECTED') {
-    return { label: '기각 (영향 없음)', cls: 'bg-slate-200 text-slate-700' };
-  }
-  return { label: fmtText(status), cls: 'bg-slate-100 text-slate-700' };
-};
-
 export default function RevenueVarianceRca() {
   const { startDate, endDate } = useDate();
   const [compareMode, setCompareMode] = useState<'YOY_DOW' | 'YOY_DATE' | 'MOM'>('YOY_DOW');
-  const [showMoreDetails, setShowMoreDetails] = useState<boolean>(false);
 
   const [rcaData, setRcaData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -105,26 +91,25 @@ export default function RevenueVarianceRca() {
   const fnbDetail = segIsolation?.fnbDetail || null;
   const leisureDetail = segIsolation?.leisureDetail || null;
 
+  const venueVariances: any[] = Array.isArray(leisureDetail?.venueVariances)
+    ? leisureDetail.venueVariances
+    : [];
+  const channelMix: any[] = Array.isArray(condoDetail?.channelMix)
+    ? condoDetail.channelMix
+    : [];
+  const golfRevComp = golfDetail?.revenueComponents || null;
+
   const fourFactors = rcaData?.fourFactorVerification || null;
   const calFactor = fourFactors?.calendarFactor || null;
-  const weatherFactor = fourFactors?.weatherFactor || null;
+  const extWeather = fourFactors?.externalEnvFactor || null;
   const compMarket = fourFactors?.competitorMarketFactor || null;
   const parkingBehavior = fourFactors?.parkingAndBehaviorFactor || null;
-  const integrityFactor = fourFactors?.dataIntegrityFactor || null;
-
-  const structuredReport = rcaData?.structuredReport || null;
-  const top3Hypotheses: any[] = Array.isArray(structuredReport?.top3Hypotheses)
-    ? structuredReport.top3Hypotheses
-    : [];
-  const immediateActionItems: string[] = Array.isArray(structuredReport?.immediateActionItems)
-    ? structuredReport.immediateActionItems
-    : [];
 
   const isNegative = Number(formula?.revenueDiffAmount) < 0;
 
   return (
     <div className="min-h-screen bg-[#F4F3EE] text-[#1B382E] p-4 md:p-6 lg:p-8 space-y-5 max-w-6xl mx-auto">
-      {/* 상단 헤더 & 비교 기준 선택 */}
+      {/* 상단 날짜 및 비교 기준 선택 */}
       <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -133,10 +118,9 @@ export default function RevenueVarianceRca() {
             </h1>
             {period && (
               <p className="text-xs md:text-sm text-[#6C7A73] mt-1">
-                분석일: <strong className="text-[#1B382E]">{fmtText(period?.tyStartDate)} ~ {fmtText(period?.tyEndDate)}</strong>
+                조회일: <strong className="text-[#1B382E]">{fmtText(period?.tyStartDate)} ~ {fmtText(period?.tyEndDate)}</strong>
                 {' '}vs 비교일:{' '}
                 <strong className="text-[#284F42]">{fmtText(period?.lyStartDate)} ~ {fmtText(period?.lyEndDate)}</strong>
-                {calFactor?.operatingRegimeLabel ? ` · ${fmtText(calFactor.operatingRegimeLabel)}` : ''}
               </p>
             )}
           </div>
@@ -146,7 +130,7 @@ export default function RevenueVarianceRca() {
             <div className="flex items-center bg-[#F4F3EE] p-1 rounded-xl">
               {[
                 { code: 'YOY_DOW' as const, label: '전년 동요일' },
-                { code: 'YOY_DATE' as const, label: '전년 동일날짜' },
+                { code: 'YOY_DATE' as const, label: '전년 같은날짜' },
                 { code: 'MOM' as const, label: '전월 동기' }
               ].map((mode) => (
                 <button
@@ -177,23 +161,35 @@ export default function RevenueVarianceRca() {
       </div>
 
       {/* =====================================================================
-          1. 매출의 증감 이유는 딱 무엇인가? (핵심 결론)
+          1. 매출의 증감 이유는 딱 무엇인가? (결론)
          ===================================================================== */}
       <div className="bg-white rounded-2xl border-2 border-[#284F42] shadow-xs p-5 md:p-6 space-y-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#1B382E]/10 pb-4">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#284F42] text-white text-xs font-bold">
               <Target size={14} />
-              1. 매출 증감 결론 (Why)
+              1. 매출 증감 이유 (결론)
             </span>
             <h2 className="text-lg md:text-xl font-black text-[#1B382E] pt-1">
               {fmtText(formula?.primaryDriverLabel)}
             </h2>
+            <p className="text-xs md:text-sm text-[#6C7A73]">
+              • 전체 방문객 수: <strong className="text-[#1B382E]">{fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명</strong> (
+              <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                {fmtSignedInt(formula?.visitorDiffCount, '명')}
+              </strong>
+              ) &nbsp;|&nbsp; • 손님 1인당 평균 지출:{' '}
+              <strong className="text-[#1B382E]">{fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원</strong> (
+              <strong className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                {fmtSignedInt(formula?.spendPerHeadDiff, '원')}
+              </strong>
+              )
+            </p>
           </div>
 
           <div className="bg-[#F4F3EE] rounded-xl px-4 py-3 text-right shrink-0">
             <div className="text-xs text-[#6C7A73] font-semibold">
-              전사 순매출 ({fmtText( fmtInt(formula?.tyTotalRevenue))}원 vs 비교기 {fmtInt(formula?.lyTotalRevenue)}원)
+              오늘 매출 {fmtInt(formula?.tyTotalRevenue)}원 (비교일 {fmtInt(formula?.lyTotalRevenue)}원)
             </div>
             <div
               className={`text-xl md:text-2xl font-black mt-0.5 flex items-center justify-end gap-1.5 ${
@@ -208,10 +204,10 @@ export default function RevenueVarianceRca() {
           </div>
         </div>
 
-        {/* 부문별 어디서 얼마나 줄고 늘었는가? (4대 부문 직관 요약) */}
+        {/* 4대 사업부별 어디서 줄고 늘었나? */}
         <div>
           <div className="text-xs font-bold text-[#6C7A73] mb-2.5">
-            부문별 증감 요약 (어느 부문이 매출 증감을 주도했는가)
+            사업부별 매출 증감 (어느 부문에서 얼마가 줄고 늘었는가)
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {segmentSummaryRows.map((row: any, idx: number) => {
@@ -238,7 +234,10 @@ export default function RevenueVarianceRca() {
                   >
                     {fmtSignedInt(row?.diffAmount, '원')}
                   </div>
-                  <p className="text-xs text-[#1B382E]/85 mt-1.5 leading-snug font-medium">
+                  <div className="text-[11px] text-[#6C7A73] mt-0.5">
+                    {fmtInt(row?.lyRevenue)}원 ➔ {fmtInt(row?.tyRevenue)}원
+                  </div>
+                  <p className="text-xs text-[#1B382E] mt-2 pt-2 border-t border-[#1B382E]/10 leading-snug font-semibold">
                     {fmtText(row?.isolationDiagnosis)}
                   </p>
                 </div>
@@ -249,341 +248,279 @@ export default function RevenueVarianceRca() {
       </div>
 
       {/* =====================================================================
-          2. 그렇게 결정한 이유는 무엇인가? (판단 근거 데이터)
+          2. 그렇게 결정한 구체적인 이유 (어느 매장·항목에서 차이나는가?)
          ===================================================================== */}
       <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 md:p-6 space-y-5">
         <div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#B59269] text-white text-xs font-bold">
             <FileCheck2 size={14} />
-            2. 그렇게 판단한 근거 (Evidence)
+            2. 그렇게 결정한 이유 (세부 매장·항목별 실제 증감)
           </span>
           <h2 className="text-base md:text-lg font-black text-[#1B382E] mt-2">
-            수치로 검증된 2가지 핵심 근거
+            각 사업부 안에서 실제로 매출이 빠지거나 늘어난 항목입니다
           </h2>
         </div>
 
-        {/* 근거 A: 방문객 수 vs 객단가 분해 */}
-        <div className="rounded-xl bg-[#F4F3EE]/70 border border-[#1B382E]/10 p-4 space-y-3">
-          <div className="text-xs font-black text-[#284F42]">
-            근거 ① 방문객 수(볼륨) vs 1인당 객단가 분해
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10">
-              <div className="text-[#6C7A73] font-semibold">방문객 수 변화 (볼륨 효과)</div>
-              <div className="text-sm font-black text-[#1B382E] mt-1">
-                {fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명 (
-                <span className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                  {fmtSignedInt(formula?.visitorDiffCount, '명')} / {fmtPct(formula?.visitorGrowthPct)}
-                </span>
-                )
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* ① 체험·레저 시설별 증감 */}
+          <div className="rounded-xl border border-[#1B382E]/15 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#1B382E]/10 pb-2.5">
+              <div className="flex items-center gap-2 font-black text-sm text-[#1B382E]">
+                <Ticket size={16} className="text-[#284F42]" />
+                <span>① 체험·레저 매장별 증감 내역</span>
               </div>
-              <div className="mt-1.5 pt-1.5 border-t border-[#1B382E]/10 flex justify-between">
-                <span className="text-[#6C7A73]">매출 영향액</span>
-                <strong className={Number(formula?.volumeEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                  {fmtSignedInt(formula?.volumeEffectAmount, '원')}
-                </strong>
-              </div>
+              <span className="text-xs font-bold text-[#6C7A73]">
+                야외 {fmtSignedInt(leisureDetail?.outdoorDiffAmount, '원')} / 실내 {fmtSignedInt(leisureDetail?.indoorDiffAmount, '원')}
+              </span>
             </div>
 
-            <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10">
-              <div className="text-[#6C7A73] font-semibold">1인당 객단가 변화 (단가 효과)</div>
-              <div className="text-sm font-black text-[#1B382E] mt-1">
-                {fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원 (
-                <span className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                  {fmtSignedInt(formula?.spendPerHeadDiff, '원')} / {fmtPct(formula?.spendPerHeadGrowthPct)}
-                </span>
-                )
-              </div>
-              <div className="mt-1.5 pt-1.5 border-t border-[#1B382E]/10 flex justify-between">
-                <span className="text-[#6C7A73]">매출 영향액</span>
-                <strong className={Number(formula?.priceEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                  {fmtSignedInt(formula?.priceEffectAmount, '원')}
-                </strong>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-3 border border-[#1B382E]/10">
-              <div className="text-[#6C7A73] font-semibold">단가 세부 내역 (왜 단가 방어가 제한됐는가)</div>
-              <div className="space-y-1 mt-1.5">
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">· 코어 3부문 순수단가</span>
-                  <strong className="text-emerald-700">
-                    {fmtSignedInt(formula?.coreSegmentPurePriceEffectAmount, '원')}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">· 순수 식음 부착 단가</span>
-                  <strong
-                    className={
-                      Number(formula?.pureFnbAttachEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
-                    }
-                  >
-                    {fmtSignedInt(formula?.pureFnbAttachEffectAmount, '원')}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">· 연회·대관 기저 효과</span>
-                  <strong
-                    className={
-                      Number(formula?.banquetBaseEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
-                    }
-                  >
-                    {fmtSignedInt(formula?.banquetBaseEffectAmount, '원')}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">· 방문객 구성비(Mix)</span>
-                  <strong className={Number(formula?.visitorMixEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                    {fmtSignedInt(formula?.visitorMixEffectAmount, '원')}
-                  </strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 근거 B: 채택된 3대 원인 검증 지표 */}
-        {top3Hypotheses.length > 0 && (
-          <div className="space-y-2.5">
-            <div className="text-xs font-black text-[#284F42]">
-              근거 ② 데이터 검증으로 확인된 3대 원인
-            </div>
-            <div className="grid grid-cols-1 gap-2.5">
-              {top3Hypotheses.map((h: any, idx: number) => {
-                const badge = getStatusBadge(h?.status);
+            <div className="space-y-2 text-xs">
+              {venueVariances.map((v: any, idx: number) => {
+                const neg = Number(v?.diffAmount) < 0;
                 return (
                   <div
                     key={idx}
-                    className="rounded-xl border border-[#1B382E]/15 bg-white p-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+                    className="flex items-center justify-between py-1.5 border-b border-[#1B382E]/5 last:border-b-0"
                   >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${badge.cls}`}>
-                          {badge.label}
-                        </span>
-                        <span className="text-xs md:text-sm font-black text-[#1B382E]">
-                          {fmtText(h?.category)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-[#284F42] font-bold">
-                        판단 수치: {fmtText(h?.verificationMetric)}
-                      </div>
+                    <div>
+                      <span className="font-bold text-[#1B382E]">{fmtText(v?.venueName)}</span>
+                      <span className="text-[#6C7A73] ml-2">
+                        (손님 {fmtInt(v?.lyVisitors)}명 ➔ {fmtInt(v?.tyVisitors)}명)
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <strong className={neg ? 'text-rose-600' : 'text-emerald-700'}>
+                        {fmtSignedInt(v?.diffAmount, '원')}
+                      </strong>
+                      <span className="text-[#6C7A73] ml-1.5">
+                        ({fmtInt(v?.lyRevenue)} ➔ {fmtInt(v?.tyRevenue)}원)
+                      </span>
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* =====================================================================
-          3. 기타 참고 요인 (짧은 1줄 설명)
-         ===================================================================== */}
-      <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#6C7A73]">
-            <Info size={14} className="text-[#284F42]" />
-            3. 외부 환경 및 주요 운영 지표 (한 줄 요약)
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">날씨 / 공휴일</span>
-            <strong className="text-[#1B382E]">
-              {fmtText(weatherFactor?.tyCondition)} {fmtText(weatherFactor?.tyTempMax)}°C (비교기{' '}
-              {fmtText(weatherFactor?.lyCondition)} {fmtText(weatherFactor?.lyTempMax)}°C) · 공휴일{' '}
-              {fmtInt(calFactor?.tyHolidayCount)}일
-            </strong>
-          </div>
-
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">경쟁사 만실 여부</span>
-            <strong className="text-[#1B382E]">
-              충청 4사 만실 {fmtInt(compMarket?.soldOutResortCount)}/{fmtInt(compMarket?.monitoredResortCount)}곳 (최저가{' '}
-              {fmtInt(compMarket?.competitorAvgMinPrice)}원, 동요일비{' '}
-              {fmtPctOne(compMarket?.competitorSameClassSurgeRatioPct ?? compMarket?.competitorPriceSurgeRatioPct, true)})
-            </strong>
-          </div>
-
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">콘도 열쇠 가동·수익</span>
-            <strong className="text-[#1B382E]">
-              물리열쇠 {fmtPctOne(condoDetail?.tyPhysicalKeyOccPct)} (기대{' '}
-              {fmtPctOne(calFactor?.regimeDynamicThresholds?.expectedKeyOccPct)}) · 열쇠당{' '}
-              {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
-            </strong>
-          </div>
-
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">골퍼 미숙박 이탈</span>
-            <strong className="text-[#1B382E]">
-              진성타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
-              <span className="text-rose-600">
-                {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박
-              </span>
-            </strong>
-          </div>
-
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">투숙객 외부 외출</span>
-            <strong className="text-[#1B382E]">
-              외출 {fmtInt(parkingBehavior?.stayCarsWithOutingCount)}회 (
-              <span className="text-rose-600">{fmtPctOne(parkingBehavior?.stayCarsOutingRatePct)}</span>, 경보 기준{' '}
-              {fmtPctOne(calFactor?.regimeDynamicThresholds?.outingAlertThresholdPct)})
-            </strong>
-          </div>
-
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">정산 무결성 / 후정산</span>
-            <strong className="text-[#1B382E]">
-              오차 {fmtInt(integrityFactor?.gatekeeperDeltaWon)}원 · 후정산 대기{' '}
-              {fmtInt(integrityFactor?.b2bDeferredSettlementAmount)}원
-            </strong>
-          </div>
-        </div>
-
-        {/* 필요할 때만 펼쳐보는 상세 보기 버튼 */}
-        <div className="pt-2 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setShowMoreDetails((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#F4F3EE] hover:bg-[#E7E5DD] text-[#1B382E] text-xs font-bold transition-colors cursor-pointer"
-          >
-            {showMoreDetails ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-            {showMoreDetails ? '상세 설명 및 부문별 세부 수치 접기' : '필요 시 상세 설명 및 대응책 더보기'}
-          </button>
-        </div>
-
-        {/* 선택적 펼침 영역: 가설 상세 설명, 부문별 세부 수치, 즉각 대응책 */}
-        {showMoreDetails && (
-          <div className="pt-4 border-t border-[#1B382E]/10 space-y-4 text-xs">
-            {/* 가설별 보충 설명 */}
-            {top3Hypotheses.length > 0 && (
-              <div className="space-y-2">
-                <div className="font-black text-[#284F42]">· 3대 원인 상세 설명</div>
-                {top3Hypotheses.map((h: any, idx: number) => (
-                  <div key={idx} className="rounded-lg bg-[#F4F3EE]/50 p-3 space-y-1">
-                    <div className="font-bold text-[#1B382E]">{fmtText(h?.hypothesisTitle)}</div>
-                    <p className="text-[#6C7A73] leading-relaxed">{fmtText(h?.evidenceDetail)}</p>
-                  </div>
-                ))}
-                {(parkingBehavior?.inRoomSelfDiningShiftNote || parkingBehavior?.concessionSubstitutionNote) && (
-                  <div className="rounded-lg bg-[#F4F3EE]/50 p-3 space-y-1">
-                    <div className="font-bold text-[#1B382E]">식음 유출 및 객실 내 포장취식 진단</div>
-                    {parkingBehavior?.inRoomSelfDiningShiftNote && (
-                      <p className="text-[#6C7A73] leading-relaxed">• {fmtText(parkingBehavior.inRoomSelfDiningShiftNote)}</p>
-                    )}
-                    {parkingBehavior?.concessionSubstitutionNote && (
-                      <p className="text-[#6C7A73] leading-relaxed">• {fmtText(parkingBehavior.concessionSubstitutionNote)}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 4대 부문 핵심 수치 요약 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="rounded-lg border border-[#1B382E]/10 p-3 space-y-1">
-                <div className="font-black text-[#1B382E]">콘도 핵심 지표</div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">가동객실 / ADR</span>
-                  <strong>
-                    {fmtInt(condoDetail?.tySoldRooms)}실 / {fmtInt(condoDetail?.tyAdr)}원
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">물리열쇠 소진</span>
-                  <strong>
-                    {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/{fmtInt(condoDetail?.physicalKeyCapacity)}키 (
-                    {fmtPctOne(condoDetail?.tyPhysicalKeyOccPct)})
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">객실당 인원</span>
-                  <strong>{fmtText(condoDetail?.tyAvgPartySizePerRoom)}명/실</strong>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-[#1B382E]/10 p-3 space-y-1">
-                <div className="font-black text-[#1B382E]">골프 핵심 지표</div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">완주 팀 / 내장객</span>
-                  <strong>
-                    {fmtInt(golfDetail?.tyTotalTeams)}팀 / {fmtInt(golfDetail?.tyVisitors)}명
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">그린피 증감</span>
-                  <strong>{fmtSignedInt(golfDetail?.greenFeeDiff, '원')}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">부대매출 증감</span>
-                  <strong className="text-emerald-700">{fmtSignedInt(golfDetail?.ancillaryRevDiff, '원')}</strong>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-[#1B382E]/10 p-3 space-y-1">
-                <div className="font-black text-[#1B382E]">F&B·대관 핵심 지표</div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">직영 식음 매출</span>
-                  <strong>{fmtInt(fnbDetail?.tyDirectFnbRevenue)}원</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">연회·대관 매출</span>
-                  <strong>
-                    {fmtInt(fnbDetail?.tyBanquetRevenue)}원 (비교기 {fmtInt(fnbDetail?.lyBanquetRevenue)}원)
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">식당 회전율</span>
-                  <strong>
-                    {fmtText(fnbDetail?.tyTableTurnoverRate)}회 (기준{' '}
-                    {fmtText(calFactor?.regimeDynamicThresholds?.expectedFnbTurnover)}회)
-                  </strong>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-[#1B382E]/10 p-3 space-y-1">
-                <div className="font-black text-[#1B382E]">체험·레저 핵심 지표</div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">야외 / 실내 매출</span>
-                  <strong>
-                    {fmtInt(leisureDetail?.tyOutdoorRevenue)}원 / {fmtInt(leisureDetail?.tyIndoorRevenue)}원
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">할인율</span>
-                  <strong>{fmtPctOne(leisureDetail?.tyDiscountRatePct)}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6C7A73]">미사용 티켓</span>
-                  <strong>
-                    {fmtInt(leisureDetail?.unredeemedTicketCount)}건 ({fmtInt(leisureDetail?.unredeemedTicketAmount)}원)
-                  </strong>
-                </div>
+          {/* ② 식당(F&B) 및 연회·대관 증감 */}
+          <div className="rounded-xl border border-[#1B382E]/15 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#1B382E]/10 pb-2.5">
+              <div className="flex items-center gap-2 font-black text-sm text-[#1B382E]">
+                <Utensils size={16} className="text-[#284F42]" />
+                <span>② 식당(F&B) · 연회대관 증감 내역</span>
               </div>
             </div>
 
-            {/* 즉각 실행 대응책 */}
-            {immediateActionItems.length > 0 && (
-              <div className="space-y-1.5">
-                <div className="font-black text-[#8C6D46] flex items-center gap-1">
-                  <CheckCircle2 size={14} />
-                  권장 대응 액션
+            <div className="space-y-2.5 text-xs">
+              <div className="rounded-lg bg-[#F4F3EE]/60 p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-[#1B382E]">직영 식당 일반 매출</div>
+                  <div className="text-[#6C7A73] mt-0.5">
+                    결제 건수 {fmtInt(fnbDetail?.lyReceiptCount)}건 ➔ {fmtInt(fnbDetail?.tyReceiptCount)}건 · 영수증당 평균{' '}
+                    {fmtInt(fnbDetail?.lyAvgCheckPerReceipt)}원 ➔ {fmtInt(fnbDetail?.tyAvgCheckPerReceipt)}원
+                  </div>
                 </div>
-                <ul className="space-y-1.5">
-                  {immediateActionItems.map((item, idx) => (
-                    <li key={idx} className="rounded-lg bg-[#F4F3EE]/50 px-3 py-2 text-[#1B382E] leading-relaxed">
-                      • {item}
-                    </li>
-                  ))}
-                </ul>
+                <div className="text-right shrink-0">
+                  <div
+                    className={`text-sm font-black ${
+                      Number(fnbDetail?.directFnbDiffAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                    }`}
+                  >
+                    {fmtSignedInt(fnbDetail?.directFnbDiffAmount, '원')}
+                  </div>
+                  <div className="text-[#6C7A73]">
+                    {fmtInt(fnbDetail?.lyDirectFnbRevenue)} ➔ {fmtInt(fnbDetail?.tyDirectFnbRevenue)}원
+                  </div>
+                </div>
               </div>
-            )}
+
+              <div className="rounded-lg bg-[#F4F3EE]/60 p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-[#1B382E]">단체 연회 · 세미나 대관 매출</div>
+                  <div className="text-[#6C7A73] mt-0.5">기업 세미나 및 단체 연회 행사 매출 비교</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div
+                    className={`text-sm font-black ${
+                      Number(fnbDetail?.banquetDiffAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                    }`}
+                  >
+                    {fmtSignedInt(fnbDetail?.banquetDiffAmount, '원')}
+                  </div>
+                  <div className="text-[#6C7A73]">
+                    {fmtInt(fnbDetail?.lyBanquetRevenue)} ➔ {fmtInt(fnbDetail?.tyBanquetRevenue)}원
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-[#F4F3EE]/60 p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-[#1B382E]">입점 매장 (편의점·카페 등)</div>
+                  <div className="text-[#6C7A73] mt-0.5">단지 내 임대/수수료 매장 매출</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-bold text-[#1B382E]">
+                    {fmtInt(fnbDetail?.lyOutsourcedFnbRevenue)} ➔ {fmtInt(fnbDetail?.tyOutsourcedFnbRevenue)}원 (
+                    {fmtPct(fnbDetail?.outsourcedFnbGrowthPct)})
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* ③ 골프 항목별 증감 */}
+          <div className="rounded-xl border border-[#1B382E]/15 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#1B382E]/10 pb-2.5">
+              <div className="flex items-center gap-2 font-black text-sm text-[#1B382E]">
+                <Flag size={16} className="text-[#284F42]" />
+                <span>③ 골프 (벨포레CC) 항목별 증감 내역</span>
+              </div>
+              <span className="text-xs font-bold text-[#6C7A73]">
+                {fmtInt(golfDetail?.lyVisitedTeams)}팀({fmtInt(golfDetail?.lyVisitors)}명) ➔{' '}
+                {fmtInt(golfDetail?.tyVisitedTeams)}팀({fmtInt(golfDetail?.tyVisitors)}명)
+              </span>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1.5 border-b border-[#1B382E]/5">
+                <div>
+                  <span className="font-bold text-[#1B382E]">그린피 (입장료)</span>
+                  <span className="text-[#6C7A73] ml-2">
+                    (회원 {fmtInt(golfDetail?.lyMemberPlayers)}➔{fmtInt(golfDetail?.tyMemberPlayers)}명 / 비회원{' '}
+                    {fmtInt(golfDetail?.lyNonMemberPlayers)}➔{fmtInt(golfDetail?.tyNonMemberPlayers)}명)
+                  </span>
+                </div>
+                <div className="text-right">
+                  <strong className={Number(golfRevComp?.greenFeeDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                    {fmtSignedInt(golfRevComp?.greenFeeDiff, '원')}
+                  </strong>
+                  <span className="text-[#6C7A73] ml-1.5">
+                    ({fmtInt(golfRevComp?.lyGreenFeeRevenue)} ➔ {fmtInt(golfRevComp?.tyGreenFeeRevenue)}원)
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 border-b border-[#1B382E]/5">
+                <div>
+                  <span className="font-bold text-[#1B382E]">카트 대여료</span>
+                </div>
+                <div className="text-right">
+                  <strong className={Number(golfRevComp?.cartFeeDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                    {fmtSignedInt(golfRevComp?.cartFeeDiff, '원')}
+                  </strong>
+                  <span className="text-[#6C7A73] ml-1.5">
+                    ({fmtInt(golfRevComp?.lyCartFeeRevenue)} ➔ {fmtInt(golfRevComp?.tyCartFeeRevenue)}원)
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5">
+                <div>
+                  <span className="font-bold text-[#1B382E]">프로샵 · 클럽하우스 부대매출</span>
+                </div>
+                <div className="text-right">
+                  <strong className={Number(golfRevComp?.extraRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                    {fmtSignedInt(golfRevComp?.extraRevenueDiff, '원')}
+                  </strong>
+                  <span className="text-[#6C7A73] ml-1.5">
+                    ({fmtInt(golfRevComp?.lyProshopAndClubhouseExtraRevenue)} ➔{' '}
+                    {fmtInt(golfRevComp?.tyProshopAndClubhouseExtraRevenue)}원)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ④ 콘도 객실 고객 유형별 증감 */}
+          <div className="rounded-xl border border-[#1B382E]/15 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#1B382E]/10 pb-2.5">
+              <div className="flex items-center gap-2 font-black text-sm text-[#1B382E]">
+                <Hotel size={16} className="text-[#284F42]" />
+                <span>④ 콘도 객실 예약 유형별 증감 내역</span>
+              </div>
+              <span className="text-xs font-bold text-[#6C7A73]">
+                판매 {fmtInt(condoDetail?.lyOccupiedRooms)}실 ➔ {fmtInt(condoDetail?.tyOccupiedRooms)}실 (평균{' '}
+                {fmtInt(condoDetail?.tyAdr)}원)
+              </span>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              {channelMix.map((ch: any, idx: number) => {
+                const neg = Number(ch?.diffRevenue) < 0;
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between py-1.5 border-b border-[#1B382E]/5 last:border-b-0"
+                  >
+                    <div>
+                      <span className="font-bold text-[#1B382E]">{fmtText(ch?.channelLabel)}</span>
+                      <span className="text-[#6C7A73] ml-2">
+                        ({fmtInt(ch?.lyRooms)}실 ➔ {fmtInt(ch?.tyRooms)}실)
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <strong className={neg ? 'text-rose-600' : 'text-emerald-700'}>
+                        {fmtSignedInt(ch?.diffRevenue, '원')}
+                      </strong>
+                      <span className="text-[#6C7A73] ml-1.5">
+                        ({fmtInt(ch?.lyRevenue)} ➔ {fmtInt(ch?.tyRevenue)}원)
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          3. 기타 참고 상황 (날씨 · 주변 경쟁 리조트 · 손님 이동)
+         ===================================================================== */}
+      <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 space-y-3">
+        <div className="flex items-center gap-1.5 text-xs font-black text-[#6C7A73]">
+          <Info size={14} className="text-[#284F42]" />
+          <span>3. 참고할 주변 상황 (짧은 설명)</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
+            <span className="text-[#6C7A73] font-semibold">날씨와 휴일 영향</span>
+            <strong className="text-[#1B382E]">
+              올해 {fmtText(extWeather?.tyWeatherDesc)}({fmtText(extWeather?.tyTempMax)}°C) vs 비교일{' '}
+              {fmtText(extWeather?.lyWeatherDesc)}({fmtText(extWeather?.lyTempMax)}°C) · 공휴일 {fmtInt(calFactor?.tyHolidayDays)}일
+            </strong>
+          </div>
+
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
+            <span className="text-[#6C7A73] font-semibold">주변 경쟁 리조트 상황</span>
+            <strong className="text-[#1B382E]">
+              주변 {fmtInt(compMarket?.monitoredResortCount)}곳 중 만실 {fmtInt(compMarket?.soldOutResortCount)}곳 (평균 최저가{' '}
+              {fmtInt(compMarket?.competitorAvgMinPrice)}원)
+            </strong>
+          </div>
+
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
+            <span className="text-[#6C7A73] font-semibold">골프 손님 중 안 자고 간 팀</span>
+            <strong className="text-[#1B382E]">
+              골프 {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfVisitedTeams)}팀 중{' '}
+              <span className="text-rose-600">
+                {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfNonStayExternalOrDayTripTeams)}팀 당일 귀가
+              </span>{' '}
+              (빈 객실 {fmtInt(compMarket?.belleforetUnsoldPhysicalKeys)}개 여유)
+            </strong>
+          </div>
+
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
+            <span className="text-[#6C7A73] font-semibold">숙박 손님 외부 식당/마트 외출</span>
+            <strong className="text-[#1B382E]">
+              외출 {fmtInt(parkingBehavior?.lyStayCarsWithOutingCount)}회 ➔{' '}
+              <span className="text-rose-600">
+                {fmtInt(parkingBehavior?.stayCarsWithOutingCount)}회 ({fmtPctOne(parkingBehavior?.stayCarsOutingRatePct)})
+              </span>
+            </strong>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -783,9 +783,61 @@ export default function RevenueVarianceRca() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              {primaryClauses.map((clause, idx) => {
-                const { headline, detail } = splitHeadlineAndDetail(clause);
-                return (
+              {(() => {
+                // 달력(공휴일·총휴일) 및 기상(우천일수·강수량) 카드는 primaryDriverLabel의 모순 문자열(0➔0일, 우천 2➔1일 악화 등) 대신
+                // 백엔드가 내려준 구조화 정밀 필드(calFactor, extWeather, pearsonCorr)를 직접 바인딩하여 오독을 원천 차단
+                const structuredCards: Array<{ headline: string; detail: string | null }> = [];
+
+                if (calFactor) {
+                  const redDiff = Number(calFactor?.redDayDiffDays);
+                  const holDiff = Number(calFactor?.holidayDiffDays);
+                  const calHeadline =
+                    redDiff < 0
+                      ? `주말·공휴일(총 휴일) 일수 축소 (${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일, ${fmtSignedInt(calFactor?.redDayDiffDays, '일')})`
+                      : redDiff > 0
+                      ? `주말·공휴일(총 휴일) 일수 확대 (${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일, ${fmtSignedInt(calFactor?.redDayDiffDays, '일')})`
+                      : holDiff !== 0
+                      ? `법정공휴일 일수 변동 (${fmtInt(calFactor?.lyHolidayDays)}일 ➔ ${fmtInt(calFactor?.tyHolidayDays)}일, ${fmtSignedInt(calFactor?.holidayDiffDays, '일')})`
+                      : `주말·공휴일 일수 동일 (총 휴일 ${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일)`;
+
+                  structuredCards.push({
+                    headline: calHeadline,
+                    detail: `(법정공휴일 ${fmtInt(calFactor?.lyHolidayDays)}➔${fmtInt(calFactor?.tyHolidayDays)}일 · 주말 ${fmtInt(calFactor?.lyWeekendDays)}➔${fmtInt(calFactor?.tyWeekendDays)}일 | 달력 휴일차이 효과 ${fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')} ➔ 보정 후 실질 영업증감 ${fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')})`
+                  });
+                }
+
+                if (extWeather) {
+                  const rDaysDiff = Number(extWeather?.rainyDaysDiff);
+                  const rMmDiff = Number(extWeather?.rainfallDiffMm);
+                  const weatherHeadline =
+                    rDaysDiff < 0 && rMmDiff > 0
+                      ? `비 온 날수 감소 (${fmtInt(extWeather?.lyRainyDays)}➔${fmtInt(extWeather?.tyRainyDays)}일) · 단, 당기 강수량 증가 (${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm)`
+                      : rDaysDiff < 0
+                      ? `우천 일수 감소 · 기상 여건 개선 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, ${fmtSignedInt(extWeather?.rainyDaysDiff, '일')})`
+                      : rDaysDiff > 0
+                      ? `우천 일수 증가 · 기상 여건 악화 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, ${fmtSignedInt(extWeather?.rainyDaysDiff, '일')})`
+                      : `우천 일수 동일 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, 강수량 ${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm)`;
+
+                  structuredCards.push({
+                    headline: weatherHeadline,
+                    detail: `(주말·휴일 우천 ${fmtInt(extWeather?.lyRedDayRainyDays)}➔${fmtInt(extWeather?.tyRedDayRainyDays)}일[${fmtSignedInt(extWeather?.redDayRainyDaysDiff, '일')}] · 평일 우천 ${fmtInt(extWeather?.lyWeekdayRainyDays)}➔${fmtInt(extWeather?.tyWeekdayRainyDays)}일 · 누적 강수량 ${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm | 강수↔골프 r=${fmtText(pearsonCorr?.rRainVsGolfRev)} · 강수↔야외레저 r=${fmtText(pearsonCorr?.rRainVsOutdoorLeisureRev)})`
+                  });
+                }
+
+                const remainingClauses = primaryClauses.filter(
+                  (c) =>
+                    !c.startsWith('공휴일') &&
+                    !c.includes('달력 역풍') &&
+                    !c.includes('달력 순풍') &&
+                    !c.startsWith('우천') &&
+                    !c.startsWith('전년 우천')
+                );
+
+                remainingClauses.forEach((clause) => {
+                  structuredCards.push(splitHeadlineAndDetail(clause));
+                });
+
+                return structuredCards.map((card, idx) => (
                   <div
                     key={idx}
                     className="rounded-xl bg-[#F8F7F3] p-3.5 border border-[#1B382E]/15 flex items-start gap-2.5"
@@ -795,17 +847,17 @@ export default function RevenueVarianceRca() {
                     </span>
                     <div className="space-y-1 min-w-0">
                       <div className="text-xs md:text-sm font-black text-[#1B382E] leading-snug">
-                        {headline}
+                        {card.headline}
                       </div>
-                      {detail && (
+                      {card.detail && (
                         <div className="text-xs text-[#4A5D54] leading-relaxed break-words">
-                          {detail}
+                          {card.detail}
                         </div>
                       )}
                     </div>
                   </div>
-                );
-              })}
+                ));
+              })()}
             </div>
 
             {/* 클릭 시 펼쳐지는 경영진 3대 인과 요약(executiveSummary) + 데이터 검증 3대 가설(top3Hypotheses) */}

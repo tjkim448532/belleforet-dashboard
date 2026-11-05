@@ -1432,6 +1432,12 @@ export interface WalkInDiscountSummary {
   totalDiscountAmount?: number | null;       // 주차할인 총 감면 금액 (원)
   totalPaidAmount?: number | null;           // 유료 주차 정산 금액 (원)
   discountedCarRatio?: number | null;        // 순수 나들이 차량 중 할인 적용 비율 (%)
+  totalDiscountedVisitors?: number | null;   // 할인 적용 차량 환산 방문객 수 (명)
+  preRegisteredVisitors?: number | null;     // 사전 차량등록 환산 방문객 수 (명)
+  motoArenaRegVisitors?: number | null;      // 모토아레나 사전등록 환산 방문객 수 (명)
+  activityFnbRegVisitors?: number | null;    // 식음·액티비티 사전등록 환산 방문객 수 (명)
+  paidOnlyVisitors?: number | null;          // 순수 유료정산 환산 방문객 수 (명)
+  isGranularStoreSynced?: boolean;           // MA_USER 개별 매장(19~39) 세분화 동기화 여부
 }
 
 export interface WalkInNonGroupCohort {

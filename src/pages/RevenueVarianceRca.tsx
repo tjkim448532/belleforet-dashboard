@@ -739,9 +739,17 @@ export default function RevenueVarianceRca() {
                 {fmtSignedInt(formula?.revenueDiffAmount, '원')} ({fmtPct(formula?.revenueGrowthPct)})
               </span>
             </div>
-            {calFactor && (
+            {calFactor && Number(calFactor?.calendarShiftEffectAmount) !== 0 && (
               <div className="text-xs font-bold text-[#8C6D46] mt-1">
-                공휴일 차이 보정 실질 증감:{' '}
+                {Number(calFactor?.holidayDiffDays) === 0 && Number(calFactor?.weekendDiffDays) !== 0 ? (
+                  <>
+                    주말 일수 차이(주말 {fmtInt(calFactor?.lyWeekendDays)}➔{fmtInt(calFactor?.tyWeekendDays)}일) 보정 실질 증감:{' '}
+                  </>
+                ) : (
+                  <>
+                    휴일 일수 차이(총 휴일 {fmtInt(calFactor?.lyRedDays)}➔{fmtInt(calFactor?.tyRedDays)}일) 보정 실질 증감:{' '}
+                  </>
+                )}
                 <strong
                   className={
                     Number(calFactor?.calendarAdjustedRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'
@@ -784,44 +792,61 @@ export default function RevenueVarianceRca() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               {(() => {
-                // 달력(공휴일·총휴일) 및 기상(우천일수·강수량) 카드는 primaryDriverLabel의 모순 문자열(0➔0일, 우천 2➔1일 악화 등) 대신
-                // 백엔드가 내려준 구조화 정밀 필드(calFactor, extWeather, pearsonCorr)를 직접 바인딩하여 오독을 원천 차단
+                // 1) 주말·공휴일 일수 차이가 실제로 존재할 때만 원인 카드에 추가 (0➔0일 동일 조건이면 원인 카드에서 제외)
+                // 2) 법정공휴일이 0➔0일인데 주말(토·일) 일수가 다른 경우 '공휴일 축소'가 아니라 '주말(토·일) 포함 일수 차이'로 명확히 표기
+                // 3) 우천일·강수량이 둘 다 0➔0이면 비가 안 온 기간이므로 원인 카드에서 제외
                 const structuredCards: Array<{ headline: string; detail: string | null }> = [];
 
                 if (calFactor) {
-                  const redDiff = Number(calFactor?.redDayDiffDays);
-                  const holDiff = Number(calFactor?.holidayDiffDays);
-                  const calHeadline =
-                    redDiff < 0
-                      ? `주말·공휴일(총 휴일) 일수 축소 (${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일, ${fmtSignedInt(calFactor?.redDayDiffDays, '일')})`
-                      : redDiff > 0
-                      ? `주말·공휴일(총 휴일) 일수 확대 (${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일, ${fmtSignedInt(calFactor?.redDayDiffDays, '일')})`
-                      : holDiff !== 0
-                      ? `법정공휴일 일수 변동 (${fmtInt(calFactor?.lyHolidayDays)}일 ➔ ${fmtInt(calFactor?.tyHolidayDays)}일, ${fmtSignedInt(calFactor?.holidayDiffDays, '일')})`
-                      : `주말·공휴일 일수 동일 (총 휴일 ${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일)`;
+                  const redDiff = Number(calFactor?.redDayDiffDays || 0);
+                  const holDiff = Number(calFactor?.holidayDiffDays || 0);
+                  const wkndDiff = Number(calFactor?.weekendDiffDays || 0);
+                  const shiftAmt = Number(calFactor?.calendarShiftEffectAmount || 0);
 
-                  structuredCards.push({
-                    headline: calHeadline,
-                    detail: `(법정공휴일 ${fmtInt(calFactor?.lyHolidayDays)}➔${fmtInt(calFactor?.tyHolidayDays)}일 · 주말 ${fmtInt(calFactor?.lyWeekendDays)}➔${fmtInt(calFactor?.tyWeekendDays)}일 | 달력 휴일차이 효과 ${fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')} ➔ 보정 후 실질 영업증감 ${fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')})`
-                  });
+                  if (redDiff !== 0 || holDiff !== 0 || wkndDiff !== 0 || shiftAmt !== 0) {
+                    if (holDiff === 0 && wkndDiff !== 0) {
+                      structuredCards.push({
+                        headline: `달력 요일 차이로 인한 주말(토·일) 일수 변동 (주말 ${fmtInt(calFactor?.lyWeekendDays)}일 ➔ ${fmtInt(calFactor?.tyWeekendDays)}일, ${fmtSignedInt(calFactor?.weekendDiffDays, '일')})`,
+                        detail: `법정공휴일은 둘 다 ${fmtInt(calFactor?.tyHolidayDays)}일로 같으나, 같은 날짜 비교 시 비교기엔 주말(토·일) ${fmtInt(calFactor?.lyWeekendDays)}일·평일 ${fmtInt(calFactor?.lyNormalWeekdayDays)}일 vs 당기엔 주말 ${fmtInt(calFactor?.tyWeekendDays)}일·평일 ${fmtInt(calFactor?.tyNormalWeekdayDays)}일이 포함되어 발생한 주말 일수 차이 영향(${fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')})입니다. (요일수 보정 시 실질 증감 ${fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')})`
+                      });
+                    } else {
+                      const calHeadline =
+                        redDiff < 0
+                          ? `법정공휴일·주말(총 휴일) 일수 축소 (${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일, ${fmtSignedInt(calFactor?.redDayDiffDays, '일')})`
+                          : `법정공휴일·주말(총 휴일) 일수 확대 (${fmtInt(calFactor?.lyRedDays)}일 ➔ ${fmtInt(calFactor?.tyRedDays)}일, ${fmtSignedInt(calFactor?.redDayDiffDays, '일')})`;
+
+                      structuredCards.push({
+                        headline: calHeadline,
+                        detail: `(법정공휴일 ${fmtInt(calFactor?.lyHolidayDays)}➔${fmtInt(calFactor?.tyHolidayDays)}일[${fmtSignedInt(calFactor?.holidayDiffDays, '일')}] · 주말 ${fmtInt(calFactor?.lyWeekendDays)}➔${fmtInt(calFactor?.tyWeekendDays)}일[${fmtSignedInt(calFactor?.weekendDiffDays, '일')}] | 휴일수 차이 영향 ${fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')} ➔ 보정 후 실질 영업증감 ${fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')})`
+                      });
+                    }
+                  }
                 }
 
                 if (extWeather) {
-                  const rDaysDiff = Number(extWeather?.rainyDaysDiff);
-                  const rMmDiff = Number(extWeather?.rainfallDiffMm);
-                  const weatherHeadline =
-                    rDaysDiff < 0 && rMmDiff > 0
-                      ? `비 온 날수 감소 (${fmtInt(extWeather?.lyRainyDays)}➔${fmtInt(extWeather?.tyRainyDays)}일) · 단, 당기 강수량 증가 (${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm)`
-                      : rDaysDiff < 0
-                      ? `우천 일수 감소 · 기상 여건 개선 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, ${fmtSignedInt(extWeather?.rainyDaysDiff, '일')})`
-                      : rDaysDiff > 0
-                      ? `우천 일수 증가 · 기상 여건 악화 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, ${fmtSignedInt(extWeather?.rainyDaysDiff, '일')})`
-                      : `우천 일수 동일 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, 강수량 ${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm)`;
+                  const lyRainDays = Number(extWeather?.lyRainyDays || 0);
+                  const tyRainDays = Number(extWeather?.tyRainyDays || 0);
+                  const rDaysDiff = Number(extWeather?.rainyDaysDiff || 0);
+                  const lyMm = Number(extWeather?.lyRainfallMm || 0);
+                  const tyMm = Number(extWeather?.tyRainfallMm || 0);
+                  const rMmDiff = Number(extWeather?.rainfallDiffMm || 0);
 
-                  structuredCards.push({
-                    headline: weatherHeadline,
-                    detail: `(주말·휴일 우천 ${fmtInt(extWeather?.lyRedDayRainyDays)}➔${fmtInt(extWeather?.tyRedDayRainyDays)}일[${fmtSignedInt(extWeather?.redDayRainyDaysDiff, '일')}] · 평일 우천 ${fmtInt(extWeather?.lyWeekdayRainyDays)}➔${fmtInt(extWeather?.tyWeekdayRainyDays)}일 · 누적 강수량 ${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm | 강수↔골프 r=${fmtText(pearsonCorr?.rRainVsGolfRev)} · 강수↔야외레저 r=${fmtText(pearsonCorr?.rRainVsOutdoorLeisureRev)})`
-                  });
+                  // 당기·비교기 중 하루라도 비가 왔거나 강수량 차이가 있을 때만 주요 증감 원인 카드에 표출
+                  if (lyRainDays > 0 || tyRainDays > 0 || rDaysDiff !== 0 || lyMm > 0 || tyMm > 0) {
+                    const weatherHeadline =
+                      rDaysDiff < 0 && rMmDiff > 0
+                        ? `비 온 날수 감소 (${fmtInt(extWeather?.lyRainyDays)}➔${fmtInt(extWeather?.tyRainyDays)}일) · 단, 당기 강수량 증가 (${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm)`
+                        : rDaysDiff < 0
+                        ? `비 온 날수 감소 · 기상 여건 개선 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, ${fmtSignedInt(extWeather?.rainyDaysDiff, '일')})`
+                        : rDaysDiff > 0
+                        ? `비 온 날수 증가 · 우천 기상 악화 (${fmtInt(extWeather?.lyRainyDays)}일 ➔ ${fmtInt(extWeather?.tyRainyDays)}일, ${fmtSignedInt(extWeather?.rainyDaysDiff, '일')})`
+                        : `우천 일수 동일 (${fmtInt(extWeather?.lyRainyDays)}➔${fmtInt(extWeather?.tyRainyDays)}일) · 강수량 ${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm`;
+
+                    structuredCards.push({
+                      headline: weatherHeadline,
+                      detail: `(주말·휴일 우천 ${fmtInt(extWeather?.lyRedDayRainyDays)}➔${fmtInt(extWeather?.tyRedDayRainyDays)}일[${fmtSignedInt(extWeather?.redDayRainyDaysDiff, '일')}] · 평일 우천 ${fmtInt(extWeather?.lyWeekdayRainyDays)}➔${fmtInt(extWeather?.tyWeekdayRainyDays)}일 · 누적 강수량 ${fmtText(extWeather?.lyRainfallMm)}➔${fmtText(extWeather?.tyRainfallMm)}mm | 강수↔골프 r=${fmtText(pearsonCorr?.rRainVsGolfRev)} · 강수↔야외레저 r=${fmtText(pearsonCorr?.rRainVsOutdoorLeisureRev)})`
+                    });
+                  }
                 }
 
                 const remainingClauses = primaryClauses.filter(
@@ -939,14 +964,14 @@ export default function RevenueVarianceRca() {
       <div className="space-y-4">
         {/* 상단 2열: [달력 공휴일 차이 보정] vs [기상 여건 및 요일 통제 순수 상관관계(r)] */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* 좌측: 달력 공휴일 차이 보정 */}
+          {/* 좌측: 달력 주말·공휴일 일수 비교 */}
           {calFactor && (
             <div className="bg-white rounded-2xl border border-[#B59269]/40 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-[#B59269]/25 pb-2.5">
                 <div className="flex items-center gap-2">
                   <Calendar size={17} className="text-[#8C6D46]" />
                   <h2 className="text-sm md:text-base font-black text-[#1B382E]">
-                    달력 공휴일 · 주말 일수 차이 보정
+                    달력 주말(토·일) · 법정공휴일 일수 비교
                   </h2>
                 </div>
                 <button
@@ -962,40 +987,67 @@ export default function RevenueVarianceRca() {
               {/* 핵심 3대 수치 요약 */}
               <div className="grid grid-cols-3 gap-2.5 text-center">
                 <div className="rounded-xl bg-[#F8F7F3] p-2.5 border border-[#1B382E]/10">
-                  <div className="text-[11px] text-[#5A6B63] font-semibold">법정공휴일 (총 휴일)</div>
+                  <div className="text-[11px] text-[#5A6B63] font-semibold">주말+공휴일 (총 휴일수)</div>
                   <div className="text-sm font-black text-[#1B382E] mt-0.5">
-                    {fmtInt(calFactor?.lyHolidayDays)}➔{fmtInt(calFactor?.tyHolidayDays)}일{' '}
-                    <span className={Number(calFactor?.holidayDiffDays) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                      ({fmtSignedInt(calFactor?.holidayDiffDays, '일')})
+                    {fmtInt(calFactor?.lyRedDays)}➔{fmtInt(calFactor?.tyRedDays)}일{' '}
+                    <span className={Number(calFactor?.redDayDiffDays) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      ({fmtSignedInt(calFactor?.redDayDiffDays, '일')})
                     </span>
                   </div>
                   <div className="text-[10px] text-[#6C7A73]">
-                    주말포함 {fmtInt(calFactor?.lyRedDays)}➔{fmtInt(calFactor?.tyRedDays)}일
+                    주말 {fmtInt(calFactor?.lyWeekendDays)}➔{fmtInt(calFactor?.tyWeekendDays)}일 · 공휴일{' '}
+                    {fmtInt(calFactor?.lyHolidayDays)}➔{fmtInt(calFactor?.tyHolidayDays)}일
                   </div>
                 </div>
 
                 <div className="rounded-xl bg-[#F8F7F3] p-2.5 border border-[#1B382E]/10">
-                  <div className="text-[11px] text-[#5A6B63] font-semibold">달력 휴일수 차이 효과</div>
-                  <div
-                    className={`text-sm font-black mt-0.5 ${
-                      Number(calFactor?.calendarShiftEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
-                    }`}
-                  >
-                    {fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')}
-                  </div>
-                  <div className="text-[10px] text-[#6C7A73]">달력 구조상 유불리</div>
+                  <div className="text-[11px] text-[#5A6B63] font-semibold">요일·휴일 일수 차이 영향</div>
+                  {Number(calFactor?.calendarShiftEffectAmount) === 0 ? (
+                    <>
+                      <div className="text-sm font-black text-[#1B382E] mt-0.5">0원 (차이 없음)</div>
+                      <div className="text-[10px] text-[#6C7A73]">주말·휴일 일수 동일</div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className={`text-sm font-black mt-0.5 ${
+                          Number(calFactor?.calendarShiftEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                        }`}
+                      >
+                        {fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')}
+                      </div>
+                      <div className="text-[10px] text-[#6C7A73]">
+                        {Number(calFactor?.holidayDiffDays) === 0
+                          ? `주말 ${fmtInt(calFactor?.lyWeekendDays)}➔${fmtInt(calFactor?.tyWeekendDays)}일 차이 반영`
+                          : `총 휴일 ${fmtInt(calFactor?.lyRedDays)}➔${fmtInt(calFactor?.tyRedDays)}일 차이 반영`}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="rounded-xl bg-[#F4F3EE] p-2.5 border border-[#B59269]/40">
-                  <div className="text-[11px] text-[#8C6D46] font-extrabold">보정 후 실질 영업증감</div>
-                  <div
-                    className={`text-sm font-black mt-0.5 ${
-                      Number(calFactor?.calendarAdjustedRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'
-                    }`}
-                  >
-                    {fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')}
+                  <div className="text-[11px] text-[#8C6D46] font-extrabold">
+                    {Number(calFactor?.calendarShiftEffectAmount) === 0
+                      ? '요일수 보정 여부'
+                      : '일수 차이 보정 실질 증감'}
                   </div>
-                  <div className="text-[10px] text-[#8C6D46]">순수 영업 기초체력</div>
+                  {Number(calFactor?.calendarShiftEffectAmount) === 0 ? (
+                    <>
+                      <div className="text-sm font-black text-[#1B382E] mt-0.5">보정 불필요</div>
+                      <div className="text-[10px] text-[#8C6D46]">실제 증감액과 동일</div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className={`text-sm font-black mt-0.5 ${
+                          Number(calFactor?.calendarAdjustedRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                        }`}
+                      >
+                        {fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')}
+                      </div>
+                      <div className="text-[10px] text-[#8C6D46]">동일 휴일수 기준 증감</div>
+                    </>
+                  )}
                 </div>
               </div>
 

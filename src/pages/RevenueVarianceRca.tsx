@@ -352,6 +352,84 @@ export default function RevenueVarianceRca() {
           </div>
         </div>
 
+        {/* 콘도(❹) / 레저(❺) 방문객 구성 (비골프 순수숙박 vs 골퍼숙박 vs 나들이) 직결 배지 */}
+        {segCode === 'CONDO' && formula?.pureRoomGuestsExGolfDiffCount !== undefined && (
+          <div className="rounded-lg bg-amber-50/70 border border-amber-200 px-3 py-2 text-xs space-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-extrabold text-amber-950">
+                [콘도 투숙객 구성 분리 — 비골프 순수 가족숙박 vs 골프 동반 숙박]
+              </span>
+              <span className="text-[11px] font-bold text-[#5A6B63]">
+                비골프 순수 숙박객:{' '}
+                <strong
+                  className={
+                    Number(formula?.pureRoomGuestsExGolfDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                  }
+                >
+                  {fmtInt(formula?.lyPureRoomGuestsExGolf)}➔{fmtInt(formula?.tyPureRoomGuestsExGolf)}명 (
+                  {fmtSignedInt(formula?.pureRoomGuestsExGolfDiffCount, '명')},{' '}
+                  {fmtPct(formula?.pureRoomGuestsExGolfGrowthPct)})
+                </strong>{' '}
+                · 골프 동반 숙박객:{' '}
+                <strong
+                  className={
+                    Number(formula?.golfSynergyStayGuestsDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                  }
+                >
+                  {fmtInt(formula?.lyGolfSynergyStayGuests)}➔{fmtInt(formula?.tyGolfSynergyStayGuests)}명 (
+                  {fmtSignedInt(formula?.golfSynergyStayGuestsDiffCount, '명')},{' '}
+                  {fmtPct(formula?.golfSynergyStayGuestsGrowthPct)})
+                </strong>
+              </span>
+            </div>
+            {formula?.visitorCompositionInsight && (
+              <div className="text-[11px] text-amber-900 leading-relaxed pt-1 border-t border-amber-200/60">
+                • {fmtText(formula?.visitorCompositionInsight)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {segCode === 'LEISURE' && formula?.nonGolfVisitorDiffCount !== undefined && (
+          <div className="rounded-lg bg-amber-50/70 border border-amber-200 px-3 py-2 text-xs space-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-extrabold text-amber-950">
+                [레저·식음 실수요 모수 — 골프 제외 방문객 증감]
+              </span>
+              <span className="text-[11px] font-bold text-[#5A6B63]">
+                골프 제외 방문객:{' '}
+                <strong
+                  className={Number(formula?.nonGolfVisitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}
+                >
+                  {fmtInt(formula?.lyNonGolfVisitors)}➔{fmtInt(formula?.tyNonGolfVisitors)}명 (
+                  {fmtSignedInt(formula?.nonGolfVisitorDiffCount, '명')},{' '}
+                  {fmtPct(formula?.nonGolfVisitorGrowthPct)})
+                </strong>{' '}
+                (비골프 순수숙박{' '}
+                <strong
+                  className={
+                    Number(formula?.pureRoomGuestsExGolfDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                  }
+                >
+                  {fmtSignedInt(formula?.pureRoomGuestsExGolfDiffCount, '명')}
+                </strong>{' '}
+                · 나들이 워크인{' '}
+                <strong
+                  className={Number(formula?.walkinVisitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}
+                >
+                  {fmtSignedInt(formula?.walkinVisitorDiffCount, '명')}
+                </strong>
+                )
+              </span>
+            </div>
+            {formula?.visitorCompositionInsight && (
+              <div className="text-[11px] text-amber-900 leading-relaxed pt-1 border-t border-amber-200/60">
+                • {fmtText(formula?.visitorCompositionInsight)}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 2) [품목·매장축] vs [예약채널·고객유형축] 2축 시각적 분리 */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 text-xs">
           {/* 축 A: 품목·매장별 증감 */}
@@ -514,14 +592,14 @@ export default function RevenueVarianceRca() {
          ===================================================================== */}
       <div className="bg-white rounded-2xl border-2 border-[#284F42] shadow-xs p-5 md:p-6 space-y-5">
         {/* 상단 타이틀 + 총 매출 증감액 헤더 */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-[#1B382E]/10">
-          <div className="space-y-2">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 pb-4 border-b border-[#1B382E]/10">
+          <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#284F42] text-white text-xs font-bold">
                 <Target size={14} />
                 1. 핵심 결론 — 왜 매출이 {isNegative ? '감소' : '증가'}했는가?
               </span>
-              <span className="text-xs font-bold text-[#5A6B63]">
+              <span className="px-2.5 py-1 rounded-md bg-[#F4F3EE] border border-[#1B382E]/15 text-xs font-bold text-[#1B382E]">
                 전체 방문객{' '}
                 <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
                   {fmtSignedInt(formula?.visitorDiffCount, '명')}({fmtPct(formula?.visitorGrowthPct)})
@@ -533,8 +611,98 @@ export default function RevenueVarianceRca() {
               </span>
             </div>
 
+            {/* [추가 개편 1] 상단 '전체 방문객' 옆에 '골프 vs 비골프 방문객(레저·식음 모수)' 2단 분리 배지 표시 */}
+            {formula && (formula?.golfVisitorDiffCount !== undefined || formula?.nonGolfVisitorDiffCount !== undefined) && (
+              <div className="rounded-xl bg-[#F8F7F3] border border-[#1B382E]/15 p-3 space-y-2 text-xs">
+                {/* 1단: 전체 방문객 vs 골프 내장객 vs 골프 제외 방문객 (레저·식음 실수요 모수) */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="px-2.5 py-1.5 rounded-lg bg-white border border-[#1B382E]/15 font-bold">
+                    <span className="text-[#5A6B63]">전체 방문객: </span>
+                    <span className="text-[#1B382E]">
+                      {fmtInt(formula?.lyTotalVisitors)}➔{fmtInt(formula?.tyTotalVisitors)}명
+                    </span>{' '}
+                    <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      ({fmtSignedInt(formula?.visitorDiffCount, '명')} / {fmtPct(formula?.visitorGrowthPct)})
+                    </strong>
+                  </div>
+
+                  <div className="px-2.5 py-1.5 rounded-lg bg-emerald-50/70 border border-emerald-200 font-bold">
+                    <span className="text-emerald-900">⛳ 골프 내장객: </span>
+                    <span className="text-[#1B382E]">
+                      {fmtInt(formula?.lyGolfVisitors)}➔{fmtInt(formula?.tyGolfVisitors)}명
+                    </span>{' '}
+                    <strong className={Number(formula?.golfVisitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      ({fmtSignedInt(formula?.golfVisitorDiffCount, '명')} / {fmtPct(formula?.golfVisitorGrowthPct)})
+                    </strong>
+                  </div>
+
+                  <div className="px-2.5 py-1.5 rounded-lg bg-amber-50/80 border-2 border-amber-300 font-bold">
+                    <span className="text-amber-950 font-extrabold">
+                      👨‍👩‍👧‍👦 골프 제외 방문객 (레저·식음 실수요 모수):{' '}
+                    </span>
+                    <span className="text-[#1B382E]">
+                      {fmtInt(formula?.lyNonGolfVisitors)}➔{fmtInt(formula?.tyNonGolfVisitors)}명
+                    </span>{' '}
+                    <strong
+                      className={Number(formula?.nonGolfVisitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}
+                    >
+                      ({fmtSignedInt(formula?.nonGolfVisitorDiffCount, '명')} / {fmtPct(formula?.nonGolfVisitorGrowthPct)})
+                    </strong>
+                  </div>
+                </div>
+
+                {/* 2단: 골프 제외 방문객 및 숙박 구성 3대 세부 트랙 (비골프 순수 숙박객 / 골프 동반 숙박객 / 나들이 워크인) */}
+                <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-[#1B382E]/10 text-[11px]">
+                  <span className="font-extrabold text-[#284F42]">└ 세부 방문객 구성 분해:</span>
+
+                  <div className="px-2 py-1 rounded bg-white border border-[#1B382E]/10">
+                    <span className="text-[#5A6B63] font-semibold">① 비골프 순수 숙박객: </span>
+                    <strong className="text-[#1B382E]">
+                      {fmtInt(formula?.lyPureRoomGuestsExGolf)}➔{fmtInt(formula?.tyPureRoomGuestsExGolf)}명
+                    </strong>{' '}
+                    <strong
+                      className={
+                        Number(formula?.pureRoomGuestsExGolfDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                      }
+                    >
+                      ({fmtSignedInt(formula?.pureRoomGuestsExGolfDiffCount, '명')} /{' '}
+                      {fmtPct(formula?.pureRoomGuestsExGolfGrowthPct)})
+                    </strong>
+                  </div>
+
+                  <div className="px-2 py-1 rounded bg-white border border-[#1B382E]/10">
+                    <span className="text-[#5A6B63] font-semibold">② 골프 동반 숙박객: </span>
+                    <strong className="text-[#1B382E]">
+                      {fmtInt(formula?.lyGolfSynergyStayGuests)}➔{fmtInt(formula?.tyGolfSynergyStayGuests)}명
+                    </strong>{' '}
+                    <strong
+                      className={
+                        Number(formula?.golfSynergyStayGuestsDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'
+                      }
+                    >
+                      ({fmtSignedInt(formula?.golfSynergyStayGuestsDiffCount, '명')} /{' '}
+                      {fmtPct(formula?.golfSynergyStayGuestsGrowthPct)})
+                    </strong>
+                  </div>
+
+                  <div className="px-2 py-1 rounded bg-white border border-[#1B382E]/10">
+                    <span className="text-[#5A6B63] font-semibold">③ 나들이 워크인: </span>
+                    <strong className="text-[#1B382E]">
+                      {fmtInt(formula?.lyWalkinVisitors)}➔{fmtInt(formula?.tyWalkinVisitors)}명
+                    </strong>{' '}
+                    <strong
+                      className={Number(formula?.walkinVisitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}
+                    >
+                      ({fmtSignedInt(formula?.walkinVisitorDiffCount, '명')} /{' '}
+                      {fmtPct(formula?.walkinVisitorGrowthPct)})
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 4대 사업부 한 줄 성적표 칩 */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
               {segmentSummaryRows.map((seg: any, sIdx: number) => {
                 const sNeg = Number(seg?.diffAmount) < 0;
                 return (
@@ -585,6 +753,16 @@ export default function RevenueVarianceRca() {
             )}
           </div>
         </div>
+
+        {/* [추가 개편 2] 핵심 요인 카드 상단에 formulaDecomposition.visitorCompositionInsight 완제품 문구 직결 노출 */}
+        {formula?.visitorCompositionInsight && (
+          <div className="rounded-xl bg-amber-50/90 border-2 border-amber-300 px-4 py-3 text-xs md:text-[13px] text-amber-950 leading-relaxed">
+            <span className="inline-block px-2 py-0.5 rounded bg-amber-800 text-white text-[11px] font-extrabold mr-2">
+              방문객 구성 역전 진단 (전체 방문객 vs 레저·식음 실수요 모수)
+            </span>
+            <strong className="font-bold">{fmtText(formula?.visitorCompositionInsight)}</strong>
+          </div>
+        )}
 
         {/* 핵심 원인 요약 카드 그리드 (primaryDriverLabel 절별 헤드라인 + 세부수치 분리) */}
         {primaryClauses.length > 0 && (

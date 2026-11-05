@@ -514,9 +514,9 @@ export default function RevenueVarianceRca() {
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
             <span className="text-[#6C7A73] font-semibold">숙박 손님 외부 식당/마트 외출</span>
             <strong className="text-[#1B382E]">
-              외출 {fmtInt(parkingBehavior?.lyStayCarsWithOutingCount)}회 ➔{' '}
+              외출 {fmtInt(parkingBehavior?.lyStayOutingCount)}회 ➔{' '}
               <span className="text-rose-600">
-                {fmtInt(parkingBehavior?.stayCarsWithOutingCount)}회 ({fmtPctOne(parkingBehavior?.stayCarsOutingRatePct)})
+                {fmtInt(parkingBehavior?.tyStayOutingCount)}회 ({fmtPctOne(parkingBehavior?.tyStayOutingRatePct)})
               </span>
             </strong>
           </div>

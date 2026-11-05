@@ -60,6 +60,7 @@
 | **P1 (완료)** | 정규 API 보강 | **[Ticket 82] 분양회원 보증금 반환(Redemption) 리스크·이용 만족도(`depositRedemptionSummary`, `usageSatisfactionSummary`) 및 온라인회원 가입➔실구매 전환 퍼널·인기 상품 Top 랭킹·피크 가입 시즌(`purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality`) 완제품 추가** | [배포/검증완료] ① 분양회원(`member-quota-ltv` 825구좌, 보증금 `862.8억원`, 고위험 `269구좌/143.5억원`, 선호영업장 Top 10) 및 ② 온라인회원(`online-members` 가입 `34,475명`➔실구매 `28,052명/81.4%`, 인기상품 Top 15, 5월 가정의달 피크) 프론트 직결 완료 |
 | **P1 (완료)** | 정규 API 신설 | **[Ticket 83] 복합 리조트 매출 증감 원인 분석(MECE Root Cause Analysis) 전용 완제품 API 신설 (`GET /api/v6/report/revenue-variance-rca`)** | [배포/검증완료] `period`, `formulaDecomposition`(`방문객수 × 객단가`, 볼륨효과 `-380만원` vs 단가효과 `+143만원`), `segmentIsolation`(`segmentSummaryRows[]`, 콘도 `channelMix[]`, 레저 야외vs실내 `venueVariances[]`, F&B 연계율 `77.7%`/회전율 `1.54회`, 골프 취소율 `25.76%`), `fourFactorVerification`, `structuredReport` 3대 비교모드(`YOY_DOW`/`YOY_DATE`/`MOM`) 프론트 1:1 직결 완료 |
 | **P1 (완료)** | API 보강 | **[Ticket 84] `GET /api/v6/parking/time-analytics` 내 순수 나들이고객(`walkInNonGroup`) 주차할인 등록 매장별 상세(`discountStores[]`) 및 할인 요약(`discountSummary`) 완제품 추가** | [배포/검증완료] `daca536f` 배포 완료: `periodSummary`, `byDayOfWeek[]`, `byDayType`, `dailyList[]` 전 노드에 `discountSummary` 및 `discountStores[]` 완제품 제공 및 프론트엔드 1:1 직결 완료 |
+| **P1 (긴급)** | 로직 교정 | **[Ticket 85] `GET /api/v6/report/revenue-variance-rca` 내 우천일수 감소(`2➔1일`) 시 `"우천 기상 악화 / 우천 일수 증가"` 및 주말 감소(`2➔1일`) 시 `"공휴일·휴일 축소(0➔0일)"` 모순 문구 교정** | `rainyDaysDiff < 0`(`2➔1일`)이나 `rainfallDiffMm > 0`(`2.1➔8.3mm`)일 때 우천일수가 줄었는데 `"우천 일수 증가"`로 표출되는 모순 및 `lyRedDays(2)➔tyRedDays(1)`인데 `lyHolidayDays(0)➔tyHolidayDays(0)`를 출력하는 변수 바인딩 오류 수정 요청 |
 
 ---
 
@@ -5396,6 +5397,56 @@ ORDER BY venue_name, rn;
 2. **프론트엔드 선제 연동 완료 (`src/pages/ParkingTimeAnalytics.tsx`)**:
    - `activeWalkInCohort.discountSummary` 및 `activeWalkInCohort.discountStores`(또는 `discountByVenue`)를 1:1 직결 바인딩 완료했습니다.
    - 백엔드 배포 전까지는 `parking-summary`의 실측 할인·사전등록 요약 카드(`POS 매장 주차할인 적용 차량`, `모토아레나 사전등록 차량`, `식음·액티비티 사전등록 차량`, `총 주차할인 감면액·유료정산액`)를 표시하고, 세부 매장별 리스트는 Fail-Loudly 원칙에 따라 `- (Ticket 84 연동 대기)`로 표출합니다.
+
+---
+
+## 72. 🌧️ [Ticket 85] `GET /api/v6/report/revenue-variance-rca` 내 우천일수 감소(`2➔1일`) 시 `"우천 기상 악화 / 우천 일수 증가"` 및 휴일 감소(`2➔1일`) 시 `"공휴일·휴일 축소(0➔0일)"` 모순 문구 교정 요청
+
+### 72-1. 현상 및 라이브 `Stdout` 실측 증거 (`startDate=2026-11-01&endDate=2026-11-04&compareMode=YOY_DATE`)
+```json
+{
+  "primaryDriverLabel": "공휴일·휴일 축소(0➔0일, 달력 역풍 -59,654,727원) · 우천 기상 악화(우천 2➔1일, 주말·휴일 우천 2➔1일) · ...",
+  "ext": {
+    "lyRainyDays": 2,
+    "tyRainyDays": 1,
+    "rainyDaysDiff": -1,
+    "lyRainfallMm": 2.1,
+    "tyRainfallMm": 8.3,
+    "outdoorWeatherImpactReason": "우천 일수 증가 및 주말·휴일 기상 악화: 총 우천일 2일(2.1mm) ➔ 1일(8.5mm) ..."
+  },
+  "cal": {
+    "lyHolidayDays": 0,
+    "tyHolidayDays": 0,
+    "lyRedDays": 2,
+    "tyRedDays": 1,
+    "redDayDiffDays": -1,
+    "calendarShiftEffectAmount": -59654727
+  }
+}
+```
+
+### 72-2. 원인 진단 (3건의 문구-수치 역전 결함)
+1. **우천일수 감소(`2➔1일`)인데 `"우천 기상 악화(우천 2➔1일)"` 및 `"우천 일수 증가"`로 표출되는 모순**:
+   - 실측 데이터상 비가 온 날(우천일수)은 비교기 `2일`에서 당기 `1일`로 **`-1일` 줄어들었습니다(`rainyDaysDiff: -1`)**.
+   - 다만 누적 강수량이 `2.1mm`에서 `8.3mm`로 늘어나(`tyRainfallMm > lyRainfallMm`) 백엔드 조건문이 `outdoorWeatherImpactGrade = 'NEGATIVE'`로 분기하면서, 우천일수가 줄었음에도 타이틀을 `"우천 일수 증가"` 및 `"우천 기상 악화(우천 2➔1일)"`로 출력하여 사용자가 "우천이 줄었다는 건지 늘었다는 건지" 혼란을 겪고 있습니다.
+2. **주말·휴일(`Red Days`)이 `2➔1일` 줄어든 것인데 `lyHolidayDays(0)➔tyHolidayDays(0)`를 대입하여 `"공휴일·휴일 축소(0➔0일)"`로 표출되는 모순**:
+   - `YOY_DATE`(`2025-11-01 토~11-04 화` vs `2026-11-01 일~11-04 수`) 비교에서 법정공휴일은 양쪽 모두 `0일`(`0➔0일`)이고, 주말을 포함한 총 휴일(`Red Days`)이 `2일 ➔ 1일 (-1일)`로 축소되어 달력 역풍 `-59,654,727원`이 발생한 것입니다.
+   - 그런데 `primaryDriverLabel` 생성 시 `lyRedDays➔tyRedDays`(`2➔1일`) 대신 `lyHolidayDays➔tyHolidayDays`(`0➔0일`)를 템플릿에 넣어 `"공휴일·휴일 축소(0➔0일)"`이라는 자기모순 문구가 생성되고 있습니다.
+3. **투숙객 외부 외출 감소(`93➔88회`) 시 방향성 미구분**:
+   - 비교기 `93회`에서 당기 `88회`로 외출 건수가 줄었음에도(`-5회`) 증가 시와 동일한 문구로 나열됩니다.
+
+### 72-3. 백엔드 조치 요청 사항
+1. **우천 진단 문구 분기 정밀화 (`primaryDriverLabel`, `outdoorWeatherImpactReason`, `top3Hypotheses`)**:
+   - `rainyDaysDiff < 0`이고 `rainfallDiffMm > 0`인 경우:
+     - `"우천 일수는 감소(2➔1일, 주말·휴일 우천 2➔1일)했으나 당기 휴일 강수량 증가(2.1mm➔8.3mm, 기온 14.1➔10.2°C)"`로 우천일수(감소)와 강수량(증가)을 명확히 구분하여 표기.
+   - `rainyDaysDiff < 0`이고 `rainfallDiffMm <= 0`인 경우:
+     - 절대 `"우천 기상 악화"`로 표기하지 않고 `"전년 우천 기저 대비 기상 호조(우천 2➔1일 감소)"`로 표기.
+   - `rainyDaysDiff === 0`(`1➔1일`)이고 `rainfallDiffMm > 0`(`0.1mm➔8.3mm`)인 경우:
+     - `"우천 일수 동일(1➔1일) 속 강수량 증가(0.1mm➔8.3mm)"`로 표기 (`"우천 일수 증가"` 문구 금지).
+2. **달력 휴일 축소/확대 문구 변수 교정 (`primaryDriverLabel`)**:
+   - `holidayDiffDays === 0`이고 `redDayDiffDays !== 0`인 경우:
+     - `"주말·휴일 일수 축소(주말·휴일 2➔1일 [법정공휴일 0➔0일], 달력 역풍 -59,654,727원)"`으로 실제 변동된 `lyRedDays➔tyRedDays`를 명시.
+
 
 
 

@@ -12,7 +12,9 @@ import {
   Ticket,
   Utensils,
   Flag,
-  Hotel
+  Hotel,
+  Calendar,
+  CloudRain
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -92,6 +94,7 @@ export default function RevenueVarianceRca() {
   }, [startDate, effectiveEndDate, compareMode]);
 
   const period = rcaData?.period || null;
+  const isMultiDayPeriod = Number(period?.dayCount) > 1 || isMultiDay;
   const formula = rcaData?.formulaDecomposition || null;
   const segIsolation = rcaData?.segmentIsolation || null;
   const segmentSummaryRows: any[] = Array.isArray(segIsolation?.segmentSummaryRows)
@@ -131,7 +134,7 @@ export default function RevenueVarianceRca() {
             {period && (
               <p className="text-xs md:text-sm text-[#6C7A73] mt-1">
                 조회일: <strong className="text-[#1B382E]">{fmtText(period?.tyStartDate)} ~ {fmtText(period?.tyEndDate)}</strong>
-                {' '}vs 비교일:{' '}
+                {' '}({fmtInt(period?.dayCount)}일) vs 비교일:{' '}
                 <strong className="text-[#284F42]">{fmtText(period?.lyStartDate)} ~ {fmtText(period?.lyEndDate)}</strong>
               </p>
             )}
@@ -186,12 +189,19 @@ export default function RevenueVarianceRca() {
               {fmtText(formula?.primaryDriverLabel)}
             </h2>
             <p className="text-xs md:text-sm text-[#6C7A73]">
-              • 전체 방문객 수: <strong className="text-[#1B382E]">{fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명</strong> (
+              • 전체 방문객 수:{' '}
+              <strong className="text-[#1B382E]">
+                {fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명
+              </strong>{' '}
+              (
               <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
                 {fmtSignedInt(formula?.visitorDiffCount, '명')}
               </strong>
               ) &nbsp;|&nbsp; • 손님 1인당 평균 지출:{' '}
-              <strong className="text-[#1B382E]">{fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원</strong> (
+              <strong className="text-[#1B382E]">
+                {fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원
+              </strong>{' '}
+              (
               <strong className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
                 {fmtSignedInt(formula?.spendPerHeadDiff, '원')}
               </strong>
@@ -201,7 +211,7 @@ export default function RevenueVarianceRca() {
 
           <div className="bg-[#F4F3EE] rounded-xl px-4 py-3 text-right shrink-0">
             <div className="text-xs text-[#6C7A73] font-semibold">
-              오늘 매출 {fmtInt(formula?.tyTotalRevenue)}원 (비교일 {fmtInt(formula?.lyTotalRevenue)}원)
+              조회기간 매출 {fmtInt(formula?.tyTotalRevenue)}원 (비교기 {fmtInt(formula?.lyTotalRevenue)}원)
             </div>
             <div
               className={`text-xl md:text-2xl font-black mt-0.5 flex items-center justify-end gap-1.5 ${
@@ -216,10 +226,64 @@ export default function RevenueVarianceRca() {
           </div>
         </div>
 
+        {/* 공휴일·휴일 일수 차이 보정 요약 배너 (다중일 또는 공휴일 차이 발생 시 직관 표출) */}
+        {(isMultiDayPeriod || Number(calFactor?.holidayDiffDays) !== 0) && calFactor && (
+          <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#B59269]/40 p-3.5 text-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div className="space-y-0.5">
+              <span className="font-black text-[#8C6D46] mr-2">[달력 공휴일 차이 보정]</span>
+              <span className="text-[#1B382E]">
+                법정공휴일 <strong>{fmtInt(calFactor?.lyHolidayDays)}일 ➔ {fmtInt(calFactor?.tyHolidayDays)}일</strong> (
+                <strong className={Number(calFactor?.holidayDiffDays) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                  {fmtSignedInt(calFactor?.holidayDiffDays, '일')}
+                </strong>
+                , 총 휴일 {fmtInt(calFactor?.lyRedDays)}일 ➔ {fmtInt(calFactor?.tyRedDays)}일) 차이로 인한 달력 영향액은{' '}
+                <strong className={Number(calFactor?.calendarShiftEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                  {fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')}
+                </strong>
+                입니다.
+              </span>
+            </div>
+            <div className="shrink-0 font-bold text-[#1B382E] bg-white px-3 py-1.5 rounded-lg border border-[#1B382E]/10">
+              공휴일 차이 보정 실질 증감:{' '}
+              <strong className={Number(calFactor?.calendarAdjustedRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                {fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')}
+              </strong>
+            </div>
+          </div>
+        )}
+
+        {/* 매출 증감액 5대 원인 분해 (0-Variance 5단 분해를 쉬운 말로 표출) */}
+        {formula && (
+          <div>
+            <div className="text-xs font-bold text-[#6C7A73] mb-2">
+              매출 증감액({fmtSignedInt(formula?.revenueDiffAmount, '원')})의 5가지 원인별 금액
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
+              {[
+                { label: '① 방문객 수 증감', val: formula?.volumeEffectAmount },
+                { label: '② 객실·골프·레저 단가', val: formula?.coreSegmentPurePriceEffectAmount },
+                { label: '③ 식당 1인당 식사비', val: formula?.pureFnbAttachEffectAmount },
+                { label: '④ 단체 연회·대관 행사', val: formula?.banquetBaseEffectAmount },
+                { label: '⑤ 손님 유형 비중 변화', val: formula?.visitorMixEffectAmount }
+              ].map((item, idx) => {
+                const neg = Number(item.val) < 0;
+                return (
+                  <div key={idx} className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-3">
+                    <div className="text-[#6C7A73] font-semibold">{item.label}</div>
+                    <div className={`text-sm font-black mt-1 ${neg ? 'text-rose-600' : 'text-emerald-700'}`}>
+                      {fmtSignedInt(item.val, '원')}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* 4대 사업부별 어디서 줄고 늘었나? */}
         <div>
           <div className="text-xs font-bold text-[#6C7A73] mb-2.5">
-            사업부별 매출 증감 (어느 부문에서 얼마가 줄고 늘었는가)
+            4대 사업부별 매출 증감 (어느 부문에서 얼마가 줄고 늘었는가)
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {segmentSummaryRows.map((row: any, idx: number) => {
@@ -260,16 +324,16 @@ export default function RevenueVarianceRca() {
       </div>
 
       {/* =====================================================================
-          2. 그렇게 결정한 구체적인 이유 (어느 매장·항목에서 차이나는가?)
+          2. 그렇게 결정한 구체적인 이유 (어느 매장·항목·날씨·휴일에서 차이나는가?)
          ===================================================================== */}
       <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 md:p-6 space-y-5">
         <div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#B59269] text-white text-xs font-bold">
             <FileCheck2 size={14} />
-            2. 그렇게 결정한 이유 (세부 매장·항목별 실제 증감)
+            2. 그렇게 결정한 이유 (세부 매장·항목 및 공휴일·우천 실측 근거)
           </span>
           <h2 className="text-base md:text-lg font-black text-[#1B382E] mt-2">
-            각 사업부 안에서 실제로 매출이 빠지거나 늘어난 항목입니다
+            각 사업부 세부 항목과 공휴일·비 온 날 차이가 실제 매출에 미친 내역입니다
           </h2>
         </div>
 
@@ -483,6 +547,112 @@ export default function RevenueVarianceRca() {
               })}
             </div>
           </div>
+
+          {/* ⑤ 공휴일·휴일 일수 차이 및 달력 영향 */}
+          {calFactor && (
+            <div className="rounded-xl border border-[#1B382E]/15 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#1B382E]/10 pb-2.5">
+                <div className="flex items-center gap-2 font-black text-sm text-[#1B382E]">
+                  <Calendar size={16} className="text-[#284F42]" />
+                  <span>⑤ 공휴일 · 주말 일수 차이 영향</span>
+                </div>
+                <span className="text-xs font-bold text-[#6C7A73]">
+                  공휴일 {fmtInt(calFactor?.lyHolidayDays)}일 ➔ {fmtInt(calFactor?.tyHolidayDays)}일 (
+                  {fmtSignedInt(calFactor?.holidayDiffDays, '일')})
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-[#1B382E]/5">
+                  <span className="text-[#6C7A73]">법정공휴일 명칭</span>
+                  <strong className="text-[#1B382E] text-right">
+                    올해 [{fmtText(calFactor?.tyHolidayNames)}] vs 비교기 [{fmtText(calFactor?.lyHolidayNames)}]
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-[#1B382E]/5">
+                  <span className="text-[#6C7A73]">주말+공휴일(휴일) 하루 평균 매출</span>
+                  <strong className="text-[#1B382E]">
+                    {fmtInt(calFactor?.lyRedDayAvgRevenue)}원 ➔ {fmtInt(calFactor?.tyRedDayAvgRevenue)}원 (
+                    <span className={Number(calFactor?.redDayDailyAvgGrowthPct) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      {fmtPct(calFactor?.redDayDailyAvgGrowthPct)}
+                    </span>
+                    )
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-[#1B382E]/5">
+                  <span className="text-[#6C7A73]">평일(주중) 하루 평균 매출</span>
+                  <strong className="text-[#1B382E]">
+                    {fmtInt(calFactor?.lyWeekdayAvgRevenue)}원 ➔ {fmtInt(calFactor?.tyWeekdayAvgRevenue)}원 (
+                    <span className={Number(calFactor?.weekdayDailyAvgGrowthPct) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      {fmtPct(calFactor?.weekdayDailyAvgGrowthPct)}
+                    </span>
+                    )
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span className="font-bold text-[#1B382E]">달력 휴일수 차이 영향 / 보정 후 실질 증감</span>
+                  <strong className="text-[#1B382E]">
+                    <span className={Number(calFactor?.calendarShiftEffectAmount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      {fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')}
+                    </span>{' '}
+                    / 실질{' '}
+                    <span className={Number(calFactor?.calendarAdjustedRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                      {fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')}
+                    </span>
+                  </strong>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ⑥ 비가 온 날 (주말·휴일 비 vs 평일 비) 비교 */}
+          {extWeather && (
+            <div className="rounded-xl border border-[#1B382E]/15 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#1B382E]/10 pb-2.5">
+                <div className="flex items-center gap-2 font-black text-sm text-[#1B382E]">
+                  <CloudRain size={16} className="text-[#284F42]" />
+                  <span>⑥ 비 온 날 (주말·휴일 우천 vs 평일 우천) 비교</span>
+                </div>
+                <span className="text-xs font-bold text-[#6C7A73]">
+                  총 우천일 {fmtInt(extWeather?.lyRainyDays)}일 ➔ {fmtInt(extWeather?.tyRainyDays)}일 (
+                  {fmtSignedInt(extWeather?.rainyDaysDiff, '일')})
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-[#1B382E]/5">
+                  <span className="text-[#6C7A73]">주말·공휴일에 비 온 날 (매출 영향 큼)</span>
+                  <strong className="text-[#1B382E]">
+                    {fmtInt(extWeather?.lyRedDayRainyDays)}일 ➔ {fmtInt(extWeather?.tyRedDayRainyDays)}일 (
+                    <span className={Number(extWeather?.redDayRainyDaysDiff) <= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                      {fmtSignedInt(extWeather?.redDayRainyDaysDiff, '일')}
+                    </span>
+                    , 강수 {fmtText(extWeather?.tyRedDayRainfallMm)}mm)
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-[#1B382E]/5">
+                  <span className="text-[#6C7A73]">평일(주중)에 비 온 날</span>
+                  <strong className="text-[#1B382E]">
+                    {fmtInt(extWeather?.lyWeekdayRainyDays)}일 ➔ {fmtInt(extWeather?.tyWeekdayRainyDays)}일 (
+                    {fmtSignedInt(extWeather?.weekdayRainyDaysDiff, '일')}, 강수 {fmtText(extWeather?.tyWeekdayRainfallMm)}mm)
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-[#1B382E]/5">
+                  <span className="text-[#6C7A73]">올해 맑은 날 vs 비 온 날 하루 평균 매출</span>
+                  <strong className="text-[#1B382E]">
+                    맑은 날 {fmtInt(extWeather?.tyClearDayAvgRevenue)}원 vs 비 온 날 {fmtInt(extWeather?.tyRainyDayAvgRevenue)}원
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-[#6C7A73]">평균 최고기온 (휴일 / 평일)</span>
+                  <strong className="text-[#1B382E]">
+                    전체 {fmtText(extWeather?.tyTempMax)}°C (휴일 {fmtText(extWeather?.tyRedDayAvgTempMax)}°C / 평일{' '}
+                    {fmtText(extWeather?.tyWeekdayAvgTempMax)}°C)
+                  </strong>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -498,72 +668,88 @@ export default function RevenueVarianceRca() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
           {/* [카드 1] 날씨 / 공휴일 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 휴일</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 공휴일</span>
             <strong className="text-[#1B382E] text-right">
-              올해 {fmtText(extWeather?.tyWeatherDesc)}({fmtText(extWeather?.tyTempMax)}°C) / 비교일{' '}
-              {fmtText(extWeather?.lyWeatherDesc)}({fmtText(extWeather?.lyTempMax)}°C) · 휴일{' '}
-              {fmtInt(calFactor?.tyHolidayDays)}일
+              {isMultiDayPeriod ? (
+                <>
+                  {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C · 우천{' '}
+                  {fmtInt(extWeather?.lyRainyDays)}➔{fmtInt(extWeather?.tyRainyDays)}일 (휴일우천{' '}
+                  {fmtInt(extWeather?.lyRedDayRainyDays)}➔{fmtInt(extWeather?.tyRedDayRainyDays)}일 / 평일{' '}
+                  {fmtInt(extWeather?.lyWeekdayRainyDays)}➔{fmtInt(extWeather?.tyWeekdayRainyDays)}일) · 공휴일{' '}
+                  {fmtInt(calFactor?.lyHolidayDays)}➔{fmtInt(calFactor?.tyHolidayDays)}일 (
+                  {fmtSignedInt(calFactor?.holidayDiffDays, '일')})
+                </>
+              ) : (
+                <>
+                  {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C (비교기{' '}
+                  {fmtText(extWeather?.lyWeatherDesc)} {fmtText(extWeather?.lyTempMax)}°C) · 공휴일{' '}
+                  {fmtInt(calFactor?.tyHolidayDays)}일 (차이 {fmtSignedInt(calFactor?.holidayDiffDays, '일')})
+                </>
+              )}
             </strong>
           </div>
 
           {/* [카드 2] 경쟁사 만실 여부 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">주변 경쟁 리조트</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">경쟁사 만실 여부</span>
             <strong className="text-[#1B382E] text-right">
-              충청 4사 중 만실 {fmtInt(compMarket?.soldOutResortCount)}곳 · 경쟁사 평균{' '}
-              {fmtInt(compMarket?.competitorAvgMinPrice)}원 (평소보다{' '}
+              충청 4사 만실 {fmtInt(compMarket?.soldOutResortCount)}/{fmtInt(compMarket?.monitoredResortCount)}곳 (경쟁사 최저가{' '}
+              {fmtInt(compMarket?.competitorAvgMinPrice)}원, 평소 대비{' '}
               {fmtPctOne(compMarket?.competitorSameClassSurgeRatioPct, true)})
             </strong>
           </div>
 
-          {/* [카드 3] 콘도 객실 가동률·단가 */}
+          {/* [카드 3] 콘도 열쇠 가동·수익 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">콘도 가동률 · 방당 매출</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">콘도 열쇠 가동·수익</span>
             <strong className="text-[#1B382E] text-right">
-              가동률{' '}
+              물리열쇠{' '}
               {fmtPctOne(
-                calFactor?.regimeDynamicThresholds?.actualKeyOccPct ??
-                  condoDetail?.tyPhysicalKeyOccPct ??
+                condoDetail?.tyPhysicalKeyOccPct ??
+                  calFactor?.regimeDynamicThresholds?.actualKeyOccPct ??
                   compMarket?.belleforetPhysicalKeyOccPct
               )}{' '}
-              ({fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}실 중{' '}
-              {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}실 판매) · 방 1개당{' '}
+              ({fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
+              {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}키, 기대{' '}
+              {fmtPctOne(calFactor?.regimeDynamicThresholds?.expectedKeyOccPct)}) · 열쇠당{' '}
               {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
             </strong>
           </div>
 
           {/* [카드 4] 골퍼 미숙박 이탈 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">골퍼 미숙박 귀가</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">골퍼 미숙박 이탈</span>
             <strong className="text-[#1B382E] text-right">
-              숙박유력 골퍼 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
+              진성타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
               <span className="text-rose-600">
-                {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 안 자고 귀가
+                {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박
               </span>
             </strong>
           </div>
 
           {/* [카드 5] 투숙객 외부 외출 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">숙박객 외부 외출</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">투숙객 외부 외출</span>
             <strong className="text-[#1B382E] text-right">
-              단지 밖 외출 {fmtInt(parkingBehavior?.tyStayOutingCount)}회 (숙박차량의{' '}
+              외출 {fmtInt(parkingBehavior?.tyStayOutingCount ?? fnbDetail?.tyStayOutingCount)}회 (
               <span className="text-rose-600">
                 {fmtPctOne(
                   parkingBehavior?.tyStayOutingRatePct ??
                     calFactor?.regimeDynamicThresholds?.actualStayOutingRatePct
                 )}
               </span>
-              )
+              , 경보 기준 {fmtPctOne(calFactor?.regimeDynamicThresholds?.outingAlertThresholdPct)} · 비교기{' '}
+              {fmtInt(parkingBehavior?.lyStayOutingCount)}회)
             </strong>
           </div>
 
           {/* [카드 6] 정산 무결성 / 후정산 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">정산 오차 / 후정산</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">정산 무결성 / 후정산</span>
             <strong className="text-[#1B382E] text-right">
-              정산 오차 {fmtInt(integrityFactor?.reconciliationDeltaWon)}원 · 단체 미수금{' '}
-              {fmtInt(integrityFactor?.cityLedgerPendingAmount)}원 ({fmtInt(integrityFactor?.cityLedgerPendingCount)}건)
+              오차 {fmtInt(integrityFactor?.reconciliationDeltaWon ?? integrityFactor?.gatekeeperDeltaWon)}원 · 후정산 대기{' '}
+              {fmtInt(integrityFactor?.cityLedgerPendingAmount ?? integrityFactor?.b2bPostSettlementPendingAmount)}원 (
+              {fmtInt(integrityFactor?.cityLedgerPendingCount)}건)
             </strong>
           </div>
         </div>

@@ -53,8 +53,19 @@ const fmtText = (val: unknown): string => {
 };
 
 export default function RevenueVarianceRca() {
-  const { startDate, endDate } = useDate();
-  const [compareMode, setCompareMode] = useState<'YOY_DOW' | 'YOY_DATE' | 'MOM'>('YOY_DOW');
+  const { startDate, endDate, isRange } = useDate();
+  const effectiveEndDate = isRange && endDate ? endDate : startDate;
+  const isMultiDay = effectiveEndDate !== startDate;
+  const dateKey = `${startDate}_${effectiveEndDate}`;
+
+  const [modeOverride, setModeOverride] = useState<{
+    key: string;
+    mode: 'YOY_DOW' | 'YOY_DATE' | 'MOM';
+  } | null>(null);
+
+  const defaultCompareMode: 'YOY_DOW' | 'YOY_DATE' = isMultiDay ? 'YOY_DATE' : 'YOY_DOW';
+  const compareMode: 'YOY_DOW' | 'YOY_DATE' | 'MOM' =
+    modeOverride && modeOverride.key === dateKey ? modeOverride.mode : defaultCompareMode;
 
   const [rcaData, setRcaData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,7 +74,7 @@ export default function RevenueVarianceRca() {
     setLoading(true);
     try {
       const res = await secureFetcher(
-        `${API_BASE}/api/v6/report/revenue-variance-rca?startDate=${startDate}&endDate=${endDate}&compareMode=${compareMode}`
+        `${API_BASE}/api/v6/report/revenue-variance-rca?startDate=${startDate}&endDate=${effectiveEndDate}&compareMode=${compareMode}`
       ).catch(() => null);
 
       if (res && res.success) {
@@ -78,7 +89,7 @@ export default function RevenueVarianceRca() {
 
   useEffect(() => {
     fetchRcaData();
-  }, [startDate, endDate, compareMode]);
+  }, [startDate, effectiveEndDate, compareMode]);
 
   const period = rcaData?.period || null;
   const formula = rcaData?.formulaDecomposition || null;
@@ -131,13 +142,13 @@ export default function RevenueVarianceRca() {
             <div className="flex items-center bg-[#F4F3EE] p-1 rounded-xl">
               {[
                 { code: 'YOY_DOW' as const, label: '전년 동요일' },
-                { code: 'YOY_DATE' as const, label: '전년 같은날짜' },
+                { code: 'YOY_DATE' as const, label: isMultiDay ? '전년 동기간 (월/일 기준)' : '전년 같은날짜' },
                 { code: 'MOM' as const, label: '전월 동기' }
               ].map((mode) => (
                 <button
                   key={mode.code}
                   type="button"
-                  onClick={() => setCompareMode(mode.code)}
+                  onClick={() => setModeOverride({ key: dateKey, mode: mode.code })}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     compareMode === mode.code
                       ? 'bg-[#284F42] text-white shadow-xs'

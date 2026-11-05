@@ -855,12 +855,26 @@ export default function RevenueVarianceRca() {
                     !c.includes('달력 역풍') &&
                     !c.includes('달력 순풍') &&
                     !c.startsWith('우천') &&
-                    !c.startsWith('전년 우천')
+                    !c.startsWith('전년 우천') &&
+                    !c.startsWith('콘도 열쇠수익')
                 );
 
                 remainingClauses.forEach((clause) => {
                   structuredCards.push(splitHeadlineAndDetail(clause));
                 });
+
+                // '콘도 열쇠수익(Key Yield...)' 절은 어색한 직역어 대신 백엔드 구조화 필드(condoDetail, compMarket)로 자연스러운 한국어 표출
+                if (condoDetail || compMarket?.unconvertedInternalStayDemand) {
+                  const targetTeams = compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams;
+                  const nonStayTeams = compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams;
+                  structuredCards.push({
+                    headline:
+                      targetTeams !== undefined && nonStayTeams !== undefined
+                        ? `골프 손님 미숙박 당일 귀가 (숙박 가능 골퍼 ${fmtInt(targetTeams)}팀 중 ${fmtInt(nonStayTeams)}팀 미숙박 이탈)`
+                        : `콘도 사용 객실 1실당 평균 매출 변동 (${fmtInt(condoDetail?.lyKeyYield)}원 ➔ ${fmtInt(condoDetail?.tyKeyYield)}원)`,
+                    detail: `(콘도 미판매 빈방 ${fmtInt(condoDetail?.tyUnsoldPhysicalKeys)}실 잔여 · 51평 방2개 사용 반영 1실당 평균 매출 ${fmtInt(condoDetail?.lyKeyYield)}원 ➔ ${fmtInt(condoDetail?.tyKeyYield)}원[${fmtPct(condoDetail?.keyYieldGrowthPct)}])`
+                  });
+                }
 
                 return structuredCards.map((card, idx) => (
                   <div
@@ -1194,7 +1208,7 @@ export default function RevenueVarianceRca() {
                           sub: weekdayBucket ? `평일 ${fmtText(weekdayBucket?.rStayOutingVsEveningPosRev)}` : undefined
                         },
                         {
-                          label: '51평 비중 ↔ 열쇠효율',
+                          label: '51평(방2개) 비중 ↔ 1실당 매출',
                           val: pearsonCorr?.rRoom51ShareVsKeyYield
                         }
                       ].map((cItem, cIdx) => {
@@ -1407,7 +1421,7 @@ export default function RevenueVarianceRca() {
               <strong className="text-rose-600">
                 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박 이탈
               </strong>{' '}
-              (콘도 미판매 잔여 {fmtInt(condoDetail?.tyUnsoldPhysicalKeys)}키)
+              (콘도 미판매 빈방 {fmtInt(condoDetail?.tyUnsoldPhysicalKeys)}실)
             </div>
           </div>
         </div>
@@ -1570,7 +1584,7 @@ export default function RevenueVarianceRca() {
             <div className="space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs md:text-sm font-black text-[#284F42]">
                 <Info size={15} />
-                <span>② 외부 환경 · 콘도 열쇠 · 정산 무결성 6대 운영 지표</span>
+                <span>② 외부 환경 · 콘도 객실 가동 · 정산 무결성 6대 운영 지표</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                 {/* 날씨 / 공휴일 */}
@@ -1606,13 +1620,13 @@ export default function RevenueVarianceRca() {
                   </div>
                 </div>
 
-                {/* 콘도 열쇠 가동·수익 */}
+                {/* 콘도 객실 가동 · 1실당 평균 매출 */}
                 <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-3.5 space-y-1">
-                  <div className="text-[11px] font-bold text-[#6C7A73]">콘도 열쇠 가동 · 수익 (Key Yield)</div>
+                  <div className="text-[11px] font-bold text-[#6C7A73]">콘도 객실 가동 · 1실당 평균 매출 (51평=2실 기준)</div>
                   <div className="font-bold text-[#1B382E]">
-                    물리열쇠 {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
-                    {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}개 (
-                    {fmtPctOne(condoDetail?.tyPhysicalKeyOccPct)}) · Key Yield {fmtInt(condoDetail?.tyKeyYield)}원 (
+                    사용 객실 {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
+                    {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}실 (
+                    {fmtPctOne(condoDetail?.tyPhysicalKeyOccPct)}) · 1실당 매출 {fmtInt(condoDetail?.tyKeyYield)}원 (
                     {fmtPct(condoDetail?.keyYieldGrowthPct)})
                   </div>
                 </div>

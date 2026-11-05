@@ -249,72 +249,378 @@ export default function RevenueVarianceRca() {
           1. 매출의 증감 이유는 딱 무엇인가? (결론)
          ===================================================================== */}
       <div className="bg-white rounded-2xl border-2 border-[#284F42] shadow-xs p-5 md:p-6 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[#1B382E]/10 pb-5">
-          <div className="space-y-2.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#284F42] text-white text-xs font-bold">
-              <Target size={14} />
-              1. 매출 증감 이유 (결론)
-            </span>
-            <h2 className="text-lg md:text-xl font-extrabold text-[#1B382E]">
-              조회 기간 전사 매출 · 방문객 · 1인당 객단가 핵심 요약
-            </h2>
-            <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-sm md:text-[15px]">
-              <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#1B382E]/10 px-3.5 py-2">
-                <span className="text-[#5A6B63] font-medium">전체 방문객 수: </span>
-                <strong className="text-[#1B382E] font-bold">
-                  {fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명
-                </strong>{' '}
-                (
-                <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                  {fmtSignedInt(formula?.visitorDiffCount, '명')}
-                </strong>
-                )
-              </div>
-              <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#1B382E]/10 px-3.5 py-2">
-                <span className="text-[#5A6B63] font-medium">손님 1인당 평균 지출: </span>
-                <strong className="text-[#1B382E] font-bold">
-                  {fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원
-                </strong>{' '}
-                (
-                <strong className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                  {fmtSignedInt(formula?.spendPerHeadDiff, '원')}
-                </strong>
-                )
-              </div>
-            </div>
-          </div>
+        {(() => {
+          const upSegments = segmentSummaryRows.filter((r: any) => Number(r?.diffAmount) > 0);
+          const downSegments = segmentSummaryRows.filter((r: any) => Number(r?.diffAmount) < 0);
 
-          <div className="bg-[#F4F3EE] rounded-2xl px-5 py-4 text-right shrink-0 border border-[#1B382E]/10">
-            <div className="text-xs md:text-sm text-[#5A6B63] font-semibold">
-              조회기간 매출 {fmtInt(formula?.tyTotalRevenue)}원 (비교기 {fmtInt(formula?.lyTotalRevenue)}원)
-            </div>
-            <div
-              className={`text-2xl md:text-3xl font-black mt-1 flex items-center justify-end gap-2 ${
-                isNegative ? 'text-rose-600' : 'text-emerald-700'
-              }`}
-            >
-              {isNegative ? <TrendingDown size={26} /> : <TrendingUp size={26} />}
-              <span>
-                {fmtSignedInt(formula?.revenueDiffAmount, '원')} ({fmtPct(formula?.revenueGrowthPct)})
-              </span>
-            </div>
-          </div>
-        </div>
+          const upSegText = upSegments
+            .map((r: any) => `${fmtText(r?.segmentName).split(' ')[0]}(${fmtSignedInt(r?.diffAmount, '원')})`)
+            .join(' · ');
+          const downSegText = downSegments
+            .map((r: any) => `${fmtText(r?.segmentName).split(' ')[0]}(${fmtSignedInt(r?.diffAmount, '원')})`)
+            .join(' · ');
 
-        {/* 최우선 핵심 원인 요약 박스 (가독성을 위해 문장 단위로 깔끔하게 줄바꿈 표출) */}
-        <div className="rounded-2xl bg-[#F8F7F3] border border-[#1B382E]/15 border-l-4 border-l-[#284F42] p-4 md:p-5 space-y-2.5">
-          <div className="text-xs md:text-sm font-extrabold text-[#284F42]">
-            핵심 증감 원인 한눈에 보기
-          </div>
-          <ul className="space-y-2 text-sm md:text-[15px] text-[#1B382E] font-medium leading-7">
-            {splitTopLevelClauses(formula?.primaryDriverLabel).map((clause, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="font-black text-[#284F42] shrink-0">•</span>
-                <span>{clause}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+          // 세부 증가 항목 수집 (백엔드 사전 집계 항목 중 양수만 추출 — 사칙연산 일절 없음)
+          const positiveDetails: Array<{ category: string; name: string; sub?: string; amount: string }> = [];
+          venueVariances
+            .filter((v: any) => Number(v?.diffAmount) > 0)
+            .slice(0, 3)
+            .forEach((v: any) => {
+              positiveDetails.push({
+                category: '레저 매장',
+                name: fmtText(v?.venueName),
+                sub: `${fmtInt(v?.lyVisitors)}➔${fmtInt(v?.tyVisitors)}명`,
+                amount: fmtSignedInt(v?.diffAmount, '원')
+              });
+            });
+          channelMix
+            .filter((ch: any) => Number(ch?.diffRevenue) > 0)
+            .forEach((ch: any) => {
+              positiveDetails.push({
+                category: '콘도 객실',
+                name: fmtText(ch?.channelLabel),
+                sub: `${fmtInt(ch?.lyRooms)}➔${fmtInt(ch?.tyRooms)}실`,
+                amount: fmtSignedInt(ch?.diffRevenue, '원')
+              });
+            });
+          if (Number(fnbDetail?.directFnbDiffAmount) > 0) {
+            positiveDetails.push({
+              category: '식당(F&B)',
+              name: '직영 식당 일반 매출',
+              sub: `결제 ${fmtInt(fnbDetail?.lyReceiptCount)}➔${fmtInt(fnbDetail?.tyReceiptCount)}건`,
+              amount: fmtSignedInt(fnbDetail?.directFnbDiffAmount, '원')
+            });
+          }
+          if (Number(fnbDetail?.banquetDiffAmount) > 0) {
+            positiveDetails.push({
+              category: '연회·대관',
+              name: 'B2B 세미나 · 단체 연회 대관',
+              amount: fmtSignedInt(fnbDetail?.banquetDiffAmount, '원')
+            });
+          }
+          if (Number(golfRevComp?.greenFeeDiff) > 0) {
+            positiveDetails.push({
+              category: '골프',
+              name: '그린피 (입장료)',
+              amount: fmtSignedInt(golfRevComp?.greenFeeDiff, '원')
+            });
+          }
+          if (Number(golfRevComp?.extraRevenueDiff) > 0) {
+            positiveDetails.push({
+              category: '골프',
+              name: '프로샵 · 스타트하우스 부대매출',
+              amount: fmtSignedInt(golfRevComp?.extraRevenueDiff, '원')
+            });
+          }
+          if (Number(golfRevComp?.cartFeeDiff) > 0) {
+            positiveDetails.push({
+              category: '골프',
+              name: '카트 대여료',
+              amount: fmtSignedInt(golfRevComp?.cartFeeDiff, '원')
+            });
+          }
+          golfChannelMix
+            .filter((gc: any) => Number(gc?.diffGreenFee) > 0)
+            .slice(0, 2)
+            .forEach((gc: any) => {
+              positiveDetails.push({
+                category: '골프 예약채널',
+                name: fmtText(gc?.channelLabel),
+                sub: `${fmtInt(gc?.lyPlayers)}➔${fmtInt(gc?.tyPlayers)}명`,
+                amount: fmtSignedInt(gc?.diffGreenFee, '원')
+              });
+            });
+
+          // 세부 감소 항목 수집 (백엔드 사전 집계 항목 중 음수만 추출 — 사칙연산 일절 없음)
+          const negativeDetails: Array<{ category: string; name: string; sub?: string; amount: string }> = [];
+          if (Number(golfRevComp?.greenFeeDiff) < 0) {
+            negativeDetails.push({
+              category: '골프',
+              name: '그린피 (입장료)',
+              amount: fmtSignedInt(golfRevComp?.greenFeeDiff, '원')
+            });
+          }
+          if (Number(golfRevComp?.extraRevenueDiff) < 0) {
+            negativeDetails.push({
+              category: '골프',
+              name: '프로샵 · 스타트하우스 부대매출',
+              amount: fmtSignedInt(golfRevComp?.extraRevenueDiff, '원')
+            });
+          }
+          if (Number(golfRevComp?.cartFeeDiff) < 0) {
+            negativeDetails.push({
+              category: '골프',
+              name: '카트 대여료',
+              amount: fmtSignedInt(golfRevComp?.cartFeeDiff, '원')
+            });
+          }
+          golfChannelMix
+            .filter((gc: any) => Number(gc?.diffGreenFee) < 0)
+            .slice(0, 2)
+            .forEach((gc: any) => {
+              negativeDetails.push({
+                category: '골프 예약채널',
+                name: fmtText(gc?.channelLabel),
+                sub: `${fmtInt(gc?.lyPlayers)}➔${fmtInt(gc?.tyPlayers)}명`,
+                amount: fmtSignedInt(gc?.diffGreenFee, '원')
+              });
+            });
+          venueVariances
+            .filter((v: any) => Number(v?.diffAmount) < 0)
+            .slice(0, 3)
+            .forEach((v: any) => {
+              negativeDetails.push({
+                category: '레저 매장',
+                name: fmtText(v?.venueName),
+                sub: `${fmtInt(v?.lyVisitors)}➔${fmtInt(v?.tyVisitors)}명`,
+                amount: fmtSignedInt(v?.diffAmount, '원')
+              });
+            });
+          channelMix
+            .filter((ch: any) => Number(ch?.diffRevenue) < 0)
+            .forEach((ch: any) => {
+              negativeDetails.push({
+                category: '콘도 객실',
+                name: fmtText(ch?.channelLabel),
+                sub: `${fmtInt(ch?.lyRooms)}➔${fmtInt(ch?.tyRooms)}실`,
+                amount: fmtSignedInt(ch?.diffRevenue, '원')
+              });
+            });
+          if (Number(fnbDetail?.directFnbDiffAmount) < 0) {
+            negativeDetails.push({
+              category: '식당(F&B)',
+              name: '직영 식당 일반 매출',
+              sub: `결제 ${fmtInt(fnbDetail?.lyReceiptCount)}➔${fmtInt(fnbDetail?.tyReceiptCount)}건`,
+              amount: fmtSignedInt(fnbDetail?.directFnbDiffAmount, '원')
+            });
+          }
+          if (Number(fnbDetail?.banquetDiffAmount) < 0) {
+            negativeDetails.push({
+              category: '연회·대관',
+              name: 'B2B 세미나 · 단체 연회 대관',
+              amount: fmtSignedInt(fnbDetail?.banquetDiffAmount, '원')
+            });
+          }
+          if (Number(calFactor?.calendarShiftEffectAmount) < 0) {
+            negativeDetails.push({
+              category: '달력 휴일 축소',
+              name: `주말·공휴일 축소 (${fmtInt(calFactor?.lyRedDays)}➔${fmtInt(calFactor?.tyRedDays)}일)`,
+              amount: fmtSignedInt(calFactor?.calendarShiftEffectAmount, '원')
+            });
+          }
+
+          return (
+            <>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[#1B382E]/10 pb-5">
+                <div className="space-y-2.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#284F42] text-white text-xs font-bold">
+                    <Target size={14} />
+                    1. 매출 증감 이유 (핵심 결론)
+                  </span>
+                  <h2 className="text-lg md:text-xl font-black text-[#1B382E] leading-snug">
+                    {isNegative ? (
+                      <>
+                        {downSegText || '주요 부문'} 감소가 {upSegText ? `${upSegText} 증가보다 커서` : '발생하여'} 총매출이{' '}
+                        <span className="text-rose-600">
+                          {fmtSignedInt(formula?.revenueDiffAmount, '원')} ({fmtPct(formula?.revenueGrowthPct)}) 감소
+                        </span>
+                        했습니다
+                      </>
+                    ) : (
+                      <>
+                        {upSegText || '주요 부문'} 성장이 {downSegText ? `${downSegText} 감소를 넘어` : '견인하여'} 총매출이{' '}
+                        <span className="text-emerald-700">
+                          {fmtSignedInt(formula?.revenueDiffAmount, '원')} ({fmtPct(formula?.revenueGrowthPct)}) 증가
+                        </span>
+                        했습니다
+                      </>
+                    )}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-sm md:text-[15px]">
+                    <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#1B382E]/10 px-3.5 py-2">
+                      <span className="text-[#5A6B63] font-medium">전체 방문객 수: </span>
+                      <strong className="text-[#1B382E] font-bold">
+                        {fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명
+                      </strong>{' '}
+                      (
+                      <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                        {fmtSignedInt(formula?.visitorDiffCount, '명')}
+                      </strong>
+                      )
+                    </div>
+                    <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#1B382E]/10 px-3.5 py-2">
+                      <span className="text-[#5A6B63] font-medium">손님 1인당 평균 지출: </span>
+                      <strong className="text-[#1B382E] font-bold">
+                        {fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원
+                      </strong>{' '}
+                      (
+                      <strong className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                        {fmtSignedInt(formula?.spendPerHeadDiff, '원')}
+                      </strong>
+                      )
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#F4F3EE] rounded-2xl px-5 py-4 text-right shrink-0 border border-[#1B382E]/10">
+                  <div className="text-xs md:text-sm text-[#5A6B63] font-semibold">
+                    조회기간 매출 {fmtInt(formula?.tyTotalRevenue)}원 (비교기 {fmtInt(formula?.lyTotalRevenue)}원)
+                  </div>
+                  <div
+                    className={`text-2xl md:text-3xl font-black mt-1 flex items-center justify-end gap-2 ${
+                      isNegative ? 'text-rose-600' : 'text-emerald-700'
+                    }`}
+                  >
+                    {isNegative ? <TrendingDown size={26} /> : <TrendingUp size={26} />}
+                    <span>
+                      {fmtSignedInt(formula?.revenueDiffAmount, '원')} ({fmtPct(formula?.revenueGrowthPct)})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 무엇 때문에 늘었고 무엇 때문에 줄었는가? (증가 요인 vs 감소 요인 2열 직관 대조) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* 왼쪽: 매출을 늘린 원인 (+) */}
+                <div className="rounded-2xl bg-emerald-50/50 border-2 border-emerald-200 p-4 md:p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2.5">
+                    <div className="text-sm md:text-base font-black text-emerald-900 flex items-center gap-1.5">
+                      <TrendingUp size={18} className="text-emerald-700" />
+                      <span>▲ 무엇 때문에 매출이 늘었나? (증가 원인)</span>
+                    </div>
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      성장 견인 요인
+                    </span>
+                  </div>
+
+                  {/* 증가한 사업부 요약 뱃지 */}
+                  {upSegments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {upSegments.map((s: any, sIdx: number) => (
+                        <div
+                          key={sIdx}
+                          className="rounded-lg bg-white px-3 py-1.5 border border-emerald-200 text-xs font-bold text-[#1B382E]"
+                        >
+                          {fmtText(s?.segmentName)}:{' '}
+                          <strong className="text-emerald-700">
+                            {fmtSignedInt(s?.diffAmount, '원')} ({fmtPct(s?.growthPct)})
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 세부 증가 매장·채널·항목 리스트 */}
+                  {positiveDetails.length > 0 ? (
+                    <div className="bg-white rounded-xl p-3.5 border border-emerald-200/80 divide-y divide-[#1B382E]/5 text-xs md:text-[13px]">
+                      {positiveDetails.slice(0, 7).map((item, pIdx) => (
+                        <div key={pIdx} className="flex items-center justify-between py-1.5 first:pt-0 last:pb-0 gap-2">
+                          <div>
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[11px] font-bold mr-1.5">
+                              {item.category}
+                            </span>
+                            <strong className="text-[#1B382E]">{item.name}</strong>
+                            {item.sub && <span className="text-[#5A6B63] ml-1.5 text-xs">({item.sub})</span>}
+                          </div>
+                          <strong className="text-emerald-700 font-black shrink-0">{item.amount}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl p-3.5 border border-emerald-200/80 text-xs text-[#5A6B63]">
+                      해당 기간 뚜렷한 매출 증가 세부 항목 없음
+                    </div>
+                  )}
+                </div>
+
+                {/* 오른쪽: 매출을 깎아먹은 원인 (-) */}
+                <div className="rounded-2xl bg-rose-50/50 border-2 border-rose-200 p-4 md:p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-rose-200/80 pb-2.5">
+                    <div className="text-sm md:text-base font-black text-rose-900 flex items-center gap-1.5">
+                      <TrendingDown size={18} className="text-rose-600" />
+                      <span>▼ 무엇 때문에 매출이 줄었나? (감소·이탈 원인)</span>
+                    </div>
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">
+                      하락·이탈 요인
+                    </span>
+                  </div>
+
+                  {/* 감소한 사업부 요약 뱃지 */}
+                  {downSegments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {downSegments.map((s: any, sIdx: number) => (
+                        <div
+                          key={sIdx}
+                          className="rounded-lg bg-white px-3 py-1.5 border border-rose-200 text-xs font-bold text-[#1B382E]"
+                        >
+                          {fmtText(s?.segmentName)}:{' '}
+                          <strong className="text-rose-600">
+                            {fmtSignedInt(s?.diffAmount, '원')} ({fmtPct(s?.growthPct)})
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 세부 감소 매장·채널·항목 리스트 */}
+                  {negativeDetails.length > 0 ? (
+                    <div className="bg-white rounded-xl p-3.5 border border-rose-200/80 divide-y divide-[#1B382E]/5 text-xs md:text-[13px]">
+                      {negativeDetails.slice(0, 7).map((item, nIdx) => (
+                        <div key={nIdx} className="flex items-center justify-between py-1.5 first:pt-0 last:pb-0 gap-2">
+                          <div>
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 text-[11px] font-bold mr-1.5">
+                              {item.category}
+                            </span>
+                            <strong className="text-[#1B382E]">{item.name}</strong>
+                            {item.sub && <span className="text-[#5A6B63] ml-1.5 text-xs">({item.sub})</span>}
+                          </div>
+                          <strong className="text-rose-600 font-black shrink-0">{item.amount}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl p-3.5 border border-rose-200/80 text-xs text-[#5A6B63]">
+                      해당 기간 뚜렷한 매출 감소 세부 항목 없음
+                    </div>
+                  )}
+
+                  {/* 외부 유출(외출·미숙박) 보조 요약 */}
+                  <div className="bg-white/90 rounded-xl px-3.5 py-2.5 border border-rose-200/60 text-xs text-[#4A5D54] space-y-1">
+                    <div>
+                      • <strong>식당 손님 외부 이탈</strong>: 숙박객 단지 밖(외부 식당·마트) 외출{' '}
+                      <strong className="text-rose-600">
+                        {fmtInt(fnbDetail?.tyStayOutingCount ?? parkingBehavior?.tyStayOutingCount)}회
+                      </strong>{' '}
+                      (외출 비율 {fmtPctOne(fnbDetail?.tyStayOutingRatePct ?? parkingBehavior?.tyStayOutingRatePct)})
+                    </div>
+                    <div>
+                      • <strong>골퍼 콘도 미숙박 귀가</strong>: 숙박 가능 골퍼{' '}
+                      {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
+                      <strong className="text-rose-600">
+                        {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 당일 귀가
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 백엔드 종합 진단 원문 (접기/펼치기 보존) */}
+              <details className="rounded-xl bg-[#F8F7F3] border border-[#1B382E]/15 px-4 py-3">
+                <summary className="cursor-pointer text-xs md:text-sm font-bold text-[#284F42] select-none">
+                  백엔드 종합 진단 요약문 원문 펼쳐보기
+                </summary>
+                <ul className="mt-2.5 space-y-1.5 text-xs md:text-[13px] text-[#1B382E] font-medium leading-relaxed">
+                  {splitTopLevelClauses(formula?.primaryDriverLabel).map((clause, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="font-black text-[#284F42] shrink-0">•</span>
+                      <span>{clause}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </>
+          );
+        })()}
 
         {/* 공휴일·휴일 일수 차이 보정 요약 배너 (다중일 또는 공휴일 차이 발생 시 직관 표출) */}
         {(isMultiDayPeriod || Number(calFactor?.holidayDiffDays) !== 0) && calFactor && (

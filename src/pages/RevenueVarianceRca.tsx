@@ -117,8 +117,16 @@ export default function RevenueVarianceRca() {
   const calFactor = fourFactors?.calendarFactor || null;
   const extWeather = fourFactors?.externalEnvFactor || null;
   const compMarket = fourFactors?.competitorMarketFactor || null;
-  const parkingBehavior = fourFactors?.parkingAndBehaviorFactor || null;
-  const integrityFactor = fourFactors?.dataIntegrityFactor || null;
+  const parkingBehavior = fourFactors?.parkingAndBehaviorFactor || fourFactors?.stayVsWalkinLprFactor || null;
+  const integrityFactor = fourFactors?.dataIntegrityFactor || fourFactors?.accountingIntegrityFactor || null;
+
+  const structuredReport = rcaData?.structuredReport || null;
+  const segmentImpactBullets: string[] = Array.isArray(structuredReport?.segmentImpactBullets)
+    ? structuredReport.segmentImpactBullets
+    : [];
+  const top3Hypotheses: any[] = Array.isArray(structuredReport?.top3Hypotheses)
+    ? structuredReport.top3Hypotheses
+    : [];
 
   const isNegative = Number(formula?.revenueDiffAmount) < 0;
 
@@ -320,6 +328,20 @@ export default function RevenueVarianceRca() {
               );
             })}
           </div>
+
+          {segmentImpactBullets.length > 0 && (
+            <div className="mt-3 rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-3.5 space-y-1.5">
+              <div className="text-xs font-black text-[#284F42]">부문별 심층 원인 진단 (백엔드 완제품)</div>
+              <ul className="space-y-1.5 text-xs text-[#1B382E] leading-relaxed">
+                {segmentImpactBullets.map((bullet, idx) => (
+                  <li key={idx} className="flex items-start gap-1.5">
+                    <span className="font-black text-[#284F42] mt-0.5">•</span>
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
@@ -654,6 +676,46 @@ export default function RevenueVarianceRca() {
             </div>
           )}
         </div>
+
+        {/* 근거 ③ 데이터 검증으로 확인된 3대 원인 카드 */}
+        {top3Hypotheses.length > 0 && (
+          <div className="pt-2 space-y-2.5">
+            <div className="text-xs font-black text-[#284F42]">
+              근거 ③ 데이터 검증으로 확인된 3대 원인
+            </div>
+            <div className="grid grid-cols-1 gap-2.5">
+              {top3Hypotheses.map((h: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-[#1B382E]/15 bg-[#F4F3EE]/50 p-3.5 space-y-1"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs md:text-sm font-black text-[#1B382E]">
+                      {fmtText(h?.category)}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                        h?.status === 'CONFIRMED'
+                          ? 'bg-rose-600 text-white'
+                          : h?.status === 'PARTIAL'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {fmtText(h?.status)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#284F42] font-bold">
+                    검증 수치: {fmtText(h?.verificationMetric)}
+                  </div>
+                  <p className="text-xs text-[#1B382E]/85 leading-relaxed">
+                    {fmtText(h?.evidenceDetail)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =====================================================================
@@ -667,26 +729,36 @@ export default function RevenueVarianceRca() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
           {/* [카드 1] 날씨 / 공휴일 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 공휴일</span>
-            <strong className="text-[#1B382E] text-right">
-              {isMultiDayPeriod ? (
-                <>
-                  {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C · 우천{' '}
-                  {fmtInt(extWeather?.lyRainyDays)}➔{fmtInt(extWeather?.tyRainyDays)}일 (휴일우천{' '}
-                  {fmtInt(extWeather?.lyRedDayRainyDays)}➔{fmtInt(extWeather?.tyRedDayRainyDays)}일 / 평일{' '}
-                  {fmtInt(extWeather?.lyWeekdayRainyDays)}➔{fmtInt(extWeather?.tyWeekdayRainyDays)}일) · 공휴일{' '}
-                  {fmtInt(calFactor?.lyHolidayDays)}➔{fmtInt(calFactor?.tyHolidayDays)}일 (
-                  {fmtSignedInt(calFactor?.holidayDiffDays, '일')})
-                </>
-              ) : (
-                <>
-                  {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C (비교기{' '}
-                  {fmtText(extWeather?.lyWeatherDesc)} {fmtText(extWeather?.lyTempMax)}°C) · 공휴일{' '}
-                  {fmtInt(calFactor?.tyHolidayDays)}일 (차이 {fmtSignedInt(calFactor?.holidayDiffDays, '일')})
-                </>
-              )}
-            </strong>
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex flex-col justify-between gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 공휴일</span>
+              <strong className="text-[#1B382E] text-right">
+                {isMultiDayPeriod ? (
+                  <>
+                    우천 {fmtInt(extWeather?.lyRainyDays)}일({fmtText(extWeather?.lyRainfallMm)}mm) ➔{' '}
+                    {fmtInt(extWeather?.tyRainyDays)}일({fmtText(extWeather?.tyRainfallMm)}mm) · 공휴일{' '}
+                    {fmtInt(extWeather?.lyHolidayDays ?? calFactor?.lyHolidayDays)}➔
+                    {fmtInt(extWeather?.tyHolidayDays ?? calFactor?.tyHolidayDays)}일 (
+                    {fmtSignedInt(extWeather?.holidayDiffDays ?? calFactor?.holidayDiffDays, '일')})
+                  </>
+                ) : (
+                  <>
+                    {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C (비교기{' '}
+                    {fmtText(extWeather?.lyWeatherDesc)} {fmtText(extWeather?.lyTempMax)}°C) · 공휴일{' '}
+                    {fmtInt(extWeather?.tyHolidayDays ?? calFactor?.tyHolidayDays)}일(비교기{' '}
+                    {fmtInt(extWeather?.lyHolidayDays ?? calFactor?.lyHolidayDays)}일)
+                  </>
+                )}
+              </strong>
+            </div>
+            {isMultiDayPeriod && (
+              <div className="text-[11px] text-[#6C7A73] text-right">
+                주말·휴일 우천 {fmtInt(extWeather?.lyRedDayRainyDays)}➔{fmtInt(extWeather?.tyRedDayRainyDays)}일 · 주중 우천{' '}
+                {fmtInt(extWeather?.lyWeekdayRainyDays)}➔{fmtInt(extWeather?.tyWeekdayRainyDays)}일 | 달력효과{' '}
+                {fmtSignedInt(extWeather?.calendarShiftEffectAmount ?? calFactor?.calendarShiftEffectAmount, '원')} (보정 실질증감{' '}
+                {fmtSignedInt(extWeather?.calendarAdjustedRevenueDiff ?? calFactor?.calendarAdjustedRevenueDiff, '원')})
+              </div>
+            )}
           </div>
 
           {/* [카드 2] 경쟁사 만실 여부 */}
@@ -703,16 +775,14 @@ export default function RevenueVarianceRca() {
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
             <span className="text-[#6C7A73] font-semibold shrink-0">콘도 열쇠 가동·수익</span>
             <strong className="text-[#1B382E] text-right">
-              물리열쇠{' '}
+              물리열쇠 {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
+              {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}개 (
               {fmtPctOne(
                 condoDetail?.tyPhysicalKeyOccPct ??
                   calFactor?.regimeDynamicThresholds?.actualKeyOccPct ??
                   compMarket?.belleforetPhysicalKeyOccPct
-              )}{' '}
-              ({fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
-              {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}키, 기대{' '}
-              {fmtPctOne(calFactor?.regimeDynamicThresholds?.expectedKeyOccPct)}) · 열쇠당{' '}
-              {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
+              )}
+              ) · 열쇠당 {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
             </strong>
           </div>
 
@@ -747,7 +817,13 @@ export default function RevenueVarianceRca() {
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
             <span className="text-[#6C7A73] font-semibold shrink-0">정산 무결성 / 후정산</span>
             <strong className="text-[#1B382E] text-right">
-              오차 {fmtInt(integrityFactor?.reconciliationDeltaWon ?? integrityFactor?.gatekeeperDeltaWon)}원 · 후정산 대기{' '}
+              오차{' '}
+              {fmtInt(
+                integrityFactor?.reconciliationDeltaWon ??
+                  integrityFactor?.gatekeeperDeltaWon ??
+                  integrityFactor?.gatekeeperDeltaAmount
+              )}
+              원 · 후정산 대기{' '}
               {fmtInt(integrityFactor?.cityLedgerPendingAmount ?? integrityFactor?.b2bPostSettlementPendingAmount)}원 (
               {fmtInt(integrityFactor?.cityLedgerPendingCount)}건)
             </strong>
